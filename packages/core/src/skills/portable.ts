@@ -49,6 +49,18 @@ export interface PortablePreset {
   updatedAt: number;
 }
 
+/** A metadata file may only name a plain folder directly inside the skills folder. */
+export function isSafeLibraryDirName(name: unknown): name is string {
+  return (
+    typeof name === "string" &&
+    name.length > 0 &&
+    name !== "." &&
+    name !== ".." &&
+    !name.startsWith(".") &&
+    !/[\\/\0]/.test(name)
+  );
+}
+
 function readJsonDir<T>(dir: string): T[] {
   const items: T[] = [];
   for (const entry of readDirSafe(dir)) {
@@ -192,6 +204,8 @@ export class PortableMetadata {
     this.#db.transaction(() => {
       const seenSkillIds = new Set<string>();
       for (const file of skillFiles) {
+        // Files arrive through backups from other devices: never trust their paths.
+        if (!isSafeLibraryDirName(file.path) || typeof file.id !== "string") continue;
         const libraryPath = join(this.#paths.skillsDir, file.path);
         if (!isSkillDir(libraryPath)) continue;
         seenSkillIds.add(file.id);
@@ -227,6 +241,7 @@ export class PortableMetadata {
         sourceSubpath: file.source.subpath ?? null,
         sourceBranch: file.source.branch ?? null,
         sourceRef: file.source.ref ?? current.sourceRef,
+        sourceRevision: file.source.revision ?? current.sourceRevision,
         updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);

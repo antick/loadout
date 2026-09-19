@@ -81,3 +81,22 @@ describe("storage", () => {
     db.close();
   });
 });
+
+describe("portable metadata", () => {
+  it("ignores metadata files that point outside the skills folder", async () => {
+    const { createTestWorld } = await import("./helpers");
+    const world = createTestWorld();
+    try {
+      makeSkill(world.root, "outside");
+      writeFile(
+        join(world.ctx.paths.metadataDir, "skills", "evil.json"),
+        JSON.stringify({ id: "evil", path: "../../../outside", tags: [], source: { type: "import" }, createdAt: 1 }),
+      );
+      writeFile(join(world.ctx.paths.metadataDir, "schema.json"), "{}");
+      world.portable.rebuild({ authoritative: true });
+      expect(world.store.list()).toHaveLength(0);
+    } finally {
+      world.cleanup();
+    }
+  });
+});
