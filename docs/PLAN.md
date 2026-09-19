@@ -10,7 +10,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 | Layer      | Choice                                                                         |
 | ---------- | ------------------------------------------------------------------------------ |
-| Monorepo   | Turborepo + bun workspaces                                                     |
+| Monorepo   | Turborepo + pnpm workspaces, Node 22+                                          |
 | Desktop    | Electron, electron-vite, electron-builder                                      |
 | UI         | React 19, TanStack Router (file based), TanStack Query, Tailwind v4, shadcn/ui |
 | Domain     | `@skillboard/core` — plain Node TypeScript, no Electron imports                |

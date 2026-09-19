@@ -3,10 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "description": "One desktop app to manage AI agent skills across every coding tool.",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -16,8 +12,8 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "check": "bun run lint && bun run format:check && bun run typecheck && bun run test",
-    "cli": "bun run --filter @skillboard/cli start --",
+    "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test",
+    "cli": "pnpm --filter @skillboard/cli run start --",
     "package": "turbo run package"
   },
   "devDependencies": {
@@ -26,9 +22,8 @@
     "turbo": "2.11.2",
     "typescript": "7.0.2"
   },
-  "packageManager": "bun@1.4.2",
-  "trustedDependencies": [
-    "electron",
-    "esbuild"
-  ]
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "pnpm@11.18.0"
 }

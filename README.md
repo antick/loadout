@@ -24,24 +24,24 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ## Develop
 
-Needs [bun](https://bun.sh) and `git`.
+Needs Node 22.12 or newer, [pnpm](https://pnpm.io) and `git`.
 
 ```bash
-bun install
+pnpm install
 ```
 
 ```bash
-bun run dev
+pnpm dev
 ```
 
-| Command            | What it does                                  |
-| ------------------ | --------------------------------------------- |
-| `bun run dev`      | Build the CLI, then start the app with reload |
-| `bun run check`    | oxlint, oxfmt check, typecheck, all tests     |
-| `bun run test`     | vitest across packages                        |
-| `bun run format`   | Format with oxfmt                             |
-| `bun run package`  | Build installers into `apps/desktop/release`  |
-| `bun run cli -- …` | Run the CLI from source                       |
+| Command        | What it does                                  |
+| -------------- | --------------------------------------------- |
+| `pnpm dev`     | Build the CLI, then start the app with reload |
+| `pnpm check`   | oxlint, oxfmt check, typecheck, all tests     |
+| `pnpm test`    | vitest across packages                        |
+| `pnpm format`  | Format with oxfmt                             |
+| `pnpm package` | Build installers into `apps/desktop/release`  |
+| `pnpm cli …`   | Run the CLI from source                       |
 
 ## Layout
 

@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "start": "bun run build && node dist/skillboard.mjs",
+    "start": "node build.mjs && node dist/skillboard.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
   },

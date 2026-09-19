@@ -401,7 +401,7 @@ describe("git backup", () => {
 describe("published launcher", () => {
   const bundle = join(import.meta.dirname, "..", "dist", `${CLI_BINARY_NAME}.mjs`);
 
-  // Needs `bun run build` first; the launcher is a shell script, so not on Windows.
+  // Needs `pnpm build` first; the launcher is a shell script, so not on Windows.
   it.skipIf(!existsSync(bundle) || process.platform === "win32")(
     "runs the real bundle the way an agent would",
     async () => {

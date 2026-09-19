@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Packages allowed to run install scripts: Electron downloads its binary and esbuild picks its
+# platform build. electron-winstaller is only needed when building Windows installers on Windows.
+allowBuilds:
+  electron: true
+  esbuild: true
+  electron-winstaller: false
