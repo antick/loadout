@@ -1,0 +1,250 @@
+{
+  "backupPage": {
+    "subtitle": "Keep the library safe in a Git repository and in step across computers",
+    "status": {
+      "title": {
+        "git_missing": "Git is not installed",
+        "not_set_up": "Backup is not set up",
+        "needs_remote": "No remote to back up to",
+        "needs_fix_unrelated_histories": "This library and the remote do not belong together",
+        "needs_fix_detached": "The library is not on a branch",
+        "failed": "The last backup failed",
+        "pending_local": "Changes are waiting to be backed up",
+        "pending_remote": "Another device pushed changes",
+        "pending_both": "Changes here and on another device",
+        "up_to_date": "Everything is backed up"
+      },
+      "body": {
+        "git_missing": "Backup uses Git. Install it, then come back to this page.",
+        "not_set_up": "Connect a private repository below and {{app}} keeps a full history of the library there.",
+        "needs_remote": "The library has a local history but nowhere to send it. Connect a repository below.",
+        "needs_fix_unrelated_histories": "The remote holds a different history than this library, so they cannot be merged. Use the remote backup to line them up again.",
+        "needs_fix_detached": "The library is checked out at a fixed point instead of a branch, so nothing can be backed up. Use the remote backup to get back on track.",
+        "failed": "Something went wrong during the last backup.",
+        "pending_local_one": "{{count}} skill changed on this machine since the last backup.",
+        "pending_local_other": "{{count}} skills changed on this machine since the last backup.",
+        "pending_remote_one": "The remote has {{count}} backup this machine has not seen. Sync to bring it into this library.",
+        "pending_remote_other": "The remote has {{count}} backups this machine has not seen. Sync to bring them into this library.",
+        "pending_both_one": "This machine has changes to send and the remote has {{count}} backup to bring in. Sync merges them skill by skill.",
+        "pending_both_other": "This machine has changes to send and the remote has {{count}} backups to bring in. Sync merges them skill by skill.",
+        "up_to_date": "The library and the remote hold the same content."
+      },
+      "action": {
+        "git_missing": "Get Git",
+        "not_set_up": "Set up backup",
+        "needs_remote": "Set up backup",
+        "needs_fix_unrelated_histories": "Fix sync setup",
+        "needs_fix_detached": "Fix sync setup",
+        "failed": "Retry",
+        "pending_local": "Back up now",
+        "pending_remote": "Sync now",
+        "pending_both": "Sync now",
+        "up_to_date": "Back up again"
+      },
+      "reconnect": "Reconnect GitHub",
+      "repository": "Repository",
+      "noRemote": "Not connected",
+      "branch": "Branch",
+      "noBranch": "none",
+      "device": "This device",
+      "deviceEdit": "Device name",
+      "snapshot": "Current snapshot",
+      "restoredFrom": "Restored from",
+      "noSnapshot": "None yet",
+      "lastBackup": "Last backup {{when}}"
+    },
+    "sync": {
+      "done": "Backup finished",
+      "upToDate": "Already up to date",
+      "merged_one": "Backup finished. Merged {{count}} update from another device",
+      "merged_other": "Backup finished. Merged {{count}} updates from another device",
+      "conflicts_one": "{{count}} skill changed on two devices. Your version was kept. Review it under “Needs attention”",
+      "conflicts_other": "{{count}} skills changed on two devices. Your versions were kept. Review them under “Needs attention”",
+      "snapshot": "Snapshot {{tag}}"
+    },
+    "toast": {
+      "remoteSaved": "Remote saved",
+      "restored": "Library restored from the backup",
+      "disconnected": "This machine is disconnected from the backup",
+      "recloned": "The library now follows the remote backup",
+      "restoredSnapshot": "Snapshot restored",
+      "safetySnapshot": "Safety snapshot {{tag}}",
+      "deviceRenamed": "Future backups are signed “{{name}}”"
+    },
+    "conflicts": {
+      "title": "Needs attention",
+      "description_one": "{{count}} skill was changed here and on another device. Pick the version to keep.",
+      "description_other": "{{count}} skills were changed here and on another device. Pick the version to keep for each.",
+      "detected": "Found {{when}}",
+      "action": {
+        "keep_local": "Keep mine",
+        "use_remote": "Use remote",
+        "keep_both": "Keep both"
+      },
+      "hint": {
+        "keep_local": "Keep the version on this machine and drop the other one",
+        "use_remote": "Replace the version on this machine with the one from the other device",
+        "keep_both": "Keep this version and add the other one as a separate skill"
+      },
+      "resolved": {
+        "keep_local": "Kept your version of “{{name}}”",
+        "use_remote": "“{{name}}” now uses the remote version",
+        "keep_both": "Kept both versions of “{{name}}”"
+      },
+      "useRemoteTitle": "Replace “{{name}}” with the remote version?",
+      "useRemoteBody": "The version on this machine is replaced. A safety snapshot is taken first, so you can go back from the history."
+    },
+    "github": {
+      "title": "Connect with GitHub",
+      "description": "{{app}} finds or creates a private repository in your account and backs the library up to it.",
+      "reconnectTitle": "Reconnect GitHub",
+      "reconnectDescription": "GitHub refused the stored access. Sign in again or paste a new token; the repository stays the same.",
+      "repoName": "Repository name",
+      "repoNameHint": "Created as a private repository when it does not exist yet.",
+      "repoNameInvalid": "Use letters, digits, dots, dashes and underscores only, up to 100 characters.",
+      "signIn": "Sign in with GitHub",
+      "signInAgain": "Get a new code",
+      "enterCode": "Enter this code on the GitHub page that just opened",
+      "copyCode": "Copy the code",
+      "waiting": "Waiting for you to approve on GitHub",
+      "openAgain": "Open GitHub again",
+      "codeExpired": "That code expired before it was approved.",
+      "orToken": "or use an access token",
+      "token": "Personal access token",
+      "tokenPlaceholder": "ghp_…",
+      "tokenHint": "Needs the “repo” scope. It goes straight to the system keychain and is never shown again.",
+      "createToken": "Create a token",
+      "connect": "Connect",
+      "signInUnavailable": "Sign in with GitHub appears here once an OAuth client id is set.",
+      "openSettings": "Open backup settings",
+      "repoCreated": "Created {{repo}}",
+      "repoFound": "Connected to {{repo}}",
+      "connectedAs": "Signed in as {{login}}",
+      "publicRepoTitle": "This repository is public",
+      "publicRepoBody": "Anyone can read the skills you back up to it. Make it private in the repository settings on GitHub unless that is what you want."
+    },
+    "remote": {
+      "title": "Advanced: any Git URL",
+      "description": "Back up to any Git remote you can push to: another provider, a self-hosted server, SSH.",
+      "placeholder": "https://git.example.com/me/skills.git",
+      "savedAs": "Saved as",
+      "credentialsHint": "A user name or token typed into the URL is moved to the system keychain and removed from the saved address."
+    },
+    "setup": {
+      "title": "How should this machine start?",
+      "description": "The library is not backed up yet. Choose what to do with",
+      "restore": {
+        "title": "Use existing remote backup",
+        "body": "Download the backup into this library. Skills that only exist on this machine are kept."
+      },
+      "new": {
+        "title": "Back up this machine as new",
+        "body": "Start a history from this library and push it to the remote. Best for an empty repository."
+      }
+    },
+    "recovery": {
+      "title": "Fix the sync setup",
+      "genericReason": "This library and the remote backup no longer line up.",
+      "optionTitle": "Use the remote backup (recommended)",
+      "pointRemote": "The library is downloaded again from the remote, so both share one history.",
+      "pointLocalOnly": "Skills that only exist on this machine are copied back in afterwards.",
+      "pointOldFolder": "The current library folder is kept next to the new one, so nothing is thrown away.",
+      "noRemote": "There is no remote to download from. Connect a repository first.",
+      "notNow": "Not now",
+      "action": "Use the remote backup"
+    },
+    "history": {
+      "title": "History",
+      "current": "Current",
+      "restore": "Restore",
+      "restoreTitle": "Restore the library to {{when}}?",
+      "restoreBody": "The library switches to this snapshot as a new backup on top of the history, so nothing is lost. A safety snapshot of the current state is taken first.",
+      "emptyTitle": "No snapshots yet",
+      "emptyBody": "Every manual backup leaves a snapshot here that you can return to.",
+      "notSetUpTitle": "History starts with the first backup",
+      "notSetUpBody": "Once backup is set up, each backup leaves a snapshot you can restore."
+    },
+    "contents": {
+      "title": "What is backed up",
+      "included": {
+        "skills": "Every skill folder in the library",
+        "metadata": "Tags and where each skill came from",
+        "presets": "Presets and their per-agent switches"
+      },
+      "neverTitle": "Never included",
+      "excluded": {
+        "credentials": "Tokens and passwords (they stay in the system keychain)",
+        "settings": "App settings and the local database",
+        "deployments": "The copies inside agent and project folders",
+        "paths": "Folder paths of this machine",
+        "junk": "System clutter and temporary files"
+      },
+      "size": "Library size {{size}}",
+      "oversizedExcluded_one": "{{count}} skill is larger than {{limit}} and is left out of the backup:",
+      "oversizedExcluded_other": "{{count}} skills are larger than {{limit}} and are left out of the backup:",
+      "oversizedTracked_one": "{{count}} skill grew past {{limit}} after it was first backed up. It stays in the backup:",
+      "oversizedTracked_other": "{{count}} skills grew past {{limit}} after they were first backed up. They stay in the backup:",
+      "totalLarge": "The library is larger than {{limit}}. Some Git hosts refuse repositories of this size."
+    },
+    "auto": {
+      "title": "Automatic backup",
+      "description": "Backs up a couple of minutes after the library stops changing, and once more when the app quits.",
+      "lastError": "The last automatic backup failed."
+    },
+    "disconnect": {
+      "title": "Disconnect",
+      "machine": {
+        "title": "Disconnect this machine",
+        "body": "Forgets the remote and its stored access here. The local history and the remote backup stay as they are.",
+        "action": "Disconnect",
+        "confirmTitle": "Disconnect this machine from the backup?",
+        "confirmBody": "The remote address and its stored credentials are removed from this machine. Nothing is deleted from the library, its history or the remote."
+      },
+      "revoke": {
+        "title": "Revoke authorisation",
+        "body": "Opens GitHub where you can take back the access, then disconnects this machine.",
+        "action": "Revoke and disconnect",
+        "confirmTitle": "Revoke GitHub access and disconnect?",
+        "confirmBody": "GitHub opens in your browser so you can delete the token or revoke the app. This machine is then disconnected. The remote backup itself is not deleted."
+      },
+      "remote": {
+        "title": "Delete remote backup",
+        "body": "{{app}} never deletes the repository itself. This opens its settings on GitHub, where you can.",
+        "bodyOther": "{{app}} never deletes the repository itself. Delete it on your Git host if you no longer need it.",
+        "action": "Open repository settings"
+      }
+    },
+    "summary": {
+      "title": "Summary",
+      "skills": "Skills in the library",
+      "snapshots": "Snapshots",
+      "conflicts": "Waiting for a choice",
+      "unknown": "–"
+    },
+    "firstRun": {
+      "title": "Start fresh, or restore from a backup?",
+      "description": "The library is empty. If you backed it up from another computer, paste the repository address to bring everything over.",
+      "urlLabel": "Backup repository",
+      "urlHint": "Any Git address you can read from. Leave it empty to start with an empty library.",
+      "fresh": "Start fresh",
+      "restore": "Connect & restore"
+    },
+    "errors": {
+      "GIT_MISSING": "Git is not installed on this computer. Install Git, then try again.",
+      "GIT_AUTH": "The remote refused the stored credentials. Reconnect, or check that the token can still write to the repository.",
+      "NETWORK": "The remote could not be reached. Check the connection and try again.",
+      "TIMEOUT": "The remote took too long to answer. Try again in a moment.",
+      "GIT_REJECTED": "The remote has backups this machine has not seen and would not accept the push.",
+      "GIT_UNRELATED": "The remote holds a different history than this library, so the two cannot be merged.",
+      "GIT_NO_UPSTREAM": "The library is not linked to a branch on the remote yet. Back up once to create the link.",
+      "GIT_NOT_REPO": "Backup is not set up for this library yet.",
+      "SYNC_CONFLICT": "The same files changed on two devices and could not be merged.",
+      "GITHUB_TOKEN_INVALID": "GitHub did not accept that token. Check that it was copied completely and has not expired.",
+      "GITHUB_SCOPE": "The token may not create or read that repository. Create one with the “repo” scope.",
+      "GITHUB_DEVICE_EXPIRED": "The sign-in code expired. Start again to get a new one.",
+      "GITHUB_DEVICE_DENIED": "The sign-in was declined on GitHub.",
+      "GITHUB_NOT_CONFIGURED": "Sign in with GitHub is not set up. Use an access token, or add an OAuth client id in Settings.",
+      "CREDENTIALS_UNAVAILABLE": "The system keychain is not available, so the access could not be stored safely."
+    }
+  }
+}

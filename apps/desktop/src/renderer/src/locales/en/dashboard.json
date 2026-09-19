@@ -1,0 +1,97 @@
+{
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "summary": {
+      "skills_one": "{{count}} skill in the library",
+      "skills_other": "{{count}} skills in the library",
+      "agents_one": "{{count}} agent connected",
+      "agents_other": "{{count}} agents connected",
+      "presets_one": "{{count}} preset",
+      "presets_other": "{{count}} presets",
+      "projects_one": "{{count}} project",
+      "projects_other": "{{count}} projects"
+    },
+    "summaryEmpty": "Welcome to {{app}}. Three steps and your agents share one set of skills.",
+    "agentControl": {
+      "title": "Let your agents manage skills themselves",
+      "body": "One small skill teaches an agent to list, install and update skills through {{app}}'s command-line tool, so you can simply ask for it in a chat.",
+      "start": "Set up",
+      "pick": "Pick the agents that may manage skills:",
+      "dismiss": "Don't show this again"
+    },
+    "stats": {
+      "skills": "Library skills",
+      "coverage": "Deploy coverage",
+      "percent": "{{value}}%",
+      "coverageHint": "{{deployed}} of {{total}} installed for an agent",
+      "agents": "Connected agents",
+      "agentsHint_one": "of {{count}} supported",
+      "agentsHint_other": "of {{count}} supported",
+      "updates": "Updates available",
+      "updatesHint": "Open the library to review them",
+      "updatesNone": "Everything checked is current",
+      "projects": "Projects",
+      "projectsDiverged_one": "{{count}} has skills that differ from the library",
+      "projectsDiverged_other": "{{count}} have skills that differ from the library",
+      "backup": "Backup"
+    },
+    "backupState": {
+      "loading": "Checking…",
+      "git_missing": "Git missing",
+      "not_set_up": "Not set up",
+      "needs_remote": "No remote",
+      "needs_fix": "Needs fixing",
+      "failed": "Failed",
+      "pending": "Changes waiting",
+      "up_to_date": "Up to date"
+    },
+    "actions": {
+      "install": "Install skills",
+      "scan": "Scan this machine",
+      "linkProject": "Link a project",
+      "backup": "Back up now"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "emptyTitle": "Nothing has happened yet",
+      "emptyBody": "Installs, updates, deployments and backups show up here.",
+      "failed": "Failed",
+      "kind": {
+        "install": "Installed",
+        "remove": "Removed",
+        "update": "Updated",
+        "deploy": "Deployed",
+        "undeploy": "Undeployed",
+        "import": "Imported",
+        "backup": "Backup",
+        "restore": "Restored",
+        "preset": "Preset"
+      }
+    },
+    "recent": {
+      "title": "Recently updated skills"
+    },
+    "start": {
+      "title": "Get going in three steps",
+      "body": "The library is empty. Fill it once, and every agent and project can draw from it.",
+      "step": "Step {{number}}",
+      "get": {
+        "title": "Bring in skills",
+        "body": "Install from the marketplace, a Git repository or a folder, or scan this machine and import what your agents already have."
+      },
+      "deploy": {
+        "title": "Install them for your agents",
+        "body": "Click an agent badge on a skill to switch it on for that agent, or group skills into presets and add a whole set at once."
+      },
+      "backup": {
+        "title": "Keep it safe",
+        "body": "Back the library up to a private Git repository to restore it later or keep several computers in step.",
+        "action": "Set up backup"
+      }
+    }
+  }
+}

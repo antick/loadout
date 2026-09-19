@@ -27,6 +27,10 @@ import {
   SEED_PROJECTS,
   SEED_SKILLS,
 } from "@/lib/dev-mock-data";
+import { createInstallMockHandlers } from "@/lib/dev-mock-install";
+import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
+import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
+import { createSystemMockHandlers } from "@/lib/dev-mock-system";
 
 const LATENCY_MS = 120;
 
@@ -251,17 +255,103 @@ for (const channel of [
   handlers[channel] = () => [];
 }
 
+Object.assign(
+  handlers,
+  createInstallMockHandlers({
+    getSkills: () => skills,
+    addSkill: (added) => {
+      skills = [...skills.filter((entry) => entry.id !== added.id), added];
+      emitChanged("skills");
+    },
+    emitProgress: (progress) => {
+      for (const listener of listeners) listener("install:progress", progress);
+    },
+    fail: (code, message) => {
+      throw new MockError(code, message);
+    },
+  }),
+);
+
+// Registered after the install handlers: it takes over `install.cancel` for update keys only.
+const cancelInstall = handlers["install.cancel"] as ((key: string) => unknown) | undefined;
+Object.assign(
+  handlers,
+  createLibraryMockHandlers({
+    getSkills: () => skills,
+    setSkills: (next) => {
+      skills = next;
+    },
+    getPresets: () => presets,
+    setPresets: (next) => {
+      presets = next;
+    },
+    getAgents: () => agents,
+    setDeployed,
+    emitChanged,
+    emitProgress: (progress) => {
+      for (const listener of listeners) listener("install:progress", progress);
+    },
+    emitAutoRan: (payload) => {
+      for (const listener of listeners) listener("updates:auto-ran", payload);
+    },
+    fail: (code, message) => {
+      throw new MockError(code, message);
+    },
+    cancelElsewhere: (key) => cancelInstall?.(key) ?? false,
+  }),
+);
+
+// Backup, settings, agents and system: replaces the simple `backup.*` and `agents.list` stubs above.
+Object.assign(
+  handlers,
+  createSystemMockHandlers({
+    getSkills: () => skills,
+    setSkills: (next) => {
+      skills = next;
+    },
+    agents,
+    getSettings: () => settings,
+    emitChanged,
+    fail: (code, message) => {
+      throw new MockError(code, message);
+    },
+  }),
+);
+
+// Registered last: the agent and project pages need fuller `workspace.*` / `projects.*` data than
+// the stubs above, and everything else that reads project skills gets the same copies.
+Object.assign(
+  handlers,
+  createWorkspaceMockHandlers({
+    getSkills: () => skills,
+    setSkills: (next) => {
+      skills = next;
+    },
+    getAgents: () => agents,
+    getProjects: () => projects,
+    setProjects: (next) => {
+      projects = next;
+    },
+    setDeployed,
+    emitChanged,
+    fail: (code, message) => {
+      throw new MockError(code, message);
+    },
+  }),
+);
+
 /** Install the fake bridge. Call only in development, and only when the real one is missing. */
 export function installDevMock(): void {
   window.skillboard = {
     invoke: (channel, args) =>
       new Promise<ApiResponse<unknown>>((resolve) => {
-        window.setTimeout(() => {
+        // Async so handlers that take a while (installs with progress) can return a promise.
+        window.setTimeout(async () => {
           const handler = handlers[channel];
           try {
             if (!handler)
               throw new MockError("UNSUPPORTED", `The preview has no data for "${channel}".`);
-            resolve({ ok: true, value: handler(...(args as never[])) });
+            resolve({ ok: true, value: await handler(...(args as never[])) });
           } catch (error) {
             const code = error instanceof MockError ? error.code : "INTERNAL";
             const details =

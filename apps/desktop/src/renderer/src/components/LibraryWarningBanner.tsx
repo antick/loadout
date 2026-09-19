@@ -21,7 +21,11 @@ export function LibraryWarningBanner(): ReactNode {
       title={t("banners.libraryTitle")}
       description={warnings.map((warning) => t(`banners.libraryWarnings.${warning}`)).join(" ")}
       actions={
-        <Button variant="ghost" size="xs" onClick={() => void navigate({ to: "/settings" })}>
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={() => void navigate({ to: "/settings", search: { section: "general" } })}
+        >
           {t("banners.openSettings")}
         </Button>
       }

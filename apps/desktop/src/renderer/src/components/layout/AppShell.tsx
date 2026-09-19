@@ -16,6 +16,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { LibraryWarningBanner } from "@/components/LibraryWarningBanner";
 import { PresetDialog } from "@/components/PresetDialog";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { FirstRunDialog } from "@/features/backup/FirstRunDialog";
 import { AddProjectDialog } from "@/features/projects/AddProjectDialog";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -99,6 +100,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
           }
         />
         <CloseDialog />
+        <FirstRunDialog />
         <AppUpdateToast />
       </PageHeaderSlotsContext.Provider>
     </ShellContext.Provider>

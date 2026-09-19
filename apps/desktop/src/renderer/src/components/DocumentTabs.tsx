@@ -16,6 +16,8 @@ export interface DocumentTabsProps {
   localLabel?: string;
   libraryLabel?: string;
   defaultTab?: DocumentTab;
+  /** Diff from local to library instead, for when the "library" side is the newer upstream text. */
+  reverseDiff?: boolean;
   className?: string;
 }
 
@@ -26,6 +28,7 @@ export function DocumentTabs({
   localLabel,
   libraryLabel,
   defaultTab = "local",
+  reverseDiff,
   className,
 }: DocumentTabsProps): ReactNode {
   const { t } = useTranslation();
@@ -53,7 +56,10 @@ export function DocumentTabs({
         {loading ? (
           <Skeleton className="h-40 w-full" />
         ) : (
-          <DiffView before={library ?? ""} after={local ?? ""} />
+          <DiffView
+            before={(reverseDiff ? local : library) ?? ""}
+            after={(reverseDiff ? library : local) ?? ""}
+          />
         )}
       </TabsContent>
       <TabsContent value="library">{pane(library)}</TabsContent>

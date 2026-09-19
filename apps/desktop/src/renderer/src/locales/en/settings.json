@@ -1,0 +1,254 @@
+{
+  "settings": {
+    "navLabel": "Settings sections",
+    "sections": {
+      "agents": {
+        "title": "Agents",
+        "description": "Choose which agents {{app}} installs skills for, their order, and where their skills live."
+      },
+      "general": {
+        "title": "General",
+        "description": "The library folder, how skills are installed, appearance and window behaviour."
+      },
+      "network": {
+        "title": "Network",
+        "description": "How {{app}} reaches the internet."
+      },
+      "updates": {
+        "title": "Skill updates",
+        "description": "Keep skills from Git and the marketplace current."
+      },
+      "backup": {
+        "title": "Backup",
+        "description": "Options for backing the library up to a Git repository."
+      },
+      "cli": {
+        "title": "Agent control",
+        "description": "Let your agents manage skills themselves through the command-line tool."
+      },
+      "about": {
+        "title": "About",
+        "description": "Version, updates and help."
+      }
+    },
+    "agents": {
+      "count": {
+        "detected": "Found on this machine",
+        "enabled": "Enabled",
+        "custom": "Custom"
+      },
+      "enableAll": "Enable all",
+      "disableAll": "Disable all",
+      "refresh": "Refresh",
+      "allEnabled": "Every agent is enabled",
+      "allDisabled": "Every agent is disabled",
+      "disableAllTitle": "Disable every agent?",
+      "disableAllBody": "Skills installed from the library are removed from every agent's folder. The library itself is not touched, and skills you put there yourself stay.",
+      "disableTitle": "Disable {{name}}?",
+      "disableBody_one": "{{count}} skill installed from the library is removed from its folder. The library keeps it.",
+      "disableBody_other": "{{count}} skills installed from the library are removed from its folder. The library keeps them.",
+      "disable": "Disable",
+      "enable": "Enable {{name}}",
+      "group": {
+        "detected": "Detected",
+        "custom": "Custom",
+        "other": "Other supported"
+      },
+      "filter": "Filter agents",
+      "noMatch": "No agent matches that filter.",
+      "badge": {
+        "notInstalled": "Not installed",
+        "custom": "Custom",
+        "customPath": "Custom path",
+        "shares": "Shares folder with {{names}}"
+      },
+      "globalPath": "Global skills folder",
+      "projectPath": "Folder inside projects",
+      "notSet": "not set",
+      "editPath": "Change path",
+      "resetPath": "Reset to default",
+      "browse": "Choose folder",
+      "pathSaved": "Path saved",
+      "pathReset": "Path reset to the default",
+      "remove": "Remove agent",
+      "removeTitle": "Remove the custom agent “{{name}}”?",
+      "removeBody": "Skills installed from the library are removed from its folder. Anything else in the folder stays.",
+      "removed": "Removed “{{name}}”",
+      "added": "Added “{{name}}”",
+      "errors": {
+        "save": "Could not change the agent.",
+        "path": "Could not save the path.",
+        "remove": "Could not remove the agent."
+      },
+      "custom": {
+        "title": "Add custom agent",
+        "description": "For an agent {{app}} does not know yet. It only needs a folder to put skills in.",
+        "name": "Name",
+        "namePlaceholder": "My agent",
+        "skillsDir": "Skills folder",
+        "skillsDirPlaceholder": "~/.my-agent/skills",
+        "projectDir": "Folder inside projects (optional)",
+        "projectDirPlaceholder": ".my-agent/skills",
+        "projectDirHint": "Relative to a project's root. Leave it empty if the agent has no per-project skills.",
+        "add": "Add agent"
+      }
+    },
+    "general": {
+      "library": {
+        "title": "Library location",
+        "description": "The folder that holds every skill, the database and the backup history.",
+        "default": "Default",
+        "custom": "Custom",
+        "change": "Change…",
+        "reset": "Use the default",
+        "open": "Open folder",
+        "pickTitle": "Choose the library folder",
+        "restartTitle": "Restart to move the library to",
+        "restart": "Restart",
+        "error": "Could not change the library location."
+      },
+      "deploy": {
+        "title": "How skills are installed",
+        "description": "Applies to skills you install from now on; existing ones keep their mode.",
+        "symlink": {
+          "title": "Link to the library",
+          "body": "Agents read the library's copy, so edits and updates show up everywhere at once. Links inside a project point at this machine's library and will not work for teammates."
+        },
+        "copy": {
+          "title": "Copy into the agent",
+          "body": "Every agent and project gets its own copy that works anywhere, including in repositories you share with a team."
+        }
+      },
+      "appearance": {
+        "title": "Appearance",
+        "theme": "Theme",
+        "themes": {
+          "system": "System",
+          "light": "Light",
+          "dark": "Dark"
+        },
+        "textSize": "Text size",
+        "textSizeHint": "Scales all text in the app.",
+        "textSizes": {
+          "small": "Small",
+          "default": "Default",
+          "large": "Large",
+          "xlarge": "Extra large"
+        },
+        "language": "Language"
+      },
+      "window": {
+        "title": "Window and tray",
+        "tray": "Show the tray icon",
+        "trayHint": "Quick access to presets and update checks while the window is closed."
+      },
+      "close": {
+        "title": "When the window is closed",
+        "description": "Staying in the tray keeps automatic backups and update checks running.",
+        "ask": "Ask every time",
+        "hide": "Minimise to the tray",
+        "quit": "Quit {{app}}",
+        "hideNeedsTray": "Turn the tray icon on to use this."
+      }
+    },
+    "network": {
+      "title": "Proxy",
+      "description": "Route {{app}}'s own downloads through a proxy server.",
+      "proxyUrl": "Proxy address",
+      "placeholder": "http://127.0.0.1:7890",
+      "hint": "Starts with http://, https:// or socks5://. Leave it empty for a direct connection.",
+      "invalid": "The address has to start with http://, https:// or socks5://.",
+      "saved": "Proxy saved",
+      "cleared": "Proxy turned off",
+      "appliesTitle": "Used for",
+      "applies": {
+        "market": "Browsing and installing from the marketplace",
+        "sources": "Downloading and updating skills from Git repositories",
+        "github": "Connecting the backup to GitHub",
+        "updates": "Checking for and downloading app updates"
+      },
+      "notApplied": "Backup pushes and pulls use your own Git configuration, including any proxy set there."
+    },
+    "updates": {
+      "title": "Automatic checks",
+      "description": "{{app}} compares each skill with the place it was installed from.",
+      "frequency": "Check for updates",
+      "intervals": {
+        "off": "Never",
+        "1h": "Every hour",
+        "6h": "Every 6 hours",
+        "24h": "Once a day"
+      },
+      "lastChecked": "Last checked {{when}}",
+      "neverChecked": "Not checked automatically yet",
+      "apply": "Install updates automatically",
+      "applyHint": "Updates that would delete files are never installed without asking."
+    },
+    "backup": {
+      "title": "Backup options",
+      "description": "Connecting, syncing and restoring happen on the Backup page.",
+      "open": "Open Backup",
+      "merge": "Merge skill by skill",
+      "mergeHint": "When two computers changed the library, whole skills are merged instead of text lines, and a skill changed on both is kept for you to decide. Turn this off to use Git's plain line merge.",
+      "clientId": "GitHub OAuth client id (advanced)",
+      "clientIdHint": "The client id of a GitHub OAuth app with device flow enabled. Setting it adds “Sign in with GitHub” to the Backup page; without it you connect with an access token.",
+      "clientIdPlaceholder": "Iv1.0123456789abcdef",
+      "clientIdSaved": "Client id saved"
+    },
+    "cli": {
+      "title": "Command-line tool",
+      "description": "Everything the app can do with skills, as commands for scripts and agents.",
+      "published": "Ready",
+      "notPublished": "Not available",
+      "notPublishedHint": "The tool could not be put in place on the last start. Restart {{app}} to try again.",
+      "path": "Location",
+      "version": "Version",
+      "noVersion": "unknown",
+      "pathHint": "Use the full location above if the command is not on your PATH. Add --json for output that programs can read.",
+      "examples": {
+        "list": "List the library",
+        "install": "Install every skill of a repository",
+        "deploy": "Install a skill for one agent",
+        "preset": "Install a whole preset",
+        "sync": "Back up now"
+      },
+      "control": {
+        "title": "Teach your agents",
+        "description": "Installs the “{{skill}}” skill, which tells an agent how to list, install and update skills through the command-line tool instead of editing folders by hand.",
+        "installed": "Installed",
+        "installedHint": "The skill is in the library.",
+        "openSkill": "Show it",
+        "pick": "Pick the agents that may manage skills:",
+        "pickMore": "Add it to more agents:"
+      }
+    },
+    "about": {
+      "checkUpdates": "Check for updates",
+      "updatesNotConfigured": "Updates are not configured for this build.",
+      "upToDate": "You have the latest version.",
+      "updateAvailable": "Version {{version}} is available.",
+      "viewRelease": "View release",
+      "updateFailed": "Could not check for updates.",
+      "supportTitle": "Help and bug reports",
+      "supportDescription": "Logs and diagnostics have home folder names, tokens and e-mail addresses removed.",
+      "exportLogs": "Export logs",
+      "logsExported_one": "Exported {{count}} file",
+      "logsExported_other": "Exported {{count}} files",
+      "revealLogs": "Reveal",
+      "logsFailed": "Could not export the logs.",
+      "copyDiagnostics": "Copy diagnostics",
+      "diagnosticsCopied": "Diagnostics copied. Paste them into your bug report",
+      "privacy": "Nothing is sent anywhere: the export is a file on this computer and the diagnostics go to your clipboard."
+    }
+  },
+  "agentControl": {
+    "pickLabel": "Agents to set up",
+    "noAgents": "No agent is enabled on this machine yet. Enable one under Settings → Agents first.",
+    "setUp_zero": "Set up",
+    "setUp_one": "Set up for {{count}} agent",
+    "setUp_other": "Set up for {{count}} agents",
+    "done_one": "Agent control is set up for {{count}} agent",
+    "done_other": "Agent control is set up for {{count}} agents",
+    "failed": "Could not set up agent control."
+  }
+}

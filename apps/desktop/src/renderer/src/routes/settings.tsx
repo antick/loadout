@@ -1,11 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import {
+  DEFAULT_SETTINGS_SECTION,
+  SETTINGS_SECTIONS,
+  type SettingsSection,
+} from "@/features/settings/constants";
+import { SettingsPage } from "@/features/settings/SettingsPage";
 
-function SettingsRoute(): ReactNode {
-  const { t } = useTranslation();
-  return <PagePlaceholder title={t("nav.settings")} />;
+export interface SettingsSearch {
+  section?: SettingsSection;
 }
 
-export const Route = createFileRoute("/settings")({ component: SettingsRoute });
+function SettingsRoute(): ReactNode {
+  const { section } = Route.useSearch();
+  return <SettingsPage section={section ?? DEFAULT_SETTINGS_SECTION} />;
+}
+
+export const Route = createFileRoute("/settings")({
+  validateSearch: (search: Record<string, unknown>): SettingsSearch => ({
+    section: SETTINGS_SECTIONS.find((section) => section === search.section),
+  }),
+  component: SettingsRoute,
+});

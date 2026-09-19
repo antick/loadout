@@ -24,7 +24,11 @@ export function CrashBanner(): ReactNode {
       description={crash.data.message}
       actions={
         <>
-          <Button variant="ghost" size="xs" onClick={() => void navigate({ to: "/settings" })}>
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={() => void navigate({ to: "/settings", search: { section: "about" } })}
+          >
             {t("banners.viewLogs")}
           </Button>
           <Button
