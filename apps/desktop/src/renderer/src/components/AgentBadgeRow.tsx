@@ -8,13 +8,18 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { AGENT_BADGE_MAX_VISIBLE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-export interface AgentBadgeRowProps {
+/** What a badge needs to know. An `AgentInfo` fits, and so does a project target. */
+export type BadgeAgent = Pick<AgentInfo, "key" | "displayName">;
+
+export interface AgentBadgeRowProps<T extends BadgeAgent = AgentInfo> {
   /** Agents to show, normally the available ones. */
-  agents: readonly AgentInfo[];
+  agents: readonly T[];
   deployedKeys: ReadonlySet<string>;
   pendingKeys?: ReadonlySet<string>;
+  /** Deployed agents whose copy needs attention; drawn with a warning ring. */
+  warningKeys?: ReadonlySet<string>;
   /** Called with the state the user wants for that agent. Omit for a read-only row. */
-  onToggle?: (agent: AgentInfo, deploy: boolean) => void;
+  onToggle?: (agent: T, deploy: boolean) => void;
   maxVisible?: number;
   className?: string;
 }
@@ -22,14 +27,15 @@ export interface AgentBadgeRowProps {
 const FOCUS_RING = "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 /** One avatar per agent showing deployed or not. Click to install or remove; extras go in "+N". */
-export function AgentBadgeRow({
+export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
   agents,
   deployedKeys,
   pendingKeys,
+  warningKeys,
   onToggle,
   maxVisible = AGENT_BADGE_MAX_VISIBLE,
   className,
-}: AgentBadgeRowProps): ReactNode {
+}: AgentBadgeRowProps<T>): ReactNode {
   const { t } = useTranslation();
   if (agents.length === 0) return null;
 
@@ -40,7 +46,7 @@ export function AgentBadgeRow({
   const visible = ordered.slice(0, maxVisible);
   const overflow = ordered.slice(maxVisible);
 
-  const badge = (agent: AgentInfo, withName: boolean): ReactNode => {
+  const badge = (agent: T, withName: boolean): ReactNode => {
     const deployed = deployedKeys.has(agent.key);
     const pending = pendingKeys?.has(agent.key) ?? false;
     const hint = t(deployed ? "agentBadges.clickToRemove" : "agentBadges.clickToInstall");
@@ -56,7 +62,7 @@ export function AgentBadgeRow({
         agentKey={agent.key}
         name={agent.displayName}
         size="sm"
-        status={deployed ? undefined : "off"}
+        status={deployed ? (warningKeys?.has(agent.key) ? "warning" : undefined) : "off"}
       />
     );
     const button = (

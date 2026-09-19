@@ -1,0 +1,26 @@
+{
+  "localSkills": {
+    "disabled": "Disabled",
+    "partlyDisabled": "Partly disabled",
+    "fileCount_one": "{{count}} file",
+    "fileCount_other": "{{count}} files",
+    "actionsFor": "Actions for {{name}}",
+    "shownOf": "{{shown}} of {{total}}",
+    "noMatchTitle": "Nothing matches",
+    "noMatchDescription": "No skill here fits the search and the filters.",
+    "clearFilters": "Clear filters",
+    "batch": {
+      "withFailures_one": "{{summary}}, {{count}} failed",
+      "withFailures_other": "{{summary}}, {{count}} failed"
+    },
+    "detail": {
+      "files": "Files",
+      "noFiles": "No files found.",
+      "document": "Document",
+      "notInLibrary": "This skill is not in the library, so there is nothing to compare it with."
+    }
+  },
+  "folderField": {
+    "browse": "Browse"
+  }
+}

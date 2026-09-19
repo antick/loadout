@@ -1,11 +1,35 @@
+import type { AgentCategory } from "@skillboard/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import {
+  AGENT_CATEGORIES,
+  AgentsOverviewPage,
+  DEFAULT_AGENT_CATEGORY,
+} from "@/features/agents/AgentsOverviewPage";
 
-function AgentsRoute(): ReactNode {
-  const { t } = useTranslation();
-  return <PagePlaceholder title={t("nav.allAgents")} />;
+export interface AgentsSearch {
+  category?: AgentCategory;
 }
 
-export const Route = createFileRoute("/agents/")({ component: AgentsRoute });
+function AgentsRoute(): ReactNode {
+  const { category } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  return (
+    <AgentsOverviewPage
+      category={category ?? DEFAULT_AGENT_CATEGORY}
+      onCategoryChange={(next) =>
+        void navigate({
+          search: { category: next === DEFAULT_AGENT_CATEGORY ? undefined : next },
+          replace: true,
+        })
+      }
+    />
+  );
+}
+
+export const Route = createFileRoute("/agents/")({
+  validateSearch: (search: Record<string, unknown>): AgentsSearch => ({
+    category: AGENT_CATEGORIES.find((category) => category === search.category),
+  }),
+  component: AgentsRoute,
+});

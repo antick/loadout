@@ -1,0 +1,91 @@
+{
+  "agents": {
+    "skillCount_one": "{{count}} skill",
+    "skillCount_other": "{{count}} skills",
+    "sharedFolder": "Shares this folder with {{agents}}, so the same skills show up there too.",
+    "managed": "Managed",
+    "category": {
+      "coding": "Coding",
+      "assistant": "Assistants"
+    },
+    "overview": {
+      "subtitle_one": "{{count}} available",
+      "subtitle_other": "{{count}} available",
+      "open": "Open the skills folder of {{agent}}",
+      "emptyTitle": "No agents to show",
+      "emptyDescription": "No agent was found on this computer, or all of them are switched off. Turn agents on or add your own in Settings.",
+      "openSettings": "Open agent settings",
+      "presetsHint_one": "Applies to the agent below",
+      "presetsHint_other": "Applies to all {{count}} agents below"
+    },
+    "unavailable": {
+      "title": "Not installed or switched off",
+      "manage": "Manage in Settings",
+      "hint": "These agents cannot receive skills right now. Switch an agent on, or point it at its folder, in Settings.",
+      "disabled": "Switched off",
+      "notInstalled": "Not installed"
+    },
+    "workspace": {
+      "summary": "{{total}} · {{managed}} managed · {{inSync}} in sync",
+      "refresh": "Read the folder again",
+      "select": "Select",
+      "addSkills": "Add skills",
+      "search": "Search this folder",
+      "emptyTitle": "This folder has no skills yet",
+      "emptyDescription": "Add skills from the library and they will be installed for {{agent}}.",
+      "addTitle": "Add skills to {{agent}}",
+      "addDescription": "Pick library skills to install in this agent's global skills folder."
+    },
+    "actions": {
+      "upload": "Upload to library",
+      "pull": "Pull from library",
+      "remove": "Remove from {{agent}}",
+      "removeShort": "Remove",
+      "deleteLocal": "Delete local skill",
+      "deleteShort": "Delete permanently"
+    },
+    "confirm": {
+      "uploadTitle": "Replace the library copy of “{{name}}”?",
+      "uploadDescription": "The library copy is overwritten with this folder's contents. Every agent and project that uses the library copy gets the new version.",
+      "pullTitle": "Replace the local copy of “{{name}}”?",
+      "pullDescription": "The folder in {{agent}} is replaced with the library version. Changes made only in this folder are lost.",
+      "removeTitle": "Remove “{{name}}” from {{agent}}?",
+      "removeDescription": "This copy has changes the library does not have. They are lost when the folder is removed. The library copy stays.",
+      "deleteTitle": "Delete “{{name}}” permanently?",
+      "deleteDescription": "This skill exists only in this folder. There is no library copy to restore it from.",
+      "removeManyTitle_one": "Remove {{count}} managed skill from {{agent}}?",
+      "removeManyTitle_other": "Remove {{count}} managed skills from {{agent}}?",
+      "removeManyDescription_one": "The folder is removed from this agent. The library copy stays, so you can add it again later.",
+      "removeManyDescription_other": "The folders are removed from this agent. The library copies stay, so you can add them again later.",
+      "deleteManyTitle_one": "Delete {{count}} local-only skill permanently?",
+      "deleteManyTitle_other": "Delete {{count}} local-only skills permanently?",
+      "deleteManyDescription_one": "This folder exists only here. There is no library copy to restore it from.",
+      "deleteManyDescription_other": "These folders exist only here. There are no library copies to restore them from."
+    },
+    "batch": {
+      "removeManaged_one": "Remove {{count}} managed",
+      "removeManaged_other": "Remove {{count}} managed",
+      "deleteLocalOnly_one": "Delete {{count}} local-only permanently",
+      "deleteLocalOnly_other": "Delete {{count}} local-only permanently",
+      "skippedHint_one": "{{count}} selected skill has no batch action",
+      "skippedHint_other": "{{count}} selected skills have no batch action"
+    },
+    "toast": {
+      "uploaded": "Uploaded “{{name}}” to the library",
+      "nowManaged": "{{app}} manages this skill from now on: the folder here is a deployment of the library copy.",
+      "pulled": "Replaced “{{name}}” with the library version",
+      "deleted": "Deleted “{{name}}”",
+      "deletedMany_one": "Deleted {{count}} local skill",
+      "deletedMany_other": "Deleted {{count}} local skills",
+      "removed": "Removed “{{name}}” from the agent",
+      "added_one": "Added {{count}} skill",
+      "added_other": "Added {{count}} skills"
+    },
+    "errors": {
+      "upload": "Could not upload the skill to the library.",
+      "pull": "Could not pull the library version.",
+      "delete": "Could not delete the local skill.",
+      "addNone": "None of the skills could be added."
+    }
+  }
+}

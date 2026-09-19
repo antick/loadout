@@ -34,6 +34,8 @@ import { matchesTagFilter } from "@/lib/tag-filter";
 import { cn, matchesQuery } from "@/lib/utils";
 
 export type AddFromLibraryTarget =
+  /** No agents involved (e.g. adding to a preset): the target row is hidden. */
+  | { kind: "none" }
   | { kind: "agent"; agentKey: string }
   | {
       kind: "project";
@@ -61,8 +63,12 @@ export interface AddFromLibrarySheetProps {
   description?: string;
   /** Per-row state for the currently ticked agents. Agent targets default to "is it deployed". */
   rowState?: (skill: Skill, agentKeys: readonly string[]) => PickerRowInfo;
+  /** Leave these skills out of the list entirely, e.g. the ones a preset already holds. */
+  exclude?: (skill: Skill) => boolean;
   /** Button text for N picked skills. */
   ctaLabel?: (count: number) => string;
+  /** Extra control at the left of the footer, given the agent keys ticked right now. */
+  renderFooterStart?: (agentKeys: readonly string[]) => ReactNode;
   /** Do the work. The sheet closes when the promise resolves and stays open when it rejects. */
   onSubmit: (skillIds: string[], agentKeys: string[]) => Promise<unknown>;
 }
@@ -89,7 +95,9 @@ export function AddFromLibrarySheet({
   title,
   description,
   rowState,
+  exclude,
   ctaLabel,
+  renderFooterStart,
   onSubmit,
 }: AddFromLibrarySheetProps): ReactNode {
   const { t } = useTranslation();
@@ -103,6 +111,7 @@ export function AddFromLibrarySheet({
   const [submitting, setSubmitting] = useState(false);
 
   const chips = useMemo<TargetChip[]>(() => {
+    if (target.kind === "none") return [];
     if (target.kind === "project") {
       return target.targets.map((entry) => ({
         key: entry.key,
@@ -141,11 +150,12 @@ export function AddFromLibrarySheet({
   const rows = useMemo(
     () =>
       (skills.data ?? [])
+        .filter((skill) => !exclude?.(skill))
         .filter((skill) => matchesQuery(query, skill.name, skill.description))
         .filter((skill) => matchesTagFilter(skill.tags, tagFilter))
         .filter((skill) => source === SOURCE_FILTER_ALL || skill.sourceType === source)
         .map((skill) => ({ skill, info: infoFor(skill, agentKeys) })),
-    [skills.data, query, tagFilter, source, infoFor, agentKeys],
+    [skills.data, exclude, query, tagFilter, source, infoFor, agentKeys],
   );
 
   const pickableIds = useMemo(
@@ -193,6 +203,7 @@ export function AddFromLibrarySheet({
   };
 
   const count = selection.count;
+  const needsAgents = target.kind !== "none";
   const cta = ctaLabel
     ? ctaLabel(count)
     : count === 0
@@ -232,7 +243,7 @@ export function AddFromLibrarySheet({
             </Select>
           </div>
           <TagFilterBar tags={allTags.data ?? []} value={tagFilter} onChange={setTagFilter} />
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className={cn("flex flex-wrap items-center gap-1.5", !needsAgents && "hidden")}>
             <span className="mr-1 text-xs font-medium tracking-wider text-muted-foreground uppercase">
               {t("picker.targets")}
             </span>
@@ -365,11 +376,14 @@ export function AddFromLibrarySheet({
         </div>
 
         <SheetFooter className="flex-row items-center justify-end border-t">
+          {renderFooterStart ? (
+            <div className="mr-auto min-w-0">{renderFooterStart(agentKeys)}</div>
+          ) : null}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
           <Button
-            disabled={count === 0 || agentKeys.length === 0 || submitting}
+            disabled={count === 0 || (needsAgents && agentKeys.length === 0) || submitting}
             onClick={() => void submit()}
           >
             {submitting ? <Spinner /> : null}

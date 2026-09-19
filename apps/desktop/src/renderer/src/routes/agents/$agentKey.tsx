@@ -1,19 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
-import { useAgents } from "@/hooks/queries/agents";
+import { AgentWorkspacePage } from "@/features/agents/AgentWorkspacePage";
 
 function AgentRoute(): ReactNode {
-  const { t } = useTranslation();
   const { agentKey } = Route.useParams();
-  const agent = useAgents().data?.find((entry) => entry.key === agentKey);
-  return (
-    <PagePlaceholder
-      title={agent?.displayName ?? agentKey}
-      breadcrumbs={[{ label: t("nav.agents"), to: "/agents" }]}
-    />
-  );
+  // Keyed so search, selection and the open sheet start fresh for every agent.
+  return <AgentWorkspacePage key={agentKey} agentKey={agentKey} />;
 }
 
 export const Route = createFileRoute("/agents/$agentKey")({ component: AgentRoute });
