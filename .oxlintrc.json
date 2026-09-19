@@ -1,6 +1,13 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "react", "import", "unicorn", "oxc", "jsx-a11y"],
+  "plugins": [
+    "typescript",
+    "react",
+    "import",
+    "unicorn",
+    "oxc",
+    "jsx-a11y"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -13,7 +20,16 @@
     "unicorn/no-array-sort": "off",
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "error",
-    "eqeqeq": ["error", "smart"]
+    "eqeqeq": [
+      "error",
+      "smart"
+    ],
+    "no-await-in-loop": "off"
   },
-  "ignorePatterns": ["**/dist/**", "**/out/**", "**/release/**", "**/routeTree.gen.ts"]
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/out/**",
+    "**/release/**",
+    "**/routeTree.gen.ts"
+  ]
 }

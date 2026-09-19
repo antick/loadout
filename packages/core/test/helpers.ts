@@ -1,6 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { type ContextBundle, createContext } from "../src/create-context";
+import { silentLogger } from "../src/log";
 
 /** A throwaway folder, removed by the returned cleanup. */
 export function tempDir(prefix = "skillboard-test-"): { dir: string; cleanup: () => void } {
@@ -35,4 +37,38 @@ export function makeSkill(
     writeFile(join(dir, relative), content);
   }
   return dir;
+}
+
+
+export interface TestWorld extends ContextBundle {
+  /** Fake home directory; agent folders live under it. */
+  home: string;
+  /** Library base folder. */
+  base: string;
+  root: string;
+  cleanup(): void;
+}
+
+/** A complete isolated library + home directory for service tests. */
+export function createTestWorld(): TestWorld {
+  const temp = tempDir();
+  const home = join(temp.dir, "home");
+  const base = join(home, ".library");
+  mkdirSync(home, { recursive: true });
+  const bundle = createContext({
+    homeDir: home,
+    configDir: join(temp.dir, "config"),
+    baseDir: base,
+    logger: silentLogger,
+  });
+  return {
+    ...bundle,
+    home,
+    base,
+    root: temp.dir,
+    cleanup: () => {
+      bundle.close();
+      temp.cleanup();
+    },
+  };
 }
