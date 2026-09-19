@@ -1,0 +1,202 @@
+/** Backup and system types. Split from `types.ts` to keep both files small. */
+
+// ── Backup ──
+
+export type UpstreamHealth =
+  | "healthy"
+  | "no_remote"
+  | "no_upstream"
+  | "unrelated_histories"
+  | "detached";
+
+export interface BackupStatus {
+  isRepo: boolean;
+  remoteUrl: string | null;
+  branch: string | null;
+  hasChanges: boolean;
+  changedSkillCount: number;
+  ahead: number;
+  behind: number;
+  lastCommit: string | null;
+  lastCommitAt: number | null;
+  currentSnapshot: string | null;
+  restoredFrom: string | null;
+  upstreamHealth: UpstreamHealth;
+  gitAvailable: boolean;
+}
+
+export interface Snapshot {
+  tag: string;
+  commit: string;
+  message: string;
+  createdAt: number;
+  /** Device that made the backup. */
+  device: string;
+}
+
+export interface MergedSkill {
+  name: string;
+  fromDevice: string;
+}
+
+export interface MergeSummary {
+  upToDate: boolean;
+  fastForward: boolean;
+  updated: MergedSkill[];
+  keptLocal: string[];
+  newConflicts: string[];
+  pendingTotal: number;
+}
+
+export interface SyncOutcome {
+  committed: boolean;
+  merge: MergeSummary | null;
+  pushed: boolean;
+  snapshot: string | null;
+}
+
+export interface BackupConflict {
+  skillKey: string;
+  skillName: string;
+  theirsCommit: string;
+  theirsPath: string | null;
+  detectedAt: number;
+}
+
+export type ConflictResolution = "keep_local" | "use_remote" | "keep_both";
+
+export interface OversizedSkill {
+  name: string;
+  bytes: number;
+  /** Over the per-skill limit and kept out of the backup. */
+  excluded: boolean;
+}
+
+export interface SizeReport {
+  totalBytes: number;
+  oversized: OversizedSkill[];
+  skillLimitBytes: number;
+  repoWarnBytes: number;
+}
+
+export interface GithubConnectResult {
+  url: string;
+  login: string;
+  repoCreated: boolean;
+  repoPrivate: boolean;
+  remoteHasContent: boolean;
+}
+
+export interface DeviceFlowStart {
+  deviceCode: string;
+  userCode: string;
+  verificationUri: string;
+  expiresIn: number;
+  interval: number;
+}
+
+export interface DeviceFlowPoll {
+  status: "pending" | "slow_down" | "connected";
+  result: GithubConnectResult | null;
+}
+
+export type GithubAuthMethod = "oauth" | "pat" | null;
+
+export interface AutoBackupEvent {
+  ok: boolean;
+  /** Changes are still waiting, for example conflicts or an offline remote. */
+  pending: boolean;
+  error: string | null;
+}
+
+// ── System ──
+
+export type ActivityKind =
+  | "install"
+  | "remove"
+  | "update"
+  | "deploy"
+  | "undeploy"
+  | "import"
+  | "backup"
+  | "restore"
+  | "preset";
+
+export interface ActivityEntry {
+  id: string;
+  kind: ActivityKind;
+  /** Skill, preset or project name the entry is about. */
+  subject: string;
+  detail: string | null;
+  ok: boolean;
+  at: number;
+}
+
+export interface AppUpdateInfo {
+  hasUpdate: boolean;
+  currentVersion: string;
+  latestVersion: string | null;
+  releaseUrl: string | null;
+  /** No update feed is configured for this build. */
+  configured: boolean;
+}
+
+export interface DiagnosticInfo {
+  appVersion: string;
+  os: string;
+  osVersion: string;
+  arch: string;
+  libraryPath: string;
+  libraryPathOverridden: boolean;
+  gitVersion: string | null;
+}
+
+export interface LogExcerpt {
+  logPath: string;
+  excerpt: string;
+  lineCount: number;
+  hasWarnings: boolean;
+}
+
+export interface LogExport {
+  zipPath: string;
+  fileCount: number;
+}
+
+export interface CrashInfo {
+  at: number;
+  message: string;
+}
+
+export type LibraryWarning = "config_unreadable" | "library_path_invalid" | "migration_incomplete";
+
+export interface LibraryLocation {
+  path: string;
+  defaultPath: string;
+  overridden: boolean;
+  /** A different path takes effect after a restart. */
+  pendingPath: string | null;
+  warnings: LibraryWarning[];
+}
+
+export interface CliStatus {
+  published: boolean;
+  path: string;
+  version: string | null;
+}
+
+export interface AgentControlStatus {
+  /** The bundled management skill is in the library. */
+  installed: boolean;
+  skillId: string | null;
+  dismissed: boolean;
+}
+
+export type Platform = "darwin" | "win32" | "linux";
+
+export interface AppInfo {
+  name: string;
+  version: string;
+  platform: Platform;
+  homeDir: string;
+}
