@@ -1,0 +1,174 @@
+{
+  "install": {
+    "title": "Install",
+    "tabs": {
+      "market": {
+        "label": "Marketplace",
+        "subtitle": "Skills published by the community"
+      },
+      "local": {
+        "label": "This computer",
+        "subtitle": "A folder or an archive you already have"
+      },
+      "git": {
+        "label": "Git repository",
+        "subtitle": "Clone a repository and pick what to keep"
+      },
+      "scan": {
+        "label": "Agent folders",
+        "subtitle": "Skills your agents already have"
+      }
+    },
+    "phase": {
+      "starting": "Getting ready…",
+      "cloning": "Cloning the repository…",
+      "cloningPercent": "Cloning the repository… {{percent}}%",
+      "scanning": "Looking for skills…",
+      "installing": "Copying into the library…",
+      "installingNamed": "Copying {{name}} into the library…",
+      "installingCount": "Importing {{current}}/{{total}}: {{name}}",
+      "deploying": "Adding to your agents…",
+      "done": "Finishing up…"
+    },
+    "toast": {
+      "installing": "Installing {{name}}",
+      "installingPath": "Installing the skill",
+      "installingCount_one": "Installing {{count}} skill",
+      "installingCount_other": "Installing {{count}} skills",
+      "importing": "Importing {{name}}",
+      "importingFolder": "Importing the folder",
+      "importingAll": "Importing everything that was found",
+      "cloning": "Fetching the repository",
+      "cancelling": "Stopping…",
+      "cancelled": "Installation cancelled",
+      "installed": "Installed {{name}}",
+      "installedCount_one": "Installed {{count}} skill",
+      "installedCount_other": "Installed {{count}} skills",
+      "imported_one": "Imported {{count}} skill",
+      "imported_other": "Imported {{count}} skills",
+      "view": "View",
+      "deploy": "Deploy to agents…"
+    },
+    "errors": {
+      "generic": "The install did not finish.",
+      "network": "Could not reach the server.",
+      "timeout": "The server took too long to answer.",
+      "proxyHint": "Check your connection. If you are behind a proxy, set it in Settings.",
+      "openSettings": "Open settings",
+      "authHint": "The repository asked for credentials. Make sure your SSH key or Git credential helper works in a terminal first."
+    },
+    "batch": {
+      "title": "Import finished",
+      "importedLabel": "imported",
+      "skippedLabel": "skipped",
+      "failedLabel": "failed",
+      "skippedHint": "Skipped skills share a name with one already in the library, which was left as it is.",
+      "skipped_one": "{{count}} skipped",
+      "skipped_other": "{{count}} skipped",
+      "failed_one": "{{count}} failed",
+      "failed_other": "{{count}} failed"
+    },
+    "deploy": {
+      "title": "Deploy to agents",
+      "skillCount_one": "{{count}} new skill",
+      "skillCount_other": "{{count}} new skills",
+      "noAgents": "No agent is available. Enable one in Settings first.",
+      "confirmNone": "Deploy",
+      "confirm_one": "Deploy to {{count}} agent",
+      "confirm_other": "Deploy to {{count}} agents"
+    },
+    "market": {
+      "boardLabel": "Ranking",
+      "boards": {
+        "hot": "Hot",
+        "trending": "Trending",
+        "all_time": "All time"
+      },
+      "searchPlaceholder": "Search {{marketplace}}",
+      "searchScope": "Search looks across all of {{marketplace}}, not just the ranking above.",
+      "sourceFilter": "Filter by contributor",
+      "allSources": "All contributors",
+      "onlyThisSource": "Show only this contributor",
+      "clearFilter": "Show all contributors",
+      "browseSite": "Open {{marketplace}}",
+      "viewOnWeb": "View on {{marketplace}}",
+      "install": "Install",
+      "reinstall": "Update",
+      "inLibrary": "In library",
+      "installs_one": "{{count}} install",
+      "installs_other": "{{count}} installs",
+      "loadFailed": "Could not load {{marketplace}}",
+      "emptyTitle": "No skills match",
+      "emptyDescription": "Try a different word, or go back to the rankings.",
+      "emptyFiltered": "This contributor has nothing in the current results.",
+      "resultCount_one": "{{count}} result",
+      "resultCount_other": "{{count}} results",
+      "loadMore": "Load more"
+    },
+    "local": {
+      "folderTitle": "Choose a skill folder",
+      "folderDescription": "A folder that holds one skill. It is copied into the library; the original stays where it is.",
+      "archiveTitle": "Choose an archive",
+      "archiveDescription": "A packed skill. It is unpacked and copied into the library.",
+      "bulkTitle": "Import every skill in a folder",
+      "bulkDescription": "Point at a folder of skill folders. Each one is imported; names already in the library are skipped.",
+      "pickFolderTitle": "Choose the skill's folder",
+      "pickBulkTitle": "Choose the folder that holds your skills",
+      "readyTitle": "Ready to install",
+      "nameLabel": "Name in the library",
+      "namePlaceholder": "Keep the skill's own name",
+      "nameHint": "Optional. Leave empty to use the name written in the skill.",
+      "installAction": "Install"
+    },
+    "git": {
+      "urlLabel": "Repository",
+      "urlHint": "Nothing is installed yet: the repository is fetched first so you can choose.",
+      "examples": "For example",
+      "preview": "Clone & preview",
+      "previewTitle_one": "{{count}} skill found",
+      "previewTitle_other": "{{count}} skills found",
+      "previewHint": "Tick what you want and rename anything before it lands in the library.",
+      "nameFor": "Library name for {{name}}",
+      "alreadyInstalled": "Already in the library. Importing it again updates that copy.",
+      "importSelected_one": "Import selected ({{count}})",
+      "importSelected_other": "Import selected ({{count}})",
+      "emptyTitle": "No skills in this repository",
+      "emptyDescription": "A skill is a folder with a SKILL.md file. For a large repository, paste the link to the exact folder instead.",
+      "privateTitle": "Private repositories",
+      "privateDescription": "Cloning uses the Git on this computer, so whatever works in your terminal works here: an SSH key for git@ addresses, or a credential helper for https. {{app}} never asks for or stores a Git password."
+    },
+    "scan": {
+      "loadFailed": "Could not scan this computer",
+      "explanation": "Importing copies a skill into the library. The agent's own folder is not changed, moved or deleted.",
+      "rescan": "Scan again",
+      "import": "Import",
+      "importAll_one": "Import all ({{count}})",
+      "importAll_other": "Import all ({{count}})",
+      "inLibrary": "In library",
+      "renameLabel": "Library name for {{name}}",
+      "renamedFrom": "was {{name}}",
+      "locations_one": "{{count}} location",
+      "locations_other": "{{count}} locations",
+      "pendingTitle": "Not in the library yet · {{count}}",
+      "importedTitle": "Already in the library · {{count}}",
+      "allImported": "Everything your agents have is already in the library.",
+      "emptyTitle": "No skills found",
+      "emptyDescription": "None of your agents has a skill folder that the library does not already manage.",
+      "stats": {
+        "agents": "Agents scanned",
+        "found": "Skills found",
+        "foundHint_one": "in {{count}} folder",
+        "foundHint_other": "across {{count}} folders",
+        "pending": "Waiting to import",
+        "imported": "In the library"
+      }
+    }
+  },
+  "pager": {
+    "label": "Pages",
+    "range": "Showing {{from}}–{{to}} of {{total}}",
+    "page": "{{page}} / {{pages}}",
+    "previous": "Previous page",
+    "next": "Next page"
+  }
+}

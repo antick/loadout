@@ -60,3 +60,13 @@ export function formatBytes(bytes: number): string {
   const digits = unit === 0 || value >= 100 ? 0 : 1;
   return `${value.toFixed(digits)} ${BYTE_UNITS[unit]}`;
 }
+
+const COMPACT_COUNT = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+/** `1.2K`, `34K`, `5.6M`: a large count short enough for a card. */
+export function formatCount(count: number): string {
+  return COMPACT_COUNT.format(count);
+}

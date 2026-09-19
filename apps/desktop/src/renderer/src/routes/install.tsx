@@ -1,16 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
-import { INSTALL_TABS, type InstallTab } from "@/lib/constants";
+import { InstallPage } from "@/features/install/InstallPage";
+import { DEFAULT_INSTALL_TAB, INSTALL_TABS, type InstallTab } from "@/lib/constants";
 
 export interface InstallSearch {
   tab?: InstallTab;
 }
 
 function InstallRoute(): ReactNode {
-  const { t } = useTranslation();
-  return <PagePlaceholder title={t("nav.install")} />;
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  return (
+    <InstallPage
+      tab={tab ?? DEFAULT_INSTALL_TAB}
+      onTabChange={(next) => void navigate({ search: { tab: next }, replace: true })}
+    />
+  );
 }
 
 export const Route = createFileRoute("/install")({
