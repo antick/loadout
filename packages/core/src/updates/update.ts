@@ -232,8 +232,10 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   ): Promise<UpdateResult> {
     const skill = store.get(skillId);
     if (!isRemoteSource(skill)) throw unsupported(CANNOT_REFRESH);
-    const handle = cancels.register(updateCancelKey(skillId));
+    const key = updateCancelKey(skillId);
+    const handle = cancels.register(key);
     try {
+      ctx.emit("install:progress", { key, phase: "cloning", name: skill.name });
       const target = remoteTargetOf(skill);
       const revision = await resolveRemoteRevision(git, target, handle.signal);
       // Same commit as installed: nothing to download, only the row to settle.
@@ -243,6 +245,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           : await openRemoteSource(git, target, revision, handle.signal);
       try {
         if (handle.signal.aborted) throw cancelled();
+        ctx.emit("install:progress", { key, phase: "installing", name: skill.name });
         return await replace({
           skillId,
           sourceDir: source?.dir ?? null,

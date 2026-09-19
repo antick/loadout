@@ -1,0 +1,43 @@
+{
+  "presetPage": {
+    "skillCount_one": "{{count}} skill",
+    "skillCount_other": "{{count}} skills",
+    "edit": "Edit",
+    "apply": "Apply preset",
+    "applyNote": "Applying copies these skills to your agents once. It is not a live link: editing this preset later changes nothing on disk until you apply again, and opening a preset never changes anything.",
+    "noDescription": "No description",
+    "skills": "Skills in this preset",
+    "reorderHint": "Drag a row to change the order.",
+    "addSkills": "Add skills",
+    "removeSkill": "Remove from preset",
+    "rowMenu": "More actions for {{name}}",
+    "deployedSummary": "{{deployed}}/{{total}} deployed",
+    "skillsAdded_one": "Added {{count}} skill to “{{name}}”",
+    "skillsAdded_other": "Added {{count}} skills to “{{name}}”",
+    "skillsRemoved_one": "Removed {{count}} skill from “{{name}}”",
+    "skillsRemoved_other": "Removed {{count}} skills from “{{name}}”",
+    "empty": {
+      "title": "This preset has no skills yet",
+      "description": "Add skills from the library to build the set."
+    },
+    "toggles": {
+      "button": "Agents",
+      "hint": "Agents that get this skill when the preset is applied. Changing a switch does not touch any files.",
+      "switchLabel": "Include {{agent}} when applying",
+      "notInstalled": "Not found on this computer",
+      "disabled": "Switched off on the Agents page"
+    },
+    "picker": {
+      "title": "Add skills to “{{name}}”",
+      "description": "Pick library skills for this preset. Nothing is installed until you apply it.",
+      "add_one": "Add {{count}} skill",
+      "add_other": "Add {{count}} skills"
+    },
+    "errors": {
+      "addSkills": "Could not add the skills to the preset.",
+      "removeSkills": "Could not remove the skill from the preset.",
+      "toggle": "Could not save the agent switch.",
+      "apply": "Could not apply the preset."
+    }
+  }
+}

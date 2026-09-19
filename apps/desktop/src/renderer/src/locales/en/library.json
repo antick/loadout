@@ -1,0 +1,226 @@
+{
+  "library": {
+    "count_one": "{{count}} skill",
+    "count_other": "{{count}} skills",
+    "countFiltered_one": "{{shown}} of {{count}} skill",
+    "countFiltered_other": "{{shown}} of {{count}} skills",
+    "checkUpdates": "Check for updates",
+    "updateAll": "Update all ({{count}})",
+    "select": "Select",
+    "install": "Install",
+    "deleteSkill": "Delete {{name}}",
+    "toolbar": {
+      "search": "Search name, description, tags or source",
+      "source": "Filter by source",
+      "status": "Filter by status",
+      "sort": "Sort by",
+      "sources": {
+        "all": "All sources",
+        "local": "Local",
+        "import": "Imported",
+        "git": "Git",
+        "marketplace": "Marketplace"
+      },
+      "statuses": {
+        "all": "Any status",
+        "deployed": "Deployed",
+        "not_deployed": "Not deployed",
+        "updates": "Updates available",
+        "attention": "Needs attention"
+      },
+      "sorts": {
+        "name": "Name",
+        "updated": "Recently updated",
+        "added": "Recently added"
+      }
+    },
+    "banners": {
+      "updatesAvailable_one": "{{count}} skill has a newer version at its source.",
+      "updatesAvailable_other": "{{count}} skills have a newer version at their source.",
+      "view": "View",
+      "autoRan": "Background update check ran {{when}}: {{updated}} updated, {{available}} waiting, {{failed}} failed."
+    },
+    "empty": {
+      "title": "The library is empty",
+      "description": "Install skills from the marketplace, Git or a folder, or import the ones your agents already have.",
+      "install": "Install skills",
+      "scan": "Scan this machine"
+    },
+    "noMatches": {
+      "title": "Nothing matches",
+      "description": "No skill fits the current search and filters.",
+      "clear": "Clear filters"
+    },
+    "delete": {
+      "titleOne": "Delete “{{name}}”?",
+      "titleMany_one": "Delete {{count}} skill?",
+      "titleMany_other": "Delete {{count}} skills?",
+      "description_one": "Its files are deleted from the library and it is taken out of every preset.",
+      "description_other": "Their files are deleted from the library and they are taken out of every preset.",
+      "deployedCopies_one": "{{count}} copy installed for an agent is removed too.",
+      "deployedCopies_other": "{{count}} copies installed for agents are removed too.",
+      "irreversible": "This cannot be undone.",
+      "confirm_one": "Delete skill",
+      "confirm_other": "Delete {{count}} skills"
+    },
+    "selection": {
+      "deploy": "Deploy to agents…",
+      "addToPreset": "Add to preset…",
+      "choosePreset": "Add the selection to",
+      "tags": "Tags…",
+      "update_one": "Update {{count}}",
+      "update_other": "Update {{count}}",
+      "delete_one": "Delete {{count}}",
+      "delete_other": "Delete {{count}}"
+    },
+    "updates": {
+      "checked_one": "Checked {{count}} skill",
+      "checked_other": "Checked {{count}} skills",
+      "checkedWithFailures_one": "{{summary}}, {{count}} could not be checked",
+      "checkedWithFailures_other": "{{summary}}, {{count}} could not be checked",
+      "batchDone_one": "Updated {{count}} skill, {{unchanged}} unchanged",
+      "batchDone_other": "Updated {{count}} skills, {{unchanged}} unchanged",
+      "heldBack": "Held back because updating would delete files: {{names}}. Open the skill and update it from the Source tab to review them."
+    },
+    "refresh": {
+      "done": "“{{name}}” is up to date with its source",
+      "unchanged": "“{{name}}” had no file changes",
+      "phases": {
+        "starting": "Starting…",
+        "cloning": "Fetching the source…",
+        "scanning": "Looking for the skill…",
+        "installing": "Replacing the library copy…",
+        "deploying": "Refreshing installed copies…",
+        "done": "Finishing…"
+      }
+    },
+    "errors": {
+      "check": "Could not check for updates.",
+      "update": "Could not update the skill.",
+      "detach": "Could not detach the skill from its source.",
+      "exportToProject": "Could not add the skill to the project.",
+      "removeFromProject": "Could not remove the skill from the project."
+    },
+    "detail": {
+      "title": "Skill",
+      "loading": "Loading the skill…",
+      "missing": "This skill is no longer in the library.",
+      "reveal": "Show in file manager",
+      "delete": "Delete skill",
+      "addTag": "Add tag",
+      "tabs": {
+        "document": "Document",
+        "source": "Source",
+        "compare": "Compare",
+        "agents": "Agents",
+        "presets": "Presets",
+        "projects": "Projects"
+      }
+    },
+    "document": {
+      "files_one": "{{count}} item in the skill folder",
+      "files_other": "{{count}} items in the skill folder"
+    },
+    "source": {
+      "title": "Where it came from",
+      "type": "Type",
+      "ref": "Source",
+      "url": "Clone URL",
+      "branch": "Branch",
+      "defaultBranch": "Default branch",
+      "subpath": "Folder in the repository",
+      "installedRevision": "Installed revision",
+      "latestRevision": "Latest revision",
+      "lastChecked": "Last checked",
+      "neverChecked": "Never",
+      "lastError": "Last error",
+      "libraryFolder": "Library folder",
+      "added": "Added",
+      "changed": "Last changed",
+      "none": "—",
+      "checkNow": "Check now",
+      "update": "Update",
+      "reimport": "Re-import",
+      "relink": "Relink…",
+      "relinkPickerTitle": "Choose the folder this skill should follow",
+      "detach": "Keep local copy",
+      "detachTitle": "Detach “{{name}}” from its source?",
+      "detachDescription": "The library copy stays exactly as it is. The link to the original folder is forgotten, so this skill can no longer be re-imported or compared.",
+      "detached": "“{{name}}” no longer follows a source"
+    },
+    "compare": {
+      "files": "Changed files",
+      "document": "Main document",
+      "loading": "Fetching the source…",
+      "against": "Library copy compared with {{source}} ({{revision}}).",
+      "local": "Local",
+      "source": "Source",
+      "noSourceTitle": "Nothing to compare with",
+      "noSourceDescription": "This skill does not follow a source, so there is no other version of it.",
+      "unavailableTitle": "The source cannot be reached right now",
+      "unavailableDescription": "Check the connection or the source folder, then try again."
+    },
+    "agents": {
+      "available": "Available agents",
+      "summary": "{{deployed}} / {{total}} deployed",
+      "deployAll": "Deploy to all",
+      "removeAll": "Remove from all",
+      "notDeployed": "Not installed for this agent",
+      "sharedFolder_one": "Shares its skills folder with {{count}} other agent",
+      "sharedFolder_other": "Shares its skills folder with {{count}} other agents",
+      "unavailable_one": "{{count}} unavailable agent",
+      "unavailable_other": "{{count}} unavailable agents",
+      "reasonDisabled": "Switched off on the Agents page",
+      "reasonNotInstalled": "Not found on this computer",
+      "noneTitle": "No agents available",
+      "noneDescription": "Install a supported agent, or switch one on from the Agents page."
+    },
+    "presets": {
+      "title": "Presets",
+      "summary_one": "In {{count}} of {{total}} presets. Ticking a preset never changes files.",
+      "summary_other": "In {{count}} of {{total}} presets. Ticking a preset never changes files.",
+      "skillCount_one": "{{count}} skill",
+      "skillCount_other": "{{count}} skills",
+      "open": "Open preset “{{name}}”",
+      "emptyTitle": "No presets yet",
+      "emptyDescription": "A preset is a named set of skills you can install in one go."
+    },
+    "projects": {
+      "title": "Projects",
+      "summary_one": "Present in {{count}} of {{total}} projects.",
+      "summary_other": "Present in {{count}} of {{total}} projects.",
+      "notPresent": "Not in this project",
+      "add": "Add to project",
+      "remove": "Remove",
+      "added": "Added “{{name}}” to {{project}}",
+      "removed": "Removed “{{name}}” from {{project}}",
+      "removeTitle": "Remove “{{name}}” from {{project}}?",
+      "removeDescription": "These folders are deleted from the project. The library copy stays.",
+      "emptyTitle": "No projects linked",
+      "emptyDescription": "Link a project folder to copy this skill into it."
+    },
+    "removalGuard": {
+      "title": "Updating “{{name}}” deletes files",
+      "description_one": "The new version no longer has {{count}} item. Nothing has been changed yet.",
+      "description_other": "The new version no longer has {{count}} items. Nothing has been changed yet.",
+      "library": "Library copy",
+      "notice": "Anything you added to these files yourself is lost when they are removed.",
+      "keep": "Keep current version",
+      "approve": "Update anyway"
+    }
+  },
+  "batchDeploy": {
+    "title_one": "Deploy {{count}} skill",
+    "title_other": "Deploy {{count}} skills",
+    "description": "Pick the agents that should get the selection. Skills an agent already has are left alone.",
+    "agents": "Agents",
+    "noAgents": "No agents are available. Switch one on from the Agents page.",
+    "hasAll": "Has them all",
+    "missing_one": "{{count}} to add",
+    "missing_other": "{{count}} to add",
+    "pickHint": "Pick at least one agent.",
+    "summary_one": "{{count}} new deployment",
+    "summary_other": "{{count}} new deployments",
+    "submit": "Deploy"
+  }
+}
