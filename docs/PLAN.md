@@ -32,120 +32,129 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ### 1. Library (central skill store)
 
-- [ ] Central folder, default `~/.skillboard`, custom path in Settings, move on restart, warnings
-- [ ] SQLite metadata, rebuilt from skill files when missing
-- [ ] Parse `SKILL.md` / `skill.md` frontmatter (name, description)
-- [ ] Skill cards: grid and list view, search, source filter, tag filter incl. Untagged
-- [ ] Skill detail: rendered docs, file list, source metadata, per-agent toggles, projects using it
-- [ ] Delete skill (removes library copy, preset links, deployments)
-- [ ] Tags: add/remove per skill, rename tag, delete tag, batch tag dialog
-- [ ] Batch select: deploy to agents, tags, update, delete
-- [ ] Activity log of install / remove / update / deploy operations
+- [x] Central folder, default `~/.skillboard`, custom path in Settings, move on restart, warnings
+- [x] SQLite metadata, rebuilt from skill files when missing
+- [x] Parse `SKILL.md` / `skill.md` frontmatter (name, description)
+- [x] Skill cards: grid and list view, search, source filter, tag filter incl. Untagged
+- [x] Skill detail: rendered docs, file list, source metadata, per-agent toggles, projects using it
+- [x] Delete skill (removes library copy, preset links, deployments)
+- [x] Tags: add/remove per skill, rename tag, delete tag, batch tag dialog
+- [x] Batch select: deploy to agents, tags, update, delete
+- [x] Activity log of install / remove / update / deploy operations
 
 ### 2. Install
 
-- [ ] From local folder (tracked source, re-import, relink, detach)
-- [ ] From `.zip` / `.skill` archive
-- [ ] From Git: https, ssh, `owner/repo`, tree URLs with branch + subpath
-- [ ] Git preview: pick skills found in the repo, rename, confirm
-- [ ] Batch import every skill under a folder
-- [ ] Scan agent folders for skills already on this machine and import them
-- [ ] Marketplace: hot / trending / all-time boards, keyword search, one-click install
-- [ ] Progress phases, cancel, timeout, proxy support
+- [x] From local folder (tracked source, re-import, relink, detach)
+- [x] From `.zip` / `.skill` archive
+- [x] From Git: https, ssh, `owner/repo`, tree URLs with branch + subpath
+- [x] Git preview: pick skills found in the repo, rename, confirm
+- [x] Batch import every skill under a folder
+- [x] Scan agent folders for skills already on this machine and import them
+- [x] Marketplace: hot / trending / all-time boards, keyword search, one-click install
+- [x] Progress phases, cancel, timeout, proxy support
 
 ### 3. Updates
 
-- [ ] Check one / check all Git-backed skills for upstream changes
-- [ ] Update one / batch update, "content unchanged" handling for monorepos
-- [ ] Removal guard: show files an update would delete, require approval
-- [ ] Compare local with upstream: per-file diff, source document view
-- [ ] Background auto-check (off / 1h / 6h / 24h), optional auto-apply, notification banner
+- [x] Check one / check all Git-backed skills for upstream changes
+- [x] Update one / batch update, "content unchanged" handling for monorepos
+- [x] Removal guard: show files an update would delete, require approval
+- [x] Compare local with upstream: per-file diff, source document view
+- [x] Background auto-check (off / 1h / 6h / 24h), optional auto-apply, notification banner
 
 ### 4. Agents
 
-- [ ] 54 built-in agents with detection, global + project skill paths
-- [ ] Enable / disable, enable all / disable all
-- [ ] Custom agents (name, skills path, optional project path)
-- [ ] Path override + reset for built-ins (global and project path)
-- [ ] Drag to reorder; order used everywhere
-- [ ] Coding agents and personal-assistant agents shown as separate groups
-- [ ] Safe handling of skill folders shared by several agents
+- [x] 54 built-in agents with detection, global + project skill paths
+- [x] Enable / disable, enable all / disable all
+- [x] Custom agents (name, skills path, optional project path)
+- [x] Path override + reset for built-ins (global and project path)
+- [x] Drag to reorder; order used everywhere
+- [x] Coding agents and personal-assistant agents shown as separate groups
+- [x] Safe handling of skill folders shared by several agents
 
 ### 5. Deploy engine
 
-- [ ] Symlink or copy mode (setting), copy fallback when symlinks are unavailable
-- [ ] Ownership check: never overwrite or delete content Skillboard did not put there
-- [ ] Per-skill per-agent deploy / remove from the card badges
-- [ ] Content hashing for in sync / local changed / library changed / conflict
+- [x] Symlink or copy mode (setting), copy fallback when symlinks are unavailable
+- [x] Ownership check: never overwrite or delete content Skillboard did not put there
+- [x] Per-skill per-agent deploy / remove from the card badges
+- [x] Content hashing for in sync / local changed / library changed / conflict
 
 ### 6. Presets
 
-- [ ] Create, rename, describe, pick icon, delete, drag to reorder
-- [ ] Add / remove skills, reorder skills inside a preset
-- [ ] Per-skill per-agent toggles inside a preset
-- [ ] Preset pills in every workspace: active, partial `n/m`, inactive; click to add or remove
-- [ ] Apply preset to default agents (one-time copy, not a live sync)
+- [x] Create, rename, describe, pick icon, delete, drag to reorder
+- [x] Add / remove skills, reorder skills inside a preset
+- [x] Per-skill per-agent toggles inside a preset
+- [x] Preset pills in every workspace: active, partial `n/m`, inactive; click to add or remove
+- [x] Apply preset to default agents (one-time copy, not a live sync)
 
 ### 7. Global workspace
 
-- [ ] All-agents overview with real on-disk skill counts
-- [ ] Per-agent page listing everything in its folder, including unmanaged skills
-- [ ] Upload to library, pull from library, remove from agent, delete local skill
-- [ ] Add-from-library sheet: search, tag + source filter, target agent chips, shift-click range
-- [ ] Batch remove / batch delete local
-- [ ] Local / Diff / Library document tabs
+- [x] All-agents overview with real on-disk skill counts
+- [x] Per-agent page listing everything in its folder, including unmanaged skills
+- [x] Upload to library, pull from library, remove from agent, delete local skill
+- [x] Add-from-library sheet: search, tag + source filter, target agent chips, shift-click range
+- [x] Batch remove / batch delete local
+- [x] Local / Diff / Library document tabs
 
 ### 8. Project workspaces
 
-- [ ] Link a project folder; scan a root folder for projects
-- [ ] Linked workspace: any skills root, with a sibling `-disabled` folder
-- [ ] Nested skill folders, one row per skill with per-agent variants
-- [ ] Enable / disable project skills
-- [ ] Sync status against the library; update library, update project, restore library version
-- [ ] Multi-variant conflict guard
-- [ ] Export library skills to a project with agent picker and remembered selection
-- [ ] Preset pills, batch actions, tags, drag to reorder projects, remove project
+- [x] Link a project folder; scan a root folder for projects
+- [x] Linked workspace: any skills root, with a sibling `-disabled` folder
+- [x] Nested skill folders, one row per skill with per-agent variants
+- [x] Enable / disable project skills
+- [x] Sync status against the library; update library, update project, restore library version
+- [x] Multi-variant conflict guard
+- [x] Export library skills to a project with agent picker and remembered selection
+- [x] Preset pills, batch actions, tags, drag to reorder projects, remove project
 
 ### 9. Backup and multi-device sync
 
-- [ ] Library as a Git repo; metadata (tags, presets, toggles) serialised next to the skills
-- [ ] Connect with GitHub: device-flow sign-in, or personal access token; private repo created
-- [ ] Any Git remote URL (https + token, ssh, self-hosted); credentials kept out of files
-- [ ] One-button sync: commit → merge → snapshot → push, retry on concurrent push
-- [ ] Skill-aware merge: per skill, renames combine with edits
-- [ ] Conflicts never block: keep mine / use remote / keep both, safety snapshot first
-- [ ] Snapshot history with device name, restore any snapshot
-- [ ] Automatic backup after changes settle and on quit; toggle
-- [ ] Size report: 100 MB per-skill exclusion, 1 GB warning
-- [ ] First-run "start fresh or restore" prompt
-- [ ] Setup and recovery dialogs; disconnect, revoke, delete-remote guidance
+- [x] Library as a Git repo; metadata (tags, presets, toggles) serialised next to the skills
+- [~] Connect with GitHub: personal access token works; device-flow sign-in is built but hidden until a GitHub OAuth client id is set (Settings → Backup)
+- [x] Any Git remote URL (https + token, ssh, self-hosted); credentials kept out of files
+- [x] One-button sync: commit → merge → snapshot → push, retry on concurrent push
+- [x] Skill-aware merge: per skill, renames combine with edits
+- [x] Conflicts never block: keep mine / use remote / keep both, safety snapshot first
+- [x] Snapshot history with device name, restore any snapshot
+- [x] Automatic backup after changes settle and on quit; toggle
+- [x] Size report: 100 MB per-skill exclusion, 1 GB warning
+- [x] First-run "start fresh or restore" prompt
+- [x] Setup and recovery dialogs; disconnect, revoke, delete-remote guidance
 
 ### 10. App shell
 
-- [ ] Sidebar: dashboard, library, install, agents, presets, projects, backup, settings
-- [ ] Dashboard: stats, quick actions, recent activity, agent-control setup card
-- [ ] Command palette (⌘K): skills, presets, projects, actions
-- [ ] Theme (light / dark / system), text size, language
-- [ ] Tray icon, close behaviour (ask / hide / quit), single instance
-- [ ] File watcher refreshes the UI when skills change on disk or through the CLI
-- [ ] App update check and notification
-- [ ] Diagnostics, log files, export logs zip, crash banner, report issue
-- [ ] Help / quick-start guide
-- [ ] Network proxy setting
+- [x] Sidebar: dashboard, library, install, agents, presets, projects, backup, settings
+- [x] Dashboard: stats, quick actions, recent activity, agent-control setup card
+- [x] Command palette (⌘K): skills, presets, projects, actions
+- [~] Theme (light / dark / system), text size, language — only English ships; add `locales/<code>.json` + an entry in `LANGUAGES`
+- [x] Tray icon, close behaviour (ask / hide / quit), single instance
+- [x] File watcher refreshes the UI when skills change on disk or through the CLI
+- [~] App update check and notification — checks a JSON feed (`SKILLBOARD_UPDATE_FEED`); no feed is configured yet and there is no in-app installer
+- [x] Diagnostics, log files, export logs zip, crash banner, report issue
+- [x] Help / quick-start guide
+- [x] Network proxy setting
 
 ### 11. CLI and agent control
 
-- [ ] `skillboard` CLI: `repo`, `agents`, `skills`, `presets`, `git` groups
-- [ ] `--json` output with stable error codes, `--dry-run`, `--yes`, `--library <path>`
-- [ ] App publishes the CLI to `~/.skillboard/bin` on start with a version stamp
-- [ ] Bundled `manage-skills` skill teaching agents to drive the CLI; one-click setup
+- [x] `skillboard` CLI: `repo`, `agents`, `skills`, `presets`, `git` groups
+- [x] `--json` output with stable error codes, `--dry-run`, `--yes`, `--library <path>`
+- [x] App publishes the CLI to `~/.skillboard/bin` on start with a version stamp
+- [x] Bundled `manage-skills` skill teaching agents to drive the CLI; one-click setup
 
 ## Build order
 
-1. Scaffold, tooling, app boots — **done**
+1. Scaffold, tooling, app boots
 2. Shared contract (types, API, events, settings)
 3. Core: db → agents → library → installers → deploy → presets → workspaces → projects → updates → backup
 4. Electron main: IPC bridge, watcher, tray, scheduler, updater, logs
 5. Renderer: shell → library → install → agents → presets → projects → backup → settings → dashboard
 6. CLI + bundled skill
 7. Verify each feature in the running app, fix, update this list
+
+## Known gaps
+
+- Drag-and-drop of a folder or archive onto the Install page is not built (the preload bridge does not expose dropped file paths).
+- Windows and Linux are untested. Symlink → junction → copy fallback and the `.cmd` CLI launcher exist but have never run.
+- The CLI cannot read tokens saved by the desktop app (they are encrypted with the OS keychain), so `skillboard git sync` to an HTTPS + token remote only works from the app. SSH remotes and git credential helpers work from both.
+- Git clones are always shallow full clones (no sparse checkout of one subfolder).
+- An interrupted backup merge is not auto-recovered; sync stops with a clear error and "Use the remote backup" fixes it.
+- Renderer components have unit tests only for pure logic (filters, grouping, backup mode). There are no UI interaction tests.
