@@ -10,33 +10,141 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BackupRouteImport } from './routes/backup'
+import { Route as InstallRouteImport } from './routes/install'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as AgentsIndexRouteImport } from './routes/agents/index'
+import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
+import { Route as PresetsPresetIdRouteImport } from './routes/presets/$presetId'
+import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackupRoute = BackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsIndexRoute = AgentsIndexRouteImport.update({
+  id: '/agents/',
+  path: '/agents/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsAgentKeyRoute = AgentsAgentKeyRouteImport.update({
+  id: '/agents/$agentKey',
+  path: '/agents/$agentKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresetsPresetIdRoute = PresetsPresetIdRouteImport.update({
+  id: '/presets/$presetId',
+  path: '/presets/$presetId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsProjectIdRoute = ProjectsProjectIdRouteImport.update({
+  id: '/projects/$projectId',
+  path: '/projects/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/backup': typeof BackupRoute
+  '/install': typeof InstallRoute
+  '/library': typeof LibraryRoute
+  '/settings': typeof SettingsRoute
+  '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/presets/$presetId': typeof PresetsPresetIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/agents/': typeof AgentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/backup': typeof BackupRoute
+  '/install': typeof InstallRoute
+  '/library': typeof LibraryRoute
+  '/settings': typeof SettingsRoute
+  '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/presets/$presetId': typeof PresetsPresetIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/agents': typeof AgentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/backup': typeof BackupRoute
+  '/install': typeof InstallRoute
+  '/library': typeof LibraryRoute
+  '/settings': typeof SettingsRoute
+  '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/presets/$presetId': typeof PresetsPresetIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/agents/': typeof AgentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/backup'
+    | '/install'
+    | '/library'
+    | '/settings'
+    | '/agents/$agentKey'
+    | '/presets/$presetId'
+    | '/projects/$projectId'
+    | '/agents/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/backup'
+    | '/install'
+    | '/library'
+    | '/settings'
+    | '/agents/$agentKey'
+    | '/presets/$presetId'
+    | '/projects/$projectId'
+    | '/agents'
+  id:
+    | '__root__'
+    | '/'
+    | '/backup'
+    | '/install'
+    | '/library'
+    | '/settings'
+    | '/agents/$agentKey'
+    | '/presets/$presetId'
+    | '/projects/$projectId'
+    | '/agents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BackupRoute: typeof BackupRoute
+  InstallRoute: typeof InstallRoute
+  LibraryRoute: typeof LibraryRoute
+  SettingsRoute: typeof SettingsRoute
+  AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
+  PresetsPresetIdRoute: typeof PresetsPresetIdRoute
+  ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
+  AgentsIndexRoute: typeof AgentsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +156,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backup': {
+      id: '/backup'
+      path: '/backup'
+      fullPath: '/backup'
+      preLoaderRoute: typeof BackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agents/': {
+      id: '/agents/'
+      path: '/agents'
+      fullPath: '/agents/'
+      preLoaderRoute: typeof AgentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agents/$agentKey': {
+      id: '/agents/$agentKey'
+      path: '/agents/$agentKey'
+      fullPath: '/agents/$agentKey'
+      preLoaderRoute: typeof AgentsAgentKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presets/$presetId': {
+      id: '/presets/$presetId'
+      path: '/presets/$presetId'
+      fullPath: '/presets/$presetId'
+      preLoaderRoute: typeof PresetsPresetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/$projectId': {
+      id: '/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof ProjectsProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BackupRoute: BackupRoute,
+  InstallRoute: InstallRoute,
+  LibraryRoute: LibraryRoute,
+  SettingsRoute: SettingsRoute,
+  AgentsAgentKeyRoute: AgentsAgentKeyRoute,
+  PresetsPresetIdRoute: PresetsPresetIdRoute,
+  ProjectsProjectIdRoute: ProjectsProjectIdRoute,
+  AgentsIndexRoute: AgentsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

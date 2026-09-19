@@ -1,0 +1,304 @@
+{
+  "common": {
+    "search": "Search",
+    "clearSearch": "Clear search",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "save": "Save",
+    "retry": "Retry",
+    "dismiss": "Dismiss",
+    "clear": "Clear",
+    "copied": "Copied to clipboard",
+    "copyPath": "Copy path",
+    "reveal": "Show in file manager",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "andMore_one": "and {{count}} more",
+    "andMore_other": "and {{count}} more"
+  },
+  "errors": {
+    "generic": "Something went wrong.",
+    "loadFailed": "Could not load this",
+    "saveSetting": "Could not save the setting.",
+    "deploy": "Could not add the skill to the agent.",
+    "undeploy": "Could not remove the skill from the agent.",
+    "apply": "Could not apply the changes.",
+    "saveTags": "Could not save the tags.",
+    "removeSkills": "Could not remove the skills.",
+    "savePreset": "Could not save the preset.",
+    "deletePreset": "Could not delete the preset.",
+    "reorder": "Could not save the new order.",
+    "removeProject": "Could not remove the project.",
+    "reveal": "Could not open the folder.",
+    "copy": "Could not copy to the clipboard.",
+    "openLink": "Could not open the link.",
+    "backup": "Backup failed."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "library": "Library",
+    "install": "Install",
+    "agents": "Agents",
+    "allAgents": "All agents",
+    "assistants": "Assistants",
+    "presets": "Presets",
+    "projects": "Projects",
+    "backup": "Backup",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "shell": {
+    "toggleSidebar": "Toggle sidebar",
+    "searchTrigger": "Search or run a command",
+    "version": "v{{version}}",
+    "placeholder": "This screen is on its way."
+  },
+  "source": {
+    "local": "Local",
+    "import": "Imported",
+    "git": "Git",
+    "marketplace": "Marketplace"
+  },
+  "syncStatus": {
+    "in_sync": "In sync",
+    "local_only": "Local only",
+    "local_newer": "Local is newer",
+    "library_newer": "Library is newer",
+    "diverged": "Diverged"
+  },
+  "updateStatus": {
+    "unknown": "Not checked",
+    "checking": "Checking",
+    "up_to_date": "Up to date",
+    "update_available": "Update available",
+    "error": "Check failed",
+    "local_only": "No source",
+    "source_missing": "Source missing"
+  },
+  "skills": {
+    "noDescription": "No description",
+    "conflict": "Backup conflict",
+    "removed_one": "Removed {{count}} skill",
+    "removed_other": "Removed {{count}} skills",
+    "removedWithFailures_one": "{{summary}}, {{count}} failed",
+    "removedWithFailures_other": "{{summary}}, {{count}} failed"
+  },
+  "deploy": {
+    "appliedAdd_one": "Added {{count}} deployment, skipped {{skipped}}",
+    "appliedAdd_other": "Added {{count}} deployments, skipped {{skipped}}",
+    "appliedRemove_one": "Removed {{count}} deployment, skipped {{skipped}}",
+    "appliedRemove_other": "Removed {{count}} deployments, skipped {{skipped}}",
+    "appliedWithProblems_one": "{{summary}}. {{count}} could not be applied",
+    "appliedWithProblems_other": "{{summary}}. {{count}} could not be applied"
+  },
+  "agentBadges": {
+    "groupLabel": "Agents",
+    "deployedTo": "Installed for {{agent}}",
+    "notDeployedTo": "Not installed for {{agent}}",
+    "clickToInstall": "Click to install",
+    "clickToRemove": "Click to remove",
+    "more_one": "{{count}} more agent",
+    "more_other": "{{count}} more agents"
+  },
+  "selection": {
+    "toolbar": "Selection actions",
+    "count_one": "{{count}} selected",
+    "count_other": "{{count}} selected",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "selectItem": "Select {{name}}",
+    "exit": "Stop selecting"
+  },
+  "viewMode": {
+    "label": "View",
+    "grid": "Grid view",
+    "list": "List view"
+  },
+  "tags": {
+    "filterLabel": "Filter by tag",
+    "all": "All",
+    "untagged": "Untagged",
+    "rename": "Rename",
+    "delete": "Delete tag",
+    "removeTag": "Remove {{tag}}",
+    "renameTitle": "Rename “{{tag}}”",
+    "renameDescription": "The new name replaces this tag on every skill that uses it.",
+    "newName": "New tag name",
+    "renamed": "Renamed “{{from}}” to “{{to}}”",
+    "deleteTitle": "Delete the tag “{{tag}}”?",
+    "deleteDescription": "The tag is removed from every skill. The skills themselves stay.",
+    "deleted": "Deleted the tag “{{tag}}”",
+    "batchTitle_one": "Edit tags of {{count}} skill",
+    "batchTitle_other": "Edit tags of {{count}} skills",
+    "batchDescription": "Click a current tag to remove it from the selected skills. New tags are added to all of them.",
+    "current": "Current tags",
+    "noneYet": "These skills have no tags yet.",
+    "add": "Add tags",
+    "addPlaceholder": "Type a tag and press Enter",
+    "batchSaved_one": "Updated tags of {{count}} skill",
+    "batchSaved_other": "Updated tags of {{count}} skills"
+  },
+  "diff": {
+    "noChanges": "No changes",
+    "binary": "Binary file. The contents differ.",
+    "tooLarge": "This file is too large to compare line by line.",
+    "madeExecutable": "Only the permissions changed: the file became executable.",
+    "madeNotExecutable": "Only the permissions changed: the file is no longer executable.",
+    "status": {
+      "added": "Added",
+      "removed": "Removed",
+      "modified": "Modified"
+    }
+  },
+  "documents": {
+    "local": "Local",
+    "diff": "Diff",
+    "library": "Library",
+    "missing": "No document found."
+  },
+  "presets": {
+    "new": "New preset",
+    "edit": "Edit preset",
+    "create": "Create preset",
+    "createTitle": "New preset",
+    "editTitle": "Edit preset",
+    "dialogDescription": "A preset is a named set of skills you can add to an agent or a project in one click.",
+    "name": "Name",
+    "namePlaceholder": "Frontend work",
+    "description": "Description",
+    "descriptionPlaceholder": "What this set is for",
+    "icon": "Icon",
+    "created": "Created preset “{{name}}”",
+    "updated": "Saved preset “{{name}}”",
+    "deleted": "Deleted preset “{{name}}”",
+    "deleteTitle": "Delete the preset “{{name}}”?",
+    "deleteDescription": "Only the preset is deleted. Its skills stay in the library and wherever they are installed."
+  },
+  "presetBar": {
+    "label": "Presets",
+    "active": "Every skill of this preset is installed here",
+    "partial": "{{installed}} of {{total}} installed here",
+    "inactive": "Not installed here",
+    "clickToAdd": "Click to install what is missing",
+    "clickToRemove": "Click to remove the preset's skills from here",
+    "shiftHint": "Shift-click removes what is installed instead"
+  },
+  "projects": {
+    "link": "Link project",
+    "linkTitle": "Link a project",
+    "linkDescription": "Choose a project folder to manage the skills inside it.",
+    "remove": "Remove project",
+    "removeTitle": "Remove “{{name}}” from {{app}}?",
+    "removeDescription": "The project only leaves this list. Files in the project folder are not deleted.",
+    "removed": "Removed project “{{name}}”",
+    "missing": "The project folder is missing",
+    "diverged": "Some skills differ from the library"
+  },
+  "backup": {
+    "synced": "Backup finished",
+    "dot": {
+      "neutral": "Backup is not set up",
+      "success": "Backup is up to date",
+      "warning": "Changes are waiting to be backed up",
+      "danger": "Backup needs attention"
+    }
+  },
+  "picker": {
+    "title": "Add from library",
+    "description": "Pick the skills to add, then choose where they go.",
+    "search": "Search the library",
+    "sourceFilter": "Filter by source",
+    "allSources": "All sources",
+    "targets": "Add to",
+    "shiftHint": "Shift-click selects a range",
+    "emptyTitle": "No skills match",
+    "emptyDescription": "Change the search or the filters to see more of the library.",
+    "addNone": "Add skills",
+    "add_one": "Add {{count}} skill",
+    "add_other": "Add {{count}} skills",
+    "state": {
+      "installed": "Already there",
+      "conflict": "Name in use",
+      "unavailable": "Unavailable"
+    }
+  },
+  "palette": {
+    "title": "Command palette",
+    "description": "Jump to a skill, preset, project or agent, or run an action.",
+    "placeholder": "Search skills, presets, projects, agents and actions",
+    "empty": "Nothing matches.",
+    "actions": "Actions",
+    "skills": "Skills",
+    "presets": "Presets",
+    "projects": "Projects",
+    "agents": "Agents",
+    "install": "Install skills",
+    "scan": "Scan this computer and import",
+    "backupNow": "Back up now",
+    "newPreset": "New preset",
+    "toggleTheme": "Switch between light and dark",
+    "settings": "Open settings",
+    "help": "Open the quick-start guide"
+  },
+  "help": {
+    "title": "Quick start",
+    "intro": "{{app}} keeps your agent skills in one library and installs them wherever you need them.",
+    "sections": {
+      "library": {
+        "title": "One library",
+        "body": "Every skill lives once in the library. Tag skills, read their documents and see which agents have them."
+      },
+      "install": {
+        "title": "Get skills",
+        "body": "Install from the marketplace, a Git repository, a folder or an archive, or scan this computer and import what your agents already have."
+      },
+      "agents": {
+        "title": "Install for agents",
+        "body": "Click an agent badge on a skill to install or remove it for that agent. An agent's page shows everything in its skills folder, managed or not."
+      },
+      "presets": {
+        "title": "Presets",
+        "body": "Group skills into presets and add a whole set to an agent or a project with one click. Editing a preset never changes files by itself."
+      },
+      "projects": {
+        "title": "Projects",
+        "body": "Link a project folder to manage the skills inside it, compare them with the library and move changes either way."
+      },
+      "backup": {
+        "title": "Backup",
+        "body": "Back the library up to a Git repository to restore it later or keep several computers in step."
+      }
+    },
+    "shortcutsTitle": "Keyboard shortcuts",
+    "shortcuts": {
+      "palette": "Open the command palette",
+      "find": "Search the current page",
+      "sidebar": "Collapse or expand the sidebar",
+      "settings": "Open settings",
+      "escape": "Leave selection mode or close a dialog"
+    }
+  },
+  "closeDialog": {
+    "title": "Close {{app}}?",
+    "description": "Keep it in the tray to continue automatic backups and update checks, or quit completely.",
+    "remember": "Remember my choice",
+    "hide": "Keep in tray",
+    "quit": "Quit"
+  },
+  "banners": {
+    "crashTitle": "{{app}} closed unexpectedly {{when}}.",
+    "viewLogs": "View logs",
+    "libraryTitle": "The library location needs attention.",
+    "openSettings": "Open settings",
+    "libraryWarnings": {
+      "config_unreadable": "The location file could not be read, so the default folder is in use.",
+      "library_path_invalid": "The chosen folder cannot be used, so the default folder is in use.",
+      "migration_incomplete": "Moving the library did not finish."
+    }
+  },
+  "appUpdate": {
+    "available": "{{app}} {{version}} is available",
+    "view": "View"
+  }
+}
