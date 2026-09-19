@@ -53,4 +53,4 @@ pnpm dev
 | `packages/shared` | Types, API contract, events, settings, formatters  |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the rules and
-[docs/PLAN.md](docs/PLAN.md) for the feature checklist and known gaps.
+[docs/PLAN.md](docs/PLAN.md) for the feature checklist, and [TODO.md](TODO.md) for pending work.
