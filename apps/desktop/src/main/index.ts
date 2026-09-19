@@ -120,7 +120,9 @@ function start(): void {
         const failure = await shell.openPath(path);
         if (failure) shell.showItemInFolder(path);
       },
-      bundledSkillDir: existsSync(join(resourcesDir, "skills")) ? join(resourcesDir, "skills") : null,
+      bundledSkillDir: existsSync(join(resourcesDir, "skills"))
+        ? join(resourcesDir, "skills")
+        : null,
       bundledCliPath: existsSync(bundledCliPath) ? bundledCliPath : null,
       nodeRunner: { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" } },
       downloadsDir: app.getPath("downloads"),

@@ -90,7 +90,13 @@ describe("portable metadata", () => {
       makeSkill(world.root, "outside");
       writeFile(
         join(world.ctx.paths.metadataDir, "skills", "evil.json"),
-        JSON.stringify({ id: "evil", path: "../../../outside", tags: [], source: { type: "import" }, createdAt: 1 }),
+        JSON.stringify({
+          id: "evil",
+          path: "../../../outside",
+          tags: [],
+          source: { type: "import" },
+          createdAt: 1,
+        }),
       );
       writeFile(join(world.ctx.paths.metadataDir, "schema.json"), "{}");
       world.portable.rebuild({ authoritative: true });

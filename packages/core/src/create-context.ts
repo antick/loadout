@@ -2,7 +2,13 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { DataScope } from "@skillboard/shared";
 import { ActivityLog } from "./activity";
-import { type CoreContext, type EventSink, type HostBridge, type SecretStore, noSecretStore } from "./context";
+import {
+  type CoreContext,
+  type EventSink,
+  type HostBridge,
+  type SecretStore,
+  noSecretStore,
+} from "./context";
 import { Database } from "./db/database";
 import { RepoLock } from "./lock";
 import { type Logger, createFileLogger } from "./log";

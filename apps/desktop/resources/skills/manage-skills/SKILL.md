@@ -25,22 +25,22 @@ survive between your commands):
 ls -l ~/.skillboard/bin/skillboard ~/.skillboard/bin/.version
 ```
 
-| What you see | What to do |
-| --- | --- |
-| Both files exist | Use `~/.skillboard/bin/skillboard`. On Windows: `%USERPROFILE%\.skillboard\bin\skillboard.cmd`. |
-| Only one of them exists | The published tool is incomplete. Stop and ask the user to open the Skillboard app once; it republishes the tool on start. |
-| Neither exists | Try `skillboard --version` from `PATH`. If that fails too, Skillboard is not installed and this skill does not apply - tell the user. |
+| What you see            | What to do                                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Both files exist        | Use `~/.skillboard/bin/skillboard`. On Windows: `%USERPROFILE%\.skillboard\bin\skillboard.cmd`.                                       |
+| Only one of them exists | The published tool is incomplete. Stop and ask the user to open the Skillboard app once; it republishes the tool on start.            |
+| Neither exists          | Try `skillboard --version` from `PATH`. If that fails too, Skillboard is not installed and this skill does not apply - tell the user. |
 
 Always pass `--json`. Success prints one JSON value on stdout with exit code 0. Add `--help`
 after any group or command to see its exact arguments.
 
 ## Three separate things
 
-| Concept | Meaning | Changed by |
-| --- | --- | --- |
-| Library | The skills Skillboard knows about | `skills install`, `skills remove`, `skills adopt` |
+| Concept    | Meaning                                   | Changed by                                           |
+| ---------- | ----------------------------------------- | ---------------------------------------------------- |
+| Library    | The skills Skillboard knows about         | `skills install`, `skills remove`, `skills adopt`    |
 | Deployment | A library skill made visible to one agent | `skills deploy`, `skills undeploy`, `presets deploy` |
-| Preset | A named set of skills deployed together | `presets add`, `presets remove` |
+| Preset     | A named set of skills deployed together   | `presets add`, `presets remove`                      |
 
 **Installing does not deploy.** After `skills install`, the agent still cannot see the skill.
 Follow up with `skills deploy <ref> --agent <key>` unless the user only wanted it in the library.
@@ -123,24 +123,29 @@ doing it.
 A failure prints one JSON object on **stderr** and exits non-zero:
 
 ```json
-{"ok": false, "code": "TARGET_CONFLICT", "message": "…", "details": {"conflicts": [{"path": "…", "reason": "…"}]}}
+{
+  "ok": false,
+  "code": "TARGET_CONFLICT",
+  "message": "…",
+  "details": { "conflicts": [{ "path": "…", "reason": "…" }] }
+}
 ```
 
 Exit code 2 means the command line was wrong (`INVALID_INPUT`): fix the arguments, check
 `--help`. Exit code 1 means the operation failed. Batch commands can exit 1 while still printing
 a result on stdout - read its `failed` list.
 
-| Code | Meaning | What to do |
-| --- | --- | --- |
-| `INVALID_INPUT` | Bad argument, missing `--yes`, agent not installed or disabled | Fix the command. Do not enable an agent unless the user wants it. |
-| `NOT_FOUND` | No such skill, preset, agent, folder or version; or the name is ambiguous | List first, then use the id. |
-| `TARGET_CONFLICT` | A folder with that name already exists in the agent's folder and Skillboard did not put it there. Nothing was changed. | Report `details.conflicts[].path`. Offer: adopt it (`skills adopt <agent skills folder>`), or let the user move it aside. **Never delete or rename it yourself.** |
-| `ALREADY_EXISTS` | Name already taken | Pick another name or use the existing item. |
-| `BUSY` | The app or another command is working on the library | Wait a few seconds and retry once. |
-| `NETWORK`, `TIMEOUT` | Could not reach the source | Retry once, then report. |
-| `GIT_MISSING` | git is not installed | Tell the user; git sources and backup need it. |
-| `GIT_AUTH`, `GIT_REJECTED`, `GIT_UNRELATED`, `GIT_NO_UPSTREAM`, `SYNC_CONFLICT` | Backup needs a decision | Report the message. These are fixed in the app's Backup page, not from here. |
-| `IO`, `INTERNAL` | Unexpected | Report the message verbatim. Do not work around it by editing files. |
+| Code                                                                            | Meaning                                                                                                                | What to do                                                                                                                                                        |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INVALID_INPUT`                                                                 | Bad argument, missing `--yes`, agent not installed or disabled                                                         | Fix the command. Do not enable an agent unless the user wants it.                                                                                                 |
+| `NOT_FOUND`                                                                     | No such skill, preset, agent, folder or version; or the name is ambiguous                                              | List first, then use the id.                                                                                                                                      |
+| `TARGET_CONFLICT`                                                               | A folder with that name already exists in the agent's folder and Skillboard did not put it there. Nothing was changed. | Report `details.conflicts[].path`. Offer: adopt it (`skills adopt <agent skills folder>`), or let the user move it aside. **Never delete or rename it yourself.** |
+| `ALREADY_EXISTS`                                                                | Name already taken                                                                                                     | Pick another name or use the existing item.                                                                                                                       |
+| `BUSY`                                                                          | The app or another command is working on the library                                                                   | Wait a few seconds and retry once.                                                                                                                                |
+| `NETWORK`, `TIMEOUT`                                                            | Could not reach the source                                                                                             | Retry once, then report.                                                                                                                                          |
+| `GIT_MISSING`                                                                   | git is not installed                                                                                                   | Tell the user; git sources and backup need it.                                                                                                                    |
+| `GIT_AUTH`, `GIT_REJECTED`, `GIT_UNRELATED`, `GIT_NO_UPSTREAM`, `SYNC_CONFLICT` | Backup needs a decision                                                                                                | Report the message. These are fixed in the app's Backup page, not from here.                                                                                      |
+| `IO`, `INTERNAL`                                                                | Unexpected                                                                                                             | Report the message verbatim. Do not work around it by editing files.                                                                                              |
 
 ## Updates that would delete files
 

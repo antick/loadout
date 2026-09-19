@@ -28,7 +28,13 @@ export function isNewer(candidate: string, current: string): boolean {
 export async function checkForUpdate(): Promise<AppUpdateInfo> {
   const currentVersion = app.getVersion();
   if (!UPDATE_FEED_URL) {
-    return { hasUpdate: false, currentVersion, latestVersion: null, releaseUrl: null, configured: false };
+    return {
+      hasUpdate: false,
+      currentVersion,
+      latestVersion: null,
+      releaseUrl: null,
+      configured: false,
+    };
   }
   // `net.fetch` follows the system proxy settings.
   const response = await net.fetch(UPDATE_FEED_URL, {

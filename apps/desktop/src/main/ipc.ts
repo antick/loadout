@@ -13,7 +13,10 @@ import {
 type Handler = (...args: unknown[]) => Promise<unknown>;
 
 /** One IPC entry point: `namespace.method` is looked up on the API object and called. */
-export function registerIpc(api: SkillboardApi, onError: (channel: string, error: unknown) => void): void {
+export function registerIpc(
+  api: SkillboardApi,
+  onError: (channel: string, error: unknown) => void,
+): void {
   const namespaces = new Set<string>(API_NAMESPACES);
   ipcMain.handle(
     IPC_INVOKE_CHANNEL,

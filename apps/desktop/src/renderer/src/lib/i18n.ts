@@ -26,7 +26,10 @@ function mergeMessages(base: Messages, extra: Messages): Messages {
   for (const [key, value] of Object.entries(extra)) {
     const current = merged[key];
     const bothObjects =
-      typeof current === "object" && current !== null && typeof value === "object" && value !== null;
+      typeof current === "object" &&
+      current !== null &&
+      typeof value === "object" &&
+      value !== null;
     merged[key] = bothObjects ? mergeMessages(current as Messages, value as Messages) : value;
   }
   return merged;

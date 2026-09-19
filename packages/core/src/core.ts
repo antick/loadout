@@ -98,7 +98,9 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     start: () => {
       updates.auto.start();
       backup.auto.start();
-      void system.publishCli().catch((error: unknown) => ctx.log.warn("Could not publish the CLI", error));
+      void system
+        .publishCli()
+        .catch((error: unknown) => ctx.log.warn("Could not publish the CLI", error));
     },
     stop: () => {
       updates.auto.stop();

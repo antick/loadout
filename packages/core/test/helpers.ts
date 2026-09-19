@@ -39,7 +39,6 @@ export function makeSkill(
   return dir;
 }
 
-
 export interface TestWorld extends ContextBundle {
   /** Fake home directory; agent folders live under it. */
   home: string;

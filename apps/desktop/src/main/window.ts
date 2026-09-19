@@ -27,7 +27,11 @@ function loadState(): WindowState | null {
     const state = JSON.parse(readFileSync(statePath(), "utf8")) as WindowState;
     const visible = screen
       .getAllDisplays()
-      .some(({ workArea }) => state.bounds.x < workArea.x + workArea.width && state.bounds.y < workArea.y + workArea.height);
+      .some(
+        ({ workArea }) =>
+          state.bounds.x < workArea.x + workArea.width &&
+          state.bounds.y < workArea.y + workArea.height,
+      );
     return visible ? state : null;
   } catch {
     return null;

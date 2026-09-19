@@ -14,10 +14,7 @@ const IGNORED_SEGMENTS = [`${sep}.git${sep}`, `${sep}node_modules${sep}`];
  * Watches the library and every agent's skills folder so changes made outside the app — by hand,
  * by an agent, or through the CLI — show up without a manual refresh.
  */
-export function watchLibrary(
-  resolvePaths: () => string[],
-  onChange: () => void,
-): LibraryWatcher {
+export function watchLibrary(resolvePaths: () => string[], onChange: () => void): LibraryWatcher {
   const watchers = new Map<string, FSWatcher>();
   let timer: NodeJS.Timeout | null = null;
   let mutedUntil = 0;

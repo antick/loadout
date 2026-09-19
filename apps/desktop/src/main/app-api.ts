@@ -15,7 +15,9 @@ export interface AppApiDeps {
 export function createAppApi(deps: AppApiDeps): AppApi {
   const pick = async (options: Electron.OpenDialogOptions): Promise<string | null> => {
     const win = deps.window();
-    const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options);
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options);
     return result.canceled ? null : (result.filePaths[0] ?? null);
   };
 
