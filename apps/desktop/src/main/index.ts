@@ -1,6 +1,6 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BrowserWindow, app, shell } from "electron";
+import { BrowserWindow, app, net, session, shell } from "electron";
 import { type Core, createCore } from "@skillboard/core";
 import { APP_ID, type SkillboardApi } from "@skillboard/shared";
 import { createAppApi } from "./app-api";
@@ -40,6 +40,12 @@ function showWindow(): void {
   if (process.platform === "darwin") void app.dock?.show();
   if (!mainWindow || mainWindow.isDestroyed()) openWindow();
   else focusWindow(mainWindow);
+}
+
+/** Route the app's own HTTP calls (marketplace, GitHub, update check) through the proxy setting. */
+function syncProxy(): void {
+  const proxyUrl = core?.ctx.settings.get("proxyUrl") ?? "";
+  void session.defaultSession.setProxy(proxyUrl ? { proxyRules: proxyUrl } : { mode: "system" });
 }
 
 function syncTray(): void {
@@ -98,11 +104,16 @@ function start(): void {
     emit: (event, payload) => {
       if (event === "data:changed") {
         watcher?.mute();
-        if ((payload as { scope: string[] }).scope.includes("settings")) syncTray();
+        if ((payload as { scope: string[] }).scope.includes("settings")) {
+          syncTray();
+          syncProxy();
+        }
       }
       send(event, payload);
     },
     echoLogs: !app.isPackaged,
+    // `net.fetch` honours the session proxy, which follows the proxy setting.
+    fetchImpl: ((input, init) => net.fetch(input as string, init as RequestInit)) as typeof fetch,
     host: {
       appVersion: app.getVersion(),
       revealPath: async (path) => {
@@ -140,6 +151,7 @@ function start(): void {
   );
 
   core.background.start();
+  syncProxy();
   syncTray();
   openWindow();
 }

@@ -16,7 +16,7 @@ import {
   resolveCommit,
   upstreamRef,
 } from "./repo";
-import { tagSnapshot } from "./snapshots";
+import { snapshotAtHead, tagSnapshot } from "./snapshots";
 
 /**
  * "Back up now": commit → fetch → merge → snapshot → push, retried when another device pushed in
@@ -68,9 +68,12 @@ export async function syncLibrary(
   let pushed = false;
 
   const takeSnapshot = (): Promise<string> => lock.run("backup snapshot", () => tagSnapshot(env));
+  // A state that was committed earlier (for example by setting up the backup) but never
+  // snapshotted still deserves a restore point the first time the user backs up.
+  const needsSnapshot = async (): Promise<boolean> => changed || !(await snapshotAtHead(env));
 
   if (!(await originUrl(env))) {
-    if (changed) snapshot = await takeSnapshot();
+    if (await needsSnapshot()) snapshot = await takeSnapshot();
   } else {
     const branch = await requireBranch(env);
     for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
@@ -79,7 +82,7 @@ export async function syncLibrary(
       merge = combine(merge, result.summary);
       committed ||= result.committed;
       changed ||= result.committed || result.changed;
-      if (changed) snapshot = await takeSnapshot();
+      if (await needsSnapshot()) snapshot = await takeSnapshot();
 
       const upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
       const { ahead } = await aheadBehind(env, branch);

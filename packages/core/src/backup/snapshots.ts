@@ -33,7 +33,8 @@ function newTagName(): string {
   return `${SNAPSHOT_TAG_PREFIX}${formatTimestampCompact(Date.now())}-${suffix}`;
 }
 
-async function snapshotAtHead(env: BackupEnv): Promise<string | null> {
+/** The snapshot tag on the current commit, if it has one. */
+export async function snapshotAtHead(env: BackupEnv): Promise<string | null> {
   const tags = await env.git.text([
     "tag",
     "--points-at",

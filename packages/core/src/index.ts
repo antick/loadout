@@ -1,4 +1,7 @@
 export * from "./context";
 export * from "./errors";
-export { createFileLogger, silentLogger, LOG_FILE_NAME, type Logger } from "./log";
-export { resolveLibrary, type LibraryPaths, type ResolveOptions } from "./paths";
+export { type Core, type CoreBackground, type CoreCreateOptions, createCore } from "./core";
+export type { CoreOptions } from "./create-context";
+export { LOG_FILE_NAME, type Logger, createFileLogger, silentLogger } from "./log";
+export { type LibraryPaths, type ResolveOptions, resolveLibrary } from "./paths";
+export type { ResolvedAgent } from "./agents/registry";
