@@ -343,6 +343,8 @@ Object.assign(
 /** Install the fake bridge. Call only in development, and only when the real one is missing. */
 export function installDevMock(): void {
   window.skillboard = {
+    // A plain browser never reveals real paths; the name is enough for the mock.
+    pathForFile: (file) => `/mock/${(file as File).name}`,
     invoke: (channel, args) =>
       new Promise<ApiResponse<unknown>>((resolve) => {
         // Async so handlers that take a while (installs with progress) can return a promise.

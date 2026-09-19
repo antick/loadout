@@ -211,6 +211,7 @@ export function PresetPage({ presetId }: { presetId: string }): ReactNode {
   if (presets.isPending) return <PresetSkeleton />;
 
   const preset = presets.data.find((entry) => entry.id === presetId);
+  if (!preset && presets.isFetching) return <PresetSkeleton />;
   if (!preset) return <Navigate to={FALLBACK_ROUTE} replace />;
   if (skills.isPending) return <PresetSkeleton />;
 

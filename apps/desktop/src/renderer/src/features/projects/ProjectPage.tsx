@@ -64,7 +64,8 @@ const NO_TARGETS = [] as const;
 export function ProjectPage({ projectId }: { projectId: string }): ReactNode {
   const projects = useProjects();
   const project = projects.data?.find((entry) => entry.id === projectId);
-  if (projects.data && !project) return <Navigate to="/" replace />;
+  // A project linked a moment ago may not be in the cached list yet: wait for the refetch.
+  if (projects.data && !project && !projects.isFetching) return <Navigate to="/" replace />;
   if (projects.error) {
     return <ErrorState error={projects.error} onRetry={() => void projects.refetch()} />;
   }

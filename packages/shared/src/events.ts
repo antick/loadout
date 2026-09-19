@@ -33,4 +33,6 @@ export const IPC_EVENT_CHANNEL = "skillboard:event";
 export interface PreloadBridge {
   invoke(channel: string, args: unknown[]): Promise<unknown>;
   on(listener: (event: AppEventName, payload: unknown) => void): () => void;
+  /** Absolute path of a file or folder the user dropped onto the window (a DOM `File`). */
+  pathForFile(file: unknown): string;
 }

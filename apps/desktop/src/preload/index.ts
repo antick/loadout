@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import {
   type AppEventName,
   IPC_EVENT_CHANNEL,
@@ -14,6 +14,7 @@ const bridge: PreloadBridge = {
     ipcRenderer.on(IPC_EVENT_CHANNEL, handler);
     return () => ipcRenderer.removeListener(IPC_EVENT_CHANNEL, handler);
   },
+  pathForFile: (file) => webUtils.getPathForFile(file as File),
 };
 
 contextBridge.exposeInMainWorld("skillboard", bridge);

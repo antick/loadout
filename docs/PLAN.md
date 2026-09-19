@@ -45,7 +45,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 ### 2. Install
 
 - [x] From local folder (tracked source, re-import, relink, detach)
-- [x] From `.zip` / `.skill` archive
+- [x] From `.zip` / `.skill` archive, or by dropping a folder or archive on the page
 - [x] From Git: https, ssh, `owner/repo`, tree URLs with branch + subpath
 - [x] Git preview: pick skills found in the repo, rename, confirm
 - [x] Batch import every skill under a folder
@@ -152,7 +152,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ## Known gaps
 
-- Drag-and-drop of a folder or archive onto the Install page is not built (the preload bridge does not expose dropped file paths).
+- Drag-and-drop install (Install → This computer) is built, but a real drag from the file manager has not been tried yet.
 - Windows and Linux are untested. Symlink → junction → copy fallback and the `.cmd` CLI launcher exist but have never run.
 - The CLI cannot read tokens saved by the desktop app (they are encrypted with the OS keychain), so `skillboard git sync` to an HTTPS + token remote only works from the app. SSH remotes and git credential helpers work from both.
 - Git clones are always shallow full clones (no sparse checkout of one subfolder).

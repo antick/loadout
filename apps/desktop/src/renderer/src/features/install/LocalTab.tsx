@@ -1,6 +1,6 @@
 import type { BatchImportResult } from "@skillboard/shared";
 import { FileArchive, FolderInput, FolderTree, PackagePlus, X } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionCard } from "@/components/OptionCard";
 import { PageSection } from "@/components/PageSection";
@@ -11,6 +11,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { ARCHIVE_EXTENSIONS } from "@/features/install/constants";
+import { cn } from "@/lib/utils";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { useImportFolder, useInstallFromPath, usePickArchive } from "@/hooks/mutations/install";
@@ -37,6 +38,23 @@ export function LocalTab(): ReactNode {
   const [bulk, setBulk] = useState<{ folder: string; result: BatchImportResult | null } | null>(
     null,
   );
+
+  const [dragging, setDragging] = useState(false);
+
+  /** A dropped archive is recognised by its extension; anything else is treated as a folder. */
+  const onDrop = (event: DragEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+    setDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+    const path = window.skillboard.pathForFile(file);
+    if (!path) return;
+    const isArchive = ARCHIVE_EXTENSIONS.some((extension) =>
+      path.toLowerCase().endsWith(extension),
+    );
+    setPicked({ path, kind: isArchive ? "archive" : "folder" });
+    setName("");
+  };
 
   const singleTask = picked ? task(picked.path) : undefined;
   const bulkTask = bulk && !bulk.result ? task(bulk.folder) : undefined;
@@ -71,7 +89,19 @@ export function LocalTab(): ReactNode {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div
+      className={cn(
+        "flex flex-col gap-6 rounded-xl transition-colors",
+        dragging && "bg-primary/5 outline-2 outline-dashed outline-primary/50 outline-offset-8",
+      )}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={onDrop}
+    >
+      <p className="text-sm text-muted-foreground">{t("install.local.dropHint")}</p>
       <div className="grid gap-3 md:grid-cols-3">
         <OptionCard
           icon={FolderInput}

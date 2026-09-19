@@ -75,7 +75,9 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   );
   const openDocument = useWorkspaceDocument(agentKey, openSkill?.relativePath);
 
-  if (agents.data && (!agent || !isAgentAvailable(agent))) return <Navigate to="/agents" replace />;
+  if (agents.data && !agents.isFetching && (!agent || !isAgentAvailable(agent))) {
+    return <Navigate to="/agents" replace />;
+  }
 
   const skillOf = (view: LocalSkillView): LocalSkill | undefined => skillsByPath.get(view.id);
   const managedBadge = (view: LocalSkillView): ReactNode =>

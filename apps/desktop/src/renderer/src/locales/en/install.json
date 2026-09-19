@@ -118,7 +118,8 @@
       "nameLabel": "Name in the library",
       "namePlaceholder": "Keep the skill's own name",
       "nameHint": "Optional. Leave empty to use the name written in the skill.",
-      "installAction": "Install"
+      "installAction": "Install",
+      "dropHint": "Drop a skill folder or a .zip / .skill archive anywhere here, or choose one below."
     },
     "git": {
       "urlLabel": "Repository",
