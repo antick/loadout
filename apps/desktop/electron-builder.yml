@@ -1,0 +1,28 @@
+appId: dev.skillboard.app
+productName: Skillboard
+directories:
+  buildResources: build
+  output: release
+files:
+  - out/**
+  - package.json
+extraResources:
+  - from: ../../packages/cli/dist/skillboard.mjs
+    to: cli/skillboard.mjs
+  - from: resources
+    to: resources
+asar: true
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - zip
+win:
+  target:
+    - nsis
+linux:
+  category: Development
+  target:
+    - AppImage
+    - deb
+publish: null

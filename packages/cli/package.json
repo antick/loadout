@@ -1,0 +1,24 @@
+{
+  "name": "@skillboard/cli",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "skillboard": "./dist/skillboard.mjs"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/bin.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/skillboard.mjs --banner:js=\"#!/usr/bin/env node\"",
+    "start": "bun run build && node dist/skillboard.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@skillboard/core": "workspace:*",
+    "@skillboard/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.6",
+    "esbuild": "0.28.2",
+    "vitest": "5.0.1"
+  }
+}
