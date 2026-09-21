@@ -78,10 +78,14 @@ export function LibraryPage({
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
   const [rest, setRest] = useState(EMPTY_FILTERS);
 
+  // A status asked for from outside replaces the filters once; the request is then cleared.
+  const [seenRequest, setSeenRequest] = useState<StatusFilter | null>(null);
+  if (requestedStatus !== seenRequest) {
+    setSeenRequest(requestedStatus);
+    if (requestedStatus) setRest({ ...EMPTY_FILTERS, status: requestedStatus });
+  }
   useEffect(() => {
-    if (!requestedStatus) return;
-    setRest({ ...EMPTY_FILTERS, status: requestedStatus });
-    onStatusApplied();
+    if (requestedStatus) onStatusApplied();
   }, [requestedStatus, onStatusApplied]);
 
   const filters = useMemo<LibraryFilters>(() => ({ ...rest, sort }), [rest, sort]);
