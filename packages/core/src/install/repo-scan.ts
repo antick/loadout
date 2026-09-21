@@ -39,6 +39,8 @@ const LOCATOR_DIRS = ["", "skills", ".agents/skills"] as const;
 const LOCATOR_SEARCH_DEPTH = 6;
 /** Conventional containers, tried when a repository has no skill at its root. */
 const CONTAINER_DIRS = ["skills", "skill"] as const;
+/** Hidden folders every agent reads, so a skill inside one is not tied to a single agent. */
+const SHARED_HIDDEN_DIRS: ReadonlySet<string> = new Set([".agents"]);
 
 /** Lexically inside, and — once it exists, so links can be followed — really inside too. */
 function assertInside(repoDir: string, path: string, label: string): void {
@@ -87,9 +89,34 @@ export function findSkillDirs(root: string, options: FindOptions = {}): string[]
   return found.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
-/** Skills under a scan root, described for a preview. */
+/** True when a path runs through one agent's own folder, such as `.claude/skills/pdf`. */
+export function isAgentSpecificPath(relPath: string): boolean {
+  return toPosix(relPath)
+    .split("/")
+    .some(
+      (segment) =>
+        segment.startsWith(".") &&
+        segment !== "." &&
+        segment !== ".." &&
+        !SHARED_HIDDEN_DIRS.has(segment),
+    );
+}
+
+/**
+ * Repositories often ship one skill several times: `pdf/` for everyone plus `.claude/skills/pdf/`
+ * and `.cursor/skills/pdf/`. Drop the agent-specific copies of every skill that also has an
+ * agent-neutral copy (same skill name), keeping the order. Copies that exist only per agent stay.
+ */
+export function preferNeutralCopies(root: string, dirs: readonly string[]): string[] {
+  const names = new Map(dirs.map((dir) => [dir, readSkillIdentity(dir).name]));
+  const specific = (dir: string): boolean => isAgentSpecificPath(relative(root, dir));
+  const neutralNames = new Set(dirs.filter((dir) => !specific(dir)).map((dir) => names.get(dir)));
+  return dirs.filter((dir) => !specific(dir) || !neutralNames.has(names.get(dir)));
+}
+
+/** Skills under a scan root, described for a preview. Agent-specific duplicates are left out. */
 export function listRepoSkills(scanRoot: string, options: FindOptions = {}): FoundSkill[] {
-  return findSkillDirs(scanRoot, options).map((dir) => {
+  return preferNeutralCopies(scanRoot, findSkillDirs(scanRoot, options)).map((dir) => {
     const identity = readSkillIdentity(dir);
     return {
       dir,
@@ -105,7 +132,12 @@ function locate(repoDir: string, locatorId: string): string {
     const candidate = join(repoDir, container, locatorId);
     if (isInside(repoDir, candidate) && isSkillDir(candidate)) return candidate;
   }
-  const all = findSkillDirs(repoDir, { maxDepth: LOCATOR_SEARCH_DEPTH });
+  // Agent-neutral copies first; the sort is stable, so each group keeps its path order.
+  const all = findSkillDirs(repoDir, { maxDepth: LOCATOR_SEARCH_DEPTH }).sort(
+    (a, b) =>
+      Number(isAgentSpecificPath(relative(repoDir, a))) -
+      Number(isAgentSpecificPath(relative(repoDir, b))),
+  );
   const match =
     all.find((dir) => basename(dir) === locatorId) ??
     all.find((dir) => readFrontmatter(dir).name === locatorId);

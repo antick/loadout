@@ -146,13 +146,6 @@ Core logic behind all of these has tests; this is about the UI wiring.
   app version is newer, sync and show an upgrade reminder.
 - **Code:** `packages/core/src/backup/`
 
-### 16. Prefer the plain copy when a repository ships one per agent
-
-- **State:** when a repository has `x/`, `.claude/skills/x/` and `.cursor/skills/x/`, installing
-  `x` takes whichever copy the search finds first, and the Git preview lists all of them.
-- **To do:** rank matches so the agent-neutral folder wins, and collapse agent-specific duplicates
-  of the same skill in the preview.
-- **Code:** `packages/core/src/install/repo-scan.ts`
 
 ### 17. Linux ARM64 builds and standalone CLI downloads
 

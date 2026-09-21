@@ -7,7 +7,7 @@ import { unzipSync } from "fflate";
 import { errorMessage, invalid, isAppError } from "../errors";
 import { isInside, removePath } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
-import { findSkillDirs } from "./repo-scan";
+import { findSkillDirs, preferNeutralCopies } from "./repo-scan";
 
 /** An unpacked archive. Always call `cleanup`. */
 export interface ExtractedArchive {
@@ -128,7 +128,7 @@ export async function extractArchive(archivePath: string): Promise<ExtractedArch
       if (isAppError(error)) throw error;
       throw invalid(`Could not read the archive: ${errorMessage(error)}`);
     }
-    const skills = findSkillDirs(root, { maxDepth: SKILL_SEARCH_DEPTH });
+    const skills = preferNeutralCopies(root, findSkillDirs(root, { maxDepth: SKILL_SEARCH_DEPTH }));
     if (skills.length > 1) throw invalid("Multiple skill directories found in archive");
     return { skillDir: skills[0] ?? root, cleanup };
   } catch (error) {

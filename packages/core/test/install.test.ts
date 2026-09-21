@@ -190,6 +190,16 @@ describe("install from an archive", () => {
     expect(readdirSync(join(world.root, "tmp"))).toEqual([]);
   });
 
+  it("installs the plain copy from an archive that also ships per-agent copies", async () => {
+    const zip = writeZip(join(sources, "variants.zip"), {
+      "zipped/SKILL.md": SKILL_MD,
+      "zipped/plain.txt": "plain",
+      ".claude/skills/zipped/SKILL.md": SKILL_MD,
+    });
+    const skill = await install.api.fromPath(zip);
+    expect(readdirSync(skill.libraryPath).sort()).toEqual(["SKILL.md", "plain.txt"]);
+  });
+
   it("names an archive without a marker after the file, not after a temp folder", async () => {
     const zip = writeZip(join(sources, "My Notes.zip"), { "README.md": "# notes" });
     const skill = await install.api.fromPath(zip);
@@ -296,6 +306,30 @@ describe("finding skills in a repository", () => {
     );
     expect(() => resolveSkillDir(repo, undefined, "nope")).toThrowError(/not found/);
     expect(() => resolveSkillDir(repo, undefined, "../sources")).toThrowError(/not found/);
+  });
+  it("prefers the agent-neutral copy when a repository ships one per agent", () => {
+    const multi = join(world.root, "multi");
+    makeSkill(join(multi, ".claude", "skills"), "lint", { body: "claude copy" });
+    makeSkill(join(multi, ".cursor", "skills"), "lint", { body: "cursor copy" });
+    makeSkill(join(multi, "extras"), "lint", { body: "plain copy" });
+    makeSkill(join(multi, ".claude", "skills"), "only-claude");
+    makeSkill(join(multi, ".agents", "skills"), "shared");
+    makeSkill(join(multi, ".cursor", "skills"), "shared");
+
+    expect(listRepoSkills(multi).map((s) => s.relPath)).toEqual([
+      ".agents/skills/shared",
+      ".claude/skills/only-claude",
+      "extras/lint",
+    ]);
+    expect(resolveSkillDir(multi, undefined, "lint")).toBe(join(multi, "extras", "lint"));
+    expect(resolveSkillDir(multi, undefined, "only-claude")).toBe(
+      join(multi, ".claude", "skills", "only-claude"),
+    );
+    // Scanning an agent folder directly treats its skills as the plain copies.
+    expect(listRepoSkills(join(multi, ".cursor", "skills")).map((s) => s.relPath)).toEqual([
+      "lint",
+      "shared",
+    ]);
   });
 });
 
