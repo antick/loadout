@@ -288,7 +288,7 @@ export interface LocalSkill {
   agentDisplayName: string;
   tags: string[];
   librarySkillId: string | null;
-  /** Skillboard deployed this copy (global workspace only). */
+  /** Loadout deployed this copy (global workspace only). */
   managed: boolean;
   syncStatus: SyncStatus;
 }

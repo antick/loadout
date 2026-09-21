@@ -1,4 +1,4 @@
-import { ApiError, type ApplyResult, type TargetConflict } from "@skillboard/shared";
+import { ApiError, type ApplyResult, type TargetConflict } from "@loadout/shared";
 import { toast } from "sonner";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";

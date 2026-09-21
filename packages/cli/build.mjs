@@ -1,6 +1,6 @@
 import { build } from "esbuild";
 
-const OUT_FILE = "dist/skillboard.mjs";
+const OUT_FILE = "dist/loadout.mjs";
 const NODE_TARGET = "node22";
 /**
  * Some dependencies are CommonJS and call `require("process")` and friends. An ES module has no

@@ -1,4 +1,4 @@
-import type { Preset, Skill } from "@skillboard/shared";
+import type { Preset, Skill } from "@loadout/shared";
 import { Check } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

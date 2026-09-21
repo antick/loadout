@@ -1,5 +1,5 @@
 import { isAbsolute, relative } from "node:path";
-import type { LocalSkill, Skill, SkillDocument } from "@skillboard/shared";
+import type { LocalSkill, Skill, SkillDocument } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { writeTarget } from "../deploy";

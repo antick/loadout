@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { makeSkill, writeFile } from "./helpers";
 import {

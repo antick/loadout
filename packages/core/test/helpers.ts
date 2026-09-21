@@ -5,7 +5,7 @@ import { type ContextBundle, createContext } from "../src/create-context";
 import { silentLogger } from "../src/log";
 
 /** A throwaway folder, removed by the returned cleanup. */
-export function tempDir(prefix = "skillboard-test-"): { dir: string; cleanup: () => void } {
+export function tempDir(prefix = "loadout-test-"): { dir: string; cleanup: () => void } {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }

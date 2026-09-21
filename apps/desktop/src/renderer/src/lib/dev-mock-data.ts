@@ -9,10 +9,10 @@ import type {
   Project,
   Skill,
   SyncHealth,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 
 export const HOME = "/Users/dev";
-export const LIBRARY = `${HOME}/.skillboard`;
+export const LIBRARY = `${HOME}/.loadout`;
 export const NOW = Date.now();
 export const HOUR = 60 * 60 * 1000;
 

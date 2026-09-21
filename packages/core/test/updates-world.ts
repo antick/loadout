@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import type { GitClient } from "../src/install";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";

@@ -1,4 +1,4 @@
-import type { AgentInfo, Skill } from "@skillboard/shared";
+import type { AgentInfo, Skill } from "@loadout/shared";
 import { type ReactNode, useMemo, useState } from "react";
 import { AgentBadgeRow } from "@/components/AgentBadgeRow";
 import { useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";

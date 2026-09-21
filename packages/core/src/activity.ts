@@ -1,4 +1,4 @@
-import type { ActivityEntry, ActivityKind } from "@skillboard/shared";
+import type { ActivityEntry, ActivityKind } from "@loadout/shared";
 import type { Database } from "./db/database";
 
 const DEFAULT_LIMIT = 50;

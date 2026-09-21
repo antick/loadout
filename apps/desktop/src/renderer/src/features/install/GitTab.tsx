@@ -1,4 +1,4 @@
-import type { GitPreview, InstallSelection } from "@skillboard/shared";
+import type { GitPreview, InstallSelection } from "@loadout/shared";
 import { GitBranch, KeyRound, PackageSearch } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";

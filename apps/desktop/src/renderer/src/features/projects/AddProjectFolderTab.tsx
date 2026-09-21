@@ -1,4 +1,4 @@
-import type { Project } from "@skillboard/shared";
+import type { Project } from "@loadout/shared";
 import { CircleAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";

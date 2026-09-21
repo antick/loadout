@@ -1,4 +1,4 @@
-import type { Preset } from "@skillboard/shared";
+import type { Preset } from "@loadout/shared";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import type { ReactNode } from "react";

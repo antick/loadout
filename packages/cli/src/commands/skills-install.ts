@@ -1,5 +1,5 @@
-import { notFound } from "@skillboard/core";
-import type { InstallSelection, RepoSkillPreview, Skill } from "@skillboard/shared";
+import { notFound } from "@loadout/core";
+import type { InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
 import { limitPositionals, positional, resolveUserPath } from "./support";

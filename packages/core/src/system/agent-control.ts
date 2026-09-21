@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { AGENT_CONTROL_SKILL_NAME, type AgentControlStatus, type Skill } from "@skillboard/shared";
+import { AGENT_CONTROL_SKILL_NAME, type AgentControlStatus, type Skill } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { AppError, invalid, notFound, targetConflict, unsupported } from "../errors";

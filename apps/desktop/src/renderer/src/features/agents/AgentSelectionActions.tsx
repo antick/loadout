@@ -1,4 +1,4 @@
-import type { LocalSkill } from "@skillboard/shared";
+import type { LocalSkill } from "@loadout/shared";
 import { CircleMinus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

@@ -1,4 +1,4 @@
-import type { BackupStatus } from "@skillboard/shared";
+import type { BackupStatus } from "@loadout/shared";
 
 export type FixReason = "unrelated_histories" | "detached";
 /** Where the waiting changes are: on this machine, on the remote, or both. */

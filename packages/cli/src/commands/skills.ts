@@ -1,6 +1,6 @@
 import { lstatSync } from "node:fs";
-import { errorMessage, targetConflict } from "@skillboard/core";
-import type { Skill } from "@skillboard/shared";
+import { errorMessage, targetConflict } from "@loadout/core";
+import type { Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";

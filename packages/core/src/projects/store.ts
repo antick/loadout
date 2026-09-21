@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { WorkspaceType } from "@skillboard/shared";
+import type { WorkspaceType } from "@loadout/shared";
 import type { Database } from "../db/database";
 import { notFound } from "../errors";
 

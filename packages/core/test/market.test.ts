@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { APP_SLUG, MARKETPLACE_URL } from "@skillboard/shared";
+import { APP_SLUG, MARKETPLACE_URL } from "@loadout/shared";
 import { createMarketService } from "../src/market";
 import { parseBoardHtml, parseSearchResponse } from "../src/market/parse";
 import { type TestWorld, createTestWorld } from "./helpers";

@@ -1,4 +1,4 @@
-import type { AgentCategory, AgentInfo } from "@skillboard/shared";
+import type { AgentCategory, AgentInfo } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { api } from "@/lib/api";

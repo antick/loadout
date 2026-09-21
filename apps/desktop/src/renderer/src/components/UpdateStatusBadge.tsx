@@ -1,4 +1,4 @@
-import type { UpdateStatus } from "@skillboard/shared";
+import type { UpdateStatus } from "@loadout/shared";
 import {
   ArrowUpCircle,
   Check,

@@ -1,5 +1,5 @@
 import type { InstallTab } from "@/lib/constants";
-import type { MarketBoard } from "@skillboard/shared";
+import type { MarketBoard } from "@loadout/shared";
 
 export const MARKET_BOARDS = [
   "hot",

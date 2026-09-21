@@ -1,4 +1,4 @@
-import type { AgentInfo } from "@skillboard/shared";
+import type { AgentInfo } from "@loadout/shared";
 import { Bot } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";

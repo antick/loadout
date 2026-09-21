@@ -3,7 +3,7 @@ import {
   PROJECT_EXPORT_PRIORITY,
   type ProjectTarget,
   SYNC_STATUS_SEVERITY,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 
 // Relative import (not `@/`) so this module stays loadable by plain vitest.
 import type { EnabledState, LocalSkillView } from "../local-skills/local-skill-view";

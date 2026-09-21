@@ -1,4 +1,4 @@
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";

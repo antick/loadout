@@ -1,4 +1,4 @@
-import type { PresetAgentToggle } from "@skillboard/shared";
+import type { PresetAgentToggle } from "@loadout/shared";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";

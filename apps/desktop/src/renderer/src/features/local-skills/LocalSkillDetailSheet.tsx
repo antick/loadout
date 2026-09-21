@@ -1,4 +1,4 @@
-import type { SkillDocument } from "@skillboard/shared";
+import type { SkillDocument } from "@loadout/shared";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

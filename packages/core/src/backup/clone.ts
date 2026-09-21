@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
-import { formatTimestampCompact } from "@skillboard/shared";
+import { formatTimestampCompact } from "@loadout/shared";
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { PortableSkill } from "../skills/portable";

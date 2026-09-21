@@ -1,4 +1,4 @@
-import { TEXT_SIZE_SCALE, type ThemeSetting } from "@skillboard/shared";
+import { TEXT_SIZE_SCALE, type ThemeSetting } from "@loadout/shared";
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { useSetting } from "@/hooks/queries/settings";
 import { applyLanguage } from "@/lib/i18n";

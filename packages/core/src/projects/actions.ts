@@ -1,6 +1,6 @@
 import { renameSync, rmdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { LocalSkill, PushToLibraryResult, Skill } from "@skillboard/shared";
+import type { LocalSkill, PushToLibraryResult, Skill } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { writeTarget } from "../deploy";

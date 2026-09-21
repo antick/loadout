@@ -5,7 +5,7 @@ import {
   type SettingKey,
   type SettingValue,
   type Settings,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { Database } from "../db/database";
 import { invalid } from "../errors";
 

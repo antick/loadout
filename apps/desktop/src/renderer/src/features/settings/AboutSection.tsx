@@ -1,4 +1,4 @@
-import { formatRelative } from "@skillboard/shared";
+import { formatRelative } from "@loadout/shared";
 import {
   Bug,
   ClipboardCopy,

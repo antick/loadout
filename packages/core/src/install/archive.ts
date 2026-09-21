@@ -2,7 +2,7 @@ import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
-import { APP_SLUG, formatBytes } from "@skillboard/shared";
+import { APP_SLUG, formatBytes } from "@loadout/shared";
 import { unzipSync } from "fflate";
 import { errorMessage, invalid, isAppError } from "../errors";
 import { isInside, removePath } from "../util/fs";

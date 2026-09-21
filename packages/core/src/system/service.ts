@@ -1,5 +1,5 @@
 import { arch, platform, release } from "node:os";
-import type { DiagnosticInfo, SystemApi } from "@skillboard/shared";
+import type { DiagnosticInfo, SystemApi } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";

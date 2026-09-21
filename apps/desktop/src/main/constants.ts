@@ -24,6 +24,6 @@ export const UPDATE_CHECK_TIMEOUT_MS = 15_000;
  * JSON endpoint describing the newest release: `{ "version": "1.2.3", "url": "https://…" }`.
  * Empty until a release feed exists; the UI then says updates are not configured.
  */
-export const UPDATE_FEED_URL = process.env.SKILLBOARD_UPDATE_FEED ?? "";
+export const UPDATE_FEED_URL = process.env.LOADOUT_UPDATE_FEED ?? "";
 
 export const ARCHIVE_EXTENSIONS = ["zip", "skill"];

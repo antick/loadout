@@ -1,20 +1,20 @@
 {
-  "name": "@skillboard/cli",
+  "name": "@loadout/cli",
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "skillboard": "./dist/skillboard.mjs"
+    "loadout": "./dist/loadout.mjs"
   },
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "start": "node build.mjs && node dist/skillboard.mjs",
+    "start": "node build.mjs && node dist/loadout.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@skillboard/core": "workspace:*",
-    "@skillboard/shared": "workspace:*"
+    "@loadout/core": "workspace:*",
+    "@loadout/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.13.6",

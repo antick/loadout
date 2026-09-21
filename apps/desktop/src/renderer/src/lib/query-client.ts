@@ -1,4 +1,4 @@
-import { ApiError } from "@skillboard/shared";
+import { ApiError } from "@loadout/shared";
 import { QueryClient } from "@tanstack/react-query";
 import { QUERY_STALE_MS } from "@/lib/constants";
 

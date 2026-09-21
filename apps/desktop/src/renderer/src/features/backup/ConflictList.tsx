@@ -1,4 +1,4 @@
-import { type BackupConflict, type ConflictResolution, formatRelative } from "@skillboard/shared";
+import { type BackupConflict, type ConflictResolution, formatRelative } from "@loadout/shared";
 import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

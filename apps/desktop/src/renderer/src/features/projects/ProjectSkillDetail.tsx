@@ -1,4 +1,4 @@
-import type { Project, ProjectTarget } from "@skillboard/shared";
+import type { Project, ProjectTarget } from "@loadout/shared";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";

@@ -1,4 +1,4 @@
-import { notFound } from "@skillboard/core";
+import { notFound } from "@loadout/core";
 import { flagBoolean } from "../args";
 import { plural, table } from "../output";
 import { limitPositionals, positionalsFrom } from "./support";

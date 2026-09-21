@@ -1,4 +1,4 @@
-import { formatDateTime, formatRelative, type Skill } from "@skillboard/shared";
+import { formatDateTime, formatRelative, type Skill } from "@loadout/shared";
 import { ArrowUpCircle, FolderSearch, FolderSync, RefreshCw, Unlink, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

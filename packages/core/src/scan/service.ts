@@ -6,7 +6,7 @@ import type {
   ScanResult,
   Skill,
   SourceType,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";

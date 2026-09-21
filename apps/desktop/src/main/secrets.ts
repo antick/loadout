@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { safeStorage } from "electron";
-import type { SecretStore } from "@skillboard/core";
+import type { SecretStore } from "@loadout/core";
 import { writeFileAtomicSync } from "./files";
 
 /**

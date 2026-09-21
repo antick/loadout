@@ -1,4 +1,4 @@
-import type { BatchImportResult, DiscoveredSkill } from "@skillboard/shared";
+import type { BatchImportResult, DiscoveredSkill } from "@loadout/shared";
 import { Bot, Check, Clock, FolderSearch, Info, PackagePlus, Radar, RotateCw } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

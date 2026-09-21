@@ -1,4 +1,4 @@
-import { APP_NAME } from "@skillboard/shared";
+import { APP_NAME } from "@loadout/shared";
 import { UsageError } from "../args";
 import { fields } from "../output";
 import { limitPositionals, positional, resolveUserPath } from "./support";

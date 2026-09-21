@@ -1,4 +1,4 @@
-import type { ActivityEntry, AgentControlStatus } from "@skillboard/shared";
+import type { ActivityEntry, AgentControlStatus } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";

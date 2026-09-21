@@ -1,5 +1,5 @@
-import { errorMessage } from "@skillboard/core";
-import type { BatchUpdateResult, Skill, UpdateResult } from "@skillboard/shared";
+import { errorMessage } from "@loadout/core";
+import type { BatchUpdateResult, Skill, UpdateResult } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { fields, plural, when } from "../output";
 import { limitPositionals } from "./support";

@@ -1,4 +1,4 @@
-import type { Skill, SourceType, UpdateStatus } from "@skillboard/shared";
+import type { Skill, SourceType, UpdateStatus } from "@loadout/shared";
 import { matchesTagFilter } from "@/lib/tag-filter";
 import { matchesQuery } from "@/lib/utils";
 

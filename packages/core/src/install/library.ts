@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { ActivityKind, Skill, SourceType, UpdateStatus } from "@skillboard/shared";
+import type { ActivityKind, Skill, SourceType, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";

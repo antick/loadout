@@ -1,4 +1,4 @@
-import type { SettingKey, SettingValue, Settings } from "@skillboard/shared";
+import type { SettingKey, SettingValue, Settings } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";

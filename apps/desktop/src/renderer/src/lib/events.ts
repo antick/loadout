@@ -1,4 +1,4 @@
-import type { AppEventName, AppEvents, DataScope } from "@skillboard/shared";
+import type { AppEventName, AppEvents, DataScope } from "@loadout/shared";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { keys } from "@/lib/query-keys";
@@ -11,8 +11,8 @@ let detachBridge: (() => void) | null = null;
 
 /** One bridge listener fans out to every local handler, so components never touch the bridge. */
 function ensureBridge(): void {
-  if (detachBridge || typeof window === "undefined" || !window.skillboard) return;
-  detachBridge = window.skillboard.on((name, payload) => {
+  if (detachBridge || typeof window === "undefined" || !window.loadout) return;
+  detachBridge = window.loadout.on((name, payload) => {
     for (const handler of handlers.get(name) ?? []) (handler as (p: unknown) => void)(payload);
   });
 }

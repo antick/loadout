@@ -6,7 +6,7 @@ import {
   type AgentDefinition,
   type AgentInfo,
   BUILT_IN_AGENTS,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { notFound } from "../errors";
 import { osConfigDir } from "../paths";

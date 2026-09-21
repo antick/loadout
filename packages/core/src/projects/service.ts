@@ -1,5 +1,5 @@
 import { basename, dirname, join } from "node:path";
-import type { Project, ProjectTarget, ProjectsApi, SkillDocument } from "@skillboard/shared";
+import type { Project, ProjectTarget, ProjectsApi, SkillDocument } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { exists, invalid, isAppError, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";

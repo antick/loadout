@@ -1,4 +1,4 @@
-import type { BatchImportResult } from "@skillboard/shared";
+import type { BatchImportResult } from "@loadout/shared";
 import { FileArchive, FolderInput, FolderTree, PackagePlus, X } from "lucide-react";
 import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -47,7 +47,7 @@ export function LocalTab(): ReactNode {
     setDragging(false);
     const file = event.dataTransfer.files[0];
     if (!file) return;
-    const path = window.skillboard.pathForFile(file);
+    const path = window.loadout.pathForFile(file);
     if (!path) return;
     const isArchive = ARCHIVE_EXTENSIONS.some((extension) =>
       path.toLowerCase().endsWith(extension),

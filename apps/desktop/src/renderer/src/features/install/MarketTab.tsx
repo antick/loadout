@@ -5,7 +5,7 @@ import {
   MARKETPLACE_URL,
   type MarketBoard,
   type MarketSkill,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink, SearchX, Store } from "lucide-react";
 import { type ReactNode, useMemo, useRef, useState } from "react";

@@ -1,5 +1,5 @@
-appId: dev.skillboard.app
-productName: Skillboard
+appId: sh.potion.loadout
+productName: Loadout
 directories:
   buildResources: build
   output: release
@@ -7,8 +7,8 @@ files:
   - out/**
   - package.json
 extraResources:
-  - from: ../../packages/cli/dist/skillboard.mjs
-    to: cli/skillboard.mjs
+  - from: ../../packages/cli/dist/loadout.mjs
+    to: cli/loadout.mjs
   - from: resources
     to: resources
 asar: true

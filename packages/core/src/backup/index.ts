@@ -1,4 +1,4 @@
-import type { BackupApi } from "@skillboard/shared";
+import type { BackupApi } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { type AutoBackup, createAutoBackup } from "./auto";
 import { type BackupDeps, createBackupEnv } from "./env";

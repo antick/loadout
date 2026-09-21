@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
-import { SNAPSHOT_TAG_PREFIX } from "@skillboard/shared";
+import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import {

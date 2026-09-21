@@ -1,4 +1,4 @@
-import type { Preset } from "@skillboard/shared";
+import type { Preset } from "@loadout/shared";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PresetIconPicker } from "@/components/PresetIconPicker";

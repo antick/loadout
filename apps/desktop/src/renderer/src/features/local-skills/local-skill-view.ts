@@ -1,4 +1,4 @@
-import type { LocalSkill, SyncStatus } from "@skillboard/shared";
+import type { LocalSkill, SyncStatus } from "@loadout/shared";
 
 /** Whether the copies of a skill are switched on: every copy, some of them, or none. */
 export type EnabledState = "all" | "partial" | "none";

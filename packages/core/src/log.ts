@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, renameSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import { APP_SLUG } from "@skillboard/shared";
+import { APP_SLUG } from "@loadout/shared";
 import { errorMessage } from "./errors";
 import { ensureDir } from "./util/fs";
 

@@ -1,4 +1,4 @@
-import { type ActivityKind, formatRelative } from "@skillboard/shared";
+import { type ActivityKind, formatRelative } from "@loadout/shared";
 import {
   Activity,
   ArrowUpCircle,

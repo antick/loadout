@@ -1,4 +1,4 @@
-import type { LocalSkill, Project, SourceDiff, SourceDocument } from "@skillboard/shared";
+import type { LocalSkill, Project, SourceDiff, SourceDocument } from "@loadout/shared";
 import { type UseQueryResult, useQueries, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";

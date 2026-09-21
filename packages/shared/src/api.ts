@@ -231,7 +231,7 @@ export interface AppApi {
   resolveClose(action: "hide" | "quit", remember: boolean): Promise<void>;
 }
 
-export interface SkillboardApi {
+export interface LoadoutApi {
   agents: AgentsApi;
   skills: SkillsApi;
   deploy: DeployApi;
@@ -247,10 +247,10 @@ export interface SkillboardApi {
   app: AppApi;
 }
 
-export type ApiNamespace = keyof SkillboardApi;
+export type ApiNamespace = keyof LoadoutApi;
 
 /** Everything core implements. */
-export type CoreApi = Omit<SkillboardApi, "app">;
+export type CoreApi = Omit<LoadoutApi, "app">;
 
 export const CORE_NAMESPACES = [
   "agents",

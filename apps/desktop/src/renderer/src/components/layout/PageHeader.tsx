@@ -2,7 +2,7 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { type ReactNode, useContext, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { APP_NAME } from "@skillboard/shared";
+import { APP_NAME } from "@loadout/shared";
 import { PageHeaderSlotsContext } from "@/components/layout/shell-context";
 
 export interface PageCrumb {

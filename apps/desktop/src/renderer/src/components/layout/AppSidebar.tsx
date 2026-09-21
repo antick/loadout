@@ -1,5 +1,5 @@
-import type { BackupStatus } from "@skillboard/shared";
-import { APP_NAME } from "@skillboard/shared";
+import type { BackupStatus } from "@loadout/shared";
+import { APP_NAME } from "@loadout/shared";
 import { CloudUpload, Download, LayoutDashboard, Library, LifeBuoy, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

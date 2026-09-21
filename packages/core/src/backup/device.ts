@@ -1,5 +1,5 @@
 import { hostname } from "node:os";
-import { APP_SLUG } from "@skillboard/shared";
+import { APP_SLUG } from "@loadout/shared";
 import { invalid } from "../errors";
 import { INTERNAL_KEYS, type SettingsStore } from "../settings/store";
 import { slugify } from "../util/names";

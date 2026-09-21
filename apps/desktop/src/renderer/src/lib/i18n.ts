@@ -1,4 +1,4 @@
-import { APP_NAME, type LanguageSetting } from "@skillboard/shared";
+import { APP_NAME, type LanguageSetting } from "@loadout/shared";
 import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "@/locales/en.json";

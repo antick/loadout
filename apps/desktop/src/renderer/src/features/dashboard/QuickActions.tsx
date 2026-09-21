@@ -1,4 +1,4 @@
-import type { BackupStatus } from "@skillboard/shared";
+import type { BackupStatus } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { CloudUpload, FolderPlus, PackagePlus, ScanSearch } from "lucide-react";
 import type { ReactNode } from "react";

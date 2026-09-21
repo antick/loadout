@@ -1,4 +1,4 @@
-import type { Preset } from "@skillboard/shared";
+import type { Preset } from "@loadout/shared";
 import { createContext, useContext } from "react";
 
 /** App-wide dialogs owned by the shell. Any page can open them through `useShell()`. */

@@ -1,4 +1,4 @@
-import { PROXY_URL_PATTERN } from "@skillboard/shared";
+import { PROXY_URL_PATTERN } from "@loadout/shared";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Panel } from "@/components/Panel";

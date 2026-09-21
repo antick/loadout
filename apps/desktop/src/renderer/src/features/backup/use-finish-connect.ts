@@ -1,4 +1,4 @@
-import type { GithubConnectResult } from "@skillboard/shared";
+import type { GithubConnectResult } from "@loadout/shared";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useStartBackup } from "@/hooks/mutations/backup-page";

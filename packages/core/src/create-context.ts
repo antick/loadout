@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { DataScope } from "@skillboard/shared";
+import type { DataScope } from "@loadout/shared";
 import { ActivityLog } from "./activity";
 import {
   type CoreContext,

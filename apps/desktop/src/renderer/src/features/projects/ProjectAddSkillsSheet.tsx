@@ -1,4 +1,4 @@
-import type { Project, ProjectTarget, Skill } from "@skillboard/shared";
+import type { Project, ProjectTarget, Skill } from "@loadout/shared";
 import { Pin } from "lucide-react";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";

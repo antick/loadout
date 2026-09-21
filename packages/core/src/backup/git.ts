@@ -1,4 +1,4 @@
-import type { ErrorCode } from "@skillboard/shared";
+import type { ErrorCode } from "@loadout/shared";
 import type { SecretStore } from "../context";
 import { AppError, isAppError } from "../errors";
 import { type ExecResult, exec } from "../util/exec";

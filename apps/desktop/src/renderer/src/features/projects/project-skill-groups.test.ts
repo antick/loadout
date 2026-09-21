@@ -1,4 +1,4 @@
-import type { LocalSkill, ProjectTarget, SyncStatus } from "@skillboard/shared";
+import type { LocalSkill, ProjectTarget, SyncStatus } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import {
   groupProjectSkills,

@@ -28,7 +28,7 @@ import {
   SNAPSHOT_TAG_PREFIX,
   type Snapshot,
   type SyncOutcome,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import {
   HOME,
   HOUR,
@@ -52,7 +52,7 @@ export interface SystemMockContext {
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("backup") ?? "pending";
 const DEVICE_POLLS_BEFORE_CONNECT = 2;
-const GITHUB_REMOTE = "https://github.com/dev/skillboard-backup.git";
+const GITHUB_REMOTE = "https://github.com/dev/loadout-backup.git";
 const MB = 1024 * 1024;
 
 function initialStatus(): BackupStatus {

@@ -6,7 +6,7 @@ import {
   formatDateTime,
   type LibraryLocation,
   type LogExport,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import {
   type QueryClient,
   type UseMutationResult,

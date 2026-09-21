@@ -1,4 +1,4 @@
-import type { FileDiffEntry, FileDiffKind, FileDiffStatus } from "@skillboard/shared";
+import type { FileDiffEntry, FileDiffKind, FileDiffStatus } from "@loadout/shared";
 import { ChevronRight } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";

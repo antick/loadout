@@ -1,4 +1,4 @@
-import type { Skill, SourceDiff, SourceDocument } from "@skillboard/shared";
+import type { Skill, SourceDiff, SourceDocument } from "@loadout/shared";
 import type { GitClient } from "../install";
 import { readSkillDocument } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";

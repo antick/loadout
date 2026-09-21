@@ -1,5 +1,5 @@
-import { targetConflict } from "@skillboard/core";
-import type { ApplyResult, Preset } from "@skillboard/shared";
+import { targetConflict } from "@loadout/core";
+import type { ApplyResult, Preset } from "@loadout/shared";
 import { flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table } from "../output";
 import {

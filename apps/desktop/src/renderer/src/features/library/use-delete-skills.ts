@@ -1,4 +1,4 @@
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";

@@ -1,4 +1,4 @@
-import type { AgentInfo } from "@skillboard/shared";
+import type { AgentInfo } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
 import type { ReactNode } from "react";

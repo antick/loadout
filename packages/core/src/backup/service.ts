@@ -1,4 +1,4 @@
-import type { BackupApi } from "@skillboard/shared";
+import type { BackupApi } from "@loadout/shared";
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { AutoBackupTarget } from "./auto";

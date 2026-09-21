@@ -7,7 +7,7 @@ import {
   LIBRARY_DIR_NAME,
   type LibraryLocation,
   type LibraryWarning,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { errorMessage } from "./errors";
 import {
   canonicalPath,

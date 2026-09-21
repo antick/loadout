@@ -1,4 +1,4 @@
-import { APP_NAME } from "@skillboard/shared";
+import { APP_NAME } from "@loadout/shared";
 
 /** Longest device name the backend keeps. */
 export const DEVICE_NAME_MAX_LENGTH = 64;

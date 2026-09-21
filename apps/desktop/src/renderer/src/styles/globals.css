@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Skillboard theme.
+ * Loadout theme.
  * Graphite neutrals with a faint cool tint, one mint accent, and a small set of
  * semantic status hues. Every colour used by components comes from these tokens.
  */

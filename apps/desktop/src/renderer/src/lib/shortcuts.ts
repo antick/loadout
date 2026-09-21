@@ -1,4 +1,4 @@
-import type { Platform } from "@skillboard/shared";
+import type { Platform } from "@loadout/shared";
 
 /** Keys of the app-wide shortcuts. All use ⌘ on macOS and Ctrl elsewhere, except `escape`. */
 export const SHORTCUT_KEYS = {

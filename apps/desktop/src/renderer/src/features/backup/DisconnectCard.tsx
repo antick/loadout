@@ -1,4 +1,4 @@
-import type { GithubAuthMethod } from "@skillboard/shared";
+import type { GithubAuthMethod } from "@loadout/shared";
 import { ExternalLink, ShieldOff, Trash2, Unplug } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

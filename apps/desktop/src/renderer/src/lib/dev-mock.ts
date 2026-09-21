@@ -1,5 +1,5 @@
 /**
- * DEV ONLY. A fake `window.skillboard` with a little in-memory data so the UI can be previewed in
+ * DEV ONLY. A fake `window.loadout` with a little in-memory data so the UI can be previewed in
  * a plain browser. Loaded from `main.tsx` behind `import.meta.env.DEV`, so production builds drop
  * it. Anything not listed in `handlers` answers with an UNSUPPORTED error.
  */
@@ -15,7 +15,7 @@ import {
   type PresetInput,
   type Settings,
   type Skill,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import {
   deployment,
   HOME,
@@ -342,7 +342,7 @@ Object.assign(
 
 /** Install the fake bridge. Call only in development, and only when the real one is missing. */
 export function installDevMock(): void {
-  window.skillboard = {
+  window.loadout = {
     // A plain browser never reveals real paths; the name is enough for the mock.
     pathForFile: (file) => `/mock/${(file as File).name}`,
     invoke: (channel, args) =>

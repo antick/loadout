@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { type BrowserWindow, app, clipboard, dialog, shell } from "electron";
-import { APP_NAME, type AppApi, type Platform } from "@skillboard/shared";
+import { APP_NAME, type AppApi, type Platform } from "@loadout/shared";
 import { ARCHIVE_EXTENSIONS } from "./constants";
 import { checkForUpdate } from "./updater";
 

@@ -1,4 +1,4 @@
-import type { MarketSkill } from "@skillboard/shared";
+import type { MarketSkill } from "@loadout/shared";
 import { SOURCE_FILTER_ALL } from "@/features/install/constants";
 
 export interface SourceOption {

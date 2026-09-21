@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { AgentRegistry, type AgentsService, createAgentsService } from "../src/agents";
 import { type DeployService, createDeployService } from "../src/deploy";
 import { hashDir } from "../src/util/hash";

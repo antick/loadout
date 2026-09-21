@@ -1,4 +1,4 @@
-import { type BackupStatus, SNAPSHOT_TAG_PREFIX, type UpstreamHealth } from "@skillboard/shared";
+import { type BackupStatus, SNAPSHOT_TAG_PREFIX, type UpstreamHealth } from "@loadout/shared";
 import { INTERNAL_KEYS } from "../settings/store";
 import { maskUrlCredentials } from "./credentials";
 import type { BackupEnv } from "./env";

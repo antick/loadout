@@ -1,4 +1,4 @@
-import type { Project } from "@skillboard/shared";
+import type { Project } from "@loadout/shared";
 import { FolderGit2, FolderSymlink } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

@@ -1,4 +1,4 @@
-import type { SourceType } from "@skillboard/shared";
+import type { SourceType } from "@loadout/shared";
 import { FolderInput, GitBranch, HardDrive, type LucideIcon, Store } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

@@ -1,4 +1,4 @@
-import type { SyncOutcome } from "@skillboard/shared";
+import type { SyncOutcome } from "@loadout/shared";
 import type { TFunction } from "i18next";
 import { toast } from "sonner";
 

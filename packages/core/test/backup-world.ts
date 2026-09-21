@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AppEvents, BackupApi, Skill } from "@skillboard/shared";
+import type { AppEvents, BackupApi, Skill } from "@loadout/shared";
 import { type BackupHooks, type BackupService, createBackupService } from "../src/backup";
 import type { SecretStore } from "../src/context";
 import { type ContextBundle, createContext } from "../src/create-context";

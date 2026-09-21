@@ -1,4 +1,4 @@
-import { formatRelative } from "@skillboard/shared";
+import { formatRelative } from "@loadout/shared";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionSelect } from "@/components/OptionSelect";

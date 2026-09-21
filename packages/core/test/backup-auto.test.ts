@@ -1,4 +1,4 @@
-import type { AutoBackupEvent, SyncOutcome } from "@skillboard/shared";
+import type { AutoBackupEvent, SyncOutcome } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTO_FIRST_CHECK_MS,

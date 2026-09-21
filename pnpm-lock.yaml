@@ -41,13 +41,13 @@ importers:
       '@fontsource-variable/geist-mono':
         specifier: 5.3.0
         version: 5.3.0
-      '@skillboard/cli':
+      '@loadout/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@skillboard/core':
+      '@loadout/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@skillboard/shared':
+      '@loadout/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@tailwindcss/vite':
@@ -143,10 +143,10 @@ importers:
 
   packages/cli:
     dependencies:
-      '@skillboard/core':
+      '@loadout/core':
         specifier: workspace:*
         version: link:../core
-      '@skillboard/shared':
+      '@loadout/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
@@ -162,7 +162,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@skillboard/shared':
+      '@loadout/shared':
         specifier: workspace:*
         version: link:../shared
       fflate:

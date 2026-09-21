@@ -1,4 +1,4 @@
-import type { LocalSkill, SyncStatus } from "@skillboard/shared";
+import type { LocalSkill, SyncStatus } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { agentSkillRules, summarizeAgentFolder } from "./agent-skill-rules";
 

@@ -1,5 +1,5 @@
 import { isAbsolute, relative } from "node:path";
-import { MARKETPLACE_NAME, type Skill, type SourceType } from "@skillboard/shared";
+import { MARKETPLACE_NAME, type Skill, type SourceType } from "@loadout/shared";
 import { AppError, invalid, notFound } from "../errors";
 import {
   type GitClient,

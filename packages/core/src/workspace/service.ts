@@ -5,7 +5,7 @@ import {
   type Skill,
   type SyncStatus,
   type WorkspaceApi,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";

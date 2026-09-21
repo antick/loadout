@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import { APP_NAME } from "@skillboard/shared";
+import { APP_NAME } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
 import { installIntoLibrary } from "../src/install/library";

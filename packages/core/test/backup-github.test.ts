@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { APP_SLUG } from "@skillboard/shared";
+import { APP_SLUG } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { GITHUB_TOKEN_KEY } from "../src/backup/credentials";
 import { INTERNAL_KEYS } from "../src/settings/store";

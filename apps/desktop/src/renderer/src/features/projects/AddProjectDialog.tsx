@@ -1,4 +1,4 @@
-import type { Project } from "@skillboard/shared";
+import type { Project } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";

@@ -1,4 +1,4 @@
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { CloudOff, GitCompareArrows } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

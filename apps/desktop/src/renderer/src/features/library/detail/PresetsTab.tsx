@@ -1,4 +1,4 @@
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Layers, Plus } from "lucide-react";
 import type { ReactNode } from "react";

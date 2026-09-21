@@ -4,7 +4,7 @@ import type {
   PresetAgentToggle,
   PresetInput,
   PresetsApi,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import type { DeployService, PairRef } from "../deploy";

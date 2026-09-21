@@ -1,5 +1,5 @@
 import { basename } from "node:path";
-import type { DeployMode, Skill } from "@skillboard/shared";
+import type { DeployMode, Skill } from "@loadout/shared";
 import type { DeploymentRecord } from "../skills/store";
 import { targetIdentity } from "../util/fs";
 import type { OwnershipPolicy, TargetState } from "./engine";

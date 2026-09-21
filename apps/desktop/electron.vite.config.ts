@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
 // Workspace packages ship as TypeScript source, so they are bundled rather than externalized.
-const WORKSPACE_PACKAGES = ["@skillboard/core", "@skillboard/shared"];
+const WORKSPACE_PACKAGES = ["@loadout/core", "@loadout/shared"];
 // Pure-JS runtime deps of the workspace packages are bundled too, so the packaged app needs no node_modules.
 const BUNDLED_DEPS = [...WORKSPACE_PACKAGES, "yaml", "fflate"];
 

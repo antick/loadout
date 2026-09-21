@@ -1,7 +1,7 @@
 import { realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { type Core, type ResolvedAgent, errorMessage, invalid, notFound } from "@skillboard/core";
-import type { LocalSkill } from "@skillboard/shared";
+import { type Core, type ResolvedAgent, errorMessage, invalid, notFound } from "@loadout/core";
+import type { LocalSkill } from "@loadout/shared";
 import { flagBoolean } from "../args";
 import { plural } from "../output";
 import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";

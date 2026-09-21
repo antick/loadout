@@ -1,4 +1,4 @@
-import type { Project } from "@skillboard/shared";
+import type { Project } from "@loadout/shared";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Folder, FolderPlus, Link2 } from "lucide-react";
 import type { ReactNode } from "react";

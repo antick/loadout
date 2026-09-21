@@ -1,4 +1,4 @@
-import type { BatchResult } from "@skillboard/shared";
+import type { BatchResult } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";

@@ -1,7 +1,7 @@
-# Skillboard — build plan and feature checklist
+# Loadout — build plan and feature checklist
 
 One desktop app to manage AI agent skills across every coding tool. A _skill_ is a folder with a
-`SKILL.md` (YAML frontmatter + instructions). Skillboard keeps every skill in one central **library**
+`SKILL.md` (YAML frontmatter + instructions). Loadout keeps every skill in one central **library**
 and deploys it (symlink or copy) into each agent's skills folder.
 
 Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started.
@@ -13,7 +13,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 | Monorepo   | Turborepo + pnpm workspaces, Node 22+                                          |
 | Desktop    | Electron, electron-vite, electron-builder                                      |
 | UI         | React 19, TanStack Router (file based), TanStack Query, Tailwind v4, shadcn/ui |
-| Domain     | `@skillboard/core` — plain Node TypeScript, no Electron imports                |
+| Domain     | `@loadout/core` — plain Node TypeScript, no Electron imports                   |
 | Storage    | SQLite through Node's built-in `node:sqlite` (no native modules)               |
 | Git        | system `git` through `child_process`                                           |
 | Lint / fmt | oxlint, oxfmt                                                                  |
@@ -25,14 +25,14 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 | ----------------- | --------------------------------------------------------------------------------------- |
 | `packages/shared` | Types, API contract, event names, settings keys, built-in agent table. No Node APIs.    |
 | `packages/core`   | All behaviour: database, library, installers, deploy engine, presets, projects, backup. |
-| `packages/cli`    | `skillboard` CLI on top of core. Shipped inside the app for agents to call.             |
+| `packages/cli`    | `loadout` CLI on top of core. Shipped inside the app for agents to call.                |
 | `apps/desktop`    | Electron main + preload + React renderer.                                               |
 
 ## Feature checklist
 
 ### 1. Library (central skill store)
 
-- [x] Central folder, default `~/.skillboard`, custom path in Settings, move on restart, warnings
+- [x] Central folder, default `~/.loadout`, custom path in Settings, move on restart, warnings
 - [x] SQLite metadata, rebuilt from skill files when missing
 - [x] Parse `SKILL.md` / `skill.md` frontmatter (name, description)
 - [x] Skill cards: grid and list view, search, source filter, tag filter incl. Untagged
@@ -74,7 +74,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 ### 5. Deploy engine
 
 - [x] Symlink or copy mode (setting), copy fallback when symlinks are unavailable
-- [x] Ownership check: never overwrite or delete content Skillboard did not put there
+- [x] Ownership check: never overwrite or delete content Loadout did not put there
 - [x] Per-skill per-agent deploy / remove from the card badges
 - [x] Content hashing for in sync / local changed / library changed / conflict
 
@@ -128,16 +128,16 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [~] Theme (light / dark / system), text size, language — only English ships; add `locales/<code>.json` + an entry in `LANGUAGES`
 - [x] Tray icon, close behaviour (ask / hide / quit), single instance
 - [x] File watcher refreshes the UI when skills change on disk or through the CLI
-- [~] App update check and notification — checks a JSON feed (`SKILLBOARD_UPDATE_FEED`); no feed is configured yet and there is no in-app installer
+- [~] App update check and notification — checks a JSON feed (`LOADOUT_UPDATE_FEED`); no feed is configured yet and there is no in-app installer
 - [x] Diagnostics, log files, export logs zip, crash banner, report issue
 - [x] Help / quick-start guide
 - [x] Network proxy setting
 
 ### 11. CLI and agent control
 
-- [x] `skillboard` CLI: `repo`, `agents`, `skills`, `presets`, `git` groups
+- [x] `loadout` CLI: `repo`, `agents`, `skills`, `presets`, `git` groups
 - [x] `--json` output with stable error codes, `--dry-run`, `--yes`, `--library <path>`
-- [x] App publishes the CLI to `~/.skillboard/bin` on start with a version stamp
+- [x] App publishes the CLI to `~/.loadout/bin` on start with a version stamp
 - [x] Bundled `manage-skills` skill teaching agents to drive the CLI; one-click setup
 
 ## Build order
@@ -154,7 +154,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 - Drag-and-drop install (Install → This computer) is built, but a real drag from the file manager has not been tried yet.
 - Windows and Linux are untested. Symlink → junction → copy fallback and the `.cmd` CLI launcher exist but have never run.
-- The CLI cannot read tokens saved by the desktop app (they are encrypted with the OS keychain), so `skillboard git sync` to an HTTPS + token remote only works from the app. SSH remotes and git credential helpers work from both.
+- The CLI cannot read tokens saved by the desktop app (they are encrypted with the OS keychain), so `loadout git sync` to an HTTPS + token remote only works from the app. SSH remotes and git credential helpers work from both.
 - Git clones are always shallow full clones (no sparse checkout of one subfolder).
 - An interrupted backup merge is not auto-recovered; sync stops with a clear error and "Use the remote backup" fixes it.
 - Renderer components have unit tests only for pure logic (filters, grouping, backup mode). There are no UI interaction tests.

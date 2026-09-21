@@ -1,4 +1,4 @@
-import type { Preset } from "@skillboard/shared";
+import type { Preset } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useMemo, useState } from "react";
 import { AppUpdateToast } from "@/components/AppUpdateToast";

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import type { SourceType } from "@skillboard/shared";
-import { APP_NAME } from "@skillboard/shared";
+import type { SourceType } from "@loadout/shared";
+import { APP_NAME } from "@loadout/shared";
 import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";

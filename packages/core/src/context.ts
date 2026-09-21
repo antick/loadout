@@ -1,4 +1,4 @@
-import type { AppEvents, LibraryWarning } from "@skillboard/shared";
+import type { AppEvents, LibraryWarning } from "@loadout/shared";
 import type { ActivityLog } from "./activity";
 import type { Database } from "./db/database";
 import type { RepoLock } from "./lock";

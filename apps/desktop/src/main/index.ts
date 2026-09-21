@@ -1,8 +1,8 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { BrowserWindow, app, net, session, shell } from "electron";
-import { type Core, createCore } from "@skillboard/core";
-import { APP_ID, type SkillboardApi } from "@skillboard/shared";
+import { type Core, createCore } from "@loadout/core";
+import { APP_ID, type LoadoutApi } from "@loadout/shared";
 import { createAppApi } from "./app-api";
 import { SECRETS_FILE } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
@@ -21,8 +21,8 @@ const resourcesDir = app.isPackaged
   ? join(process.resourcesPath, "resources")
   : join(import.meta.dirname, "../../resources");
 const bundledCliPath = app.isPackaged
-  ? join(process.resourcesPath, "cli", "skillboard.mjs")
-  : join(import.meta.dirname, "../../../../packages/cli/dist/skillboard.mjs");
+  ? join(process.resourcesPath, "cli", "loadout.mjs")
+  : join(import.meta.dirname, "../../../../packages/cli/dist/loadout.mjs");
 
 const send = createEventSender(() => BrowserWindow.getAllWindows());
 
@@ -129,7 +129,7 @@ function start(): void {
     },
   });
 
-  const api: SkillboardApi = {
+  const api: LoadoutApi = {
     ...core.api,
     app: createAppApi({
       window: () => mainWindow,

@@ -3,7 +3,7 @@ import {
   type AppEvents,
   type Skill,
   type UpdateResult,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { isAppError } from "../errors";
 import { pause } from "../util/async";

@@ -1,4 +1,4 @@
-import type { CoreApi, SettingsApi } from "@skillboard/shared";
+import type { CoreApi, SettingsApi } from "@loadout/shared";
 import { AgentRegistry } from "./agents/registry";
 import { createAgentsService } from "./agents";
 import { createBackupService } from "./backup";

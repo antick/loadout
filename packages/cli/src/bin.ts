@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { createCore } from "@skillboard/core";
+import { createCore } from "@loadout/core";
 import packageJson from "../package.json";
 import { runCli } from "./run";
 

@@ -1,5 +1,5 @@
 import { isAbsolute } from "node:path";
-import { APP_NAME } from "@skillboard/shared";
+import { APP_NAME } from "@loadout/shared";
 import type { SecretStore } from "../context";
 import { AppError, invalid } from "../errors";
 

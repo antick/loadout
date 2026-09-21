@@ -1,10 +1,4 @@
-import type {
-  BatchResult,
-  BatchUpdateResult,
-  Project,
-  Skill,
-  UpdateResult,
-} from "@skillboard/shared";
+import type { BatchResult, BatchUpdateResult, Project, Skill, UpdateResult } from "@loadout/shared";
 import {
   type QueryClient,
   type UseMutationResult,

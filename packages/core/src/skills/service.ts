@@ -1,4 +1,4 @@
-import type { BatchResult, Skill, SkillDocument, SkillsApi } from "@skillboard/shared";
+import type { BatchResult, Skill, SkillDocument, SkillsApi } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { listTopLevel, removePath } from "../util/fs";

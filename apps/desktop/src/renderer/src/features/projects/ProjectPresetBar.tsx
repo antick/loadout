@@ -1,4 +1,4 @@
-import type { Preset, Project, ProjectTarget } from "@skillboard/shared";
+import type { Preset, Project, ProjectTarget } from "@loadout/shared";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";

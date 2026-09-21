@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import type { MergeSummary, MergedSkill } from "@skillboard/shared";
+import type { MergeSummary, MergedSkill } from "@loadout/shared";
 import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
 import { ensureDir, removePath, writeFileAtomic } from "../util/fs";

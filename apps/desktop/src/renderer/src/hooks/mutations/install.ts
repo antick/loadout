@@ -6,7 +6,7 @@ import type {
   MarketSkill,
   ScanResult,
   Skill,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";

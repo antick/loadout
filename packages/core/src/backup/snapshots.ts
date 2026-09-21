@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { SNAPSHOT_TAG_PREFIX, type Snapshot, formatTimestampCompact } from "@skillboard/shared";
+import { SNAPSHOT_TAG_PREFIX, type Snapshot, formatTimestampCompact } from "@loadout/shared";
 import { invalid, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { BackupEnv } from "./env";

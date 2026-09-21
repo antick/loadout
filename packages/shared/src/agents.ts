@@ -1,7 +1,7 @@
 /** UI grouping only. Assistant agents are personal-assistant style tools rather than coding tools. */
 export type AgentCategory = "coding" | "assistant";
 
-/** Static description of an agent Skillboard knows how to deploy skills to. */
+/** Static description of an agent Loadout knows how to deploy skills to. */
 export interface AgentDefinition {
   key: string;
   displayName: string;

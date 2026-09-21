@@ -1,4 +1,4 @@
-import { APP_NAME, type Project } from "@skillboard/shared";
+import { APP_NAME, type Project } from "@loadout/shared";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import {
   FolderOpen,

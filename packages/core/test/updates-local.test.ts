@@ -1,6 +1,6 @@
 import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MARKETPLACE_NAME, type Skill } from "@skillboard/shared";
+import { MARKETPLACE_NAME, type Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
 import { LIBRARY_LOCATION, MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates";

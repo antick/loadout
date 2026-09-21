@@ -1,4 +1,4 @@
-import type { AgentCategory, AgentInfo } from "@skillboard/shared";
+import type { AgentCategory, AgentInfo } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { Bot, Settings2 } from "lucide-react";
 import { type ReactNode, useMemo } from "react";

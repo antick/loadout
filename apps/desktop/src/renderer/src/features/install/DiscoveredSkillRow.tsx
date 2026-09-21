@@ -1,4 +1,4 @@
-import type { AgentInfo, DiscoveredSkill } from "@skillboard/shared";
+import type { AgentInfo, DiscoveredSkill } from "@loadout/shared";
 import { Check, Download } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

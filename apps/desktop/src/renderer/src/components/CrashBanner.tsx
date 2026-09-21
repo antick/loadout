@@ -1,4 +1,4 @@
-import { formatRelative } from "@skillboard/shared";
+import { formatRelative } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { Bug } from "lucide-react";
 import type { ReactNode } from "react";

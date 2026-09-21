@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { BUILT_IN_AGENTS, type ProjectTarget } from "@skillboard/shared";
+import { BUILT_IN_AGENTS, type ProjectTarget } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { ProjectRecord } from "./store";
 

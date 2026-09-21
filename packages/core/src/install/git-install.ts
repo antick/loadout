@@ -6,7 +6,7 @@ import type {
   InstallProgress,
   InstallSelection,
   Skill,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { cancelled, invalid } from "../errors";
 import type { SkillStore } from "../skills/store";

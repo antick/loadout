@@ -4,7 +4,7 @@ import {
   SYNC_STATUS_SEVERITY,
   type SyncHealth,
   type SyncStatus,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { isDirectory, readDirSafe } from "../util/fs";
 import { toLocalSkill } from "../workspace/local-actions";
 import {

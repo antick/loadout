@@ -1,7 +1,7 @@
-export const APP_NAME = "Skillboard";
-export const APP_ID = "dev.skillboard.app";
+export const APP_NAME = "Loadout";
+export const APP_ID = "sh.potion.loadout";
 /** Folder name under the home directory, and the prefix for anything else we name on disk. */
-export const APP_SLUG = "skillboard";
+export const APP_SLUG = "loadout";
 export const LIBRARY_DIR_NAME = `.${APP_SLUG}`;
 export const CLI_BINARY_NAME = APP_SLUG;
 
@@ -25,7 +25,7 @@ export const AGENT_CONTROL_SKILL_NAME = "manage-skills";
 
 export const DEFAULT_BACKUP_REPO_NAME = `${APP_SLUG}-backup`;
 export const DEFAULT_BACKUP_COMMIT_MESSAGE = "backup: sync skills library";
-export const SNAPSHOT_TAG_PREFIX = "sb-v-";
+export const SNAPSHOT_TAG_PREFIX = "lo-v-";
 
 export const BACKUP_SKILL_LIMIT_BYTES = 100 * 1024 * 1024;
 export const BACKUP_REPO_WARN_BYTES = 1024 * 1024 * 1024;

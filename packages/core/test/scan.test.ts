@@ -74,7 +74,7 @@ describe("scanning agent folders", () => {
     expect(result.skillsFound).toBe(1);
   });
 
-  it("skips what Skillboard deployed itself: recorded targets and links into the library", async () => {
+  it("skips what Loadout deployed itself: recorded targets and links into the library", async () => {
     const library = await install.api.fromPath(makeSkill(join(world.root, "src"), "mine"));
     // A copy deployment is a plain folder; only the deployments row says it is ours.
     const copied = makeSkill(claude, "mine-copy", { body: "deployed copy" });

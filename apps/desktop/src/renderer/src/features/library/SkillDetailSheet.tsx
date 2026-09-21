@@ -1,4 +1,4 @@
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";

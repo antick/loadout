@@ -1,4 +1,4 @@
-import { formatRelative, type Skill } from "@skillboard/shared";
+import { formatRelative, type Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";

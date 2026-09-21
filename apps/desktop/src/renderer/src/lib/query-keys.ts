@@ -1,4 +1,4 @@
-import type { MarketBoard } from "@skillboard/shared";
+import type { MarketBoard } from "@loadout/shared";
 
 /**
  * Every TanStack Query key in the app. Each namespace has a `root` prefix (use it to invalidate the

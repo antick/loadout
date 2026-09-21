@@ -1,6 +1,6 @@
 import { isAbsolute, join, resolve } from "node:path";
-import { type Core, type ResolvedAgent, invalid, notFound } from "@skillboard/core";
-import type { ApplyResult, Preset, Skill } from "@skillboard/shared";
+import { type Core, type ResolvedAgent, invalid, notFound } from "@loadout/core";
+import type { ApplyResult, Preset, Skill } from "@loadout/shared";
 import { type FlagSpec, type ParsedArgs, UsageError, flagBoolean, flagList } from "../args";
 import { plural } from "../output";
 

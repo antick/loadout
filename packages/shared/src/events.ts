@@ -26,10 +26,10 @@ export const APP_EVENT_NAMES = [
   "app:navigate",
 ] as const satisfies readonly AppEventName[];
 
-export const IPC_INVOKE_CHANNEL = "skillboard:invoke";
-export const IPC_EVENT_CHANNEL = "skillboard:event";
+export const IPC_INVOKE_CHANNEL = "loadout:invoke";
+export const IPC_EVENT_CHANNEL = "loadout:event";
 
-/** What the preload script exposes on `window.skillboard`. */
+/** What the preload script exposes on `window.loadout`. */
 export interface PreloadBridge {
   invoke(channel: string, args: unknown[]): Promise<unknown>;
   on(listener: (event: AppEventName, payload: unknown) => void): () => void;

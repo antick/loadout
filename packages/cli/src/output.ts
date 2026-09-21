@@ -1,4 +1,4 @@
-import { type ErrorShape, formatDateTime } from "@skillboard/shared";
+import { type ErrorShape, formatDateTime } from "@loadout/shared";
 
 export interface CliIo {
   stdout(text: string): void;

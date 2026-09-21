@@ -1,4 +1,4 @@
-import type { ApplyResult, Preset, PresetAgentToggle } from "@skillboard/shared";
+import type { ApplyResult, Preset, PresetAgentToggle } from "@loadout/shared";
 import {
   type QueryClient,
   type UseMutationResult,

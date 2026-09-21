@@ -1,4 +1,4 @@
-import type { SyncOutcome } from "@skillboard/shared";
+import type { SyncOutcome } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, isAppError } from "../errors";
 

@@ -1,6 +1,6 @@
 import { readlinkSync, realpathSync, rmSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { APP_NAME, type DeployMode } from "@skillboard/shared";
+import { APP_NAME, type DeployMode } from "@loadout/shared";
 import { invalid, notFound, targetConflict } from "../errors";
 import {
   canonicalPath,

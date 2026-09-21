@@ -1,4 +1,4 @@
-import type { BackupConflict } from "@skillboard/shared";
+import type { BackupConflict } from "@loadout/shared";
 import type { Database } from "../db/database";
 
 /** Rows of `backup_conflicts`: skills waiting for the user to pick a side after a merge. */

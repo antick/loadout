@@ -14,7 +14,7 @@ import type {
   Skill,
   SkillDocument,
   SyncStatus,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { HOME, HOUR, NOW } from "@/lib/dev-mock-data";
 
 export interface WorkspaceMockContext {
@@ -242,7 +242,7 @@ export function createWorkspaceMockHandlers(
       sourceRevision: null,
       remoteRevision: null,
       updateStatus: "local_only",
-      libraryPath: `${HOME}/.skillboard/skills/${name}`,
+      libraryPath: `${HOME}/.loadout/skills/${name}`,
       contentHash: name,
       createdAt: NOW,
       updatedAt: NOW - HOUR,

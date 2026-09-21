@@ -1,4 +1,4 @@
-import type { ApplyResult, TargetConflict } from "@skillboard/shared";
+import type { ApplyResult, TargetConflict } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";

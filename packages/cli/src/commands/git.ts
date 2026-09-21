@@ -1,5 +1,5 @@
-import { notFound } from "@skillboard/core";
-import { DEFAULT_BACKUP_COMMIT_MESSAGE, type MergeSummary } from "@skillboard/shared";
+import { notFound } from "@loadout/core";
+import { DEFAULT_BACKUP_COMMIT_MESSAGE, type MergeSummary } from "@loadout/shared";
 import { flagBoolean, flagInteger, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { DRY_RUN_FLAG, YES_FLAG, limitPositionals, positional, requireYes } from "./support";

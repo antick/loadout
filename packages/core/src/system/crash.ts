@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { CrashInfo } from "@skillboard/shared";
+import type { CrashInfo } from "@loadout/shared";
 import { removePathSync, statOrNull } from "../util/fs";
 import { sanitizeText } from "./sanitize";
 

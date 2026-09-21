@@ -1,4 +1,4 @@
-import { APP_SLUG } from "@skillboard/shared";
+import { APP_SLUG } from "@loadout/shared";
 
 /** Prefix for every localStorage key the renderer writes. */
 export const STORAGE_PREFIX = `${APP_SLUG}:`;

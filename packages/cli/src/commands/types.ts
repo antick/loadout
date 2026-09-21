@@ -1,4 +1,4 @@
-import type { Core } from "@skillboard/core";
+import type { Core } from "@loadout/core";
 import type { FlagSpec, ParsedArgs } from "../args";
 
 /** What a command hands back: the machine-readable value and the text a person reads. */

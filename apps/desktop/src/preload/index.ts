@@ -4,7 +4,7 @@ import {
   IPC_EVENT_CHANNEL,
   IPC_INVOKE_CHANNEL,
   type PreloadBridge,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 
 const bridge: PreloadBridge = {
   invoke: (channel, args) => ipcRenderer.invoke(IPC_INVOKE_CHANNEL, channel, args),
@@ -17,4 +17,4 @@ const bridge: PreloadBridge = {
   pathForFile: (file) => webUtils.getPathForFile(file as File),
 };
 
-contextBridge.exposeInMainWorld("skillboard", bridge);
+contextBridge.exposeInMainWorld("loadout", bridge);

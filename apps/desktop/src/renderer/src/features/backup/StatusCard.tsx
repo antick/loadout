@@ -1,4 +1,4 @@
-import { type BackupStatus, formatRelative } from "@skillboard/shared";
+import { type BackupStatus, formatRelative } from "@loadout/shared";
 import {
   CircleAlert,
   CircleCheck,

@@ -19,7 +19,7 @@
 - Filesystem writes that touch the library run inside `ctx.lock.run("<operation>", fn)`.
   Never hold the lock across a network call.
 - Never delete or overwrite a folder in an agent's directory unless a `deployments` row proves
-  Skillboard put it there (see `deploy/engine.ts`). Shared folders: remove the path only when no
+  Loadout put it there (see `deploy/engine.ts`). Shared folders: remove the path only when no
   other deployment row still points at it.
 
 ## Core layout (`packages/core/src`)
@@ -68,7 +68,7 @@ only place services are constructed, so dependencies are explicit and there are 
 | Path        | Owns                                                                                        |
 | ----------- | ------------------------------------------------------------------------------------------- |
 | `main/`     | Window, IPC bridge, tray, close behaviour, file watcher, schedulers, update check, keychain |
-| `preload/`  | Exposes `window.skillboard` = `{ invoke, on }`, nothing else                                |
+| `preload/`  | Exposes `window.loadout` = `{ invoke, on }`, nothing else                                   |
 | `renderer/` | React app. `routes/` is file based (TanStack Router). `lib/api.ts` is the typed proxy.      |
 
 Renderer data flow: TanStack Query for every read, keyed by namespace. The main process emits
@@ -78,10 +78,10 @@ their outcome and rely on the same invalidation.
 ## Library on disk
 
 ```
-~/.skillboard/
-  skillboard.db            SQLite (metadata; rebuilt from files when missing)
+~/.loadout/
+  loadout.db            SQLite (metadata; rebuilt from files when missing)
   skills/                  one folder per skill — also the backup Git repository
-    .skillboard/           portable metadata: schema.json, skills/<id>.json, presets/<id>.json
+    .loadout/           portable metadata: schema.json, skills/<id>.json, presets/<id>.json
   cache/repos/             Git clone cache
   logs/                    rotating logs, crash marker
   bin/                     published CLI for agents

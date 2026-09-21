@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { BrowserWindow, type Rectangle, app, screen, shell } from "electron";
-import { APP_NAME } from "@skillboard/shared";
+import { APP_NAME } from "@loadout/shared";
 import {
   TRAFFIC_LIGHT_POSITION,
   WINDOW_DEFAULT_HEIGHT,

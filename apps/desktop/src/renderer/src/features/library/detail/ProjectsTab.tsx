@@ -4,7 +4,7 @@ import {
   SYNC_STATUS_SEVERITY,
   type Skill,
   type SyncStatus,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { FolderGit2, FolderX, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";

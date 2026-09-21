@@ -1,4 +1,4 @@
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowUpCircle,

@@ -1,4 +1,4 @@
-import type { AgentInfo } from "@skillboard/shared";
+import type { AgentInfo } from "@loadout/shared";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";

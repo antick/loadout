@@ -1,4 +1,4 @@
-import type { Preset, Skill } from "@skillboard/shared";
+import type { Preset, Skill } from "@loadout/shared";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import { Info, Layers, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { type ReactNode, useCallback, useMemo, useState } from "react";

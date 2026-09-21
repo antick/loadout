@@ -1,11 +1,11 @@
-import { ApiError, type ApiResponse, type SkillboardApi } from "@skillboard/shared";
+import { ApiError, type ApiResponse, type LoadoutApi } from "@loadout/shared";
 
 const BRIDGE_MISSING_MESSAGE =
-  "The desktop bridge is not available. Open this screen inside the Skillboard app.";
+  "The desktop bridge is not available. Open this screen inside the Loadout app.";
 
 /** Sends one call over the preload bridge and unwraps the response, throwing `ApiError` on failure. */
 async function invoke(channel: string, args: unknown[]): Promise<unknown> {
-  const bridge = typeof window === "undefined" ? undefined : window.skillboard;
+  const bridge = typeof window === "undefined" ? undefined : window.loadout;
   if (!bridge) throw new ApiError({ code: "UNSUPPORTED", message: BRIDGE_MISSING_MESSAGE });
 
   const response = (await bridge.invoke(channel, args)) as ApiResponse<unknown>;
@@ -47,4 +47,4 @@ export const api = new Proxy(
       return proxy;
     },
   },
-) as SkillboardApi;
+) as LoadoutApi;

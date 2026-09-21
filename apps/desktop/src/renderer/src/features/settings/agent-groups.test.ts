@@ -1,4 +1,4 @@
-import type { AgentInfo } from "@skillboard/shared";
+import type { AgentInfo } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { groupAgents, mergeGroupOrder } from "./agent-groups";
 

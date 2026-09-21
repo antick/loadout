@@ -1,4 +1,4 @@
-import type { ApplyResult, Deployment, Skill } from "@skillboard/shared";
+import type { ApplyResult, Deployment, Skill } from "@loadout/shared";
 import {
   type QueryClient,
   type UseMutationResult,

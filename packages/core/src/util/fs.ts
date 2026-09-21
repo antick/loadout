@@ -15,7 +15,7 @@ import {
 import { cp, mkdir, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
-import { SKILL_MARKER_FILES } from "@skillboard/shared";
+import { SKILL_MARKER_FILES } from "@loadout/shared";
 import { invalid } from "../errors";
 
 /** Names never copied into or out of the library. */

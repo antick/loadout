@@ -1,4 +1,4 @@
-import type { ErrorCode, ErrorDetails, ErrorShape, TargetConflict } from "@skillboard/shared";
+import type { ErrorCode, ErrorDetails, ErrorShape, TargetConflict } from "@loadout/shared";
 
 /** The one error type core throws on purpose. Anything else is a bug and surfaces as INTERNAL. */
 export class AppError extends Error {

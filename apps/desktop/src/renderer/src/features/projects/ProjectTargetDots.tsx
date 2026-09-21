@@ -1,4 +1,4 @@
-import type { ProjectTarget } from "@skillboard/shared";
+import type { ProjectTarget } from "@loadout/shared";
 import { type ReactNode, useMemo } from "react";
 import { AgentBadgeRow } from "@/components/AgentBadgeRow";
 import { isTargetAvailable, type ProjectSkillGroup } from "./project-skill-groups";

@@ -1,4 +1,4 @@
-import type { MarketBoard, MarketSkill, ScanResult } from "@skillboard/shared";
+import type { MarketBoard, MarketSkill, ScanResult } from "@loadout/shared";
 import { type UseQueryResult, keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { FileDiffEntry, FileDiffKind } from "@skillboard/shared";
+import type { FileDiffEntry, FileDiffKind } from "@loadout/shared";
 import { type ContentFile, listContentFiles } from "../util/hash";
 
 /** Files larger than this are compared but never sent to the UI as text. */

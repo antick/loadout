@@ -20,7 +20,7 @@ import type {
   SourceDiff,
   SourceDocument,
   UpdateResult,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { HOME } from "@/lib/dev-mock-data";
 
 export interface LibraryMockContext {

@@ -17,7 +17,7 @@ import {
   type ScanResult,
   type Skill,
   type SourceType,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { HOME, LIBRARY } from "@/lib/dev-mock-data";
 
 export interface InstallMockContext {

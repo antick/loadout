@@ -1,4 +1,4 @@
-import type { AgentCategory } from "@skillboard/shared";
+import type { AgentCategory } from "@loadout/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import {

@@ -1,7 +1,7 @@
-import type { PreloadBridge } from "@skillboard/shared";
+import type { PreloadBridge } from "@loadout/shared";
 
 declare global {
   interface Window {
-    skillboard: PreloadBridge;
+    loadout: PreloadBridge;
   }
 }

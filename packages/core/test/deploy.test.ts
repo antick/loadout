@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import { APP_NAME, type DeployMode } from "@skillboard/shared";
+import { APP_NAME, type DeployMode } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   type OwnershipPolicy,

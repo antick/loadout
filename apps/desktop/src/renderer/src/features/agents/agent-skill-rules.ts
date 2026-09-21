@@ -1,4 +1,4 @@
-import type { LocalSkill } from "@skillboard/shared";
+import type { LocalSkill } from "@loadout/shared";
 
 /** What can be done with one folder of an agent's global skills folder. */
 export interface AgentSkillRules {

@@ -1,4 +1,4 @@
-import type { SyncStatus } from "@skillboard/shared";
+import type { SyncStatus } from "@loadout/shared";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,

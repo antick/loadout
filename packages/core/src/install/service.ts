@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { BatchImportResult, InstallApi, Skill } from "@skillboard/shared";
+import type { BatchImportResult, InstallApi, Skill } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, notFound } from "../errors";

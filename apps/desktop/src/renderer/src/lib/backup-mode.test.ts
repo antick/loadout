@@ -1,4 +1,4 @@
-import type { BackupStatus } from "@skillboard/shared";
+import type { BackupStatus } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { deriveBackupMode } from "./backup-mode";
 

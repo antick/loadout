@@ -1,4 +1,4 @@
-import type { AgentInfo } from "@skillboard/shared";
+import type { AgentInfo } from "@loadout/shared";
 import type { AgentGroupId } from "./constants";
 
 export function agentGroupOf(agent: AgentInfo): AgentGroupId {

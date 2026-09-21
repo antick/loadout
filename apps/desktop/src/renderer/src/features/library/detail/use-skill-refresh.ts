@@ -1,4 +1,4 @@
-import type { InstallProgress, PendingRemoval, Skill } from "@skillboard/shared";
+import type { InstallProgress, PendingRemoval, Skill } from "@loadout/shared";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {

@@ -3,7 +3,7 @@ import { existsSync, renameSync, utimesSync } from "node:fs";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { APP_SLUG, type ErrorCode } from "@skillboard/shared";
+import { APP_SLUG, type ErrorCode } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, cancelled, isAppError } from "../errors";
 import { type ExecResult, exec } from "../util/exec";

@@ -1,5 +1,5 @@
 import { basename, isAbsolute, join, relative } from "node:path";
-import type { Deployment, Skill, SyncStatus } from "@skillboard/shared";
+import type { Deployment, Skill, SyncStatus } from "@loadout/shared";
 import { readSkillIdentity } from "../skills/metadata";
 import {
   canonicalPath,

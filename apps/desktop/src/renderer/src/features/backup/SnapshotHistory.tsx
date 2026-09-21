@@ -3,7 +3,7 @@ import {
   parseTimestampCompact,
   SNAPSHOT_TAG_PREFIX,
   type Snapshot,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { History, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

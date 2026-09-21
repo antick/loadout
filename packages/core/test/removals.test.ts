@@ -1,6 +1,6 @@
 import { mkdirSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import type { PendingRemoval } from "@skillboard/shared";
+import type { PendingRemoval } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   LIBRARY_LOCATION,

@@ -1,16 +1,16 @@
-# Skillboard
+# Loadout
 
 One desktop app to manage AI agent skills across every coding tool.
 
-A skill is a folder with a `SKILL.md`. Skillboard keeps every skill in one library
-(`~/.skillboard`) and deploys it — by symlink or copy — into the skills folder of each agent you
+A skill is a folder with a `SKILL.md`. Loadout keeps every skill in one library
+(`~/.loadout`) and deploys it — by symlink or copy — into the skills folder of each agent you
 use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ## Features
 
 ### Library
 
-- One central library for every skill, in `~/.skillboard` by default. The location can be changed
+- One central library for every skill, in `~/.loadout` by default. The location can be changed
   in Settings; the library moves on the next start.
 - Grid and list views, search across name, description, tags and source, sort by name, recently
   updated or recently added.
@@ -122,10 +122,10 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ### Command line and agent control
 
-- `skillboard` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands, `--json` output
+- `loadout` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands, `--json` output
   with stable error codes, `--dry-run` and `--yes` for destructive commands, and `--library` to
   work on another library.
-- The app publishes the CLI to `~/.skillboard/bin/skillboard` on start. It runs on the app's own
+- The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.
 - A bundled `manage-skills` skill teaches your agents to install, deploy and update skills through
   the CLI. One-click setup from the Dashboard or Settings.
@@ -153,10 +153,10 @@ See [docs/FEATURES.md](docs/FEATURES.md) for current limitations and what still 
    npm install --global pnpm@12.4.2
    ```
 
-2. Open a terminal in your Skillboard checkout. For this machine:
+2. Open a terminal in your Loadout checkout. For this machine:
 
    ```bash
-   cd /Users/pankaj/Projects/personal/skillboard
+   cd /Users/pankaj/Projects/personal/loadout
    ```
 
    On another machine, use the folder where you cloned this repository.
@@ -188,7 +188,7 @@ See [docs/FEATURES.md](docs/FEATURES.md) for current limitations and what still 
 6. Stop development with `Ctrl+C` in that terminal. Run `pnpm dev` again next time.
 
 No `.env` file or GitHub sign-in is required for basic local use. The default library
-is `~/.skillboard`; development uses your real library and agent folders.
+is `~/.loadout`; development uses your real library and agent folders.
 
 ## First use
 
@@ -214,7 +214,7 @@ pnpm cli skills status my-skill
 ```
 
 Replace the example path, skill name and agent keys with your own. The app also publishes
-the CLI to `~/.skillboard/bin/skillboard` when it starts. To let an agent manage skills,
+the CLI to `~/.loadout/bin/loadout` when it starts. To let an agent manage skills,
 use the agent-control setup card on the Dashboard.
 
 ## Development commands
@@ -238,7 +238,7 @@ Installer signing and cross-platform packaging verification are still pending;
 | ----------------- | -------------------------------------------------- |
 | `apps/desktop`    | Electron main, preload and the React renderer      |
 | `packages/core`   | All behaviour, plain Node TypeScript (no Electron) |
-| `packages/cli`    | The `skillboard` command-line tool                 |
+| `packages/cli`    | The `loadout` command-line tool                    |
 | `packages/shared` | Types, API contract, events, settings, formatters  |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the rules and

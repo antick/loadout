@@ -1,6 +1,6 @@
 import { mkdirSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import type { Deployment, Skill } from "@skillboard/shared";
+import type { Deployment, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hashDir } from "../src/util/hash";
 import {

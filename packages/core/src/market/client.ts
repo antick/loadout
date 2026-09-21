@@ -5,7 +5,7 @@ import {
   type MarketApi,
   type MarketBoard,
   type MarketSkill,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, errorMessage, invalid, isAppError } from "../errors";
 import type { SkillStore } from "../skills/store";

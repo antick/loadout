@@ -2,7 +2,7 @@ import {
   DEFAULT_BACKUP_COMMIT_MESSAGE,
   type MergeSummary,
   type SyncOutcome,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { type BackupEnv, REMOTE_NAME } from "./env";

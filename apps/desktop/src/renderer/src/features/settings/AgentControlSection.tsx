@@ -1,4 +1,4 @@
-import { AGENT_CONTROL_SKILL_NAME, CLI_BINARY_NAME } from "@skillboard/shared";
+import { AGENT_CONTROL_SKILL_NAME, CLI_BINARY_NAME } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { Bot, CircleCheck, TerminalSquare } from "lucide-react";
 import type { ReactNode } from "react";

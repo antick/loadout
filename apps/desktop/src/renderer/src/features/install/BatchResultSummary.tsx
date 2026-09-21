@@ -1,4 +1,4 @@
-import type { BatchImportResult } from "@skillboard/shared";
+import type { BatchImportResult } from "@loadout/shared";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

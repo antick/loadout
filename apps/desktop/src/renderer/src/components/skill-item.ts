@@ -1,4 +1,4 @@
-import type { Skill } from "@skillboard/shared";
+import type { Skill } from "@loadout/shared";
 import type { MouseEvent, ReactNode } from "react";
 
 export interface SkillItemProps {

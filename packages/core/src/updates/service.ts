@@ -1,4 +1,4 @@
-import type { UpdatesApi } from "@skillboard/shared";
+import type { UpdatesApi } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import type { InstallService } from "../install";

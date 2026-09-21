@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { type Dirent, lstatSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import type { PendingRemoval } from "@skillboard/shared";
+import type { PendingRemoval } from "@loadout/shared";
 import { isIgnoredContentName } from "../util/hash";
 
 /**

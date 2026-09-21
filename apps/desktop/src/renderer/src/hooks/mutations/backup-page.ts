@@ -5,7 +5,7 @@ import type {
   DeviceFlowStart,
   GithubConnectResult,
   SyncOutcome,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import {
   type QueryClient,
   type QueryKey,

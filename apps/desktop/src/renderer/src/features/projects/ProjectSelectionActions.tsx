@@ -1,4 +1,4 @@
-import type { Project } from "@skillboard/shared";
+import type { Project } from "@loadout/shared";
 import { ArrowDownToLine, ArrowUpFromLine, Eye, EyeOff, Tags, Trash2 } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

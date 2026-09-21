@@ -1,5 +1,5 @@
 import { app, net } from "electron";
-import type { AppUpdateInfo } from "@skillboard/shared";
+import type { AppUpdateInfo } from "@loadout/shared";
 import { UPDATE_CHECK_TIMEOUT_MS, UPDATE_FEED_URL } from "./constants";
 
 interface ReleaseFeed {

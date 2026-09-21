@@ -6,7 +6,7 @@ import {
   BACKUP_SKILL_LIMIT_BYTES,
   type OversizedSkill,
   type SizeReport,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import { dirSize, readDirSafe, statOrNull, writeFileAtomic } from "../util/fs";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 

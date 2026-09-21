@@ -1,6 +1,6 @@
 import { chmodSync, copyFileSync, readFileSync, renameSync, truncateSync } from "node:fs";
 import { join } from "node:path";
-import { APP_NAME, CLI_BINARY_NAME, type CliStatus } from "@skillboard/shared";
+import { APP_NAME, CLI_BINARY_NAME, type CliStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError } from "../errors";
 import { ensureDir, removePathSync, statOrNull, writeFileAtomic } from "../util/fs";

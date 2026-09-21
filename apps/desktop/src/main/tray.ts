@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { Menu, Tray, nativeImage } from "electron";
-import { APP_NAME } from "@skillboard/shared";
+import { APP_NAME } from "@loadout/shared";
 
 export interface TrayActions {
   show(): void;

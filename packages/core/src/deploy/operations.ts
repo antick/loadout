@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { DeployMode, Skill, TargetConflict } from "@skillboard/shared";
+import type { DeployMode, Skill, TargetConflict } from "@loadout/shared";
 import type { ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { targetConflict } from "../errors";

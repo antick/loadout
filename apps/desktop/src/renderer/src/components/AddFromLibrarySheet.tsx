@@ -1,4 +1,4 @@
-import type { AgentInfo, ProjectTarget, Skill, SourceType } from "@skillboard/shared";
+import type { AgentInfo, ProjectTarget, Skill, SourceType } from "@loadout/shared";
 import { Library } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

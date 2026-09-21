@@ -5,7 +5,7 @@ import {
   type DeviceFlowStart,
   type GithubAuthMethod,
   type GithubConnectResult,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, invalid } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";

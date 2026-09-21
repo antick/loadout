@@ -1,4 +1,4 @@
-import { ApiError, type DeviceFlowStart, type GithubConnectResult } from "@skillboard/shared";
+import { ApiError, type DeviceFlowStart, type GithubConnectResult } from "@loadout/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOpenExternal } from "@/hooks/mutations/app";

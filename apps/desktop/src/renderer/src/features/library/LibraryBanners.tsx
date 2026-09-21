@@ -1,4 +1,4 @@
-import { formatRelative } from "@skillboard/shared";
+import { formatRelative } from "@loadout/shared";
 import { ArrowUpCircle, History } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";

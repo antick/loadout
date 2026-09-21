@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { AGENT_PRIORITY_ORDER, BUILT_IN_AGENTS } from "@skillboard/shared";
+import { AGENT_PRIORITY_ORDER, BUILT_IN_AGENTS } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { normalizeProjectDir } from "../src/agents";
 import { AppError } from "../src/errors";

@@ -1,4 +1,4 @@
-import { MARKETPLACE_NAME, type MarketSkill, formatCount } from "@skillboard/shared";
+import { MARKETPLACE_NAME, type MarketSkill, formatCount } from "@loadout/shared";
 import { Check, Download, ExternalLink, RefreshCw, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

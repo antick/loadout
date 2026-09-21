@@ -2,8 +2,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createCore, silentLogger } from "@skillboard/core";
-import { CLI_BINARY_NAME, LIBRARY_DIR_NAME } from "@skillboard/shared";
+import { createCore, silentLogger } from "@loadout/core";
+import { CLI_BINARY_NAME, LIBRARY_DIR_NAME } from "@loadout/shared";
 import { EXIT_FAILED, EXIT_OK, EXIT_USAGE } from "../src/run";
 import { AGENT, type Run, type Sandbox, VERSION, createSandbox, writeSkill } from "./harness";
 

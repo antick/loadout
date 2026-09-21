@@ -1,4 +1,4 @@
-import type { BatchResult, Skill, UpdateStatus } from "@skillboard/shared";
+import type { BatchResult, Skill, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, isAppError } from "../errors";
 import type { GitClient } from "../install";

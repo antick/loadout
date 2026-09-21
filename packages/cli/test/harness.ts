@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createCore, silentLogger } from "@skillboard/core";
-import { LIBRARY_DIR_NAME } from "@skillboard/shared";
+import { createCore, silentLogger } from "@loadout/core";
+import { LIBRARY_DIR_NAME } from "@loadout/shared";
 import { EXIT_OK, runCli } from "../src/run";
 
 export const VERSION = "9.9.9-test";

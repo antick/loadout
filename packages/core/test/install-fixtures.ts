@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Zippable, strToU8, zipSync } from "fflate";
-import type { AppEvents } from "@skillboard/shared";
+import type { AppEvents } from "@loadout/shared";
 import { AgentRegistry } from "../src/agents/registry";
 import { type InstallService, type InstallServiceDeps, createInstallService } from "../src/install";
 import { CLONE_DIR_PREFIX } from "../src/install/git-client";

@@ -1,4 +1,4 @@
-import { ApiError, type ErrorCode } from "@skillboard/shared";
+import { ApiError, type ErrorCode } from "@loadout/shared";
 import type { TFunction } from "i18next";
 import { toast } from "sonner";
 import { errorMessage } from "@/lib/toast";

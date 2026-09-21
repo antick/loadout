@@ -1,4 +1,4 @@
-import type { LocalSkill } from "@skillboard/shared";
+import type { LocalSkill } from "@loadout/shared";
 import { Navigate } from "@tanstack/react-router";
 import { FolderSearch, Link2, ListChecks, Plus, RotateCw, SearchX } from "lucide-react";
 import { type ReactNode, useCallback, useMemo, useState } from "react";

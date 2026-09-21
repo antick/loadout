@@ -1,5 +1,5 @@
-import { type Core, type CoreCreateOptions, toErrorShape } from "@skillboard/core";
-import type { ErrorShape } from "@skillboard/shared";
+import { type Core, type CoreCreateOptions, toErrorShape } from "@loadout/core";
+import type { ErrorShape } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString, parseArgs, splitCommandPath } from "./args";
 import { COMMAND_GROUPS, type CommandGroup, type CommandSpec } from "./commands";
 import { resolveUserPath } from "./commands/support";

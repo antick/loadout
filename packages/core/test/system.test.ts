@@ -11,7 +11,7 @@ import {
 import { join } from "node:path";
 import { strFromU8, unzipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AGENT_CONTROL_SKILL_NAME, APP_SLUG, CLI_BINARY_NAME } from "@skillboard/shared";
+import { AGENT_CONTROL_SKILL_NAME, APP_SLUG, CLI_BINARY_NAME } from "@loadout/shared";
 import { createInstallService } from "../src/install";
 import { LOG_FILE_NAME } from "../src/log";
 import { readSkillIdentity } from "../src/skills/metadata";

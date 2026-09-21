@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { BackupConflict, ConflictResolution } from "@skillboard/shared";
+import type { BackupConflict, ConflictResolution } from "@loadout/shared";
 import { AppError, notFound } from "../errors";
 import type { PortableSkill } from "../skills/portable";
 import { removePath, writeJsonAtomic } from "../util/fs";

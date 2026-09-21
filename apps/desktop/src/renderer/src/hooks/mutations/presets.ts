@@ -1,4 +1,4 @@
-import type { Preset, PresetInput } from "@skillboard/shared";
+import type { Preset, PresetInput } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";

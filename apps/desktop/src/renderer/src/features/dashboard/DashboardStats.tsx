@@ -1,4 +1,4 @@
-import type { AgentInfo, BackupStatus, Project, Skill } from "@skillboard/shared";
+import type { AgentInfo, BackupStatus, Project, Skill } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUpCircle, Bot, CloudUpload, FolderKanban, Layers, Library } from "lucide-react";
 import type { ReactNode } from "react";

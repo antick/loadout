@@ -1,4 +1,4 @@
-import type { CloseActionSetting, DeployMode } from "@skillboard/shared";
+import type { CloseActionSetting, DeployMode } from "@loadout/shared";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";

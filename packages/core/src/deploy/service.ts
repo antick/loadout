@@ -1,11 +1,5 @@
 import { isAbsolute } from "node:path";
-import type {
-  ApplyResult,
-  BatchFailure,
-  DeployApi,
-  Skill,
-  TargetConflict,
-} from "@skillboard/shared";
+import type { ApplyResult, BatchFailure, DeployApi, Skill, TargetConflict } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, isAppError } from "../errors";

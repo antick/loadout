@@ -7,7 +7,7 @@ import {
   type LogExcerpt,
   type LogExport,
   formatTimestampCompact,
-} from "@skillboard/shared";
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { LOG_FILE_NAME } from "../log";
 import { ensureDir, readDirSafe, statOrNull } from "../util/fs";

@@ -16,7 +16,7 @@ Last full pass: 2026-09-19. `pnpm check` clean (390 tests), app click-tested on 
   1. github.com/settings/developers → OAuth Apps → New OAuth App
   2. Tick "Enable Device Flow"
   3. Paste the Client ID into Settings → Backup in the app
-- **Then:** decide whether to ship that id as the default (env `SKILLBOARD_GITHUB_CLIENT_ID`, or a
+- **Then:** decide whether to ship that id as the default (env `LOADOUT_GITHUB_CLIENT_ID`, or a
   constant) so users never see the field. Sign in once for real and confirm the private repository
   is created and the first backup pushes.
 - **Code:** `packages/core/src/backup/github.ts`, `apps/desktop/src/renderer/src/features/backup/DeviceSignIn.tsx`
@@ -85,7 +85,7 @@ Core logic behind all of these has tests; this is about the UI wiring.
 ### 8. CLI and saved tokens
 
 - **State:** tokens are encrypted with the OS keychain through Electron `safeStorage`, which the CLI
-  cannot read. `skillboard git sync` to an HTTPS + token remote only works from the app. SSH remotes
+  cannot read. `loadout git sync` to an HTTPS + token remote only works from the app. SSH remotes
   and git credential helpers work from both.
 - **Options:** have the CLI ask the running app over a local socket, or store the token with the
   OS keychain CLI (`security`, `secret-tool`) instead of `safeStorage`.
@@ -138,7 +138,7 @@ Core logic behind all of these has tests; this is about the UI wiring.
       apply the same pattern to the rest.
 - [ ] `resolveUserPath` / `canonical()` in `packages/cli` duplicate helpers from core's `util/fs`.
       Export them from core and delete the copies.
-- [ ] `skillboard --version` prints the CLI package version, not the app version.
+- [ ] `loadout --version` prints the CLI package version, not the app version.
 - [ ] No `--dry-run` on `skills deploy` / `skills undeploy`.
 - [ ] Dashboard stat-card subtitles truncate at narrow widths ("2 of 2 installed for an …").
 - [ ] "Settings → Agents" links from the agent pages go to `/settings`; point them at

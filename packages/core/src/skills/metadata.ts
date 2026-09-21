@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { SKILL_DOCUMENT_FILES, SKILL_MARKER_FILES } from "@skillboard/shared";
+import { SKILL_DOCUMENT_FILES, SKILL_MARKER_FILES } from "@loadout/shared";
 import { parse } from "yaml";
 import { isInside, canonicalPath, readDirSafe, statOrNull } from "../util/fs";
 import { inferSkillName } from "../util/names";

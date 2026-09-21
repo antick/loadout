@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, join } from "node:path";
-import { BACKUP_SKILL_LIMIT_BYTES } from "@skillboard/shared";
+import { BACKUP_SKILL_LIMIT_BYTES } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tokenKey } from "../src/backup/credentials";
 import { INTERNAL_KEYS } from "../src/settings/store";

@@ -1,4 +1,4 @@
-import { APP_NAME, CLI_BINARY_NAME } from "@skillboard/shared";
+import { APP_NAME, CLI_BINARY_NAME } from "@loadout/shared";
 import type { FlagSpec } from "./args";
 import type { CommandGroup, CommandSpec } from "./commands";
 

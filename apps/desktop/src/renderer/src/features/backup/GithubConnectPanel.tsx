@@ -1,4 +1,4 @@
-import { DEFAULT_BACKUP_REPO_NAME, type GithubConnectResult } from "@skillboard/shared";
+import { DEFAULT_BACKUP_REPO_NAME, type GithubConnectResult } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink, KeyRound } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";

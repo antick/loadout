@@ -1,4 +1,4 @@
-import { formatBytes } from "@skillboard/shared";
+import { formatBytes } from "@loadout/shared";
 import { Check, HardDrive, Minus, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";

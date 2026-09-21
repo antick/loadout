@@ -1,5 +1,5 @@
 import { posix, win32 } from "node:path";
-import { type AgentsApi, BUILT_IN_AGENTS, type CustomAgentInput } from "@skillboard/shared";
+import { type AgentsApi, BUILT_IN_AGENTS, type CustomAgentInput } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { invalid } from "../errors";

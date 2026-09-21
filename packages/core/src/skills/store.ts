@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { basename } from "node:path";
-import type { DeployMode, Deployment, Skill, SourceType, UpdateStatus } from "@skillboard/shared";
+import type { DeployMode, Deployment, Skill, SourceType, UpdateStatus } from "@loadout/shared";
 import type { Database } from "../db/database";
 import { notFound } from "../errors";
 

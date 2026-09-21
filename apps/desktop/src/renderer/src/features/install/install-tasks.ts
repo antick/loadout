@@ -1,4 +1,4 @@
-import { ApiError, type InstallProgress, type Skill } from "@skillboard/shared";
+import { ApiError, type InstallProgress, type Skill } from "@loadout/shared";
 import { createElement } from "react";
 import { toast } from "sonner";
 import { DeployAfterInstallToast } from "@/features/install/DeployAfterInstallToast";

@@ -1,4 +1,4 @@
-import type { AgentInfo, PendingRemoval } from "@skillboard/shared";
+import type { AgentInfo, PendingRemoval } from "@loadout/shared";
 import { FileX, Library } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";

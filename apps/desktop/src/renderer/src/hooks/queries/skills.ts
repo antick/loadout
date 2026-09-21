@@ -1,4 +1,4 @@
-import type { Skill, SkillDocument } from "@skillboard/shared";
+import type { Skill, SkillDocument } from "@loadout/shared";
 import { type UseQueryResult, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";

@@ -1,4 +1,4 @@
-import type { BatchUpdateResult, PendingRemoval, Skill, UpdateResult } from "@skillboard/shared";
+import type { BatchUpdateResult, PendingRemoval, Skill, UpdateResult } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { RedeployReport } from "../deploy";
 import { cancelled, errorMessage, invalid, isAppError, notFound, unsupported } from "../errors";
