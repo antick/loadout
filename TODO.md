@@ -34,7 +34,11 @@ Last full pass: 2026-09-19. `pnpm check` clean (390 tests), app click-tested on 
 - **State:** the unpacked macOS build runs, unsigned. `pnpm package` (dmg / zip / nsis / AppImage /
   deb) has never been run to the end.
 - **To do:** Apple Developer ID + notarisation, Windows certificate; run `pnpm package` on each OS;
-  add a release workflow.
+  add a release workflow that also attaches the standalone CLI files
+  (`pnpm --filter @loadout/cli run build:standalone -- --all`, run on a Mac).
+- **Needs an email:** the `.deb` build stops with "Please specify author 'email'". Add
+  `maintainer: Name <email>` under `linux:` in `apps/desktop/electron-builder.yml` (it is printed
+  in every package). The AppImage builds without it.
 - **Code:** `apps/desktop/electron-builder.yml`
 
 ## Verify (built, never exercised for real)
@@ -129,13 +133,6 @@ Core logic behind all of these has tests; this is about the UI wiring.
 - **State:** renderer tests cover pure logic only (filters, grouping, backup mode, agent groups).
 - **To do:** Playwright against the built Electron app with a temp `HOME`, replaying the manual pass
   in item 4. The throwaway CDP scripts used for the manual pass were not kept.
-
-### 17. Linux ARM64 builds and standalone CLI downloads
-
-- **State:** Linux targets build for x64 only, and the CLI ships only inside the app.
-- **To do:** add `arm64` to the Linux targets; build a standalone CLI archive per OS as part of
-  packaging so it can be attached to a release.
-- **Code:** `apps/desktop/electron-builder.yml`, `packages/cli`
 
 ## Small things
 

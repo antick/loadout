@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
+    "build:standalone": "node scripts/standalone.mjs",
     "start": "node build.mjs && node dist/loadout.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests"

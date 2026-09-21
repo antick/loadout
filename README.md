@@ -127,6 +127,8 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   work on another library.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.
+- Standalone CLI executables for macOS, Linux (x64 and arm64) and Windows, for machines without
+  the app: `pnpm --filter @loadout/cli run build:standalone -- --all`.
 - A bundled `manage-skills` skill teaches your agents to install, deploy and update skills through
   the CLI. One-click setup from the Dashboard or Settings.
 - The app notices changes made through the CLI, by an agent or by hand, and refreshes itself.
@@ -228,6 +230,11 @@ use the agent-control setup card on the Dashboard.
 | `pnpm format`  | Format with oxfmt                             |
 | `pnpm package` | Build installers into `apps/desktop/release`  |
 | `pnpm cli …`   | Run the CLI from source                       |
+
+Linux installers are built for x64 and arm64. Standalone CLI executables are built with
+`pnpm --filter @loadout/cli run build:standalone` (this platform), `-- --target linux-arm64,win-x64`
+or `-- --all`, into `packages/cli/dist/standalone` with a `SHA256SUMS` file. Targets other than
+this computer's download the matching official Node binary; macOS targets need a Mac to sign.
 
 Installer signing and cross-platform packaging verification are still pending;
 `pnpm package` is a build command, not a guarantee of a signed release.
