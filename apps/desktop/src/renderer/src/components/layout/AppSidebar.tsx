@@ -53,13 +53,8 @@ export function AppSidebar(): ReactNode {
           reserveWindowControls
           className={cn("px-4 group-data-[collapsible=icon]:hidden", TOP_BAR_HEIGHT_CLASS)}
         >
-          <span className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-            <span aria-hidden="true" className="grid size-4 grid-cols-2 gap-0.5">
-              <span className="rounded-[2px] bg-primary" />
-              <span className="rounded-[2px] bg-primary/40" />
-              <span className="rounded-[2px] bg-primary/40" />
-              <span className="rounded-[2px] bg-primary" />
-            </span>
+          <span className="flex items-center gap-2 text-sm leading-none font-semibold tracking-tight">
+            <img src="./brand.svg" alt="" className="size-[18px] shrink-0" />
             {APP_NAME}
           </span>
         </WindowDragRegion>

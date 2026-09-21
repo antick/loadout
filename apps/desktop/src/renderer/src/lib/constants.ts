@@ -10,8 +10,12 @@ export const STORAGE_KEYS = {
   viewMode: "view-mode",
 } as const;
 
-/** Space kept free at the top-left on macOS for the window buttons. */
-export const MAC_WINDOW_CONTROLS_WIDTH_PX = 76;
+/**
+ * Space kept free at the top-left on macOS for the window buttons. At the main process's
+ * `TRAFFIC_LIGHT_POSITION` they end 77px from the left edge; 96 leaves the ~20px gap macOS keeps
+ * between the buttons and a title.
+ */
+export const MAC_WINDOW_CONTROLS_WIDTH_PX = 96;
 export const TOP_BAR_HEIGHT_CLASS = "h-12";
 
 export const APP_UPDATE_CHECK_DELAY_MS = 3000;
