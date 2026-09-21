@@ -80,6 +80,8 @@ export interface DeviceOptions {
   hooks?: BackupHooks;
   fetchImpl?: typeof fetch;
   secrets?: MemorySecrets;
+  /** App version this device runs; the context default when left out. */
+  appVersion?: string;
 }
 
 export function createDevice(root: string, name: string, options: DeviceOptions = {}): Device {
@@ -95,6 +97,7 @@ export function createDevice(root: string, name: string, options: DeviceOptions 
     logger: silentLogger,
     secrets,
     emit: (event, payload) => events.push({ event, payload }),
+    host: options.appVersion ? { appVersion: options.appVersion } : undefined,
   });
   const { ctx, store } = bundle;
   ctx.settings.setRaw(INTERNAL_KEYS.backupDeviceName, `Device ${name}`);

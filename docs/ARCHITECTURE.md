@@ -86,3 +86,7 @@ their outcome and rely on the same invalidation.
   logs/                    rotating logs, crash marker
   bin/                     published CLI for agents
 ```
+
+`schema.json` holds the metadata format version and the highest app version that has written the
+library. Sync, clone and restore refuse a backup whose format is newer than the app knows
+(`BACKUP_TOO_NEW`); a newer app version alone only shows an update reminder (`backup/compat.ts`).

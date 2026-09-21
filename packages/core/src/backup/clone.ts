@@ -7,6 +7,7 @@ import type { PortableSkill } from "../skills/portable";
 import { copyDir, isSkillDir, readDirSafe, removePath } from "../util/fs";
 import { hashDir } from "../util/hash";
 import { firstFreeName } from "../util/names";
+import { assertReadable, schemaAt } from "./compat";
 import { sanitizeRemoteUrl } from "./credentials";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME, SKILL_METADATA_SUBDIR } from "./env";
 import { isRepo } from "./repo";
@@ -152,6 +153,7 @@ export async function cloneLibrary(
 
   try {
     await cloneInto(env, url, cloneDir);
+    assertReadable(await schemaAt(env, "HEAD", cloneDir));
   } catch (error) {
     await removePath(cloneDir);
     throw error;

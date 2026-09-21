@@ -130,24 +130,12 @@ Core logic behind all of these has tests; this is about the UI wiring.
 - **To do:** Playwright against the built Electron app with a temp `HOME`, replaying the manual pass
   in item 4. The throwaway CDP scripts used for the manual pass were not kept.
 
-
-### 15. Backup guard against older app versions
-
-- **State:** nothing records which app version wrote the backup. A machine running an older Loadout
-  can merge into a backup a newer one wrote, and drop metadata it does not understand.
-- **To do:** write a backup format version into the repository. On sync, when the backup's format
-  is newer than this app understands, stop and tell the user to upgrade; when only the recorded
-  app version is newer, sync and show an upgrade reminder.
-- **Code:** `packages/core/src/backup/`
-
-
 ### 17. Linux ARM64 builds and standalone CLI downloads
 
 - **State:** Linux targets build for x64 only, and the CLI ships only inside the app.
 - **To do:** add `arm64` to the Linux targets; build a standalone CLI archive per OS as part of
   packaging so it can be attached to a release.
 - **Code:** `apps/desktop/electron-builder.yml`, `packages/cli`
-
 
 ## Small things
 

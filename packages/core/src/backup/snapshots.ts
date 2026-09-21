@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { SNAPSHOT_TAG_PREFIX, type Snapshot, formatTimestampCompact } from "@loadout/shared";
 import { invalid, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
+import { assertReadable, schemaAt } from "./compat";
 import type { BackupEnv } from "./env";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 
@@ -95,6 +96,7 @@ export async function listSnapshots(
 export async function restoreSnapshot(env: BackupEnv, tag: string): Promise<string> {
   if (!tag.startsWith(SNAPSHOT_TAG_PREFIX)) throw invalid(`"${tag}" is not a snapshot.`);
   if (!(await resolveCommit(env, `refs/tags/${tag}`))) throw notFound(`Snapshot not found: ${tag}`);
+  assertReadable(await schemaAt(env, `refs/tags/${tag}`));
 
   await commitLibrary(env, BEFORE_RESTORE_MESSAGE);
   const safety = await tagSnapshot(env);

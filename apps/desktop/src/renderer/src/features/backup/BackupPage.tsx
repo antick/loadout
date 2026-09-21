@@ -1,6 +1,8 @@
+import { CircleArrowUp } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";
+import { InlineNotice } from "@/components/InlineNotice";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useFetchBackup, useSetDeviceName, useSyncBackup } from "@/hooks/mutations/backup-page";
@@ -139,6 +141,12 @@ export function BackupPage(): ReactNode {
           onReconnect={canReconnect ? () => setReconnecting(true) : undefined}
           onRenameDevice={(name) => renameDevice.mutate(name)}
         />
+
+        {data?.newerAppVersion ? (
+          <InlineNotice tone="warning" icon={CircleArrowUp}>
+            {t("backupPage.newerApp", { version: data.newerAppVersion })}
+          </InlineNotice>
+        ) : null}
 
         <ConflictList conflicts={conflicts.data ?? []} />
 

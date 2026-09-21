@@ -5,6 +5,7 @@ import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
 import { ensureDir, removePath, writeFileAtomic } from "../util/fs";
 import { firstFreeName } from "../util/names";
+import { assertReadable, schemaAt } from "./compat";
 import { countConflicts, listConflicts, recordConflict } from "./conflict-store";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
@@ -228,6 +229,7 @@ export async function mergeRemote(env: BackupEnv): Promise<MergeResult> {
   const branch = await requireBranch(env);
   const ours = await resolveCommit(env, "HEAD");
   const theirs = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+  if (theirs) assertReadable(await schemaAt(env, theirs));
   const idle = (): MergeResult => ({
     summary: { ...UP_TO_DATE, pendingTotal: countConflicts(env.ctx.db) },
     committed,

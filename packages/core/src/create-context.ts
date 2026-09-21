@@ -68,7 +68,8 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
 
   const db = new Database(resolved.paths.dbPath);
   const store = new SkillStore(db);
-  const portable = new PortableMetadata(resolved.paths, db, store, log);
+  const host: HostBridge = { ...defaultHost(home), ...options.host };
+  const portable = new PortableMetadata(resolved.paths, db, store, log, host.appVersion);
   const emit: EventSink = options.emit ?? (() => undefined);
 
   let metadataDirty = false;
@@ -101,7 +102,7 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     log,
     activity: new ActivityLog(db),
     secrets: options.secrets ?? noSecretStore,
-    host: { ...defaultHost(home), ...options.host },
+    host,
     warnings: resolved.warnings,
     emit,
     touched: (...scope) => {

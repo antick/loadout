@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceType } from "@loadout/shared";
-import { APP_NAME } from "@loadout/shared";
+import { APP_NAME, isNewerVersion } from "@loadout/shared";
 import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";
@@ -16,7 +16,9 @@ import type { SkillStore } from "./store";
  * Machine-specific values (local source paths, deployments, check times) are left out.
  */
 
-const SCHEMA_VERSION = 1;
+/** Format of the metadata files. Raise it when an older app could not read them correctly. */
+export const BACKUP_SCHEMA_VERSION = 1;
+export const SCHEMA_FILE = "schema.json";
 const MACHINE_LOCAL_SOURCES: ReadonlySet<SourceType> = new Set(["local", "import"]);
 
 export interface PortableSkill {
@@ -82,17 +84,51 @@ function pruneDir(dir: string, keep: ReadonlySet<string>): void {
   }
 }
 
+/** What `schema.json` says about the library it sits in. */
+export interface SchemaInfo {
+  schemaVersion: number;
+  /** Highest app version that has written this library; null in files from before it was kept. */
+  appVersion: string | null;
+}
+
+/** Read a `schema.json` text; null when it is missing or not understood. */
+export function parseSchemaInfo(raw: string | null): SchemaInfo | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as { schemaVersion?: unknown; appVersion?: unknown };
+    if (typeof value.schemaVersion !== "number") return null;
+    return {
+      schemaVersion: value.schemaVersion,
+      appVersion: typeof value.appVersion === "string" ? value.appVersion : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readSchemaFile(path: string): SchemaInfo | null {
+  return existsSync(path) ? parseSchemaInfo(readFileSync(path, "utf8")) : null;
+}
+
 export class PortableMetadata {
   readonly #paths: LibraryPaths;
   readonly #db: Database;
   readonly #skills: SkillStore;
   readonly #log: Logger;
+  readonly #appVersion: string;
 
-  constructor(paths: LibraryPaths, db: Database, skills: SkillStore, log: Logger) {
+  constructor(
+    paths: LibraryPaths,
+    db: Database,
+    skills: SkillStore,
+    log: Logger,
+    appVersion: string,
+  ) {
     this.#paths = paths;
     this.#db = db;
     this.#skills = skills;
     this.#log = log;
+    this.#appVersion = appVersion;
   }
 
   get #skillsMetaDir(): string {
@@ -107,9 +143,15 @@ export class PortableMetadata {
   write(): void {
     ensureDir(this.#skillsMetaDir);
     ensureDir(this.#presetsMetaDir);
-    writeJsonAtomic(join(this.#paths.metadataDir, "schema.json"), {
-      schemaVersion: SCHEMA_VERSION,
+    // The recorded app version only ever goes up, so an older computer syncing the library does
+    // not hide from the others that a newer version is in use.
+    const schemaPath = join(this.#paths.metadataDir, SCHEMA_FILE);
+    const recorded = readSchemaFile(schemaPath)?.appVersion ?? null;
+    writeJsonAtomic(schemaPath, {
+      schemaVersion: BACKUP_SCHEMA_VERSION,
       createdBy: APP_NAME,
+      appVersion:
+        recorded && isNewerVersion(recorded, this.#appVersion) ? recorded : this.#appVersion,
     });
 
     const skillFiles = new Set<string>();

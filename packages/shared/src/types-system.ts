@@ -23,6 +23,8 @@ export interface BackupStatus {
   restoredFrom: string | null;
   upstreamHealth: UpstreamHealth;
   gitAvailable: boolean;
+  /** A newer app version has written to this backup: this computer should update. */
+  newerAppVersion: string | null;
 }
 
 export interface Snapshot {

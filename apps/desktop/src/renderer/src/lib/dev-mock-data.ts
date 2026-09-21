@@ -257,6 +257,7 @@ export const SEED_BACKUP_STATUS: BackupStatus = {
   restoredFrom: null,
   upstreamHealth: "healthy",
   gitAvailable: true,
+  newerAppVersion: null,
 };
 
 export const SEED_LIBRARY_LOCATION: LibraryLocation = {

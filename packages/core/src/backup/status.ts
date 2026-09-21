@@ -1,5 +1,6 @@
 import { type BackupStatus, SNAPSHOT_TAG_PREFIX, type UpstreamHealth } from "@loadout/shared";
 import { INTERNAL_KEYS } from "../settings/store";
+import { newerAppVersion, schemaAt } from "./compat";
 import { maskUrlCredentials } from "./credentials";
 import type { BackupEnv } from "./env";
 import { aheadBehind, currentBranch, isRepo, originUrl, resolveCommit, upstreamRef } from "./repo";
@@ -63,6 +64,7 @@ export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
       restoredFrom: null,
       upstreamHealth: "no_remote",
       gitAvailable,
+      newerAppVersion: null,
     };
   }
 
@@ -99,5 +101,12 @@ export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
     restoredFrom,
     upstreamHealth: await upstreamHealth(env, remote, branch),
     gitAvailable,
+    newerAppVersion: newerAppVersion(
+      await Promise.all([
+        schemaAt(env, "HEAD"),
+        branch ? schemaAt(env, `refs/remotes/${upstreamRef(branch)}`) : null,
+      ]),
+      env.ctx.host.appVersion,
+    ),
   };
 }
