@@ -48,7 +48,8 @@ Checked against mock data only, never clicked in the running Electron app:
 - [ ] Removal guard dialog while updating a Git skill whose new version deletes files
 - [ ] Backup recovery dialog ("Use the remote backup") after unrelated histories or a rejected push
 - [ ] Backup conflict list: keep mine / use remote / keep both
-- [ ] Tray menu items (Show, Library, Install, Backup, Quit)
+- [ ] Tray menu: counts line, "N skill updates available", Presets submenu (deploy / remove /
+      partial count), Check for skill updates, Open library folder, Show, Library, Install, Backup, Quit
 - [ ] Drag a real folder and a real `.zip` from Finder onto Install → This computer
 - [ ] Marketplace tab: paging, contributor filter, search "Load more", install + "Deploy to agents…" toast
 - [ ] Scan tab with skills present in several agent folders; Import one, Import all
@@ -129,13 +130,6 @@ Core logic behind all of these has tests; this is about the UI wiring.
 - **To do:** Playwright against the built Electron app with a temp `HOME`, replaying the manual pass
   in item 4. The throwaway CDP scripts used for the manual pass were not kept.
 
-### 14. Richer tray menu
-
-- **State:** the tray offers Show / Library / Install / Backup / Quit only.
-- **To do:** a status line (skills, agents), "N skill updates available" that opens the library
-  filtered to updates, a Presets submenu that deploys or removes a preset for every enabled agent,
-  "Check for updates" and "Open library folder". Rebuild the menu when the state changes.
-- **Code:** `apps/desktop/src/main/tray.ts`, `apps/desktop/src/main/index.ts`
 
 ### 15. Backup guard against older app versions
 

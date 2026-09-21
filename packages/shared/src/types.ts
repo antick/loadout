@@ -248,6 +248,15 @@ export interface PresetInput {
   icon?: string | null;
 }
 
+/** How much of a preset is deployed across every enabled agent, counted per skill × agent pair. */
+export interface PresetDeployStatus {
+  presetId: string;
+  /** Pairs deployed now. */
+  deployed: number;
+  /** Pairs the preset wants: its skills × enabled agents, minus the pairs switched off. */
+  total: number;
+}
+
 export interface PresetAgentToggle {
   agentKey: string;
   displayName: string;

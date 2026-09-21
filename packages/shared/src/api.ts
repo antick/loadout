@@ -30,6 +30,7 @@ import type {
   MergeSummary,
   Preset,
   PresetAgentToggle,
+  PresetDeployStatus,
   PresetInput,
   Project,
   ProjectTarget,
@@ -131,6 +132,10 @@ export interface PresetsApi {
   setToggle(id: string, skillId: string, agentKey: string, enabled: boolean): Promise<void>;
   /** Deploy the preset to every enabled agent, honouring per-agent toggles. One-time copy. */
   applyToDefault(id: string): Promise<ApplyResult>;
+  /** Undo `applyToDefault`: remove the preset's skills from every enabled agent. */
+  removeFromDefault(id: string): Promise<ApplyResult>;
+  /** Deployment progress of every preset across the enabled agents, in preset order. */
+  deployStatus(): Promise<PresetDeployStatus[]>;
 }
 
 export interface WorkspaceApi {

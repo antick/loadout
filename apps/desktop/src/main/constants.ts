@@ -12,6 +12,8 @@ export const SECRETS_FILE = "secrets.json";
 
 /** File-watcher timings. */
 export const WATCH_DEBOUNCE_MS = 500;
+/** Merges bursts of change events into one tray menu rebuild. */
+export const TRAY_REFRESH_DEBOUNCE_MS = 300;
 /** Ignore filesystem events for this long after the app itself wrote something. */
 export const WATCH_SELF_WRITE_MUTE_MS = 1200;
 /** Agent folders can appear after launch; re-resolve what to watch this often. */

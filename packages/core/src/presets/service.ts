@@ -29,8 +29,13 @@ function requireMember(preset: Preset, skillId: string): void {
   if (!preset.skillIds.includes(skillId)) throw invalid("Skill is not in this preset");
 }
 
-function describeApply(result: ApplyResult): string {
-  const parts = [`${result.added} deployed`, `${result.skipped} already in place`];
+const pairKey = (skillId: string, agentKey: string): string => `${skillId}\u0000${agentKey}`;
+
+function describeApply(result: ApplyResult, action: "add" | "remove"): string {
+  const parts =
+    action === "add"
+      ? [`${result.added} deployed`, `${result.skipped} already in place`]
+      : [`${result.removed} removed`, `${result.skipped} not deployed`];
   if (result.conflicts.length > 0) parts.push(`${result.conflicts.length} refused`);
   if (result.failed.length > 0) parts.push(`${result.failed.length} failed`);
   return parts.join(", ");
@@ -67,6 +72,19 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
         .filter((agent) => !off.has(agent.key))
         .map((agent) => ({ skillId, agentKey: agent.key }));
     });
+  }
+
+  /** Deploy or remove the preset's wanted pairs and record the outcome in the activity log. */
+  async function applyWanted(preset: Preset, action: "add" | "remove"): Promise<ApplyResult> {
+    try {
+      const result = await deploy.applyPairs(wantedPairs(preset), action);
+      const clean = result.conflicts.length === 0 && result.failed.length === 0;
+      ctx.activity.record("preset", preset.name, describeApply(result, action), clean);
+      return result;
+    } catch (error) {
+      ctx.activity.record("preset", preset.name, errorMessage(error), false);
+      throw error;
+    }
   }
 
   const api: PresetsApi = {
@@ -138,17 +156,21 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
       changed();
     },
 
-    applyToDefault: async (id) => {
-      const preset = presets.get(id);
-      try {
-        const result = await deploy.applyPairs(wantedPairs(preset), "add");
-        const clean = result.conflicts.length === 0 && result.failed.length === 0;
-        ctx.activity.record("preset", preset.name, describeApply(result), clean);
-        return result;
-      } catch (error) {
-        ctx.activity.record("preset", preset.name, errorMessage(error), false);
-        throw error;
-      }
+    applyToDefault: async (id) => applyWanted(presets.get(id), "add"),
+
+    removeFromDefault: async (id) => applyWanted(presets.get(id), "remove"),
+
+    deployStatus: async () => {
+      const deployed = new Set(store.deployments().map((d) => pairKey(d.skillId, d.agentKey)));
+      return presets.list().map((preset) => {
+        const wanted = wantedPairs(preset);
+        return {
+          presetId: preset.id,
+          deployed: wanted.filter((pair) => deployed.has(pairKey(pair.skillId, pair.agentKey)))
+            .length,
+          total: wanted.length,
+        };
+      });
     },
   };
 

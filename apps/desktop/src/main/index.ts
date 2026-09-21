@@ -7,14 +7,14 @@ import { createAppApi } from "./app-api";
 import { SECRETS_FILE } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
-import { createTray } from "./tray";
+import { type TrayController, createTrayController } from "./tray-controller";
 import { type LibraryWatcher, watchLibrary } from "./watcher";
 import { createMainWindow, focusWindow } from "./window";
 
 let mainWindow: BrowserWindow | null = null;
 let core: Core | null = null;
 let watcher: LibraryWatcher | null = null;
-let disposeTray: (() => void) | null = null;
+let tray: TrayController | null = null;
 let quitting = false;
 
 const resourcesDir = app.isPackaged
@@ -48,21 +48,24 @@ function syncProxy(): void {
   void session.defaultSession.setProxy(proxyUrl ? { proxyRules: proxyUrl } : { mode: "system" });
 }
 
+/** Scopes whose changes alter a count or a preset shown in the tray menu. */
+const TRAY_SCOPES: ReadonlySet<string> = new Set(["skills", "agents", "presets"]);
+
+function navigateTo(to: string): void {
+  showWindow();
+  send("app:navigate", { to });
+}
+
 function syncTray(): void {
-  const wanted = core?.ctx.settings.get("showTrayIcon") ?? true;
-  if (wanted && !disposeTray) {
-    disposeTray = createTray(resourcesDir, {
-      show: showWindow,
-      navigate: (to) => {
-        showWindow();
-        send("app:navigate", { to });
-      },
-      quit,
-    });
-  } else if (!wanted && disposeTray) {
-    disposeTray();
-    disposeTray = null;
-  }
+  tray ??= createTrayController({
+    resourcesDir,
+    api: () => core?.api ?? null,
+    show: showWindow,
+    navigate: navigateTo,
+    quit,
+    warn: (message, error) => core?.ctx.log.warn(message, error),
+  });
+  tray.setVisible(core?.ctx.settings.get("showTrayIcon") ?? true);
 }
 
 /** The close button asks, hides or quits depending on the saved choice. */
@@ -104,11 +107,14 @@ function start(): void {
     emit: (event, payload) => {
       if (event === "data:changed") {
         watcher?.mute();
-        if ((payload as { scope: string[] }).scope.includes("settings")) {
+        const { scope } = payload as { scope: string[] };
+        if (scope.includes("settings")) {
           syncTray();
           syncProxy();
         }
+        if (scope.some((entry) => TRAY_SCOPES.has(entry))) tray?.refresh();
       }
+      if (event === "updates:auto-ran") tray?.refresh();
       send(event, payload);
     },
     echoLogs: !app.isPackaged,
@@ -149,6 +155,7 @@ function start(): void {
     () => {
       core?.background.libraryChangedOnDisk();
       send("data:changed", { scope: ["skills", "agents", "presets", "projects", "backup"] });
+      tray?.refresh();
     },
   );
 
@@ -177,7 +184,8 @@ if (!app.requestSingleInstanceLock()) {
     core = null;
     event.preventDefault();
     watcher?.stop();
-    disposeTray?.();
+    tray?.dispose();
+    tray = null;
     void closing.background
       .beforeQuit()
       .catch((error: unknown) => closing.ctx.log.warn("Backup on quit failed", error))

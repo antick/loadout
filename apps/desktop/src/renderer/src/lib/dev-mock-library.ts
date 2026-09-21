@@ -16,6 +16,7 @@ import type {
   PendingRemoval,
   Preset,
   PresetAgentToggle,
+  PresetDeployStatus,
   Skill,
   SourceDiff,
   SourceDocument,
@@ -204,6 +205,23 @@ export function createLibraryMockHandlers(
     return ctx.getAgents().filter((agent) => agent.installed && agent.enabled);
   }
 
+  /** Preset skills × available agents, minus the pairs switched off. */
+  function wantedPairs(id: string): { skillId: string; agentKey: string }[] {
+    return findPreset(id).skillIds.flatMap((skillId) =>
+      availableAgents()
+        .filter((agent) => !toggleOff.has(`${id}:${skillId}:${agent.key}`))
+        .map((agent) => ({ skillId, agentKey: agent.key })),
+    );
+  }
+
+  function isDeployed(skillId: string, agentKey: string): boolean {
+    return ctx
+      .getSkills()
+      .some(
+        (skill) => skill.id === skillId && skill.deployments.some((d) => d.agentKey === agentKey),
+      );
+  }
+
   return {
     "updates.check": async (skillId: string) => {
       await wait(STEP_MS);
@@ -350,20 +368,37 @@ export function createLibraryMockHandlers(
     "presets.applyToDefault": async (id: string): Promise<ApplyResult> => {
       await wait(STEP_MS);
       const result: ApplyResult = { added: 0, removed: 0, skipped: 0, conflicts: [], failed: [] };
-      for (const skillId of findPreset(id).skillIds) {
-        for (const agent of availableAgents()) {
-          if (toggleOff.has(`${id}:${skillId}:${agent.key}`)) continue;
-          if (skillId === FAILING_CHECK_SKILL) {
-            result.conflicts.push({
-              path: `${agent.skillsDir}/${skillId}`,
-              reason: "not installed from the library",
-            });
-          } else if (ctx.setDeployed(skillId, agent.key, true)) result.added += 1;
-          else result.skipped += 1;
-        }
+      for (const { skillId, agentKey } of wantedPairs(id)) {
+        if (skillId === FAILING_CHECK_SKILL) {
+          const agent = ctx.getAgents().find((entry) => entry.key === agentKey);
+          result.conflicts.push({
+            path: `${agent?.skillsDir ?? HOME}/${skillId}`,
+            reason: "not installed from the library",
+          });
+        } else if (ctx.setDeployed(skillId, agentKey, true)) result.added += 1;
+        else result.skipped += 1;
       }
       ctx.emitChanged("skills");
       return result;
     },
+    "presets.removeFromDefault": async (id: string): Promise<ApplyResult> => {
+      await wait(STEP_MS);
+      const result: ApplyResult = { added: 0, removed: 0, skipped: 0, conflicts: [], failed: [] };
+      for (const { skillId, agentKey } of wantedPairs(id)) {
+        if (ctx.setDeployed(skillId, agentKey, false)) result.removed += 1;
+        else result.skipped += 1;
+      }
+      ctx.emitChanged("skills");
+      return result;
+    },
+    "presets.deployStatus": (): PresetDeployStatus[] =>
+      ctx.getPresets().map((preset) => {
+        const wanted = wantedPairs(preset.id);
+        return {
+          presetId: preset.id,
+          deployed: wanted.filter((pair) => isDeployed(pair.skillId, pair.agentKey)).length,
+          total: wanted.length,
+        };
+      }),
   };
 }

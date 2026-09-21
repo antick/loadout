@@ -10,7 +10,7 @@ import {
   ScanSearch,
   Trash2,
 } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -32,6 +32,7 @@ import {
   isFiltering,
   type LibraryFilters,
   type SortMode,
+  type StatusFilter,
 } from "@/features/library/library-filters";
 import { LibrarySelectionActions } from "@/features/library/LibrarySelectionActions";
 import { LibraryToolbar } from "@/features/library/LibraryToolbar";
@@ -54,10 +55,18 @@ export interface LibraryPageProps {
   /** Skill whose detail panel is open; comes from the URL so other screens can deep-link. */
   openSkillId: string | null;
   onOpenSkill: (skillId: string | null) => void;
+  /** A status filter asked for from outside the page (the tray); applied once, then cleared. */
+  requestedStatus: StatusFilter | null;
+  onStatusApplied: () => void;
 }
 
 /** Every skill in the library: search, filter, deploy per agent, batch actions, detail panel. */
-export function LibraryPage({ openSkillId, onOpenSkill }: LibraryPageProps): ReactNode {
+export function LibraryPage({
+  openSkillId,
+  onOpenSkill,
+  requestedStatus,
+  onStatusApplied,
+}: LibraryPageProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const skills = useSkills();
@@ -68,6 +77,12 @@ export function LibraryPage({ openSkillId, onOpenSkill }: LibraryPageProps): Rea
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
   const [rest, setRest] = useState(EMPTY_FILTERS);
+
+  useEffect(() => {
+    if (!requestedStatus) return;
+    setRest({ ...EMPTY_FILTERS, status: requestedStatus });
+    onStatusApplied();
+  }, [requestedStatus, onStatusApplied]);
 
   const filters = useMemo<LibraryFilters>(() => ({ ...rest, sort }), [rest, sort]);
   const all = skills.data;

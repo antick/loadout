@@ -148,6 +148,39 @@ describe("presets", () => {
     expect(entry).toMatchObject({ subject: "Set", ok: true });
   });
 
+  it("reports deploy progress and removes a preset from every enabled agent", async () => {
+    const one = world.addSkill("one");
+    const two = world.addSkill("two");
+    const preset = await api().create({ name: "Set" });
+    const empty = await api().create({ name: "Empty" });
+    await api().addSkills(preset.id, [one.id, two.id]);
+    await api().setToggle(preset.id, one.id, "cursor", false);
+    const status = async () => (await api().deployStatus()).map((s) => [s.deployed, s.total]);
+
+    // Pairs switched off do not count towards the total.
+    expect(await status()).toEqual([
+      [0, 3],
+      [0, 0],
+    ]);
+    expect((await api().deployStatus())[1]?.presetId).toBe(empty.id);
+    await world.deploy.api.deploy(two.id, "claude_code");
+    expect(await status()).toEqual([
+      [1, 3],
+      [0, 0],
+    ]);
+    await api().applyToDefault(preset.id);
+    expect((await status())[0]).toEqual([3, 3]);
+
+    const result = await api().removeFromDefault(preset.id);
+    expect(result).toMatchObject({ removed: 3, conflicts: [], failed: [] });
+    expect(world.store.deployments()).toEqual([]);
+    expect(existsSync(join(world.home, ".claude", "skills", "one"))).toBe(false);
+    expect((await status())[0]).toEqual([0, 3]);
+    const entry = world.ctx.activity.list(20).find((a) => a.kind === "preset");
+    expect(entry).toMatchObject({ subject: "Set", ok: true });
+    expect(entry?.detail).toMatch(/3 removed/);
+  });
+
   it("reports a refused target and records the apply as not clean", async () => {
     const one = world.addSkill("one");
     const preset = await api().create({ name: "Set" });
