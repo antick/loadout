@@ -9,6 +9,7 @@ export const TRAFFIC_LIGHT_POSITION = { x: 16, y: 17 };
 
 export const WINDOW_STATE_FILE = "window-state.json";
 export const SECRETS_FILE = "secrets.json";
+export const APP_ICON_FILE = "icon.png";
 
 /** File-watcher timings. */
 export const WATCH_DEBOUNCE_MS = 500;

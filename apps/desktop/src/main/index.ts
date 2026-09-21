@@ -4,7 +4,7 @@ import { BrowserWindow, app, net, session, shell } from "electron";
 import { type Core, createCore } from "@loadout/core";
 import { APP_ID, type LoadoutApi } from "@loadout/shared";
 import { createAppApi } from "./app-api";
-import { SECRETS_FILE } from "./constants";
+import { APP_ICON_FILE, SECRETS_FILE } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
 import { type TrayController, createTrayController } from "./tray-controller";
@@ -20,6 +20,7 @@ let quitting = false;
 const resourcesDir = app.isPackaged
   ? join(process.resourcesPath, "resources")
   : join(import.meta.dirname, "../../resources");
+const appIconPath = join(resourcesDir, APP_ICON_FILE);
 const bundledCliPath = app.isPackaged
   ? join(process.resourcesPath, "cli", "loadout.mjs")
   : join(import.meta.dirname, "../../../../packages/cli/dist/loadout.mjs");
@@ -83,7 +84,7 @@ function handleClose(event: Electron.Event): void {
 }
 
 function openWindow(): void {
-  mainWindow = createMainWindow();
+  mainWindow = createMainWindow(appIconPath);
   mainWindow.on("close", handleClose);
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -102,6 +103,7 @@ function recordCrash(error: unknown): void {
 }
 
 function start(): void {
+  app.dock?.setIcon(appIconPath);
   core = createCore({
     secrets: createSecretStore(join(app.getPath("userData"), SECRETS_FILE)),
     emit: (event, payload) => {

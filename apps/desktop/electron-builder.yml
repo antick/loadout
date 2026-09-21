@@ -16,16 +16,19 @@ extraMetadata:
   homepage: https://loadout.potion.sh
 mac:
   category: public.app-category.developer-tools
+  icon: build/icon.icns
   target:
     - dmg
     - zip
 win:
+  icon: build/icon.ico
   target:
     - nsis
 linux:
   category: Development
   # Otherwise derived from the package name `@loadout/desktop`, which is not a valid file name.
   executableName: loadout
+  icon: build/icon.png
   target:
     - target: AppImage
       arch: [x64, arm64]

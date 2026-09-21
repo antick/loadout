@@ -47,7 +47,7 @@ function saveState(win: BrowserWindow): void {
   }
 }
 
-export function createMainWindow(): BrowserWindow {
+export function createMainWindow(icon: string): BrowserWindow {
   const saved = loadState();
   const isMac = process.platform === "darwin";
   const win = new BrowserWindow({
@@ -58,6 +58,7 @@ export function createMainWindow(): BrowserWindow {
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
     title: APP_NAME,
+    icon,
     show: false,
     titleBarStyle: isMac ? "hiddenInset" : "default",
     trafficLightPosition: isMac ? TRAFFIC_LIGHT_POSITION : undefined,
