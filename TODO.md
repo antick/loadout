@@ -129,6 +129,45 @@ Core logic behind all of these has tests; this is about the UI wiring.
 - **To do:** Playwright against the built Electron app with a temp `HOME`, replaying the manual pass
   in item 4. The throwaway CDP scripts used for the manual pass were not kept.
 
+### 14. Richer tray menu
+
+- **State:** the tray offers Show / Library / Install / Backup / Quit only.
+- **To do:** a status line (skills, agents), "N skill updates available" that opens the library
+  filtered to updates, a Presets submenu that deploys or removes a preset for every enabled agent,
+  "Check for updates" and "Open library folder". Rebuild the menu when the state changes.
+- **Code:** `apps/desktop/src/main/tray.ts`, `apps/desktop/src/main/index.ts`
+
+### 15. Backup guard against older app versions
+
+- **State:** nothing records which app version wrote the backup. A machine running an older Loadout
+  can merge into a backup a newer one wrote, and drop metadata it does not understand.
+- **To do:** write a backup format version into the repository. On sync, when the backup's format
+  is newer than this app understands, stop and tell the user to upgrade; when only the recorded
+  app version is newer, sync and show an upgrade reminder.
+- **Code:** `packages/core/src/backup/`
+
+### 16. Prefer the plain copy when a repository ships one per agent
+
+- **State:** when a repository has `x/`, `.claude/skills/x/` and `.cursor/skills/x/`, installing
+  `x` takes whichever copy the search finds first, and the Git preview lists all of them.
+- **To do:** rank matches so the agent-neutral folder wins, and collapse agent-specific duplicates
+  of the same skill in the preview.
+- **Code:** `packages/core/src/install/repo-scan.ts`
+
+### 17. Linux ARM64 builds and standalone CLI downloads
+
+- **State:** Linux targets build for x64 only, and the CLI ships only inside the app.
+- **To do:** add `arm64` to the Linux targets; build a standalone CLI archive per OS as part of
+  packaging so it can be attached to a release.
+- **Code:** `apps/desktop/electron-builder.yml`, `packages/cli`
+
+### 18. Recommended workflows in Help
+
+- **State:** the Help dialog has feature sections and shortcuts only.
+- **To do:** a "Recommended workflows" section covering one agent, several projects and several
+  computers.
+- **Code:** `apps/desktop/src/renderer/src/components/HelpDialog.tsx`, `locales/en/*.json`
+
 ## Small things
 
 - [ ] `usePickFolder` exists twice (`hooks/mutations/library.ts` and `settings-page.ts`). Move one copy
