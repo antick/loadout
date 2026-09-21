@@ -1,0 +1,96 @@
+# Loadout features
+
+Loadout manages AI agent skills in one library and makes them available to your agents
+and projects. A skill is a folder containing a `SKILL.md` file.
+
+For setup and usage, see the [README](../README.md#run-locally).
+For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TODO.md).
+
+## Available features
+
+| Feature                  | Loadout support                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------- |
+| Central library          | Shared skill library, custom storage location, metadata recovery from files                         |
+| Local installation       | Import folders, `.zip` and `.skill` files; drag-and-drop support                                    |
+| Git installation         | HTTPS, SSH, repository shorthand, branch/subfolder URLs, preview and select skills before importing |
+| Marketplace              | skills.sh browsing, hot/trending/all-time boards, search, filters, installation                     |
+| Discover existing skills | Scan agent folders and import skills installed outside Loadout                                      |
+| Library organisation     | Search, grid/list views, tags, source filters, tag filters, Untagged filter                         |
+| Skill inspection         | Rendered `SKILL.md`/`README.md`, file listings, source details, comparisons with upstream           |
+| Agent support            | 54 built-in agents, detection, custom agents, custom paths, enable/disable, ordering                |
+| Deploy skills            | Symlink or copy, per-agent toggles, protection against overwriting unmanaged content                |
+| Global workspaces        | View each agent's actual skills; upload to library, pull changes, remove skills                     |
+| Project workspaces       | Project discovery, nested skills, per-agent copies, enable/disable, two-way library sync            |
+| Linked workspaces        | Manage an arbitrary folder as a skill workspace                                                     |
+| Add-from-library picker  | Search/filter, agent selection, select-all, Shift-click selection, batch installation               |
+| Presets                  | Create/edit/delete, icons, ordering, membership, per-agent settings, workspace activation           |
+| Batch operations         | Deploy, tag, update, delete, add to presets; project enable/disable and sync                        |
+| Skill updates            | Individual/batch checks and updates, scheduled checks, optional automatic application               |
+| Update protection        | Show files an update would delete and require approval                                              |
+| Local source management  | Re-import, change the local source folder, detach from source                                       |
+| Git backup               | Git remotes, automatic backup, snapshots, restore, first-run restore flow                           |
+| Multi-device sync        | Merge changes per skill; resolve conflicts with keep mine/use remote/keep both                      |
+| Backup controls          | Device names, size reporting, oversized-skill exclusions, disconnect/recovery flows                 |
+| Agent-driven management  | Bundled CLI and `manage-skills` skill, with setup inside the app                                    |
+| App conveniences         | Dashboard, command palette, themes, text sizes, tray, close behaviour, filesystem refresh           |
+| Diagnostics              | Activity history, logs, ZIP log export, crash reporting                                             |
+| Network settings         | Proxy configuration                                                                                 |
+
+## Current limitations
+
+| Area                    | Current state                                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Application updates     | The update checker needs a configured release feed. Downloading and installing app updates inside Loadout is not implemented. Individual skill updates are supported. |
+| GitHub sign-in          | Device sign-in requires an OAuth Client ID in Settings. Personal access tokens and Git remote URLs are supported.                                                     |
+| Languages               | Only English is available. Chinese translations and first-run language detection are not implemented.                                                                 |
+| Release distribution    | Signing, notarisation, release automation and cross-platform installer verification are pending. Homebrew distribution is not configured.                             |
+| Installer formats       | DMG/ZIP, Windows NSIS, AppImage and DEB are configured. MSI and RPM are not configured.                                                                               |
+| Git subfolder downloads | Installation downloads a shallow copy of the whole repository, even when only one subfolder is needed.                                                                |
+| CLI credentials         | The CLI cannot read tokens saved by the desktop app. Use SSH or a Git credential helper for CLI backup authentication.                                                |
+| External skill folders  | CLI `--library` selects a complete Loadout library. Operating directly on an arbitrary skill checkout while keeping app state elsewhere is not supported.             |
+| Agent icons             | Agents use coloured initials; brand logos are not included.                                                                                                           |
+
+## CLI features
+
+The CLI supports the `repo`, `agents`, `skills`, `presets` and `git` command groups,
+JSON output, a custom library location and dry runs for selected commands. It can install,
+list, inspect, deploy, remove, update and adopt skills; manage preset membership and deployment;
+and sync, pull or restore Git backups. Run `pnpm cli --help` for usage.
+
+The following capabilities are not currently available through the CLI:
+
+- Export a skill to an arbitrary destination folder.
+- Search the marketplace from the CLI.
+- Change an existing skill to a Git source while preserving its identity, tags and deployments.
+- Adopt multiple paths in one command, with optional Git-source association.
+- Preview skill/preset deployment and removal using `--dry-run`.
+- Additional library filters: text query, preset, deployed agent, untagged and no-preset.
+- Global tag listing/renaming/deletion and replacing a skill's complete tag set.
+- Preset editing, deployment preview and dedicated deployment-status commands.
+- Separate Git clone, commit and push commands. Loadout provides combined `git sync`,
+  plus pull and restore.
+
+Some of these capabilities are available in the desktop interface; this list describes
+limits of the CLI only.
+
+## Verification still needed
+
+These are testing gaps, not missing implementations:
+
+- Windows and Linux operation, including deployment fallback, CLI launcher, credential storage,
+  window controls and tray behaviour.
+- Two real computers syncing through a private remote, including conflicting edits and renames.
+- Linked workspace dialog and native folder pickers.
+- Library batch deployment, tagging, updating and deletion.
+- Update removal-approval dialog.
+- Backup recovery and conflict-resolution dialogs.
+- Tray menu actions.
+- Dragging a real folder or archive from the file manager.
+- Marketplace paging, filtering, search, installation and deployment handoff.
+- Scanning/importing skills from several agent folders.
+- Library relocation and restart, proxy settings and automatic update intervals.
+- Dashboard agent-control setup followed by an agent using the published CLI.
+
+Renderer tests currently cover selected pure logic; automated UI interaction tests are still
+pending. See [TODO.md](../TODO.md) for the detailed verification checklist and additional
+maintenance issues, such as interrupted-merge recovery.
