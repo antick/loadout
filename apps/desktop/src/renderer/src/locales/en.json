@@ -270,6 +270,33 @@
         "body": "Back the library up to a Git repository to restore it later or keep several computers in step."
       }
     },
+    "workflowsTitle": "Recommended workflows",
+    "workflows": {
+      "oneAgent": {
+        "title": "One agent",
+        "steps": [
+          "Install skills into the library from Install.",
+          "Open the agent's page and add skills with Add from library, or click its badge on a skill card.",
+          "Keep only what you use: remove a skill from the agent and it stays in the library for later."
+        ]
+      },
+      "projects": {
+        "title": "Several projects",
+        "steps": [
+          "Group the skills each kind of project needs into a preset.",
+          "Link each project folder, then apply the preset to add those skills to the project's agents.",
+          "Edited a skill inside a project? Use Update library, then Pull from library in the other projects."
+        ]
+      },
+      "devices": {
+        "title": "Several computers",
+        "steps": [
+          "On the first computer, open Backup and connect a private Git repository.",
+          "On the next computer, choose to restore from a backup when {{app}} first starts, or connect the same repository from Backup.",
+          "Changes sync in the background. If both computers edit the same skill, pick which version to keep under Needs attention."
+        ]
+      }
+    },
     "shortcutsTitle": "Keyboard shortcuts",
     "shortcuts": {
       "palette": "Open the command palette",

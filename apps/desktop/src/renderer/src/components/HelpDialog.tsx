@@ -5,8 +5,11 @@ import {
   Download,
   FolderGit2,
   Keyboard,
+  Laptop,
   Layers,
   type LucideIcon,
+  Route,
+  User,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,9 +34,23 @@ const SECTIONS: readonly { id: string; icon: LucideIcon }[] = [
   { id: "backup", icon: CloudUpload },
 ];
 
+/** Step-by-step setups; the text lives under `help.workflows.<id>` (a title and a list of steps). */
+const WORKFLOWS: readonly { id: string; icon: LucideIcon }[] = [
+  { id: "oneAgent", icon: User },
+  { id: "projects", icon: FolderGit2 },
+  { id: "devices", icon: Laptop },
+];
+
 const SHORTCUT_IDS: readonly ShortcutId[] = ["palette", "find", "sidebar", "settings", "escape"];
 
-/** Quick-start guide and keyboard shortcuts. */
+/** A workflow's steps; an untranslated key comes back as a string, which shows nothing. */
+function workflowSteps(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((step): step is string => typeof step === "string")
+    : [];
+}
+
+/** Quick-start guide, recommended workflows and keyboard shortcuts. */
 export function HelpDialog({
   open,
   onOpenChange,
@@ -63,6 +80,29 @@ export function HelpDialog({
             </section>
           ))}
         </div>
+        <section>
+          <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+            <Route className="size-3.5" />
+            {t("help.workflowsTitle")}
+          </h3>
+          <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            {WORKFLOWS.map(({ id, icon: Icon }) => (
+              <section key={id} className="rounded-lg border bg-card p-3">
+                <h4 className="flex items-center gap-2 text-sm font-medium">
+                  <Icon className="size-4 text-primary" />
+                  {t(`help.workflows.${id}.title`)}
+                </h4>
+                <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-sm leading-5 text-muted-foreground">
+                  {workflowSteps(t(`help.workflows.${id}.steps`, { returnObjects: true })).map(
+                    (step) => (
+                      <li key={step}>{step}</li>
+                    ),
+                  )}
+                </ol>
+              </section>
+            ))}
+          </div>
+        </section>
         <section>
           <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
             <Keyboard className="size-3.5" />

@@ -161,12 +161,6 @@ Core logic behind all of these has tests; this is about the UI wiring.
   packaging so it can be attached to a release.
 - **Code:** `apps/desktop/electron-builder.yml`, `packages/cli`
 
-### 18. Recommended workflows in Help
-
-- **State:** the Help dialog has feature sections and shortcuts only.
-- **To do:** a "Recommended workflows" section covering one agent, several projects and several
-  computers.
-- **Code:** `apps/desktop/src/renderer/src/components/HelpDialog.tsx`, `locales/en/*.json`
 
 ## Small things
 
