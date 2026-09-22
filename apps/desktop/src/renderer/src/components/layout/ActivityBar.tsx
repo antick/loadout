@@ -57,13 +57,16 @@ export function ActivityBar({ section, sidebarOpen, onSection }: ActivityBarProp
   const sectionButton = (id: SidebarSection, Icon: LucideIcon): ReactNode => {
     const shortcut = SECTION_SHORTCUTS[id];
     const shown = sidebarOpen && section === id;
+    // One marker: the section picked. With the sidebar folded, the page's section instead.
+    // A page outside every section (backup) keeps the marker on its own button.
+    const current = pageSection !== null && (sidebarOpen ? shown : pageSection === id);
     return (
       <ActivityBarButton
         key={id}
         icon={<Icon />}
         label={t(`activityBar.${id}`)}
         shortcut={shortcut ? shortcutLabel(shortcut, platform) : undefined}
-        current={pageSection === id}
+        current={current}
         selected={shown}
         pressed={shown}
         onClick={() => onSection(id)}

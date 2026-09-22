@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export interface ActivityBarButtonProps {
   icon: ReactNode;
   label: string;
-  /** The current page belongs here: an accent bar on the left edge. */
+  /** The active entry: an accent bar on the left edge. */
   current?: boolean;
   /** Its section is what the sidebar shows right now: a filled background. */
   selected?: boolean;
