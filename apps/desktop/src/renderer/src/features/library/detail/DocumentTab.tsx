@@ -1,4 +1,4 @@
-import type { Skill } from "@loadout/shared";
+import { hasSkillErrors, type Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { File, FileText, Folder, PencilLine } from "lucide-react";
 import type { ReactNode } from "react";
@@ -7,9 +7,11 @@ import { ErrorState } from "@/components/ErrorState";
 import { MarkdownView } from "@/components/MarkdownView";
 import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
+import { SkillIssueList } from "@/components/SkillIssueList";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
+import { cn } from "@/lib/utils";
 
 const CHIP_CLASS =
   "inline-flex h-6 items-center rounded-md border bg-muted/40 font-mono text-xs data-[main=true]:border-primary/40 data-[main=true]:text-foreground";
@@ -41,6 +43,30 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
   const { filename, content, files, path } = document.data;
   return (
     <div className="flex flex-col gap-6">
+      {skill.issues.length > 0 ? (
+        <PageSection
+          title={t("checks.title")}
+          actions={
+            <Button asChild variant="outline" size="xs">
+              <Link to="/library/$skillId/edit" params={{ skillId: skill.id }}>
+                <PencilLine />
+                {t("checks.fix")}
+              </Link>
+            </Button>
+          }
+        >
+          <div
+            className={cn(
+              "rounded-lg border px-3 py-2.5",
+              hasSkillErrors(skill.issues)
+                ? "border-danger/30 bg-danger/5"
+                : "border-warning/30 bg-warning/5",
+            )}
+          >
+            <SkillIssueList issues={skill.issues} />
+          </div>
+        </PageSection>
+      ) : null}
       <PageSection
         title={t("library.document.files", { count: files.length })}
         actions={

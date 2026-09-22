@@ -1,4 +1,4 @@
-import type { Skill, SourceType, UpdateStatus } from "@loadout/shared";
+import { hasSkillErrors, type Skill, type SourceType, type UpdateStatus } from "@loadout/shared";
 import { matchesTagFilter } from "@/lib/tag-filter";
 import { matchesQuery } from "@/lib/utils";
 
@@ -42,8 +42,11 @@ export function hasUpdate(skill: Skill): boolean {
   return skill.updateStatus === "update_available";
 }
 
+/** Something the user has to fix: a failed check, a backup conflict, or a broken SKILL.md. */
 export function needsAttention(skill: Skill): boolean {
-  return skill.hasConflict || ATTENTION_STATUSES.has(skill.updateStatus);
+  return (
+    skill.hasConflict || ATTENTION_STATUSES.has(skill.updateStatus) || hasSkillErrors(skill.issues)
+  );
 }
 
 function matchesStatus(skill: Skill, status: StatusFilter): boolean {

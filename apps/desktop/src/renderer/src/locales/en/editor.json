@@ -40,9 +40,6 @@
       "reload": "Load disk version",
       "restored": "Unsaved changes from last time are back. Save them, or discard them.",
       "discard": "Discard",
-      "noFrontmatter": "This document has no frontmatter. Agents find a skill by the name and description between two --- lines at the top.",
-      "frontmatterMissing": "The frontmatter has no {{keys}}. Agents use the name and description to decide when to use the skill.",
-      "and": " and ",
       "tracked": "This skill is updated from {{source}}. An update asks before it replaces anything you change here."
     },
     "conflict": {

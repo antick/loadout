@@ -22,8 +22,8 @@ import { EditorFileList } from "@/features/editor/EditorFileList";
 import { EditorNotices } from "@/features/editor/EditorNotices";
 import { hasDiskChange, isDirty } from "@/features/editor/editor-session";
 import { EditorStatusBar, type SaveState } from "@/features/editor/EditorStatusBar";
-import { frontmatterProblems } from "@/features/editor/frontmatter-checks";
 import { LeaveEditorDialog } from "@/features/editor/LeaveEditorDialog";
+import { checkDraft, isSkillDocument } from "@/features/editor/live-checks";
 import { useEditorSession } from "@/features/editor/use-editor-session";
 import { useLeaveGuard } from "@/features/editor/use-leave-guard";
 import { useSaveReport } from "@/features/editor/use-save-report";
@@ -96,10 +96,12 @@ export function EditorWorkspace({
   const dirty = current ? isDirty(current) : false;
   const saving = activePath ? session.saving.has(activePath) : false;
   const saveState: SaveState = saving ? "saving" : dirty ? "unsaved" : "saved";
-  const main = files.data?.find((entry) => entry.main) ?? null;
   const problems = useMemo(
-    () => (activePath && activePath === main?.path ? frontmatterProblems(previewText) : []),
-    [activePath, main?.path, previewText],
+    () =>
+      activePath && isSkillDocument(activePath) && files.data
+        ? checkDraft(previewText, skill.dirName, files.data)
+        : [],
+    [activePath, files.data, previewText, skill.dirName],
   );
 
   const unsaved = useMemo(() => {

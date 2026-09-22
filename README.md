@@ -19,6 +19,11 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 - Tags: add and remove per skill, rename or delete a tag everywhere, edit tags for many skills at once.
 - Skill detail panel: rendered `SKILL.md` with its frontmatter, file list, source details, per-agent
   switches, preset membership, and the projects that use the skill.
+- Skill checks against the Agent Skills format. Errors (no `SKILL.md`, no frontmatter, YAML that
+  does not parse, no name or description) put the skill under **Needs attention** with a
+  "Needs fixing" badge that opens the editor. Warnings (name rules, name differs from the folder,
+  over-long description or `SKILL.md`, links to files that are not in the skill) are listed in the
+  skill's panel. The editor runs the same checks on unsaved text.
 - Batch mode: deploy to agents, add to a preset, tag, update or delete many skills at once.
 - Deleting a skill removes its library copy, preset links and every copy the app deployed.
 - The database is rebuilt from the skill files if it is ever lost.
@@ -134,7 +139,8 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ### Command line and agent control
 
-- `loadout` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands, `--json` output
+- `loadout` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands (including
+  `skills validate` for the format checks, exit code 1 on errors), `--json` output
   with stable error codes, `--dry-run` and `--yes` for destructive commands, and `--library` to
   work on another library.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own

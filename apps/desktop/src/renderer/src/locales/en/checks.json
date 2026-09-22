@@ -1,0 +1,31 @@
+{
+  "checks": {
+    "title": "Checks",
+    "fix": "Fix in editor",
+    "allGood": "No problems found.",
+    "errors_one": "{{count}} error",
+    "errors_other": "{{count}} errors",
+    "warnings_one": "{{count}} warning",
+    "warnings_other": "{{count}} warnings",
+    "badge": "Needs fixing",
+    "badgeHint": "Agents may ignore this skill until its SKILL.md is fixed.",
+    "severity": {
+      "error": "Error",
+      "warning": "Warning"
+    },
+    "code": {
+      "document_missing": "The skill has no SKILL.md.",
+      "frontmatter_missing": "SKILL.md does not start with frontmatter (a block between two --- lines) giving its name and description.",
+      "frontmatter_invalid": "The frontmatter is not valid YAML: {{reason}}",
+      "name_missing": "The frontmatter has no name.",
+      "description_missing": "The frontmatter has no description. Agents use it to decide when to use the skill.",
+      "name_format": "The name “{{name}}” should use only lowercase letters, numbers and single hyphens, and not start or end with a hyphen.",
+      "name_too_long": "The name is {{length}} characters; the limit is {{max}}.",
+      "name_mismatch": "The name “{{name}}” differs from the folder name “{{folder}}”. Some agents expect them to match.",
+      "description_too_long": "The description is {{length}} characters; the limit is {{max}}.",
+      "compatibility_too_long": "The compatibility note is {{length}} characters; the limit is {{max}}.",
+      "document_too_long": "SKILL.md is {{lines}} lines. Keeping it under {{max}} and moving detail into other files is recommended.",
+      "broken_reference": "SKILL.md links to {{path}}, which is not in the skill."
+    }
+  }
+}

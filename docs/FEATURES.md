@@ -17,6 +17,7 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
 | Discover existing skills | Scan agent folders and import skills installed outside Loadout                                                                                                                    |
 | Library organisation     | Search, grid/list views, tags, source filters, tag filters, Untagged filter                                                                                                       |
 | Skill inspection         | Rendered `SKILL.md`/`README.md`, file listings, source details, comparisons with upstream                                                                                         |
+| Skill checks             | Agent Skills format checks on every skill: errors feed Needs attention, warnings shown in the panel, live checks in the editor, `skills validate` in the CLI                      |
 | Skill editor             | Edit any text file of a library skill with a live preview; guards against overwriting outside changes, keeps drafts and earlier versions, refreshes copied deployments            |
 | Agent support            | 54 built-in agents, detection, custom agents, custom paths, enable/disable, ordering                                                                                              |
 | Deploy skills            | Symlink or copy, per-agent toggles, protection against overwriting unmanaged content                                                                                              |
@@ -57,7 +58,7 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
 
 The CLI supports the `repo`, `agents`, `skills`, `presets` and `git` command groups,
 JSON output, a custom library location and dry runs for selected commands. It can install,
-list, inspect, deploy, remove, update and adopt skills; manage preset membership and deployment;
+list, inspect, validate, deploy, remove, update and adopt skills; manage preset membership and deployment;
 and sync, pull or restore Git backups. Run `pnpm cli --help` for usage.
 
 The following capabilities are not currently available through the CLI:

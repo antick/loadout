@@ -1,10 +1,10 @@
-import type { Skill } from "@loadout/shared";
+import { hasSkillErrors, type Skill, type SkillIssue } from "@loadout/shared";
 import { FileWarning, GitBranch, History, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
+import { SkillIssueList } from "@/components/SkillIssueList";
 import { Button } from "@/components/ui/button";
-import type { FrontmatterProblem } from "@/features/editor/frontmatter-checks";
 import { hasTrackedSource, sourceLabelOf } from "@/lib/skill-source";
 
 export interface EditorNoticesProps {
@@ -16,7 +16,8 @@ export interface EditorNoticesProps {
   diskChanged: boolean;
   /** Unsaved text came back from an earlier session. */
   restored: boolean;
-  problems: readonly FrontmatterProblem[];
+  /** Format problems of the text on screen (SKILL.md only), errors first. */
+  problems: readonly SkillIssue[];
   onCompare(): void;
   onKeepMine(): void;
   onReload(): void;
@@ -88,13 +89,14 @@ export function EditorNotices({
   }
 
   if (problems.length > 0) {
+    const errors = hasSkillErrors(problems);
     notices.push(
-      <InlineNotice key="frontmatter" tone="warning" icon={TriangleAlert}>
-        {problems.includes("missing")
-          ? t("editor.notice.noFrontmatter")
-          : t("editor.notice.frontmatterMissing", {
-              keys: problems.map((problem) => `“${problem}”`).join(t("editor.notice.and")),
-            })}
+      <InlineNotice
+        key="checks"
+        tone={errors ? "danger" : "warning"}
+        icon={errors ? FileWarning : TriangleAlert}
+      >
+        <SkillIssueList issues={problems} className="gap-1" />
       </InlineNotice>,
     );
   }

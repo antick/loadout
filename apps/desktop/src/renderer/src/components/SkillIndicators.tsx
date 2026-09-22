@@ -1,6 +1,6 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { PencilLine, TriangleAlert } from "lucide-react";
+import { FileWarning, PencilLine, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
@@ -11,9 +11,9 @@ import { hasTrackedSource } from "@/lib/skill-source";
 import { cn } from "@/lib/utils";
 
 /**
- * Attention badges of a library skill: update state and an unresolved backup conflict. The
- * conflict badge is a link to the Backup page, where the conflict is resolved. Detail views also
- * say when a skill with an upstream was edited in the app, since updating it asks first.
+ * Attention badges of a library skill: update state, a SKILL.md that breaks the format (a link to
+ * the editor), and an unresolved backup conflict (a link to the Backup page). Detail views also
+ * count format warnings and say when a skill with an upstream was edited in the app.
  */
 export function SkillIndicators({
   skill,
@@ -29,6 +29,7 @@ export function SkillIndicators({
   return (
     <>
       <UpdateStatusBadge status={skill.updateStatus} compact={compact} showAll={showAll} />
+      <CheckBadges skill={skill} compact={compact} showAll={showAll} />
       {skill.hasConflict ? (
         <Link
           to="/backup"
@@ -62,5 +63,54 @@ export function SkillIndicators({
         </Tooltip>
       ) : null}
     </>
+  );
+}
+
+/** Errors on every view (they keep agents from using the skill); warnings only in detail views. */
+function CheckBadges({
+  skill,
+  compact,
+  showAll,
+}: {
+  skill: Skill;
+  compact?: boolean;
+  showAll?: boolean;
+}): ReactNode {
+  const { t } = useTranslation();
+  const errors = skill.issues.filter((issue) => issue.severity === "error").length;
+  const warnings = skill.issues.length - errors;
+  if (errors > 0) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            to="/library/$skillId/edit"
+            params={{ skillId: skill.id }}
+            aria-label={t("checks.badge")}
+            className={cn(
+              SKILL_ITEM_RAISED_CLASS,
+              "inline-flex rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            )}
+          >
+            <StatusBadge
+              tone="danger"
+              icon={<FileWarning />}
+              label={t("checks.badge")}
+              compact={compact}
+            />
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-64">{t("checks.badgeHint")}</TooltipContent>
+      </Tooltip>
+    );
+  }
+  if (!showAll || warnings === 0) return null;
+  return (
+    <StatusBadge
+      tone="warning"
+      icon={<TriangleAlert />}
+      label={t("checks.warnings", { count: warnings })}
+      compact={compact}
+    />
   );
 }
