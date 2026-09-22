@@ -31,8 +31,9 @@ export const DEFAULT_EDITOR_VIEW: EditorView = "split";
  */
 export const MAC_WINDOW_CONTROLS_WIDTH_PX = 96;
 export const TOP_BAR_HEIGHT_CLASS = "h-12";
-/** Width of the icon rail at the far left, beside the collapsible sidebar. */
-export const RAIL_WIDTH_PX = 68;
+/** Width of the activity bar, the icon strip at the far left beside the sidebar. */
+export const ACTIVITY_BAR_WIDTH_PX = 68;
+export const STATUS_BAR_HEIGHT_CLASS = "h-7";
 /** Skills listed under "Recently changed" in the library panel. */
 export const SIDEBAR_RECENT_SKILLS = 5;
 

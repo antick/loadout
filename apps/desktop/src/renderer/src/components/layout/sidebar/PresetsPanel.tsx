@@ -52,7 +52,7 @@ export function PresetsPanel(): ReactNode {
 
   return (
     <SidebarPanel
-      title={t("rail.presets")}
+      title={t("activityBar.presets")}
       action={{ label: t("presets.new"), icon: <Plus />, onClick: () => shell.openPresetDialog() }}
     >
       <SidebarGroup className="py-1">

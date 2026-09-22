@@ -12,10 +12,10 @@ describe("sidebar sections", () => {
     expect(sectionForPath("/projects/x")).toBe("projects");
   });
 
-  it("leaves pages of their own alone", () => {
-    expect(sectionForPath("/")).toBeNull();
+  it("gives home and settings their own sections, and leaves backup alone", () => {
+    expect(sectionForPath("/")).toBe("home");
+    expect(sectionForPath("/settings")).toBe("settings");
     expect(sectionForPath("/backup")).toBeNull();
-    expect(sectionForPath("/settings")).toBeNull();
   });
 
   it("recognises stored section names", () => {

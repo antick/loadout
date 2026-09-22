@@ -13,13 +13,16 @@ export interface ShellActions {
 export interface PageHeaderSlots {
   title: HTMLElement | null;
   actions: HTMLElement | null;
+  /** Title-bar cell above the sidebar, where the sidebar section puts its name and action. */
+  sidebarHeader: HTMLElement | null;
 }
 
 export const ShellContext = createContext<ShellActions | null>(null);
-/** DOM nodes inside the top bar that `<PageHeader>` portals into. */
+/** DOM nodes inside the title bar that `<PageHeader>` and `<SidebarPanel>` portal into. */
 export const PageHeaderSlotsContext = createContext<PageHeaderSlots>({
   title: null,
   actions: null,
+  sidebarHeader: null,
 });
 
 /** Open the shell's dialogs (command palette, help, preset editor, link project). */

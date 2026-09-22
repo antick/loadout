@@ -4,11 +4,9 @@ import { Kbd } from "@/components/ui/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-export interface RailButtonProps {
+export interface ActivityBarButtonProps {
   icon: ReactNode;
   label: string;
-  /** Hide the caption under the icon (small utility buttons); the tooltip still names it. */
-  iconOnly?: boolean;
   /** The current page belongs here: an accent bar on the left edge. */
   current?: boolean;
   /** Its section is what the sidebar shows right now: a filled background. */
@@ -24,13 +22,12 @@ export interface RailButtonProps {
 }
 
 const BASE =
-  "group/rail relative flex w-full flex-col items-center gap-1 rounded-lg px-0.5 py-1.5 text-sidebar-foreground/75 transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&_svg]:size-[18px] [&_svg]:shrink-0";
+  "relative flex w-full flex-col items-center gap-1 rounded-lg px-0.5 py-1.5 text-sidebar-foreground/75 transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&_svg]:size-[18px] [&_svg]:shrink-0";
 
-/** One entry of the icon rail: an icon with a short caption, a tooltip and its active states. */
-export function RailButton({
+/** One entry of the activity bar: an icon with a caption, a tooltip and its active states. */
+export function ActivityBarButton({
   icon,
   label,
-  iconOnly,
   current,
   selected,
   shortcut,
@@ -38,10 +35,9 @@ export function RailButton({
   link,
   onClick,
   pressed,
-}: RailButtonProps): ReactNode {
+}: ActivityBarButtonProps): ReactNode {
   const className = cn(
     BASE,
-    iconOnly && "size-9 justify-center p-0",
     (current || selected) && "text-sidebar-accent-foreground",
     selected && "bg-sidebar-accent",
   );
@@ -58,11 +54,7 @@ export function RailButton({
         {icon}
         {indicator ? <span className="absolute -top-0.5 -right-1 flex">{indicator}</span> : null}
       </span>
-      {iconOnly ? null : (
-        <span className="max-w-full truncate text-[0.625rem] leading-none font-medium">
-          {label}
-        </span>
-      )}
+      <span className="max-w-full truncate text-[0.625rem] leading-none font-medium">{label}</span>
     </>
   );
 

@@ -45,6 +45,7 @@ const SHORTCUT_IDS: readonly ShortcutId[] = [
   "palette",
   "find",
   "sidebar",
+  "sectionHome",
   "sectionLibrary",
   "sectionAgents",
   "sectionPresets",

@@ -59,7 +59,7 @@ export function LibraryPanel(): ReactNode {
   );
 
   return (
-    <SidebarPanel title={t("rail.library")}>
+    <SidebarPanel title={t("activityBar.library")}>
       <SidebarGroup className="py-1">
         <SidebarGroupContent>
           <SidebarMenu>

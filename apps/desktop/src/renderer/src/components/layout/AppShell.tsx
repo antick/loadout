@@ -12,7 +12,8 @@ import {
   type ShellActions,
   ShellContext,
 } from "@/components/layout/shell-context";
-import { TopBar } from "@/components/layout/TopBar";
+import { StatusBar } from "@/components/layout/status-bar/StatusBar";
+import { TitleBar } from "@/components/layout/TitleBar";
 import { LibraryWarningBanner } from "@/components/LibraryWarningBanner";
 import { PresetDialog } from "@/components/PresetDialog";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -24,9 +25,10 @@ import { STORAGE_KEYS } from "@/lib/constants";
 import { SHORTCUT_KEYS } from "@/lib/shortcuts";
 
 /**
- * Frame of every screen: sidebar, top bar, banners, the scrolling `<main>`, and the dialogs any
- * page can open through `useShell()`. Pages render inside `children` and set their title and
- * top-bar buttons with `<PageHeader>`.
+ * Frame of every screen: the title bar across the top, the activity bar and sidebar on the left,
+ * banners and the scrolling page, the status bar along the bottom, and the dialogs any page can
+ * open through `useShell()`. Pages render inside `children` and set their title and title-bar
+ * buttons with `<PageHeader>`.
  */
 export function AppShell({ children }: { children: ReactNode }): ReactNode {
   const navigate = useNavigate();
@@ -40,6 +42,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   });
   const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
+  const [sidebarHeaderSlot, setSidebarHeaderSlot] = useState<HTMLElement | null>(null);
 
   const shell = useMemo<ShellActions>(
     () => ({
@@ -51,8 +54,8 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     [],
   );
   const slots = useMemo(
-    () => ({ title: titleSlot, actions: actionsSlot }),
-    [titleSlot, actionsSlot],
+    () => ({ title: titleSlot, actions: actionsSlot, sidebarHeader: sidebarHeaderSlot }),
+    [titleSlot, actionsSlot, sidebarHeaderSlot],
   );
 
   useHotkey(SHORTCUT_KEYS.palette, (event) => {
@@ -70,15 +73,22 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
         <SidebarProvider
           open={sidebarOpen}
           onOpenChange={setSidebarOpen}
-          className="h-svh min-h-0 overflow-hidden"
+          className="h-svh min-h-0 flex-col overflow-hidden"
         >
-          <AppSidebar />
-          <SidebarInset className="min-w-0 overflow-hidden">
-            <TopBar titleSlotRef={setTitleSlot} actionsSlotRef={setActionsSlot} />
-            <CrashBanner />
-            <LibraryWarningBanner />
-            <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
-          </SidebarInset>
+          <TitleBar
+            titleSlotRef={setTitleSlot}
+            actionsSlotRef={setActionsSlot}
+            sidebarHeaderRef={setSidebarHeaderSlot}
+          />
+          <div className="flex min-h-0 flex-1">
+            <AppSidebar />
+            <SidebarInset className="min-w-0 overflow-hidden">
+              <CrashBanner />
+              <LibraryWarningBanner />
+              <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+            </SidebarInset>
+          </div>
+          <StatusBar />
         </SidebarProvider>
 
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />

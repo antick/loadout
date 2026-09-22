@@ -1,7 +1,11 @@
-import type { ReactNode } from "react";
-import { useIsMac, WindowDragRegion } from "@/components/layout/WindowDragRegion";
+import { type ReactNode, useContext } from "react";
+import { createPortal } from "react-dom";
+import { PageHeaderSlotsContext } from "@/components/layout/shell-context";
+import { useIsMac } from "@/components/layout/WindowDragRegion";
+import { Button } from "@/components/ui/button";
 import { SidebarContent } from "@/components/ui/sidebar";
-import { MAC_WINDOW_CONTROLS_WIDTH_PX, RAIL_WIDTH_PX, TOP_BAR_HEIGHT_CLASS } from "@/lib/constants";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ACTIVITY_BAR_WIDTH_PX, MAC_WINDOW_CONTROLS_WIDTH_PX } from "@/lib/constants";
 
 export interface SidebarPanelProps {
   title: string;
@@ -10,32 +14,45 @@ export interface SidebarPanelProps {
   children: ReactNode;
 }
 
-/** The sidebar's body for one section: a title row in the window's drag strip, then its lists. */
+/**
+ * The sidebar's body for one section. Its name and action go into the title bar cell above the
+ * sidebar, so the title bar stays one clean band; the lists scroll below.
+ */
 export function SidebarPanel({ title, action, children }: SidebarPanelProps): ReactNode {
+  const slots = useContext(PageHeaderSlotsContext);
   const isMac = useIsMac();
-  // The macOS window buttons reach past the rail into this row.
-  const reserve = isMac ? MAC_WINDOW_CONTROLS_WIDTH_PX - RAIL_WIDTH_PX : undefined;
+  // The macOS window buttons reach past the activity bar into this cell.
+  const inset = isMac ? MAC_WINDOW_CONTROLS_WIDTH_PX - ACTIVITY_BAR_WIDTH_PX : undefined;
+
+  const header = (
+    <div
+      className="flex h-full w-(--sidebar-width) items-center justify-between gap-2 pr-2 pl-3"
+      style={inset ? { paddingLeft: inset } : undefined}
+    >
+      <h2 className="truncate text-sm font-semibold tracking-tight">{title}</h2>
+      {action ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={action.label}
+              onClick={action.onClick}
+              className="app-no-drag text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            >
+              {action.icon}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{action.label}</TooltipContent>
+        </Tooltip>
+      ) : null}
+    </div>
+  );
 
   return (
     <>
-      <WindowDragRegion
-        className={`justify-between gap-2 pr-2 pl-4 ${TOP_BAR_HEIGHT_CLASS}`}
-        style={reserve ? { paddingLeft: reserve } : undefined}
-      >
-        <h2 className="truncate text-sm font-semibold tracking-tight">{title}</h2>
-        {action ? (
-          <button
-            type="button"
-            aria-label={action.label}
-            title={action.label}
-            onClick={action.onClick}
-            className="app-no-drag flex size-7 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none [&_svg]:size-4"
-          >
-            {action.icon}
-          </button>
-        ) : null}
-      </WindowDragRegion>
-      <SidebarContent className="gap-0 pb-3">{children}</SidebarContent>
+      {slots.sidebarHeader ? createPortal(header, slots.sidebarHeader) : null}
+      <SidebarContent className="gap-0 pt-1 pb-3">{children}</SidebarContent>
     </>
   );
 }

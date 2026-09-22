@@ -59,7 +59,7 @@ export function ProjectsPanel(): ReactNode {
 
   return (
     <SidebarPanel
-      title={t("rail.projects")}
+      title={t("activityBar.projects")}
       action={{ label: t("projects.link"), icon: <FolderPlus />, onClick: shell.openAddProject }}
     >
       <SidebarGroup className="py-1">

@@ -54,7 +54,7 @@ export function AgentsPanel(): ReactNode {
 
   return (
     <SidebarPanel
-      title={t("rail.agents")}
+      title={t("activityBar.agents")}
       action={{
         label: t("sidebar.agents.manage"),
         icon: <SlidersHorizontal />,

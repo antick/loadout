@@ -1,20 +1,25 @@
 {
-  "rail": {
-    "label": "Main navigation",
+  "activityBar": {
+    "label": "Activity bar",
     "home": "Home",
     "library": "Library",
     "agents": "Agents",
     "presets": "Presets",
     "projects": "Projects",
-    "theme": "Theme: {{current}}. Click to switch",
-    "themes": {
-      "system": "system",
-      "light": "light",
-      "dark": "dark"
-    }
+    "settings": "Settings"
   },
   "sidebar": {
     "label": "{{section}} sidebar",
+    "home": {
+      "start": "Get started",
+      "install": "Install skills",
+      "scan": "Scan this machine",
+      "linkProject": "Link a project",
+      "newPreset": "New preset",
+      "backup": "Set up backup",
+      "learn": "Learn",
+      "guide": "Quick-start guide"
+    },
     "library": {
       "all": "All skills",
       "install": "Install skills",
@@ -32,9 +37,43 @@
       "manage": "Agent settings"
     }
   },
+  "statusBar": {
+    "backup": {
+      "neutral": "Backup off",
+      "success": "Backed up {{when}}",
+      "warning_one": "{{count}} skill not backed up",
+      "warning_other": "{{count}} skills not backed up",
+      "danger": "Backup needs attention"
+    },
+    "skills_one": "{{count}} skill",
+    "skills_other": "{{count}} skills",
+    "skillsHint": "Open the library",
+    "attention_one": "{{count}} needs attention",
+    "attention_other": "{{count}} need attention",
+    "attentionHint": "Skills with a broken SKILL.md, a failed update check or a backup conflict",
+    "updates_one": "{{count}} update",
+    "updates_other": "{{count}} updates",
+    "updatesHint": "Skills with a newer version at their source",
+    "agents_one": "{{count}} agent",
+    "agents_other": "{{count}} agents",
+    "agentsHint": "Installed and switched-on agents",
+    "deployMode": {
+      "symlink": "Symlinks",
+      "symlinkHint": "Skills are linked into agent folders, so edits reach every agent at once. Change it in Settings.",
+      "copy": "Copies",
+      "copyHint": "Skills are copied into agent folders. Change it in Settings."
+    },
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    }
+  },
   "help": {
     "shortcuts": {
       "save": "Save the file open in the editor",
+      "sectionHome": "Show home in the sidebar",
       "sectionLibrary": "Show the library in the sidebar",
       "sectionAgents": "Show agents in the sidebar",
       "sectionPresets": "Show presets in the sidebar",
