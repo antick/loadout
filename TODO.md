@@ -134,6 +134,54 @@ Core logic behind all of these has tests; this is about the UI wiring.
 - **To do:** Playwright against the built Electron app with a temp `HOME`, replaying the manual pass
   in item 4. The throwaway CDP scripts used for the manual pass were not kept.
 
+### 14. Skill editor follow-ups
+
+The editor (`/library/$skillId/edit`) shipped without these. Each one is a separate piece of work.
+
+- [ ] **File management.** The editor only changes files that already exist: no create, rename or
+      delete.
+  - **To do:** "New file" and "New folder" in the file list, rename and delete from a right-click
+    menu. Deleting keeps the file as an earlier version first. Every change goes through core
+    (`skills.createFile`, `renameFile`, `deleteFile`), updates `editedFiles` and the content hash,
+    refreshes copy deployments like a save does, and never touches the main document's existence
+    (a skill without `SKILL.md` stops being a skill).
+  - **Code:** `packages/core/src/skills/editor.ts`, `apps/desktop/src/renderer/src/features/editor/EditorFileList.tsx`
+- [ ] **Edits made outside the app are not tracked.** Only saves made in the editor are recorded
+      in `editedFiles`, so an update replaces a hand edit of the library folder without asking.
+  - **To do:** remember the content hash each skill had right after it last came from its source
+    (new column, set by `installIntoLibrary`). A different hash later means the library was changed
+    by someone; list the changed files in the update guard as edits. Hand edits then get the same
+    protection as editor saves.
+  - **Code:** `packages/core/src/install/library.ts`, `packages/core/src/updates/update.ts`, `packages/core/src/db/schema.ts`
+- [ ] **Local-folder skills show "Update available" after an edit.** For a skill installed from a
+      folder, the check compares the folder with the library, so an edit in the app looks like an
+      upstream change. Re-importing then asks before replacing the edit, so nothing is lost, but the
+      badge is misleading.
+  - **To do:** with the "installed hash" above, report `update_available` only when the source
+    folder differs from what was installed, not from the edited library copy.
+  - **Code:** `packages/core/src/updates/check.ts` (`localFinding`)
+- [ ] **Mixed line endings.** A file that mixes CRLF and LF is saved with whichever ending most of
+      its lines use, so its other lines change on the first save.
+  - **To do:** keep the ending of each untouched line (diff the saved text against the original
+    lines), or at least say so in the status bar before the first save.
+  - **Code:** `packages/core/src/skills/text-file.ts`
+- [ ] **Narrow windows.** At the minimum window width with the sidebar open, the skill name in the
+      top bar is cut off, because the file path and the editor buttons share the row.
+  - **To do:** let the file path give way first (hide it below a width), or move it into the
+    editor's status bar.
+  - **Code:** `apps/desktop/src/renderer/src/components/layout/PageHeader.tsx`, `features/editor/EditorWorkspace.tsx`
+- [ ] **Not wired in everywhere.** Editing is not in the command palette, and copies of a skill in
+      an agent's folder or in a project cannot be edited, only the library skill.
+  - **To do:** "Edit <skill>" entries in the palette; an Edit action on agent-workspace and project
+    skills, reusing the editor with a different file source (and that source's own sync status
+    instead of `editedFiles`).
+  - **Code:** `apps/desktop/src/renderer/src/components/CommandPalette.tsx`, `packages/core/src/workspace/`, `packages/core/src/projects/`
+- [ ] **Not tested yet.** The editor was click-tested on macOS only. The update guard for edits
+      is covered by core tests against a local Git fixture, never against a real remote update.
+  - **To check:** on Windows and Linux, saving keeps CRLF files and file permissions as they were,
+    and copies refresh; on any OS, edit a skill installed from a real GitHub repository, push an
+    upstream change, and confirm Update lists "Your edits" and the automatic update holds it back.
+
 ## Small things
 
 - [ ] `usePickFolder` exists twice (`hooks/mutations/library.ts` and `settings-page.ts`). Move one copy
