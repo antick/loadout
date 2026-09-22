@@ -11,6 +11,7 @@ import {
   DEFAULT_SIDEBAR_SECTION,
   SECTION_PAGES,
   type SidebarSection,
+  isSectionPage,
   isSidebarSection,
   sectionForPath,
 } from "@/components/layout/sidebar/sections";
@@ -42,7 +43,7 @@ export interface AppSidebarProps {
 /**
  * The left of the window: the activity bar, always there, and the sidebar next to it, which
  * lists the section picked in the activity bar, folds away with ⌘B and resizes from its edge.
- * Opening a page of another section switches the sidebar to that section. A page can take the
+ * Picking a section opens its main page; opening a page of another section switches the sidebar. A page can take the
  * sidebar over for its own list (the editor shows the skill's files) until a section is picked.
  */
 export function AppSidebar({ width, onWidth }: AppSidebarProps): ReactNode {
@@ -56,7 +57,9 @@ export function AppSidebar({ width, onWidth }: AppSidebarProps): ReactNode {
     DEFAULT_SIDEBAR_SECTION,
   );
   const section = isSidebarSection(stored) ? stored : DEFAULT_SIDEBAR_SECTION;
-  const pathname = useLocation({ select: (location) => location.pathname });
+  const { pathname, searchStr } = useLocation({
+    select: (location) => ({ pathname: location.pathname, searchStr: location.searchStr }),
+  });
 
   // Follow the page into its section; a page without one (backup) keeps whatever is shown.
   const [seenPath, setSeenPath] = useState(pathname);
@@ -66,26 +69,37 @@ export function AppSidebar({ width, onWidth }: AppSidebarProps): ReactNode {
     if (pageSection && pageSection !== section) setStored(pageSection);
   }
 
+  /** Show the section in the sidebar, and open its main page unless a page of it is open. */
   const show = (next: SidebarSection): void => {
     setStored(next);
     setOpen(true);
-    const page = SECTION_PAGES[next];
-    if (page && sectionForPath(pathname) !== next) void navigate({ to: page });
+    if (sectionForPath(pathname) !== next) void navigate({ to: SECTION_PAGES[next] });
   };
 
-  /** An activity bar button: show its section, or fold the sidebar when it is already shown. */
+  /**
+   * An activity bar button. Another section: show it and open its main page. The section of the
+   * page on screen: back to its main page from a page inside it (a project, a skill's detail),
+   * and on the main page itself, fold the sidebar away or bring it back.
+   */
   const pick = (next: SidebarSection): void => {
-    // A page's own list is on screen: the button brings the section back, it does not fold.
+    // A page's own list is on screen (the editor's files): the button brings the section back.
     if (takeover.active) {
       takeover.setShown(false);
       show(next);
       return;
     }
-    if (open && next === section && (!SECTION_PAGES[next] || sectionForPath(pathname) === next)) {
-      setOpen(false);
+    if (sectionForPath(pathname) !== next) {
+      show(next);
       return;
     }
-    show(next);
+    if (!isSectionPage(next, pathname, searchStr)) {
+      setStored(next);
+      setOpen(true);
+      void navigate({ to: SECTION_PAGES[next] });
+      return;
+    }
+    if (open && next === section) setOpen(false);
+    else show(next);
   };
 
   const hotkey = (next: SidebarSection) => (event: KeyboardEvent) => {

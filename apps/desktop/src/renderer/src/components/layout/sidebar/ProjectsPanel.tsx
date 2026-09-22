@@ -65,7 +65,7 @@ export function ProjectsPanel(): ReactNode {
     });
     if (!ok) return;
     remove.mutate(project);
-    if (params.projectId === project.id) void navigate({ to: "/" });
+    if (params.projectId === project.id) void navigate({ to: "/projects" });
   };
 
   return (

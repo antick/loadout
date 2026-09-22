@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { CARD_GRID_CLASS, CardGridSkeleton } from "@/components/LinkCard";
 import { PageSection } from "@/components/PageSection";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isAgentAvailable, useAgents, useWorkspaceCounts } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
@@ -17,9 +17,6 @@ import { UnavailableAgents } from "./UnavailableAgents";
 
 export const AGENT_CATEGORIES: readonly AgentCategory[] = ["coding", "assistant"];
 export const DEFAULT_AGENT_CATEGORY: AgentCategory = "coding";
-
-const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-3";
-const SKELETON_CARDS = [0, 1, 2, 3];
 
 export interface AgentsOverviewPageProps {
   category: AgentCategory;
@@ -78,11 +75,7 @@ export function AgentsOverviewPage({
       />
 
       {agents.isPending ? (
-        <div aria-hidden="true" className={GRID_CLASS}>
-          {SKELETON_CARDS.map((card) => (
-            <Skeleton key={card} className="h-32 rounded-lg" />
-          ))}
-        </div>
+        <CardGridSkeleton />
       ) : agents.error ? (
         <ErrorState error={agents.error} onRetry={() => void agents.refetch()} className="flex-1" />
       ) : available.length === 0 ? (
@@ -126,7 +119,7 @@ export function AgentsOverviewPage({
           />
 
           <PageSection title={t(`agents.category.${shownCategory}`)}>
-            <div className={GRID_CLASS}>
+            <div className={CARD_GRID_CLASS}>
               {listed.map((agent) => (
                 <AgentCard
                   key={agent.key}

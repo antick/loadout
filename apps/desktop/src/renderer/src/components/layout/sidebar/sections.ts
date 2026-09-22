@@ -1,8 +1,8 @@
 import type { SHORTCUT_KEYS } from "@/lib/shortcuts";
 
 /**
- * What the sidebar can show. Each has a button in the activity bar. Home and Settings are pages
- * as well as sections: their buttons open the page, and the sidebar follows.
+ * What the sidebar can show. Each has a button in the activity bar, which also opens the
+ * section's main page.
  */
 export const SIDEBAR_SECTIONS = [
   "home",
@@ -15,11 +15,21 @@ export const SIDEBAR_SECTIONS = [
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
 export const DEFAULT_SIDEBAR_SECTION: SidebarSection = "home";
 
-/** Sections whose button opens a page; the others only switch the sidebar. */
-export const SECTION_PAGES: Partial<Record<SidebarSection, "/" | "/settings">> = {
+/** The main page of each section: where its activity bar button leads. */
+export const SECTION_PAGES = {
   home: "/",
+  library: "/library",
+  agents: "/agents",
+  presets: "/presets",
+  projects: "/projects",
   settings: "/settings",
-};
+} as const satisfies Record<SidebarSection, string>;
+
+/** Whether this is a section's main page itself, not a page inside it or a detail opened on it. */
+export function isSectionPage(section: SidebarSection, pathname: string, search: string): boolean {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  return path === SECTION_PAGES[section] && !search;
+}
 
 export const SECTION_SHORTCUTS: Partial<Record<SidebarSection, keyof typeof SHORTCUT_KEYS>> = {
   home: "sectionHome",

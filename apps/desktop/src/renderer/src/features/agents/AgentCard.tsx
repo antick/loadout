@@ -1,9 +1,9 @@
 import type { AgentInfo } from "@loadout/shared";
-import { Link } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { LinkCard } from "@/components/LinkCard";
 import { PathText } from "@/components/PathText";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,13 +20,10 @@ export interface AgentCardProps {
 export function AgentCard({ agent, count, sharedWith }: AgentCardProps): ReactNode {
   const { t } = useTranslation();
   return (
-    <div className="group/agent relative flex flex-col gap-3 rounded-lg border bg-card p-4 transition-colors duration-150 hover:border-primary/40 hover:bg-accent/40">
-      <Link
-        to="/agents/$agentKey"
-        params={{ agentKey: agent.key }}
-        aria-label={t("agents.overview.open", { agent: agent.displayName })}
-        className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      />
+    <LinkCard
+      link={{ to: "/agents/$agentKey", params: { agentKey: agent.key } }}
+      label={t("agents.overview.open", { agent: agent.displayName })}
+    >
       <div className="flex items-center gap-3">
         <AgentAvatar agentKey={agent.key} name={agent.displayName} size="lg" />
         <div className="min-w-0 flex-1">
@@ -47,6 +44,6 @@ export function AgentCard({ agent, count, sharedWith }: AgentCardProps): ReactNo
           {t("agents.sharedFolder", { agents: sharedWith.join(", ") })}
         </p>
       ) : null}
-    </div>
+    </LinkCard>
   );
 }

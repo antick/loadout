@@ -38,6 +38,14 @@
       "removeSkills": "Could not remove the skill from the preset.",
       "toggle": "Could not save the agent switch.",
       "apply": "Could not apply the preset."
+    },
+    "overview": {
+      "title": "All presets",
+      "subtitle_one": "{{count}} preset",
+      "subtitle_other": "{{count}} presets",
+      "open": "Open preset “{{name}}”",
+      "emptyTitle": "No presets yet",
+      "emptyDescription": "A preset is a named set of skills. Apply it to copy all of them to your agents in one go."
     }
   }
 }

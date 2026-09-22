@@ -161,9 +161,12 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 - Navigation in three parts. The **activity bar** at the far left: Home, Library, Agents,
   Presets, Projects, then Backup, Settings and Help. The **sidebar** beside it lists the section
   picked there: Home (dashboard, first steps, guide), Library (all skills, install, views with
-  counts, recently changed), Agents, Presets, Projects, and Settings (its sections). Pressing the
-  shown section folds the sidebar away; `⌘B` does the same, `⌘1`–`⌘5` jump to Home, Library,
-  Agents, Presets and Projects, and opening a page switches the sidebar to its section. Drag the
+  counts, recently changed), Agents, Presets, Projects, and Settings (its sections). Each button
+  also opens its section's main page (all skills, all agents, all presets, all projects); pressed
+  again from a page inside the section (a project, a preset) it goes back to that main page, and
+  on the main page it folds the sidebar away. A bar marks the section picked. `⌘B` folds the
+  sidebar, `⌘1`–`⌘5` jump to Home, Library, Agents, Presets and Projects, and opening a page
+  switches the sidebar to its section. Drag the
   sidebar's edge to resize it (double-click resets); the width is remembered.
 - Each project in the sidebar opens to list its skills; clicking one opens it on the project page.
 - While a skill is edited, the sidebar shows its files with a way back, so the editor has no file

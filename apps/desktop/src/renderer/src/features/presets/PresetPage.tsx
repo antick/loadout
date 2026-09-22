@@ -30,7 +30,7 @@ import { useSkills } from "@/hooks/queries/skills";
 import { moveId } from "@/lib/utils";
 
 /** Where the app goes when the preset in the URL does not exist (any more). */
-const FALLBACK_ROUTE = "/library";
+const FALLBACK_ROUTE = "/presets";
 /** Presets hold skills, not agents, so the picker shows no target row. */
 const PICKER_TARGET = { kind: "none" } as const;
 

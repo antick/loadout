@@ -152,6 +152,15 @@
       "realignHint": "Replaces the copies for {{agents}} with this one. What is different in them is lost.",
       "keepHint": "The copies for {{agents}} stay as they are and keep showing as changed.",
       "confirm": "Add this copy to the library"
+    },
+    "overview": {
+      "title": "All projects",
+      "subtitle_one": "{{count}} project",
+      "subtitle_other": "{{count}} projects",
+      "open": "Open project “{{name}}”",
+      "missing": "Folder not found",
+      "emptyTitle": "No projects yet",
+      "emptyDescription": "Link a project folder to see and manage the skills in its agent folders, such as .claude/skills."
     }
   },
   "addProject": {

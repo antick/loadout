@@ -78,7 +78,7 @@ export function ProjectPage({
   const projects = useProjects();
   const project = projects.data?.find((entry) => entry.id === projectId);
   // A project linked a moment ago may not be in the cached list yet: wait for the refetch.
-  if (projects.data && !project && !projects.isFetching) return <Navigate to="/" replace />;
+  if (projects.data && !project && !projects.isFetching) return <Navigate to="/projects" replace />;
   if (projects.error) {
     return <ErrorState error={projects.error} onRetry={() => void projects.refetch()} />;
   }
@@ -167,7 +167,7 @@ function ProjectWorkspace({
       confirmLabel: t("projects.remove"),
     });
     if (!ok) return;
-    removeProject.mutate(project, { onSuccess: () => void navigate({ to: "/" }) });
+    removeProject.mutate(project, { onSuccess: () => void navigate({ to: "/projects" }) });
   };
 
   return (

@@ -47,7 +47,7 @@ export function PresetsPanel(): ReactNode {
     });
     if (!ok) return;
     remove.mutate(preset);
-    if (params.presetId === preset.id) void navigate({ to: "/" });
+    if (params.presetId === preset.id) void navigate({ to: "/presets" });
   };
 
   return (
