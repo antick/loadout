@@ -18,6 +18,7 @@ export interface SidebarNavItemProps {
   exact?: boolean;
   /** `ContextMenuItem`s for a right-click menu. */
   contextMenu?: ReactNode;
+  className?: string;
 }
 
 /** One sidebar link with active state, collapsed-mode tooltip, optional badge and context menu. */
@@ -30,6 +31,7 @@ export function SidebarNavItem({
   indicator,
   exact,
   contextMenu,
+  className,
 }: SidebarNavItemProps): ReactNode {
   const matchRoute = useMatchRoute();
   const active = Boolean(
@@ -37,7 +39,7 @@ export function SidebarNavItem({
   );
 
   const button = (
-    <SidebarMenuButton asChild isActive={active} tooltip={label}>
+    <SidebarMenuButton asChild isActive={active} tooltip={label} className={className}>
       <Link {...link} draggable={false}>
         {icon}
         <span className="flex min-w-0 items-center gap-1.5">

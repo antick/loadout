@@ -35,6 +35,13 @@
     "agents": {
       "coding": "Coding agents",
       "manage": "Agent settings"
+    },
+    "resize": "Resize the sidebar",
+    "resizeHint": "Drag to resize. Double-click to reset.",
+    "projects": {
+      "show": "Show the skills of {{name}}",
+      "hide": "Hide the skills of {{name}}",
+      "empty": "No skills in this project yet."
     }
   },
   "statusBar": {

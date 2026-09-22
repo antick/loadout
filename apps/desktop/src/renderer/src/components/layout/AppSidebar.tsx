@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityBar } from "@/components/layout/ActivityBar";
 import { AgentsPanel } from "@/components/layout/sidebar/AgentsPanel";
@@ -14,7 +14,9 @@ import {
   isSidebarSection,
   sectionForPath,
 } from "@/components/layout/sidebar/sections";
+import { SidebarSlotRefContext, useSidebarTakeover } from "@/components/layout/shell-context";
 import { SettingsPanel } from "@/components/layout/sidebar/SettingsPanel";
+import { SidebarResizeHandle } from "@/components/layout/sidebar/SidebarResizeHandle";
 import { Sidebar, useSidebar } from "@/components/ui/sidebar";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -31,15 +33,24 @@ const PANELS: Record<SidebarSection, () => ReactNode> = {
   settings: SettingsPanel,
 };
 
+export interface AppSidebarProps {
+  /** Sidebar width in pixels, changed by dragging its edge. */
+  width: number;
+  onWidth(width: number): void;
+}
+
 /**
  * The left of the window: the activity bar, always there, and the sidebar next to it, which
- * lists the section picked in the activity bar and folds away with ⌘B. Opening a page of another
- * section (a link, the palette, the tray) switches the sidebar to that section.
+ * lists the section picked in the activity bar, folds away with ⌘B and resizes from its edge.
+ * Opening a page of another section switches the sidebar to that section. A page can take the
+ * sidebar over for its own list (the editor shows the skill's files) until a section is picked.
  */
-export function AppSidebar(): ReactNode {
+export function AppSidebar({ width, onWidth }: AppSidebarProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { open, setOpen } = useSidebar();
+  const takeover = useSidebarTakeover();
+  const setSlot = useContext(SidebarSlotRefContext);
   const [stored, setStored] = usePersistedState<SidebarSection>(
     STORAGE_KEYS.sidebarSection,
     DEFAULT_SIDEBAR_SECTION,
@@ -64,6 +75,12 @@ export function AppSidebar(): ReactNode {
 
   /** An activity bar button: show its section, or fold the sidebar when it is already shown. */
   const pick = (next: SidebarSection): void => {
+    // A page's own list is on screen: the button brings the section back, it does not fold.
+    if (takeover.active) {
+      takeover.setShown(false);
+      show(next);
+      return;
+    }
     if (open && next === section && (!SECTION_PAGES[next] || sectionForPath(pathname) === next)) {
       setOpen(false);
       return;
@@ -85,24 +102,30 @@ export function AppSidebar(): ReactNode {
 
   return (
     <>
-      <ActivityBar section={section} sidebarOpen={open} onSection={pick} />
-      <div
-        data-state={open ? "expanded" : "collapsed"}
-        aria-hidden={!open}
-        inert={!open}
-        className={cn(
-          "h-full shrink-0 overflow-hidden bg-sidebar transition-[width] duration-200 ease-linear",
-          open ? "w-(--sidebar-width) border-r" : "w-0",
-        )}
-      >
-        {/* Fixed width inside, so the lists do not reflow while the sidebar slides. */}
-        <Sidebar
-          collapsible="none"
-          aria-label={t("sidebar.label", { section: t(`activityBar.${section}`) })}
-          className="h-full"
+      <ActivityBar section={section} sidebarOpen={open && !takeover.active} onSection={pick} />
+      <div className="relative h-full shrink-0">
+        <div
+          data-state={open ? "expanded" : "collapsed"}
+          aria-hidden={!open}
+          inert={!open}
+          className={cn(
+            "h-full overflow-hidden bg-sidebar transition-[width] duration-200 ease-linear",
+            open ? "w-(--sidebar-width) border-r" : "w-0",
+          )}
         >
-          <Panel />
-        </Sidebar>
+          <Sidebar
+            collapsible="none"
+            aria-label={t("sidebar.label", { section: t(`activityBar.${section}`) })}
+            className="h-full"
+          >
+            {takeover.active ? (
+              <div ref={setSlot} className="flex min-h-0 flex-1 flex-col" />
+            ) : (
+              <Panel />
+            )}
+          </Sidebar>
+        </div>
+        {open ? <SidebarResizeHandle width={width} onWidth={onWidth} /> : null}
       </div>
     </>
   );

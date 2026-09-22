@@ -8,12 +8,15 @@ import {
 import { type LinkProps, useNavigate } from "@tanstack/react-router";
 import { FileX } from "lucide-react";
 import { type ReactNode, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { type PageCrumb, PageHeader } from "@/components/layout/PageHeader";
+import { useSidebarTakeover } from "@/components/layout/shell-context";
 import { MarkdownView } from "@/components/MarkdownView";
+import { useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   CodeEditor,
@@ -24,8 +27,8 @@ import { languageFor } from "@/features/editor/code-languages";
 import { ConflictDialog } from "@/features/editor/ConflictDialog";
 import { draftPaths } from "@/features/editor/editor-drafts";
 import { EditorActions } from "@/features/editor/EditorActions";
-import { EditorFileList } from "@/features/editor/EditorFileList";
 import { EditorNotices } from "@/features/editor/EditorNotices";
+import { EditorSidebar } from "@/features/editor/EditorSidebar";
 import { hasDiskChange, isDirty } from "@/features/editor/editor-session";
 import { EditorStatusBar, type SaveState } from "@/features/editor/EditorStatusBar";
 import { LeaveEditorDialog } from "@/features/editor/LeaveEditorDialog";
@@ -100,7 +103,12 @@ export function EditorWorkspace({
     DEFAULT_EDITOR_VIEW,
   );
   const [wrap, setWrap] = usePersistedState(STORAGE_KEYS.editorWrap, true);
-  const [filesOpen, setFilesOpen] = usePersistedState(STORAGE_KEYS.editorFilesOpen, true);
+  // The skill's files take the sidebar's place while the editor is open.
+  const takeover = useSidebarTakeover();
+  const { claim } = takeover;
+  useEffect(() => claim(), [claim]);
+  const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
+  const filesShown = takeover.active && sidebarOpen;
   const [cursor, setCursor] = useState<CursorPosition | null>(null);
   const [conflict, setConflict] = useState<Conflict | null>(null);
   const [resolving, setResolving] = useState(false);
@@ -210,7 +218,8 @@ export function EditorWorkspace({
     <PageHeader
       title={target.name}
       subtitle={activePath ?? undefined}
-      breadcrumbs={crumbs}
+      // The sidebar already leads back while it shows the files.
+      breadcrumbs={filesShown ? undefined : crumbs}
       actions={
         <EditorActions
           location={location}
@@ -253,25 +262,21 @@ export function EditorWorkspace({
   return (
     <div className="flex h-full min-h-0">
       {header}
-      {filesOpen ? (
-        <aside className="w-52 shrink-0 overflow-y-auto border-r bg-sidebar/40">
-          {files.data ? (
-            <EditorFileList
+      {takeover.active && takeover.slot
+        ? createPortal(
+            <EditorSidebar
+              target={target}
+              backLink={doneLink}
+              backLabel={crumbs.at(-1)?.label ?? t("nav.library")}
               files={files.data}
               activePath={activePath}
               unsaved={unsaved}
               showEdited={librarySkill !== null && hasTrackedSource(librarySkill)}
               onSelect={onOpenFile}
-            />
-          ) : (
-            <div className="flex flex-col gap-2 p-3">
-              <Skeleton className="h-6 w-full" />
-              <Skeleton className="h-6 w-4/5" />
-              <Skeleton className="h-6 w-3/5" />
-            </div>
-          )}
-        </aside>
-      ) : null}
+            />,
+            takeover.slot,
+          )
+        : null}
 
       <section className="flex min-w-0 flex-1 flex-col">
         {activePath && (current || deleted) ? (
@@ -348,8 +353,15 @@ export function EditorWorkspace({
           state={saveState}
           wrap={wrap}
           onToggleWrap={() => setWrap((on) => !on)}
-          filesOpen={filesOpen}
-          onToggleFiles={() => setFilesOpen((open) => !open)}
+          filesOpen={filesShown}
+          onToggleFiles={() => {
+            if (filesShown) {
+              takeover.setShown(false);
+              return;
+            }
+            takeover.setShown(true);
+            setSidebarOpen(true);
+          }}
         />
       </section>
 

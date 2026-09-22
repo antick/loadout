@@ -179,6 +179,14 @@
   label[for] {
     cursor: pointer;
   }
+  /* While a panel edge is dragged: no animation lag, no text selection, one steady cursor. */
+  body[data-resizing] *,
+  body[data-resizing] {
+    transition: none !important;
+    cursor: col-resize !important;
+    user-select: none !important;
+  }
+
   button:disabled,
   [aria-disabled="true"],
   [data-disabled]:not([data-disabled="false"]) {

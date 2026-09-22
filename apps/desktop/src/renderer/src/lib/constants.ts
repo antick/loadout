@@ -8,10 +8,11 @@ export const STORAGE_KEYS = {
   sidebarOpen: "sidebar.open",
   sidebarGroups: "sidebar.groups",
   sidebarSection: "sidebar.section",
+  sidebarWidth: "sidebar.width",
+  sidebarProjectsOpen: "sidebar.projects-open",
   viewMode: "view-mode",
   editorView: "editor.view",
   editorWrap: "editor.wrap",
-  editorFilesOpen: "editor.files-open",
 } as const;
 
 /** localStorage prefix of unsaved editor drafts: `<prefix><skillId>:<path>`. */
@@ -34,6 +35,12 @@ export const TOP_BAR_HEIGHT_CLASS = "h-12";
 /** Width of the activity bar, the icon strip at the far left beside the sidebar. */
 export const ACTIVITY_BAR_WIDTH_PX = 68;
 export const STATUS_BAR_HEIGHT_CLASS = "h-7";
+/** Sidebar width: what it starts at, and how far dragging its edge may take it. */
+export const SIDEBAR_WIDTH_DEFAULT_PX = 256;
+export const SIDEBAR_WIDTH_MIN_PX = 200;
+export const SIDEBAR_WIDTH_MAX_PX = 440;
+/** One arrow-key press on the sidebar's edge moves it by this much. */
+export const SIDEBAR_WIDTH_STEP_PX = 16;
 /** Skills listed under "Recently changed" in the library panel. */
 export const SIDEBAR_RECENT_SKILLS = 5;
 

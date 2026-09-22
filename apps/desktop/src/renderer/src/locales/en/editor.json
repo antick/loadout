@@ -23,7 +23,7 @@
       }
     },
     "status": {
-      "files": "Show or hide the file list",
+      "files": "Show or hide the files in the sidebar",
       "wrap": "Wrap long lines",
       "cursor": "Ln {{line}}, Col {{column}}",
       "selected_one": "{{count}} character selected",
@@ -96,6 +96,10 @@
       "title": "This skill is no longer here",
       "description": "It was moved or removed while the editor was open, or the link is out of date.",
       "back": "Go back"
+    },
+    "sidebar": {
+      "copies_one": "Also in {{agents}} in this project.",
+      "copies_other": "Also in {{agents}} in this project."
     }
   },
   "skills": {

@@ -10,7 +10,7 @@ import {
   SearchX,
   Unlink,
 } from "lucide-react";
-import { type ReactNode, useCallback, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
@@ -44,6 +44,7 @@ import { useViewMode } from "@/hooks/use-view-mode";
 import {
   ENABLED_FILTERS,
   type EnabledFilter,
+  groupKey,
   groupProjectSkills,
   matchesEnabledFilter,
   type ProjectSkillGroup,
@@ -61,7 +62,18 @@ const VIEW_MODE_SCOPE = "project-workspace";
 const NO_TARGETS = [] as const;
 
 /** One project (or linked workspace): its skills grouped across agent folders. */
-export function ProjectPage({ projectId }: { projectId: string }): ReactNode {
+export interface ProjectPageProps {
+  projectId: string;
+  /** A skill to open once, by its relative path (from a link in the sidebar). */
+  requestedSkill: string | null;
+  onSkillOpened(): void;
+}
+
+export function ProjectPage({
+  projectId,
+  requestedSkill,
+  onSkillOpened,
+}: ProjectPageProps): ReactNode {
   const projects = useProjects();
   const project = projects.data?.find((entry) => entry.id === projectId);
   // A project linked a moment ago may not be in the cached list yet: wait for the refetch.
@@ -70,10 +82,20 @@ export function ProjectPage({ projectId }: { projectId: string }): ReactNode {
     return <ErrorState error={projects.error} onRetry={() => void projects.refetch()} />;
   }
   // Until the list has loaded there is nothing to draw the page around.
-  return project ? <ProjectWorkspace project={project} /> : null;
+  return project ? (
+    <ProjectWorkspace
+      project={project}
+      requestedSkill={requestedSkill}
+      onSkillOpened={onSkillOpened}
+    />
+  ) : null;
 }
 
-function ProjectWorkspace({ project }: { project: Project }): ReactNode {
+function ProjectWorkspace({
+  project,
+  requestedSkill,
+  onSkillOpened,
+}: Omit<ProjectPageProps, "projectId"> & { project: Project }): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -84,7 +106,18 @@ function ProjectWorkspace({ project }: { project: Project }): ReactNode {
   const revealProject = useRevealProject();
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
   const [enabledFilter, setEnabledFilter] = useState<EnabledFilter>("all");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(
+    requestedSkill ? groupKey(requestedSkill) : null,
+  );
+  // A later link to another skill of the same project opens that one.
+  const [seenRequest, setSeenRequest] = useState(requestedSkill);
+  if (requestedSkill !== seenRequest) {
+    setSeenRequest(requestedSkill);
+    if (requestedSkill) setOpenId(groupKey(requestedSkill));
+  }
+  useEffect(() => {
+    if (requestedSkill) onSkillOpened();
+  }, [requestedSkill, onSkillOpened]);
   const [adding, setAdding] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
