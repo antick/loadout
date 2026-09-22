@@ -56,9 +56,9 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
                   <ChevronRight className="size-3.5 self-center" />
                 </span>
               ))}
-              <h1 className="truncate text-xl font-semibold tracking-tight">{title}</h1>
+              <h1 className="truncate text-[0.9375rem] font-semibold tracking-tight">{title}</h1>
               {subtitle ? (
-                <span className="truncate text-sm text-muted-foreground">{subtitle}</span>
+                <span className="truncate text-[0.8125rem] text-muted-foreground">{subtitle}</span>
               ) : null}
             </div>,
             slots.title,
