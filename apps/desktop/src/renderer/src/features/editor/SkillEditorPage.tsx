@@ -1,50 +1,72 @@
-import { ApiError } from "@loadout/shared";
-import { useNavigate } from "@tanstack/react-router";
-import { Library } from "lucide-react";
+import { ApiError, type SkillLocation } from "@loadout/shared";
+import { type LinkProps, useNavigate } from "@tanstack/react-router";
+import { FileX } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { type PageCrumb, PageHeader } from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditorWorkspace } from "@/features/editor/EditorWorkspace";
+import { useEditTarget } from "@/hooks/queries/editor";
 import { useSkill } from "@/hooks/queries/skills";
+import { locationKey } from "@/lib/skill-location";
 
 export interface SkillEditorPageProps {
-  skillId: string;
+  location: SkillLocation;
   file: string | null;
   onOpenFile(path: string): void;
+  /** Parent pages in the title bar, e.g. Projects › my-app. */
+  crumbs: readonly PageCrumb[];
+  /** Where Done and "go back" lead. */
+  doneLink: LinkProps;
 }
 
-/** Route page: loads the skill, then hands over to the editor, or explains why it cannot. */
-export function SkillEditorPage({ skillId, file, onOpenFile }: SkillEditorPageProps): ReactNode {
+/** Route page: finds the skill, then hands over to the editor, or explains why it cannot. */
+export function SkillEditorPage({
+  location,
+  file,
+  onOpenFile,
+  crumbs,
+  doneLink,
+}: SkillEditorPageProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const skill = useSkill(skillId);
+  const target = useEditTarget(location);
+  const resolved = target.data?.location;
+  const librarySkill = useSkill(resolved?.kind === "library" ? resolved.skillId : null);
 
-  if (skill.data) {
-    return <EditorWorkspace skill={skill.data} requestedPath={file} onOpenFile={onOpenFile} />;
+  if (target.data && (resolved?.kind !== "library" || librarySkill.data)) {
+    return (
+      <EditorWorkspace
+        // A fresh editor per place, so open files and drafts never carry over.
+        key={locationKey(target.data.location)}
+        target={target.data}
+        librarySkill={librarySkill.data ?? null}
+        crumbs={crumbs}
+        doneLink={doneLink}
+        requestedPath={file}
+        onOpenFile={onOpenFile}
+      />
+    );
   }
 
-  const crumbs = [{ label: t("nav.library"), to: "/library" as const }];
-  if (skill.isError) {
-    const gone = skill.error instanceof ApiError && skill.error.code === "NOT_FOUND";
+  const error = target.error ?? librarySkill.error;
+  if (error) {
+    const gone = error instanceof ApiError && error.code === "NOT_FOUND";
     return (
       <>
         <PageHeader title={t("editor.title")} breadcrumbs={crumbs} />
         {gone ? (
           <EmptyState
-            icon={Library}
+            icon={FileX}
             title={t("editor.missing.title")}
             description={t("editor.missing.description")}
-            action={{
-              label: t("editor.missing.back"),
-              onClick: () => void navigate({ to: "/library" }),
-            }}
+            action={{ label: t("editor.missing.back"), onClick: () => void navigate(doneLink) }}
             className="h-full"
           />
         ) : (
-          <ErrorState error={skill.error} onRetry={() => void skill.refetch()} className="h-full" />
+          <ErrorState error={error} onRetry={() => void target.refetch()} className="h-full" />
         )}
       </>
     );
@@ -54,7 +76,7 @@ export function SkillEditorPage({ skillId, file, onOpenFile }: SkillEditorPagePr
     <>
       <PageHeader title={t("editor.title")} breadcrumbs={crumbs} />
       <div className="flex h-full">
-        <div className="flex w-56 flex-col gap-2 border-r p-3">
+        <div className="flex w-52 flex-col gap-2 border-r p-3">
           <Skeleton className="h-6 w-full" />
           <Skeleton className="h-6 w-4/5" />
         </div>

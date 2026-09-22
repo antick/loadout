@@ -1,12 +1,18 @@
-import { ApiError, formatRelative, type Skill, type SkillFileEntry } from "@loadout/shared";
-import { useNavigate } from "@tanstack/react-router";
+import {
+  ApiError,
+  type EditTarget,
+  formatRelative,
+  type Skill,
+  type SkillFileEntry,
+} from "@loadout/shared";
+import { type LinkProps, useNavigate } from "@tanstack/react-router";
 import { FileX } from "lucide-react";
 import { type ReactNode, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { type PageCrumb, PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownView } from "@/components/MarkdownView";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,18 +33,25 @@ import { checkDraft, isSkillDocument } from "@/features/editor/live-checks";
 import { useEditorSession } from "@/features/editor/use-editor-session";
 import { useLeaveGuard } from "@/features/editor/use-leave-guard";
 import { useSaveReport } from "@/features/editor/use-save-report";
-import { useSkillFile, useSkillFiles } from "@/hooks/queries/skill-files";
+import { useEditorFile, useEditorFiles } from "@/hooks/queries/editor";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { api } from "@/lib/api";
 import { DEFAULT_EDITOR_VIEW, EDITOR_VIEWS, type EditorView, STORAGE_KEYS } from "@/lib/constants";
 import { SHORTCUT_KEYS } from "@/lib/shortcuts";
+import { locationKey } from "@/lib/skill-location";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { toastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 export interface EditorWorkspaceProps {
-  skill: Skill;
+  target: EditTarget;
+  /** The library skill when a library skill is edited: its source and edit marks matter. */
+  librarySkill: Skill | null;
+  /** Parent pages in the title bar. */
+  crumbs: readonly PageCrumb[];
+  /** Where Done goes. */
+  doneLink: LinkProps;
   /** File asked for in the address; falls back to the main document. */
   requestedPath: string | null;
   onOpenFile(path: string): void;
@@ -56,19 +69,30 @@ function pickPath(files: readonly SkillFileEntry[], requested: string | null): s
   return (asked ?? editable.find((file) => file.main) ?? editable[0])?.path ?? null;
 }
 
-/** The editor of one library skill: its files, the text, a preview, and everything around saving. */
+/**
+ * The editor of one skill folder, in the library, an agent's folder or a project: its files, the
+ * text, a preview, and everything around saving.
+ */
 export function EditorWorkspace({
-  skill,
+  target,
+  librarySkill,
+  crumbs,
+  doneLink,
   requestedPath,
   onOpenFile,
 }: EditorWorkspaceProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const files = useSkillFiles(skill.id);
+  const { location } = target;
+  const files = useEditorFiles(location);
   const activePath = files.data ? pickPath(files.data, requestedPath) : null;
-  const file = useSkillFile(skill.id, activePath);
-  const session = useEditorSession(skill.id);
-  const report = useSaveReport();
+  const file = useEditorFile(location, activePath);
+  const session = useEditorSession(location);
+  const copyNames = useMemo(
+    () => Object.fromEntries(target.otherCopies.map((copy) => [copy.agentKey, copy.agentName])),
+    [target.otherCopies],
+  );
+  const report = useSaveReport(copyNames);
   const editorRef = useRef<CodeEditorHandle>(null);
 
   const [storedView, setView] = usePersistedState<EditorView>(
@@ -80,7 +104,9 @@ export function EditorWorkspace({
   const [cursor, setCursor] = useState<CursorPosition | null>(null);
   const [conflict, setConflict] = useState<Conflict | null>(null);
   const [resolving, setResolving] = useState(false);
-  const [storedDrafts] = useState(() => new Set(draftPaths(skill.id)));
+  const [storedDrafts] = useState(() => new Set(draftPaths(locationKey(location))));
+  // Project copies: carry each save to the other copies that were the same (on by default).
+  const [carryToCopies, setCarryToCopies] = useState(true);
 
   const { sync } = session;
   useEffect(() => {
@@ -99,9 +125,9 @@ export function EditorWorkspace({
   const problems = useMemo(
     () =>
       activePath && isSkillDocument(activePath) && files.data
-        ? checkDraft(previewText, skill.dirName, files.data)
+        ? checkDraft(previewText, target.folderName, files.data)
         : [],
-    [activePath, files.data, previewText, skill.dirName],
+    [activePath, files.data, previewText, target.folderName],
   );
 
   const unsaved = useMemo(() => {
@@ -113,7 +139,10 @@ export function EditorWorkspace({
 
   async function save(path: string, overwrite = false): Promise<boolean> {
     const mine = session.sessions[path]?.draft ?? "";
-    const outcome = await session.save(path, { overwrite });
+    const outcome = await session.save(path, {
+      overwrite,
+      otherCopies: target.otherCopies.length > 0 && carryToCopies ? "identical" : "none",
+    });
     if (outcome.kind === "saved") {
       report(outcome.result);
       return true;
@@ -168,7 +197,7 @@ export function EditorWorkspace({
   const pickVersion = async (versionId: string, savedAt: number): Promise<void> => {
     if (!activePath) return;
     try {
-      const content = await api.skills.readFileVersion(skill.id, activePath, versionId);
+      const content = await api.editor.readFileVersion(location, activePath, versionId);
       session.replaceDraft(activePath, content);
       editorRef.current?.focus();
       toast.info(t("editor.versions.loaded", { when: formatRelative(savedAt) }));
@@ -179,12 +208,12 @@ export function EditorWorkspace({
 
   const header = (
     <PageHeader
-      title={skill.name}
+      title={target.name}
       subtitle={activePath ?? undefined}
-      breadcrumbs={[{ label: t("nav.library"), to: "/library" }]}
+      breadcrumbs={crumbs}
       actions={
         <EditorActions
-          skillId={skill.id}
+          location={location}
           path={activePath}
           view={view}
           previewable={language.previewable}
@@ -193,7 +222,7 @@ export function EditorWorkspace({
           saving={saving}
           onSave={saveActive}
           onPickVersion={(id, at) => void pickVersion(id, at)}
-          onDone={() => void navigate({ to: "/library", search: { skill: skill.id } })}
+          onDone={() => void navigate(doneLink)}
         />
       }
     />
@@ -231,7 +260,7 @@ export function EditorWorkspace({
               files={files.data}
               activePath={activePath}
               unsaved={unsaved}
-              showEdited={hasTrackedSource(skill)}
+              showEdited={librarySkill !== null && hasTrackedSource(librarySkill)}
               onSelect={onOpenFile}
             />
           ) : (
@@ -247,7 +276,10 @@ export function EditorWorkspace({
       <section className="flex min-w-0 flex-1 flex-col">
         {activePath && (current || deleted) ? (
           <EditorNotices
-            skill={skill}
+            librarySkill={librarySkill}
+            otherCopies={target.otherCopies}
+            carryToCopies={carryToCopies}
+            onCarryToCopies={setCarryToCopies}
             path={activePath}
             deleted={deleted}
             diskChanged={current ? hasDiskChange(current) : false}

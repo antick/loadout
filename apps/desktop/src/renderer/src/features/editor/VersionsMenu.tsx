@@ -1,4 +1,4 @@
-import { formatBytes, formatDateTime, formatRelative } from "@loadout/shared";
+import { formatBytes, formatDateTime, formatRelative, type SkillLocation } from "@loadout/shared";
 import { History } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useSkillFileVersions } from "@/hooks/queries/skill-files";
+import { useEditorFileVersions } from "@/hooks/queries/editor";
 
 export interface VersionsMenuProps {
-  skillId: string;
+  location: SkillLocation;
   path: string | null;
   disabled?: boolean;
   /** A version was picked; the caller loads it into the editor. */
@@ -24,10 +24,10 @@ export interface VersionsMenuProps {
 }
 
 /** Earlier saved versions of the open file, kept on this computer, newest first. */
-export function VersionsMenu({ skillId, path, disabled, onPick }: VersionsMenuProps): ReactNode {
+export function VersionsMenu({ location, path, disabled, onPick }: VersionsMenuProps): ReactNode {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const versions = useSkillFileVersions(skillId, path, open);
+  const versions = useEditorFileVersions(location, path, open);
   const label = t("editor.versions.button");
 
   return (

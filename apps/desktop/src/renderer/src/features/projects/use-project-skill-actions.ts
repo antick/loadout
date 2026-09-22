@@ -1,5 +1,6 @@
 import type { Project, ProjectTarget } from "@loadout/shared";
-import { ArrowDownToLine, ArrowUpFromLine, History, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowDownToLine, ArrowUpFromLine, History, PencilLine, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -13,8 +14,10 @@ import {
   usePushToLibrary,
   useSetProjectSkillEnabled,
 } from "@/hooks/mutations/project-detail";
+import { editLink } from "@/lib/skill-location";
 import {
   isTargetAvailable,
+  leadVariant,
   type ProjectSkillGroup,
   projectSkillRules,
   variantFor,
@@ -42,6 +45,7 @@ export function useProjectSkillActions(
 ): ProjectSkillActions {
   const { t } = useTranslation();
   const confirm = useConfirm();
+  const navigate = useNavigate();
   // `mutate` is stable across renders; the mutation objects are not.
   const { mutate: push } = usePushToLibrary();
   const { mutate: pull } = usePullFromLibrary();
@@ -68,7 +72,25 @@ export function useProjectSkillActions(
         relativePath: group.relativePath,
         name: group.name,
       };
-      const actions: SkillAction[] = [];
+      const lead = leadVariant(group);
+      const actions: SkillAction[] = lead
+        ? [
+            {
+              id: "edit",
+              label: t("editor.open"),
+              icon: PencilLine,
+              run: () =>
+                void navigate(
+                  editLink({
+                    kind: "project",
+                    projectId,
+                    relativePath: lead.relativePath,
+                    agentKey: lead.agentKey,
+                  }),
+                ),
+            },
+          ]
+        : [];
 
       if (rules.push) {
         actions.push({
@@ -140,7 +162,7 @@ export function useProjectSkillActions(
       });
       return actions;
     },
-    [t, confirm, push, pull, deleteSkill, projectId, onGone],
+    [t, confirm, navigate, push, pull, deleteSkill, projectId, onGone],
   );
 
   const toggleEnabled = useCallback(

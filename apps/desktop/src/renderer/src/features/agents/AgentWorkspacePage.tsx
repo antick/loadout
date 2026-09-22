@@ -216,6 +216,9 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
         path={openSkill?.path}
         document={openDocument}
         badges={openView ? managedBadge(openView) : null}
+        editLocation={
+          openSkill ? { kind: "agent", agentKey, relativePath: openSkill.relativePath } : undefined
+        }
         actions={
           openSkill ? <SkillActionButtons all size="sm" actions={actionsFor(openSkill)} /> : null
         }

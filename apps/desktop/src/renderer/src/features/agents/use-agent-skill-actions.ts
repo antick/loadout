@@ -1,5 +1,6 @@
 import type { LocalSkill } from "@loadout/shared";
-import { ArrowDownToLine, ArrowUpFromLine, CircleMinus, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowDownToLine, ArrowUpFromLine, CircleMinus, PencilLine, Trash2 } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -11,6 +12,7 @@ import {
   useRemoveFromAgent,
   useUploadLocalSkill,
 } from "@/hooks/mutations/workspace";
+import { editLink } from "@/lib/skill-location";
 import { agentSkillRules } from "./agent-skill-rules";
 
 /**
@@ -23,6 +25,7 @@ export function useAgentSkillActions(
 ): (skill: LocalSkill) => SkillAction[] {
   const { t } = useTranslation();
   const confirm = useConfirm();
+  const navigate = useNavigate();
   // `mutate` is stable across renders; the mutation objects are not.
   const { mutate: upload } = useUploadLocalSkill();
   const { mutate: pull } = usePullLocalSkill();
@@ -37,7 +40,22 @@ export function useAgentSkillActions(
         relativePath: skill.relativePath,
         name: skill.name,
       };
-      const actions: SkillAction[] = [];
+      const actions: SkillAction[] = [
+        {
+          id: "edit",
+          label: t("editor.open"),
+          icon: PencilLine,
+          // A deployed link is the library skill; the editor opens that one.
+          run: () =>
+            void navigate(
+              editLink({
+                kind: "agent",
+                agentKey: skill.agentKey,
+                relativePath: skill.relativePath,
+              }),
+            ),
+        },
+      ];
 
       if (rules.upload) {
         actions.push({
@@ -125,6 +143,6 @@ export function useAgentSkillActions(
 
       return actions;
     },
-    [t, confirm, upload, pull, remove, deleteLocal, agentName, onGone],
+    [t, confirm, navigate, upload, pull, remove, deleteLocal, agentName, onGone],
   );
 }

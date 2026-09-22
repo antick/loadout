@@ -13,8 +13,8 @@ export interface EditorDraft {
   savedAt: number;
 }
 
-function storageKey(skillId: string, path: string): string {
-  return `${STORAGE_PREFIX}${EDITOR_DRAFT_PREFIX}${skillId}:${path}`;
+function storageKey(draftKey: string, path: string): string {
+  return `${STORAGE_PREFIX}${EDITOR_DRAFT_PREFIX}${draftKey}:${path}`;
 }
 
 function isDraft(value: unknown): value is EditorDraft {
@@ -27,13 +27,13 @@ function isDraft(value: unknown): value is EditorDraft {
   );
 }
 
-export function readDraft(skillId: string, path: string, now = Date.now()): EditorDraft | null {
+export function readDraft(draftKey: string, path: string, now = Date.now()): EditorDraft | null {
   try {
-    const raw = window.localStorage.getItem(storageKey(skillId, path));
+    const raw = window.localStorage.getItem(storageKey(draftKey, path));
     if (raw === null) return null;
     const value: unknown = JSON.parse(raw);
     if (!isDraft(value) || now - value.savedAt > EDITOR_DRAFT_MAX_AGE_MS) {
-      clearDraft(skillId, path);
+      clearDraft(draftKey, path);
       return null;
     }
     return value;
@@ -42,25 +42,25 @@ export function readDraft(skillId: string, path: string, now = Date.now()): Edit
   }
 }
 
-export function writeDraft(skillId: string, path: string, draft: EditorDraft): void {
+export function writeDraft(draftKey: string, path: string, draft: EditorDraft): void {
   try {
-    window.localStorage.setItem(storageKey(skillId, path), JSON.stringify(draft));
+    window.localStorage.setItem(storageKey(draftKey, path), JSON.stringify(draft));
   } catch {
     // Storage full or blocked: the text is still in the editor for this session.
   }
 }
 
-export function clearDraft(skillId: string, path: string): void {
+export function clearDraft(draftKey: string, path: string): void {
   try {
-    window.localStorage.removeItem(storageKey(skillId, path));
+    window.localStorage.removeItem(storageKey(draftKey, path));
   } catch {
     // Nothing to clean up when storage is unavailable.
   }
 }
 
-/** Paths of the skill that have a stored draft, for the dots in the file list. */
-export function draftPaths(skillId: string): string[] {
-  const prefix = storageKey(skillId, "");
+/** Paths of the skill (by location key) that have a stored draft, for the file list dots. */
+export function draftPaths(draftKey: string): string[] {
+  const prefix = storageKey(draftKey, "");
   const paths: string[] = [];
   try {
     for (let index = 0; index < window.localStorage.length; index += 1) {

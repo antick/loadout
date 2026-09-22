@@ -40,7 +40,10 @@
       "reload": "Load disk version",
       "restored": "Unsaved changes from last time are back. Save them, or discard them.",
       "discard": "Discard",
-      "tracked": "This skill is updated from {{source}}. An update asks before it replaces anything you change here."
+      "tracked": "This skill is updated from {{source}}. An update asks before it replaces anything you change here.",
+      "copies_one": "This project also has this skill in {{agents}}.",
+      "copies_other": "This project also has this skill in {{agents}}.",
+      "carry": "Save to identical copies too"
     },
     "conflict": {
       "title": "{{path}} changed on disk",
@@ -74,7 +77,13 @@
       "keptTitle_other": "Saved. {{count}} agents kept their own copies",
       "keptDescription_one": "The copy in {{agents}} has changes of its own, so it was not replaced. Compare the two on the agent's page.",
       "keptDescription_other": "The copies in {{agents}} have changes of their own, so they were not replaced. Compare them on each agent's page.",
-      "keptAction": "Open {{agent}}"
+      "keptAction": "Open {{agent}}",
+      "carried_one": "Saved, and copied to {{agents}}",
+      "carried_other": "Saved, and copied to {{agents}}",
+      "skippedTitle_one": "Saved. One copy was left as it was",
+      "skippedTitle_other": "Saved. {{count}} copies were left as they were",
+      "skippedDescription_one": "The copy in {{agents}} had changes of its own, so it did not get this edit.",
+      "skippedDescription_other": "The copies in {{agents}} had changes of their own, so they did not get this edit."
     },
     "errors": {
       "save": "Could not save the file."
@@ -84,9 +93,9 @@
       "description": "This skill has no text files that can be edited here."
     },
     "missing": {
-      "title": "This skill is no longer in the library",
-      "description": "It was removed while the editor was open, or the link is out of date.",
-      "back": "Back to the library"
+      "title": "This skill is no longer here",
+      "description": "It was moved or removed while the editor was open, or the link is out of date.",
+      "back": "Go back"
     }
   },
   "skills": {

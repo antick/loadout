@@ -5,6 +5,7 @@ import { createBackupService } from "./backup";
 import type { CoreContext } from "./context";
 import { type CoreOptions, createContext } from "./create-context";
 import { createDeployService } from "./deploy";
+import { createEditorService, createFileHistory } from "./editor";
 import { createInstallService } from "./install";
 import { createMarketService } from "./market";
 import { createPresetsService } from "./presets";
@@ -53,9 +54,23 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const registry = new AgentRegistry(ctx);
   const deploy = createDeployService(ctx, { store, registry });
   const agents = createAgentsService(ctx, { registry, deploy });
+  const history = createFileHistory(ctx.paths.historyDir);
   const skills = createSkillsService(ctx, {
     store,
     removeDeployments: deploy.removeAllForSkill,
+    history,
+  });
+  const install = createInstallService(ctx, { store, registry });
+  const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
+  const updates = createUpdatesService(ctx, { store, install, deploy });
+  const presets = createPresetsService(ctx, { store, registry, deploy });
+  const workspace = createWorkspaceService(ctx, { store, registry, deploy, install });
+  const projects = createProjectsService(ctx, { store, registry, deploy, install });
+  const editor = createEditorService(ctx, {
+    store,
+    registry,
+    projects: projects.projects,
+    history,
     refreshCopies: async (skill) => {
       const report = await deploy.refreshCopies(skill, { keepModified: true });
       for (const conflict of report.conflicts) {
@@ -67,12 +82,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       return { written: report.written, kept: report.kept };
     },
   });
-  const install = createInstallService(ctx, { store, registry });
-  const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
-  const updates = createUpdatesService(ctx, { store, install, deploy });
-  const presets = createPresetsService(ctx, { store, registry, deploy });
-  const workspace = createWorkspaceService(ctx, { store, registry, deploy, install });
-  const projects = createProjectsService(ctx, { store, registry, deploy, install });
   const backup = createBackupService(ctx, {
     store,
     portable,
@@ -95,6 +104,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const api: CoreApi = {
     agents: agents.api,
     skills: skills.api,
+    editor: editor.api,
     deploy: deploy.api,
     install: install.api,
     market: market.api,

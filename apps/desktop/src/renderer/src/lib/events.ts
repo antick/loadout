@@ -44,15 +44,16 @@ export function useAppEvent<N extends AppEventName>(name: N, handler: Handler<N>
 const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   skills: [
     keys.skills.root,
+    keys.editor.root,
     keys.workspace.root,
     keys.projects.root,
     keys.updates.root,
     keys.market.root,
     keys.system.root,
   ],
-  agents: [keys.agents.root, keys.workspace.root, keys.projects.root],
+  agents: [keys.agents.root, keys.workspace.root, keys.projects.root, keys.editor.root],
   presets: [keys.presets.root, keys.skills.root],
-  projects: [keys.projects.root],
+  projects: [keys.projects.root, keys.editor.root],
   backup: [keys.backup.root],
   settings: [keys.settings.root, keys.system.root],
 };

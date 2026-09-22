@@ -1,14 +1,21 @@
-import { hasSkillErrors, type Skill, type SkillIssue } from "@loadout/shared";
-import { FileWarning, GitBranch, History, TriangleAlert } from "lucide-react";
+import { hasSkillErrors, type Skill, type SkillCopy, type SkillIssue } from "@loadout/shared";
+import { Copy, FileWarning, GitBranch, History, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
 import { SkillIssueList } from "@/components/SkillIssueList";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { hasTrackedSource, sourceLabelOf } from "@/lib/skill-source";
 
 export interface EditorNoticesProps {
-  skill: Skill;
+  /** Set when a library skill is edited. */
+  librarySkill: Skill | null;
+  /** Other copies of a project skill in other agents' folders. */
+  otherCopies: readonly SkillCopy[];
+  carryToCopies: boolean;
+  onCarryToCopies(carry: boolean): void;
   path: string;
   /** The open file is gone from disk. */
   deleted: boolean;
@@ -24,9 +31,14 @@ export interface EditorNoticesProps {
   onDiscardRestored(): void;
 }
 
+const CARRY_SWITCH_ID = "editor-carry-to-copies";
+
 /** The notes above the editor, most urgent first. Each says what happened and what to do. */
 export function EditorNotices({
-  skill,
+  librarySkill,
+  otherCopies,
+  carryToCopies,
+  onCarryToCopies,
   path,
   deleted,
   diskChanged,
@@ -101,10 +113,38 @@ export function EditorNotices({
     );
   }
 
-  if (hasTrackedSource(skill)) {
+  if (otherCopies.length > 0) {
+    notices.push(
+      <InlineNotice
+        key="copies"
+        tone="neutral"
+        icon={Copy}
+        actions={
+          <div className="flex items-center gap-2">
+            <Label htmlFor={CARRY_SWITCH_ID} className="text-xs font-normal">
+              {t("editor.notice.carry")}
+            </Label>
+            <Switch
+              id={CARRY_SWITCH_ID}
+              size="sm"
+              checked={carryToCopies}
+              onCheckedChange={onCarryToCopies}
+            />
+          </div>
+        }
+      >
+        {t("editor.notice.copies", {
+          count: otherCopies.length,
+          agents: otherCopies.map((copy) => copy.agentName).join(", "),
+        })}
+      </InlineNotice>,
+    );
+  }
+
+  if (librarySkill && hasTrackedSource(librarySkill)) {
     notices.push(
       <InlineNotice key="source" tone="neutral" icon={GitBranch}>
-        {t("editor.notice.tracked", { source: sourceLabelOf(skill) })}
+        {t("editor.notice.tracked", { source: sourceLabelOf(librarySkill) })}
       </InlineNotice>,
     );
   }

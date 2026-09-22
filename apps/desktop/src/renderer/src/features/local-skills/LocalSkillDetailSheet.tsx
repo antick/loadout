@@ -1,4 +1,5 @@
-import type { SkillDocument } from "@loadout/shared";
+import type { SkillDocument, SkillLocation } from "@loadout/shared";
+import { Link } from "@tanstack/react-router";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
 import { useLastDefined } from "@/hooks/use-last-defined";
+import { editLink } from "@/lib/skill-location";
 import type { LocalSkillView } from "./local-skill-view";
 import { LocalSkillMeta } from "./LocalSkillMeta";
 
@@ -33,6 +35,8 @@ export interface LocalSkillDetailSheetProps {
   badges?: ReactNode;
   /** Buttons under the header: the same actions the card offers. */
   actions?: ReactNode;
+  /** The copy on screen: its file names open the editor on that file. */
+  editLocation?: SkillLocation;
   /** Extra sections between the header and the files, e.g. per-agent switches. */
   children?: ReactNode;
 }
@@ -56,6 +60,7 @@ export function LocalSkillDetailSheet({
   localLabel,
   badges,
   actions,
+  editLocation,
   children,
 }: LocalSkillDetailSheetProps): ReactNode {
   const { t } = useTranslation();
@@ -105,9 +110,19 @@ export function LocalSkillDetailSheet({
                     {files.map((file) => (
                       <li
                         key={file}
-                        className="rounded-md border bg-muted/40 px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
+                        className="rounded-md border bg-muted/40 font-mono text-xs text-muted-foreground"
                       >
-                        {file}
+                        {editLocation && !file.endsWith("/") ? (
+                          <Link
+                            {...editLink(editLocation, file)}
+                            title={t("editor.openFile", { path: file })}
+                            className="block rounded-md px-1.5 py-0.5 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                          >
+                            {file}
+                          </Link>
+                        ) : (
+                          <span className="block px-1.5 py-0.5">{file}</span>
+                        )}
                       </li>
                     ))}
                   </ul>

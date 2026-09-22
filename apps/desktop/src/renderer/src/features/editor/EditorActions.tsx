@@ -1,3 +1,4 @@
+import type { SkillLocation } from "@loadout/shared";
 import { Columns2, Eye, PencilLine, Save } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +13,7 @@ import { EDITOR_VIEWS, type EditorView } from "@/lib/constants";
 const VIEW_ICONS = { edit: PencilLine, split: Columns2, preview: Eye } as const;
 
 export interface EditorActionsProps {
-  skillId: string;
+  location: SkillLocation;
   path: string | null;
   view: EditorView;
   /** Only Markdown has a preview; other files are always shown as text. */
@@ -27,7 +28,7 @@ export interface EditorActionsProps {
 
 /** The editor's buttons in the top bar: earlier versions, layout, save and done. */
 export function EditorActions({
-  skillId,
+  location,
   path,
   view,
   previewable,
@@ -43,7 +44,7 @@ export function EditorActions({
 
   return (
     <>
-      <VersionsMenu skillId={skillId} path={path} onPick={onPickVersion} />
+      <VersionsMenu location={location} path={path} onPick={onPickVersion} />
       {previewable ? (
         <ToggleGroup
           type="single"

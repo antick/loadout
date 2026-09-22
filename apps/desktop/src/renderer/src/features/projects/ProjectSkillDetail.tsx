@@ -62,6 +62,16 @@ export function ProjectSkillDetail({
       path={shown?.path}
       document={document}
       localLabel={t("projectPage.detail.projectTab")}
+      editLocation={
+        shown
+          ? {
+              kind: "project",
+              projectId: project.id,
+              relativePath: shown.relativePath,
+              agentKey: shown.agentKey,
+            }
+          : undefined
+      }
       actions={
         group ? <SkillActionButtons all size="sm" actions={actions.actionsFor(group)} /> : null
       }

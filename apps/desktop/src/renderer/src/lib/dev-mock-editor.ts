@@ -1,8 +1,9 @@
 /**
- * DEV ONLY. `skills.files` / `readFile` / `saveFile` and the version history for the browser
+ * DEV ONLY. `editor.*` (library skills only) and the version history for the browser
  * preview: every skill gets a few in-memory files, and saves keep earlier versions.
  */
 import type {
+  EditTarget,
   ErrorCode,
   SaveSkillFileInput,
   SaveSkillFileResult,
@@ -10,6 +11,7 @@ import type {
   SkillFile,
   SkillFileEntry,
   SkillFileVersion,
+  SkillLocation,
 } from "@loadout/shared";
 
 export interface EditorMockContext {
@@ -49,6 +51,12 @@ export function createEditorMockHandlers(
   const files = new Map<string, Map<string, string>>();
   const versions = new Map<string, { id: string; savedAt: number; content: string }[]>();
 
+  /** The preview only has library skills; other places answer with a clear error. */
+  function idOf(location: SkillLocation): string {
+    if (location.kind === "library") return location.skillId;
+    return ctx.fail("UNSUPPORTED", "The preview can only edit library skills.");
+  }
+
   function skillOf(skillId: string): Skill {
     const skill = ctx.getSkills().find((entry) => entry.id === skillId);
     return skill ?? ctx.fail("NOT_FOUND", `Skill not found: ${skillId}`);
@@ -70,8 +78,21 @@ export function createEditorMockHandlers(
   }
 
   return {
-    "skills.files": (skillId: string): SkillFileEntry[] => {
-      const skill = skillOf(skillId);
+    "editor.target": (location: SkillLocation): EditTarget => {
+      const skill = skillOf(idOf(location));
+      return {
+        location,
+        name: skill.name,
+        folderName: skill.dirName,
+        path: skill.libraryPath,
+        placeLabel: "Library",
+        librarySkillId: skill.id,
+        otherCopies: [],
+      };
+    },
+
+    "editor.files": (location: SkillLocation): SkillFileEntry[] => {
+      const skill = skillOf(idOf(location));
       const edited = new Set(skill.editedFiles);
       const text = [...filesOf(skill)].map(([path, content]) => ({
         path,
@@ -85,16 +106,29 @@ export function createEditorMockHandlers(
       );
     },
 
-    "skills.readFile": (skillId: string, path: string) => read(skillOf(skillId), path),
+    "editor.readFile": (location: SkillLocation, path: string) =>
+      read(skillOf(idOf(location)), path),
 
-    "skills.saveFile": (skillId: string, input: SaveSkillFileInput): SaveSkillFileResult => {
+    "editor.saveFile": (
+      location: SkillLocation,
+      input: SaveSkillFileInput,
+    ): SaveSkillFileResult => {
+      const skillId = idOf(location);
       const skill = skillOf(skillId);
       const current = read(skill, input.path);
       if (current.hash !== input.baseHash && !input.overwrite) {
         ctx.fail("CHANGED_ON_DISK", `${input.path} changed on disk after you opened it.`);
       }
       if (current.content === input.content) {
-        return { skill, file: current, written: false, copiesRefreshed: 0, copiesKept: [] };
+        return {
+          skill,
+          file: current,
+          written: false,
+          copiesRefreshed: 0,
+          copiesKept: [],
+          otherCopiesSaved: [],
+          otherCopiesSkipped: [],
+        };
       }
       const key = `${skillId}:${input.path}`;
       const kept = versions.get(key) ?? [];
@@ -113,18 +147,22 @@ export function createEditorMockHandlers(
         written: true,
         copiesRefreshed: agents.filter((agent) => agent !== EDITED_COPY_AGENT).length,
         copiesKept: agents.filter((agent) => agent === EDITED_COPY_AGENT),
+        otherCopiesSaved: [],
+        otherCopiesSkipped: [],
       };
     },
 
-    "skills.fileVersions": (skillId: string, path: string): SkillFileVersion[] =>
-      (versions.get(`${skillId}:${path}`) ?? []).map(({ id, savedAt, content }) => ({
+    "editor.fileVersions": (location: SkillLocation, path: string): SkillFileVersion[] =>
+      (versions.get(`${idOf(location)}:${path}`) ?? []).map(({ id, savedAt, content }) => ({
         id,
         savedAt,
         size: content.length,
       })),
 
-    "skills.readFileVersion": (skillId: string, path: string, versionId: string) => {
-      const version = versions.get(`${skillId}:${path}`)?.find((entry) => entry.id === versionId);
+    "editor.readFileVersion": (location: SkillLocation, path: string, versionId: string) => {
+      const version = versions
+        .get(`${idOf(location)}:${path}`)
+        ?.find((entry) => entry.id === versionId);
       return version?.content ?? ctx.fail("NOT_FOUND", "That earlier version is no longer kept");
     },
   };

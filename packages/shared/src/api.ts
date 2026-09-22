@@ -39,6 +39,8 @@ import type {
   SizeReport,
   Skill,
   SkillDocument,
+  SkillLocation,
+  EditTarget,
   SkillFile,
   SkillFileEntry,
   SkillFileVersion,
@@ -83,14 +85,19 @@ export interface SkillsApi {
   deleteTag(tag: string): Promise<void>;
   /** Open the skill's library folder in the OS file manager. */
   reveal(skillId: string): Promise<void>;
+}
+
+/** The in-app editor: any skill folder, in the library, an agent's folder or a project. */
+export interface EditorApi {
+  target(location: SkillLocation): Promise<EditTarget>;
   /** Every content file of the skill, main document first, then by path. */
-  files(skillId: string): Promise<SkillFileEntry[]>;
-  readFile(skillId: string, path: string): Promise<SkillFile>;
+  files(location: SkillLocation): Promise<SkillFileEntry[]>;
+  readFile(location: SkillLocation, path: string): Promise<SkillFile>;
   /** Throws CHANGED_ON_DISK when the file moved on since `baseHash`, unless `overwrite`. */
-  saveFile(skillId: string, input: SaveSkillFileInput): Promise<SaveSkillFileResult>;
+  saveFile(location: SkillLocation, input: SaveSkillFileInput): Promise<SaveSkillFileResult>;
   /** Earlier versions of one file, newest first. */
-  fileVersions(skillId: string, path: string): Promise<SkillFileVersion[]>;
-  readFileVersion(skillId: string, path: string, versionId: string): Promise<string>;
+  fileVersions(location: SkillLocation, path: string): Promise<SkillFileVersion[]>;
+  readFileVersion(location: SkillLocation, path: string, versionId: string): Promise<string>;
 }
 
 export interface DeployApi {
@@ -252,6 +259,7 @@ export interface AppApi {
 export interface LoadoutApi {
   agents: AgentsApi;
   skills: SkillsApi;
+  editor: EditorApi;
   deploy: DeployApi;
   install: InstallApi;
   market: MarketApi;
@@ -273,6 +281,7 @@ export type CoreApi = Omit<LoadoutApi, "app">;
 export const CORE_NAMESPACES = [
   "agents",
   "skills",
+  "editor",
   "deploy",
   "install",
   "market",

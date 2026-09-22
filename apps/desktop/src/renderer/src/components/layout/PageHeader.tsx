@@ -8,6 +8,7 @@ import { PageHeaderSlotsContext } from "@/components/layout/shell-context";
 export interface PageCrumb {
   label: string;
   to: LinkProps["to"];
+  params?: LinkProps["params"];
 }
 
 export interface PageHeaderProps {
@@ -47,6 +48,7 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
                 >
                   <Link
                     to={crumb.to}
+                    params={crumb.params}
                     className="rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     {crumb.label}
