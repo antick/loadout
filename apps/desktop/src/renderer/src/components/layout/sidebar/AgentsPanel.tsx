@@ -1,10 +1,12 @@
 import type { AgentInfo } from "@loadout/shared";
-import { Bot } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Bot, SlidersHorizontal } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { NavGroup } from "@/components/layout/sidebar/NavGroup";
 import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem";
+import { SidebarPanel } from "@/components/layout/sidebar/SidebarPanel";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuSkeleton } from "@/components/ui/sidebar";
 import { useAvailableAgents, useWorkspaceCounts } from "@/hooks/queries/agents";
 
@@ -37,9 +39,13 @@ function AgentItems({
   ));
 }
 
-/** "All agents" plus one entry per available agent; assistants get their own group when present. */
-export function AgentsGroup(): ReactNode {
+/**
+ * Agents section of the sidebar: "All agents", then one entry per available coding agent, and
+ * personal assistants in a group of their own when there are any.
+ */
+export function AgentsPanel(): ReactNode {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const agents = useAvailableAgents();
   const agentKeys = useMemo(() => (agents.data ?? []).map((agent) => agent.key), [agents.data]);
   const counts = useWorkspaceCounts(agentKeys);
@@ -47,8 +53,15 @@ export function AgentsGroup(): ReactNode {
   const assistants = (agents.data ?? []).filter((agent) => agent.category === "assistant");
 
   return (
-    <>
-      <NavGroup id="agents" label={t("nav.agents")}>
+    <SidebarPanel
+      title={t("rail.agents")}
+      action={{
+        label: t("sidebar.agents.manage"),
+        icon: <SlidersHorizontal />,
+        onClick: () => void navigate({ to: "/settings", search: { section: "agents" } }),
+      }}
+    >
+      <NavGroup id="agents" label={t("sidebar.agents.coding")}>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarNavItem
@@ -72,6 +85,6 @@ export function AgentsGroup(): ReactNode {
           </SidebarMenu>
         </NavGroup>
       ) : null}
-    </>
+    </SidebarPanel>
   );
 }

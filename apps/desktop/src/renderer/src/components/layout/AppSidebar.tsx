@@ -1,137 +1,109 @@
-import type { BackupStatus } from "@loadout/shared";
-import { APP_NAME } from "@loadout/shared";
-import { CloudUpload, Download, LayoutDashboard, Library, LifeBuoy, Settings } from "lucide-react";
-import type { ReactNode } from "react";
+import { useLocation } from "@tanstack/react-router";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AgentsGroup } from "@/components/layout/sidebar/AgentsGroup";
-import { PresetsGroup } from "@/components/layout/sidebar/PresetsGroup";
-import { ProjectsGroup } from "@/components/layout/sidebar/ProjectsGroup";
-import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem";
-import { useShell } from "@/components/layout/shell-context";
-import { WindowDragRegion } from "@/components/layout/WindowDragRegion";
-import type { StatusTone } from "@/components/StatusBadge";
-import { StatusDot } from "@/components/StatusDot";
+import { AppRail } from "@/components/layout/AppRail";
+import { AgentsPanel } from "@/components/layout/sidebar/AgentsPanel";
+import { LibraryPanel } from "@/components/layout/sidebar/LibraryPanel";
+import { PresetsPanel } from "@/components/layout/sidebar/PresetsPanel";
+import { ProjectsPanel } from "@/components/layout/sidebar/ProjectsPanel";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-} from "@/components/ui/sidebar";
-import { useAppInfo, useBackupStatus } from "@/hooks/queries/app";
-import { useSkills } from "@/hooks/queries/skills";
-import { TOP_BAR_HEIGHT_CLASS } from "@/lib/constants";
+  DEFAULT_SIDEBAR_SECTION,
+  SECTION_SHORTCUTS,
+  type SidebarSection,
+  isSidebarSection,
+  sectionForPath,
+} from "@/components/layout/sidebar/sections";
+import { Sidebar, useSidebar } from "@/components/ui/sidebar";
+import { useHotkey } from "@/hooks/use-hotkey";
+import { usePersistedState } from "@/hooks/use-persisted-state";
+import { STORAGE_KEYS } from "@/lib/constants";
+import { SHORTCUT_KEYS } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 
-/** Backup health as a dot: grey = not set up, amber = changes waiting, red = broken, green = synced. */
-function backupTone(status: BackupStatus | undefined): StatusTone | null {
-  if (!status) return null;
-  if (!status.isRepo || !status.remoteUrl) return "neutral";
-  if (status.upstreamHealth !== "healthy" || !status.gitAvailable) return "danger";
-  if (status.hasChanges || status.ahead > 0 || status.behind > 0) return "warning";
-  return "success";
-}
+const PANELS: Record<SidebarSection, () => ReactNode> = {
+  library: LibraryPanel,
+  agents: AgentsPanel,
+  presets: PresetsPanel,
+  projects: ProjectsPanel,
+};
 
-/** The app's left navigation. Collapses to icons with ⌘B. */
+/**
+ * The app's left navigation in two parts: the icon rail, always there, and the sidebar next to
+ * it, which lists the section picked in the rail and folds away with ⌘B. Opening a page of
+ * another section (from a link, the palette or the tray) switches the sidebar to that section.
+ */
 export function AppSidebar(): ReactNode {
   const { t } = useTranslation();
-  const shell = useShell();
-  const skills = useSkills();
-  const info = useAppInfo();
-  const backup = useBackupStatus();
-  const tone = backupTone(backup.data);
+  const { open, setOpen } = useSidebar();
+  const [stored, setStored] = usePersistedState<SidebarSection>(
+    STORAGE_KEYS.sidebarSection,
+    DEFAULT_SIDEBAR_SECTION,
+  );
+  const section = isSidebarSection(stored) ? stored : DEFAULT_SIDEBAR_SECTION;
+  const pathname = useLocation({ select: (location) => location.pathname });
+
+  // Follow the page into its section; pages of their own keep whatever is shown.
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (pathname !== seenPath) {
+    setSeenPath(pathname);
+    const pageSection = sectionForPath(pathname);
+    if (pageSection && pageSection !== section) setStored(pageSection);
+  }
+
+  /** The rail button: show that section, or fold the sidebar when it is already shown. */
+  const pick = (next: SidebarSection): void => {
+    if (open && next === section) {
+      setOpen(false);
+      return;
+    }
+    setStored(next);
+    setOpen(true);
+  };
+
+  const showSection = (next: SidebarSection): void => {
+    setStored(next);
+    setOpen(true);
+  };
+  useHotkey(SHORTCUT_KEYS[SECTION_SHORTCUTS.library], (event) => {
+    event.preventDefault();
+    showSection("library");
+  });
+  useHotkey(SHORTCUT_KEYS[SECTION_SHORTCUTS.agents], (event) => {
+    event.preventDefault();
+    showSection("agents");
+  });
+  useHotkey(SHORTCUT_KEYS[SECTION_SHORTCUTS.presets], (event) => {
+    event.preventDefault();
+    showSection("presets");
+  });
+  useHotkey(SHORTCUT_KEYS[SECTION_SHORTCUTS.projects], (event) => {
+    event.preventDefault();
+    showSection("projects");
+  });
+
+  const Panel = PANELS[section];
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="p-0">
-        <WindowDragRegion
-          reserveWindowControls
-          className={cn("px-4 group-data-[collapsible=icon]:hidden", TOP_BAR_HEIGHT_CLASS)}
+    <>
+      <AppRail section={section} panelOpen={open} onSection={pick} />
+      <div
+        data-state={open ? "expanded" : "collapsed"}
+        aria-hidden={!open}
+        inert={!open}
+        className={cn(
+          "h-svh shrink-0 overflow-hidden border-r bg-sidebar transition-[width] duration-200 ease-linear",
+          open ? "w-(--sidebar-width)" : "w-0 border-r-0",
+        )}
+      >
+        {/* Fixed width inside, so the lists do not reflow while the panel slides. */}
+        <Sidebar
+          collapsible="none"
+          aria-label={t("sidebar.label", { section: t(`rail.${section}`) })}
+          className="h-svh"
         >
-          <span className="flex items-center gap-2 text-sm leading-none font-semibold tracking-tight">
-            <img src="./brand.svg" alt="" className="size-[18px] shrink-0" />
-            {APP_NAME}
-          </span>
-        </WindowDragRegion>
-        <WindowDragRegion
-          className={cn("hidden group-data-[collapsible=icon]:flex", TOP_BAR_HEIGHT_CLASS)}
-        />
-      </SidebarHeader>
-
-      <SidebarContent className="gap-0">
-        <SidebarGroup className="py-1">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarNavItem
-                  link={{ to: "/" }}
-                  exact
-                  label={t("nav.dashboard")}
-                  icon={<LayoutDashboard />}
-                />
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarNavItem
-                  link={{ to: "/library" }}
-                  label={t("nav.library")}
-                  icon={<Library />}
-                  badge={skills.data?.length}
-                />
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarNavItem
-                  link={{ to: "/install" }}
-                  label={t("nav.install")}
-                  icon={<Download />}
-                />
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <AgentsGroup />
-        <PresetsGroup />
-        <ProjectsGroup />
-      </SidebarContent>
-
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarNavItem
-              link={{ to: "/backup" }}
-              label={t("nav.backup")}
-              icon={<CloudUpload />}
-              indicator={tone ? <StatusDot tone={tone} label={t(`backup.dot.${tone}`)} /> : null}
-            />
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarNavItem
-              link={{ to: "/settings" }}
-              label={t("nav.settings")}
-              icon={<Settings />}
-            />
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip={t("nav.help")} onClick={shell.openHelp}>
-              <LifeBuoy />
-              <span>{t("nav.help")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        {info.data ? (
-          <p
-            data-selectable
-            className="px-2 font-mono text-[0.6875rem] text-muted-foreground group-data-[collapsible=icon]:hidden"
-          >
-            {t("shell.version", { version: info.data.version })}
-          </p>
-        ) : null}
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+          <Panel />
+        </Sidebar>
+      </div>
+    </>
   );
 }

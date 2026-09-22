@@ -5,7 +5,7 @@ import { useShell } from "@/components/layout/shell-context";
 import { useIsMac, WindowDragRegion } from "@/components/layout/WindowDragRegion";
 import { Kbd } from "@/components/ui/kbd";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import { MAC_WINDOW_CONTROLS_WIDTH_PX, TOP_BAR_HEIGHT_CLASS } from "@/lib/constants";
+import { MAC_WINDOW_CONTROLS_WIDTH_PX, RAIL_WIDTH_PX, TOP_BAR_HEIGHT_CLASS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useShortcutLabel } from "@/hooks/use-shortcut-label";
 
@@ -23,8 +23,8 @@ export function TopBar({ titleSlotRef, actionsSlotRef }: TopBarProps): ReactNode
   const { state, isMobile } = useSidebar();
   const isMac = useIsMac();
   const paletteLabel = useShortcutLabel("palette");
-  // With the sidebar reduced to icons (or hidden) the macOS window buttons reach into the top bar.
-  const sidebarWidth = isMobile ? "0px" : "var(--sidebar-width-icon)";
+  // With the sidebar folded away only the rail is left, and the macOS window buttons reach past
+  // it into the top bar.
   const clearControls = isMac && (state === "collapsed" || isMobile);
 
   return (
@@ -33,7 +33,7 @@ export function TopBar({ titleSlotRef, actionsSlotRef }: TopBarProps): ReactNode
       style={
         clearControls
           ? {
-              paddingLeft: `max(0.75rem, calc(${MAC_WINDOW_CONTROLS_WIDTH_PX}px - ${sidebarWidth}))`,
+              paddingLeft: `max(0.75rem, ${MAC_WINDOW_CONTROLS_WIDTH_PX - RAIL_WIDTH_PX}px)`,
             }
           : undefined
       }

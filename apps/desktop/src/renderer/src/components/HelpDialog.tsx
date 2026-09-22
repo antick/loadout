@@ -41,7 +41,18 @@ const WORKFLOWS: readonly { id: string; icon: LucideIcon }[] = [
   { id: "devices", icon: Laptop },
 ];
 
-const SHORTCUT_IDS: readonly ShortcutId[] = ["palette", "find", "sidebar", "settings", "escape"];
+const SHORTCUT_IDS: readonly ShortcutId[] = [
+  "palette",
+  "find",
+  "sidebar",
+  "sectionLibrary",
+  "sectionAgents",
+  "sectionPresets",
+  "sectionProjects",
+  "save",
+  "settings",
+  "escape",
+];
 
 /** A workflow's steps; an untranslated key comes back as a string, which shows nothing. */
 function workflowSteps(value: unknown): string[] {

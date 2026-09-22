@@ -301,7 +301,7 @@
     "shortcuts": {
       "palette": "Open the command palette",
       "find": "Search the current page",
-      "sidebar": "Collapse or expand the sidebar",
+      "sidebar": "Fold the sidebar away or bring it back",
       "settings": "Open settings",
       "escape": "Leave selection mode or close a dialog"
     }

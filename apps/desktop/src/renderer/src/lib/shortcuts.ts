@@ -7,6 +7,10 @@ export const SHORTCUT_KEYS = {
   sidebar: "b",
   settings: ",",
   save: "s",
+  sectionLibrary: "1",
+  sectionAgents: "2",
+  sectionPresets: "3",
+  sectionProjects: "4",
 } as const;
 
 export type ShortcutId = keyof typeof SHORTCUT_KEYS | "escape";

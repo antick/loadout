@@ -147,6 +147,13 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ### App
 
+- Two-part navigation: an icon rail at the far left (Home, Library, Agents, Presets, Projects,
+  Backup, Settings, Help and a theme switch) and a sidebar beside it that lists the section picked
+  in the rail. Pressing the shown section folds the sidebar away; `⌘B` does the same, and
+  `⌘1`–`⌘4` jump to Library, Agents, Presets and Projects. Opening a page of another section
+  switches the sidebar to it.
+- The Library section has All skills, Install, one-click views (updates available, needs
+  attention, not deployed) with counts, and the recently changed skills.
 - Dashboard with library, coverage, agent, update, project and backup stats, quick actions, recent
   activity and recently updated skills.
 - Command palette (`⌘K` / `Ctrl+K`) for skills, presets, projects, agents and actions.

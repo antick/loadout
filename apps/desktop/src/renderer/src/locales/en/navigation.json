@@ -1,0 +1,44 @@
+{
+  "rail": {
+    "label": "Main navigation",
+    "home": "Home",
+    "library": "Library",
+    "agents": "Agents",
+    "presets": "Presets",
+    "projects": "Projects",
+    "theme": "Theme: {{current}}. Click to switch",
+    "themes": {
+      "system": "system",
+      "light": "light",
+      "dark": "dark"
+    }
+  },
+  "sidebar": {
+    "label": "{{section}} sidebar",
+    "library": {
+      "all": "All skills",
+      "install": "Install skills",
+      "views": "Views",
+      "view": {
+        "updates": "Updates available",
+        "attention": "Needs attention",
+        "not_deployed": "Not deployed"
+      },
+      "recent": "Recently changed",
+      "empty": "No skills yet."
+    },
+    "agents": {
+      "coding": "Coding agents",
+      "manage": "Agent settings"
+    }
+  },
+  "help": {
+    "shortcuts": {
+      "save": "Save the file open in the editor",
+      "sectionLibrary": "Show the library in the sidebar",
+      "sectionAgents": "Show agents in the sidebar",
+      "sectionPresets": "Show presets in the sidebar",
+      "sectionProjects": "Show projects in the sidebar"
+    }
+  }
+}

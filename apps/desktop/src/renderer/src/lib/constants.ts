@@ -7,6 +7,7 @@ export const STORAGE_PREFIX = `${APP_SLUG}:`;
 export const STORAGE_KEYS = {
   sidebarOpen: "sidebar.open",
   sidebarGroups: "sidebar.groups",
+  sidebarSection: "sidebar.section",
   viewMode: "view-mode",
   editorView: "editor.view",
   editorWrap: "editor.wrap",
@@ -30,6 +31,10 @@ export const DEFAULT_EDITOR_VIEW: EditorView = "split";
  */
 export const MAC_WINDOW_CONTROLS_WIDTH_PX = 96;
 export const TOP_BAR_HEIGHT_CLASS = "h-12";
+/** Width of the icon rail at the far left, beside the collapsible sidebar. */
+export const RAIL_WIDTH_PX = 68;
+/** Skills listed under "Recently changed" in the library panel. */
+export const SIDEBAR_RECENT_SKILLS = 5;
 
 export const APP_UPDATE_CHECK_DELAY_MS = 3000;
 export const SEARCH_DEBOUNCE_MS = 200;
@@ -47,7 +52,8 @@ export const COMMAND_PALETTE_MAX_SKILLS = 50;
 /** Pointer travel before a sidebar item starts dragging, so plain clicks still navigate. */
 export const DRAG_ACTIVATION_DISTANCE_PX = 6;
 
-export const SIDEBAR_GROUP_IDS = ["agents", "assistants", "presets", "projects"] as const;
+/** Collapsible groups inside the sidebar sections; their open state is remembered. */
+export const SIDEBAR_GROUP_IDS = ["agents", "assistants"] as const;
 export type SidebarGroupId = (typeof SIDEBAR_GROUP_IDS)[number];
 
 export const INSTALL_TABS = ["market", "local", "git", "scan"] as const;

@@ -6,7 +6,6 @@ import {
   SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { type SidebarGroupId, STORAGE_KEYS } from "@/lib/constants";
@@ -24,9 +23,7 @@ type GroupState = Partial<Record<SidebarGroupId, boolean>>;
 /** Collapsible sidebar group whose open state is remembered across restarts. */
 export function NavGroup({ id, label, action, children }: NavGroupProps): ReactNode {
   const [groups, setGroups] = usePersistedState<GroupState>(STORAGE_KEYS.sidebarGroups, {});
-  const { state } = useSidebar();
-  // In icon mode labels are hidden, so a collapsed group would silently hide its icons.
-  const open = state === "collapsed" || (groups[id] ?? true);
+  const open = groups[id] ?? true;
 
   return (
     <Collapsible
