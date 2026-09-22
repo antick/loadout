@@ -63,6 +63,7 @@
       "kind": {
         "install": "Installed",
         "remove": "Removed",
+        "edit": "Edited",
         "update": "Updated",
         "deploy": "Deployed",
         "undeploy": "Undeployed",

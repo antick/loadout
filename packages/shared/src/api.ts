@@ -39,6 +39,11 @@ import type {
   SizeReport,
   Skill,
   SkillDocument,
+  SkillFile,
+  SkillFileEntry,
+  SkillFileVersion,
+  SaveSkillFileInput,
+  SaveSkillFileResult,
   Snapshot,
   SourceDiff,
   SourceDocument,
@@ -78,6 +83,14 @@ export interface SkillsApi {
   deleteTag(tag: string): Promise<void>;
   /** Open the skill's library folder in the OS file manager. */
   reveal(skillId: string): Promise<void>;
+  /** Every content file of the skill, main document first, then by path. */
+  files(skillId: string): Promise<SkillFileEntry[]>;
+  readFile(skillId: string, path: string): Promise<SkillFile>;
+  /** Throws CHANGED_ON_DISK when the file moved on since `baseHash`, unless `overwrite`. */
+  saveFile(skillId: string, input: SaveSkillFileInput): Promise<SaveSkillFileResult>;
+  /** Earlier versions of one file, newest first. */
+  fileVersions(skillId: string, path: string): Promise<SkillFileVersion[]>;
+  readFileVersion(skillId: string, path: string, versionId: string): Promise<string>;
 }
 
 export interface DeployApi {

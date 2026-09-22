@@ -35,6 +35,8 @@ export interface PortableSkill {
     revision?: string | null;
   };
   createdAt: number;
+  /** Files edited in the app since the skill came from its source. Left out when none. */
+  editedFiles?: string[];
 }
 
 export interface PortablePreset {
@@ -49,6 +51,18 @@ export interface PortablePreset {
   disabledAgents: Record<string, string[]>;
   createdAt: number;
   updatedAt: number;
+}
+
+/** A relative, `/` separated path that stays inside the folder it is relative to. */
+function isSafeRelativePath(path: unknown): path is string {
+  if (typeof path !== "string" || path.length === 0 || path.includes("\0")) return false;
+  if (path.startsWith("/") || path.includes("\\") || /^[A-Za-z]:/.test(path)) return false;
+  return path.split("/").every((segment) => segment !== "" && segment !== "." && segment !== "..");
+}
+
+/** Edited paths from a file that may come from another device; anything unsafe is dropped. */
+export function readEditedFiles(value: unknown): string[] {
+  return Array.isArray(value) ? [...new Set(value.filter(isSafeRelativePath))].sort() : [];
 }
 
 /** A metadata file may only name a plain folder directly inside the skills folder. */
@@ -170,6 +184,7 @@ export class PortableMetadata {
           revision: skill.sourceRevision,
         },
         createdAt: skill.createdAt,
+        editedFiles: skill.editedFiles.length > 0 ? [...skill.editedFiles].sort() : undefined,
       };
       skillFiles.add(`${skill.id}.json`);
       this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), file);
@@ -284,6 +299,7 @@ export class PortableMetadata {
         sourceBranch: file.source.branch ?? null,
         sourceRef: file.source.ref ?? current.sourceRef,
         sourceRevision: file.source.revision ?? current.sourceRevision,
+        editedFiles: readEditedFiles(file.editedFiles),
         updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);
@@ -304,6 +320,7 @@ export class PortableMetadata {
       contentHash,
       updateStatus: remote ? "unknown" : "local_only",
       createdAt: file.createdAt,
+      editedFiles: readEditedFiles(file.editedFiles),
     });
     this.#skills.setTags(file.id, file.tags);
   }

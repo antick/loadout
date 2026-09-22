@@ -4,7 +4,8 @@ import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
-import { canonicalPath } from "../util/fs";
+import { canonicalPath, lstatOrNull } from "../util/fs";
+import { hashDir } from "../util/hash";
 import { type PairRef, createBatchApply } from "./batch";
 import { rowsAtPath, samePath } from "./evidence";
 import { type DeployPair, createDeployOperations } from "./operations";
@@ -19,6 +20,16 @@ export interface RedeployReport {
   written: number;
   conflicts: TargetConflict[];
   failed: BatchFailure[];
+  /** Agents whose copy was left alone because it holds changes of its own (`keepModified`). */
+  kept: string[];
+}
+
+export interface RefreshOptions {
+  /**
+   * Leave a copy alone when its content no longer matches what was deployed, i.e. someone edited
+   * it inside the agent's folder. Without this, every copy is rewritten.
+   */
+  keepModified?: boolean;
 }
 
 export interface DeployService {
@@ -30,7 +41,7 @@ export interface DeployService {
   /** Same, for one agent. Returns how many deployment rows were dropped. */
   removeAllForAgent(agentKey: string): Promise<number>;
   /** Re-copy every copy-mode deployment after the library content of `skill` changed. */
-  refreshCopies(skill: Skill): Promise<RedeployReport>;
+  refreshCopies(skill: Skill, options?: RefreshOptions): Promise<RedeployReport>;
   /**
    * Replace whatever is at the agent's target with a managed deployment. Only call this when
    * the user asked for it: nothing at the target is preserved.
@@ -44,7 +55,15 @@ export interface DeployService {
   ): Promise<RedeployReport>;
 }
 
-const emptyReport = (): RedeployReport => ({ written: 0, conflicts: [], failed: [] });
+const emptyReport = (): RedeployReport => ({ written: 0, conflicts: [], failed: [], kept: [] });
+
+/** The copy at the row's path differs from the content it was made from. */
+function copyWasEdited(row: DeploymentRecord): boolean {
+  const stat = lstatOrNull(row.targetPath);
+  // Missing: rewriting loses nothing. A link or file: the engine refuses it on its own.
+  if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) return false;
+  return row.sourceHash === null || hashDir(row.targetPath) !== row.sourceHash;
+}
 
 export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): DeployService {
   const { store, registry } = deps;
@@ -137,13 +156,20 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         store.deploymentsForAgent(agentKey),
       ),
 
-    refreshCopies: async (skill) => {
+    refreshCopies: async (skill, options = {}) => {
       const report = emptyReport();
       await ctx.lock.run(`refresh copies of ${skill.name}`, async () => {
         const copies = store
           .deployments()
           .filter((row) => row.skillId === skill.id && row.mode === "copy");
-        for (const row of copies) {
+        for (const listed of copies) {
+          // Agents sharing a folder: refreshing one realigns the others' rows, so read it again.
+          const row = store.deployment(listed.skillId, listed.agentKey) ?? listed;
+          const stale = row.sourceHash !== skill.contentHash;
+          if (options.keepModified && stale && copyWasEdited(row)) {
+            report.kept.push(row.agentKey);
+            continue;
+          }
           // The row's own path, not the agent's present folder: we refresh what we recorded.
           const pair = {
             skill,

@@ -117,4 +117,8 @@ export const MIGRATIONS: readonly string[] = [
     detected_at INTEGER NOT NULL
   );
   `,
+  `
+  -- Files edited in the app since the skill last came from its source: a JSON array of paths.
+  ALTER TABLE skills ADD COLUMN edited_files TEXT;
+  `,
 ];

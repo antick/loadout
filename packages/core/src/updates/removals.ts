@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { type Dirent, lstatSync, readdirSync } from "node:fs";
+import { type Dirent, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { PendingRemoval } from "@loadout/shared";
 import { isIgnoredContentName } from "../util/hash";
@@ -67,6 +67,36 @@ export function listRemovedPaths(currentRoot: string, replacementRoot: string): 
   return removed.sort(compareText);
 }
 
+/** The file's bytes, or null when there is no regular file there. */
+function fileBytes(path: string): Buffer | null {
+  try {
+    return kindAt(path) === "file" ? readFileSync(path) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Of the files edited in the app, those the replacement would change: present in the library
+ * now, and different (or missing) in the replacement. Sorted, `/` separated.
+ */
+export function listReplacedEdits(
+  currentRoot: string,
+  replacementRoot: string,
+  editedFiles: readonly string[],
+): string[] {
+  const replaced: string[] = [];
+  for (const path of new Set(editedFiles)) {
+    const segments = path.split("/").filter(Boolean);
+    if (segments.length === 0 || segments.some((segment) => segment === "..")) continue;
+    const current = fileBytes(join(currentRoot, ...segments));
+    if (!current) continue;
+    const replacement = fileBytes(join(replacementRoot, ...segments));
+    if (!replacement || !replacement.equals(current)) replaced.push(segments.join("/"));
+  }
+  return replaced.sort(compareText);
+}
+
 function compareText(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -74,7 +104,10 @@ function compareText(a: string, b: string): number {
 /** One fixed order for the token and for display, so the same list always yields the same token. */
 export function sortRemovals(removals: readonly PendingRemoval[]): PendingRemoval[] {
   return [...removals].sort(
-    (a, b) => compareText(a.location, b.location) || compareText(a.path, b.path),
+    (a, b) =>
+      compareText(a.location, b.location) ||
+      compareText(a.path, b.path) ||
+      compareText(a.kind, b.kind),
   );
 }
 
@@ -86,7 +119,9 @@ export function sortRemovals(removals: readonly PendingRemoval[]): PendingRemova
 export function approvalToken(domain: string, removals: readonly PendingRemoval[]): string {
   const hash = createHash("sha256").update(domain).update(SEPARATOR);
   for (const removal of sortRemovals(removals)) {
-    hash.update(`${removal.location}${SEPARATOR}${removal.path}${SEPARATOR}`);
+    hash.update(
+      `${removal.location}${SEPARATOR}${removal.path}${SEPARATOR}${removal.kind}${SEPARATOR}`,
+    );
   }
   return hash.digest("hex");
 }

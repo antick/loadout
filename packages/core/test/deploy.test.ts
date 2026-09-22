@@ -362,7 +362,7 @@ describe("deploy service", () => {
     const updated = world.rehash(skill);
 
     const report = await world.deploy.refreshCopies(updated);
-    expect(report).toEqual({ written: 2, conflicts: [], failed: [] });
+    expect(report).toEqual({ written: 2, conflicts: [], failed: [], kept: [] });
     expect(readFileSync(join(claudeTarget("alpha"), "new.txt"), "utf8")).toBe("fresh");
     expect(readFileSync(join(sharedTarget("alpha"), "new.txt"), "utf8")).toBe("fresh");
     for (const row of world.store.deployments()) {

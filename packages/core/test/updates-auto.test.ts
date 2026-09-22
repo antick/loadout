@@ -138,7 +138,10 @@ describe("auto-updater schedule", () => {
     const idOf = (name: string): string => skills.find((s) => s.name === name)?.id ?? "";
     updateOutcome = (skillId) => {
       if (skillId === idOf("held")) {
-        return { pendingRemovals: [{ location: "library", path: "notes/" }], approval: "token" };
+        return {
+          pendingRemovals: [{ location: "library", path: "notes/", kind: "removed" }],
+          approval: "token",
+        };
       }
       return skillId === idOf("elsewhere") ? { contentChanged: false } : {};
     };

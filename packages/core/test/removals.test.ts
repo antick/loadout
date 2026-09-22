@@ -92,16 +92,16 @@ describe("listRemovedPaths", () => {
 
 describe("approval token", () => {
   const removals: PendingRemoval[] = [
-    { location: "claude_code", path: "docs/" },
-    { location: LIBRARY_LOCATION, path: "scripts/gone.sh" },
-    { location: LIBRARY_LOCATION, path: "docs/" },
+    { location: "claude_code", path: "docs/", kind: "removed" },
+    { location: LIBRARY_LOCATION, path: "scripts/gone.sh", kind: "removed" },
+    { location: LIBRARY_LOCATION, path: "docs/", kind: "removed" },
   ];
 
   it("sorts by location, then path", () => {
     expect(sortRemovals(removals)).toEqual([
-      { location: "claude_code", path: "docs/" },
-      { location: LIBRARY_LOCATION, path: "docs/" },
-      { location: LIBRARY_LOCATION, path: "scripts/gone.sh" },
+      { location: "claude_code", path: "docs/", kind: "removed" },
+      { location: LIBRARY_LOCATION, path: "docs/", kind: "removed" },
+      { location: LIBRARY_LOCATION, path: "scripts/gone.sh", kind: "removed" },
     ]);
   });
 
@@ -116,11 +116,11 @@ describe("approval token", () => {
     expect(approvalToken("def456", removals)).not.toBe(token);
     expect(approvalToken("abc123", removals.slice(1))).not.toBe(token);
     // `a` + `b/c` must not collide with `a/b` + `c`, nor the domain with the first location.
-    expect(approvalToken("d", [{ location: "a", path: "b/c" }])).not.toBe(
-      approvalToken("d", [{ location: "a/b", path: "c" }]),
+    expect(approvalToken("d", [{ location: "a", path: "b/c", kind: "removed" }])).not.toBe(
+      approvalToken("d", [{ location: "a/b", path: "c", kind: "removed" }]),
     );
-    expect(approvalToken("da", [{ location: "", path: "x" }])).not.toBe(
-      approvalToken("d", [{ location: "a", path: "x" }]),
+    expect(approvalToken("da", [{ location: "", path: "x", kind: "removed" }])).not.toBe(
+      approvalToken("d", [{ location: "a", path: "x", kind: "removed" }]),
     );
   });
 

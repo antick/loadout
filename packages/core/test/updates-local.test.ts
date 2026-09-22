@@ -83,7 +83,9 @@ describe("reimport, relink, detach", () => {
     rmSync(join(sourceDir, "notes"), { recursive: true });
 
     const asked = await world.updates.api.reimport(skill.id);
-    expect(asked.pendingRemovals).toEqual([{ location: LIBRARY_LOCATION, path: "notes/" }]);
+    expect(asked.pendingRemovals).toEqual([
+      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
+    ]);
     expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo one\n");
     // A declined re-import leaves the row exactly as it was.
     expect(world.store.get(skill.id)).toEqual({ ...skill, tags: ["mine"] });
@@ -126,7 +128,9 @@ describe("reimport, relink, detach", () => {
     });
 
     const asked = await world.updates.api.relink(skill.id, moved);
-    expect(asked.pendingRemovals).toEqual([{ location: LIBRARY_LOCATION, path: "notes/" }]);
+    expect(asked.pendingRemovals).toEqual([
+      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
+    ]);
     expect(world.store.get(skill.id).sourceRef).toBe(sourceDir);
     // The token belongs to that folder: it approves nothing for a plain re-import.
     const reimported = await world.updates.api.reimport(skill.id, asked.approval);

@@ -16,6 +16,7 @@ export {
   approvalToken,
   isApproved,
   listRemovedPaths,
+  listReplacedEdits,
   sortRemovals,
 } from "./removals";
 export { type RemoteTarget, isRemoteSource, remoteTargetOf, sourceLabel } from "./source";

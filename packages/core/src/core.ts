@@ -53,7 +53,20 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const registry = new AgentRegistry(ctx);
   const deploy = createDeployService(ctx, { store, registry });
   const agents = createAgentsService(ctx, { registry, deploy });
-  const skills = createSkillsService(ctx, { store, removeDeployments: deploy.removeAllForSkill });
+  const skills = createSkillsService(ctx, {
+    store,
+    removeDeployments: deploy.removeAllForSkill,
+    refreshCopies: async (skill) => {
+      const report = await deploy.refreshCopies(skill, { keepModified: true });
+      for (const conflict of report.conflicts) {
+        ctx.log.warn(`Deployed copy not refreshed: ${conflict.path} ${conflict.reason}`);
+      }
+      for (const failure of report.failed) {
+        ctx.log.warn(`Deployed copy of ${failure.name} not refreshed: ${failure.message}`);
+      }
+      return { written: report.written, kept: report.kept };
+    },
+  });
   const install = createInstallService(ctx, { store, registry });
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
   const updates = createUpdatesService(ctx, { store, install, deploy });

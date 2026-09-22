@@ -6,6 +6,7 @@ export const ERROR_CODES = [
   "NOT_FOUND",
   "ALREADY_EXISTS",
   "TARGET_CONFLICT",
+  "CHANGED_ON_DISK",
   "CANCELLED",
   "NETWORK",
   "TIMEOUT",

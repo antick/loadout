@@ -96,6 +96,8 @@ export async function installIntoLibrary(
         remoteRevision: record.remoteRevision ?? record.sourceRevision ?? null,
         contentHash: hashDir(destination),
         updateStatus: record.updateStatus,
+        // The folder now holds exactly what the source has: nothing is edited any more.
+        editedFiles: [],
       };
       const skill = owner
         ? store.update(owner.id, { ...fields, lastCheckedAt: Date.now(), lastCheckError: null })

@@ -18,7 +18,7 @@ const FORCE_FLAG = {
 const APPROVE_FLAG = {
   name: "approve-removals",
   type: "boolean",
-  description: "Go ahead even when the update deletes files.",
+  description: "Go ahead even when the update deletes files or replaces your edits.",
 } as const;
 
 /** Exactly one of `<ref>` and `--all`. */
@@ -74,7 +74,7 @@ async function check(context: CommandContext): Promise<CommandResult> {
 const updateView = (result: UpdateResult) => ({
   skill: checkView(result.skill),
   contentChanged: result.contentChanged,
-  /** Files the update would delete. Non-empty means nothing was changed. */
+  /** Files the update would delete or edits it would replace. Non-empty: nothing was changed. */
   pendingRemovals: result.pendingRemovals,
   applied: result.pendingRemovals.length === 0,
 });
@@ -113,8 +113,11 @@ async function update(context: CommandContext): Promise<CommandResult> {
     const lines = value.applied
       ? [`${value.skill.name}: ${value.contentChanged ? "updated" : "already up to date"}.`]
       : [
-          `${value.skill.name} was NOT updated: the update would delete ${plural(value.pendingRemovals.length, "file")}.`,
-          ...value.pendingRemovals.map((removal) => `  ${removal.location}: ${removal.path}`),
+          `${value.skill.name} was NOT updated: the update would delete or replace ${plural(value.pendingRemovals.length, "file")}.`,
+          ...value.pendingRemovals.map(
+            (removal) =>
+              `  ${removal.location}: ${removal.path}${removal.kind === "edited" ? " (your edit)" : ""}`,
+          ),
           `Run again with --${APPROVE_FLAG.name} to accept that.`,
         ];
     return { value, text: lines.join("\n") };
@@ -127,7 +130,9 @@ async function update(context: CommandContext): Promise<CommandResult> {
     : await core.api.updates.updateMany(due.map((skill) => skill.id));
   const lines = [`${plural(value.updated, "skill")} updated, ${value.unchanged} unchanged.`];
   if (value.heldBack.length > 0) {
-    lines.push(`Held back because files would be deleted: ${value.heldBack.join(", ")}`);
+    lines.push(
+      `Held back because files would be deleted or edits replaced: ${value.heldBack.join(", ")}`,
+    );
   }
   for (const failure of value.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
   return { value, text: lines.join("\n"), exitCode: value.failed.length > 0 ? 1 : 0 };
@@ -147,7 +152,7 @@ export const updateCommand: CommandSpec = {
   usage: "[<ref> | --all] [--approve-removals]",
   flags: [ALL_FLAG, APPROVE_FLAG],
   notes: [
-    "An update that would delete files is held back and listed; that is a safety stop, not an error.",
+    "An update that would delete files or replace edits made in the app is held back and listed; that is a safety stop, not an error.",
   ],
   run: update,
 };

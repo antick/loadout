@@ -20,6 +20,7 @@ import {
   approvalToken,
   isApproved,
   listRemovedPaths,
+  listReplacedEdits,
   sortRemovals,
 } from "./removals";
 import {
@@ -120,8 +121,13 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   function pendingRemovals(fresh: Skill, sourceDir: string | null): PendingRemoval[] {
     const removals: PendingRemoval[] = [];
     if (sourceDir) {
+      // An edited file the new version drops is listed once, as the edit the user would lose.
+      const edits = listReplacedEdits(fresh.libraryPath, sourceDir, fresh.editedFiles);
+      const editSet = new Set(edits);
+      for (const path of edits) removals.push({ location: LIBRARY_LOCATION, path, kind: "edited" });
       for (const path of listRemovedPaths(fresh.libraryPath, sourceDir)) {
-        removals.push({ location: LIBRARY_LOCATION, path });
+        if (!editSet.has(path))
+          removals.push({ location: LIBRARY_LOCATION, path, kind: "removed" });
       }
     }
     const rebuiltFrom = sourceDir ?? fresh.libraryPath;
@@ -139,7 +145,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       // Anything but a real folder is refused by the deploy engine and left untouched.
       if (!lstatOrNull(row.targetPath)?.isDirectory()) continue;
       for (const path of listRemovedPaths(row.targetPath, rebuiltFrom)) {
-        removals.push({ location: row.agentKey, path });
+        removals.push({ location: row.agentKey, path, kind: "removed" });
       }
     }
     return sortRemovals(removals);

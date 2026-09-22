@@ -88,6 +88,7 @@ function skill(
     presetIds: [],
     tags: [],
     hasConflict: false,
+    editedFiles: [],
     ...extra,
   };
 }

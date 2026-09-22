@@ -60,12 +60,17 @@ const sampleDocument = (name: string, extra: string): string =>
 
 function removalsFor(skill: Skill, round: number): PendingRemoval[] {
   const removals: PendingRemoval[] = [
-    { location: "library", path: "scripts/legacy-check.sh" },
-    { location: "library", path: "references/" },
+    { location: "library", path: "scripts/legacy-check.sh", kind: "removed" },
+    { location: "library", path: "references/", kind: "removed" },
   ];
-  if (round > 0) removals.push({ location: "library", path: "templates/old-report.md" });
+  if (skill.editedFiles.includes("SKILL.md")) {
+    removals.push({ location: "library", path: "SKILL.md", kind: "edited" });
+  }
+  if (round > 0)
+    removals.push({ location: "library", path: "templates/old-report.md", kind: "removed" });
   const copyAgent = skill.deployments[0]?.agentKey;
-  if (copyAgent) removals.push({ location: copyAgent, path: "scripts/legacy-check.sh" });
+  if (copyAgent)
+    removals.push({ location: copyAgent, path: "scripts/legacy-check.sh", kind: "removed" });
   return removals;
 }
 

@@ -266,9 +266,9 @@ describe("removal guard", () => {
     const asked = await world.updates.api.update(pdf.id);
     expect(asked.contentChanged).toBe(true);
     expect(asked.pendingRemovals).toEqual([
-      { location: "claude_code", path: "notes/" },
-      { location: "claude_code", path: "scratch.txt" },
-      { location: LIBRARY_LOCATION, path: "notes/" },
+      { location: "claude_code", path: "notes/", kind: "removed" },
+      { location: "claude_code", path: "scratch.txt", kind: "removed" },
+      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
     ]);
     expect(asked.approval).toMatch(/^[0-9a-f]{64}$/);
     // Nothing moved: files, hash and installed revision are as before.
@@ -300,7 +300,9 @@ describe("removal guard", () => {
     const pdf = await world.installFromGit("pdf");
     dropNotesUpstream();
     const asked = await world.updates.api.update(pdf.id);
-    expect(asked.pendingRemovals).toEqual([{ location: LIBRARY_LOCATION, path: "notes/" }]);
+    expect(asked.pendingRemovals).toEqual([
+      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
+    ]);
 
     changePdfUpstream("echo pdf v3\n");
     const again = await world.updates.api.update(pdf.id, asked.approval);

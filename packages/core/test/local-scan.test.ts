@@ -54,6 +54,7 @@ function librarySkill(dirName: string, overrides: Partial<Skill> = {}): Skill {
     presetIds: [],
     tags: [],
     hasConflict: false,
+    editedFiles: [],
     ...overrides,
   };
 }

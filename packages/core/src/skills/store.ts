@@ -22,6 +22,7 @@ interface SkillRow {
   last_check_error: string | null;
   created_at: number;
   updated_at: number;
+  edited_files: string | null;
 }
 
 interface DeploymentRow {
@@ -55,6 +56,7 @@ export interface NewSkill {
   updateStatus: UpdateStatus;
   createdAt?: number;
   updatedAt?: number;
+  editedFiles?: string[];
 }
 
 export type SkillPatch = Partial<
@@ -75,6 +77,7 @@ export type SkillPatch = Partial<
     | "lastCheckedAt"
     | "lastCheckError"
     | "updatedAt"
+    | "editedFiles"
   >
 >;
 
@@ -94,7 +97,24 @@ const PATCH_COLUMNS: Record<keyof SkillPatch, string> = {
   lastCheckedAt: "last_checked_at",
   lastCheckError: "last_check_error",
   updatedAt: "updated_at",
+  editedFiles: "edited_files",
 };
+
+/** Stored as a JSON array; an empty list is stored as NULL. */
+function encodeEditedFiles(paths: readonly string[] | null | undefined): string | null {
+  const clean = [...new Set(paths ?? [])].sort();
+  return clean.length > 0 ? JSON.stringify(clean) : null;
+}
+
+function decodeEditedFiles(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const value: unknown = JSON.parse(raw);
+    return Array.isArray(value) ? value.filter((entry) => typeof entry === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 function toDeployment(row: DeploymentRow): DeploymentRecord {
   return {
@@ -163,6 +183,7 @@ export class SkillStore {
       presetIds: presets.get(row.id) ?? [],
       tags: tags.get(row.id) ?? [],
       hasConflict: conflicts.has(row.id),
+      editedFiles: decodeEditedFiles(row.edited_files),
     }));
   }
 
@@ -228,8 +249,8 @@ export class SkillStore {
     this.#db.run(
       `INSERT INTO skills(id, name, description, source_type, source_ref, source_url, source_subpath,
         source_branch, source_revision, remote_revision, library_path, content_hash, update_status,
-        last_checked_at, created_at, updated_at)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        last_checked_at, created_at, updated_at, edited_files)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.description,
@@ -246,6 +267,7 @@ export class SkillStore {
       now,
       input.createdAt ?? now,
       input.updatedAt ?? now,
+      encodeEditedFiles(input.editedFiles),
     );
     return this.get(id);
   }
@@ -256,7 +278,11 @@ export class SkillStore {
       unknown,
     ][];
     const assignments = entries.map(([key]) => `${PATCH_COLUMNS[key]} = ?`).join(", ");
-    const values = entries.map(([, value]) => (value ?? null) as string | number | null);
+    const values = entries.map(([key, value]) =>
+      key === "editedFiles"
+        ? encodeEditedFiles(value as string[] | null)
+        : ((value ?? null) as string | number | null),
+    );
     this.#db.run(`UPDATE skills SET ${assignments} WHERE id = ?`, ...values, id);
     return this.get(id);
   }

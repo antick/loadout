@@ -147,10 +147,12 @@ a result on stdout - read its `failed` list.
 | `GIT_AUTH`, `GIT_REJECTED`, `GIT_UNRELATED`, `GIT_NO_UPSTREAM`, `SYNC_CONFLICT` | Backup needs a decision                                                                                             | Report the message. These are fixed in the app's Backup page, not from here.                                                                                      |
 | `IO`, `INTERNAL`                                                                | Unexpected                                                                                                          | Report the message verbatim. Do not work around it by editing files.                                                                                              |
 
-## Updates that would delete files
+## Updates that would delete files or replace edits
 
-`skills update` never silently deletes files. If upstream removed files, the result has
-`"applied": false` and a `pendingRemovals` list (for `--all`: a `heldBack` list of names). That
+`skills update` never silently deletes files or throws away edits. If upstream removed files, or
+the new version would replace a file the user edited in the app, the result has
+`"applied": false` and a `pendingRemovals` list (for `--all`: a `heldBack` list of names). Each
+entry has `kind`: `removed` (the file goes away) or `edited` (the user's edit is replaced). That
 is a safety stop, not an error. Show the list to the user; only when they agree, run the same
 command again with `--approve-removals`.
 

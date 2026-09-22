@@ -82,6 +82,11 @@ export interface Skill {
   tags: string[];
   /** A backup sync found this skill changed on two devices; waiting for the user to choose. */
   hasConflict: boolean;
+  /**
+   * Files edited in the app since the skill last came from its source, `/` separated. An update
+   * asks before replacing them.
+   */
+  editedFiles: string[];
 }
 
 export interface SkillDocument {
@@ -120,11 +125,16 @@ export interface SourceDocument {
   revision: string | null;
 }
 
-/** A file an update would delete. Nothing is changed until the caller approves the list. */
+/**
+ * A file an update would delete, or an edit it would replace. Nothing is changed until the
+ * caller approves the list.
+ */
 export interface PendingRemoval {
   /** "library" or the agent key whose deployed copy holds the file. */
   location: string;
   path: string;
+  /** `edited`: a file changed in the app that the new version replaces. */
+  kind: "removed" | "edited";
 }
 
 export interface UpdateResult {
@@ -152,6 +162,62 @@ export interface BatchFailure {
 export interface BatchResult {
   succeeded: number;
   failed: BatchFailure[];
+}
+
+// ── Editing ──
+
+export type SkillFileLock = "binary" | "too_large";
+
+/** One file inside a library skill's folder. */
+export interface SkillFileEntry {
+  /** Relative to the skill folder, `/` separated. */
+  path: string;
+  size: number;
+  /** Why the file cannot be opened in the editor; null when it can. */
+  locked: SkillFileLock | null;
+  /** The skill's main document (usually `SKILL.md`). */
+  main: boolean;
+  /** Changed in the app since the skill last came from its source. */
+  edited: boolean;
+}
+
+export type LineEnding = "lf" | "crlf";
+
+/** A text file opened for editing. `content` always uses `\n`; saving restores `eol`. */
+export interface SkillFile {
+  path: string;
+  content: string;
+  /** Hash of the bytes on disk. Send it back when saving so a change made meanwhile is noticed. */
+  hash: string;
+  eol: LineEnding;
+  modifiedAt: number;
+}
+
+export interface SaveSkillFileInput {
+  path: string;
+  content: string;
+  /** `SkillFile.hash` of the version the edit started from. */
+  baseHash: string;
+  /** Write even though the file changed on disk after `baseHash` was read. */
+  overwrite?: boolean;
+}
+
+export interface SaveSkillFileResult {
+  skill: Skill;
+  file: SkillFile;
+  /** False when the content was already on disk, so nothing was written. */
+  written: boolean;
+  /** Copy deployments rewritten with the new content. */
+  copiesRefreshed: number;
+  /** Agents whose copied folder has its own changes; those copies were left alone. */
+  copiesKept: string[];
+}
+
+/** An earlier version of a file, kept on this computer each time the editor overwrites it. */
+export interface SkillFileVersion {
+  id: string;
+  savedAt: number;
+  size: number;
 }
 
 // ── Install ──

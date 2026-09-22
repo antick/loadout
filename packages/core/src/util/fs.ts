@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   type Dirent,
   type Stats,
+  chmodSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -185,12 +186,21 @@ export async function replaceDirAtomic(source: string, target: string): Promise<
   if (hadTarget) await removePath(backup);
 }
 
-/** Write through a temp file and rename, so readers never see a half-written file. */
-export function writeFileAtomic(path: string, content: string): void {
+/**
+ * Write through a temp file and rename, so readers never see a half-written file. `mode` sets the
+ * permission bits exactly (the umask does not apply), e.g. to keep a script executable.
+ */
+export function writeFileAtomic(path: string, content: string | Uint8Array, mode?: number): void {
   ensureDir(dirname(path));
   const temp = `${path}.tmp.${randomUUID()}`;
-  writeFileSync(temp, content);
-  renameSync(temp, path);
+  try {
+    writeFileSync(temp, content);
+    if (mode !== undefined) chmodSync(temp, mode);
+    renameSync(temp, path);
+  } catch (error) {
+    rmSync(temp, { force: true });
+    throw error;
+  }
 }
 
 export function writeJsonAtomic(path: string, value: unknown): void {

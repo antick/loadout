@@ -27,6 +27,8 @@ export interface LibraryPaths {
   /** Portable metadata that travels with a backup. */
   metadataDir: string;
   cacheDir: string;
+  /** Earlier versions of files the editor overwrote. Stays on this computer. */
+  historyDir: string;
   logsDir: string;
   binDir: string;
   dbPath: string;
@@ -75,6 +77,7 @@ function buildPaths(baseDir: string, defaultBaseDir: string, configPath: string)
     skillsDir,
     metadataDir: join(skillsDir, METADATA_DIR),
     cacheDir: join(baseDir, "cache"),
+    historyDir: join(baseDir, "history"),
     logsDir: join(baseDir, "logs"),
     binDir: join(defaultBaseDir, "bin"),
     dbPath: join(baseDir, DB_FILE),

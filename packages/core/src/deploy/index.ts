@@ -11,5 +11,6 @@ export {
   type DeployService,
   type DeployServiceDeps,
   type RedeployReport,
+  type RefreshOptions,
   createDeployService,
 } from "./service";
