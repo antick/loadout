@@ -23,6 +23,18 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 - Deleting a skill removes its library copy, preset links and every copy the app deployed.
 - The database is rebuilt from the skill files if it is ever lost.
 
+### Editor
+
+- Edit any text file of a library skill in the app: file list, highlighted editor, live Markdown
+  preview (side by side, stacked or on its own), search, undo, `⌘S` to save.
+- A save never overwrites a change made on disk meanwhile: you see the difference and choose.
+- Unsaved text survives closing the window or quitting; leaving the editor asks first.
+- Every save keeps the version it replaced, on this computer; restore any of the last 20.
+- Copied deployments are refreshed on save, except a copy an agent changed itself.
+- Skills with a source are marked Edited, and an update lists your edits and asks before
+  replacing them. Batch and automatic updates hold those skills back.
+- Line endings, a byte-order mark and the executable bit of a file are kept.
+
 ### Install
 
 - From a folder, from a `.zip` or `.skill` archive, or by dropping either onto the page.

@@ -1,10 +1,12 @@
 import type { Skill } from "@loadout/shared";
-import { FolderOpen, Trash2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { FolderOpen, PencilLine, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "@/components/IconButton";
 import { SkillIndicators } from "@/components/SkillIndicators";
 import { SourceBadge } from "@/components/SourceBadge";
+import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SkillTagsEditor } from "@/features/library/detail/SkillTagsEditor";
 import { useRevealSkill } from "@/hooks/mutations/library";
@@ -14,7 +16,10 @@ export interface SkillDetailHeaderProps {
   onDelete: () => void;
 }
 
-/** Top of the detail panel: name, description, source and update badges, tags, reveal and delete. */
+/**
+ * Top of the detail panel: name, description, source and update badges, tags, and the edit,
+ * reveal and delete actions.
+ */
 export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): ReactNode {
   const { t } = useTranslation();
   const reveal = useRevealSkill();
@@ -32,6 +37,12 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
           </SheetDescription>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <Button asChild variant="outline" size="sm" className="mr-1">
+            <Link to="/library/$skillId/edit" params={{ skillId: skill.id }}>
+              <PencilLine />
+              {t("editor.open")}
+            </Link>
+          </Button>
           <IconButton
             label={t("library.detail.reveal")}
             icon={<FolderOpen />}

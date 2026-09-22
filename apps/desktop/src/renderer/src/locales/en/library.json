@@ -80,7 +80,7 @@
       "checkedWithFailures_other": "{{summary}}, {{count}} could not be checked",
       "batchDone_one": "Updated {{count}} skill, {{unchanged}} unchanged",
       "batchDone_other": "Updated {{count}} skills, {{unchanged}} unchanged",
-      "heldBack": "Held back because updating would delete files: {{names}}. Open the skill and update it from the Source tab to review them."
+      "heldBack": "Held back because updating would delete files or replace your edits: {{names}}. Open the skill and update it from the Source tab to review them."
     },
     "refresh": {
       "done": "“{{name}}” is up to date with its source",
@@ -201,10 +201,15 @@
     },
     "removalGuard": {
       "title": "Updating “{{name}}” deletes files",
+      "titleEdits": "Updating “{{name}}” replaces your edits",
       "description_one": "The new version no longer has {{count}} item. Nothing has been changed yet.",
       "description_other": "The new version no longer has {{count}} items. Nothing has been changed yet.",
+      "descriptionEdits_one": "You edited {{count}} file that the new version changes. Nothing has been changed yet.",
+      "descriptionEdits_other": "You edited {{count}} files that the new version changes. Nothing has been changed yet.",
+      "edits": "Your edits",
       "library": "Library copy",
       "notice": "Anything you added to these files yourself is lost when they are removed.",
+      "noticeEdits": "Your edits are replaced by the new version. To keep them, copy them first, or detach the skill from its source on the Source tab.",
       "keep": "Keep current version",
       "approve": "Update anyway"
     }

@@ -6,6 +6,7 @@ export const SHORTCUT_KEYS = {
   find: "f",
   sidebar: "b",
   settings: ",",
+  save: "s",
 } as const;
 
 export type ShortcutId = keyof typeof SHORTCUT_KEYS | "escape";

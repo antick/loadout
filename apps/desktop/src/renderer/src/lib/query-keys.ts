@@ -10,6 +10,10 @@ export const keys = {
     all: ["skills", "all"] as const,
     detail: (skillId: string) => ["skills", "detail", skillId] as const,
     document: (skillId: string) => ["skills", "document", skillId] as const,
+    files: (skillId: string) => ["skills", "files", skillId] as const,
+    file: (skillId: string, path: string) => ["skills", "file", skillId, path] as const,
+    fileVersions: (skillId: string, path: string) =>
+      ["skills", "file-versions", skillId, path] as const,
     tags: ["skills", "tags"] as const,
   },
   agents: {

@@ -1,5 +1,5 @@
 import type { AgentInfo, PendingRemoval } from "@loadout/shared";
-import { FileX, Library } from "lucide-react";
+import { FileX, Library, PencilLine } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
@@ -32,6 +32,7 @@ export interface RemovalGuardDialogProps {
 function groupByLocation(removals: readonly PendingRemoval[]): [string, string[]][] {
   const groups = new Map<string, string[]>();
   for (const removal of removals) {
+    if (removal.kind === "edited") continue;
     const paths = groups.get(removal.location) ?? [];
     paths.push(removal.path);
     groups.set(removal.location, paths);
@@ -42,7 +43,10 @@ function groupByLocation(removals: readonly PendingRemoval[]): [string, string[]
   );
 }
 
-/** Lists every file an update would delete, grouped by where it lives, before anything changes. */
+/**
+ * Lists what an update would lose before anything changes: edits made in the app first, then
+ * every file it would delete, grouped by where it lives.
+ */
 export function RemovalGuardDialog({
   skillName,
   removals,
@@ -53,6 +57,11 @@ export function RemovalGuardDialog({
   const { t } = useTranslation();
   const agents = useAgents();
   const groups = useMemo(() => groupByLocation(removals ?? []), [removals]);
+  const edits = useMemo(
+    () => (removals ?? []).filter((removal) => removal.kind === "edited").map((r) => r.path),
+    [removals],
+  );
+  const deletions = (removals?.length ?? 0) - edits.length;
   const agentOf = (key: string): AgentInfo | undefined =>
     agents.data?.find((agent) => agent.key === key);
 
@@ -64,14 +73,38 @@ export function RemovalGuardDialog({
       <AlertDialogContent className="sm:max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {t("library.removalGuard.title", { name: skillName })}
+            {t(
+              edits.length > 0 ? "library.removalGuard.titleEdits" : "library.removalGuard.title",
+              {
+                name: skillName,
+              },
+            )}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {t("library.removalGuard.description", { count: removals?.length ?? 0 })}
+            {edits.length > 0 && deletions === 0
+              ? t("library.removalGuard.descriptionEdits", { count: edits.length })
+              : t("library.removalGuard.description", { count: deletions })}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <div className="flex max-h-72 flex-col gap-3 overflow-y-auto">
+          {edits.length > 0 ? (
+            <section className="flex flex-col gap-1.5">
+              <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                <PencilLine className="size-3.5" />
+                {t("library.removalGuard.edits")}
+                <span className="tabular-nums opacity-70">{edits.length}</span>
+              </h3>
+              <ul
+                data-selectable
+                className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 font-mono text-xs leading-5 break-all"
+              >
+                {edits.map((path) => (
+                  <li key={path}>{path}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           {groups.map(([location, paths]) => {
             const agent = location === LIBRARY_LOCATION ? undefined : agentOf(location);
             return (
@@ -105,7 +138,7 @@ export function RemovalGuardDialog({
         </div>
 
         <InlineNotice tone="warning" icon={FileX}>
-          {t("library.removalGuard.notice")}
+          {t(edits.length > 0 ? "library.removalGuard.noticeEdits" : "library.removalGuard.notice")}
         </InlineNotice>
 
         <AlertDialogFooter>

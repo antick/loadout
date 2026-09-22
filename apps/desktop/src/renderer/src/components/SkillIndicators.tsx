@@ -1,16 +1,19 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { TriangleAlert } from "lucide-react";
+import { PencilLine, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UpdateStatusBadge } from "@/components/UpdateStatusBadge";
+import { hasTrackedSource } from "@/lib/skill-source";
 import { cn } from "@/lib/utils";
 
 /**
  * Attention badges of a library skill: update state and an unresolved backup conflict. The
- * conflict badge is a link to the Backup page, where the conflict is resolved.
+ * conflict badge is a link to the Backup page, where the conflict is resolved. Detail views also
+ * say when a skill with an upstream was edited in the app, since updating it asks first.
  */
 export function SkillIndicators({
   skill,
@@ -42,6 +45,21 @@ export function SkillIndicators({
             compact={compact}
           />
         </Link>
+      ) : null}
+      {showAll && skill.editedFiles.length > 0 && hasTrackedSource(skill) ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <StatusBadge
+                tone="info"
+                icon={<PencilLine />}
+                label={t("skills.edited")}
+                compact={compact}
+              />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-64">{t("skills.editedHint")}</TooltipContent>
+        </Tooltip>
       ) : null}
     </>
   );

@@ -8,7 +8,20 @@ export const STORAGE_KEYS = {
   sidebarOpen: "sidebar.open",
   sidebarGroups: "sidebar.groups",
   viewMode: "view-mode",
+  editorView: "editor.view",
+  editorWrap: "editor.wrap",
+  editorFilesOpen: "editor.files-open",
 } as const;
+
+/** localStorage prefix of unsaved editor drafts: `<prefix><skillId>:<path>`. */
+export const EDITOR_DRAFT_PREFIX = "editor.draft:";
+/** Quiet time before an unsaved draft is written to localStorage. */
+export const EDITOR_DRAFT_SAVE_MS = 400;
+/** Drafts older than this are dropped instead of restored. */
+export const EDITOR_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+export const EDITOR_VIEWS = ["edit", "split", "preview"] as const;
+export type EditorView = (typeof EDITOR_VIEWS)[number];
+export const DEFAULT_EDITOR_VIEW: EditorView = "split";
 
 /**
  * Space kept free at the top-left on macOS for the window buttons. At the main process's

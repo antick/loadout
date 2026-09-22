@@ -27,6 +27,7 @@ import {
   SEED_PROJECTS,
   SEED_SKILLS,
 } from "@/lib/dev-mock-data";
+import { createEditorMockHandlers } from "@/lib/dev-mock-editor";
 import { createInstallMockHandlers } from "@/lib/dev-mock-install";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
@@ -108,7 +109,7 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     return {
       filename: "SKILL.md",
       content: SAMPLE_DOCUMENT(found.name, found.description),
-      files: ["SKILL.md", "scripts"],
+      files: ["SKILL.md", "config.yaml", "references/", "scripts/"],
       path: `${found.libraryPath}/SKILL.md`,
     };
   },
@@ -337,6 +338,21 @@ Object.assign(
     fail: (code, message) => {
       throw new MockError(code, message);
     },
+  }),
+);
+
+Object.assign(
+  handlers,
+  createEditorMockHandlers({
+    getSkills: () => skills,
+    setSkills: (next) => {
+      skills = next;
+    },
+    emitChanged,
+    fail: (code, message) => {
+      throw new MockError(code, message);
+    },
+    document: (skill) => SAMPLE_DOCUMENT(skill.name, skill.description),
   }),
 );
 

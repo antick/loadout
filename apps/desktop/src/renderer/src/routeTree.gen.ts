@@ -18,6 +18,7 @@ import { Route as AgentsIndexRouteImport } from './routes/agents/index'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
 import { Route as PresetsPresetIdRouteImport } from './routes/presets/$presetId'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
+import { Route as LibrarySkillIdEditRouteImport } from './routes/library_.$skillId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const ProjectsProjectIdRoute = ProjectsProjectIdRouteImport.update({
   path: '/projects/$projectId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LibrarySkillIdEditRoute = LibrarySkillIdEditRouteImport.update({
+  id: '/library_/$skillId/edit',
+  path: '/library/$skillId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents/': typeof AgentsIndexRoute
+  '/library/$skillId/edit': typeof LibrarySkillIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents': typeof AgentsIndexRoute
+  '/library/$skillId/edit': typeof LibrarySkillIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents/': typeof AgentsIndexRoute
+  '/library_/$skillId/edit': typeof LibrarySkillIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents/'
+    | '/library/$skillId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents'
+    | '/library/$skillId/edit'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents/'
+    | '/library_/$skillId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   PresetsPresetIdRoute: typeof PresetsPresetIdRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
+  LibrarySkillIdEditRoute: typeof LibrarySkillIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/library_/$skillId/edit': {
+      id: '/library_/$skillId/edit'
+      path: '/library/$skillId/edit'
+      fullPath: '/library/$skillId/edit'
+      preLoaderRoute: typeof LibrarySkillIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   PresetsPresetIdRoute: PresetsPresetIdRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   AgentsIndexRoute: AgentsIndexRoute,
+  LibrarySkillIdEditRoute: LibrarySkillIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

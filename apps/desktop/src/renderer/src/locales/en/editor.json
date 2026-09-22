@@ -1,0 +1,99 @@
+{
+  "editor": {
+    "title": "Edit skill",
+    "ariaLabel": "Contents of {{path}}",
+    "save": "Save",
+    "done": "Done",
+    "open": "Edit",
+    "openFile": "Edit {{path}}",
+    "view": {
+      "label": "Layout",
+      "edit": "Editor only",
+      "split": "Editor and preview",
+      "preview": "Preview only"
+    },
+    "files": {
+      "label": "Files of the skill",
+      "other": "Other files",
+      "unsaved": "Unsaved changes",
+      "edited": "Edited",
+      "locked": {
+        "binary": "Not a text file, so it cannot be edited here.",
+        "too_large": "Too large to edit here ({{size}})."
+      }
+    },
+    "status": {
+      "files": "Show or hide the file list",
+      "wrap": "Wrap long lines",
+      "cursor": "Ln {{line}}, Col {{column}}",
+      "selected_one": "{{count}} character selected",
+      "selected_other": "{{count}} characters selected",
+      "saved": "Saved",
+      "unsaved": "Unsaved changes",
+      "saving": "Saving…"
+    },
+    "notice": {
+      "deleted": "{{path}} was deleted on disk. Your text is still here: copy it before you leave.",
+      "diskChanged": "{{path}} changed on disk while you were editing it. Your text has not been saved.",
+      "compare": "Compare",
+      "keepMine": "Keep mine",
+      "reload": "Load disk version",
+      "restored": "Unsaved changes from last time are back. Save them, or discard them.",
+      "discard": "Discard",
+      "noFrontmatter": "This document has no frontmatter. Agents find a skill by the name and description between two --- lines at the top.",
+      "frontmatterMissing": "The frontmatter has no {{keys}}. Agents use the name and description to decide when to use the skill.",
+      "and": " and ",
+      "tracked": "This skill is updated from {{source}}. An update asks before it replaces anything you change here."
+    },
+    "conflict": {
+      "title": "{{path}} changed on disk",
+      "description": "Something else changed this file after you opened it. Nothing has been saved yet. Pick which version to keep.",
+      "onDisk": "On disk now",
+      "yours": "Your version",
+      "unreadable": "The version on disk could not be read.",
+      "cancel": "Keep editing",
+      "useDisk": "Use the disk version",
+      "overwrite": "Save mine anyway"
+    },
+    "leave": {
+      "title_one": "Save changes to {{count}} file?",
+      "title_other": "Save changes to {{count}} files?",
+      "description": "These files have unsaved changes.",
+      "stay": "Keep editing",
+      "discard": "Discard changes",
+      "save": "Save and leave"
+    },
+    "versions": {
+      "button": "Earlier versions",
+      "title": "Earlier versions",
+      "hint": "Every save keeps the version it replaces, on this computer only.",
+      "loading": "Loading…",
+      "empty": "No earlier versions yet.",
+      "failed": "Could not load the earlier version.",
+      "loaded": "Loaded the version from {{when}}. Save to keep it, or press undo to go back."
+    },
+    "saved": {
+      "keptTitle_one": "Saved. One agent kept its own copy",
+      "keptTitle_other": "Saved. {{count}} agents kept their own copies",
+      "keptDescription_one": "The copy in {{agents}} has changes of its own, so it was not replaced. Compare the two on the agent's page.",
+      "keptDescription_other": "The copies in {{agents}} have changes of their own, so they were not replaced. Compare them on each agent's page.",
+      "keptAction": "Open {{agent}}"
+    },
+    "errors": {
+      "save": "Could not save the file."
+    },
+    "empty": {
+      "title": "Nothing to edit",
+      "description": "This skill has no text files that can be edited here."
+    },
+    "missing": {
+      "title": "This skill is no longer in the library",
+      "description": "It was removed while the editor was open, or the link is out of date.",
+      "back": "Back to the library"
+    }
+  },
+  "skills": {
+    "edited": "Edited",
+    "editedHint": "You changed this skill in the app. An update asks before replacing your edits."
+  }
+}
