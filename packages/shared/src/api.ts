@@ -34,6 +34,7 @@ import type {
   PresetInput,
   Project,
   ProjectTarget,
+  PushToLibraryOptions,
   PushToLibraryResult,
   ScanResult,
   SizeReport,
@@ -181,7 +182,11 @@ export interface ProjectsApi {
   document(id: string, relativePath: string, agentKey: string): Promise<SkillDocument>;
   exportSkill(skillId: string, id: string, agentKeys?: string[]): Promise<void>;
   /** Push a project skill (all its per-agent copies, given by relative path) to the library. */
-  pushToLibrary(id: string, relativePath: string): Promise<PushToLibraryResult>;
+  pushToLibrary(
+    id: string,
+    relativePath: string,
+    options?: PushToLibraryOptions,
+  ): Promise<PushToLibraryResult>;
   pullFromLibrary(id: string, relativePath: string): Promise<void>;
   setSkillEnabled(id: string, relativePath: string, enabled: boolean): Promise<void>;
   deleteSkill(id: string, relativePath: string, agentKey?: string): Promise<void>;

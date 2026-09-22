@@ -1,4 +1,4 @@
-import type { Project, ProjectTarget } from "@loadout/shared";
+import type { Project, ProjectTarget, SkillVersion } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, History, PencilLine, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -15,6 +15,7 @@ import {
   useSetProjectSkillEnabled,
 } from "@/hooks/mutations/project-detail";
 import { editLink } from "@/lib/skill-location";
+import type { VersionChoice } from "./PushVersionDialog";
 import {
   isTargetAvailable,
   leadVariant,
@@ -36,6 +37,9 @@ export interface ProjectSkillActions {
   toggleTarget(group: ProjectSkillGroup, target: ProjectTarget): void;
   /** `pendingTargetId`s with a copy being added or removed right now. */
   pendingTargets: ReadonlySet<string>;
+  /** A skill whose copies differ, waiting for the user to pick the one the library gets. */
+  versionChoice: VersionChoice | null;
+  closeVersionChoice(): void;
 }
 
 /** Everything a project skill card can do, wired to confirmations and mutations. */
@@ -47,7 +51,12 @@ export function useProjectSkillActions(
   const confirm = useConfirm();
   const navigate = useNavigate();
   // `mutate` is stable across renders; the mutation objects are not.
-  const { mutate: push } = usePushToLibrary();
+  const [versionChoice, setVersionChoice] = useState<VersionChoice | null>(null);
+  const { mutate: push } = usePushToLibrary(
+    useCallback((ref: ProjectSkillRef, versions: SkillVersion[]) => {
+      setVersionChoice({ ref, versions });
+    }, []),
+  );
   const { mutate: pull } = usePullFromLibrary();
   const { mutate: setEnabled } = useSetProjectSkillEnabled();
   const { mutate: exportSkill } = useExportSkill();
@@ -251,5 +260,7 @@ export function useProjectSkillActions(
     toggleEnabled,
     toggleTarget: (group, target) => void toggleTarget(group, target),
     pendingTargets,
+    versionChoice,
+    closeVersionChoice: () => setVersionChoice(null),
   };
 }

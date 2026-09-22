@@ -10,6 +10,7 @@ import type {
   LocalSkill,
   Project,
   ProjectTarget,
+  PushToLibraryOptions,
   PushToLibraryResult,
   Skill,
   SkillDocument,
@@ -212,6 +213,9 @@ export function createWorkspaceMockHandlers(
         : [],
     );
   }
+
+  const agentName = (key: string): string =>
+    ctx.getAgents().find((agent) => agent.key === key)?.displayName ?? key;
 
   const copiesOf = (projectId: string): Copy[] => projectCopies.get(projectId) ?? [];
 
@@ -421,23 +425,46 @@ export function createWorkspaceMockHandlers(
     "projects.pushToLibrary": async (
       id: string,
       relativePath: string,
+      options?: PushToLibraryOptions,
     ): Promise<PushToLibraryResult> => {
       await wait(STEP_MS);
+      const done: PushToLibraryResult = { conflictingVariants: 0, versions: [], realignFailed: 0 };
       const variants = copiesOf(id).filter((entry) => sameSkill(entry, relativePath));
+      // The preview has no content: every changed copy counts as a version of its own.
       const unsynced = variants.filter((entry) => entry.status !== "in_sync");
-      if (unsynced.length > 1) return { conflictingVariants: unsynced.length, realignFailed: 0 };
-      const winner = variants.find((entry) => entry.status !== "in_sync");
-      if (!winner) return { conflictingVariants: 0, realignFailed: 0 };
+      const picked = options?.version
+        ? unsynced.find((entry) => entry.agentKey === options.version)
+        : unsynced.length === 1
+          ? unsynced[0]
+          : undefined;
+      if (options?.version && !picked)
+        ctx.fail("NOT_FOUND", "That version is no longer in the project.");
+      if (!picked && unsynced.length > 1) {
+        return {
+          conflictingVariants: unsynced.length,
+          realignFailed: 0,
+          versions: unsynced.map((entry, index) => ({
+            id: entry.agentKey,
+            agents: [{ agentKey: entry.agentKey, agentName: agentName(entry.agentKey) }],
+            changedAt: Date.now() - (index + 1) * STEP_MS * 60,
+            fileCount: 2 + index,
+            documentName: "SKILL.md",
+            document: `---\nname: ${dirNameOf(relativePath)}\ndescription: ${entry.description}\n---\n\nEdited for ${agentName(entry.agentKey)}.\n`,
+            matchesLibrary: false,
+          })),
+        };
+      }
+      if (!picked) return done;
       const skill =
-        librarySkill(winner.librarySkillId) ??
-        importToLibrary(dirNameOf(winner.relativePath), winner.description);
-      patchCopies(id, relativePath, (entry) => ({
-        ...entry,
-        status: "in_sync",
-        librarySkillId: skill.id,
-      }));
+        librarySkill(picked.librarySkillId) ??
+        importToLibrary(dirNameOf(picked.relativePath), picked.description);
+      patchCopies(id, relativePath, (entry) =>
+        options?.realign === false && entry !== picked && entry.status !== "in_sync"
+          ? { ...entry, librarySkillId: skill.id, status: "diverged" }
+          : { ...entry, status: "in_sync", librarySkillId: skill.id },
+      );
       ctx.emitChanged("skills");
-      return { conflictingVariants: 0, realignFailed: 0 };
+      return done;
     },
     "projects.pullFromLibrary": async (id: string, relativePath: string) => {
       await wait(STEP_MS);

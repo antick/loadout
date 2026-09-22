@@ -162,9 +162,61 @@ describe("project actions", () => {
       editedCopy(skill, join(repo, ".cursor", "skills"), -MINUTE, "cursor edit");
 
       const result = await api().pushToLibrary(project.id, "alpha");
-      expect(result).toEqual({ conflictingVariants: 2, realignFailed: 0 });
+      expect(result).toMatchObject({ conflictingVariants: 2, realignFailed: 0 });
+      expect(result.versions.map((version) => version.agents.map((a) => a.agentKey))).toEqual([
+        ["claude_code"],
+        ["cursor"],
+      ]);
+      expect(result.versions[0]).toMatchObject({ matchesLibrary: false, documentName: "SKILL.md" });
+      expect(result.versions[0]?.document).toContain("claude edit");
       expect(world.store.get(skill.id).contentHash).toBe(skill.contentHash);
       expect(skillText(join(claude, "alpha"))).toContain("claude edit");
+    });
+
+    it("adds the picked version and makes the other copies match", async () => {
+      const project = await api().add(repo);
+      const skill = world.addSkill("alpha");
+      editedCopy(skill, claude, MINUTE, "claude edit");
+      editedCopy(skill, join(repo, ".cursor", "skills"), -MINUTE, "cursor edit");
+      const { versions } = await api().pushToLibrary(project.id, "alpha");
+      const cursorVersion = versions.find((v) => v.agents[0]?.agentKey === "cursor");
+
+      const result = await api().pushToLibrary(project.id, "alpha", { version: cursorVersion?.id });
+      expect(result).toEqual({ conflictingVariants: 0, versions: [], realignFailed: 0 });
+      expect(skillText(world.store.get(skill.id).libraryPath)).toContain("cursor edit");
+      expect(skillText(join(claude, "alpha"))).toContain("cursor edit");
+    });
+
+    it("adds the picked version and leaves the other copies as they are when asked", async () => {
+      const project = await api().add(repo);
+      const skill = world.addSkill("alpha");
+      editedCopy(skill, claude, MINUTE, "claude edit");
+      editedCopy(skill, join(repo, ".cursor", "skills"), -MINUTE, "cursor edit");
+      const { versions } = await api().pushToLibrary(project.id, "alpha");
+      const cursorVersion = versions.find((v) => v.agents[0]?.agentKey === "cursor");
+
+      await api().pushToLibrary(project.id, "alpha", {
+        version: cursorVersion?.id,
+        realign: false,
+      });
+      expect(skillText(world.store.get(skill.id).libraryPath)).toContain("cursor edit");
+      expect(skillText(join(claude, "alpha"))).toContain("claude edit");
+
+      const stale = await rejection(api().pushToLibrary(project.id, "alpha", { version: "gone" }));
+      expect(stale.code).toBe("NOT_FOUND");
+    });
+
+    it("adds a skill whose copies are all identical without asking", async () => {
+      const project = await api().add(repo);
+      for (const dir of [".claude", ".cursor", ".warp"]) {
+        makeSkill(join(repo, dir, "skills"), "build", { body: "same everywhere" });
+      }
+      const result = await api().pushToLibrary(project.id, "build");
+      expect(result).toEqual({ conflictingVariants: 0, versions: [], realignFailed: 0 });
+      expect(world.store.list().map((skill) => skill.name)).toEqual(["build"]);
+      expect(new Set((await api().skills(project.id)).map((s) => s.syncStatus))).toEqual(
+        new Set(["in_sync"]),
+      );
     });
 
     it("pushes the one changed copy over its match and realigns the rest", async () => {
@@ -178,7 +230,7 @@ describe("project actions", () => {
       setContentMtime(join(claude, "alpha"), T0 + MINUTE);
 
       const result = await api().pushToLibrary(project.id, "alpha");
-      expect(result).toEqual({ conflictingVariants: 0, realignFailed: 0 });
+      expect(result).toEqual({ conflictingVariants: 0, versions: [], realignFailed: 0 });
       const updated = world.store.get(skill.id);
       expect(updated.updateStatus).toBe("local_only");
       expect(skillText(updated.libraryPath)).toContain("version two");
@@ -195,7 +247,7 @@ describe("project actions", () => {
       const project = await api().add(repo);
       const local = makeSkill(join(claude, "research"), "web", { body: "found on the web" });
       const result = await api().pushToLibrary(project.id, "research/web");
-      expect(result).toEqual({ conflictingVariants: 0, realignFailed: 0 });
+      expect(result).toEqual({ conflictingVariants: 0, versions: [], realignFailed: 0 });
       const [skill] = world.store.list();
       expect(skill).toMatchObject({
         name: "web",

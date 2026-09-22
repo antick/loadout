@@ -107,11 +107,9 @@
       "pushed": "Updated the library with “{{name}}”",
       "pushedMany_one": "Updated the library with {{count}} skill",
       "pushedMany_other": "Updated the library with {{count}} skills",
-      "pushConflictTitle": "“{{name}}” was not pushed to the library",
-      "pushConflict_one": "{{count}} copy may hold content of its own. Reconcile the copies into one before updating the library.",
-      "pushConflict_other": "{{count}} copies each may hold content of their own. Reconcile them into one before updating the library. Nothing was written.",
-      "pushConflictMany_one": "{{count}} skill has copies that disagree, so it was left alone",
-      "pushConflictMany_other": "{{count}} skills have copies that disagree, so they were left alone",
+      "pushConflictTitle": "“{{name}}” was not added to the library",
+      "pushConflictMany_one": "{{count}} skill was skipped: its copies in different agent folders are not the same",
+      "pushConflictMany_other": "{{count}} skills were skipped: their copies in different agent folders are not the same",
       "realignFailed_one": "The library was updated, but {{count}} other copy in the project could not be brought in line.",
       "realignFailed_other": "The library was updated, but {{count}} other copies in the project could not be brought in line.",
       "realignFailedMany_one": "{{count}} skill was pushed, but not all of its copies could be brought in line",
@@ -128,7 +126,8 @@
       "enabledMany_other": "Enabled {{count}} skills",
       "disabledMany_one": "Disabled {{count}} skill",
       "disabledMany_other": "Disabled {{count}} skills",
-      "defaultsSaved": "These agents are ticked by default for this project from now on"
+      "defaultsSaved": "These agents are ticked by default for this project from now on",
+      "pushConflict": "Its copies in different agent folders are not the same. Add it again from the project page to choose which one to keep."
     },
     "errors": {
       "export": "Could not add the skill to the project.",
@@ -137,6 +136,22 @@
       "pull": "Could not update the project from the library.",
       "toggle": "Could not switch the skill on or off.",
       "saveDefaults": "Could not save the default agents."
+    },
+    "chooseVersion": {
+      "title": "Which copy of “{{name}}” goes to the library?",
+      "description": "This skill is in several agent folders, and the copies are not the same. Pick the one to keep. Nothing changes until you confirm.",
+      "label": "Versions",
+      "changed": "Changed {{when}}",
+      "files_one": "{{count}} file",
+      "files_other": "{{count}} files",
+      "sameAsLibrary": "Same as the library",
+      "compare": "Compare with",
+      "chosen": "The chosen copy",
+      "documentSame": "{{document}} is the same in both. They differ in their other files.",
+      "realign": "Make the other copies match",
+      "realignHint": "Replaces the copies for {{agents}} with this one. What is different in them is lost.",
+      "keepHint": "The copies for {{agents}} stay as they are and keep showing as changed.",
+      "confirm": "Add this copy to the library"
     }
   },
   "addProject": {

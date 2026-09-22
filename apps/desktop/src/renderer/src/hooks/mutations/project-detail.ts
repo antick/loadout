@@ -1,4 +1,9 @@
-import type { BatchResult, PushToLibraryResult } from "@loadout/shared";
+import type {
+  BatchResult,
+  PushToLibraryOptions,
+  PushToLibraryResult,
+  SkillVersion,
+} from "@loadout/shared";
 import {
   type QueryClient,
   type UseMutationResult,
@@ -98,22 +103,31 @@ export function useDeleteProjectSkill(): UseMutationResult<void, unknown, Delete
   });
 }
 
-/** Push a project skill to the library. Says clearly when nothing was written, or only partly. */
-export function usePushToLibrary(): UseMutationResult<
-  PushToLibraryResult,
-  unknown,
-  ProjectSkillRef
-> {
+export interface PushToLibraryInput extends ProjectSkillRef {
+  /** Which version to add, and whether the other copies follow; see `PushToLibraryOptions`. */
+  options?: PushToLibraryOptions;
+}
+
+/**
+ * Push a project skill to the library. When its copies disagree nothing is written and
+ * `onChooseVersion` gets the versions, so the user can pick one.
+ */
+export function usePushToLibrary(
+  onChooseVersion?: (ref: ProjectSkillRef, versions: SkillVersion[]) => void,
+): UseMutationResult<PushToLibraryResult, unknown, PushToLibraryInput> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ projectId, relativePath }: ProjectSkillRef) =>
-      api.projects.pushToLibrary(projectId, relativePath),
-    onSuccess: (result, { name }) => {
+    mutationFn: ({ projectId, relativePath, options }: PushToLibraryInput) =>
+      api.projects.pushToLibrary(projectId, relativePath, options),
+    onSuccess: (result, { projectId, relativePath, name }) => {
       if (result.conflictingVariants > 0) {
-        toast.warning(t("projectPage.toast.pushConflictTitle", { name }), {
-          description: t("projectPage.toast.pushConflict", { count: result.conflictingVariants }),
-        });
+        if (onChooseVersion) onChooseVersion({ projectId, relativePath, name }, result.versions);
+        else {
+          toast.warning(t("projectPage.toast.pushConflictTitle", { name }), {
+            description: t("projectPage.toast.pushConflict"),
+          });
+        }
       } else if (result.realignFailed > 0) {
         toast.warning(t("projectPage.toast.pushed", { name }), {
           description: t("projectPage.toast.realignFailed", { count: result.realignFailed }),

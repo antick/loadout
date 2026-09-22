@@ -187,8 +187,8 @@ export function createProjectsService(
     exportSkill: async (skillId, id, agentKeys) =>
       actions.exportSkill(store.get(skillId), projects.get(id), agentKeys),
 
-    pushToLibrary: async (id, relativePath) =>
-      actions.pushToLibrary(projects.get(id), relativePath),
+    pushToLibrary: async (id, relativePath, options) =>
+      actions.pushToLibrary(projects.get(id), relativePath, options),
 
     pullFromLibrary: async (id, relativePath) =>
       actions.pullFromLibrary(projects.get(id), relativePath),

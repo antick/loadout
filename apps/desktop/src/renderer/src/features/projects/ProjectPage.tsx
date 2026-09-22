@@ -56,6 +56,7 @@ import { ProjectPresetBar } from "./ProjectPresetBar";
 import { ProjectSelectionActions } from "./ProjectSelectionActions";
 import { ProjectSkillDetail } from "./ProjectSkillDetail";
 import { ProjectTargetDots } from "./ProjectTargetDots";
+import { PushVersionDialog } from "./PushVersionDialog";
 import { useProjectSkillActions } from "./use-project-skill-actions";
 
 const VIEW_MODE_SCOPE = "project-workspace";
@@ -353,6 +354,8 @@ function ProjectWorkspace({
         actions={actions}
         onClose={() => setOpenId(null)}
       />
+
+      <PushVersionDialog choice={actions.versionChoice} onClose={actions.closeVersionChoice} />
 
       <ProjectAddSkillsSheet
         open={adding}

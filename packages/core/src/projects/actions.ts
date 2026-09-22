@@ -1,6 +1,6 @@
 import { renameSync, rmdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { LocalSkill, PushToLibraryResult, Skill } from "@loadout/shared";
+import type { LocalSkill, PushToLibraryOptions, PushToLibraryResult, Skill } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { writeTarget } from "../deploy";
@@ -14,6 +14,7 @@ import {
 import { indexLibrary } from "../workspace/local-scan";
 import { type Variant, findVariants, groupKey, listProjectSkills } from "./scan";
 import type { ProjectRecord } from "./store";
+import { type VersionGroup, describeVersion, groupByContent } from "./versions";
 import {
   DEFAULT_PROJECT_AGENT_KEY,
   type ResolvedTarget,
@@ -29,12 +30,17 @@ export interface ProjectActionsDeps extends LocalSyncDeps {
 export interface ProjectActions {
   setSkillEnabled(project: ProjectRecord, relativePath: string, enabled: boolean): Promise<void>;
   exportSkill(skill: Skill, project: ProjectRecord, agentKeys?: string[]): Promise<void>;
-  pushToLibrary(project: ProjectRecord, relativePath: string): Promise<PushToLibraryResult>;
+  pushToLibrary(
+    project: ProjectRecord,
+    relativePath: string,
+    options?: PushToLibraryOptions,
+  ): Promise<PushToLibraryResult>;
   pullFromLibrary(project: ProjectRecord, relativePath: string): Promise<void>;
   deleteSkill(project: ProjectRecord, relativePath: string, agentKey?: string): Promise<void>;
 }
 
 const NOT_IN_WORKSPACE = "Skill not found in this workspace";
+const VERSION_GONE = "That version is no longer in the project. Refresh and choose again.";
 
 /**
  * Remove folders left empty by a move or a delete, from `start` up to `root`. `rmdir` refuses a
@@ -170,32 +176,50 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       ctx.touched("projects");
     },
 
-    pushToLibrary: async (project, relativePath) => {
+    pushToLibrary: async (project, relativePath, options = {}) => {
       const variants = variantsOf(project, relativePath);
       if (variants.length === 0) throw notFound(NOT_IN_WORKSPACE);
-      // Equal content is the only proof a copy holds nothing of its own. Two copies without that
-      // proof cannot both win, and picking one would silently drop the other's changes.
-      const unsynced = variants.filter((variant) => variant.syncStatus !== "in_sync");
-      if (unsynced.length > 1) return { conflictingVariants: unsynced.length, realignFailed: 0 };
-      const winner = unsynced[0];
-      if (!winner) return { conflictingVariants: 0, realignFailed: 0 };
+      const libraryId = variants.find((variant) => variant.librarySkillId)?.librarySkillId ?? null;
+      const match = libraryId ? store.find(libraryId) : null;
+      const groups = groupByContent(variants);
+      // Copies with the library's content hold nothing of their own.
+      const changed = groups.filter((group) => !match || group.hash !== match.contentHash);
 
-      const match = winner.librarySkillId ? store.find(winner.librarySkillId) : null;
-      const pushed = await pushLocalToLibrary(ctx, deps, winner, match);
+      let winner: VersionGroup | undefined;
+      if (options.version !== undefined) {
+        winner = groups.find((group) => group.hash === options.version);
+        if (!winner) throw notFound(VERSION_GONE);
+      } else if (changed.length > 1) {
+        // Identical copies are one version. Only copies that really differ need a choice, and
+        // picking one silently would drop the others' changes.
+        return {
+          conflictingVariants: changed.length,
+          versions: groups.map((group) => describeVersion(group, match?.contentHash ?? null)),
+          realignFailed: 0,
+        };
+      } else {
+        winner = changed[0];
+      }
+      if (!winner?.copies[0]) return { conflictingVariants: 0, versions: [], realignFailed: 0 };
 
+      const pushed = await pushLocalToLibrary(ctx, deps, winner.copies[0], match);
       let realignFailed = 0;
-      // One at a time: each replace stages a sibling folder, and targets can share a parent.
-      for (const other of variants) {
-        if (other === winner) continue;
-        try {
-          await replaceLocalFromLibrary(ctx, pushed, other.path);
-        } catch (error) {
-          realignFailed += 1;
-          ctx.log.warn(`Could not realign ${other.path}: ${errorMessage(error)}`);
+      if (options.realign !== false) {
+        // One at a time: each replace stages a sibling folder, and targets can share a parent.
+        for (const group of groups) {
+          if (group === winner) continue;
+          for (const other of group.copies) {
+            try {
+              await replaceLocalFromLibrary(ctx, pushed, other.path);
+            } catch (error) {
+              realignFailed += 1;
+              ctx.log.warn(`Could not realign ${other.path}: ${errorMessage(error)}`);
+            }
+          }
         }
       }
       ctx.touched("skills", "projects");
-      return { conflictingVariants: 0, realignFailed };
+      return { conflictingVariants: 0, versions: [], realignFailed };
     },
 
     pullFromLibrary: async (project, relativePath) => {
