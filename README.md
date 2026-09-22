@@ -30,8 +30,13 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ### Editor
 
-- Edit any text file of a library skill in the app: file list, highlighted editor, live Markdown
-  preview (side by side, stacked or on its own), search, undo, `⌘S` to save.
+- Edit any text file of a skill in the app, wherever it lives: in the library, in an agent's
+  skills folder, or in a project. File list, highlighted editor, live Markdown preview (side by
+  side, stacked or on its own), search, undo, `⌘S` to save. Open it with **Edit** on a skill's
+  panel or its "…" menu, or by clicking one of its files.
+- A project skill usually has a copy per agent folder. Saving one copy also gives the change to
+  the copies that were identical (switch it off per save), and says which copies kept their own
+  changes. A copy that is really a link into the library is edited as the library skill.
 - A save never overwrites a change made on disk meanwhile: you see the difference and choose.
 - Unsaved text survives closing the window or quitting; leaving the editor asks first.
 - Every save keeps the version it replaced, on this computer; restore any of the last 20.
@@ -153,17 +158,21 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ### App
 
-- Two-part navigation: an icon rail at the far left (Home, Library, Agents, Presets, Projects,
-  Backup, Settings, Help and a theme switch) and a sidebar beside it that lists the section picked
-  in the rail. Pressing the shown section folds the sidebar away; `⌘B` does the same, and
-  `⌘1`–`⌘4` jump to Library, Agents, Presets and Projects. Opening a page of another section
-  switches the sidebar to it.
-- The Library section has All skills, Install, one-click views (updates available, needs
-  attention, not deployed) with counts, and the recently changed skills.
+- Navigation in three parts. The **activity bar** at the far left: Home, Library, Agents,
+  Presets, Projects, then Backup, Settings and Help. The **sidebar** beside it lists the section
+  picked there: Home (dashboard, first steps, guide), Library (all skills, install, views with
+  counts, recently changed), Agents, Presets, Projects, and Settings (its sections). Pressing the
+  shown section folds the sidebar away; `⌘B` does the same, `⌘1`–`⌘5` jump to Home, Library,
+  Agents, Presets and Projects, and opening a page switches the sidebar to its section.
+- One title bar across the window, clear of the macOS window buttons, naming the sidebar section
+  and the page.
+- A **status bar** along the bottom: backup state, skill count, skills that need attention,
+  available updates and background installs on the left; agents, deploy mode (symlinks or copies)
+  and the theme menu on the right. Every entry opens the page that explains it.
 - Dashboard with library, coverage, agent, update, project and backup stats, quick actions, recent
   activity and recently updated skills.
 - Command palette (`⌘K` / `Ctrl+K`) for skills, presets, projects, agents and actions.
-- Light, dark and system theme, four text sizes.
+- Light, dark and system theme (from the status bar or Settings), four text sizes.
 - Tray icon, and a choice of what the close button does: ask, keep in tray or quit.
 - Single instance, remembered window size, links open in your browser.
 - Activity history, rotating logs, export logs as a zip, copy diagnostics, crash notice.
