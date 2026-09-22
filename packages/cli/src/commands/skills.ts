@@ -6,6 +6,7 @@ import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { installCommand } from "./skills-install";
 import { checkCommand, updateCommand } from "./skills-update";
+import { validateCommand } from "./skills-validate";
 import {
   AGENT_FLAG,
   DRY_RUN_FLAG,
@@ -48,6 +49,14 @@ const SOURCE_TYPES = ["local", "import", "git", "marketplace"] as const;
 
 const agentsOf = (skill: Skill): string => skill.deployments.map((d) => d.agentKey).join(", ");
 
+/** "ok", "2 errors", "1 warning": the format checks in one cell. */
+function checksOf(skill: Skill): string {
+  const errors = skill.issues.filter((issue) => issue.severity === "error").length;
+  const warnings = skill.issues.length - errors;
+  if (errors > 0) return plural(errors, "error");
+  return warnings > 0 ? plural(warnings, "warning") : "ok";
+}
+
 async function list({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
   const tags = flagList(args, TAG_FLAG.name).map((tag) => tag.toLowerCase());
@@ -61,8 +70,15 @@ async function list({ core, args }: CommandContext): Promise<CommandResult> {
       tags.every((tag) => skill.tags.some((own) => own.toLowerCase() === tag)),
   );
   const text = table(
-    ["name", "source", "updates", "deployed to", "tags"],
-    value.map((s) => [s.name, s.sourceType, s.updateStatus, agentsOf(s), s.tags.join(", ")]),
+    ["name", "source", "updates", "checks", "deployed to", "tags"],
+    value.map((s) => [
+      s.name,
+      s.sourceType,
+      s.updateStatus,
+      checksOf(s),
+      agentsOf(s),
+      s.tags.join(", "),
+    ]),
     "No skills match.",
   );
   return { value, text };
@@ -85,6 +101,7 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
     ["Deployed to", agentsOf(value)],
     ["Installed", when(value.createdAt)],
     ["Changed", when(value.updatedAt)],
+    ["Problems", value.issues.map((issue) => `${issue.severity}: ${issue.message}`).join(" | ")],
   ]);
   return { value, text };
 }
@@ -262,6 +279,7 @@ export const skillsGroup: CommandGroup = {
     },
     checkCommand,
     updateCommand,
+    validateCommand,
     adoptCommand,
     {
       name: "tag",

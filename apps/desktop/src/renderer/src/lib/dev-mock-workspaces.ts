@@ -251,6 +251,7 @@ export function createWorkspaceMockHandlers(
       tags: [],
       hasConflict: false,
       editedFiles: [],
+      issues: [],
     };
     ctx.setSkills([...ctx.getSkills(), created]);
     return created;

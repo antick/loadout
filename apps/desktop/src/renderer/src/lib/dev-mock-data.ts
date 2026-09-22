@@ -89,6 +89,7 @@ function skill(
     tags: [],
     hasConflict: false,
     editedFiles: [],
+    issues: [],
     ...extra,
   };
 }

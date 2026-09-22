@@ -3,6 +3,7 @@ import { basename } from "node:path";
 import type { DeployMode, Deployment, Skill, SourceType, UpdateStatus } from "@loadout/shared";
 import type { Database } from "../db/database";
 import { notFound } from "../errors";
+import type { SkillInspector } from "./checks";
 
 interface SkillRow {
   id: string;
@@ -128,12 +129,19 @@ function toDeployment(row: DeploymentRow): DeploymentRecord {
   };
 }
 
-/** All reads and writes of skills, tags and deployments. No filesystem work happens here. */
+const NO_CHECKS: SkillInspector = { issuesOf: () => [] };
+
+/**
+ * All reads and writes of skills, tags and deployments. No filesystem work happens here: the
+ * format checks attached to each skill come from `inspector`, which caches them per content hash.
+ */
 export class SkillStore {
   readonly #db: Database;
+  readonly #inspector: SkillInspector;
 
-  constructor(db: Database) {
+  constructor(db: Database, inspector: SkillInspector = NO_CHECKS) {
     this.#db = db;
+    this.#inspector = inspector;
   }
 
   #hydrate(rows: SkillRow[]): Skill[] {
@@ -184,6 +192,11 @@ export class SkillStore {
       tags: tags.get(row.id) ?? [],
       hasConflict: conflicts.has(row.id),
       editedFiles: decodeEditedFiles(row.edited_files),
+      issues: this.#inspector.issuesOf({
+        id: row.id,
+        libraryPath: row.library_path,
+        contentHash: row.content_hash,
+      }),
     }));
   }
 

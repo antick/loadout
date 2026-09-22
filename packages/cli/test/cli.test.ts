@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createCore, silentLogger } from "@loadout/core";
@@ -192,6 +192,31 @@ describe("skills: install, deploy, status, remove", () => {
     expect((await cli("skills", "check", "alpha", "--all", "--json")).code).toBe(EXIT_USAGE);
     const checked = await cli("skills", "check", "alpha", "--json");
     expect(checked.json()).toMatchObject({ name: "alpha", updateStatus: "local_only" });
+  });
+});
+
+describe("skills validate", () => {
+  it("reports format problems and fails only on errors", async () => {
+    writeSkill(join(root, "src"), "good", "See [notes](notes.md).\n");
+    const bad = writeSkill(join(root, "src"), "bad");
+    writeFileSync(join(bad, "SKILL.md"), "---\nname: bad\n---\nNo description.\n");
+    await cli("skills", "install", "./src/good");
+    await cli("skills", "install", "./src/bad");
+
+    const one = await cli("skills", "validate", "good", "--json");
+    expect(one.code).toBe(EXIT_OK);
+    expect(one.json<{ issues: { code: string }[] }>().issues).toMatchObject([
+      { code: "broken_reference", severity: "warning" },
+    ]);
+
+    const all = await cli("skills", "validate", "--all");
+    expect(all.code).toBe(EXIT_FAILED);
+    expect(all.stdout).toContain("error: The frontmatter has no description.");
+    expect(all.stdout).toContain("1 with errors, 1 with warnings only");
+
+    const listed = await cli("skills", "list");
+    expect(listed.stdout).toContain("1 error");
+    expect((await cli("skills", "validate")).code).toBe(EXIT_USAGE);
   });
 });
 

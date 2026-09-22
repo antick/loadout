@@ -77,6 +77,10 @@ sb skills check --all --json
 sb skills update <ref> --json
 sb skills update --all --json
 
+# Format checks (Agent Skills rules); exit code 1 when a skill has an error
+sb skills validate <ref> --json
+sb skills validate --all --json
+
 # Tags
 sb skills tag <ref> --add writing --remove draft --json
 
@@ -160,4 +164,6 @@ command again with `--approve-removals`.
 
 Start with `repo show --json` and `agents list --json`. A skill "not showing up" is almost
 always one of: installed but never deployed, deployed to a different agent, the agent is
-disabled, or `skills status` reports `presentOnDisk: false` (deploy it again).
+disabled, or `skills status` reports `presentOnDisk: false` (deploy it again). An agent may
+also ignore a skill whose SKILL.md is broken: run `skills validate <ref>` and report any `error`
+(missing frontmatter, name or description, or YAML that does not parse).

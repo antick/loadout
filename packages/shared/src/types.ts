@@ -1,4 +1,5 @@
 import type { AgentCategory } from "./agents";
+import type { SkillIssue } from "./skill-checks";
 
 // ── Agents ──
 
@@ -87,6 +88,8 @@ export interface Skill {
    * asks before replacing them.
    */
   editedFiles: string[];
+  /** Problems with the skill's format, errors first. Empty when the skill is fine. */
+  issues: SkillIssue[];
 }
 
 export interface SkillDocument {

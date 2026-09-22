@@ -190,6 +190,7 @@ export function createInstallMockHandlers(
       tags: existing?.tags ?? [],
       hasConflict: false,
       editedFiles: [],
+      issues: [],
       ...extra,
     };
     ctx.addSkill(created);

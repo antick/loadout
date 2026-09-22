@@ -14,6 +14,7 @@ import { RepoLock } from "./lock";
 import { type Logger, createFileLogger } from "./log";
 import { ensureLibraryDirs, resolveLibrary } from "./paths";
 import { SettingsStore } from "./settings/store";
+import { createSkillInspector } from "./skills/checks";
 import { PortableMetadata } from "./skills/portable";
 import { SkillStore } from "./skills/store";
 
@@ -67,7 +68,7 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
   for (const note of resolved.notes) log.warn(note);
 
   const db = new Database(resolved.paths.dbPath);
-  const store = new SkillStore(db);
+  const store = new SkillStore(db, createSkillInspector());
   const host: HostBridge = { ...defaultHost(home), ...options.host };
   const portable = new PortableMetadata(resolved.paths, db, store, log, host.appVersion);
   const emit: EventSink = options.emit ?? (() => undefined);
