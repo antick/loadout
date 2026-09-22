@@ -163,7 +163,12 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   picked there: Home (dashboard, first steps, guide), Library (all skills, install, views with
   counts, recently changed), Agents, Presets, Projects, and Settings (its sections). Pressing the
   shown section folds the sidebar away; `⌘B` does the same, `⌘1`–`⌘5` jump to Home, Library,
-  Agents, Presets and Projects, and opening a page switches the sidebar to its section.
+  Agents, Presets and Projects, and opening a page switches the sidebar to its section. Drag the
+  sidebar's edge to resize it (double-click resets); the width is remembered.
+- Each project in the sidebar opens to list its skills; clicking one opens it on the project page.
+- While a skill is edited, the sidebar shows its files with a way back, so the editor has no file
+  column of its own. Picking a section in the activity bar brings the section back; the files
+  button in the editor's status line brings the files back.
 - One title bar across the window, clear of the macOS window buttons, naming the sidebar section
   and the page.
 - A **status bar** along the bottom: backup state, skill count, skills that need attention,
