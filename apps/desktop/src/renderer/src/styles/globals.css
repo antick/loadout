@@ -186,6 +186,10 @@
     cursor: col-resize !important;
     user-select: none !important;
   }
+  body[data-resizing="row"] *,
+  body[data-resizing="row"] {
+    cursor: row-resize !important;
+  }
 
   button:disabled,
   [aria-disabled="true"],

@@ -29,6 +29,7 @@ import { draftPaths } from "@/features/editor/editor-drafts";
 import { EditorActions } from "@/features/editor/EditorActions";
 import { EditorNotices } from "@/features/editor/EditorNotices";
 import { EditorSidebar } from "@/features/editor/EditorSidebar";
+import { EditorSplit } from "@/features/editor/EditorSplit";
 import { hasDiskChange, isDirty } from "@/features/editor/editor-session";
 import { EditorStatusBar, type SaveState } from "@/features/editor/EditorStatusBar";
 import { LeaveEditorDialog } from "@/features/editor/LeaveEditorDialog";
@@ -45,7 +46,6 @@ import { ALT_SHORTCUT_KEYS, SHORTCUT_KEYS } from "@/lib/shortcuts";
 import { locationKey } from "@/lib/skill-location";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { toastError } from "@/lib/toast";
-import { cn } from "@/lib/utils";
 
 export interface EditorWorkspaceProps {
   target: EditTarget;
@@ -323,48 +323,33 @@ export function EditorWorkspace({
 
         {/* A narrow editor stacks the preview underneath instead of squeezing both. */}
         <div className="@container flex min-h-0 flex-1">
-          <div className="flex min-h-0 min-w-0 flex-1 @max-2xl:flex-col">
-            {file.isError && !deleted ? (
-              <ErrorState
-                error={file.error}
-                onRetry={() => void file.refetch()}
-                className="flex-1"
-              />
-            ) : !current ? (
-              <div className="flex flex-1 flex-col gap-2 p-4">
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-3/5" />
-              </div>
-            ) : (
-              <>
-                {/* Kept mounted in preview mode so every file keeps its undo history. */}
-                <div className={cn("min-h-0 min-w-0 flex-1", view === "preview" && "hidden")}>
-                  <CodeEditor
-                    ref={editorRef}
-                    docKey={current.path}
-                    value={current.draft}
-                    language={language}
-                    wrap={wrap}
-                    ariaLabel={t("editor.ariaLabel", { path: current.path })}
-                    onChange={(text) => session.setDraft(current.path, text)}
-                    onSave={saveActive}
-                    onCursor={setCursor}
-                  />
-                </div>
-                {view !== "edit" ? (
-                  <div
-                    className={cn(
-                      "min-h-0 min-w-0 flex-1 overflow-y-auto bg-background px-6 py-5",
-                      view === "split" && "border-l @max-2xl:border-t @max-2xl:border-l-0",
-                    )}
-                  >
-                    <MarkdownView content={previewText} />
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
+          {file.isError && !deleted ? (
+            <ErrorState error={file.error} onRetry={() => void file.refetch()} className="flex-1" />
+          ) : !current ? (
+            <div className="flex flex-1 flex-col gap-2 p-4">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-3/5" />
+            </div>
+          ) : (
+            <EditorSplit
+              view={view}
+              editor={
+                <CodeEditor
+                  ref={editorRef}
+                  docKey={current.path}
+                  value={current.draft}
+                  language={language}
+                  wrap={wrap}
+                  ariaLabel={t("editor.ariaLabel", { path: current.path })}
+                  onChange={(text) => session.setDraft(current.path, text)}
+                  onSave={saveActive}
+                  onCursor={setCursor}
+                />
+              }
+              preview={<MarkdownView content={previewText} />}
+            />
+          )}
         </div>
 
         <EditorStatusBar

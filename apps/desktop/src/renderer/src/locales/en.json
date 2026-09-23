@@ -12,6 +12,7 @@
     "copied": "Copied to clipboard",
     "copyPath": "Copy path",
     "reveal": "Show in file manager",
+    "resizeHint": "Drag to resize. Double-click to reset.",
     "moveUp": "Move up",
     "moveDown": "Move down",
     "andMore_one": "and {{count}} more",

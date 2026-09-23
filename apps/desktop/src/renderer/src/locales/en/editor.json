@@ -10,7 +10,8 @@
       "label": "Layout",
       "edit": "Editor only",
       "split": "Editor and preview",
-      "preview": "Preview only"
+      "preview": "Preview only",
+      "resize": "Resize the editor and the preview"
     },
     "files": {
       "label": "Files of the skill",

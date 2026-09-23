@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   viewMode: "view-mode",
   editorView: "editor.view",
   editorWrap: "editor.wrap",
+  editorSplit: "editor.split",
 } as const;
 
 /** localStorage prefix of unsaved editor drafts: `<prefix><skillId>:<path>`. */
@@ -24,6 +25,12 @@ export const EDITOR_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export const EDITOR_VIEWS = ["edit", "split", "preview"] as const;
 export type EditorView = (typeof EDITOR_VIEWS)[number];
 export const DEFAULT_EDITOR_VIEW: EditorView = "split";
+/** Share of the text in the editor-and-preview layout, in percent, and how far a drag may take it. */
+export const EDITOR_SPLIT_DEFAULT_PERCENT = 50;
+export const EDITOR_SPLIT_MIN_PERCENT = 20;
+export const EDITOR_SPLIT_MAX_PERCENT = 80;
+/** One arrow-key press on the split's edge moves it by this much. */
+export const EDITOR_SPLIT_STEP_PERCENT = 5;
 
 /**
  * Space kept free at the top-left on macOS for the window buttons. At the main process's
