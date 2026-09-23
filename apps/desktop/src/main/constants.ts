@@ -10,6 +10,12 @@ export const TRAFFIC_LIGHT_POSITION = { x: 16, y: 17 };
 export const WINDOW_STATE_FILE = "window-state.json";
 export const SECRETS_FILE = "secrets.json";
 export const APP_ICON_FILE = "icon.png";
+/** Chromium's web storage folder: interface preferences and unsaved editor drafts. */
+export const WEB_STORAGE_DIR = "Local Storage";
+/** Chromium's crash reports, kept inside the app data folder. */
+export const CRASH_DUMPS_DIR = "Crashpad";
+/** Chromium's single-instance marker: a link named `<host>-<pid>` while that instance runs. */
+export const SINGLETON_LOCK_FILE = "SingletonLock";
 
 /** File-watcher timings. */
 export const WATCH_DEBOUNCE_MS = 500;

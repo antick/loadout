@@ -209,6 +209,11 @@ function adoptLegacyConfig(legacyPath: string, configPath: string, notes: string
     ensureDir(dirname(configPath));
     moveEntry(legacyPath, configPath);
     notes.push(`Moved the library location file from ${legacyPath} to ${configPath}`);
+    try {
+      rmdirSync(dirname(legacyPath));
+    } catch {
+      // Not empty: on macOS it is also the desktop app's old data folder, which cleans itself up.
+    }
   } catch (error) {
     notes.push(`Could not move the library location file: ${errorMessage(error)}`);
   }

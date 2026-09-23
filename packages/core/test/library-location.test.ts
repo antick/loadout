@@ -108,6 +108,7 @@ describe("library location", () => {
     const { paths } = resolve();
     expect(paths.baseDir).toBe(target);
     expect(existsSync(legacy)).toBe(false);
+    expect(existsSync(join(configDir, "loadout"))).toBe(false);
     expect(existsSync(join(homeDir(), "library.json"))).toBe(true);
   });
 

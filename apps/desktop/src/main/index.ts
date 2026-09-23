@@ -1,10 +1,18 @@
 import { existsSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { BrowserWindow, app, net, session, shell } from "electron";
 import { type Core, createCore } from "@loadout/core";
-import { APP_ID, type LoadoutApi } from "@loadout/shared";
+import {
+  APP_DATA_DIR_NAME,
+  APP_ID,
+  DEV_APP_DATA_DIR_NAME,
+  LIBRARY_DIR_NAME,
+  type LoadoutApi,
+} from "@loadout/shared";
 import { createAppApi } from "./app-api";
-import { APP_ICON_FILE, SECRETS_FILE } from "./constants";
+import { type AppDataMove, adoptAppData, removeOldAppData } from "./app-data";
+import { APP_ICON_FILE, CRASH_DUMPS_DIR, SECRETS_FILE } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
 import { type TrayController, createTrayController } from "./tray-controller";
@@ -26,6 +34,31 @@ const bundledCliPath = app.isPackaged
   : join(import.meta.dirname, "../../../../packages/cli/dist/loadout.mjs");
 
 const send = createEventSender(() => BrowserWindow.getAllWindows());
+
+// The app's own files live in the home data folder next to the library, not in the OS app data
+// folder. Set before anything reads the path (the single-instance lock does).
+const legacyAppDataDir = app.getPath("userData");
+const appDataDir = join(
+  homedir(),
+  LIBRARY_DIR_NAME,
+  app.isPackaged ? APP_DATA_DIR_NAME : DEV_APP_DATA_DIR_NAME,
+);
+app.setPath("userData", appDataDir);
+app.setPath("crashDumps", join(appDataDir, CRASH_DUMPS_DIR));
+let appDataMove: AppDataMove | null = null;
+
+/** Report the one-time move of the app's files, and remove the old folder when it is safe. */
+function finishAppDataMove(log: Core["ctx"]["log"]): void {
+  for (const name of appDataMove?.copied ?? []) {
+    log.info(`Moved ${name} from ${legacyAppDataDir} to ${appDataDir}`);
+  }
+  for (const failure of appDataMove?.failed ?? []) {
+    log.warn(`Could not move ${failure.name} from ${legacyAppDataDir}: ${failure.message}`);
+  }
+  const outcome = removeOldAppData(legacyAppDataDir, appDataDir);
+  if (outcome === "removed") log.info(`Removed the old app data folder ${legacyAppDataDir}`);
+  else if (outcome !== "absent") log.warn(`Kept the old app data folder (${outcome})`);
+}
 
 function quit(): void {
   quitting = true;
@@ -161,6 +194,8 @@ function start(): void {
     },
   );
 
+  // After the library started: it adopts the location file the old folder may still hold.
+  finishAppDataMove(core.ctx.log);
   core.background.start();
   syncProxy();
   syncTray();
@@ -173,6 +208,7 @@ process.on("unhandledRejection", recordCrash);
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  appDataMove = adoptAppData(legacyAppDataDir, appDataDir);
   app.setAppUserModelId(APP_ID);
   app.on("second-instance", showWindow);
   app.on("activate", showWindow);
