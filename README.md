@@ -83,6 +83,9 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   detected automatically.
 - Enable or disable each agent, or all at once. Disabling removes only what the app deployed.
 - Custom agents with their own skills folder and an optional project-relative folder.
+- Agents inside WSL on Windows: point an agent at its Linux folder, such as
+  `\\wsl.localhost\Ubuntu\home\you\.claude\skills`. Skills are always copied there, never
+  linked, because Linux cannot follow a link back into Windows; saving a skill refreshes the copies.
 - Override the global or project skills folder of any built-in agent, and reset it.
 - Reorder agents; the order is used everywhere in the app.
 - Coding agents and personal-assistant agents are grouped separately.

@@ -1,6 +1,6 @@
 import { readlinkSync, realpathSync, rmSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { APP_NAME, type DeployMode } from "@loadout/shared";
+import { APP_NAME, type DeployMode, isWslPath } from "@loadout/shared";
 import { invalid, notFound, targetConflict } from "../errors";
 import {
   canonicalPath,
@@ -120,16 +120,25 @@ async function copyOrCleanUp(sourceDir: string, targetPath: string): Promise<voi
 }
 
 /**
+ * The mode a target can really use. A folder inside WSL is read by Linux, which cannot follow a
+ * Windows link back into the library, so it always gets a copy.
+ */
+export function usableMode(targetPath: string, mode: DeployMode): DeployMode {
+  return mode === "symlink" && isWslPath(targetPath) ? "copy" : mode;
+}
+
+/**
  * Put `sourceDir` at `targetPath` as a link or a copy and return the mode actually used
- * (a link that cannot be created becomes a copy). Throws TARGET_CONFLICT, leaving the existing
- * content untouched, when `policy` does not cover what is there.
+ * (a link that cannot be created, or one into WSL, becomes a copy). Throws TARGET_CONFLICT,
+ * leaving the existing content untouched, when `policy` does not cover what is there.
  */
 export async function writeTarget(
   sourceDir: string,
   targetPath: string,
-  mode: DeployMode,
+  requested: DeployMode,
   policy: OwnershipPolicy,
 ): Promise<DeployMode> {
+  const mode = usableMode(targetPath, requested);
   if (!isDirectory(sourceDir)) throw notFound(`The skill folder is missing: ${sourceDir}`);
   if (
     pathsOverlap(sourceDir, targetPath) ||

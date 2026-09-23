@@ -11,6 +11,7 @@ import {
   authorize,
   classifyTarget,
   removeTarget,
+  usableMode,
   writeTarget,
 } from "./engine";
 import { isCurrent, policyFromRows, rowsAtPath, samePath } from "./evidence";
@@ -62,7 +63,8 @@ export function createDeployOperations(ctx: CoreContext, store: SkillStore): Dep
     const rows = rowsAtPath(store.deployments(), targetPath);
     const policy = forced ?? policyFromRows(rows);
     const state = classifyTarget(targetPath, skill.libraryPath);
-    const current = isCurrent(state, rows, skill, ctx.settings.get("deployMode"));
+    const mode = usableMode(targetPath, ctx.settings.get("deployMode"));
+    const current = isCurrent(state, rows, skill, mode);
     let reason: string | null = null;
     if (!forced && rows.some((row) => row.skillId !== skill.id)) reason = REASON_OTHER_SKILL;
     else if (!current) reason = authorize(state, policy);
@@ -99,7 +101,7 @@ export function createDeployOperations(ctx: CoreContext, store: SkillStore): Dep
 
   async function deployPair(pair: DeployPair, forced?: OwnershipPolicy): Promise<DeployOutcome> {
     const { skill, agentKey, targetPath } = pair;
-    const wanted = ctx.settings.get("deployMode");
+    const wanted = usableMode(targetPath, ctx.settings.get("deployMode"));
     const before = store.deployment(skill.id, agentKey);
     const check = inspect(pair, forced);
     if (check.refusal) throw targetConflict([check.refusal]);

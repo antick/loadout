@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { IconButton } from "@/components/IconButton";
 import { PathText } from "@/components/PathText";
 import { Input } from "@/components/ui/input";
+import { WslFolderNote } from "@/components/WslFolderNote";
 import {
   type AgentPathKind,
   usePickFolder,
@@ -129,6 +130,13 @@ export function AgentPathField({
           </span>
         </div>
       )}
+      {kind === "global" ? (
+        <WslFolderNote
+          path={editing ? draft : (value ?? "")}
+          hint={editing}
+          className="col-start-2 mt-1"
+        />
+      ) : null}
     </div>
   );
 }

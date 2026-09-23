@@ -59,6 +59,10 @@ Checked against mock data only, never clicked in the running Electron app:
 - [ ] Scan tab with skills present in several agent folders; Import one, Import all
 - [ ] Settings: library location change + restart (the move happens on next launch), proxy, auto-update interval
 - [ ] Agent control setup card on the Dashboard, then ask an agent to run the published CLI
+- [ ] Export as .zip: the native "Save as" dialog (single skill, batch), then "Show file" selects
+      the file in Finder / Explorer instead of opening it
+- [ ] Choose or drop a real `.zip` holding several skills on Install → This computer: the picker opens
+- [ ] Git or link tab with a real `.zip` link and with Git uninstalled (the "Git is not installed" note)
 
 Core logic behind all of these has tests; this is about the UI wiring.
 
@@ -77,6 +81,11 @@ Core logic behind all of these has tests; this is about the UI wiring.
   `.cmd` CLI launcher (`packages/core/src/system/cli-publish.ts`), `safeStorage` without a keyring on
   Linux, window chrome without the macOS inset title bar, tray icon rendering, path compaction with
   `\`.
+- **WSL agents** (built, unit-tested on macOS only): add a custom agent at
+  `\\wsl.localhost\<distro>\home\<you>\.claude\skills`, deploy a skill, and confirm a copy
+  (not a link) lands there, Claude Code inside WSL sees it, saving in the editor refreshes it, and
+  the folder watcher neither errors nor misses changes on the UNC path.
+  Code: `packages/shared/src/wsl.ts`, `usableMode` in `packages/core/src/deploy/engine.ts`.
 
 ## Build
 

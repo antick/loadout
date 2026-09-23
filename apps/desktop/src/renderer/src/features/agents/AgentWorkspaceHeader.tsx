@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PathText } from "@/components/PathText";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WslFolderNote } from "@/components/WslFolderNote";
 import type { AgentFolderSummary } from "./agent-skill-rules";
 
 export interface AgentWorkspaceHeaderProps {
@@ -37,6 +38,7 @@ export function AgentWorkspaceHeader({
         ) : (
           <Skeleton className="h-4 w-56" />
         )}
+        <WslFolderNote path={agent.skillsDir} />
         {sharedWith.length > 0 ? (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Share2 className="size-3 shrink-0" />

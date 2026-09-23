@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { WslFolderNote } from "@/components/WslFolderNote";
 import { useAddCustomAgent, usePickFolder } from "@/hooks/mutations/settings-page";
 import { errorMessage } from "@/lib/toast";
 
@@ -80,6 +81,7 @@ export function AddCustomAgentForm(): ReactNode {
               }
             />
           </div>
+          <WslFolderNote path={skillsDir} hint />
         </Field>
         <Field className="md:col-span-2">
           <FieldLabel htmlFor={projectId}>{t("settings.agents.custom.projectDir")}</FieldLabel>

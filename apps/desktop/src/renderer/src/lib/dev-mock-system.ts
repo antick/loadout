@@ -22,6 +22,7 @@ import {
   type ErrorCode,
   formatTimestampCompact,
   type GithubConnectResult,
+  isWslPath,
   type LibraryLocation,
   type Settings,
   type Skill,
@@ -298,7 +299,9 @@ export function createSystemMockHandlers(
       agents.sort((a, b) => (rank.get(a.key) ?? keys.length) - (rank.get(b.key) ?? keys.length));
     },
     "agents.addCustom": (input: CustomAgentInput) => {
-      if (!input.skillsDir.startsWith("/") && !input.skillsDir.startsWith("~")) {
+      const path = input.skillsDir;
+      // Windows accepts WSL folders (`\\wsl.localhost\…`) as absolute paths too.
+      if (!path.startsWith("/") && !path.startsWith("~") && !isWslPath(path)) {
         ctx.fail("INVALID_INPUT", "Skills path must be absolute (or start with ~/).");
       }
       const created: AgentInfo = {

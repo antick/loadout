@@ -108,6 +108,10 @@
       "delete": "Could not delete the local skill.",
       "addNone": "None of the skills could be added.",
       "deleteBroken": "Could not delete the folder."
+    },
+    "wsl": {
+      "copies": "Inside WSL ({{distro}}). Skills are copied here, not linked: Linux cannot follow a link back into Windows. Saving a skill refreshes the copies.",
+      "hint": "An agent that runs inside WSL? Use its Linux folder, for example \\\\wsl.localhost\\Ubuntu\\home\\you\\.claude\\skills."
     }
   }
 }

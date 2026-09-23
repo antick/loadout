@@ -97,7 +97,13 @@ const SAMPLE_DOCUMENT = (name: string, description: string | null): string =>
 
 // `never[]` accepts handlers with any parameter list; arguments arrive untyped over the fake bridge.
 const handlers: Record<string, (...args: never[]) => unknown> = {
-  "app.info": () => ({ name: APP_NAME, version: "0.1.0-dev", platform: "darwin", homeDir: HOME }),
+  // `?platform=win32` previews Windows-only hints such as the WSL folder note.
+  "app.info": () => ({
+    name: APP_NAME,
+    version: "0.1.0-dev",
+    platform: new URLSearchParams(window.location.search).get("platform") ?? "darwin",
+    homeDir: HOME,
+  }),
   "app.checkUpdate": () => SEED_APP_UPDATE,
   "app.copyText": (text: string) => void navigator.clipboard?.writeText(text),
   "app.openExternal": (url: string) => void window.open(url, "_blank", "noopener"),
