@@ -1,4 +1,13 @@
-import type { BatchResult, BatchUpdateResult, Project, Skill, UpdateResult } from "@loadout/shared";
+import {
+  type BatchResult,
+  type BatchUpdateResult,
+  type ExportResult,
+  type Project,
+  type Skill,
+  type UpdateResult,
+  formatBytes,
+  formatTimestampCompact,
+} from "@loadout/shared";
 import {
   type QueryClient,
   type UseMutationResult,
@@ -8,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { EXPORT_FILE_EXTENSION, EXPORT_MANY_PREFIX } from "@/lib/constants";
 import { keys } from "@/lib/query-keys";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -154,6 +164,56 @@ export function useRevealSkill(): UseMutationResult<void, unknown, string> {
   return useMutation({
     mutationFn: (skillId: string) => api.skills.reveal(skillId),
     onError: (error) => toastError(error, "errors.reveal"),
+  });
+}
+
+/** File name "Save as" suggests: the skill's folder name, or a stamped name for several. */
+function exportFileName(skills: readonly Skill[]): string {
+  const [only] = skills;
+  const stem =
+    only && skills.length === 1
+      ? only.dirName
+      : `${EXPORT_MANY_PREFIX}${formatTimestampCompact(Date.now())}`;
+  return `${stem}${EXPORT_FILE_EXTENSION}`;
+}
+
+/**
+ * Save skills as one `.zip`: asks where, writes it, and offers to show the file. Resolves to null
+ * when the user cancels the "Save as" dialog.
+ */
+export function useExportSkills(): UseMutationResult<
+  ExportResult | null,
+  unknown,
+  readonly Skill[]
+> {
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: async (skills: readonly Skill[]) => {
+      const path = await api.app.pickSavePath(
+        exportFileName(skills),
+        t("library.export.dialogTitle", { count: skills.length }),
+      );
+      if (!path) return null;
+      return api.skills.exportArchive(
+        skills.map((skill) => skill.id),
+        path,
+      );
+    },
+    onSuccess: (result) => {
+      if (!result) return;
+      toast.success(t("library.export.done", { count: result.skillCount }), {
+        description: t("library.export.doneDescription", {
+          path: result.path,
+          size: formatBytes(result.bytes),
+        }),
+        descriptionClassName: "font-mono text-xs break-all",
+        action: {
+          label: t("library.export.showFile"),
+          onClick: () => void api.app.revealPath(result.path).catch(toastError),
+        },
+      });
+    },
+    onError: (error) => toastError(error, "library.export.failed"),
   });
 }
 

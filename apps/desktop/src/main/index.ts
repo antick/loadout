@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BrowserWindow, app, net, session, shell } from "electron";
+import { BrowserWindow, app, net, session } from "electron";
 import { AppError, type Core, createCore } from "@loadout/core";
 import {
   APP_DATA_DIR_NAME,
@@ -14,6 +14,7 @@ import {
 import { createAppApi } from "./app-api";
 import { type AppDataMove, adoptAppData, removeOldAppData } from "./app-data";
 import { startRemoval } from "./remover";
+import { revealInFileManager } from "./reveal";
 import { APP_ICON_FILE, CRASH_DUMPS_DIR, SECRETS_FILE } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
@@ -206,10 +207,7 @@ function start(): void {
     fetchImpl: ((input, init) => net.fetch(input as string, init as RequestInit)) as typeof fetch,
     host: {
       appVersion: app.getVersion(),
-      revealPath: async (path) => {
-        const failure = await shell.openPath(path);
-        if (failure) shell.showItemInFolder(path);
-      },
+      revealPath: revealInFileManager,
       bundledSkillDir: existsSync(join(resourcesDir, "skills"))
         ? join(resourcesDir, "skills")
         : null,

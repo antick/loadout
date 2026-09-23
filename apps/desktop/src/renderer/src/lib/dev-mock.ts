@@ -233,6 +233,14 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     emitChanged("settings");
   },
 
+  // "Save as" answers with the suggested name in Downloads; the export pretends to write it.
+  "app.pickSavePath": (defaultName: string) => `${HOME}/Downloads/${defaultName}`,
+  "skills.exportArchive": (skillIds: string[], destPath: string) => ({
+    path: destPath,
+    skillCount: new Set(skillIds).size,
+    bytes: 18_432 * new Set(skillIds).size,
+  }),
+
   "system.libraryLocation": () => SEED_LIBRARY_LOCATION,
   "system.lastCrash": () => null,
   "backup.status": () => SEED_BACKUP_STATUS,

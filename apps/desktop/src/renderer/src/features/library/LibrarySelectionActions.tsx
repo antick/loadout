@@ -1,5 +1,5 @@
 import type { Skill } from "@loadout/shared";
-import { ArrowUpCircle, Layers, Plus, Send, Tags, Trash2 } from "lucide-react";
+import { ArrowUpCircle, FileArchive, Layers, Plus, Send, Tags, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BatchDeployDialog } from "@/components/BatchDeployDialog";
@@ -18,7 +18,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { hasUpdate } from "@/features/library/library-filters";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
-import { useUpdateSkills } from "@/hooks/mutations/library";
+import { useExportSkills, useUpdateSkills } from "@/hooks/mutations/library";
 import { useAddSkillsToPreset } from "@/hooks/mutations/preset-detail";
 import { usePresets } from "@/hooks/queries/presets";
 
@@ -39,6 +39,7 @@ export function LibrarySelectionActions({
   const presets = usePresets();
   const addToPreset = useAddSkillsToPreset();
   const updateMany = useUpdateSkills();
+  const exportSkills = useExportSkills();
   const deleteSkills = useDeleteSkills();
   const [deployOpen, setDeployOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
@@ -87,6 +88,18 @@ export function LibrarySelectionActions({
       <Button variant="outline" size="sm" disabled={none} onClick={() => setTagsOpen(true)}>
         <Tags />
         {t("library.selection.tags")}
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={none || exportSkills.isPending}
+        onClick={() =>
+          exportSkills.mutate(skills, { onSuccess: (result) => (result ? onDone() : null) })
+        }
+      >
+        {exportSkills.isPending ? <Spinner /> : <FileArchive />}
+        {t("library.selection.export")}
       </Button>
 
       {updatable.length > 0 ? (

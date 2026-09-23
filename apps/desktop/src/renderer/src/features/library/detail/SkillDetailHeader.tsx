@@ -1,6 +1,6 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { FolderOpen, PencilLine, Trash2 } from "lucide-react";
+import { FileArchive, FolderOpen, PencilLine, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "@/components/IconButton";
@@ -9,7 +9,8 @@ import { SourceBadge } from "@/components/SourceBadge";
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SkillTagsEditor } from "@/features/library/detail/SkillTagsEditor";
-import { useRevealSkill } from "@/hooks/mutations/library";
+import { Spinner } from "@/components/ui/spinner";
+import { useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
 
 export interface SkillDetailHeaderProps {
   skill: Skill;
@@ -18,11 +19,12 @@ export interface SkillDetailHeaderProps {
 
 /**
  * Top of the detail panel: name, description, source and update badges, tags, and the edit,
- * reveal and delete actions.
+ * reveal, export and delete actions.
  */
 export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): ReactNode {
   const { t } = useTranslation();
   const reveal = useRevealSkill();
+  const exportSkills = useExportSkills();
 
   return (
     <SheetHeader className="gap-3 border-b px-6 pt-5 pb-4">
@@ -47,6 +49,12 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
             label={t("library.detail.reveal")}
             icon={<FolderOpen />}
             onClick={() => reveal.mutate(skill.id)}
+          />
+          <IconButton
+            label={t("library.export.action")}
+            icon={exportSkills.isPending ? <Spinner /> : <FileArchive />}
+            disabled={exportSkills.isPending}
+            onClick={() => exportSkills.mutate([skill])}
           />
           <IconButton
             label={t("library.detail.delete")}

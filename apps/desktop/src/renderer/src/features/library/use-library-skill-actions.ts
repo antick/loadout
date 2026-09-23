@@ -1,11 +1,11 @@
 import type { Skill } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
-import { FolderOpen, PencilLine, RefreshCw, Trash2 } from "lucide-react";
+import { FileArchive, FolderOpen, PencilLine, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { SkillAction } from "@/components/skill-action";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
-import { useCheckSkillUpdate, useRevealSkill } from "@/hooks/mutations/library";
+import { useCheckSkillUpdate, useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { editLink } from "@/lib/skill-location";
 
@@ -15,6 +15,7 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
   const navigate = useNavigate();
   const reveal = useRevealSkill();
   const check = useCheckSkillUpdate();
+  const exportSkills = useExportSkills();
   const deleteSkills = useDeleteSkills();
 
   return useCallback(
@@ -33,6 +34,12 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
           run: () => reveal.mutate(skill.id),
         },
       ];
+      actions.push({
+        id: "export",
+        label: t("library.export.action"),
+        icon: FileArchive,
+        run: () => exportSkills.mutate([skill]),
+      });
       if (hasTrackedSource(skill)) {
         actions.push({
           id: "check",
@@ -50,6 +57,6 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
       });
       return actions;
     },
-    [t, navigate, reveal, check, deleteSkills],
+    [t, navigate, reveal, check, exportSkills, deleteSkills],
   );
 }

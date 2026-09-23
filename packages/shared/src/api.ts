@@ -1,4 +1,5 @@
 import type {
+  ExportResult,
   ActivityEntry,
   AgentControlStatus,
   AgentInfo,
@@ -89,6 +90,11 @@ export interface SkillsApi {
   deleteTag(tag: string): Promise<void>;
   /** Open the skill's library folder in the OS file manager. */
   reveal(skillId: string): Promise<void>;
+  /**
+   * Pack skills into one `.zip` / `.skill` file at `destPath`, one folder per skill, ready to be
+   * installed again anywhere. Replaces a file already at that path.
+   */
+  exportArchive(skillIds: string[], destPath: string): Promise<ExportResult>;
 }
 
 /** The in-app editor: any skill folder, in the library, an agent's folder or a project. */
@@ -275,6 +281,8 @@ export interface AppApi {
   info(): Promise<AppInfo>;
   pickFolder(title?: string): Promise<string | null>;
   pickArchive(): Promise<string | null>;
+  /** Native "Save as" for a `.zip`, starting in Downloads with `defaultName`. */
+  pickSavePath(defaultName: string, title?: string): Promise<string | null>;
   openExternal(url: string): Promise<void>;
   revealPath(path: string): Promise<void>;
   copyText(text: string): Promise<void>;

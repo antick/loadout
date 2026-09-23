@@ -72,7 +72,8 @@
       "update_one": "Update {{count}}",
       "update_other": "Update {{count}}",
       "delete_one": "Delete {{count}}",
-      "delete_other": "Delete {{count}}"
+      "delete_other": "Delete {{count}}",
+      "export": "Export…"
     },
     "updates": {
       "checked_one": "Checked {{count}} skill",
@@ -218,6 +219,16 @@
       "noticeEdits": "Your edits are replaced by the new version. To keep them, copy them first, or detach the skill from its source on the Source tab.",
       "keep": "Keep current version",
       "approve": "Update anyway"
+    },
+    "export": {
+      "action": "Export as .zip…",
+      "dialogTitle_one": "Export {{count}} skill",
+      "dialogTitle_other": "Export {{count}} skills",
+      "done_one": "Exported {{count}} skill",
+      "done_other": "Exported {{count}} skills",
+      "doneDescription": "{{path}} ({{size}})",
+      "showFile": "Show file",
+      "failed": "Could not export."
     }
   },
   "batchDeploy": {

@@ -4,6 +4,7 @@ import { SOURCE_TYPES, type Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
+import { exportCommand } from "./skills-export";
 import { installCommand } from "./skills-install";
 import { checkCommand, updateCommand } from "./skills-update";
 import { validateCommand } from "./skills-validate";
@@ -31,7 +32,7 @@ const SOURCE_FLAG = {
   name: "source",
   type: "string",
   value: "type",
-  description: "Only skills from this source: local, import, git or marketplace.",
+  description: `Only skills from this source: ${SOURCE_TYPES.join(", ")}.`,
 } as const;
 const ADD_FLAG = {
   name: "add",
@@ -280,6 +281,7 @@ export const skillsGroup: CommandGroup = {
     updateCommand,
     validateCommand,
     adoptCommand,
+    exportCommand,
     {
       name: "tag",
       summary: "Show or change a skill's tags",

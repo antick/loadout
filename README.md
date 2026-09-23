@@ -25,7 +25,10 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   over-long description or `SKILL.md`, links to files that are not in the skill) are listed in the
   skill's panel. The editor runs the same checks on unsaved text, and each problem names its
   line; click it to jump there. `loadout skills validate` prints the line too.
-- Batch mode: deploy to agents, add to a preset, tag, update or delete many skills at once.
+- Batch mode: deploy to agents, add to a preset, tag, export, update or delete many skills at once.
+- Export: one skill or a selection as a single `.zip`, from the skill's panel, its right-click menu
+  or batch mode. Each skill is a folder inside, so the file installs again anywhere, including in
+  Loadout on another computer. `loadout skills export <ref>… --out file.zip` does the same.
 - Deleting a skill removes its library copy, preset links and every copy the app deployed.
 - The database is rebuilt from the skill files if it is ever lost.
 
@@ -174,9 +177,9 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 ### Command line and agent control
 
 - `loadout` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands (including
-  `skills validate` for the format checks, exit code 1 on errors), `--json` output
-  with stable error codes, `--dry-run` and `--yes` for destructive commands, and `--library` to
-  work on another library.
+  `skills validate` for the format checks, exit code 1 on errors, and `skills export`),
+  `--json` output with stable error codes, `--dry-run` and `--yes` for destructive commands, and
+  `--library` to work on another library.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.
 - Standalone CLI executables for macOS, Linux (x64 and arm64) and Windows, for machines without

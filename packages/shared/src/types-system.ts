@@ -123,7 +123,8 @@ export type ActivityKind =
   | "import"
   | "backup"
   | "restore"
-  | "preset";
+  | "preset"
+  | "export";
 
 export interface ActivityEntry {
   id: string;

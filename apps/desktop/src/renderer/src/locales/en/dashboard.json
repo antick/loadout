@@ -70,7 +70,8 @@
         "import": "Imported",
         "backup": "Backup",
         "restore": "Restored",
-        "preset": "Preset"
+        "preset": "Preset",
+        "export": "Exported"
       }
     },
     "recent": {

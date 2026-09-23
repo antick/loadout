@@ -1,7 +1,9 @@
 import { homedir } from "node:os";
+import { join } from "node:path";
 import { type BrowserWindow, app, clipboard, dialog, session, shell } from "electron";
 import { APP_NAME, type AppApi, type Platform, type RemoveAllDataOptions } from "@loadout/shared";
-import { ARCHIVE_EXTENSIONS } from "./constants";
+import { ARCHIVE_EXTENSIONS, EXPORT_EXTENSION } from "./constants";
+import { revealInFileManager } from "./reveal";
 import { checkForUpdate } from "./updater";
 
 export interface AppApiDeps {
@@ -36,14 +38,24 @@ export function createAppApi(deps: AppApiDeps): AppApi {
         properties: ["openFile"],
         filters: [{ name: "Skill archives", extensions: ARCHIVE_EXTENSIONS }],
       }),
+    pickSavePath: async (defaultName, title) => {
+      const options: Electron.SaveDialogOptions = {
+        title,
+        defaultPath: join(app.getPath("downloads"), defaultName),
+        filters: [{ name: "Zip archives", extensions: [EXPORT_EXTENSION] }],
+        properties: ["createDirectory", "showOverwriteConfirmation"],
+      };
+      const win = deps.window();
+      const result = win
+        ? await dialog.showSaveDialog(win, options)
+        : await dialog.showSaveDialog(options);
+      return result.canceled || !result.filePath ? null : result.filePath;
+    },
     openExternal: async (url) => {
       if (!/^https?:\/\//i.test(url)) throw new Error("Only web links can be opened");
       await shell.openExternal(url);
     },
-    revealPath: async (path) => {
-      const failure = await shell.openPath(path);
-      if (failure) shell.showItemInFolder(path);
-    },
+    revealPath: revealInFileManager,
     copyText: async (text) => clipboard.writeText(text),
     checkUpdate: () => checkForUpdate(),
     quit: async () => deps.quit(),

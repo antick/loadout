@@ -3,6 +3,7 @@ import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { listTopLevel, removePath } from "../util/fs";
 import type { FileHistory } from "../editor/history";
+import { exportTarget, writeSkillsArchive } from "./export";
 import { readSkillDocument } from "./metadata";
 import type { SkillStore } from "./store";
 
@@ -97,6 +98,16 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
     },
 
     reveal: async (skillId) => ctx.host.revealPath(store.get(skillId).libraryPath),
+
+    exportArchive: async (skillIds, destPath) => {
+      const path = exportTarget(destPath, ctx.paths.skillsDir);
+      const skills = [...new Set(skillIds)].map((id) => store.get(id));
+      const result = writeSkillsArchive(skills, path);
+      const [only] = skills;
+      const subject = only && skills.length === 1 ? only.name : `${skills.length} skills`;
+      ctx.activity.record("export", subject, path);
+      return result;
+    },
   };
 
   return { api, store };

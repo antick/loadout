@@ -97,6 +97,14 @@ export interface Skill {
   issues: SkillIssue[];
 }
 
+/** A `.zip` written by `skills.exportArchive`. */
+export interface ExportResult {
+  path: string;
+  skillCount: number;
+  /** Size of the written file. */
+  bytes: number;
+}
+
 export interface SkillDocument {
   filename: string;
   content: string;

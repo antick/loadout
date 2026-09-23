@@ -36,3 +36,5 @@ export const UPDATE_CHECK_TIMEOUT_MS = 15_000;
 export const UPDATE_FEED_URL = process.env.LOADOUT_UPDATE_FEED ?? "";
 
 export const ARCHIVE_EXTENSIONS = ["zip", "skill"];
+/** What "Export as .zip" saves. */
+export const EXPORT_EXTENSION = "zip";
