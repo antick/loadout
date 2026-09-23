@@ -31,6 +31,9 @@ export const EDITOR_SPLIT_MIN_PERCENT = 20;
 export const EDITOR_SPLIT_MAX_PERCENT = 80;
 /** One arrow-key press on the split's edge moves it by this much. */
 export const EDITOR_SPLIT_STEP_PERCENT = 5;
+/** Least either side of the split keeps: its width side by side, its height stacked. */
+export const EDITOR_PANE_MIN_WIDTH_PX = 280;
+export const EDITOR_PANE_MIN_HEIGHT_PX = 160;
 
 /**
  * Space kept free at the top-left on macOS for the window buttons. At the main process's
@@ -46,6 +49,11 @@ export const STATUS_BAR_HEIGHT_CLASS = "h-7";
 export const SIDEBAR_WIDTH_DEFAULT_PX = 256;
 export const SIDEBAR_WIDTH_MIN_PX = 200;
 export const SIDEBAR_WIDTH_MAX_PX = 440;
+/**
+ * Width the page keeps beside the sidebar. A narrow window shows the sidebar narrower (down to
+ * its minimum) rather than squeezing the page; the width you chose comes back as it widens.
+ */
+export const PAGE_MIN_WIDTH_PX = 600;
 /** One arrow-key press on the sidebar's edge moves it by this much. */
 export const SIDEBAR_WIDTH_STEP_PX = 16;
 /** Skills listed under "Recently changed" in the library panel. */

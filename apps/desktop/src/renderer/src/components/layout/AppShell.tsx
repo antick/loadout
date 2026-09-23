@@ -9,7 +9,7 @@ import { CrashBanner } from "@/components/CrashBanner";
 import { LibraryMissingDialog } from "@/components/LibraryMissingDialog";
 import { HelpDialog } from "@/components/HelpDialog";
 import { AppSidebar } from "@/components/layout/AppSidebar";
-import { clampSidebarWidth } from "@/components/layout/sidebar/SidebarResizeHandle";
+import { clampSidebarWidth, sidebarMaxFor } from "@/components/layout/sidebar/SidebarResizeHandle";
 import {
   PageHeaderSlotsContext,
   type ShellActions,
@@ -27,6 +27,7 @@ import { FirstRunDialog } from "@/features/backup/FirstRunDialog";
 import { AddProjectDialog } from "@/features/projects/AddProjectDialog";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { useWindowWidth } from "@/hooks/use-window-width";
 import { SIDEBAR_WIDTH_DEFAULT_PX, STORAGE_KEYS } from "@/lib/constants";
 import { SHORTCUT_KEYS } from "@/lib/shortcuts";
 
@@ -43,7 +44,12 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     STORAGE_KEYS.sidebarWidth,
     SIDEBAR_WIDTH_DEFAULT_PX,
   );
-  const sidebarWidth = clampSidebarWidth(Number(storedWidth) || SIDEBAR_WIDTH_DEFAULT_PX);
+  // The width chosen stays stored; a narrow window only shows it narrower until it widens again.
+  const sidebarMaxWidth = sidebarMaxFor(useWindowWidth());
+  const sidebarWidth = Math.min(
+    clampSidebarWidth(Number(storedWidth) || SIDEBAR_WIDTH_DEFAULT_PX),
+    sidebarMaxWidth,
+  );
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [skillPickerOpen, setSkillPickerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -120,7 +126,11 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             />
             <div className="flex min-h-0 flex-1">
               <SidebarSlotRefContext.Provider value={setTakeoverSlot}>
-                <AppSidebar width={sidebarWidth} onWidth={setSidebarWidth} />
+                <AppSidebar
+                  width={sidebarWidth}
+                  maxWidth={sidebarMaxWidth}
+                  onWidth={setSidebarWidth}
+                />
               </SidebarSlotRefContext.Provider>
               <SidebarInset className="min-w-0 overflow-hidden">
                 <CrashBanner />

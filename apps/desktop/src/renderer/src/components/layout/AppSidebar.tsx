@@ -37,6 +37,8 @@ const PANELS: Record<SidebarSection, () => ReactNode> = {
 export interface AppSidebarProps {
   /** Sidebar width in pixels, changed by dragging its edge. */
   width: number;
+  /** How wide dragging may take it in this window. */
+  maxWidth: number;
   onWidth(width: number): void;
 }
 
@@ -46,7 +48,7 @@ export interface AppSidebarProps {
  * Picking a section opens its main page; opening a page of another section switches the sidebar. A page can take the
  * sidebar over for its own list (the editor shows the skill's files) until a section is picked.
  */
-export function AppSidebar({ width, onWidth }: AppSidebarProps): ReactNode {
+export function AppSidebar({ width, maxWidth, onWidth }: AppSidebarProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { open, setOpen } = useSidebar();
@@ -139,7 +141,7 @@ export function AppSidebar({ width, onWidth }: AppSidebarProps): ReactNode {
             )}
           </Sidebar>
         </div>
-        {open ? <SidebarResizeHandle width={width} onWidth={onWidth} /> : null}
+        {open ? <SidebarResizeHandle width={width} max={maxWidth} onWidth={onWidth} /> : null}
       </div>
     </>
   );

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { ResizeHandle, type ResizeOrientation } from "@/components/ResizeHandle";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
+  EDITOR_PANE_MIN_HEIGHT_PX,
+  EDITOR_PANE_MIN_WIDTH_PX,
   EDITOR_SPLIT_DEFAULT_PERCENT,
   EDITOR_SPLIT_MAX_PERCENT,
   EDITOR_SPLIT_MIN_PERCENT,
@@ -10,7 +12,7 @@ import {
   type EditorView,
   STORAGE_KEYS,
 } from "@/lib/constants";
-import { clampTo, percentAfterDrag } from "@/lib/resize";
+import { clampTo, percentAfterDrag, splitRange } from "@/lib/resize";
 import { cn } from "@/lib/utils";
 
 export interface EditorSplitProps {
@@ -21,7 +23,8 @@ export interface EditorSplitProps {
 
 /**
  * The text and its preview, side by side or (in a narrow editor) stacked, with a draggable edge
- * between them whose position is remembered. Must sit inside an `@container`.
+ * between them whose position is remembered. Each side keeps a minimum size, so a smaller window
+ * moves the edge for now without forgetting where it was put. Must sit inside an `@container`.
  */
 export function EditorSplit({ view, editor, preview }: EditorSplitProps): ReactNode {
   const { t } = useTranslation();
@@ -30,18 +33,30 @@ export function EditorSplit({ view, editor, preview }: EditorSplitProps): ReactN
     STORAGE_KEYS.editorSplit,
     EDITOR_SPLIT_DEFAULT_PERCENT,
   );
-  // Anything odd in storage falls back into range rather than breaking the layout.
-  const percent = clampTo(
-    Number.isFinite(stored) ? stored : EDITOR_SPLIT_DEFAULT_PERCENT,
+  // The container query decides the layout; read it back so the edge drags along the right axis.
+  const [stacked, setStacked] = useState(false);
+  const [boxSize, setBoxSize] = useState(0);
+  const range = splitRange(
+    boxSize,
+    stacked ? EDITOR_PANE_MIN_HEIGHT_PX : EDITOR_PANE_MIN_WIDTH_PX,
     EDITOR_SPLIT_MIN_PERCENT,
     EDITOR_SPLIT_MAX_PERCENT,
   );
-  // The container query decides the layout; read it back so the edge drags along the right axis.
-  const [stacked, setStacked] = useState(false);
+  // Anything odd in storage falls back into range rather than breaking the layout.
+  const percent = clampTo(
+    Number.isFinite(stored) ? stored : EDITOR_SPLIT_DEFAULT_PERCENT,
+    range.min,
+    range.max,
+  );
   useLayoutEffect(() => {
     const box = boxRef.current;
     if (!box) return;
-    const measure = (): void => setStacked(getComputedStyle(box).flexDirection === "column");
+    const measure = (): void => {
+      const column = getComputedStyle(box).flexDirection === "column";
+      const rect = box.getBoundingClientRect();
+      setStacked(column);
+      setBoxSize(column ? rect.height : rect.width);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(box);
@@ -50,10 +65,6 @@ export function EditorSplit({ view, editor, preview }: EditorSplitProps): ReactN
 
   const split = view === "split";
   const orientation: ResizeOrientation = stacked ? "horizontal" : "vertical";
-  const size = (): number => {
-    const rect = boxRef.current?.getBoundingClientRect();
-    return (stacked ? rect?.height : rect?.width) ?? 0;
-  };
 
   return (
     <div ref={boxRef} className="flex min-h-0 min-w-0 flex-1 @max-2xl:flex-col">
@@ -70,11 +81,11 @@ export function EditorSplit({ view, editor, preview }: EditorSplitProps): ReactN
           <ResizeHandle
             orientation={orientation}
             value={percent}
-            min={EDITOR_SPLIT_MIN_PERCENT}
-            max={EDITOR_SPLIT_MAX_PERCENT}
+            min={range.min}
+            max={range.max}
             defaultValue={EDITOR_SPLIT_DEFAULT_PERCENT}
             step={EDITOR_SPLIT_STEP_PERCENT}
-            fromDrag={(start, delta) => percentAfterDrag(start, delta, size())}
+            fromDrag={(start, delta) => percentAfterDrag(start, delta, boxSize)}
             onValue={setPercent}
             label={t("editor.view.resize")}
             className={

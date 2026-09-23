@@ -206,7 +206,10 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   on the main page it folds the sidebar away. A bar marks the section picked. `⌘B` folds the
   sidebar, `⌘1`–`⌘5` jump to Home, Library, Agents, Presets and Projects, and opening a page
   switches the sidebar to its section. Drag the
-  sidebar's edge to resize it (double-click resets); the width is remembered.
+  sidebar's edge to resize it (double-click resets); the width is remembered. In a narrow window
+  the sidebar gives way first so the page keeps at least 600px, and grows back to the width you
+  chose when the window widens. The editor and its preview each keep at least 280px side by side
+  (160px stacked).
 - Each project in the sidebar opens to list its skills; clicking one opens it on the project page.
 - While a skill is edited, the sidebar shows its files with a way back, so the editor has no file
   column of its own. Picking a section in the activity bar brings the section back; the files
