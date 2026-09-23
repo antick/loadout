@@ -39,7 +39,9 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 - Right-click any skill card or row (Library, an agent, a project) for the same actions as its
   "…" menu. Library skills offer Edit, Show in file manager, Check now and Delete.
 - Code blocks in every Markdown preview (the editor, a skill's panel) are coloured like the
-  editor for TypeScript, JavaScript, Python, shell, JSON, YAML and Markdown; others stay plain.
+  editor. Both know TypeScript, JavaScript, Python, shell, JSON, YAML, Markdown, Go, Rust, C,
+  C++, C#, Java, Kotlin, Swift, Ruby, Perl, R, Lua, PowerShell, SQL, CSS, SCSS, HTML, XML, TOML,
+  INI, diff and Dockerfile; others stay plain.
 - A project skill usually has a copy per agent folder. Saving one copy also gives the change to
   the copies that were identical (switch it off per save), and says which copies kept their own
   changes. A copy that is really a link into the library is edited as the library skill.

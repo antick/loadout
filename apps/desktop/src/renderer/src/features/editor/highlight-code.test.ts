@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { languageForFence } from "@/features/editor/code-languages";
+import { languageFor, languageForFence } from "@/features/editor/code-languages";
 import { type CodeToken, highlightCode } from "@/features/editor/highlight-code";
 
 const styleOf = (tokens: CodeToken[], text: string) =>
@@ -21,9 +21,30 @@ describe("highlightCode", () => {
     expect(languageForFence("python title=run.py").id).toBe("python");
   });
 
+  it("colours the line-by-line languages too", () => {
+    const sql = highlightCode("SELECT 'a' FROM t;", languageForFence("postgres"));
+    expect(styleOf(sql, "SELECT")).toEqual({ color: "var(--violet)" });
+    expect(styleOf(sql, "'a'")).toEqual({ color: "var(--success)" });
+
+    const go = highlightCode("func main() { return 7 }", languageForFence("golang"));
+    expect(styleOf(go, "func")).toEqual({ color: "var(--violet)" });
+    expect(styleOf(go, "7")).toEqual({ color: "var(--warning)" });
+
+    const patch = highlightCode("+added\n-removed", languageForFence("diff"));
+    expect(styleOf(patch, "+added")).toEqual({ color: "var(--success)" });
+    expect(styleOf(patch, "-removed")).toEqual({ color: "var(--danger)" });
+  });
+
+  it("picks a file's language by its whole name, then its extension", () => {
+    expect(languageFor("skill/Dockerfile").id).toBe("dockerfile");
+    expect(languageFor("skill/.env").id).toBe("ini");
+    expect(languageFor("skill/scripts/run.rs").id).toBe("rust");
+    expect(languageFor("skill/LICENSE").id).toBe("text");
+  });
+
   it("leaves unknown languages as one plain run", () => {
-    expect(highlightCode("SELECT 1;", languageForFence("sql"))).toEqual([
-      { text: "SELECT 1;", style: null },
+    expect(highlightCode("frob 1;", languageForFence("cobol"))).toEqual([
+      { text: "frob 1;", style: null },
     ]);
   });
 });

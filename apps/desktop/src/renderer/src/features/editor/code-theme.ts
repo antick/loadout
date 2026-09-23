@@ -119,6 +119,10 @@ export const HIGHLIGHT_RULES: readonly TagStyle[] = [
     color: "var(--info)",
   },
   { tag: [tags.typeName, tags.className, tags.namespace], color: "var(--warning)" },
+  { tag: tags.tagName, color: "var(--violet)" },
+  { tag: tags.standard(tags.variableName), color: "var(--info)" },
+  { tag: tags.inserted, color: "var(--success)" },
+  { tag: tags.deleted, color: "var(--danger)" },
   { tag: tags.invalid, color: "var(--danger)" },
 ];
 
