@@ -11,3 +11,4 @@ release
 *.log
 coverage
 .astro
+.vercel
