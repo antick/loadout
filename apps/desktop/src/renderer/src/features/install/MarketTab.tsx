@@ -212,6 +212,7 @@ export function MarketTab(): ReactNode {
               {t("install.errors.proxyHint")}{" "}
               <Link
                 to="/settings"
+                search={{ section: "network" }}
                 className="rounded text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 {t("install.errors.openSettings")}

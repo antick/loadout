@@ -90,7 +90,7 @@ export function DashboardStats({
         icon={ArrowUpCircle}
         tone={updates > 0 ? "info" : "neutral"}
         hint={t(updates > 0 ? "dashboard.stats.updatesHint" : "dashboard.stats.updatesNone")}
-        onClick={() => void navigate({ to: "/library" })}
+        onClick={() => void navigate({ to: "/library", search: { status: "updates" } })}
       />
       <StatCard
         label={t("dashboard.stats.projects")}
@@ -104,6 +104,7 @@ export function DashboardStats({
             </span>
           ) : undefined
         }
+        onClick={() => void navigate({ to: "/projects" })}
       />
       <StatCard
         label={t("dashboard.stats.backup")}

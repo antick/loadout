@@ -23,7 +23,10 @@ export function AppUpdateToast(): ReactNode {
     announced.current = true;
     toast.info(t("appUpdate.available", { version: update.data.latestVersion ?? "" }), {
       duration: Number.POSITIVE_INFINITY,
-      action: { label: t("appUpdate.view"), onClick: () => void navigate({ to: "/settings" }) },
+      action: {
+        label: t("appUpdate.view"),
+        onClick: () => void navigate({ to: "/settings", search: { section: "about" } }),
+      },
     });
   }, [update.data, t, navigate]);
 

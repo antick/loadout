@@ -32,7 +32,7 @@ export function useInstallTask(): InstallTaskRunner {
       runInstallTask(options, {
         openLibrary: (skillId) =>
           void navigate({ to: "/library", search: skillId ? { skill: skillId } : {} }),
-        openSettings: () => void navigate({ to: "/settings" }),
+        openSettings: () => void navigate({ to: "/settings", search: { section: "network" } }),
       }),
     [navigate],
   );

@@ -63,7 +63,8 @@ export function AgentsOverviewPage({
     ).length;
   };
 
-  const openSettings = (): void => void navigate({ to: "/settings" });
+  const openSettings = (): void =>
+    void navigate({ to: "/settings", search: { section: "agents" } });
 
   return (
     <div className="flex min-h-full flex-col gap-6 px-6 py-5">
