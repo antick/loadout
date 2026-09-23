@@ -1,0 +1,13 @@
+{
+  "instructions": {
+    "label": "Instructions",
+    "readBy": "Read by {{agents}}",
+    "linkedTo": "A link to {{target}}",
+    "changed": "Changed {{when}}. Click to edit.",
+    "createHint": "Not created yet. Click to create it and start editing.",
+    "editorTitle": "Edit instructions"
+  },
+  "errors": {
+    "createInstructionFile": "Could not create the instruction file"
+  }
+}

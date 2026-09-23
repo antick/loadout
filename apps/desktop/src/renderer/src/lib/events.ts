@@ -51,9 +51,15 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.market.root,
     keys.system.root,
   ],
-  agents: [keys.agents.root, keys.workspace.root, keys.projects.root, keys.editor.root],
+  agents: [
+    keys.agents.root,
+    keys.workspace.root,
+    keys.projects.root,
+    keys.editor.root,
+    keys.instructions.root,
+  ],
   presets: [keys.presets.root, keys.skills.root],
-  projects: [keys.projects.root, keys.editor.root],
+  projects: [keys.projects.root, keys.editor.root, keys.instructions.root],
   backup: [keys.backup.root],
   settings: [keys.settings.root, keys.system.root],
 };

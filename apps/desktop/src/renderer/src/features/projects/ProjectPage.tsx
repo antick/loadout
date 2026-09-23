@@ -35,8 +35,10 @@ import { LocalSkillToolbar } from "@/features/local-skills/LocalSkillToolbar";
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
+import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
 import { useRefreshProject } from "@/hooks/mutations/project-detail";
 import { useRemoveProject, useRevealProject } from "@/hooks/mutations/projects";
+import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useProjectSkills, useProjectTargets } from "@/hooks/queries/project-detail";
 import { useProjects } from "@/hooks/queries/projects";
 import { useSelection } from "@/hooks/use-selection";
@@ -102,6 +104,7 @@ function ProjectWorkspace({
   const confirm = useConfirm();
   const skills = useProjectSkills(project.missing ? null : project.id);
   const targets = useProjectTargets(project.id);
+  const instructionFiles = useInstructionFiles(project.id, project.type === "project");
   const refresh = useRefreshProject();
   const removeProject = useRemoveProject();
   const revealProject = useRevealProject();
@@ -233,6 +236,8 @@ function ProjectWorkspace({
         <ProjectMissingBanner project={project} onRemove={() => void onRemoveProject()} />
       ) : (
         <>
+          <InstructionFilesSection files={instructionFiles.data} showReaders />
+
           <ProjectPresetBar project={project} targets={targets.data} groups={groups} />
 
           <LocalSkillToolbar

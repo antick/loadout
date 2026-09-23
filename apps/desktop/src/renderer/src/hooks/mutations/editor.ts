@@ -32,6 +32,7 @@ export function useSaveSkillFile(): UseMutationResult<
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: keys.editor.root });
       void queryClient.invalidateQueries({ queryKey: keys.skills.root });
+      void queryClient.invalidateQueries({ queryKey: keys.instructions.root });
     },
   });
 }

@@ -106,6 +106,15 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Export library skills to a project with agent picker and remembered selection
 - [x] Preset pills, batch actions, tags, drag to reorder projects, remove project
 
+### 8b. Instruction files
+
+- [x] Known single-file instructions per agent, global and project (`shared/src/instructions.ts`)
+- [x] One entry per distinct file (same path or linked), naming every agent that reads it
+- [x] Create a missing file empty; edit through the editor (limited to that one file)
+- [ ] Keep one source in sync across agents (e.g. write `CLAUDE.md` as a link to `AGENTS.md`)
+- [ ] Agents that read a folder of rule files; custom agents and path overrides for these files
+- [ ] CLI commands for instruction files
+
 ### 9. Backup and multi-device sync
 
 - [x] Library as a Git repo; metadata (tags, presets, toggles) serialised next to the skills

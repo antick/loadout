@@ -20,6 +20,8 @@ export interface SkillEditorPageProps {
   crumbs: readonly PageCrumb[];
   /** Where Done and "go back" lead. */
   doneLink: LinkProps;
+  /** Title while loading or when the file is gone; "Edit skill" by default. */
+  title?: string;
 }
 
 /** Route page: finds the skill, then hands over to the editor, or explains why it cannot. */
@@ -29,8 +31,10 @@ export function SkillEditorPage({
   onOpenFile,
   crumbs,
   doneLink,
+  title,
 }: SkillEditorPageProps): ReactNode {
   const { t } = useTranslation();
+  const pageTitle = title ?? t("editor.title");
   const navigate = useNavigate();
   const target = useEditTarget(location);
   const resolved = target.data?.location;
@@ -56,7 +60,7 @@ export function SkillEditorPage({
     const gone = error instanceof ApiError && error.code === "NOT_FOUND";
     return (
       <>
-        <PageHeader title={t("editor.title")} breadcrumbs={crumbs} />
+        <PageHeader title={pageTitle} breadcrumbs={crumbs} />
         {gone ? (
           <EmptyState
             icon={FileX}
@@ -74,7 +78,7 @@ export function SkillEditorPage({
 
   return (
     <>
-      <PageHeader title={t("editor.title")} breadcrumbs={crumbs} />
+      <PageHeader title={pageTitle} breadcrumbs={crumbs} />
       <div className="flex flex-col gap-2 p-4">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-4 w-1/2" />

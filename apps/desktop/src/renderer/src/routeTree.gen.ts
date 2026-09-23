@@ -16,6 +16,7 @@ import { Route as LibraryRouteImport } from './routes/library'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AgentsIndexRouteImport } from './routes/agents/index'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
+import { Route as InstructionsEditRouteImport } from './routes/instructions.edit'
 import { Route as PresetsIndexRouteImport } from './routes/presets/index'
 import { Route as PresetsPresetIdRouteImport } from './routes/presets/$presetId'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
@@ -57,6 +58,11 @@ const AgentsIndexRoute = AgentsIndexRouteImport.update({
 const AgentsAgentKeyRoute = AgentsAgentKeyRouteImport.update({
   id: '/agents/$agentKey',
   path: '/agents/$agentKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstructionsEditRoute = InstructionsEditRouteImport.update({
+  id: '/instructions/edit',
+  path: '/instructions/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PresetsIndexRoute = PresetsIndexRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/library': typeof LibraryRoute
   '/settings': typeof SettingsRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/instructions/edit': typeof InstructionsEditRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents/': typeof AgentsIndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/library': typeof LibraryRoute
   '/settings': typeof SettingsRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/instructions/edit': typeof InstructionsEditRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents': typeof AgentsIndexRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/library': typeof LibraryRoute
   '/settings': typeof SettingsRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/instructions/edit': typeof InstructionsEditRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents/': typeof AgentsIndexRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/settings'
     | '/agents/$agentKey'
+    | '/instructions/edit'
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents/'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/settings'
     | '/agents/$agentKey'
+    | '/instructions/edit'
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/settings'
     | '/agents/$agentKey'
+    | '/instructions/edit'
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents/'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   LibraryRoute: typeof LibraryRoute
   SettingsRoute: typeof SettingsRoute
   AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
+  InstructionsEditRoute: typeof InstructionsEditRoute
   PresetsPresetIdRoute: typeof PresetsPresetIdRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
@@ -263,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsAgentKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/instructions/edit': {
+      id: '/instructions/edit'
+      path: '/instructions/edit'
+      fullPath: '/instructions/edit'
+      preLoaderRoute: typeof InstructionsEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/presets/': {
       id: '/presets/'
       path: '/presets'
@@ -322,6 +342,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryRoute: LibraryRoute,
   SettingsRoute: SettingsRoute,
   AgentsAgentKeyRoute: AgentsAgentKeyRoute,
+  InstructionsEditRoute: InstructionsEditRoute,
   PresetsPresetIdRoute: PresetsPresetIdRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   AgentsIndexRoute: AgentsIndexRoute,

@@ -1,4 +1,4 @@
-import type { SkillLocation } from "@loadout/shared";
+import type { InstructionFile, SkillLocation } from "@loadout/shared";
 import type { LinkProps } from "@tanstack/react-router";
 
 /** One string per location: query keys, draft storage and React keys. */
@@ -10,6 +10,8 @@ export function locationKey(location: SkillLocation): string {
       return `agent:${location.agentKey}:${location.relativePath}`;
     case "project":
       return `project:${location.projectId}:${location.agentKey}:${location.relativePath}`;
+    case "instructions":
+      return `instructions:${location.agentKey}:${location.projectId ?? ""}`;
   }
 }
 
@@ -34,6 +36,11 @@ export function editLink(location: SkillLocation, file?: string): LinkProps {
         params: { projectId: location.projectId },
         search: { skill: location.relativePath, agent: location.agentKey, file },
       };
+    case "instructions":
+      return {
+        to: "/instructions/edit",
+        search: { agent: location.agentKey, project: location.projectId ?? undefined, file },
+      };
   }
 }
 
@@ -46,5 +53,18 @@ export function originLink(location: SkillLocation): LinkProps {
       return { to: "/agents/$agentKey", params: { agentKey: location.agentKey } };
     case "project":
       return { to: "/projects/$projectId", params: { projectId: location.projectId } };
+    case "instructions":
+      return location.projectId === null
+        ? { to: "/agents/$agentKey", params: { agentKey: location.agentKey } }
+        : { to: "/projects/$projectId", params: { projectId: location.projectId } };
   }
+}
+
+/** Where an instruction file is edited: named after its first reader. */
+export function instructionLocation(file: InstructionFile): SkillLocation {
+  return {
+    kind: "instructions",
+    agentKey: file.readers[0]?.agentKey ?? "",
+    projectId: file.projectId,
+  };
 }

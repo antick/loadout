@@ -79,6 +79,17 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   the exact path instead.
 - A shared folder is only cleaned up when no other agent still uses that copy.
 
+### Instruction files
+
+- The file each agent reads before every session: `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`,
+  `QWEN.md`, `.goosehints`, `copilot-instructions.md` and others, globally and per project.
+- An **Instructions** row on each agent's page (its global file) and on each project's page (the
+  project's files). Agents that read the same file, such as `AGENTS.md` at a project root or a
+  `CLAUDE.md` linked to it, share one entry that names them all.
+- Click a file to edit it in the editor, with preview, earlier versions and the on-disk change
+  guard. A file that does not exist yet is created empty first.
+- Agents that read a folder of rule files (Cline, Roo Code, Kiro and others) are not covered.
+
 ### Agent workspaces
 
 - One page per agent listing everything in its skills folder, including skills installed outside

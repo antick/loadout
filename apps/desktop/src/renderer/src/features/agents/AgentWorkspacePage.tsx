@@ -19,8 +19,10 @@ import { LocalSkillToolbar } from "@/features/local-skills/LocalSkillToolbar";
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
+import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
 import { useDeployToAgent, useRefreshWorkspace } from "@/hooks/mutations/workspace";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
+import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useSkills } from "@/hooks/queries/skills";
 import { useWorkspaceDocument, useWorkspaceSkills } from "@/hooks/queries/workspace";
 import { useLastDefined } from "@/hooks/use-last-defined";
@@ -46,6 +48,15 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const instructionFiles = useInstructionFiles(null);
+  const agentInstructions = useMemo(
+    () =>
+      instructionFiles.data?.filter((file) =>
+        file.readers.some((reader) => reader.agentKey === agentKey),
+      ),
+    [instructionFiles.data, agentKey],
+  );
 
   const agent = agents.data?.find((entry) => entry.key === agentKey);
   const agentName = agent?.displayName ?? agentKey;
@@ -137,6 +148,8 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
           sharedWith={agent.sharesDirWith.map((key) => names.get(key) ?? key)}
         />
       ) : null}
+
+      <InstructionFilesSection files={agentInstructions} showReaders={false} />
 
       <AgentPresetBar agentKeys={[agentKey]} />
 

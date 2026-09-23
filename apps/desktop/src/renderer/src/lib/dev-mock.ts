@@ -29,6 +29,7 @@ import {
 } from "@/lib/dev-mock-data";
 import { createEditorMockHandlers } from "@/lib/dev-mock-editor";
 import { createInstallMockHandlers } from "@/lib/dev-mock-install";
+import { withInstructionMocks } from "@/lib/dev-mock-instructions";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
 import { createSystemMockHandlers } from "@/lib/dev-mock-system";
@@ -343,17 +344,27 @@ Object.assign(
 
 Object.assign(
   handlers,
-  createEditorMockHandlers({
-    getSkills: () => skills,
-    setSkills: (next) => {
-      skills = next;
+  withInstructionMocks(
+    {
+      home: HOME,
+      getAgents: () => agents,
+      getProjects: () => projects,
+      fail: (code, message) => {
+        throw new MockError(code, message);
+      },
     },
-    emitChanged,
-    fail: (code, message) => {
-      throw new MockError(code, message);
-    },
-    document: (skill) => SAMPLE_DOCUMENT(skill.name, skill.description),
-  }),
+    createEditorMockHandlers({
+      getSkills: () => skills,
+      setSkills: (next) => {
+        skills = next;
+      },
+      emitChanged,
+      fail: (code, message) => {
+        throw new MockError(code, message);
+      },
+      document: (skill) => SAMPLE_DOCUMENT(skill.name, skill.description),
+    }),
+  ),
 );
 
 /** Install the fake bridge. Call only in development, and only when the real one is missing. */
