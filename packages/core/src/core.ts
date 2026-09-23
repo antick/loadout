@@ -1,10 +1,11 @@
+import { existsSync } from "node:fs";
 import type { CoreApi, SettingsApi } from "@loadout/shared";
 import { AgentRegistry } from "./agents/registry";
 import { createAgentsService } from "./agents";
 import { createBackupService } from "./backup";
 import type { CoreContext } from "./context";
 import { type CoreOptions, createContext } from "./create-context";
-import { createDeployService } from "./deploy";
+import { createDeployService, pruneBrokenLinks } from "./deploy";
 import { createEditorService, createFileHistory } from "./editor";
 import { createInstallService } from "./install";
 import { createInstructionFinder, createInstructionsService } from "./instructions";
@@ -43,7 +44,11 @@ export interface Core {
   background: CoreBackground;
   /** Folders worth watching for outside changes. */
   watchPaths(): string[];
+  /** The database and the skills folder are still where they were. */
+  libraryPresent(): boolean;
   close(): void;
+  /** Close without writing anything: the library was deleted and must not come back. */
+  abandon(): void;
 }
 
 /** Open the library and wire every service. The only place services are constructed. */
@@ -56,6 +61,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   portable.write();
 
   const registry = new AgentRegistry(ctx);
+  // Skill folders deleted while the app was closed leave links behind in agent folders.
+  pruneBrokenLinks(ctx, { registry, store });
   const deploy = createDeployService(ctx, { store, registry });
   const agents = createAgentsService(ctx, { registry, deploy });
   const history = createFileHistory(ctx.paths.historyDir);
@@ -142,6 +149,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     libraryChangedOnDisk: () => {
       try {
         portable.rebuild({ authoritative: false });
+        pruneBrokenLinks(ctx, { registry, store });
       } catch (error) {
         ctx.log.warn("Could not re-index the library after an outside change", error);
       }
@@ -173,10 +181,16 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       ctx.paths.skillsDir,
       ...new Set(registry.list().flatMap((agent) => (agent.installed ? [agent.skillsDir] : []))),
     ],
+    libraryPresent: () => existsSync(ctx.paths.dbPath) && existsSync(ctx.paths.skillsDir),
     close: () => {
       background.stop();
       install.dispose();
       bundle.close();
+    },
+    abandon: () => {
+      background.stop();
+      install.dispose();
+      bundle.abandon();
     },
   };
 }

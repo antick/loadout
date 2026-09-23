@@ -1,5 +1,5 @@
 import { appendFileSync, existsSync, renameSync, statSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { APP_SLUG } from "@loadout/shared";
 import { errorMessage } from "./errors";
 import { ensureDir } from "./util/fs";
@@ -43,9 +43,11 @@ export function createFileLogger(logsDir: string, echo = false): Logger {
     try {
       appendFileSync(filePath, line);
     } catch {
-      // The folder may have been removed while running (or cleared from Settings): make it
-      // again once. A full or read-only disk should not break the operation being logged.
+      // The logs folder alone may have been removed while running: make it again, but never
+      // bring back a library that was deleted as a whole. A full or read-only disk should not
+      // break the operation being logged.
       try {
+        if (!existsSync(dirname(logsDir))) return;
         ensureDir(logsDir);
         appendFileSync(filePath, line);
       } catch {

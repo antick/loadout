@@ -16,6 +16,8 @@ type Handler = (...args: unknown[]) => Promise<unknown>;
 export function registerIpc(
   api: LoadoutApi,
   onError: (channel: string, error: unknown) => void,
+  /** Refuse a namespace for now (the library is gone): return the error to answer with. */
+  refuse: (namespace: string) => Error | null = () => null,
 ): void {
   const namespaces = new Set<string>(API_NAMESPACES);
   ipcMain.handle(
@@ -26,6 +28,8 @@ export function registerIpc(
         if (!namespace || !method || !namespaces.has(namespace)) {
           throw new Error(`Unknown API channel: ${channel}`);
         }
+        const refusal = refuse(namespace);
+        if (refusal) throw refusal;
         const group = api[namespace as keyof LoadoutApi] as unknown as Record<string, Handler>;
         const handler = Object.hasOwn(group, method) ? group[method] : undefined;
         if (typeof handler !== "function") throw new Error(`Unknown API channel: ${channel}`);

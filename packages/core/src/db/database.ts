@@ -69,7 +69,8 @@ export class Database {
     }
   }
 
+  /** Safe to call twice: a library abandoned mid-run is closed again on the way out. */
   close(): void {
-    this.#db.close();
+    if (this.#db.isOpen) this.#db.close();
   }
 }

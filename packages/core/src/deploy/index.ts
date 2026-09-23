@@ -7,6 +7,7 @@ export {
   writeTarget,
 } from "./engine";
 export type { PairRef } from "./batch";
+export { pruneBrokenLinks } from "./prune";
 export {
   type DeployService,
   type DeployServiceDeps,

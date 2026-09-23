@@ -171,6 +171,23 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   the CLI. One-click setup from the Dashboard or Settings.
 - The app notices changes made through the CLI, by an agent or by hand, and refreshes itself.
 
+### Storage
+
+- Everything lives in one folder, `~/.loadout`: the library, the command-line tool and the app's
+  own files (window size, encrypted GitHub sign-in, interface preferences, drafts, cache) in
+  `~/.loadout/app`. Older versions kept the app's files in the OS app data folder; they are moved
+  over once and the old folder is removed.
+- **Settings → Storage** shows each part with its path and size. Editor history, the download
+  cache, logs and the app's cache can be cleared; interface preferences reset and unsaved drafts
+  discarded.
+- The library can be moved (the rest stays in `~/.loadout`). A move only goes into an empty
+  folder, moves all or nothing, and can come back to `~/.loadout`.
+- **Remove all data** takes Loadout's links out of agent folders (copies too, if asked), deletes
+  the data folder and a moved library, deletes the keychain key on macOS, and quits. Project folders
+  and the backup repository are left alone.
+- Deleted outside the app: links left pointing at deleted skills are removed on the next start. If
+  the data folder goes while the app runs, it stops writing and offers to restart fresh or quit.
+
 ### App
 
 - Navigation in three parts. The **activity bar** at the far left: Home, Library, Agents,

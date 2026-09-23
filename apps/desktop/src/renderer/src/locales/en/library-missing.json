@@ -1,0 +1,8 @@
+{
+  "libraryMissing": {
+    "title": "The data folder was deleted",
+    "description": "{{app}} stopped writing to it, so nothing comes back on its own. Restart to start with a fresh, empty library; links it had put into agent folders are cleaned up then. If you moved the folder yourself, quit, put it back, and open {{app}} again.",
+    "quit": "Quit",
+    "restart": "Restart fresh"
+  }
+}

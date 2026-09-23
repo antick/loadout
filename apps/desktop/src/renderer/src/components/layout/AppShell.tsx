@@ -5,6 +5,7 @@ import { AppUpdateToast } from "@/components/AppUpdateToast";
 import { CloseDialog } from "@/components/CloseDialog";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CrashBanner } from "@/components/CrashBanner";
+import { LibraryMissingDialog } from "@/components/LibraryMissingDialog";
 import { HelpDialog } from "@/components/HelpDialog";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { clampSidebarWidth } from "@/components/layout/sidebar/SidebarResizeHandle";
@@ -141,6 +142,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             }
           />
           <CloseDialog />
+          <LibraryMissingDialog />
           <FirstRunDialog />
           <AppUpdateToast />
         </PageHeaderSlotsContext.Provider>

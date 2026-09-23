@@ -2,7 +2,7 @@ import { existsSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { BrowserWindow, app, net, session, shell } from "electron";
-import { type Core, createCore } from "@loadout/core";
+import { AppError, type Core, createCore } from "@loadout/core";
 import {
   APP_DATA_DIR_NAME,
   APP_ID,
@@ -26,6 +26,8 @@ let core: Core | null = null;
 let watcher: LibraryWatcher | null = null;
 let tray: TrayController | null = null;
 let quitting = false;
+/** The library was deleted while running: nothing may write to it any more. */
+let libraryGone = false;
 
 const resourcesDir = app.isPackaged
   ? join(process.resourcesPath, "resources")
@@ -146,6 +148,22 @@ async function removeAllData(options: RemoveAllDataOptions): Promise<void> {
   app.exit(0);
 }
 
+/**
+ * Is the library still there? When its folder or database was deleted, stop everything that
+ * writes to it (watcher, background work, the backup on quit) and ask the user what to do. No
+ * logging here: that would bring the logs folder back.
+ */
+function checkLibrary(): boolean {
+  if (libraryGone) return false;
+  if (!core || core.libraryPresent()) return true;
+  libraryGone = true;
+  watcher?.stop();
+  watcher = null;
+  core.background.stop();
+  send("library:missing", { path: core.ctx.paths.baseDir });
+  return false;
+}
+
 function openWindow(): void {
   mainWindow = createMainWindow(appIconPath);
   mainWindow.on("close", handleClose);
@@ -215,11 +233,20 @@ function start(): void {
       },
     }),
   };
-  registerIpc(api, (channel, error) => core?.ctx.log.error(`IPC ${channel} failed`, error));
+  registerIpc(
+    api,
+    (channel, error) => core?.ctx.log.error(`IPC ${channel} failed`, error),
+    // A deleted library must not come back through a late request; only the app itself answers.
+    (namespace) =>
+      libraryGone && namespace !== "app"
+        ? new AppError("UNSUPPORTED", "The library was deleted. Restart or quit.")
+        : null,
+  );
 
   watcher = watchLibrary(
     () => (core ? core.watchPaths() : []),
     () => {
+      if (!checkLibrary()) return;
       core?.background.libraryChangedOnDisk();
       send("data:changed", { scope: ["skills", "agents", "presets", "projects", "backup"] });
       tray?.refresh();
@@ -244,6 +271,7 @@ if (!app.requestSingleInstanceLock()) {
   app.setAppUserModelId(APP_ID);
   app.on("second-instance", showWindow);
   app.on("activate", showWindow);
+  app.on("browser-window-focus", () => void checkLibrary());
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin" || quitting) quit();
   });
@@ -256,6 +284,12 @@ if (!app.requestSingleInstanceLock()) {
     watcher?.stop();
     tray?.dispose();
     tray = null;
+    if (libraryGone) {
+      // Nothing to back up, and closing normally would write the metadata back.
+      closing.abandon();
+      app.quit();
+      return;
+    }
     void closing.background
       .beforeQuit()
       .catch((error: unknown) => closing.ctx.log.warn("Backup on quit failed", error))

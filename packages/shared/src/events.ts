@@ -11,6 +11,8 @@ export interface AppEvents {
   "window:close-requested": Record<string, never>;
   /** Tray or menu asked the UI to go somewhere. */
   "app:navigate": { to: string };
+  /** The library folder or its database was deleted while the app ran. */
+  "library:missing": { path: string };
 }
 
 export type DataScope = "skills" | "agents" | "presets" | "projects" | "backup" | "settings";
@@ -24,6 +26,7 @@ export const APP_EVENT_NAMES = [
   "backup:auto-completed",
   "window:close-requested",
   "app:navigate",
+  "library:missing",
 ] as const satisfies readonly AppEventName[];
 
 export const IPC_INVOKE_CHANNEL = "loadout:invoke";

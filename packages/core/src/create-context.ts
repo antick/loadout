@@ -39,6 +39,8 @@ export interface ContextBundle {
   /** Write any pending portable metadata now. */
   flush(): void;
   close(): void;
+  /** Close the database without writing the portable metadata. */
+  abandon(): void;
 }
 
 const DEV_VERSION = "0.0.0-dev";
@@ -77,9 +79,11 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
   let metadataDirty = false;
   let pendingScopes = new Set<DataScope>();
   let scheduled = false;
+  let abandoned = false;
 
   const flush = (): void => {
     scheduled = false;
+    if (abandoned) return;
     if (metadataDirty) {
       metadataDirty = false;
       try {
@@ -123,6 +127,10 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     flush,
     close: () => {
       flush();
+      db.close();
+    },
+    abandon: () => {
+      abandoned = true;
       db.close();
     },
   };
