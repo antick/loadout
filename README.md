@@ -107,6 +107,8 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   agent, or delete a local skill.
 - Add skills from the library with search, tag and source filters and Shift-click range selection.
 - Batch remove managed skills and batch delete local-only skills.
+- Folders the agent skips (no `SKILL.md`, an empty folder, a link to nothing) are listed with why,
+  and can be revealed or deleted.
 - Local, Diff and Library tabs to compare a skill with its library copy.
 - An overview of all agents with the real number of skills on disk.
 

@@ -93,6 +93,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Upload to library, pull from library, remove from agent, delete local skill
 - [x] Add-from-library sheet: search, tag + source filter, target agent chips, shift-click range
 - [x] Batch remove / batch delete local
+- [x] Folders the agent skips (no `SKILL.md`, dangling link) listed with a reason; reveal or delete
 - [x] Local / Diff / Library document tabs
 
 ### 8. Project workspaces
