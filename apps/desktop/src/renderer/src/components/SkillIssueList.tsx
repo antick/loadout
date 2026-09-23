@@ -13,11 +13,17 @@ export function useIssueText(): (issue: SkillIssue) => string {
 
 export interface SkillIssueListProps {
   issues: readonly SkillIssue[];
+  /** Given, an issue's line is a button that takes the editor there; otherwise plain text. */
+  onJumpToLine?: (line: number) => void;
   className?: string;
 }
 
 /** Format problems of a skill, errors first, each with its severity. */
-export function SkillIssueList({ issues, className }: SkillIssueListProps): ReactNode {
+export function SkillIssueList({
+  issues,
+  onJumpToLine,
+  className,
+}: SkillIssueListProps): ReactNode {
   const { t } = useTranslation();
   const textOf = useIssueText();
   return (
@@ -35,7 +41,23 @@ export function SkillIssueList({ issues, className }: SkillIssueListProps): Reac
               aria-label={t(`checks.severity.${issue.severity}`)}
               className={cn("mt-0.5 size-4 shrink-0", error ? "text-danger" : "text-warning")}
             />
-            <span className="min-w-0 break-words">{textOf(issue)}</span>
+            <span className="min-w-0 break-words">
+              {textOf(issue)}
+              {issue.line === undefined ? null : onJumpToLine ? (
+                <button
+                  type="button"
+                  onClick={() => issue.line !== undefined && onJumpToLine(issue.line)}
+                  aria-label={t("checks.goToLine", { line: issue.line })}
+                  className="ml-1.5 rounded text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  {t("checks.line", { line: issue.line })}
+                </button>
+              ) : (
+                <span className="ml-1.5 text-xs text-muted-foreground">
+                  {t("checks.line", { line: issue.line })}
+                </span>
+              )}
+            </span>
           </li>
         );
       })}

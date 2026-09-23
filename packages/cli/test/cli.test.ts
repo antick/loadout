@@ -211,7 +211,7 @@ describe("skills validate", () => {
 
     const all = await cli("skills", "validate", "--all");
     expect(all.code).toBe(EXIT_FAILED);
-    expect(all.stdout).toContain("error: The frontmatter has no description.");
+    expect(all.stdout).toContain("error (line 1): The frontmatter has no description.");
     expect(all.stdout).toContain("1 with errors, 1 with warnings only");
 
     const listed = await cli("skills", "list");

@@ -16,7 +16,11 @@ function describe(skill: Skill): string[] {
   if (skill.issues.length === 0) return [`${skill.name}: no problems.`];
   return [
     `${skill.name}:`,
-    ...skill.issues.map((issue) => `  ${issue.severity}: ${issue.message}`),
+    ...skill.issues.map((issue) =>
+      issue.line === undefined
+        ? `  ${issue.severity}: ${issue.message}`
+        : `  ${issue.severity} (line ${issue.line}): ${issue.message}`,
+    ),
   ];
 }
 

@@ -40,10 +40,13 @@ function referenceExists(root: string, relativePath: string): boolean {
 
 /** Every check of one skill folder, reading its files. */
 export function inspectSkillFolder(dir: string): SkillIssue[] {
-  const { issues, references } = checkSkillDocument(readDocument(dir), basename(dir));
+  const { issues, references, referenceLines } = checkSkillDocument(
+    readDocument(dir),
+    basename(dir),
+  );
   const broken = references
     .filter((path) => !referenceExists(dir, path))
-    .map((path) => skillIssue("broken_reference", { path }));
+    .map((path) => skillIssue("broken_reference", { path }, referenceLines[path]));
   return [...issues, ...broken].sort(
     (a, b) => Number(b.severity === "error") - Number(a.severity === "error"),
   );

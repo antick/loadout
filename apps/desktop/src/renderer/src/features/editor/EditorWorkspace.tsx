@@ -306,6 +306,11 @@ export function EditorWorkspace({
             diskChanged={current ? hasDiskChange(current) : false}
             restored={current?.restored ?? false}
             problems={problems}
+            onJumpToLine={(line) => {
+              // The preview-only layout hides the text: show it so the jump lands somewhere.
+              if (view === "preview") setView("split");
+              editorRef.current?.goToLine(line);
+            }}
             onCompare={() =>
               current &&
               setConflict({ path: current.path, mine: current.draft, disk: current.disk.content })

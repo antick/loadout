@@ -26,6 +26,8 @@
       "compatibility_too_long": "The compatibility note is {{length}} characters; the limit is {{max}}.",
       "document_too_long": "SKILL.md is {{lines}} lines. Keeping it under {{max}} and moving detail into other files is recommended.",
       "broken_reference": "SKILL.md links to {{path}}, which is not in the skill."
-    }
+    },
+    "line": "line {{line}}",
+    "goToLine": "Go to line {{line}}"
   }
 }

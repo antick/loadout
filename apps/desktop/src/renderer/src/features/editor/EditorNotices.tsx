@@ -25,6 +25,8 @@ export interface EditorNoticesProps {
   restored: boolean;
   /** Format problems of the text on screen (SKILL.md only), errors first. */
   problems: readonly SkillIssue[];
+  /** Take the editor to a problem's line. */
+  onJumpToLine(line: number): void;
   onCompare(): void;
   onKeepMine(): void;
   onReload(): void;
@@ -44,6 +46,7 @@ export function EditorNotices({
   diskChanged,
   restored,
   problems,
+  onJumpToLine,
   onCompare,
   onKeepMine,
   onReload,
@@ -108,7 +111,7 @@ export function EditorNotices({
         tone={errors ? "danger" : "warning"}
         icon={errors ? FileWarning : TriangleAlert}
       >
-        <SkillIssueList issues={problems} className="gap-1" />
+        <SkillIssueList issues={problems} onJumpToLine={onJumpToLine} className="gap-1" />
       </InlineNotice>,
     );
   }

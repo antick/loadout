@@ -24,6 +24,8 @@ export interface CursorPosition {
 
 export interface CodeEditorHandle {
   focus(): void;
+  /** Put the cursor at the start of a 1-based line, scroll it into view and focus the editor. */
+  goToLine(line: number): void;
 }
 
 export interface CodeEditorProps {
@@ -85,7 +87,24 @@ export function CodeEditor({
     settings.current = { language, wrap, placeholder, ariaLabel };
   });
 
-  useImperativeHandle(ref, () => ({ focus: () => viewRef.current?.focus() }), []);
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: () => viewRef.current?.focus(),
+      goToLine: (line) => {
+        const view = viewRef.current;
+        if (!view) return;
+        const { doc } = view.state;
+        const target = doc.line(Math.min(Math.max(1, line), doc.lines));
+        view.dispatch({
+          selection: { anchor: target.from },
+          effects: EditorView.scrollIntoView(target.from, { y: "center" }),
+        });
+        view.focus();
+      },
+    }),
+    [],
+  );
 
   function labelExtensions(): Extension {
     const { ariaLabel: label, placeholder: hint } = settings.current;

@@ -23,7 +23,8 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   does not parse, no name or description) put the skill under **Needs attention** with a
   "Needs fixing" badge that opens the editor. Warnings (name rules, name differs from the folder,
   over-long description or `SKILL.md`, links to files that are not in the skill) are listed in the
-  skill's panel. The editor runs the same checks on unsaved text.
+  skill's panel. The editor runs the same checks on unsaved text, and each problem names its
+  line; click it to jump there. `loadout skills validate` prints the line too.
 - Batch mode: deploy to agents, add to a preset, tag, update or delete many skills at once.
 - Deleting a skill removes its library copy, preset links and every copy the app deployed.
 - The database is rebuilt from the skill files if it is ever lost.

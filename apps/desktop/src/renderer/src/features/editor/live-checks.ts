@@ -20,13 +20,13 @@ export function checkDraft(
   folderName: string,
   files: readonly Pick<SkillFileEntry, "path">[],
 ): SkillIssue[] {
-  const { issues, references } = checkSkillDocument(content, folderName);
+  const { issues, references, referenceLines } = checkSkillDocument(content, folderName);
   const paths = files.map((file) => file.path);
   const exists = (reference: string): boolean =>
     paths.some((path) => path === reference || path.startsWith(`${reference}/`));
   const broken = references
     .filter((reference) => !exists(reference))
-    .map((path) => skillIssue("broken_reference", { path }));
+    .map((path) => skillIssue("broken_reference", { path }, referenceLines[path]));
   return [...issues, ...broken].sort(
     (a, b) => Number(b.severity === "error") - Number(a.severity === "error"),
   );

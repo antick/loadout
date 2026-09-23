@@ -1,4 +1,4 @@
-import { isMap, parseDocument } from "yaml";
+import { isMap, isScalar, parseDocument } from "yaml";
 
 /**
  * Checks of a skill against the Agent Skills format (agentskills.io/specification). Pure, so the
@@ -33,12 +33,16 @@ export interface SkillIssue {
   /** English sentence for the CLI and logs; the app words it from `code` and `params`. */
   message: string;
   params: Record<string, string | number>;
+  /** 1-based line of SKILL.md the problem is on, when it is on one. */
+  line?: number;
 }
 
 export interface DocumentCheck {
   issues: SkillIssue[];
   /** Relative files the document links to, `/` separated, without `#fragment` or `?query`. */
   references: string[];
+  /** Line of the first link to each of `references`, for the caller's own issues. */
+  referenceLines: Record<string, number>;
 }
 
 export const SKILL_NAME_MAX = 64;
@@ -84,8 +88,16 @@ const MESSAGES: Record<SkillIssueCode, (params: Record<string, string | number>)
 export function skillIssue(
   code: SkillIssueCode,
   params: Record<string, string | number> = {},
+  line?: number,
 ): SkillIssue {
-  return { code, severity: SEVERITY[code], message: MESSAGES[code](params), params };
+  const issue: SkillIssue = {
+    code,
+    severity: SEVERITY[code],
+    message: MESSAGES[code](params),
+    params,
+  };
+  if (line !== undefined) issue.line = line;
+  return issue;
 }
 
 export function hasSkillErrors(issues: readonly SkillIssue[]): boolean {
@@ -129,12 +141,19 @@ function decode(path: string): string {
   }
 }
 
-/** Relative links of a Markdown body, outside code blocks and inline code. */
-export function findReferences(body: string): { references: string[]; outside: string[] } {
-  const references = new Set<string>();
-  const outside = new Set<string>();
+interface FoundLink {
+  /** Normalised path inside the skill, or the link as written when it climbs out. */
+  path: string;
+  outside: boolean;
+  /** 0-based line within the text scanned. */
+  index: number;
+}
+
+/** Every relative link of a Markdown body, outside code blocks and inline code, in order. */
+function scanLinks(body: string): FoundLink[] {
+  const found: FoundLink[] = [];
   let fence: string | null = null;
-  for (const line of body.split(/\r?\n/)) {
+  for (const [index, line] of body.split(/\r?\n/).entries()) {
     const marker = FENCE_PATTERN.exec(line)?.[2];
     if (marker) {
       if (fence === null) fence = marker.charAt(0);
@@ -149,11 +168,30 @@ export function findReferences(body: string): { references: string[]; outside: s
       const bare = decode(target.split(/[?#]/)[0] ?? "");
       if (!bare) continue;
       const normalized = normalizeRelative(bare.replaceAll("\\", "/"));
-      if (normalized) references.add(normalized);
-      else outside.add(bare);
+      found.push(
+        normalized
+          ? { path: normalized, outside: false, index }
+          : { path: bare, outside: true, index },
+      );
     }
   }
-  return { references: [...references].sort(), outside: [...outside].sort() };
+  return found;
+}
+
+/** Relative links of a Markdown body, outside code blocks and inline code. */
+export function findReferences(body: string): { references: string[]; outside: string[] } {
+  const links = scanLinks(body);
+  const pick = (outside: boolean): string[] => [
+    ...new Set(links.filter((link) => link.outside === outside).map((link) => link.path)),
+  ];
+  return { references: pick(false).sort(), outside: pick(true).sort() };
+}
+
+/** 1-based line of a character offset. */
+function lineAt(content: string, offset: number): number {
+  let line = 1;
+  for (let i = 0; i < offset && i < content.length; i += 1) if (content[i] === "\n") line += 1;
+  return line;
 }
 
 /**
@@ -161,60 +199,100 @@ export function findReferences(body: string): { references: string[]; outside: s
  * Links that climb out of the skill folder are reported here; the caller checks the rest exist.
  */
 export function checkSkillDocument(content: string | null, folderName: string): DocumentCheck {
-  if (content === null) return { issues: [skillIssue("document_missing")], references: [] };
+  if (content === null) {
+    return { issues: [skillIssue("document_missing")], references: [], referenceLines: {} };
+  }
   const issues: SkillIssue[] = [];
   const match = FRONTMATTER_PATTERN.exec(content);
-  const body = match ? content.slice(match[0].length) : content;
+  const bodyStart = match ? match[0].length : 0;
+  const bodyLine = lineAt(content, bodyStart);
 
   const lines = content.split(/\r?\n/).length;
   if (lines > SKILL_DOCUMENT_MAX_LINES) {
-    issues.push(skillIssue("document_too_long", { lines, max: SKILL_DOCUMENT_MAX_LINES }));
+    issues.push(
+      skillIssue(
+        "document_too_long",
+        { lines, max: SKILL_DOCUMENT_MAX_LINES },
+        SKILL_DOCUMENT_MAX_LINES + 1,
+      ),
+    );
   }
-  const { references, outside } = findReferences(body);
-  for (const path of outside) issues.push(skillIssue("broken_reference", { path }));
+  const links = scanLinks(content.slice(bodyStart));
+  const { references, outside } = findReferences(content.slice(bodyStart));
+  const firstLine = (path: string, isOutside: boolean): number | undefined => {
+    const link = links.find((entry) => entry.path === path && entry.outside === isOutside);
+    return link ? bodyLine + link.index : undefined;
+  };
+  const referenceLines: Record<string, number> = {};
+  for (const path of references) {
+    const line = firstLine(path, false);
+    if (line !== undefined) referenceLines[path] = line;
+  }
+  for (const path of outside) {
+    issues.push(skillIssue("broken_reference", { path }, firstLine(path, true)));
+  }
 
   if (!match) {
-    issues.unshift(skillIssue("frontmatter_missing"));
-    return { issues, references };
+    issues.unshift(skillIssue("frontmatter_missing", {}, 1));
+    return { issues, references, referenceLines };
   }
 
-  const document = parseDocument(match[1] ?? "", { prettyErrors: false });
+  const source = match[1] ?? "";
+  // Where the frontmatter text starts in the document: after the opening `---` line.
+  const sourceStart = source ? match[0].indexOf(source) : bodyStart;
+  const document = parseDocument(source, { prettyErrors: false });
   const error = document.errors[0];
   if (error || (document.contents !== null && !isMap(document.contents))) {
     const reason = error ? error.message.split("\n")[0] : "it is not a list of key: value pairs";
-    issues.unshift(skillIssue("frontmatter_invalid", { reason: reason ?? "" }));
-    return { issues, references };
+    const line = lineAt(content, sourceStart + (error?.pos[0] ?? 0));
+    issues.unshift(skillIssue("frontmatter_invalid", { reason: reason ?? "" }, line));
+    return { issues, references, referenceLines };
   }
   const data = (document.toJS() ?? {}) as Record<string, unknown>;
+
+  /** Line of a top-level frontmatter key; the opening `---` when the key is absent. */
+  const keyLine = (key: string): number => {
+    if (!isMap(document.contents)) return 1;
+    const pair = document.contents.items.find(
+      (item) => isScalar(item.key) && item.key.value === key,
+    );
+    const offset = pair && isScalar(pair.key) ? pair.key.range?.[0] : undefined;
+    return offset === undefined ? 1 : lineAt(content, sourceStart + offset);
+  };
 
   const name = text(data.name);
   const description = text(data.description);
   const head: SkillIssue[] = [];
-  if (!name) head.push(skillIssue("name_missing"));
-  if (!description) head.push(skillIssue("description_missing"));
+  if (!name) head.push(skillIssue("name_missing", {}, keyLine("name")));
+  if (!description) head.push(skillIssue("description_missing", {}, keyLine("description")));
   if (name) {
+    const line = keyLine("name");
     if (name.length > SKILL_NAME_MAX) {
-      head.push(skillIssue("name_too_long", { length: name.length, max: SKILL_NAME_MAX }));
+      head.push(skillIssue("name_too_long", { length: name.length, max: SKILL_NAME_MAX }, line));
     }
-    if (!NAME_PATTERN.test(name)) head.push(skillIssue("name_format", { name }));
-    if (name !== folderName) head.push(skillIssue("name_mismatch", { name, folder: folderName }));
+    if (!NAME_PATTERN.test(name)) head.push(skillIssue("name_format", { name }, line));
+    if (name !== folderName) {
+      head.push(skillIssue("name_mismatch", { name, folder: folderName }, line));
+    }
   }
   if (description && description.length > SKILL_DESCRIPTION_MAX) {
     head.push(
-      skillIssue("description_too_long", {
-        length: description.length,
-        max: SKILL_DESCRIPTION_MAX,
-      }),
+      skillIssue(
+        "description_too_long",
+        { length: description.length, max: SKILL_DESCRIPTION_MAX },
+        keyLine("description"),
+      ),
     );
   }
   const compatibility = text(data.compatibility);
   if (compatibility && compatibility.length > SKILL_COMPATIBILITY_MAX) {
     head.push(
-      skillIssue("compatibility_too_long", {
-        length: compatibility.length,
-        max: SKILL_COMPATIBILITY_MAX,
-      }),
+      skillIssue(
+        "compatibility_too_long",
+        { length: compatibility.length, max: SKILL_COMPATIBILITY_MAX },
+        keyLine("compatibility"),
+      ),
     );
   }
-  return { issues: [...head, ...issues], references };
+  return { issues: [...head, ...issues], references, referenceLines };
 }

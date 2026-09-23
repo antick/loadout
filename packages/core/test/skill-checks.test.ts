@@ -64,6 +64,37 @@ describe("checking a SKILL.md", () => {
   });
 });
 
+describe("where a problem is", () => {
+  const lineOf = (issues: readonly SkillIssue[], code: string): number | undefined =>
+    issues.find((issue) => issue.code === code)?.line;
+
+  it("points at the frontmatter key a problem is about", () => {
+    const text = doc("license: MIT\nname: PDF_Tools\ndescription: Read PDFs.", "Body\n");
+    const issues = checkSkillDocument(text, "pdf").issues;
+    expect(lineOf(issues, "name_format")).toBe(3);
+    expect(lineOf(issues, "name_mismatch")).toBe(3);
+    expect(lineOf(checkSkillDocument(doc("name: pdf"), "pdf").issues, "description_missing")).toBe(
+      1,
+    );
+  });
+
+  it("points at the line YAML stops parsing and at a missing frontmatter", () => {
+    const broken = checkSkillDocument(doc("name: pdf\ndescription: [unclosed"), "pdf").issues;
+    expect(lineOf(broken, "frontmatter_invalid")).toBeGreaterThanOrEqual(3);
+    expect(lineOf(checkSkillDocument("# Just text\n", "pdf").issues, "frontmatter_missing")).toBe(
+      1,
+    );
+  });
+
+  it("points at the first link to a file, in the body after the frontmatter", () => {
+    const body =
+      "Intro\n\nSee [outside](../x.md).\nThen [guide](guide.md) and [again](guide.md).\n";
+    const result = checkSkillDocument(doc("name: pdf\ndescription: x", body), "pdf");
+    expect(lineOf(result.issues, "broken_reference")).toBe(7);
+    expect(result.referenceLines).toEqual({ "guide.md": 8 });
+  });
+});
+
 describe("links in SKILL.md", () => {
   it("collects relative links, and ignores web links, anchors and code", () => {
     const body = [
@@ -120,7 +151,7 @@ describe("checking library skills", () => {
       { "scripts/run.sh": "echo\n" },
     );
     expect(inspectSkillFolder(skill.libraryPath)).toMatchObject([
-      { code: "broken_reference", params: { path: "references/missing.md" } },
+      { code: "broken_reference", params: { path: "references/missing.md" }, line: 5 },
     ]);
   });
 
