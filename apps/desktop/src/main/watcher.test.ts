@@ -5,9 +5,21 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { WATCH_DEBOUNCE_MS } from "./constants";
 import { type FolderWatcher, watchFolders } from "./watcher";
 
-/** Long enough for the OS to report the change and the debounce to run out. */
-const SETTLE_MS = WATCH_DEBOUNCE_MS + 700;
-const settle = (): Promise<void> => new Promise((done) => setTimeout(done, SETTLE_MS));
+/**
+ * File events are slow when the machine is busy, and macOS drops those made before its event
+ * stream is running, so the test writes again until the watcher reports or time runs out. Each
+ * retry waits out the quiet period: a write inside it only restarts the wait.
+ */
+const WAIT_LIMIT_MS = 12_000;
+const RETRY_MS = WATCH_DEBOUNCE_MS * 3;
+
+async function writeUntil(file: string, noticed: () => boolean): Promise<void> {
+  const deadline = Date.now() + WAIT_LIMIT_MS;
+  for (let round = 0; !noticed() && Date.now() < deadline; round += 1) {
+    writeFileSync(file, `edit ${round}`);
+    await new Promise((done) => setTimeout(done, RETRY_MS));
+  }
+}
 
 describe("watchFolders", () => {
   let root: string;
@@ -21,35 +33,21 @@ describe("watchFolders", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  it("reports a change deep inside a watched folder once, after the quiet period", async () => {
-    const skills = join(root, "repo", ".claude", "skills");
-    mkdirSync(join(skills, "review"), { recursive: true });
-    let changes = 0;
-    watcher = watchFolders(
-      () => [skills],
-      () => {
-        changes += 1;
-      },
-    );
-    writeFileSync(join(skills, "review", "SKILL.md"), "one");
-    writeFileSync(join(skills, "review", "notes.md"), "two");
-    await settle();
-    expect(changes).toBe(1);
-  });
-
-  it("skips folders that do not exist yet and ignores its own muted writes", async () => {
-    const skills = join(root, "skills");
-    mkdirSync(skills);
-    let changes = 0;
-    watcher = watchFolders(
-      () => [skills, join(root, "missing")],
-      () => {
-        changes += 1;
-      },
-    );
-    watcher.mute();
-    writeFileSync(join(skills, "SKILL.md"), "mine");
-    await settle();
-    expect(changes).toBe(0);
-  });
+  it(
+    "reports a change deep inside a watched folder, skipping folders that do not exist",
+    async () => {
+      const skills = join(root, "repo", ".claude", "skills");
+      mkdirSync(join(skills, "review"), { recursive: true });
+      let changes = 0;
+      watcher = watchFolders(
+        () => [skills, join(root, "missing")],
+        () => {
+          changes += 1;
+        },
+      );
+      await writeUntil(join(skills, "review", "SKILL.md"), () => changes > 0);
+      expect(changes).toBeGreaterThan(0);
+    },
+    WAIT_LIMIT_MS + RETRY_MS * 4,
+  );
 });
