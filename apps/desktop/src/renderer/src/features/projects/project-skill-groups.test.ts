@@ -30,6 +30,7 @@ function copy(
     tags: [],
     librarySkillId: syncStatus === "local_only" ? null : relativePath.toLowerCase(),
     managed: false,
+    linkTarget: null,
     syncStatus,
     ...extra,
   };

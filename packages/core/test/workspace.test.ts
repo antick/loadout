@@ -4,6 +4,7 @@ import { APP_NAME } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
 import { installIntoLibrary } from "../src/install/library";
+import { canonicalPath } from "../src/util/fs";
 import { createWorkspaceService } from "../src/workspace";
 import { makeSkill, writeFile } from "./helpers";
 import {
@@ -70,6 +71,21 @@ describe("global workspace", () => {
       agentDisplayName: "Claude Code",
       relativePath: "managed",
     });
+  });
+
+  it("says whether each skill is a link and where it leads", async () => {
+    const alpha = world.addSkill("alpha");
+    const beta = world.addSkill("beta");
+    await world.deploy.api.deploy(alpha.id, "claude_code");
+    world.ctx.settings.set("deployMode", "copy");
+    await world.deploy.api.deploy(beta.id, "claude_code");
+    makeSkill(claude, "own");
+
+    const byName = new Map((await api().list("claude_code")).map((skill) => [skill.name, skill]));
+    expect(byName.get("alpha")?.linkTarget).toBe(canonicalPath(alpha.libraryPath));
+    expect(byName.get("beta")?.linkTarget).toBeNull();
+    expect(byName.get("beta")?.managed).toBe(true);
+    expect(byName.get("own")?.linkTarget).toBeNull();
   });
 
   it("shows a shared folder's skill under the sibling agent as in sync but not managed", async () => {

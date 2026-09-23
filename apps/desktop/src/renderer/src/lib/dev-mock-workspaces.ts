@@ -31,6 +31,8 @@ export interface WorkspaceMockContext {
 }
 
 const STEP_MS = 350;
+/** Managed skills of this agent are shown as copies; the others as links into the library. */
+const COPY_AGENT_KEY = "codex";
 const SKILL_FILES = ["SKILL.md", "scripts", "reference.md"];
 const SCAN_RESULTS = ["shop-web", "billing-api", "docs-site", "mobile/app", "tools/release-bot"];
 const DISABLED_SUFFIX = "-disabled";
@@ -146,6 +148,11 @@ export function createWorkspaceMockHandlers(
       tags: match?.tags ?? [],
       librarySkillId: entry.librarySkillId,
       managed,
+      // The preview's codex copies are real copies; every other managed skill is a link.
+      linkTarget:
+        managed && entry.agentKey !== COPY_AGENT_KEY
+          ? `${HOME}/.loadout/skills/${dirNameOf(entry.relativePath)}`
+          : null,
       syncStatus: entry.status,
     };
   }

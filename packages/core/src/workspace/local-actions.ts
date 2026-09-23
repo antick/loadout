@@ -9,6 +9,7 @@ import type { InstallIntoLibrary } from "../install/library";
 import { readSkillDocument } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import {
+  canonicalPath,
   isDirectory,
   isSkillDir,
   lstatOrNull,
@@ -62,6 +63,7 @@ export function toLocalSkill(
     tags: match?.tags ?? [],
     librarySkillId: match?.id ?? null,
     managed: match !== null && (owner.isManaged?.(match) ?? false),
+    linkTarget: lstatOrNull(entry.path)?.isSymbolicLink() ? canonicalPath(entry.path) : null,
     syncStatus: classifySync(entry, match),
   };
 }

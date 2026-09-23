@@ -17,6 +17,7 @@ function folder(syncStatus: SyncStatus, managed: boolean): LocalSkill {
     tags: [],
     librarySkillId: matched ? "lib-skill" : null,
     managed,
+    linkTarget: null,
     syncStatus,
   };
 }

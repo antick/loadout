@@ -18,6 +18,20 @@
       "noFiles": "No files found.",
       "document": "Document",
       "notInLibrary": "This skill is not in the library, so there is nothing to compare it with."
+    },
+    "link": {
+      "linked": {
+        "label": "Linked",
+        "hint": "A link to the library skill: it is the same folder, so an edit in either place shows up in both at once."
+      },
+      "copy": {
+        "label": "Copy",
+        "hint": "A copy of the library skill. Saving the library skill in Loadout refreshes it; an edit made here stays here until you upload it."
+      },
+      "link": {
+        "label": "Link",
+        "hint": "A link Loadout did not make. It leads to:"
+      }
     }
   },
   "folderField": {

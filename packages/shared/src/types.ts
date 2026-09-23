@@ -417,6 +417,11 @@ export interface LocalSkill {
   librarySkillId: string | null;
   /** Loadout deployed this copy (global workspace only). */
   managed: boolean;
+  /**
+   * Where the folder really is when it is a link (a symlink, or a junction on Windows): edits
+   * made at either end are the same edit. Null for a plain folder, a copy.
+   */
+  linkTarget: string | null;
   syncStatus: SyncStatus;
 }
 

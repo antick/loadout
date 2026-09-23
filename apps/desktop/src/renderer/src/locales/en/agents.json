@@ -3,7 +3,6 @@
     "skillCount_one": "{{count}} skill",
     "skillCount_other": "{{count}} skills",
     "sharedFolder": "Shares this folder with {{agents}}, so the same skills show up there too.",
-    "managed": "Managed",
     "category": {
       "coding": "Coding",
       "assistant": "Assistants"

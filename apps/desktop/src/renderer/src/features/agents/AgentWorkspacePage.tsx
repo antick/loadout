@@ -1,6 +1,6 @@
 import type { LocalSkill } from "@loadout/shared";
 import { Navigate } from "@tanstack/react-router";
-import { FolderSearch, Link2, ListChecks, Plus, RotateCw, SearchX } from "lucide-react";
+import { FolderSearch, ListChecks, Plus, RotateCw, SearchX } from "lucide-react";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AddFromLibrarySheet } from "@/components/AddFromLibrarySheet";
@@ -9,9 +9,9 @@ import { ErrorState } from "@/components/ErrorState";
 import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
-import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { type LocalSkillView, toLocalSkillView } from "@/features/local-skills/local-skill-view";
+import { LinkBadge } from "@/features/local-skills/LinkBadge";
 import { LocalSkillCollection } from "@/features/local-skills/LocalSkillCollection";
 import { LocalSkillDetailSheet } from "@/features/local-skills/LocalSkillDetailSheet";
 import { LocalSkillSkeletons } from "@/features/local-skills/LocalSkillSkeletons";
@@ -91,10 +91,10 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   }
 
   const skillOf = (view: LocalSkillView): LocalSkill | undefined => skillsByPath.get(view.id);
-  const managedBadge = (view: LocalSkillView): ReactNode =>
-    skillOf(view)?.managed ? (
-      <StatusBadge tone="primary" icon={<Link2 />} label={t("agents.managed")} />
-    ) : null;
+  const managedBadge = (view: LocalSkillView): ReactNode => {
+    const skill = skillOf(view);
+    return skill ? <LinkBadge skill={skill} /> : null;
+  };
   const selectedSkills = selection.selectedIds.flatMap((id) => skillsByPath.get(id) ?? []);
   const names = new Map((agents.data ?? []).map((entry) => [entry.key, entry.displayName]));
 
