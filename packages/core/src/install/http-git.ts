@@ -6,7 +6,7 @@ import { AppError, cancelled, isAppError } from "../errors";
 import { ensureDir, readDirSafe, removePath } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { unpackArchive } from "./archive";
-import type { Download } from "./download";
+import { type Download, percentReporter } from "./download";
 import {
   CLONE_DIR_PREFIX,
   type Checkout,
@@ -58,7 +58,6 @@ const PKT_LENGTH_DIGITS = 4;
 const HEX_RADIX = 16;
 const ZERO_SHA = /^0+$/;
 const SHA = /^[0-9a-f]{40,64}$/i;
-const PERCENT_TOTAL = 100;
 const FALLBACK_REPO_NAME = "repository";
 
 /** `https://host/owner/repo(.git)` → host and the path without `.git`, or null. */
@@ -153,18 +152,11 @@ export function createHttpGit(download: Download): HttpGit {
         throw new AppError("GIT", `${what} does not exist in ${redactUrl(url)}`);
       }
       const repo = repoNameFromUrl(url);
-      let last = -1;
       const data = await download(target.host.archiveUrl(target.path, repo, revision), {
         signal: options.signal,
         subject: "The repository",
         label: url,
-        onProgress: (received, total) => {
-          if (!total || !options.onPercent) return;
-          const percent = Math.min(PERCENT_TOTAL, Math.floor((received / total) * PERCENT_TOTAL));
-          if (percent === last) return;
-          last = percent;
-          options.onPercent(percent);
-        },
+        onProgress: percentReporter(options.onPercent),
       });
       if (options.signal?.aborted) throw cancelled();
 

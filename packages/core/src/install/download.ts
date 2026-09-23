@@ -35,6 +35,26 @@ const DEFAULT_SUBJECT = "The file";
 const RETRY_STATUSES: ReadonlySet<number> = new Set([406, 429, 502, 503, 504]);
 const RETRY_DELAY_MS = 2000;
 
+const PERCENT_TOTAL = 100;
+
+/**
+ * Adapt a whole-percent listener to {@link DownloadOptions.onProgress}. Each percent is reported
+ * once; nothing is reported while the size is unknown.
+ */
+export function percentReporter(
+  onPercent?: (percent: number) => void,
+): DownloadOptions["onProgress"] {
+  if (!onPercent) return undefined;
+  let last = -1;
+  return (received, total) => {
+    if (!total) return;
+    const percent = Math.min(PERCENT_TOTAL, Math.floor((received / total) * PERCENT_TOTAL));
+    if (percent === last) return;
+    last = percent;
+    onPercent(percent);
+  };
+}
+
 function contentLength(response: Response): number | null {
   const value = Number(response.headers.get("content-length"));
   return Number.isFinite(value) && value > 0 ? value : null;

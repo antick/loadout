@@ -1,4 +1,4 @@
-import { errorMessage } from "@loadout/core";
+import { errorMessage, isRemoteSource } from "@loadout/core";
 import type { BatchUpdateResult, Skill, UpdateResult } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { fields, plural, when } from "../output";
@@ -79,11 +79,20 @@ const updateView = (result: UpdateResult) => ({
   applied: result.pendingRemovals.length === 0,
 });
 
+/**
+ * Update from a repository, or re-import a folder, archive or archive link: the same choice
+ * `updateMany` makes.
+ */
 async function updateOne(context: CommandContext, skillId: string): Promise<UpdateResult> {
   const { core, args } = context;
-  const first = await core.api.updates.update(skillId);
+  const remote = isRemoteSource(core.store.get(skillId));
+  const refresh = (approval?: string | null): Promise<UpdateResult> =>
+    remote
+      ? core.api.updates.update(skillId, approval)
+      : core.api.updates.reimport(skillId, approval);
+  const first = await refresh();
   if (first.pendingRemovals.length === 0 || !flagBoolean(args, APPROVE_FLAG.name)) return first;
-  return core.api.updates.update(skillId, first.approval);
+  return refresh(first.approval);
 }
 
 /** `updateMany` has no way to approve removals, so an approved bulk run goes skill by skill. */

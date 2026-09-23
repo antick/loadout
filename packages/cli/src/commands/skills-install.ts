@@ -1,5 +1,5 @@
 import { notFound } from "@loadout/core";
-import type { InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
+import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
 import { limitPositionals, positional, resolveUserPath } from "./support";
@@ -39,18 +39,19 @@ function lastSegment(relPath: string): string {
   return relPath.split("/").findLast(Boolean) ?? relPath;
 }
 
-/** Match `--skill` values against what the repository really holds; never guess. */
+/** Match `--skill` values against what the repository or archive really holds; never guess. */
 export function selectSkills(
   available: readonly RepoSkillPreview[],
   wanted: readonly string[],
   all: boolean,
+  what: "repository" | "archive" = "repository",
 ): RepoSkillPreview[] {
-  if (available.length === 0) throw notFound("No skills were found in that repository.");
+  if (available.length === 0) throw notFound(`No skills were found in that ${what}.`);
   if (wanted.length === 0) {
     if (all || available.length === 1) return [...available];
     const names = available.map((skill) => skill.name).join(", ");
     throw new UsageError(
-      `That repository holds ${plural(available.length, "skill")}: ${names}. Pick with --skill <name> (repeatable) or take everything with --all.`,
+      `That ${what} holds ${plural(available.length, "skill")}: ${names}. Pick with --skill <name> (repeatable) or take everything with --all.`,
     );
   }
   return wanted.map((want) => {
@@ -61,7 +62,7 @@ export function selectSkills(
         skill.name.toLowerCase() === key ||
         lastSegment(skill.relPath).toLowerCase() === key,
     );
-    if (!match) throw notFound(`No skill called "${want}" in that repository.`);
+    if (!match) throw notFound(`No skill called "${want}" in that ${what}.`);
     return match;
   });
 }
@@ -76,23 +77,24 @@ const SKILL_FLAG = {
   name: "skill",
   type: "list",
   value: "id",
-  description: "Skill to take from a repository. Repeat for several.",
+  description: "Skill to take from a repository or archive. Repeat for several.",
 } as const;
 const ALL_FLAG = {
   name: "all",
   type: "boolean",
-  description: "Take every skill the repository holds.",
+  description: "Take every skill the repository or archive holds.",
 } as const;
 
-async function installFromGit(context: CommandContext, url: string): Promise<Skill[]> {
+/** Install the chosen skills of a preview; the preview is cleaned up whatever happens. */
+async function installFromPreview(context: CommandContext, preview: GitPreview): Promise<Skill[]> {
   const { core, args } = context;
   const name = flagString(args, NAME_FLAG.name);
-  const preview = await core.api.install.previewGit(url);
   try {
     const chosen = selectSkills(
       preview.skills,
       flagList(args, SKILL_FLAG.name),
       flagBoolean(args, ALL_FLAG.name),
+      preview.kind,
     );
     if (name !== undefined && chosen.length !== 1) {
       throw new UsageError("--name only works when exactly one skill is installed.");
@@ -109,6 +111,21 @@ async function installFromGit(context: CommandContext, url: string): Promise<Ski
   }
 }
 
+/**
+ * A folder or an archive file. An archive holding several skills is picked from like a
+ * repository; anything else installs as one skill, exactly as before.
+ */
+async function installFromPath(context: CommandContext, path: string): Promise<Skill[]> {
+  const { core, args } = context;
+  const name = flagString(args, NAME_FLAG.name);
+  if (ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
+    const preview = await core.api.install.previewArchive(path);
+    if (preview.skills.length > 1) return installFromPreview(context, preview);
+    await core.api.install.cancelPreview(preview.previewId);
+  }
+  return [await core.api.install.fromPath(path, name)];
+}
+
 async function run(context: CommandContext): Promise<CommandResult> {
   const { core, args, cwd } = context;
   limitPositionals(args, 1);
@@ -116,13 +133,12 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const name = flagString(args, NAME_FLAG.name);
   let installed: Skill[];
   if (source.kind === "path") {
-    const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
-    installed = [await core.api.install.fromPath(path, name)];
+    installed = await installFromPath(context, resolveUserPath(source.path, cwd, core.ctx.homeDir));
   } else if (source.kind === "market") {
     if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
     installed = [await core.api.install.fromMarket(source.source, source.skillId)];
   } else {
-    installed = await installFromGit(context, source.url);
+    installed = await installFromPreview(context, await core.api.install.previewGit(source.url));
   }
   const lines = installed.map((skill) => `Installed ${skill.name} (${skill.id}) into the library.`);
   lines.push("Installing does not deploy. Next: skills deploy <ref> --agent <key>");
@@ -135,7 +151,8 @@ export const installCommand: CommandSpec = {
   usage: "<source> [--name <name>] [--skill <id>…] [--all]",
   flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG],
   notes: [
-    "Sources: ./folder, ./archive.zip, ./archive.skill, a git URL, owner/repo, owner/repo@skill.",
+    "Sources: ./folder, ./archive.zip, ./archive.skill, a git URL, owner/repo, owner/repo@skill,",
+    "or a link to a .zip / .skill file (https://…/skill.zip).",
     "A folder must start with ./, ../, / or ~/ - a bare owner/repo always means GitHub.",
   ],
   run,

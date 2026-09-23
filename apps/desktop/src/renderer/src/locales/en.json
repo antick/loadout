@@ -59,7 +59,8 @@
     "local": "Local",
     "import": "Imported",
     "git": "Git",
-    "marketplace": "Marketplace"
+    "marketplace": "Marketplace",
+    "url": "Link"
   },
   "syncStatus": {
     "in_sync": "In sync",

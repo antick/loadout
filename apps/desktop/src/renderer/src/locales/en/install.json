@@ -11,8 +11,8 @@
         "subtitle": "A folder or an archive you already have"
       },
       "git": {
-        "label": "Git repository",
-        "subtitle": "Clone a repository and pick what to keep"
+        "label": "Git or link",
+        "subtitle": "Fetch a repository or a .zip link and pick what to keep"
       },
       "scan": {
         "label": "Agent folders",
@@ -23,6 +23,8 @@
       "starting": "Getting ready…",
       "cloning": "Fetching the repository…",
       "cloningPercent": "Fetching the repository… {{percent}}%",
+      "downloading": "Downloading the archive…",
+      "downloadingPercent": "Downloading the archive… {{percent}}%",
       "scanning": "Looking for skills…",
       "installing": "Copying into the library…",
       "installingNamed": "Copying {{name}} into the library…",
@@ -47,7 +49,8 @@
       "imported_one": "Imported {{count}} skill",
       "imported_other": "Imported {{count}} skills",
       "view": "View",
-      "deploy": "Deploy to agents…"
+      "deploy": "Deploy to agents…",
+      "downloading": "Downloading the archive"
     },
     "errors": {
       "generic": "The install did not finish.",
@@ -55,7 +58,8 @@
       "timeout": "The server took too long to answer.",
       "proxyHint": "Check your connection. If you are behind a proxy, set it in Settings.",
       "openSettings": "Open settings",
-      "authHint": "The repository asked for credentials. Make sure your SSH key or Git credential helper works in a terminal first."
+      "authHint": "The repository asked for credentials. Make sure your SSH key or Git credential helper works in a terminal first.",
+      "readArchive": "Could not read the archive."
     },
     "batch": {
       "title": "Import finished",
@@ -109,7 +113,7 @@
       "folderTitle": "Choose a skill folder",
       "folderDescription": "A folder that holds one skill. It is copied into the library; the original stays where it is.",
       "archiveTitle": "Choose an archive",
-      "archiveDescription": "A packed skill. It is unpacked and copied into the library.",
+      "archiveDescription": "One or more packed skills. When it holds several, you pick which to keep.",
       "bulkTitle": "Import every skill in a folder",
       "bulkDescription": "Point at a folder of skill folders. Each one is imported; names already in the library are skipped.",
       "pickFolderTitle": "Choose the skill's folder",
@@ -122,10 +126,10 @@
       "dropHint": "Drop a skill folder or a .zip / .skill archive anywhere here, or choose one below."
     },
     "git": {
-      "urlLabel": "Repository",
-      "urlHint": "Nothing is installed yet: the repository is fetched first so you can choose.",
+      "urlLabel": "Repository or archive link",
+      "urlHint": "Nothing is installed yet: the repository or archive is fetched first so you can choose. A link to a .zip or .skill file works too.",
       "examples": "For example",
-      "preview": "Clone & preview",
+      "preview": "Preview",
       "previewTitle_one": "{{count}} skill found",
       "previewTitle_other": "{{count}} skills found",
       "previewHint": "Tick what you want and rename anything before it lands in the library.",
@@ -139,7 +143,9 @@
       "privateDescription": "Cloning uses the Git on this computer, so whatever works in your terminal works here: an SSH key for git@ addresses, or a credential helper for https. {{app}} never asks for or stores a Git password.",
       "noGitTitle": "Git is not installed",
       "noGitDescription": "Public repositories on GitHub and GitLab still install: {{app}} downloads them directly. Private repositories and other hosts need Git.",
-      "getGit": "Get Git"
+      "getGit": "Get Git",
+      "emptyArchiveTitle": "No skills in this archive",
+      "emptyArchiveDescription": "A skill is a folder with a SKILL.md file. This archive has none."
     },
     "scan": {
       "loadFailed": "Could not scan this computer",

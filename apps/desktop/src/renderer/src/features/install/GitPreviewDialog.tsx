@@ -1,5 +1,5 @@
 import type { GitPreview, InstallSelection, RepoSkillPreview } from "@loadout/shared";
-import { GitBranch, GitCommitHorizontal, RefreshCw } from "lucide-react";
+import { FileArchive, GitBranch, GitCommitHorizontal, RefreshCw } from "lucide-react";
 import { type FormEvent, type ReactNode, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -119,8 +119,11 @@ function PreviewForm({
         <DialogTitle>{t("install.git.previewTitle", { count: preview.skills.length })}</DialogTitle>
         <DialogDescription asChild>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-            <span className="truncate font-mono text-xs" data-selectable>
-              {preview.repoUrl}
+            <span className="flex min-w-0 items-center gap-1 font-mono text-xs" data-selectable>
+              {preview.kind === "archive" ? <FileArchive className="size-3 shrink-0" /> : null}
+              <span className="truncate" title={preview.repoUrl}>
+                {preview.repoUrl}
+              </span>
             </span>
             {preview.branch ? (
               <span className="flex items-center gap-1 font-mono text-xs">
@@ -177,7 +180,7 @@ function PreviewForm({
   );
 }
 
-/** Choose which skills of a cloned repository to import, and under which names. */
+/** Choose which skills of a repository or archive to import, and under which names. */
 export function GitPreviewDialog({
   preview,
   onDismiss,

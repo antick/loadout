@@ -1,12 +1,13 @@
 import type { BatchResult, Skill, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, isAppError } from "../errors";
-import type { GitClient } from "../install";
+import type { Download, GitClient } from "../install";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
 import { hashDir } from "../util/hash";
 import { type LockMode, runLocked } from "./locking";
 import {
+  type DownloadCache,
   type RemoteTarget,
   SOURCE_PATH_GONE,
   isRemoteSource,
@@ -19,6 +20,7 @@ import {
 export interface CheckerDeps {
   store: SkillStore;
   git: GitClient;
+  download: Download;
 }
 
 export interface CheckOptions {
@@ -93,11 +95,18 @@ function remoteFinding(skill: Skill, outcome: RemoteOutcome): Finding {
   };
 }
 
-/** Compare a local source with the library. Reads only, so it runs without the lock. */
-async function localFinding(skill: Skill): Promise<Finding> {
+/**
+ * Compare a folder, archive or archive link with the library. Reads only, so it runs without the
+ * lock.
+ */
+async function localFinding(
+  skill: Skill,
+  download: Download,
+  cache?: DownloadCache,
+): Promise<Finding> {
   if (!skill.sourceRef) return settled(skill, "local_only");
   try {
-    const source = await openLocalSource(skill);
+    const source = await openLocalSource(skill, download, cache);
     try {
       if (!skill.contentHash) return settled(skill, "local_only");
       if (hashDir(source.dir) === skill.contentHash) return settled(skill, "up_to_date");
@@ -110,7 +119,11 @@ async function localFinding(skill: Skill): Promise<Finding> {
       await source.cleanup();
     }
   } catch (error) {
-    if (isAppError(error, "NOT_FOUND")) return settled(skill, "source_missing", SOURCE_PATH_GONE);
+    if (isAppError(error, "NOT_FOUND")) {
+      // A dead link says which link; a folder that is gone says so plainly.
+      const why = skill.sourceType === "url" ? errorMessage(error) : SOURCE_PATH_GONE;
+      return settled(skill, "source_missing", why);
+    }
     return settled(skill, "error", errorMessage(error));
   }
 }
@@ -125,7 +138,7 @@ function targetOrFailure(skill: Skill): RemoteTarget | { failure: string } {
 }
 
 export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
-  const { store, git } = deps;
+  const { store, git, download } = deps;
 
   async function lookup(target: RemoteTarget): Promise<RemoteOutcome> {
     try {
@@ -139,8 +152,9 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
   async function investigate(
     skill: Skill,
     shared?: ReadonlyMap<string, RemoteOutcome>,
+    downloads?: DownloadCache,
   ): Promise<Finding> {
-    if (!isRemoteSource(skill)) return localFinding(skill);
+    if (!isRemoteSource(skill)) return localFinding(skill, download, downloads);
     const target = targetOrFailure(skill);
     if ("failure" in target) return remoteFinding(skill, target);
     return remoteFinding(skill, shared?.get(remoteKey(target)) ?? (await lookup(target)));
@@ -189,9 +203,11 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       });
 
       const result: BatchResult = { succeeded: skills.length - due.length, failed: [] };
+      // Skills taken from one archive link download it once per round.
+      const downloads: DownloadCache = new Map();
       for (const skill of due) {
         try {
-          const checked = await apply(skill, await investigate(skill, outcomes), "wait");
+          const checked = await apply(skill, await investigate(skill, outcomes, downloads), "wait");
           if (checked.updateStatus === "error") {
             result.failed.push({
               name: skill.name,

@@ -62,6 +62,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
   const gitInstaller = createGitInstaller(ctx, {
     store,
     git,
+    download,
     cancels,
     install,
     allowLocalGitSources: deps.allowLocalGitSources,
@@ -123,6 +124,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     fromPath,
     importFolder,
     previewGit: gitInstaller.previewGit,
+    previewArchive: gitInstaller.previewArchive,
     confirmGit: gitInstaller.confirmGit,
     cancelPreview: gitInstaller.cancelPreview,
     fromMarket: gitInstaller.fromMarket,

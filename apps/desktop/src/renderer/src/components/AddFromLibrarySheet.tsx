@@ -1,4 +1,4 @@
-import type { AgentInfo, ProjectTarget, Skill, SourceType } from "@loadout/shared";
+import { type AgentInfo, type ProjectTarget, SOURCE_TYPES, type Skill } from "@loadout/shared";
 import { Library } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -74,7 +74,6 @@ export interface AddFromLibrarySheetProps {
 }
 
 const SOURCE_FILTER_ALL = "all";
-const SOURCE_TYPES: readonly SourceType[] = ["local", "import", "git", "marketplace"];
 const STATE_TONES: Record<Exclude<PickerRowState, "available">, StatusTone> = {
   installed: "success",
   conflict: "warning",

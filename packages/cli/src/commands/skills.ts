@@ -1,6 +1,6 @@
 import { lstatSync } from "node:fs";
 import { errorMessage, targetConflict } from "@loadout/core";
-import type { Skill } from "@loadout/shared";
+import { SOURCE_TYPES, type Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
@@ -45,7 +45,6 @@ const REMOVE_FLAG = {
   value: "tag",
   description: "Tag to take off. Repeatable.",
 } as const;
-const SOURCE_TYPES = ["local", "import", "git", "marketplace"] as const;
 
 const agentsOf = (skill: Skill): string => skill.deployments.map((d) => d.agentKey).join(", ");
 

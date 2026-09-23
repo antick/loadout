@@ -41,7 +41,9 @@ export {
   type DownloadOptions,
   MAX_DOWNLOAD_BYTES,
   createDownload,
+  percentReporter,
 } from "./download";
+export { archiveLink, archiveLinkName } from "./archive-link";
 export { GIT_NEEDED, withHttpFallback } from "./git-fallback";
 export { type HttpGit, createHttpGit, parseAdvertisement } from "./http-git";
 export {
@@ -49,6 +51,7 @@ export {
   type UnpackedArchive,
   archiveSkillDir,
   archiveSkillDirs,
+  listArchiveSkills,
   unpackArchive,
   unpackArchiveFile,
   ARCHIVE_EXTENSIONS,

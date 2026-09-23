@@ -55,7 +55,10 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ### Install
 
-- From a folder, from a `.zip` or `.skill` archive, or by dropping either onto the page.
+- From a folder, from a `.zip` or `.skill` archive, or by dropping either onto the page. An
+  archive holding several skills opens the same pick-and-rename list as a Git repository.
+- From a link to a `.zip` or `.skill` file, pasted where a Git URL goes. The skill is marked
+  **Link**; checking it downloads the link again and compares, and **Download again** updates it.
 - Import every skill inside a folder in one go, with live progress.
 - From Git: `https`, `ssh`, `git@`, `owner/repo`, and GitHub tree URLs that carry a branch and a
   subfolder.

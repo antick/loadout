@@ -2,7 +2,9 @@
  * DEV ONLY. Marketplace, install and scan handlers for the in-memory preview bridge in
  * `dev-mock.ts`. Installs take a moment and report progress so toasts, progress panels and Cancel
  * can be tried in a plain browser. Magic inputs: searching "offline" or cloning a URL containing
- * "offline" fails with NETWORK, "private" fails with GIT_AUTH, "empty" finds no skills.
+ * "offline" fails with NETWORK, "private" fails with GIT_AUTH, "empty" finds no skills. A link
+ * ending in `.zip` / `.skill` is treated as an archive; an archive whose name contains "bundle"
+ * holds several skills.
  */
 import {
   MARKETPLACE_URL,
@@ -18,6 +20,7 @@ import {
   type Skill,
   type SourceType,
 } from "@loadout/shared";
+import { ARCHIVE_LINK_PATTERN } from "@/features/install/constants";
 import { HOME, LIBRARY } from "@/lib/dev-mock-data";
 
 export interface InstallMockContext {
@@ -160,7 +163,20 @@ export function createInstallMockHandlers(
   const running = new Set<string>();
   const importedFingerprints = new Set<string>(["commit-messages"]);
   /** The real backend reports confirm progress under the URL the preview was made from. */
-  const previewUrls = new Map<string, string>();
+  const previewUrls = new Map<string, { key: string; kind: GitPreview["kind"]; local: boolean }>();
+
+  /** Skills a mock archive holds: several for a "bundle", else one named after the file. */
+  function archiveSkills(source: string): GitPreview["skills"] {
+    const names = new Set(ctx.getSkills().map((entry) => entry.name));
+    const skills = source.includes("bundle")
+      ? REPO_SKILLS.map(({ relPath, name, description }) => ({
+          relPath: relPath.split("/").at(-1) ?? relPath,
+          name,
+          description,
+        }))
+      : [{ relPath: baseName(source), name: baseName(source), description: "From an archive." }];
+    return skills.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
+  }
 
   function makeSkill(name: string, sourceType: SourceType, extra: Partial<Skill> = {}): Skill {
     const existing = ctx.getSkills().find((entry) => entry.name === name);
@@ -201,12 +217,12 @@ export function createInstallMockHandlers(
     if (cancelled.delete(key)) ctx.fail("CANCELLED", "The install was cancelled.");
   }
 
-  async function clone(key: string): Promise<void> {
+  async function clone(key: string, phase: "cloning" | "downloading" = "cloning"): Promise<void> {
     for (let step = 0; step <= CLONE_STEPS; step += 1) {
       checkCancelled(key);
       ctx.emitProgress({
         key,
-        phase: "cloning",
+        phase,
         current: (step * PERCENT) / CLONE_STEPS,
         total: PERCENT,
       });
@@ -319,7 +335,8 @@ export function createInstallMockHandlers(
     "install.previewGit": (repoUrl: string) =>
       tracked(repoUrl, async (): Promise<GitPreview> => {
         if (repoUrl.includes("offline")) ctx.fail("NETWORK", "Could not resolve host.");
-        await clone(repoUrl);
+        const archive = ARCHIVE_LINK_PATTERN.test(repoUrl.trim());
+        await clone(repoUrl, archive ? "downloading" : "cloning");
         if (repoUrl.includes("private")) {
           ctx.fail("GIT_AUTH", "The repository refused access: authentication failed.");
         }
@@ -328,9 +345,21 @@ export function createInstallMockHandlers(
         checkCancelled(repoUrl);
         const names = new Set(ctx.getSkills().map((entry) => entry.name));
         const previewId = `preview-${Date.now()}`;
-        previewUrls.set(previewId, repoUrl);
+        const kind = archive ? "archive" : "repository";
+        previewUrls.set(previewId, { key: repoUrl, kind, local: false });
+        if (archive) {
+          return {
+            previewId,
+            kind,
+            repoUrl: repoUrl.trim(),
+            branch: null,
+            revision: null,
+            skills: repoUrl.includes("empty") ? [] : archiveSkills(repoUrl),
+          };
+        }
         return {
           previewId,
+          kind,
           repoUrl,
           branch: repoUrl.includes("/tree/") ? "main" : null,
           revision: "4f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39",
@@ -339,20 +368,45 @@ export function createInstallMockHandlers(
             : REPO_SKILLS.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) })),
         };
       }),
+    "install.previewArchive": async (archivePath: string): Promise<GitPreview> => {
+      await wait(STEP_MS * 2);
+      const previewId = `preview-${Date.now()}`;
+      previewUrls.set(previewId, { key: archivePath, kind: "archive", local: true });
+      return {
+        previewId,
+        kind: "archive",
+        repoUrl: archivePath,
+        branch: null,
+        revision: null,
+        skills: archiveSkills(archivePath),
+      };
+    },
     "install.confirmGit": async (previewId: string, items: InstallSelection[]) => {
       const installed: Skill[] = [];
-      const key = previewUrls.get(previewId);
-      if (!key) return ctx.fail("INVALID_INPUT", "The preview has expired. Clone again.");
+      const preview = previewUrls.get(previewId);
+      if (!preview) return ctx.fail("INVALID_INPUT", "The preview has expired. Try again.");
       previewUrls.delete(previewId);
       for (const [index, item] of items.entries()) {
         ctx.emitProgress({
-          key,
+          key: preview.key,
           phase: "installing",
           current: index + 1,
           total: items.length,
           name: item.name,
         });
         await wait(STEP_MS * 3);
+        const description = REPO_SKILLS.find((entry) => entry.name === item.relPath)?.description;
+        if (preview.kind === "archive") {
+          installed.push(
+            makeSkill(item.name, preview.local ? "local" : "url", {
+              description,
+              sourceRef: preview.key.trim(),
+              sourceUrl: preview.local ? null : preview.key.trim(),
+              sourceSubpath: item.relPath,
+            }),
+          );
+          continue;
+        }
         installed.push(
           makeSkill(item.name, "git", {
             description: REPO_SKILLS.find((entry) => entry.relPath === item.relPath)?.description,

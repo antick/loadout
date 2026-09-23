@@ -1,4 +1,4 @@
-import type { BatchImportResult } from "@loadout/shared";
+import type { BatchImportResult, GitPreview, InstallSelection } from "@loadout/shared";
 import { FileArchive, FolderInput, FolderTree, PackagePlus, X } from "lucide-react";
 import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,10 +11,18 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { ARCHIVE_EXTENSIONS } from "@/features/install/constants";
+import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { cn } from "@/lib/utils";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import { useInstallTask } from "@/features/install/use-install-task";
-import { useImportFolder, useInstallFromPath, usePickArchive } from "@/hooks/mutations/install";
+import {
+  useCancelPreview,
+  useConfirmGit,
+  useImportFolder,
+  useInstallFromPath,
+  usePickArchive,
+  usePreviewArchive,
+} from "@/hooks/mutations/install";
 import { usePickFolder } from "@/hooks/mutations/library";
 
 type SourceKind = "folder" | "archive";
@@ -31,7 +39,12 @@ export function LocalTab(): ReactNode {
   const pickArchive = usePickArchive();
   const installFromPath = useInstallFromPath();
   const importFolder = useImportFolder();
+  const previewArchive = usePreviewArchive();
+  const confirmGit = useConfirmGit();
+  const cancelPreview = useCancelPreview();
   const { task } = useInstallTask();
+  /** An archive holding several skills, waiting for the user to pick from it. */
+  const [archivePreview, setArchivePreview] = useState<GitPreview | null>(null);
 
   const [picked, setPicked] = useState<PickedSource | null>(null);
   const [name, setName] = useState("");
@@ -40,6 +53,36 @@ export function LocalTab(): ReactNode {
   );
 
   const [dragging, setDragging] = useState(false);
+
+  /**
+   * Take a picked or dropped source. An archive holding several skills goes straight to the
+   * picker; one with a single skill (or none, which install then reports) keeps the name form.
+   */
+  const accept = async (source: PickedSource): Promise<void> => {
+    setName("");
+    if (source.kind === "archive") {
+      const preview = await previewArchive.mutateAsync(source.path).catch(() => null);
+      if (!preview) return;
+      if (preview.skills.length > 1) {
+        setPicked(null);
+        setArchivePreview(preview);
+        return;
+      }
+      cancelPreview.mutate(preview.previewId);
+    }
+    setPicked(source);
+  };
+
+  const dismissArchive = (dismissed: GitPreview): void => {
+    cancelPreview.mutate(dismissed.previewId);
+    setArchivePreview(null);
+  };
+
+  const confirmArchive = (confirmed: GitPreview, items: InstallSelection[]): void => {
+    // Confirming consumes the preview whether or not it works, so the dialog closes right away.
+    setArchivePreview(null);
+    void confirmGit(confirmed, items);
+  };
 
   /** A dropped archive is recognised by its extension; anything else is treated as a folder. */
   const onDrop = (event: DragEvent<HTMLDivElement>): void => {
@@ -52,8 +95,7 @@ export function LocalTab(): ReactNode {
     const isArchive = ARCHIVE_EXTENSIONS.some((extension) =>
       path.toLowerCase().endsWith(extension),
     );
-    setPicked({ path, kind: isArchive ? "archive" : "folder" });
-    setName("");
+    void accept({ path, kind: isArchive ? "archive" : "folder" });
   };
 
   const singleTask = picked ? task(picked.path) : undefined;
@@ -65,8 +107,7 @@ export function LocalTab(): ReactNode {
         ? await pickFolder.mutateAsync(t("install.local.pickFolderTitle")).catch(() => null)
         : await pickArchive.mutateAsync().catch(() => null);
     if (!path) return;
-    setPicked({ path, kind });
-    setName("");
+    await accept({ path, kind });
   };
 
   const chooseBulk = async (): Promise<void> => {
@@ -117,7 +158,7 @@ export function LocalTab(): ReactNode {
           description={t("install.local.archiveDescription")}
           hint={ARCHIVE_EXTENSIONS.join("  ")}
           tone="info"
-          busy={pickArchive.isPending}
+          busy={pickArchive.isPending || previewArchive.isPending}
           onClick={() => void choose("archive")}
         />
         <OptionCard
@@ -182,6 +223,12 @@ export function LocalTab(): ReactNode {
           percent={installProgressPercent(bulkTask?.progress ?? null)}
         />
       ) : null}
+
+      <GitPreviewDialog
+        preview={archivePreview}
+        onDismiss={dismissArchive}
+        onConfirm={confirmArchive}
+      />
 
       {bulk?.result ? (
         <BatchResultSummary

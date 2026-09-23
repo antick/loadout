@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
-import type { GitClient } from "../src/install";
+import type { GitClient, InstallServiceDeps } from "../src/install";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { makeSkill } from "./helpers";
@@ -32,14 +32,17 @@ export interface UpdatesWorld extends DeployWorld {
   restore(): void;
 }
 
-/** Deploy + install + updates wired as `createCore` wires them, over a local fixture repository. */
-export function createUpdatesWorld(): UpdatesWorld {
+/**
+ * Deploy + install + updates wired as `createCore` wires them, over a local fixture repository.
+ * `installDeps` reaches the install service, e.g. a fake `fetchImpl` for downloads.
+ */
+export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}): UpdatesWorld {
   const world = createDeployWorld();
   world.installAgents(".claude");
   const tmp = join(world.root, "tmp");
   const remotes = join(world.root, "remotes");
   const restores = [isolateTmpDir(tmp), redirectGithubTo(remotes)];
-  const install = createInstallHarness(world);
+  const install = createInstallHarness(world, installDeps);
 
   let lookupCount = 0;
   const countingGit: GitClient = {

@@ -2,7 +2,10 @@ import { isAbsolute, relative } from "node:path";
 import { MARKETPLACE_NAME, type Skill, type SourceType } from "@loadout/shared";
 import { AppError, invalid, notFound } from "../errors";
 import {
+  type Download,
   type GitClient,
+  archiveLinkName,
+  archiveSkillDir,
   extractArchive,
   isArchivePath,
   marketSourceToUrl,
@@ -10,6 +13,7 @@ import {
   parseGitSource,
   redactUrl,
   resolveSkillDir,
+  unpackArchive,
 } from "../install";
 import { isSkillDir, statOrNull, toPosix } from "../util/fs";
 
@@ -22,6 +26,8 @@ export const MISSING_SOURCE_REF = "Local skill is missing its original source pa
 export const SOURCE_PATH_GONE = "Original source path no longer exists";
 /** Revision label of a source that is a folder on this machine. */
 export const WORKSPACE_REVISION = "workspace";
+/** Revision label of an archive link: whatever the link serves right now. */
+export const LINK_REVISION = "latest";
 
 const REMOTE_TYPES: ReadonlySet<SourceType> = new Set(["git", "marketplace"]);
 const SOURCE_LABELS: Record<SourceType, string> = {
@@ -29,6 +35,7 @@ const SOURCE_LABELS: Record<SourceType, string> = {
   git: "Git",
   local: "Local",
   import: "Imported",
+  url: "Link",
 };
 
 export function isRemoteSource(skill: Pick<Skill, "sourceType">): boolean {
@@ -116,8 +123,48 @@ export interface OpenedSource {
 
 const noCleanup = async (): Promise<void> => undefined;
 
-/** Open the folder (or unpack the archive) a local or imported skill was installed from. */
-export async function openLocalSource(skill: Skill): Promise<OpenedSource> {
+/**
+ * Downloads made during one round of checks, by link, so skills taken from the same archive
+ * download it once. Pass a fresh map per round.
+ */
+export type DownloadCache = Map<string, Promise<Buffer>>;
+
+async function openLinkSource(
+  skill: Skill,
+  download: Download,
+  cache?: DownloadCache,
+): Promise<OpenedSource> {
+  const link = skill.sourceRef;
+  if (!link) throw invalid(MISSING_SOURCE_REF);
+  let pending = cache?.get(link);
+  if (!pending) {
+    pending = download(link, { subject: "The archive" });
+    cache?.set(link, pending);
+  }
+  const archive = await unpackArchive(await pending, archiveLinkName(link));
+  try {
+    return {
+      dir: archiveSkillDir(archive.root, skill.sourceSubpath),
+      revision: LINK_REVISION,
+      subpath: skill.sourceSubpath,
+      cleanup: archive.cleanup,
+    };
+  } catch (error) {
+    await archive.cleanup();
+    throw error;
+  }
+}
+
+/**
+ * Open what a skill without a repository was installed from: its folder, its archive file
+ * (the recorded skill inside it, for archives holding several), or its archive link.
+ */
+export async function openLocalSource(
+  skill: Skill,
+  download: Download,
+  cache?: DownloadCache,
+): Promise<OpenedSource> {
+  if (skill.sourceType === "url") return openLinkSource(skill, download, cache);
   const ref = skill.sourceRef;
   if (!ref) throw invalid(MISSING_SOURCE_REF);
   const stat = isAbsolute(ref) ? statOrNull(ref) : null;
@@ -126,11 +173,11 @@ export async function openLocalSource(skill: Skill): Promise<OpenedSource> {
     return { dir: ref, revision: WORKSPACE_REVISION, subpath: null, cleanup: noCleanup };
   }
   if (!isArchivePath(ref)) throw invalid(`The original source is not a folder or archive: ${ref}`);
-  const archive = await extractArchive(ref);
+  const archive = await extractArchive(ref, skill.sourceSubpath);
   return {
     dir: archive.skillDir,
     revision: WORKSPACE_REVISION,
-    subpath: null,
+    subpath: skill.sourceSubpath,
     cleanup: archive.cleanup,
   };
 }

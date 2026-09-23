@@ -1,5 +1,5 @@
 import type { Skill, SourceDiff, SourceDocument } from "@loadout/shared";
-import type { GitClient } from "../install";
+import type { Download, GitClient } from "../install";
 import { readSkillDocument } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import { diffTrees } from "./diff";
@@ -16,6 +16,7 @@ import {
 export interface SourcePreviewDeps {
   store: SkillStore;
   git: GitClient;
+  download: Download;
 }
 
 export interface SourcePreview {
@@ -25,10 +26,10 @@ export interface SourcePreview {
 
 /** Look at a skill's upstream without changing anything in the library. */
 export function createSourcePreview(deps: SourcePreviewDeps): SourcePreview {
-  const { store, git } = deps;
+  const { store, git, download } = deps;
 
   async function open(skill: Skill): Promise<OpenedSource> {
-    if (!isRemoteSource(skill)) return openLocalSource(skill);
+    if (!isRemoteSource(skill)) return openLocalSource(skill, download);
     const target = remoteTargetOf(skill);
     return openRemoteSource(git, target, await resolveRemoteRevision(git, target));
   }

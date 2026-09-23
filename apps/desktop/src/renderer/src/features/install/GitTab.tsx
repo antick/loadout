@@ -1,5 +1,12 @@
 import type { GitPreview, InstallSelection } from "@loadout/shared";
-import { ExternalLink, GitBranch, KeyRound, PackageSearch, TriangleAlert } from "lucide-react";
+import {
+  ExternalLink,
+  FileArchive,
+  GitBranch,
+  KeyRound,
+  PackageSearch,
+  TriangleAlert,
+} from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
@@ -7,7 +14,11 @@ import { ProgressPanel } from "@/components/ProgressPanel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { GIT_DOWNLOAD_URL, GIT_URL_EXAMPLES } from "@/features/install/constants";
+import {
+  ARCHIVE_LINK_PATTERN,
+  GIT_DOWNLOAD_URL,
+  GIT_URL_EXAMPLES,
+} from "@/features/install/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import { useInstallTask } from "@/features/install/use-install-task";
@@ -61,7 +72,10 @@ function GitAccessNote(): ReactNode {
   );
 }
 
-/** Install from a Git repository: clone, look at what is inside, pick and rename, import. */
+/**
+ * Install from a Git repository or an archive link: fetch it, look at what is inside, pick and
+ * rename, import.
+ */
 export function GitTab(): ReactNode {
   const { t } = useTranslation();
   const previewGit = usePreviewGit();
@@ -73,7 +87,8 @@ export function GitTab(): ReactNode {
   /** The URL last sent, which is also the key its progress is reported under. */
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<GitPreview | null>(null);
-  const [emptyRepo, setEmptyRepo] = useState<string | null>(null);
+  const [emptyRepo, setEmptyRepo] = useState<Pick<GitPreview, "kind" | "repoUrl"> | null>(null);
+  const isLink = ARCHIVE_LINK_PATTERN.test(url.trim());
 
   const mounted = useRef(true);
   useEffect(() => {
@@ -97,7 +112,7 @@ export function GitTab(): ReactNode {
     // one has nothing to choose: both checkouts are thrown away at once.
     if (!mounted.current || result.skills.length === 0) {
       cancelPreview.mutate(result.previewId);
-      if (mounted.current) setEmptyRepo(result.repoUrl);
+      if (mounted.current) setEmptyRepo({ kind: result.kind, repoUrl: result.repoUrl });
       return;
     }
     setPreview(result);
@@ -122,9 +137,7 @@ export function GitTab(): ReactNode {
           <FieldLabel htmlFor="install-git-url">{t("install.git.urlLabel")}</FieldLabel>
           <div className="flex items-center gap-2">
             <InputGroup className="h-9 flex-1">
-              <InputGroupAddon>
-                <GitBranch />
-              </InputGroupAddon>
+              <InputGroupAddon>{isLink ? <FileArchive /> : <GitBranch />}</InputGroupAddon>
               <InputGroupInput
                 id="install-git-url"
                 value={url}
@@ -173,12 +186,20 @@ export function GitTab(): ReactNode {
       {emptyRepo && !running ? (
         <EmptyState
           icon={PackageSearch}
-          title={t("install.git.emptyTitle")}
-          description={t("install.git.emptyDescription")}
+          title={t(
+            emptyRepo.kind === "archive"
+              ? "install.git.emptyArchiveTitle"
+              : "install.git.emptyTitle",
+          )}
+          description={t(
+            emptyRepo.kind === "archive"
+              ? "install.git.emptyArchiveDescription"
+              : "install.git.emptyDescription",
+          )}
           className="rounded-lg border border-dashed"
         >
           <span className="max-w-full truncate font-mono text-xs text-muted-foreground">
-            {emptyRepo}
+            {emptyRepo.repoUrl}
           </span>
         </EmptyState>
       ) : null}

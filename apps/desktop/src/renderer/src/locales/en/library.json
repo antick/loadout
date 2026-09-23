@@ -19,7 +19,8 @@
         "local": "Local",
         "import": "Imported",
         "git": "Git",
-        "marketplace": "Marketplace"
+        "marketplace": "Marketplace",
+        "url": "Link"
       },
       "statuses": {
         "all": "Any status",
@@ -88,6 +89,7 @@
       "phases": {
         "starting": "Starting…",
         "cloning": "Fetching the source…",
+        "downloading": "Downloading the source…",
         "scanning": "Looking for the skill…",
         "installing": "Replacing the library copy…",
         "deploying": "Refreshing installed copies…",
@@ -146,7 +148,11 @@
       "detach": "Keep local copy",
       "detachTitle": "Detach “{{name}}” from its source?",
       "detachDescription": "The library copy stays exactly as it is. The link to the original folder is forgotten, so this skill can no longer be re-imported or compared.",
-      "detached": "“{{name}}” no longer follows a source"
+      "detached": "“{{name}}” no longer follows a source",
+      "archiveSubpath": "Folder in the archive",
+      "link": "Link",
+      "downloadAgain": "Download again",
+      "openLink": "Open link"
     },
     "compare": {
       "files": "Changed files",

@@ -123,7 +123,10 @@ export interface InstallApi {
   /** A folder containing a skill, or a `.zip` / `.skill` archive. */
   fromPath(sourcePath: string, name?: string): Promise<Skill>;
   importFolder(folderPath: string): Promise<BatchImportResult>;
+  /** Fetch a Git repository, or download a `.zip` / `.skill` link, and list the skills in it. */
   previewGit(repoUrl: string): Promise<GitPreview>;
+  /** List the skills in a `.zip` / `.skill` file, for archives that hold more than one. */
+  previewArchive(archivePath: string): Promise<GitPreview>;
   confirmGit(previewId: string, items: InstallSelection[]): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
   fromMarket(source: string, skillId: string): Promise<Skill>;

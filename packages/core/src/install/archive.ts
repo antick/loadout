@@ -7,7 +7,7 @@ import { unzipSync } from "fflate";
 import { errorMessage, invalid, isAppError, notFound } from "../errors";
 import { isInside, isSkillDir, removePath, resolveInside } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
-import { findSkillDirs, preferNeutralCopies } from "./repo-scan";
+import { type FoundSkill, findSkillDirs, listRepoSkills, preferNeutralCopies } from "./repo-scan";
 
 /** An unpacked archive. Always call `cleanup`. */
 export interface ExtractedArchive {
@@ -148,6 +148,11 @@ export async function unpackArchiveFile(archivePath: string): Promise<UnpackedAr
 /** Every skill folder inside an unpacked archive, one per skill. */
 export function archiveSkillDirs(root: string): string[] {
   return preferNeutralCopies(root, findSkillDirs(root, { maxDepth: SKILL_SEARCH_DEPTH }));
+}
+
+/** The skills of an unpacked archive, described for a preview. Same set as {@link archiveSkillDirs}. */
+export function listArchiveSkills(root: string): FoundSkill[] {
+  return listRepoSkills(root, { maxDepth: SKILL_SEARCH_DEPTH });
 }
 
 /**

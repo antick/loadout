@@ -30,8 +30,12 @@ export interface CustomAgentInput {
 
 // ── Skills ──
 
-/** Where a library skill came from. */
-export type SourceType = "local" | "import" | "git" | "marketplace";
+/**
+ * Where a library skill came from, in the order filters list them. `url` is a `.zip` / `.skill`
+ * archive linked on the web.
+ */
+export const SOURCE_TYPES = ["local", "import", "git", "marketplace", "url"] as const;
+export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export type UpdateStatus =
   | "unknown"
@@ -61,10 +65,11 @@ export interface Skill {
   dirName: string;
   description: string | null;
   sourceType: SourceType;
-  /** Folder path, archive path, git URL or marketplace id the skill was installed from. */
+  /** Folder path, archive path, git URL, archive link or marketplace id it was installed from. */
   sourceRef: string | null;
   /** Normalised clone URL for git sources. */
   sourceUrl: string | null;
+  /** Folder of the skill inside its repository or archive; null when it is the root. */
   sourceSubpath: string | null;
   sourceBranch: string | null;
   /** Revision installed in the library. */
@@ -286,6 +291,9 @@ export interface RepoSkillPreview {
 export interface GitPreview {
   /** Handle for confirm / cancel. */
   previewId: string;
+  /** A Git repository, or an archive (a link on the web or a file on this computer). */
+  kind: "repository" | "archive";
+  /** Clone URL of a repository; the link or file path of an archive. */
   repoUrl: string;
   branch: string | null;
   revision: string | null;
@@ -297,7 +305,13 @@ export interface InstallSelection {
   name: string;
 }
 
-export type InstallPhase = "cloning" | "scanning" | "installing" | "deploying" | "done";
+export type InstallPhase =
+  | "cloning"
+  | "downloading"
+  | "scanning"
+  | "installing"
+  | "deploying"
+  | "done";
 
 export interface InstallProgress {
   /** Caller-chosen key, also used to cancel. */

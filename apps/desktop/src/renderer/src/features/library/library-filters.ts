@@ -1,10 +1,16 @@
-import { hasSkillErrors, type Skill, type SourceType, type UpdateStatus } from "@loadout/shared";
+import {
+  SOURCE_TYPES,
+  hasSkillErrors,
+  type Skill,
+  type SourceType,
+  type UpdateStatus,
+} from "@loadout/shared";
 import { matchesTagFilter } from "@/lib/tag-filter";
 import { matchesQuery } from "@/lib/utils";
 
 export const FILTER_ALL = "all";
 
-export const SOURCE_FILTERS = [FILTER_ALL, "local", "import", "git", "marketplace"] as const;
+export const SOURCE_FILTERS = [FILTER_ALL, ...SOURCE_TYPES] as const;
 export type SourceFilter = typeof FILTER_ALL | SourceType;
 
 export const STATUS_FILTERS = [

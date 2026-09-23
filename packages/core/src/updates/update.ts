@@ -2,7 +2,13 @@ import type { BatchUpdateResult, PendingRemoval, Skill, UpdateResult } from "@lo
 import type { CoreContext } from "../context";
 import type { RedeployReport } from "../deploy";
 import { cancelled, errorMessage, invalid, isAppError, notFound, unsupported } from "../errors";
-import type { CancelRegistry, GitClient, InstallIntoLibrary, InstallRecord } from "../install";
+import type {
+  CancelRegistry,
+  Download,
+  GitClient,
+  InstallIntoLibrary,
+  InstallRecord,
+} from "../install";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import {
   canonicalPath,
@@ -35,6 +41,7 @@ import {
 export interface UpdaterDeps {
   store: SkillStore;
   git: GitClient;
+  download: Download;
   cancels: CancelRegistry;
   installIntoLibrary: InstallIntoLibrary;
   refreshCopies(skill: Skill): Promise<RedeployReport>;
@@ -56,7 +63,8 @@ const UPDATE_CANCEL_PREFIX = "update:";
 /** Token domain of a re-import: there is no revision, and the path is already on the row. */
 const REIMPORT_DOMAIN = "reimport";
 const CANNOT_REFRESH = "Source type cannot be refreshed";
-const NOT_LOCAL = "Only local and imported skills can do this. Use update for this skill instead.";
+const NOT_LOCAL =
+  "Only local, imported and linked skills can do this. Use update for this skill instead.";
 const SOURCE_MOVED = "This skill's source changed while it was being updated. Try again.";
 const INSIDE_LIBRARY = "That folder is already inside the skill library";
 const NO_CHANGES_DETAIL = "No file changes";
@@ -100,7 +108,7 @@ function patchFromRecord(record: InstallRecord): SkillPatch {
 }
 
 export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
-  const { store, git, cancels } = deps;
+  const { store, git, download, cancels } = deps;
   /** Failures the library installer already wrote to the history. */
   const recordedFailures = new WeakSet<object>();
 
@@ -295,7 +303,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     const skill = store.get(skillId);
     requireLocal(skill);
     try {
-      const source = await openLocalSource(skill);
+      const source = await openLocalSource(skill, download);
       try {
         return await replace({
           skillId,
@@ -310,7 +318,10 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           record: (fresh) => ({
             sourceType: fresh.sourceType,
             sourceRef: fresh.sourceRef,
-            updateStatus: "local_only",
+            sourceUrl: fresh.sourceUrl,
+            // Which of several skills in an archive this one is.
+            sourceSubpath: fresh.sourceSubpath,
+            updateStatus: fresh.sourceType === "url" ? "up_to_date" : "local_only",
           }),
           declined: () => null,
         });

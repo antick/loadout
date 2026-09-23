@@ -92,8 +92,8 @@ export function getInstallTasks(): Tasks {
 export function installPhaseText(progress: InstallProgress | null): string {
   if (!progress) return i18n.t("install.phase.starting");
   const { phase, current, total, name } = progress;
-  if (phase === "cloning" && current !== undefined && total) {
-    return i18n.t("install.phase.cloningPercent", {
+  if ((phase === "cloning" || phase === "downloading") && current !== undefined && total) {
+    return i18n.t(`install.phase.${phase}Percent`, {
       percent: Math.round((current / total) * PERCENT),
     });
   }

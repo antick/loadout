@@ -10,6 +10,7 @@ import type {
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { ARCHIVE_LINK_PATTERN } from "@/features/install/constants";
 import type { InstallTaskSuccess } from "@/features/install/install-tasks";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { api } from "@/lib/api";
@@ -101,7 +102,10 @@ export function useImportFolder(): (folder: string) => Promise<BatchImportResult
   );
 }
 
-/** Clone a repository and list its skills. Cancellable. Silent on success: the dialog opens. */
+/**
+ * Fetch a repository, or download an archive link, and list its skills. Cancellable. Silent on
+ * success: the dialog opens.
+ */
 export function usePreviewGit(): (repoUrl: string) => Promise<GitPreview | null> {
   const { t } = useTranslation();
   const { run } = useInstallTask();
@@ -109,12 +113,27 @@ export function usePreviewGit(): (repoUrl: string) => Promise<GitPreview | null>
     (repoUrl) =>
       run({
         key: repoUrl,
-        title: t("install.toast.cloning"),
+        title: t(
+          ARCHIVE_LINK_PATTERN.test(repoUrl.trim())
+            ? "install.toast.downloading"
+            : "install.toast.cloning",
+        ),
         run: () => api.install.previewGit(repoUrl),
         cancel: () => api.install.cancel(repoUrl),
       }),
     [run, t],
   );
+}
+
+/**
+ * List the skills of an archive on this computer. Quick and local, so no progress toast: the
+ * caller shows a busy state, and a failure is toasted here.
+ */
+export function usePreviewArchive(): UseMutationResult<GitPreview, unknown, string> {
+  return useMutation({
+    mutationFn: (archivePath: string) => api.install.previewArchive(archivePath),
+    onError: (error) => toastError(error, "install.errors.readArchive"),
+  });
 }
 
 /** Install the ticked skills of a preview under the names the user gave them. */

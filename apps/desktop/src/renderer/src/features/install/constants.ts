@@ -32,7 +32,11 @@ export const GIT_URL_EXAMPLES = [
   "https://github.com/owner/repo",
   "https://github.com/owner/repo/tree/main/skills/my-skill",
   "git@github.com:owner/repo.git",
+  "https://example.com/my-skill.zip",
 ] as const;
+
+/** A link to a `.zip` / `.skill` file; the backend decides for real, this only picks wording. */
+export const ARCHIVE_LINK_PATTERN = /^https?:\/\/[^?#\s]+\.(zip|skill)(?:[?#]\S*)?$/i;
 
 /** Where to get Git, offered when it is missing. */
 export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";

@@ -11,7 +11,7 @@ import { createUpdater } from "./update";
 export interface UpdatesServiceDeps {
   store: SkillStore;
   /** Same git client, cancel registry and way into the library the installer uses. */
-  install: Pick<InstallService, "git" | "cancels" | "installIntoLibrary">;
+  install: Pick<InstallService, "git" | "download" | "cancels" | "installIntoLibrary">;
   deploy: Pick<DeployService, "refreshCopies">;
 }
 
@@ -23,15 +23,16 @@ export interface UpdatesService {
 
 export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps): UpdatesService {
   const { store, install, deploy } = deps;
-  const checker = createChecker(ctx, { store, git: install.git });
+  const checker = createChecker(ctx, { store, git: install.git, download: install.download });
   const updater = createUpdater(ctx, {
     store,
     git: install.git,
+    download: install.download,
     cancels: install.cancels,
     installIntoLibrary: install.installIntoLibrary,
     refreshCopies: deploy.refreshCopies,
   });
-  const preview = createSourcePreview({ store, git: install.git });
+  const preview = createSourcePreview({ store, git: install.git, download: install.download });
   const auto = createAutoUpdater(ctx, {
     skills: () => store.list(),
     check: checker.check,

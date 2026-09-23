@@ -89,7 +89,7 @@ describe("git preview and confirm", () => {
     // The session is spent: the same id can never install twice.
     await expect(install.api.confirmGit(preview.previewId, [])).rejects.toMatchObject({
       code: "INVALID_INPUT",
-      message: "Clone session expired, please try again",
+      message: "Preview expired, please try again",
     });
 
     const again = await install.api.previewGit(remote);
@@ -119,7 +119,7 @@ describe("git preview and confirm", () => {
     const preview = await shortLived.api.previewGit(remote);
     await new Promise((resolve) => setTimeout(resolve, 10));
     await expect(shortLived.api.confirmGit(preview.previewId, [])).rejects.toMatchObject({
-      message: "Clone session expired, please try again",
+      message: "Preview expired, please try again",
     });
     expect(leftoverCheckouts(tmp)).toEqual([]);
     await expect(shortLived.api.cancelPreview(preview.previewId)).resolves.toBeUndefined();

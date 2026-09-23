@@ -6,3 +6,4 @@ export { LOG_FILE_NAME, type Logger, createFileLogger, silentLogger } from "./lo
 export { type LibraryPaths, type ResolveOptions, resolveLibrary } from "./paths";
 export { type RemovalPlan, type StorageService } from "./storage";
 export type { ResolvedAgent } from "./agents/registry";
+export { isRemoteSource } from "./updates";

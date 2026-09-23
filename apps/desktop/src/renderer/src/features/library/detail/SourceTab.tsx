@@ -1,5 +1,14 @@
 import { formatDateTime, formatRelative, type Skill } from "@loadout/shared";
-import { ArrowUpCircle, FolderSearch, FolderSync, RefreshCw, Unlink, X } from "lucide-react";
+import {
+  ArrowUpCircle,
+  Download,
+  ExternalLink,
+  FolderSearch,
+  FolderSync,
+  RefreshCw,
+  Unlink,
+  X,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -9,6 +18,7 @@ import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { SkillRefresh } from "@/features/library/detail/use-skill-refresh";
+import { useOpenExternal } from "@/hooks/mutations/app";
 import { useCheckSkillUpdate, useDetachSkill, usePickFolder } from "@/hooks/mutations/library";
 
 /** Characters of a revision shown; the full value stays in the tooltip. */
@@ -46,8 +56,11 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
   const check = useCheckSkillUpdate();
   const detach = useDetachSkill();
   const pickFolder = usePickFolder();
+  const openExternal = useOpenExternal();
 
   const remote = skill.sourceType === "git" || skill.sourceType === "marketplace";
+  /** An archive linked on the web: checked and refreshed by downloading it again. */
+  const link = skill.sourceType === "url";
   const hasSource = Boolean(skill.sourceRef ?? skill.sourceUrl);
   const busy = refresh.running || check.isPending || detach.isPending;
   const none = <span className="text-muted-foreground">{t("library.source.none")}</span>;
@@ -111,19 +124,38 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
             </>
           ) : (
             <>
+              {link ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => check.mutate(skill.id)}
+                >
+                  {check.isPending ? <Spinner /> : <RefreshCw />}
+                  {t("library.source.checkNow")}
+                </Button>
+              ) : null}
               <Button
-                variant="outline"
+                variant={link && skill.updateStatus === "update_available" ? "default" : "outline"}
                 size="sm"
                 disabled={busy || !hasSource}
                 onClick={() => refresh.start({ kind: "reimport" })}
               >
-                {refresh.runningKind === "reimport" ? <Spinner /> : <FolderSync />}
-                {t("library.source.reimport")}
+                {refresh.runningKind === "reimport" ? (
+                  <Spinner />
+                ) : link ? (
+                  <Download />
+                ) : (
+                  <FolderSync />
+                )}
+                {t(link ? "library.source.downloadAgain" : "library.source.reimport")}
               </Button>
-              <Button variant="outline" size="sm" disabled={busy} onClick={() => void relink()}>
-                {refresh.runningKind === "relink" ? <Spinner /> : <FolderSearch />}
-                {t("library.source.relink")}
-              </Button>
+              {link ? null : (
+                <Button variant="outline" size="sm" disabled={busy} onClick={() => void relink()}>
+                  {refresh.runningKind === "relink" ? <Spinner /> : <FolderSearch />}
+                  {t("library.source.relink")}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -139,9 +171,25 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
       >
         <dl className="grid grid-cols-[max-content_1fr] rounded-lg border bg-card px-4 py-1 text-sm [&>div>*]:border-b [&>div:last-child>*]:border-b-0">
           <Row label={t("library.source.type")}>{t(`source.${skill.sourceType}`)}</Row>
-          <Row label={t("library.source.ref")}>
+          <Row label={t(link ? "library.source.link" : "library.source.ref")}>
             {skill.sourceRef ? (
-              ABSOLUTE_PATH_PATTERN.test(skill.sourceRef) ? (
+              link ? (
+                <span className="flex min-w-0 items-start gap-1.5">
+                  <span data-selectable className="min-w-0 font-mono text-xs break-all">
+                    {skill.sourceRef}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="-my-0.5 shrink-0"
+                    aria-label={t("library.source.openLink")}
+                    title={t("library.source.openLink")}
+                    onClick={() => openExternal.mutate(skill.sourceRef ?? "")}
+                  >
+                    <ExternalLink />
+                  </Button>
+                </span>
+              ) : ABSOLUTE_PATH_PATTERN.test(skill.sourceRef) ? (
                 <PathText path={skill.sourceRef} />
               ) : (
                 <span data-selectable className="font-mono text-xs break-all">
@@ -152,6 +200,13 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
               none
             )}
           </Row>
+          {!remote && skill.sourceSubpath ? (
+            <Row label={t("library.source.archiveSubpath")}>
+              <span data-selectable className="font-mono text-xs break-all">
+                {skill.sourceSubpath}
+              </span>
+            </Row>
+          ) : null}
           {remote ? (
             <>
               <Row label={t("library.source.url")}>
