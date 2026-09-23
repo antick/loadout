@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
 import { APP_SLUG, formatBytes } from "@loadout/shared";
 import { unzipSync } from "fflate";
-import { errorMessage, invalid, isAppError } from "../errors";
-import { isInside, removePath } from "../util/fs";
+import { errorMessage, invalid, isAppError, notFound } from "../errors";
+import { isInside, isSkillDir, removePath, resolveInside } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { findSkillDirs, preferNeutralCopies } from "./repo-scan";
 
@@ -110,29 +110,73 @@ function unpack(data: Buffer, root: string): void {
   }
 }
 
-/** Unpack a `.zip` / `.skill` file into a temp folder and find the one skill inside it. */
-export async function extractArchive(archivePath: string): Promise<ExtractedArchive> {
+/** An archive unpacked into a temp folder. Always call `cleanup`. */
+export interface UnpackedArchive {
+  /** Folder holding the archive's entries, named after the archive. */
+  root: string;
+  cleanup(): Promise<void>;
+}
+
+/**
+ * Unpack archive bytes into a fresh temp folder. `name` (a file name or URL path segment, with or
+ * without extension) names the folder, so a skill without a marker or frontmatter name is called
+ * after what the user picked rather than after a random temp folder.
+ */
+export async function unpackArchive(data: Buffer, name: string): Promise<UnpackedArchive> {
+  const parent = await mkdtemp(join(tmpdir(), EXTRACT_DIR_PREFIX));
+  const cleanup = (): Promise<void> => removePath(parent).catch(() => undefined);
+  const stem = basename(name, extname(name));
+  const root = join(parent, trySanitizeSkillName(stem) ?? FALLBACK_ARCHIVE_NAME);
+  try {
+    unpack(data, root);
+    return { root, cleanup };
+  } catch (error) {
+    await cleanup();
+    if (isAppError(error)) throw error;
+    throw invalid(`Could not read the archive: ${errorMessage(error)}`);
+  }
+}
+
+/** Read a `.zip` / `.skill` file from disk and unpack it. */
+export async function unpackArchiveFile(archivePath: string): Promise<UnpackedArchive> {
   if (!isArchivePath(archivePath)) {
     throw invalid(`Unsupported archive format: ${extname(archivePath) || basename(archivePath)}`);
   }
-  const parent = await mkdtemp(join(tmpdir(), EXTRACT_DIR_PREFIX));
-  const cleanup = (): Promise<void> => removePath(parent).catch(() => undefined);
-  // The unpack folder carries the archive's name, so a skill without a marker or frontmatter name
-  // is called after the file the user picked rather than after a random temp folder.
-  const stem = basename(archivePath, extname(archivePath));
-  const root = join(parent, trySanitizeSkillName(stem) ?? FALLBACK_ARCHIVE_NAME);
+  return unpackArchive(await readFile(archivePath), archivePath);
+}
+
+/** Every skill folder inside an unpacked archive, one per skill. */
+export function archiveSkillDirs(root: string): string[] {
+  return preferNeutralCopies(root, findSkillDirs(root, { maxDepth: SKILL_SEARCH_DEPTH }));
+}
+
+/**
+ * The skill folder of an unpacked archive: the folder at `subpath` when one is recorded (archives
+ * that hold several skills), else the only skill, else the root when it holds no marker file.
+ */
+export function archiveSkillDir(root: string, subpath?: string | null): string {
+  if (subpath) {
+    const dir = resolveInside(root, subpath);
+    if (!isSkillDir(dir)) throw notFound(`The archive no longer holds a skill at ${subpath}`);
+    return dir;
+  }
+  const skills = archiveSkillDirs(root);
+  if (skills.length > 1) {
+    throw invalid("The archive holds several skills. Choose which ones to install.");
+  }
+  return skills[0] ?? root;
+}
+
+/** Unpack a `.zip` / `.skill` file into a temp folder and find the skill inside it. */
+export async function extractArchive(
+  archivePath: string,
+  subpath?: string | null,
+): Promise<ExtractedArchive> {
+  const archive = await unpackArchiveFile(archivePath);
   try {
-    try {
-      unpack(await readFile(archivePath), root);
-    } catch (error) {
-      if (isAppError(error)) throw error;
-      throw invalid(`Could not read the archive: ${errorMessage(error)}`);
-    }
-    const skills = preferNeutralCopies(root, findSkillDirs(root, { maxDepth: SKILL_SEARCH_DEPTH }));
-    if (skills.length > 1) throw invalid("Multiple skill directories found in archive");
-    return { skillDir: skills[0] ?? root, cleanup };
+    return { skillDir: archiveSkillDir(archive.root, subpath), cleanup: archive.cleanup };
   } catch (error) {
-    await cleanup();
+    await archive.cleanup();
     throw error;
   }
 }

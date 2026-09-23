@@ -1,5 +1,5 @@
 import type { GitPreview, InstallSelection } from "@loadout/shared";
-import { GitBranch, KeyRound, PackageSearch } from "lucide-react";
+import { ExternalLink, GitBranch, KeyRound, PackageSearch, TriangleAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
@@ -7,11 +7,59 @@ import { ProgressPanel } from "@/components/ProgressPanel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { GIT_URL_EXAMPLES } from "@/features/install/constants";
+import { GIT_DOWNLOAD_URL, GIT_URL_EXAMPLES } from "@/features/install/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import { useInstallTask } from "@/features/install/use-install-task";
+import { useOpenExternal } from "@/hooks/mutations/app";
 import { useCancelPreview, useConfirmGit, usePreviewGit } from "@/hooks/mutations/install";
+import { useDiagnostics } from "@/hooks/queries/app";
+
+/**
+ * What works without Git, or how private repositories work with it. Shown once the Git check has
+ * answered, so the page never flashes the wrong one.
+ */
+function GitAccessNote(): ReactNode {
+  const { t } = useTranslation();
+  const diagnostics = useDiagnostics();
+  const openExternal = useOpenExternal();
+  if (!diagnostics.data) return null;
+
+  if (diagnostics.data.gitVersion === null) {
+    return (
+      <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/5 p-3">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
+        <div className="flex flex-1 flex-col gap-0.5">
+          <p className="text-sm font-medium">{t("install.git.noGitTitle")}</p>
+          <p className="text-xs leading-5 text-muted-foreground">
+            {t("install.git.noGitDescription")}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => openExternal.mutate(GIT_DOWNLOAD_URL)}
+        >
+          <ExternalLink />
+          {t("install.git.getGit")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
+      <KeyRound className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <div className="flex flex-col gap-0.5">
+        <p className="text-sm font-medium">{t("install.git.privateTitle")}</p>
+        <p className="text-xs leading-5 text-muted-foreground">
+          {t("install.git.privateDescription")}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 /** Install from a Git repository: clone, look at what is inside, pick and rename, import. */
 export function GitTab(): ReactNode {
@@ -135,15 +183,7 @@ export function GitTab(): ReactNode {
         </EmptyState>
       ) : null}
 
-      <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
-        <KeyRound className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-        <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium">{t("install.git.privateTitle")}</p>
-          <p className="text-xs leading-5 text-muted-foreground">
-            {t("install.git.privateDescription")}
-          </p>
-        </div>
-      </div>
+      <GitAccessNote />
 
       <GitPreviewDialog
         preview={preview}

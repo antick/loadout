@@ -73,7 +73,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     removeDeployments: deploy.removeAllForSkill,
     history,
   });
-  const install = createInstallService(ctx, { store, registry });
+  const install = createInstallService(ctx, { store, registry, fetchImpl: options.fetchImpl });
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
   const updates = createUpdatesService(ctx, { store, install, deploy });
   const presets = createPresetsService(ctx, { store, registry, deploy });

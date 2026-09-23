@@ -34,6 +34,9 @@ export const GIT_URL_EXAMPLES = [
   "git@github.com:owner/repo.git",
 ] as const;
 
+/** Where to get Git, offered when it is missing. */
+export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
+
 /** Archive types the installer accepts, for the option card's hint. */
 export const ARCHIVE_EXTENSIONS = [".zip", ".skill"] as const;
 

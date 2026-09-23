@@ -19,6 +19,15 @@ import {
 } from "../util/fs";
 import { sha256Hex } from "../util/hash";
 import { trySanitizeSkillName } from "../util/names";
+import {
+  DEFAULT_REF,
+  HEADS_PREFIX,
+  TAGS_PREFIX,
+  parseRefLines,
+  pickRevision,
+  refCandidates,
+  refLists,
+} from "./git-refs";
 import { type RemoteRefs, normalizeRepoUrl, redactUrl, repoNameFromUrl } from "./git-source";
 
 export interface CheckoutOptions {
@@ -29,8 +38,8 @@ export interface CheckoutOptions {
   /** Folder the caller cares about. Accepted for narrow clones later; today the clone is whole. */
   subpath?: string | null;
   signal?: AbortSignal;
-  /** Raw progress lines from git. */
-  onProgress?: (line: string) => void;
+  /** Download progress, 0–100, reported once per whole percent. */
+  onPercent?: (percent: number) => void;
 }
 
 /** A throwaway copy of a repository, without its `.git`. Always call `cleanup`. */
@@ -60,6 +69,8 @@ export interface GitClient {
 export interface GitClientOptions {
   /** Clone cache budget (tests shrink it). */
   cacheLimitBytes?: number;
+  /** Tests only: the git executable to run, e.g. one that does not exist. */
+  binary?: string;
 }
 
 const GIT = "git";
@@ -69,10 +80,6 @@ const REPOS_DIR_NAME = "repos";
 const SLOT_HEX_LENGTH = 16;
 const PARTIAL_MARK = ".partial-";
 const FALLBACK_REPO_NAME = "repository";
-const DEFAULT_REF = "HEAD";
-const PEELED_SUFFIX = "^{}";
-const HEADS_PREFIX = "refs/heads/";
-const TAGS_PREFIX = "refs/tags/";
 /** Prefix of every temporary working copy we hand out. */
 export const CLONE_DIR_PREFIX = `${APP_SLUG}-clone-`;
 
@@ -99,6 +106,22 @@ const KEEP_CACHE_CODES: ReadonlySet<ErrorCode> = new Set([
   "NETWORK",
   "GIT_MISSING",
 ]);
+const RECEIVING_PERCENT = /Receiving objects:\s+(\d+)%/;
+
+/** Turn git's progress lines into whole percentages, each reported once. */
+function percentReader(
+  onPercent?: (percent: number) => void,
+): ((line: string) => void) | undefined {
+  if (!onPercent) return undefined;
+  let last = -1;
+  return (line) => {
+    const percent = Number(RECEIVING_PERCENT.exec(line)?.[1] ?? Number.NaN);
+    if (Number.isNaN(percent) || percent === last) return;
+    last = percent;
+    onPercent(percent);
+  };
+}
+
 /** SSH chatter that would otherwise hide the real error line. */
 const NOISE = /^warning: permanently added/i;
 
@@ -131,19 +154,11 @@ function isHopeless(error: unknown): boolean {
   return error instanceof AppError && KEEP_CACHE_CODES.has(error.code);
 }
 
-function parseRefLines(stdout: string): Map<string, string> {
-  const refs = new Map<string, string>();
-  for (const line of stdout.split("\n")) {
-    const [sha, ref] = line.trim().split(/\s+/);
-    if (sha && ref) refs.set(ref, sha);
-  }
-  return refs;
-}
-
 /** System git with a shared clone cache. All network calls honour the proxy setting. */
 export function createGitClient(ctx: CoreContext, config: GitClientOptions = {}): GitClient {
   const reposDir = join(ctx.paths.cacheDir, REPOS_DIR_NAME);
   const cacheLimit = config.cacheLimitBytes ?? CACHE_LIMIT_BYTES;
+  const binary = config.binary ?? GIT;
   /** Tail of the work queued per slot. A slot present here is in use. */
   const queues = new Map<string, Promise<unknown>>();
 
@@ -155,7 +170,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     // Config flags only count when they come before the subcommand.
     const flags = configFlags([...BYTE_EXACT_CONFIG, ...proxyConfig(proxy)]);
     try {
-      return await exec(GIT, [...flags, ...args], {
+      return await exec(binary, [...flags, ...args], {
         cwd: call.cwd,
         // Never block on a credential prompt; keep messages in English so they can be classified.
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0", LC_ALL: "C" },
@@ -242,7 +257,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
       network: true,
       cwd: slot,
       signal: options.signal,
-      onLine: options.onProgress,
+      onLine: percentReader(options.onPercent),
     });
   }
 
@@ -278,7 +293,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
       await runOk(
         `Failed to clone ${redactUrl(url)}`,
         ["clone", "--depth", "1", "--progress", ...branch, "--", url, partial],
-        { network: true, signal: options.signal, onLine: options.onProgress },
+        { network: true, signal: options.signal, onLine: percentReader(options.onPercent) },
       );
       renameSync(partial, slot);
     } catch (error) {
@@ -329,26 +344,13 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     },
 
     lsRemote: async (url, remote = {}) => {
-      const branch = remote.branch?.trim();
-      // Never "the first line": a branch beats a tag, and a peeled tag beats the tag object.
-      const candidates = branch
-        ? [
-            `${HEADS_PREFIX}${branch}`,
-            `${TAGS_PREFIX}${branch}${PEELED_SUFFIX}`,
-            `${TAGS_PREFIX}${branch}`,
-          ]
-        : [DEFAULT_REF];
+      const candidates = refCandidates(remote.branch);
       const result = await runOk(
         `Failed to reach ${redactUrl(url)}`,
         ["ls-remote", "--", url, ...candidates],
         { network: true, signal: remote.signal },
       );
-      const refs = parseRefLines(result.stdout);
-      for (const candidate of candidates) {
-        const sha = refs.get(candidate);
-        if (sha) return sha;
-      }
-      return null;
+      return pickRevision(parseRefLines(result.stdout), candidates);
     },
 
     listRefs: async (url, remote = {}) => {
@@ -357,12 +359,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
         ["ls-remote", "--heads", "--tags", "--", url],
         { network: true, signal: remote.signal },
       );
-      const names = [...parseRefLines(result.stdout).keys()].filter(
-        (ref) => !ref.endsWith(PEELED_SUFFIX),
-      );
-      const under = (prefix: string): string[] =>
-        names.filter((ref) => ref.startsWith(prefix)).map((ref) => ref.slice(prefix.length));
-      return { branches: under(HEADS_PREFIX), tags: under(TAGS_PREFIX) };
+      return refLists(parseRefLines(result.stdout));
     },
 
     checkout: async (url, checkoutOptions = {}) => {

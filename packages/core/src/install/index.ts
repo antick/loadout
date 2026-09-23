@@ -37,7 +37,20 @@ export {
   resolveSkillDir,
 } from "./repo-scan";
 export {
+  type Download,
+  type DownloadOptions,
+  MAX_DOWNLOAD_BYTES,
+  createDownload,
+} from "./download";
+export { GIT_NEEDED, withHttpFallback } from "./git-fallback";
+export { type HttpGit, createHttpGit, parseAdvertisement } from "./http-git";
+export {
   type ExtractedArchive,
+  type UnpackedArchive,
+  archiveSkillDir,
+  archiveSkillDirs,
+  unpackArchive,
+  unpackArchiveFile,
   ARCHIVE_EXTENSIONS,
   extractArchive,
   isArchivePath,

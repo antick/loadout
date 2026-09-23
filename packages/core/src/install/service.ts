@@ -15,8 +15,11 @@ import {
 } from "../util/fs";
 import { extractArchive } from "./archive";
 import { CancelRegistry } from "./cancel";
+import { type Download, createDownload } from "./download";
 import { type GitClient, type GitClientOptions, createGitClient } from "./git-client";
+import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
+import { createHttpGit } from "./http-git";
 import { type InstallIntoLibrary, type InstallRecord, installIntoLibrary } from "./library";
 
 export interface InstallServiceDeps {
@@ -26,12 +29,19 @@ export interface InstallServiceDeps {
   allowLocalGitSources?: boolean;
   previewTtlMs?: number;
   git?: GitClientOptions;
+  /**
+   * HTTP client for downloads (Git-less repositories, archive links). The built-in `fetch`
+   * ignores the proxy setting, so the desktop app injects a proxy-aware one; tests a fake.
+   */
+  fetchImpl?: typeof fetch;
 }
 
 export interface InstallService {
   api: InstallApi;
   /** Shared by the updates service, which clones and checks the same repositories. */
   git: GitClient;
+  /** Shared by the updates service, which downloads archive links again to check them. */
+  download: Download;
   /** Shared so an update can be cancelled through `install.cancel("update:<skillId>")`. */
   cancels: CancelRegistry;
   /** The single way into the library, bound to this context. */
@@ -44,7 +54,9 @@ const LOCAL_RECORD = { sourceType: "local", updateStatus: "local_only" } as cons
 
 export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps): InstallService {
   const { store, registry } = deps;
-  const git = createGitClient(ctx, deps.git);
+  const download = createDownload(deps.fetchImpl);
+  // System Git when it is installed; public GitHub and GitLab repositories work without it.
+  const git = withHttpFallback(createGitClient(ctx, deps.git), createHttpGit(download));
   const cancels = new CancelRegistry();
   const install: InstallIntoLibrary = (request) => installIntoLibrary(ctx, store, request);
   const gitInstaller = createGitInstaller(ctx, {
@@ -120,5 +132,12 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     importAllDiscovered: scan.importAllDiscovered,
   };
 
-  return { api, git, cancels, installIntoLibrary: install, dispose: gitInstaller.dispose };
+  return {
+    api,
+    git,
+    download,
+    cancels,
+    installIntoLibrary: install,
+    dispose: gitInstaller.dispose,
+  };
 }

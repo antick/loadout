@@ -185,7 +185,7 @@ describe("install from an archive", () => {
     });
     await expect(install.api.fromPath(zip)).rejects.toMatchObject({
       code: "INVALID_INPUT",
-      message: "Multiple skill directories found in archive",
+      message: expect.stringContaining("several skills"),
     });
     expect(readdirSync(join(world.root, "tmp"))).toEqual([]);
   });

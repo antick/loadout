@@ -61,6 +61,9 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   subfolder.
 - Git preview: the repository is cloned first, then you tick the skills you want and can rename
   each before it lands in the library.
+- No Git installed: public GitHub and GitLab repositories still install, update and preview. The
+  app reads the branches over HTTPS and downloads the host's archive of the exact commit. Private
+  repositories and other hosts need Git, and the Git tab says so.
 - Marketplace (skills.sh): hot, trending and all-time boards, keyword search, contributor filter,
   one-click install, open the skill on the web.
 - Scan this machine: find skills already sitting in agent folders and import one or all of them.

@@ -57,7 +57,6 @@ interface PreviewSession {
 
 const PREVIEW_TTL_MS = 30 * 60_000;
 const SESSION_EXPIRED = "Clone session expired, please try again";
-const RECEIVING_PERCENT = /Receiving objects:\s+(\d+)%/;
 const PERCENT_TOTAL = 100;
 
 /** Folder of a skill relative to the repository root; null when the skill is the root. */
@@ -74,15 +73,9 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     ctx.emit("install:progress", { key, phase, ...extra });
   }
 
-  /** Forward git's download percentage, once per whole percent. */
-  function cloneProgress(key: string): (line: string) => void {
-    let last = -1;
-    return (line) => {
-      const percent = Number(RECEIVING_PERCENT.exec(line)?.[1] ?? Number.NaN);
-      if (Number.isNaN(percent) || percent === last) return;
-      last = percent;
-      progress(key, "cloning", { current: percent, total: PERCENT_TOTAL });
-    };
+  /** Forward the download percentage of a checkout. */
+  function cloneProgress(key: string): (percent: number) => void {
+    return (percent) => progress(key, "cloning", { current: percent, total: PERCENT_TOTAL });
   }
 
   /** Previews nobody confirmed or cancelled would otherwise keep their temp folder forever. */
@@ -118,7 +111,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
           branch: source.branch,
           subpath: source.subpath,
           signal: handle.signal,
-          onProgress: cloneProgress(repoUrl),
+          onPercent: cloneProgress(repoUrl),
         });
         progress(repoUrl, "scanning");
         const scanRoot = resolveSkillDir(checkout.dir, source.subpath);
@@ -217,7 +210,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         progress(key, "cloning");
         checkout = await git.checkout(cloneUrl, {
           signal: handle.signal,
-          onProgress: cloneProgress(key),
+          onPercent: cloneProgress(key),
         });
         progress(key, "installing", { name: id });
         const dir = resolveSkillDir(checkout.dir, undefined, id);

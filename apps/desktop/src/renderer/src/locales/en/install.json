@@ -21,8 +21,8 @@
     },
     "phase": {
       "starting": "Getting ready…",
-      "cloning": "Cloning the repository…",
-      "cloningPercent": "Cloning the repository… {{percent}}%",
+      "cloning": "Fetching the repository…",
+      "cloningPercent": "Fetching the repository… {{percent}}%",
       "scanning": "Looking for skills…",
       "installing": "Copying into the library…",
       "installingNamed": "Copying {{name}} into the library…",
@@ -136,7 +136,10 @@
       "emptyTitle": "No skills in this repository",
       "emptyDescription": "A skill is a folder with a SKILL.md file. For a large repository, paste the link to the exact folder instead.",
       "privateTitle": "Private repositories",
-      "privateDescription": "Cloning uses the Git on this computer, so whatever works in your terminal works here: an SSH key for git@ addresses, or a credential helper for https. {{app}} never asks for or stores a Git password."
+      "privateDescription": "Cloning uses the Git on this computer, so whatever works in your terminal works here: an SSH key for git@ addresses, or a credential helper for https. {{app}} never asks for or stores a Git password.",
+      "noGitTitle": "Git is not installed",
+      "noGitDescription": "Public repositories on GitHub and GitLab still install: {{app}} downloads them directly. Private repositories and other hosts need Git.",
+      "getGit": "Get Git"
     },
     "scan": {
       "loadFailed": "Could not scan this computer",

@@ -51,6 +51,8 @@ export interface SystemMockContext {
 
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("backup") ?? "pending";
+/** `?git=missing` previews the app on a computer without Git. */
+const GIT_VERSION = params.get("git") === "missing" ? null : "2.50.1";
 const DEVICE_POLLS_BEFORE_CONNECT = 2;
 const GITHUB_REMOTE = "https://github.com/dev/loadout-backup.git";
 const MB = 1024 * 1024;
@@ -343,7 +345,7 @@ export function createSystemMockHandlers(
       arch: "arm64",
       libraryPath: LIBRARY,
       libraryPathOverridden: false,
-      gitVersion: "2.50.1",
+      gitVersion: GIT_VERSION,
     }),
     "system.logExcerpt": () => ({
       logPath: `${LIBRARY}/logs/main.log`,

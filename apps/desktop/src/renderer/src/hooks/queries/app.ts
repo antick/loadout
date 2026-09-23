@@ -3,6 +3,7 @@ import type {
   AppUpdateInfo,
   BackupStatus,
   CrashInfo,
+  DiagnosticInfo,
   LibraryLocation,
 } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
@@ -35,6 +36,11 @@ export function useLibraryLocation(): UseQueryResult<LibraryLocation> {
     queryKey: keys.system.libraryLocation,
     queryFn: () => api.system.libraryLocation(),
   });
+}
+
+/** Versions and paths of this computer; `gitVersion` is null when Git is not installed. */
+export function useDiagnostics(): UseQueryResult<DiagnosticInfo> {
+  return useQuery({ queryKey: keys.system.diagnostics, queryFn: () => api.system.diagnostics() });
 }
 
 /** The crash recorded by the previous run, or null. */
