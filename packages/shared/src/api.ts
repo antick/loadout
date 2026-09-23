@@ -10,6 +10,7 @@ import type {
   BatchImportResult,
   BatchResult,
   BatchUpdateResult,
+  BrokenSkillFolder,
   CliStatus,
   ConflictResolution,
   CrashInfo,
@@ -178,6 +179,10 @@ export interface WorkspaceApi {
   upload(agentKey: string, relativePath: string): Promise<Skill>;
   pull(agentKey: string, relativePath: string): Promise<void>;
   deleteLocal(agentKey: string, relativePath: string): Promise<void>;
+  /** Folders in the agent's skills folder that the agent ignores, sorted by path. */
+  broken(agentKey: string): Promise<BrokenSkillFolder[]>;
+  /** Delete one of `broken`. Refused for anything that is not broken right now, or is managed. */
+  deleteBroken(agentKey: string, relativePath: string): Promise<void>;
 }
 
 export interface ProjectsApi {

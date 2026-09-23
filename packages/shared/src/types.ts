@@ -425,6 +425,28 @@ export interface LocalSkill {
   syncStatus: SyncStatus;
 }
 
+/**
+ * Why a folder in a skills root is not a skill the agent can load. `missing_document`: no
+ * `SKILL.md` in it (or, where the agent looks through namespace folders, anywhere below it).
+ * `dangling_link`: a link whose target no longer exists.
+ */
+export type BrokenSkillReason = "missing_document" | "dangling_link";
+
+/** A folder in an agent's skills folder that the agent ignores. */
+export interface BrokenSkillFolder {
+  dirName: string;
+  /** Path relative to the scanned skills root, `/` separated. */
+  relativePath: string;
+  path: string;
+  reason: BrokenSkillReason;
+  /** Where the link points (it may not exist). Null for a plain folder. */
+  linkTarget: string | null;
+  /** Top-level entries, folders ending in `/`. Empty for a dangling link. */
+  files: string[];
+  /** The app deployed something at this path; it is repaired from the library, not deleted here. */
+  managed: boolean;
+}
+
 export type WorkspaceType = "project" | "linked";
 
 export type SyncHealth = Record<SyncStatus, number>;

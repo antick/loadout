@@ -1,10 +1,12 @@
 import { basename, isAbsolute, join, relative } from "node:path";
-import type { Deployment, Skill, SyncStatus } from "@loadout/shared";
+import type { BrokenSkillReason, Deployment, Skill, SyncStatus } from "@loadout/shared";
 import { readSkillIdentity } from "../skills/metadata";
 import {
   canonicalPath,
+  isDanglingLink,
   isDirectory,
   isSkillDir,
+  linkTargetOf,
   listTopLevel,
   readDirSafe,
   targetIdentity,
@@ -47,34 +49,92 @@ const MTIME_THRESHOLD_MS = 1000;
 const byRelativePath = (a: LocalSkillDir, b: LocalSkillDir): number =>
   a.relativePath.localeCompare(b.relativePath);
 
+/** A folder under a skills root that the agent will not load, before any lookup. */
+export interface BrokenDir extends LocalSkillDir {
+  reason: BrokenSkillReason;
+  /** Where the link points, resolved against its folder. Null for a plain folder. */
+  linkTarget: string | null;
+}
+
+export interface SkillRootScan {
+  skills: LocalSkillDir[];
+  broken: BrokenDir[];
+}
+
 /**
- * Skill folders under `root`. A skill folder is a leaf. Hidden folders are skipped: they are
- * either tooling or our own staging leftovers, never something the agent loads.
+ * Skill folders under `root`, and the folders the agent ignores. A skill folder is a leaf.
+ * Hidden folders are skipped: they are either tooling or our own staging leftovers, never
+ * something the agent loads. A plugin bundle (a folder with its own `skills/` folder) and a link
+ * back up the tree are neither skills nor broken. A namespace folder is broken only when nothing
+ * was found anywhere below it; otherwise what is below it speaks for itself.
  */
-export function findLocalSkillDirs(root: string, options: ScanOptions): LocalSkillDir[] {
-  const found: LocalSkillDir[] = [];
+export function walkSkillRoot(root: string, options: ScanOptions): SkillRootScan {
+  const skills: LocalSkillDir[] = [];
+  const broken: BrokenDir[] = [];
   // Canonical paths already walked: a link pointing back up the tree must not loop forever.
   const visited = new Set<string>([canonicalPath(root)]);
+  const at = (path: string): LocalSkillDir => ({
+    path,
+    relativePath: toPosix(relative(root, path)),
+  });
+  const markBroken = (path: string, reason: BrokenSkillReason): void => {
+    broken.push({ ...at(path), reason, linkTarget: linkTargetOf(path) });
+  };
 
-  const walk = (dir: string): void => {
+  /**
+   * How many things below `dir` are more than empty folders: skills, bundles, loops and dangling
+   * links. A folder with none of them is reported once, at its top, instead of at every level.
+   */
+  const walk = (dir: string): number => {
+    let found = 0;
     for (const entry of readDirSafe(dir)) {
       if (entry.name.startsWith(HIDDEN_PREFIX)) continue;
       const child = join(dir, entry.name);
-      if (!isDirectory(child)) continue;
-      if (isSkillDir(child)) {
-        found.push({ path: child, relativePath: toPosix(relative(root, child)) });
+      if (!isDirectory(child)) {
+        // A link to a file is not a folder at all; only a link to nothing is broken.
+        if (isDanglingLink(child)) {
+          markBroken(child, "dangling_link");
+          found += 1;
+        }
         continue;
       }
-      if (!options.recursive || isDirectory(join(child, BUNDLE_MARKER_DIR))) continue;
+      if (isSkillDir(child)) {
+        skills.push(at(child));
+        found += 1;
+        continue;
+      }
+      if (isDirectory(join(child, BUNDLE_MARKER_DIR))) {
+        found += 1;
+        continue;
+      }
+      if (!options.recursive) {
+        markBroken(child, "missing_document");
+        continue;
+      }
       const real = canonicalPath(child);
-      if (visited.has(real)) continue;
+      if (visited.has(real)) {
+        found += 1;
+        continue;
+      }
       visited.add(real);
-      walk(child);
+      const brokenBefore = broken.length;
+      const below = walk(child);
+      found += below;
+      if (below > 0) continue;
+      // Only empty folders were marked below; the child itself stands for all of them.
+      broken.length = brokenBefore;
+      markBroken(child, "missing_document");
     }
+    return found;
   };
 
   walk(root);
-  return found.sort(byRelativePath);
+  return { skills: skills.sort(byRelativePath), broken: broken.sort(byRelativePath) };
+}
+
+/** Skill folders under `root`, sorted by path. */
+export function findLocalSkillDirs(root: string, options: ScanOptions): LocalSkillDir[] {
+  return walkSkillRoot(root, options).skills;
 }
 
 export function describeLocalSkill(dir: LocalSkillDir): LocalEntry {

@@ -41,6 +41,7 @@ export function useRefreshWorkspace(): (agentKey: string) => Promise<void> {
   return async (agentKey) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: keys.workspace.list(agentKey) }),
+      queryClient.invalidateQueries({ queryKey: keys.workspace.broken(agentKey) }),
       queryClient.invalidateQueries({ queryKey: keys.workspace.counts }),
     ]);
   };
@@ -82,6 +83,19 @@ export function useDeleteLocalSkill(): UseMutationResult<void, unknown, LocalSki
       api.workspace.deleteLocal(agentKey, relativePath),
     onSuccess: (_result, { name }) => toastSuccess(t("agents.toast.deleted", { name })),
     onError: (error) => toastError(error, "agents.errors.delete"),
+    onSettled: () => invalidateWorkspace(queryClient),
+  });
+}
+
+/** Delete a folder the agent ignores (no SKILL.md, or a link to nothing). */
+export function useDeleteBrokenFolder(): UseMutationResult<void, unknown, LocalSkillRef> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
+      api.workspace.deleteBroken(agentKey, relativePath),
+    onSuccess: (_result, { name }) => toastSuccess(t("agents.toast.deleted", { name })),
+    onError: (error) => toastError(error, "agents.errors.deleteBroken"),
     onSettled: () => invalidateWorkspace(queryClient),
   });
 }

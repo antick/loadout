@@ -1,6 +1,7 @@
-import { join } from "node:path";
+import { basename, join, relative } from "node:path";
 import {
   APP_NAME,
+  type BrokenSkillFolder,
   type LocalSkill,
   type Skill,
   type SyncStatus,
@@ -12,7 +13,14 @@ import type { DeployService } from "../deploy";
 import { rowsAtPath, samePath } from "../deploy/evidence";
 import { errorMessage, exists, invalid, notFound } from "../errors";
 import type { SkillStore } from "../skills/store";
-import { isDirectory, lstatOrNull, removePath } from "../util/fs";
+import {
+  isDirectory,
+  listTopLevel,
+  lstatOrNull,
+  removePath,
+  resolveInside,
+  toPosix,
+} from "../util/fs";
 import { hashDir } from "../util/hash";
 import {
   type LocalSyncDeps,
@@ -24,6 +32,7 @@ import {
   toLocalSkill,
 } from "./local-actions";
 import {
+  type BrokenDir,
   type LibraryIndex,
   type LocalEntry,
   type ScanOptions,
@@ -32,6 +41,7 @@ import {
   indexLibrary,
   matchLibrarySkill,
   scanSkillRoot,
+  walkSkillRoot,
 } from "./local-scan";
 
 export interface WorkspaceServiceDeps {
@@ -112,6 +122,23 @@ export function createWorkspaceService(
     });
   }
 
+  /** A broken folder as the UI shows it. Managed when one of our deployment rows sits there. */
+  function toBrokenFolder(dir: BrokenDir): BrokenSkillFolder {
+    return {
+      dirName: basename(dir.path),
+      relativePath: dir.relativePath,
+      path: dir.path,
+      reason: dir.reason,
+      linkTarget: dir.linkTarget,
+      files: dir.reason === "dangling_link" ? [] : listTopLevel(dir.path),
+      managed: rowsAtPath(store.deployments(), dir.path).length > 0,
+    };
+  }
+
+  function brokenFolders(agent: ResolvedAgent): BrokenSkillFolder[] {
+    return walkSkillRoot(agent.skillsDir, scanOptions(agent)).broken.map(toBrokenFolder);
+  }
+
   const api: WorkspaceApi = {
     list: async (agentKey) => {
       const agent = registry.get(agentKey);
@@ -184,6 +211,24 @@ export function createWorkspaceService(
       }
       await removePath(entry.path);
       ctx.activity.record("remove", entry.name, `${agent.displayName}: local skill deleted`);
+      ctx.touched("skills");
+    },
+
+    broken: async (agentKey) => brokenFolders(registry.get(agentKey)),
+
+    deleteBroken: async (agentKey, relativePath) => {
+      const agent = registry.get(agentKey);
+      // Judged again now: the folder may have gained a SKILL.md since the list was shown.
+      const wanted = toPosix(
+        relative(agent.skillsDir, resolveInside(agent.skillsDir, relativePath)),
+      );
+      const folder = brokenFolders(agent).find((entry) => entry.relativePath === wanted);
+      if (!folder) throw notFound(`No broken folder at ${relativePath}`);
+      if (folder.managed) {
+        throw invalid(`${APP_NAME} put this folder here — deploy the skill again to repair it.`);
+      }
+      await removePath(folder.path);
+      ctx.activity.record("remove", folder.dirName, `${agent.displayName}: broken folder deleted`);
       ctx.touched("skills");
     },
   };

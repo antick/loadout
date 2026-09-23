@@ -24,7 +24,11 @@ import { useDeployToAgent, useRefreshWorkspace } from "@/hooks/mutations/workspa
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useSkills } from "@/hooks/queries/skills";
-import { useWorkspaceDocument, useWorkspaceSkills } from "@/hooks/queries/workspace";
+import {
+  useBrokenFolders,
+  useWorkspaceDocument,
+  useWorkspaceSkills,
+} from "@/hooks/queries/workspace";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
@@ -32,6 +36,7 @@ import { summarizeAgentFolder } from "./agent-skill-rules";
 import { AgentPresetBar } from "./AgentPresetBar";
 import { AgentSelectionActions } from "./AgentSelectionActions";
 import { AgentWorkspaceHeader } from "./AgentWorkspaceHeader";
+import { BrokenFoldersNotice } from "./BrokenFoldersNotice";
 import { useAgentSkillActions } from "./use-agent-skill-actions";
 
 const VIEW_MODE_SCOPE = "agent-workspace";
@@ -42,6 +47,7 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const agents = useAgents();
   const library = useSkills();
   const workspace = useWorkspaceSkills(agentKey);
+  const broken = useBrokenFolders(agentKey);
   const refresh = useRefreshWorkspace();
   const deployToAgent = useDeployToAgent();
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
@@ -152,6 +158,8 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
       <InstructionFilesSection files={agentInstructions} showReaders={false} />
 
       <AgentPresetBar agentKeys={[agentKey]} />
+
+      <BrokenFoldersNotice agentKey={agentKey} agentName={agentName} folders={broken.data} />
 
       <LocalSkillToolbar
         filters={filters}

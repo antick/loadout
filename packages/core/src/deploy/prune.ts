@@ -1,9 +1,16 @@
-import { existsSync, readlinkSync, unlinkSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { unlinkSync } from "node:fs";
+import { join, resolve } from "node:path";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import type { SkillStore } from "../skills/store";
-import { canonicalPath, isInside, lstatOrNull, readDirSafe, targetIdentity } from "../util/fs";
+import {
+  canonicalPath,
+  isDanglingLink,
+  isInside,
+  linkTargetOf,
+  readDirSafe,
+  targetIdentity,
+} from "../util/fs";
 
 /**
  * Remove links in agent folders that lead into the library's skills folder but no longer reach
@@ -25,14 +32,9 @@ export function pruneBrokenLinks(
   for (const folder of folders.values()) {
     for (const entry of readDirSafe(folder)) {
       const path = join(folder, entry.name);
-      if (!lstatOrNull(path)?.isSymbolicLink() || existsSync(path)) continue;
-      let target: string;
-      try {
-        target = resolve(dirname(path), readlinkSync(path));
-      } catch {
-        continue;
-      }
-      if (!roots.some((root) => isInside(root, target))) continue;
+      if (!isDanglingLink(path)) continue;
+      const target = linkTargetOf(path);
+      if (!target || !roots.some((root) => isInside(root, target))) continue;
       try {
         unlinkSync(path);
         removed.push(path);

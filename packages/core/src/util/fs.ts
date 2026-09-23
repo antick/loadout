@@ -7,6 +7,7 @@ import {
   lstatSync,
   mkdirSync,
   readdirSync,
+  readlinkSync,
   realpathSync,
   renameSync,
   rmSync,
@@ -49,6 +50,21 @@ export function lstatOrNull(path: string): Stats | null {
   } catch {
     return null;
   }
+}
+
+/** Where the link at `path` points, resolved against its folder. Null when it is not a link. */
+export function linkTargetOf(path: string): string | null {
+  if (!lstatOrNull(path)?.isSymbolicLink()) return null;
+  try {
+    return resolve(dirname(path), readlinkSync(path));
+  } catch {
+    return null;
+  }
+}
+
+/** A link whose target does not exist (any more). */
+export function isDanglingLink(path: string): boolean {
+  return (lstatOrNull(path)?.isSymbolicLink() ?? false) && !existsSync(path);
 }
 
 export function statOrNull(path: string): Stats | null {

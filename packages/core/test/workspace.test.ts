@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { APP_NAME } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -310,5 +310,70 @@ describe("global workspace", () => {
     // The link went, not what it pointed at.
     expect(existsSync(join(outside, "SKILL.md"))).toBe(true);
     expect((await rejection(api().deleteLocal("claude_code", "../x"))).code).toBe("INVALID_INPUT");
+  });
+
+  describe("broken folders", () => {
+    it("lists folders the agent ignores, with their files and whether they are ours", async () => {
+      makeSkill(claude, "fine");
+      writeFile(join(claude, "half-deleted", "scripts", "run.sh"), "echo");
+      writeFile(join(claude, "half-deleted", "notes.md"), "notes");
+      symlinkSync(join(world.root, "gone"), join(claude, "dead"), "dir");
+
+      expect(await api().broken("claude_code")).toEqual([
+        {
+          dirName: "dead",
+          relativePath: "dead",
+          path: join(claude, "dead"),
+          reason: "dangling_link",
+          linkTarget: join(world.root, "gone"),
+          files: [],
+          managed: false,
+        },
+        {
+          dirName: "half-deleted",
+          relativePath: "half-deleted",
+          path: join(claude, "half-deleted"),
+          reason: "missing_document",
+          linkTarget: null,
+          files: ["notes.md", "scripts/"],
+          managed: false,
+        },
+      ]);
+      // The skill list is unchanged by them.
+      expect((await api().list("claude_code")).map((s) => s.dirName)).toEqual(["fine"]);
+    });
+
+    it("deletes a broken folder or link, and only what is broken right now", async () => {
+      writeFile(join(claude, "half-deleted", "notes.md"), "notes");
+      const outside = join(world.root, "gone");
+      symlinkSync(outside, join(claude, "dead"), "dir");
+      makeSkill(claude, "fine");
+
+      await api().deleteBroken("claude_code", "half-deleted");
+      await api().deleteBroken("claude_code", "dead");
+      expect(await api().broken("claude_code")).toEqual([]);
+      expect(existsSync(join(claude, "fine", "SKILL.md"))).toBe(true);
+
+      expect((await rejection(api().deleteBroken("claude_code", "fine"))).code).toBe("NOT_FOUND");
+      expect((await rejection(api().deleteBroken("claude_code", "../x"))).code).toBe(
+        "INVALID_INPUT",
+      );
+      expect(existsSync(join(claude, "fine", "SKILL.md"))).toBe(true);
+    });
+
+    it("never deletes a copy the app deployed, even with its SKILL.md gone", async () => {
+      world.ctx.settings.set("deployMode", "copy");
+      const skill = world.addSkill("copied");
+      await world.deploy.api.deploy(skill.id, "claude_code");
+      rmSync(join(claude, "copied", "SKILL.md"));
+
+      const [folder] = await api().broken("claude_code");
+      expect(folder).toMatchObject({ relativePath: "copied", managed: true });
+      const refused = await rejection(api().deleteBroken("claude_code", "copied"));
+      expect(refused.message).toBe(
+        `${APP_NAME} put this folder here — deploy the skill again to repair it.`,
+      );
+      expect(existsSync(join(claude, "copied"))).toBe(true);
+    });
   });
 });

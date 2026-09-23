@@ -10,6 +10,7 @@ import {
   indexLibrary,
   matchLibrarySkill,
   scanSkillRoot,
+  walkSkillRoot,
 } from "../src/workspace";
 import { makeSkill, tempDir, writeFile } from "./helpers";
 import { setContentMtime } from "./workspace-world";
@@ -237,5 +238,78 @@ describe("classifySync", () => {
     expect(classifySync({ hash: "x", newestMtime: null }, skill)).toBe("diverged");
     const gone = { ...skill, libraryPath: join(library, "missing") };
     expect(classifySync(entryAt(local), gone)).toBe("diverged");
+  });
+});
+
+describe("walkSkillRoot", () => {
+  const brokenOf = (recursive: boolean) =>
+    walkSkillRoot(root, { recursive }).broken.map((b) => [b.relativePath, b.reason]);
+
+  it("flat: every visible folder without a SKILL.md is broken, bundles and files are not", () => {
+    makeSkill(root, "good");
+    mkdirSync(join(root, "empty"));
+    writeFile(join(root, "notes", "README.md"), "not a skill");
+    // An agent reading direct children never sees a skill one level down.
+    makeSkill(join(root, "group"), "nested");
+    makeSkill(join(root, "plugin", "skills"), "bundled");
+    mkdirSync(join(root, ".cache"));
+    writeFile(join(root, "loose.txt"), "a file");
+
+    const scan = walkSkillRoot(root, { recursive: false });
+    expect(scan.skills.map((d) => d.relativePath)).toEqual(["good"]);
+    expect(brokenOf(false)).toEqual([
+      ["empty", "missing_document"],
+      ["group", "missing_document"],
+      ["notes", "missing_document"],
+    ]);
+    expect(scan.broken[0]).toMatchObject({ path: join(root, "empty"), linkTarget: null });
+  });
+
+  it("recursive: a namespace is broken only when nothing at all is found below it", () => {
+    makeSkill(join(root, "research"), "web-search");
+    mkdirSync(join(root, "research", "drafts"));
+    mkdirSync(join(root, "hollow", "a", "b"), { recursive: true });
+    mkdirSync(join(root, "only-link"));
+    symlinkSync(join(temp.dir, "gone"), join(root, "only-link", "dead"), "dir");
+
+    expect(brokenOf(true)).toEqual([
+      ["hollow", "missing_document"],
+      ["only-link/dead", "dangling_link"],
+      ["research/drafts", "missing_document"],
+    ]);
+  });
+
+  it("reports a link to nothing, and a link to a folder without a SKILL.md, with its target", () => {
+    const gone = join(temp.dir, "deleted-checkout", "skill");
+    symlinkSync(gone, join(root, "dead"), "dir");
+    const plain = join(temp.dir, "plain-folder");
+    mkdirSync(plain);
+    symlinkSync(plain, join(root, "not-a-skill"), "dir");
+    const file = join(temp.dir, "file.md");
+    writeFile(file, "text");
+    symlinkSync(file, join(root, "to-a-file"));
+
+    expect(walkSkillRoot(root, { recursive: false }).broken).toEqual([
+      { path: join(root, "dead"), relativePath: "dead", reason: "dangling_link", linkTarget: gone },
+      {
+        path: join(root, "not-a-skill"),
+        relativePath: "not-a-skill",
+        reason: "missing_document",
+        linkTarget: plain,
+      },
+    ]);
+  });
+
+  it("does not call a folder broken because a link inside it loops back up", () => {
+    mkdirSync(join(root, "group"));
+    symlinkSync(root, join(root, "group", "loop"), "dir");
+    expect(brokenOf(true)).toEqual([]);
+  });
+
+  it("returns nothing for a missing root", () => {
+    expect(walkSkillRoot(join(temp.dir, "nope"), { recursive: true })).toEqual({
+      skills: [],
+      broken: [],
+    });
   });
 });

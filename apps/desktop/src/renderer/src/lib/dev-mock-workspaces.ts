@@ -2,10 +2,12 @@
  * DEV ONLY. Agent-folder (`workspace.*`) and project (`projects.*`) handlers for the in-memory
  * preview bridge in `dev-mock.ts`, so the agent and project pages can be tried in a plain browser.
  * Seeds cover every sync status, unmanaged folders, a nested folder, a switched-off skill and a
- * skill whose two copies disagree (pushing it reports conflicting variants).
+ * skill whose two copies disagree (pushing it reports conflicting variants), and folders an agent
+ * skips: one without a SKILL.md, an empty one, a dead link and a managed copy that lost its file.
  */
 import type {
   AgentInfo,
+  BrokenSkillFolder,
   ErrorCode,
   LocalSkill,
   Project,
@@ -95,6 +97,51 @@ export function createWorkspaceMockHandlers(
     copy("sql-migrations", "cursor", "local_newer"),
     copy("old-linter-rules", "cursor", "local_only", { description: null }),
   ];
+  // Folders the agent skips, keyed by agent; paths are filled in from the agent's folder.
+  let broken: Record<string, Omit<BrokenSkillFolder, "path">[]> = {
+    claude_code: [
+      {
+        dirName: "half-deleted",
+        relativePath: "half-deleted",
+        reason: "missing_document",
+        linkTarget: null,
+        files: ["notes.md", "scripts/"],
+        managed: false,
+      },
+      {
+        dirName: "old-checkout",
+        relativePath: "old-checkout",
+        reason: "dangling_link",
+        linkTarget: `${HOME}/code/agent-skills/old-checkout`,
+        files: [],
+        managed: false,
+      },
+      {
+        dirName: "release-notes",
+        relativePath: "release-notes",
+        reason: "missing_document",
+        linkTarget: null,
+        files: ["examples/"],
+        managed: true,
+      },
+      {
+        dirName: "drafts",
+        relativePath: "team/drafts",
+        reason: "missing_document",
+        linkTarget: null,
+        files: [],
+        managed: false,
+      },
+      {
+        dirName: "tmp",
+        relativePath: "tmp",
+        reason: "missing_document",
+        linkTarget: null,
+        files: [],
+        managed: false,
+      },
+    ],
+  };
   const projectCopies = new Map<string, Copy[]>([
     [
       "pr-shop",
@@ -331,6 +378,28 @@ export function createWorkspaceMockHandlers(
           ? { ...entry, status: "in_sync" }
           : entry,
       );
+      ctx.emitChanged("skills");
+    },
+    "workspace.broken": (agentKey: string): BrokenSkillFolder[] => {
+      const dir = agentOf(agentKey)?.skillsDir ?? "";
+      return (broken[agentKey] ?? []).map((entry) => ({
+        ...entry,
+        path: `${dir}/${entry.relativePath}`,
+      }));
+    },
+    "workspace.deleteBroken": async (agentKey: string, relativePath: string) => {
+      await wait(STEP_MS);
+      const found = broken[agentKey]?.find((entry) => entry.relativePath === relativePath);
+      if (!found) return ctx.fail("NOT_FOUND", `No broken folder at ${relativePath}`);
+      if (found.managed) {
+        ctx.fail("INVALID_INPUT", "This copy was deployed by the app — deploy it again instead.");
+      }
+      if (relativePath === "tmp")
+        ctx.fail("IO", "The folder is read-only, so it could not be deleted.");
+      broken = {
+        ...broken,
+        [agentKey]: (broken[agentKey] ?? []).filter((entry) => entry.relativePath !== relativePath),
+      };
       ctx.emitChanged("skills");
     },
     "workspace.deleteLocal": (agentKey: string, relativePath: string) => {

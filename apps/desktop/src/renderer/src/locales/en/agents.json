@@ -35,6 +35,28 @@
       "addTitle": "Add skills to {{agent}}",
       "addDescription": "Pick library skills to install in this agent's global skills folder."
     },
+    "broken": {
+      "title_one": "{{count}} folder here is not a skill",
+      "title_other": "{{count}} folders here are not skills",
+      "description": "{{agent}} skips them: a skill needs a SKILL.md at the top of its folder. Fix the folder, or delete it if it is left over.",
+      "reason": {
+        "empty": "Empty folder",
+        "noDocument_one": "No SKILL.md · {{count}} item inside",
+        "noDocument_other": "No SKILL.md · {{count}} items inside",
+        "danglingLink": "Link to {{target}}, which no longer exists"
+      },
+      "linkedTo": "linked to {{target}}",
+      "managedHint": "{{app}} put this copy here. Deploy the skill again from the library to repair it.",
+      "delete": "Delete",
+      "showAll_one": "Show {{count}} more",
+      "showAll_other": "Show {{count}} more",
+      "showFewer": "Show fewer",
+      "confirm": {
+        "title": "Delete “{{name}}” permanently?",
+        "folderDescription": "Everything in {{path}} is deleted. It is not a skill, so there is no library copy to restore it from.",
+        "linkDescription": "Only the link is removed. What it pointed at is already gone."
+      }
+    },
     "actions": {
       "upload": "Upload to library",
       "pull": "Pull from library",
@@ -84,7 +106,8 @@
       "upload": "Could not upload the skill to the library.",
       "pull": "Could not pull the library version.",
       "delete": "Could not delete the local skill.",
-      "addNone": "None of the skills could be added."
+      "addNone": "None of the skills could be added.",
+      "deleteBroken": "Could not delete the folder."
     }
   }
 }
