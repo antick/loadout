@@ -2,7 +2,7 @@ import { type FSWatcher, existsSync, watch } from "node:fs";
 import { sep } from "node:path";
 import { WATCH_DEBOUNCE_MS, WATCH_RESCAN_MS, WATCH_SELF_WRITE_MUTE_MS } from "./constants";
 
-export interface LibraryWatcher {
+export interface FolderWatcher {
   /** The app is about to write: ignore the filesystem echo of our own change. */
   mute(): void;
   stop(): void;
@@ -11,10 +11,11 @@ export interface LibraryWatcher {
 const IGNORED_SEGMENTS = [`${sep}.git${sep}`, `${sep}node_modules${sep}`];
 
 /**
- * Watches the library and every agent's skills folder so changes made outside the app — by hand,
- * by an agent, or through the CLI — show up without a manual refresh.
+ * Watches folders (the library, agents' and projects' skills folders) so changes made outside the
+ * app — by hand, by an agent, or through the CLI — show up without a manual refresh. The list is
+ * asked for again every minute, so folders created later are picked up.
  */
-export function watchLibrary(resolvePaths: () => string[], onChange: () => void): LibraryWatcher {
+export function watchFolders(resolvePaths: () => string[], onChange: () => void): FolderWatcher {
   const watchers = new Map<string, FSWatcher>();
   let timer: NodeJS.Timeout | null = null;
   let mutedUntil = 0;

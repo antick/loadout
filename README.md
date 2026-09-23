@@ -172,6 +172,7 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 - A bundled `manage-skills` skill teaches your agents to install, deploy and update skills through
   the CLI. One-click setup from the Dashboard or Settings.
 - The app notices changes made through the CLI, by an agent or by hand, and refreshes itself.
+  That covers the library, agents' skills folders and every linked project's skills folders.
 
 ### Storage
 

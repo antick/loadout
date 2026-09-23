@@ -31,6 +31,8 @@ export type ProjectsServiceDeps = ProjectActionsDeps;
 export interface ProjectsService {
   api: ProjectsApi;
   projects: ProjectStore;
+  /** Every skills folder of every workspace, switched-off parking folders included. */
+  skillFolders(): string[];
 }
 
 function toTarget(target: ResolvedTarget): ProjectTarget {
@@ -217,5 +219,16 @@ export function createProjectsService(
     reveal: async (id) => ctx.host.revealPath(projects.get(id).path),
   };
 
-  return { api, projects };
+  const skillFolders = (): string[] => [
+    ...new Set(
+      projects
+        .list()
+        .flatMap(targetsOf)
+        .flatMap((target) =>
+          target.disabledRoot ? [target.enabledRoot, target.disabledRoot] : [target.enabledRoot],
+        ),
+    ),
+  ];
+
+  return { api, projects, skillFolders };
 }

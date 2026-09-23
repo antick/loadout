@@ -18,12 +18,13 @@ import { APP_ICON_FILE, CRASH_DUMPS_DIR, SECRETS_FILE } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
 import { type TrayController, createTrayController } from "./tray-controller";
-import { type LibraryWatcher, watchLibrary } from "./watcher";
+import { type FolderWatcher, watchFolders } from "./watcher";
 import { createMainWindow, focusWindow } from "./window";
 
 let mainWindow: BrowserWindow | null = null;
 let core: Core | null = null;
-let watcher: LibraryWatcher | null = null;
+/** The library and agents' folders, then projects' skills folders. */
+let watchers: FolderWatcher[] = [];
 let tray: TrayController | null = null;
 let quitting = false;
 /** The library was deleted while running: nothing may write to it any more. */
@@ -131,7 +132,7 @@ async function removeAllData(options: RemoveAllDataOptions): Promise<void> {
   closing.ctx.log.info(`Removing all data; ${plan.undeployed} deployments taken out of agents`);
   core = null;
   quitting = true;
-  watcher?.stop();
+  for (const watcher of watchers) watcher.stop();
   tray?.dispose();
   tray = null;
   closing.background.stop();
@@ -157,8 +158,8 @@ function checkLibrary(): boolean {
   if (libraryGone) return false;
   if (!core || core.libraryPresent()) return true;
   libraryGone = true;
-  watcher?.stop();
-  watcher = null;
+  for (const watcher of watchers) watcher.stop();
+  watchers = [];
   core.background.stop();
   send("library:missing", { path: core.ctx.paths.baseDir });
   return false;
@@ -189,7 +190,7 @@ function start(): void {
     secrets: createSecretStore(join(app.getPath("userData"), SECRETS_FILE)),
     emit: (event, payload) => {
       if (event === "data:changed") {
-        watcher?.mute();
+        for (const watcher of watchers) watcher.mute();
         const { scope } = payload as { scope: string[] };
         if (scope.includes("settings")) {
           syncTray();
@@ -243,15 +244,23 @@ function start(): void {
         : null,
   );
 
-  watcher = watchLibrary(
-    () => (core ? core.watchPaths() : []),
-    () => {
-      if (!checkLibrary()) return;
-      core?.background.libraryChangedOnDisk();
-      send("data:changed", { scope: ["skills", "agents", "presets", "projects", "backup"] });
-      tray?.refresh();
-    },
-  );
+  watchers = [
+    watchFolders(
+      () => (core ? core.watchPaths() : []),
+      () => {
+        if (!checkLibrary()) return;
+        core?.background.libraryChangedOnDisk();
+        send("data:changed", { scope: ["skills", "agents", "presets", "projects", "backup"] });
+        tray?.refresh();
+      },
+    ),
+    watchFolders(
+      () => (core ? core.projectWatchPaths() : []),
+      () => {
+        if (checkLibrary()) send("data:changed", { scope: ["projects"] });
+      },
+    ),
+  ];
 
   // After the library started: it adopts the location file the old folder may still hold.
   finishAppDataMove(core.ctx.log);
@@ -281,7 +290,7 @@ if (!app.requestSingleInstanceLock()) {
     const closing = core;
     core = null;
     event.preventDefault();
-    watcher?.stop();
+    for (const watcher of watchers) watcher.stop();
     tray?.dispose();
     tray = null;
     if (libraryGone) {

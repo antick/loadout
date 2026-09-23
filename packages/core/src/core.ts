@@ -44,6 +44,8 @@ export interface Core {
   background: CoreBackground;
   /** Folders worth watching for outside changes. */
   watchPaths(): string[];
+  /** Workspace skills folders: a change there only touches project pages. */
+  projectWatchPaths(): string[];
   /** The database and the skills folder are still where they were. */
   libraryPresent(): boolean;
   close(): void;
@@ -181,6 +183,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       ctx.paths.skillsDir,
       ...new Set(registry.list().flatMap((agent) => (agent.installed ? [agent.skillsDir] : []))),
     ],
+    projectWatchPaths: () => projects.skillFolders(),
     libraryPresent: () => existsSync(ctx.paths.dbPath) && existsSync(ctx.paths.skillsDir),
     close: () => {
       background.stop();

@@ -41,6 +41,16 @@ describe("projects", () => {
     return local;
   }
 
+  describe("watching", () => {
+    it("lists each workspace's skills folders, parking folders included, once each", async () => {
+      await api().add(repo);
+      const folders = world.projects.skillFolders();
+      expect(folders).toContain(claude);
+      expect(folders).toContain(claudeOff);
+      expect(new Set(folders).size).toBe(folders.length);
+    });
+  });
+
   describe("saving workspaces", () => {
     it("adds an existing folder, prepares the default agent's folders, and lists it last", async () => {
       const first = await api().add(repo);
