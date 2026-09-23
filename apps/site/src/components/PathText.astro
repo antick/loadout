@@ -1,0 +1,23 @@
+---
+interface Props {
+  path: string;
+}
+
+// A folder path that may wrap only after a slash, never inside a folder name.
+const parts = Astro.props.path.split("/");
+---
+
+<code class="path">
+  {
+    parts.map((part, index) => (
+      <>
+        {part}
+        {index < parts.length - 1 ? (
+          <>
+            /<wbr />
+          </>
+        ) : null}
+      </>
+    ))
+  }
+</code>

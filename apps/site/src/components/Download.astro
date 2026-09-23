@@ -1,0 +1,51 @@
+---
+import { DEMO_PATH, DOWNLOADS_URL } from "../lib/site";
+
+const platforms = ["macOS", "Windows", "Linux"];
+---
+
+<section class="wrap section download" id="download" aria-labelledby="download-title">
+  <h2 id="download-title">Get Loadout</h2>
+  {
+    DOWNLOADS_URL ? (
+      <>
+        <p class="lede">
+          For {platforms.slice(0, -1).join(", ")} and {platforms.at(-1)}.
+        </p>
+        <div class="actions">
+          <a class="button" href={DOWNLOADS_URL}>
+            Download the latest release
+          </a>
+          <a class="button quiet" href={DEMO_PATH}>
+            Try it in your browser first
+          </a>
+        </div>
+      </>
+    ) : (
+      <>
+        <p class="lede">
+          Installers for {platforms.slice(0, -1).join(", ")} and {platforms.at(-1)} are not published
+          yet. The browser demo runs the same interface in the meantime.
+        </p>
+        <div class="actions">
+          <a class="button" href={DEMO_PATH}>
+            Try it in your browser
+          </a>
+        </div>
+      </>
+    )
+  }
+</section>
+
+<style>
+  .download {
+    padding-bottom: clamp(3rem, 7vw, 5rem);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+</style>

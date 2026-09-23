@@ -1,0 +1,68 @@
+---
+interface Assurance {
+  title: string;
+  body: string;
+}
+
+// The same promises the app's help makes, in fewer words.
+const promises: Assurance[] = [
+  {
+    title: "Agent folders",
+    body: "Loadout never overwrites or deletes anything in an agent's folder that it did not put there. If something is in the way, it tells you the exact path and stops.",
+  },
+  {
+    title: "Your edits",
+    body: "A save never overwrites a change made on disk after you opened the file: you see both and choose. Updates hold back skills you edited until you say otherwise.",
+  },
+  {
+    title: "Deleting files",
+    body: "An update that would delete files lists them and waits for your approval. Automatic updates never delete anything.",
+  },
+  {
+    title: "Your data",
+    body: "Everything lives in ~/.loadout on your computer. The backup goes only to a Git remote you choose, and a GitHub token is kept in the system keychain.",
+  },
+];
+---
+
+<section class="wrap section" aria-labelledby="safety-title">
+  <h2 id="safety-title">It only touches what it put there</h2>
+  <ul>
+    {
+      promises.map((item) => (
+        <li>
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  ul {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(2rem, 4vw, 3rem);
+    margin: clamp(2.5rem, 5vw, 3.5rem) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (max-width: 60rem) {
+    ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 36rem) {
+    ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  li p {
+    margin-top: 0.5rem;
+    color: var(--slate);
+  }
+</style>

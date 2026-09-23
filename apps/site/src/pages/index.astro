@@ -1,0 +1,42 @@
+---
+import { APP_NAME } from "@loadout/shared";
+import Agents from "../components/Agents.astro";
+import Capabilities from "../components/Capabilities.astro";
+import Demo from "../components/Demo.astro";
+import Download from "../components/Download.astro";
+import Header from "../components/Header.astro";
+import Hero from "../components/Hero.astro";
+import Safety from "../components/Safety.astro";
+import Base from "../layouts/Base.astro";
+import { AGENT_COUNT } from "../lib/agents";
+import { PARENT_NAME, PARENT_URL } from "../lib/site";
+---
+
+<Base
+  title={`${APP_NAME}: one skill library for every coding agent`}
+  description={`A desktop app that keeps your AI agent skills in one library and links them into Claude Code, Codex, Cursor and ${AGENT_COUNT - 3} other agents.`}
+>
+  <Header />
+  <main>
+    <Hero />
+    <Capabilities />
+    <Demo />
+    <Agents />
+    <Safety />
+    <Download />
+  </main>
+  <footer class="wrap">
+    <p>
+      {APP_NAME} is a <a href={PARENT_URL}>{PARENT_NAME}</a> project.
+    </p>
+  </footer>
+</Base>
+
+<style>
+  footer {
+    padding-block: 2rem 3rem;
+    border-top: 1px solid var(--rule);
+    color: var(--slate);
+    font-size: 0.9375rem;
+  }
+</style>

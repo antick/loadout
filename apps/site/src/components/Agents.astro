@@ -1,0 +1,77 @@
+---
+import { AGENT_COUNT, assistantAgents, codingAgents } from "../lib/agents";
+
+const coding = codingAgents();
+const assistants = assistantAgents();
+---
+
+<section class="wrap section" id="agents" aria-labelledby="agents-title">
+  <h2 id="agents-title">Works with {AGENT_COUNT} agents</h2>
+  <p class="lede">
+    Loadout finds the agents installed on your computer and knows where each one looks for skills.
+    Anything missing? Add it as a custom agent with its own folder.
+  </p>
+  <div class="lists">
+    <div>
+      <h3>Coding agents</h3>
+      <ul>{coding.map((agent) => <li>{agent.displayName}</li>)}</ul>
+    </div>
+    {
+      assistants.length > 0 ? (
+        <div>
+          <h3>Assistants</h3>
+          <ul>
+            {assistants.map((agent) => (
+              <li>{agent.displayName}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null
+    }
+  </div>
+</section>
+
+<style>
+  .lists {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  h3 {
+    padding-bottom: 0.75rem;
+    border-bottom: 1.5px solid var(--ink);
+  }
+
+  ul {
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+    columns: 3 11rem;
+    column-gap: 2rem;
+  }
+
+  .lists > div:last-child ul {
+    columns: 1;
+  }
+
+  li {
+    padding-block: 0.25rem;
+    break-inside: avoid;
+  }
+
+  @media (max-width: 44rem) {
+    .lists {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    ul {
+      columns: 2;
+    }
+
+    .lists > div:last-child ul {
+      columns: 2;
+    }
+  }
+</style>

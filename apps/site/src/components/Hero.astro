@@ -1,0 +1,63 @@
+---
+import { AGENT_COUNT } from "../lib/agents";
+import { DEMO_PATH, DOWNLOADS_URL } from "../lib/site";
+import LinkBoard from "./LinkBoard.astro";
+---
+
+<section class="wrap hero" aria-labelledby="hero-title">
+  <div class="copy">
+    <h1 id="hero-title">One skill library for every coding agent.</h1>
+    <p class="lede">
+      Loadout keeps your agent skills in one folder and links them into Claude Code, Codex, Cursor
+      and {AGENT_COUNT - 3} other agents. Change a skill once and every agent that uses it sees the
+      change.
+    </p>
+    <div class="actions">
+      {
+        DOWNLOADS_URL ? (
+          <>
+            <a class="button" href="#download">
+              Download Loadout
+            </a>
+            <a class="button quiet" href={DEMO_PATH}>
+              Try it in your browser
+            </a>
+          </>
+        ) : (
+          <>
+            <a class="button" href={DEMO_PATH}>
+              Try it in your browser
+            </a>
+            <a class="button quiet" href="#what-it-does">
+              See what it does
+            </a>
+          </>
+        )
+      }
+    </div>
+  </div>
+  <LinkBoard />
+</section>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    align-items: center;
+    padding-block: clamp(2.5rem, 7vw, 6rem) var(--space-section);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 60rem) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

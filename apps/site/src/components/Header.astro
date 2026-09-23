@@ -1,0 +1,57 @@
+---
+import { APP_NAME } from "@loadout/shared";
+---
+
+<header class="wrap header">
+  <a class="brand" href="/" aria-label={`${APP_NAME} home`}>
+    <img src="/brand.svg" alt="" width="32" height="32" />
+    <span>{APP_NAME}</span>
+  </a>
+  <nav aria-label="On this page">
+    <a class="optional" href="#what-it-does">What it does</a>
+    <a class="optional" href="#demo">Demo</a>
+    <a class="optional" href="#agents">Agents</a>
+    <a href="#download">Download</a>
+  </nav>
+</header>
+
+<style>
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1.25rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 1.25rem;
+    font-weight: 780;
+    font-stretch: 78%;
+    text-decoration: none;
+  }
+
+  nav {
+    display: flex;
+    gap: clamp(1rem, 2.5vw, 1.75rem);
+    font-size: 0.9375rem;
+  }
+
+  nav a {
+    text-decoration: none;
+    color: var(--slate);
+  }
+
+  nav a:hover {
+    color: var(--ink);
+  }
+
+  @media (max-width: 40rem) {
+    .optional {
+      display: none;
+    }
+  }
+</style>
