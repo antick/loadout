@@ -16,6 +16,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { type PageCrumb, PageHeader } from "@/components/layout/PageHeader";
 import { useSidebarTakeover } from "@/components/layout/shell-context";
 import { MarkdownView } from "@/components/MarkdownView";
+import { PathActions } from "@/components/PathActions";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -26,6 +27,7 @@ import {
 import { languageFor } from "@/features/editor/code-languages";
 import { ConflictDialog } from "@/features/editor/ConflictDialog";
 import { draftPaths } from "@/features/editor/editor-drafts";
+import { absoluteFilePath } from "@/features/editor/editor-paths";
 import { EditorActions } from "@/features/editor/EditorActions";
 import { EditorNotices } from "@/features/editor/EditorNotices";
 import { EditorSidebar } from "@/features/editor/EditorSidebar";
@@ -233,7 +235,14 @@ export function EditorWorkspace({
   const header = (
     <PageHeader
       title={target.name}
-      subtitle={activePath ?? undefined}
+      subtitle={
+        activePath ? (
+          <span className="flex min-w-0 items-center gap-1">
+            <span className="truncate">{activePath}</span>
+            <PathActions path={absoluteFilePath(target, activePath)} className="app-no-drag" />
+          </span>
+        ) : undefined
+      }
       // The sidebar already leads back while it shows the files.
       breadcrumbs={filesShown ? undefined : crumbs}
       actions={

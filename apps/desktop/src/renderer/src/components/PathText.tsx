@@ -1,8 +1,5 @@
-import { Copy, FolderOpen } from "lucide-react";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { IconButton } from "@/components/IconButton";
-import { useCopyText, useRevealPath } from "@/hooks/mutations/app";
+import { PathActions } from "@/components/PathActions";
 import { useAppInfo } from "@/hooks/queries/app";
 import { compactHome } from "@/lib/paths";
 import { cn } from "@/lib/utils";
@@ -23,10 +20,7 @@ export function PathText({
   reveal = true,
   className,
 }: PathTextProps): ReactNode {
-  const { t } = useTranslation();
   const { data: info } = useAppInfo();
-  const copyText = useCopyText();
-  const revealPath = useRevealPath();
 
   return (
     <span
@@ -39,24 +33,12 @@ export function PathText({
       >
         {compactHome(path, info?.homeDir)}
       </span>
-      <span className="flex shrink-0 opacity-0 transition-opacity group-focus-within/path:opacity-100 group-hover/path:opacity-100">
-        {copy ? (
-          <IconButton
-            size="icon-xs"
-            label={t("common.copyPath")}
-            icon={<Copy />}
-            onClick={() => copyText.mutate(path)}
-          />
-        ) : null}
-        {reveal ? (
-          <IconButton
-            size="icon-xs"
-            label={t("common.reveal")}
-            icon={<FolderOpen />}
-            onClick={() => revealPath.mutate(path)}
-          />
-        ) : null}
-      </span>
+      <PathActions
+        path={path}
+        copy={copy}
+        reveal={reveal}
+        className="opacity-0 transition-opacity group-focus-within/path:opacity-100 group-hover/path:opacity-100"
+      />
     </span>
   );
 }
