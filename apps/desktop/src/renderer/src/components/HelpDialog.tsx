@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SafetyNotes } from "@/components/SafetyNotes";
 import { Kbd } from "@/components/ui/kbd";
 import { useAppInfo } from "@/hooks/queries/app";
 import { type ShortcutId, shortcutLabel } from "@/lib/shortcuts";
@@ -62,7 +63,7 @@ function workflowSteps(value: unknown): string[] {
     : [];
 }
 
-/** Quick-start guide, recommended workflows and keyboard shortcuts. */
+/** Quick-start guide, recommended workflows, how files are kept safe, keyboard shortcuts. */
 export function HelpDialog({
   open,
   onOpenChange,
@@ -115,6 +116,7 @@ export function HelpDialog({
             ))}
           </div>
         </section>
+        <SafetyNotes />
         <section>
           <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
             <Keyboard className="size-3.5" />

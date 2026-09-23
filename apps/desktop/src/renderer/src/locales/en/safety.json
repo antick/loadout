@@ -1,0 +1,31 @@
+{
+  "help": {
+    "safety": {
+      "title": "How your files are kept safe",
+      "agentFolders": {
+        "title": "Agent folders",
+        "body": "{{app}} never overwrites or deletes anything in an agent's folder that it did not put there; a clash is reported with the exact path instead. A folder several agents share is cleaned up only when none of them still uses it."
+      },
+      "editor": {
+        "title": "Editing",
+        "body": "A save never overwrites a change made on disk after you opened the file: you see both and choose. Every save keeps the version it replaced (the last 20), and unsaved text survives closing the window."
+      },
+      "copies": {
+        "title": "Copies in agent folders",
+        "body": "Saving a library skill refreshes its copies, except a copy that was changed in the agent's folder: that one is left alone and reported."
+      },
+      "updates": {
+        "title": "Updates",
+        "body": "Before an update deletes a file you see which ones and approve. Automatic updates never delete files, and hold back skills you edited."
+      },
+      "backup": {
+        "title": "Backup",
+        "body": "A conflict never blocks a sync: your version stays until you choose, and a safety snapshot is taken first. Restoring a snapshot saves the current state first. Your GitHub token is encrypted with the system keychain."
+      },
+      "library": {
+        "title": "Your data",
+        "body": "Everything lives in ~/.loadout. Moving the library goes only into an empty folder and moves all or nothing. Removing all data takes {{app}}'s links out of agent folders first and never touches project folders."
+      }
+    }
+  }
+}
