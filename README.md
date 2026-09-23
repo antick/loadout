@@ -311,24 +311,13 @@ use the agent-control setup card on the Dashboard.
 | `pnpm package` | Build installers into `apps/desktop/release`  |
 | `pnpm cli …`   | Run the CLI from source                       |
 
-The interface also runs in a plain browser on sample data: `pnpm --filter @loadout/desktop demo`
-serves it, `build:demo` builds it into `apps/desktop/out/demo`.
-
 ## Website
 
-`apps/site` is the landing page at [loadout.potion.sh](https://loadout.potion.sh), an Astro
-static site. `pnpm exec turbo run build --filter=@loadout/site` builds it with the browser demo
-under `/demo`. Vercel builds and serves it from `vercel.json`; links such as where installers are
-downloaded live in `apps/site/src/lib/site.ts`. The agent list on the page comes from
-`@loadout/shared`, so it always matches the app.
-
-Linux installers are built for x64 and arm64. Standalone CLI executables are built with
-`pnpm --filter @loadout/cli run build:standalone` (this platform), `-- --target linux-arm64,win-x64`
-or `-- --all`, into `packages/cli/dist/standalone` with a `SHA256SUMS` file. Targets other than
-this computer's download the matching official Node binary; macOS targets need a Mac to sign.
-
-Installer signing is still pending; `pnpm package` is a build command, not a guarantee of a
-signed release.
+`apps/landing` is the landing page at [loadout.potion.sh](https://loadout.potion.sh), an Astro
+static site. `pnpm exec turbo run build --filter=@loadout/landing` builds it. Vercel builds and
+serves it from `vercel.json`; links such as where installers are downloaded live in
+`apps/landing/src/lib/site.ts`. The agent list on the page comes from `@loadout/shared`, so it
+always matches the app.
 
 ## Releases
 
@@ -360,7 +349,7 @@ are not signed yet, so macOS asks to confirm the first launch and Windows SmartS
 | Path              | Purpose                                            |
 | ----------------- | -------------------------------------------------- |
 | `apps/desktop`    | Electron main, preload and the React renderer      |
-| `apps/site`       | Landing page at loadout.potion.sh                  |
+| `apps/landing`    | Landing page at loadout.potion.sh                  |
 | `packages/core`   | All behaviour, plain Node TypeScript (no Electron) |
 | `packages/cli`    | The `loadout` command-line tool                    |
 | `packages/shared` | Types, API contract, events, settings, formatters  |

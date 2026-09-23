@@ -2,23 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "demo",
+      "name": "landing",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "@loadout/desktop",
-        "run",
-        "demo",
-        "--port",
-        "5199",
-        "--strictPort"
-      ],
-      "port": 5199
-    },
-    {
-      "name": "site",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@loadout/site", "run", "preview", "--port", "4399"],
+      "runtimeArgs": ["--filter", "@loadout/landing", "run", "preview", "--port", "4399"],
       "port": 4399
     }
   ]

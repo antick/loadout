@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
+import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
-import { rendererConfig } from "./renderer.config";
 
 // Workspace packages ship as TypeScript source, so they are bundled rather than externalized.
 const WORKSPACE_PACKAGES = ["@loadout/core", "@loadout/shared"];
@@ -28,7 +30,20 @@ export default defineConfig({
     },
   },
   renderer: {
-    ...rendererConfig,
+    root: resolve(__dirname, "src/renderer"),
+    resolve: {
+      alias: { "@": resolve(__dirname, "src/renderer/src") },
+    },
+    plugins: [
+      tanstackRouter({
+        target: "react",
+        autoCodeSplitting: true,
+        routesDirectory: resolve(__dirname, "src/renderer/src/routes"),
+        generatedRouteTree: resolve(__dirname, "src/renderer/src/routeTree.gen.ts"),
+      }),
+      react(),
+      tailwindcss(),
+    ],
     build: {
       rollupOptions: {
         input: { index: resolve(__dirname, "src/renderer/index.html") },

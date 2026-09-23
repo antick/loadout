@@ -23,14 +23,6 @@
       "dependsOn": ["build"],
       "outputs": ["release/**"],
       "cache": false
-    },
-    "build:demo": {
-      "dependsOn": ["^build"],
-      "outputs": ["out/demo/**"]
-    },
-    "@loadout/site#build": {
-      "dependsOn": ["^build", "@loadout/desktop#build:demo"],
-      "outputs": ["dist/**"]
     }
   }
 }

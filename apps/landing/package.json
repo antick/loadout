@@ -1,12 +1,12 @@
 {
-  "name": "@loadout/site",
+  "name": "@loadout/landing",
   "version": "0.1.0",
   "private": true,
-  "description": "The Loadout landing page at loadout.potion.sh, with the browser demo under /demo",
+  "description": "The Loadout landing page at loadout.potion.sh",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/copy-demo.mjs",
+    "build": "astro build",
     "preview": "astro preview"
   },
   "dependencies": {

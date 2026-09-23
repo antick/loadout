@@ -3,12 +3,9 @@ export const SITE_URL = "https://loadout.potion.sh";
 export const PARENT_URL = "https://potion.sh";
 export const PARENT_NAME = "potion.sh";
 
-/** The browser demo, built from the desktop app's interface on sample data. */
-export const DEMO_PATH = "/demo/";
-
 /**
  * Where installers are published. Empty while there is no public release: the page then says so
- * and points at the demo instead of showing download buttons that lead nowhere.
+ * instead of showing download buttons that lead nowhere.
  */
 export const DOWNLOADS_URL = "";
 

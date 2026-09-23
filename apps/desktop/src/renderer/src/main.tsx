@@ -14,9 +14,8 @@ declare module "@tanstack/react-router" {
 }
 
 async function start(): Promise<void> {
-  // Plain-browser preview and the web demo only: the guard lets the bundler drop the mock from
-  // the desktop build.
-  if ((import.meta.env.DEV || import.meta.env.VITE_LOADOUT_DEMO) && !window.loadout) {
+  // Plain-browser preview only: the guard lets the bundler drop the mock from production builds.
+  if (import.meta.env.DEV && !window.loadout) {
     const { installDevMock } = await import("@/lib/dev-mock");
     installDevMock();
   }

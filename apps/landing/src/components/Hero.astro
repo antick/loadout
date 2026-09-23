@@ -1,6 +1,5 @@
 ---
 import { AGENT_COUNT } from "../lib/agents";
-import { DEMO_PATH, DOWNLOADS_URL } from "../lib/site";
 import LinkBoard from "./LinkBoard.astro";
 ---
 
@@ -13,27 +12,8 @@ import LinkBoard from "./LinkBoard.astro";
       change.
     </p>
     <div class="actions">
-      {
-        DOWNLOADS_URL ? (
-          <>
-            <a class="button" href="#download">
-              Download Loadout
-            </a>
-            <a class="button quiet" href={DEMO_PATH}>
-              Try it in your browser
-            </a>
-          </>
-        ) : (
-          <>
-            <a class="button" href={DEMO_PATH}>
-              Try it in your browser
-            </a>
-            <a class="button quiet" href="#what-it-does">
-              See what it does
-            </a>
-          </>
-        )
-      }
+      <a class="button" href="#download">Get Loadout</a>
+      <a class="button quiet" href="#what-it-does">See what it does</a>
     </div>
   </div>
   <LinkBoard />
