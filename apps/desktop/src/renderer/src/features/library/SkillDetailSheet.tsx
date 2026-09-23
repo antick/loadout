@@ -23,7 +23,6 @@ import { useSkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useSkill } from "@/hooks/queries/skills";
-import { useDoubleClickThrough } from "@/hooks/use-double-click-through";
 
 const DETAIL_TABS = ["document", "source", "compare", "agents", "presets", "projects"] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
@@ -117,15 +116,11 @@ export function SkillDetailSheet({ skillId, onClose }: SkillDetailSheetProps): R
   const [shownId, setShownId] = useState(skillId);
   if (skillId !== null && skillId !== shownId) setShownId(skillId);
   const skill = useSkill(shownId);
-  const editOnDoubleClick = useDoubleClickThrough(
-    skillId === null ? null : { kind: "library", skillId },
-  );
 
   return (
     <Sheet open={skillId !== null} onOpenChange={(open) => (open ? undefined : onClose())}>
       <SheetContent
         className="flex w-full flex-col gap-0 sm:max-w-3xl"
-        onPointerDownOutside={editOnDoubleClick}
         // Focus the panel, not its first button, so no tooltip pops up on opening.
         onOpenAutoFocus={(event) => {
           event.preventDefault();

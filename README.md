@@ -33,7 +33,7 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 - Edit any text file of a skill in the app, wherever it lives: in the library, in an agent's
   skills folder, or in a project. File list, highlighted editor, live Markdown preview (side by
   side, stacked or on its own), search, undo, `⌘S` to save. Open it with **Edit** on a skill's
-  panel or its "…" menu, by double-clicking the skill, or by clicking one of its files.
+  panel, its "…" menu or its right-click menu, or by clicking one of its files.
 - Right-click any skill card or row (Library, an agent, a project) for the same actions as its
   "…" menu. Library skills offer Edit, Show in file manager, Check now and Delete.
 - Code blocks in every Markdown preview (the editor, a skill's panel) are coloured like the

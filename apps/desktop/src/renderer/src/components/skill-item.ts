@@ -13,7 +13,7 @@ export interface SkillItemProps {
   onSelectToggle?: (skill: Skill, modifiers: { shiftKey: boolean }) => void;
   /** Highlight as the currently opened skill. */
   current?: boolean;
-  /** Right-click menu of the item; its "edit" action also runs on double-click. */
+  /** Right-click menu of the item, usually the same actions as its "…" menu. */
   menuActions?: readonly SkillAction[];
   /** Slot for menus and buttons. */
   actions?: ReactNode;

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { editOnDoubleClick } from "@/components/skill-action";
 import { SkillContextMenu } from "@/components/SkillContextMenu";
 import {
   SKILL_ITEM_BASE_CLASS,
@@ -36,7 +35,6 @@ export function SkillCard(props: SkillItemProps): ReactNode {
           aria-label={skill.name}
           className={SKILL_ITEM_HIT_CLASS}
           onClick={skillItemClick(props)}
-          onDoubleClick={editOnDoubleClick(props.menuActions, props.selecting)}
         />
         <div className="flex items-start gap-2">
           {onSelectToggle ? (

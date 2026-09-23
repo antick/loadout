@@ -3,13 +3,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { FolderOpen, PencilLine, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { EDIT_ACTION_ID, type SkillAction } from "@/components/skill-action";
+import type { SkillAction } from "@/components/skill-action";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useCheckSkillUpdate, useRevealSkill } from "@/hooks/mutations/library";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { editLink } from "@/lib/skill-location";
 
-/** What a library skill's right-click menu offers; "edit" also runs on double-click. */
+/** What a library skill's right-click menu offers. */
 export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
     (skill: Skill): SkillAction[] => {
       const actions: SkillAction[] = [
         {
-          id: EDIT_ACTION_ID,
+          id: "edit",
           label: t("editor.open"),
           icon: PencilLine,
           run: () => void navigate(editLink({ kind: "library", skillId: skill.id })),

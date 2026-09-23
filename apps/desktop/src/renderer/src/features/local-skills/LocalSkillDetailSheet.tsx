@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
-import { useDoubleClickThrough } from "@/hooks/use-double-click-through";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { editLink } from "@/lib/skill-location";
 import type { LocalSkillView } from "./local-skill-view";
@@ -71,13 +70,11 @@ export function LocalSkillDetailSheet({
   const files = document.data?.files ?? [];
   // A library document that fails to load reads as "missing" rather than blocking the local one.
   const libraryContent = libraryDocument.isError ? null : libraryDocument.data?.content;
-  const editOnDoubleClick = useDoubleClickThrough(editLocation);
 
   return (
     <Sheet open={openItem !== null} onOpenChange={(open) => (open ? undefined : onClose())}>
       <SheetContent
         className="flex w-full flex-col gap-0 sm:max-w-2xl"
-        onPointerDownOutside={editOnDoubleClick}
         // Focus the sheet itself, not its first button, whose tooltip would pop open unasked.
         onOpenAutoFocus={(event) => {
           event.preventDefault();

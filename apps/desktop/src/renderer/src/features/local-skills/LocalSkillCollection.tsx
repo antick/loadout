@@ -19,7 +19,7 @@ export interface LocalSkillCollectionProps<T extends LocalSkillView> {
   renderBadges?: (item: T) => ReactNode;
   renderActions?: (item: T) => ReactNode;
   renderFooter?: (item: T) => ReactNode;
-  /** Right-click menu per item; its "edit" action also runs on double-click. */
+  /** Right-click menu per item, usually the same actions as its "…" menu. */
   menuActions?: (item: T) => readonly SkillAction[];
 }
 

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { editOnDoubleClick } from "@/components/skill-action";
 import { SkillContextMenu } from "@/components/SkillContextMenu";
 import {
   SKILL_ITEM_BASE_CLASS,
@@ -35,7 +34,6 @@ export function LocalSkillRow(props: LocalSkillItemProps): ReactNode {
           aria-label={item.name}
           className={SKILL_ITEM_HIT_CLASS}
           onClick={localSkillItemClick(props)}
-          onDoubleClick={editOnDoubleClick(props.menuActions, props.selecting)}
         />
         <LocalSkillSelectBox
           item={item}

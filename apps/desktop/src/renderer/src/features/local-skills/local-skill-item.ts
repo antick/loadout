@@ -14,7 +14,7 @@ export interface LocalSkillItemProps {
   current?: boolean;
   /** Extra chips after the sync status, e.g. "Managed". */
   badges?: ReactNode;
-  /** Right-click menu of the item; its "edit" action also runs on double-click. */
+  /** Right-click menu of the item, usually the same actions as its "…" menu. */
   menuActions?: readonly SkillAction[];
   /** Slot for menus, switches and buttons at the top right. */
   actions?: ReactNode;
