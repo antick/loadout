@@ -44,6 +44,7 @@ const WORKFLOWS: readonly { id: string; icon: LucideIcon }[] = [
 
 const SHORTCUT_IDS: readonly ShortcutId[] = [
   "palette",
+  "quickOpen",
   "find",
   "sidebar",
   "sectionHome",
@@ -52,6 +53,8 @@ const SHORTCUT_IDS: readonly ShortcutId[] = [
   "sectionPresets",
   "sectionProjects",
   "save",
+  "editorView",
+  "editorWrap",
   "settings",
   "escape",
 ];

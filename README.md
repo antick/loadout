@@ -32,8 +32,9 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 - Edit any text file of a skill in the app, wherever it lives: in the library, in an agent's
   skills folder, or in a project. File list, highlighted editor, live Markdown preview (side by
-  side, stacked or on its own), search, undo, `⌘S` to save. Open it with **Edit** on a skill's
-  panel, its "…" menu or its right-click menu, or by clicking one of its files.
+  side, stacked or on its own), search, undo, `⌘S` to save, `⌘\` to step through the three
+  layouts, `⌥Z` to wrap long lines. Open it with **Edit** on a skill's panel, its "…" menu or its
+  right-click menu, by clicking one of its files, or with `⌘P` from anywhere.
 - Right-click any skill card or row (Library, an agent, a project) for the same actions as its
   "…" menu. Library skills offer Edit, Show in file manager, Check now and Delete.
 - Code blocks in every Markdown preview (the editor, a skill's panel) are coloured like the
@@ -214,7 +215,8 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   and the theme menu on the right. Every entry opens the page that explains it.
 - Dashboard with library, coverage, agent, update, project and backup stats, quick actions, recent
   activity and recently updated skills.
-- Command palette (`⌘K` / `Ctrl+K`) for skills, presets, projects, agents and actions.
+- Command palette (`⌘K` / `Ctrl+K`) for skills, presets, projects, agents and actions, including
+  "Open a skill in the editor" (`⌘P` / `Ctrl+P`).
 - Light, dark and system theme (from the status bar or Settings), four text sizes.
 - Tray icon, and a choice of what the close button does: ask, keep in tray or quit.
 - Single instance, remembered window size, links open in your browser.

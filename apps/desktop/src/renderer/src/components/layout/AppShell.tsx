@@ -4,6 +4,7 @@ import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } fr
 import { AppUpdateToast } from "@/components/AppUpdateToast";
 import { CloseDialog } from "@/components/CloseDialog";
 import { CommandPalette } from "@/components/CommandPalette";
+import { SkillPicker } from "@/components/SkillPicker";
 import { CrashBanner } from "@/components/CrashBanner";
 import { LibraryMissingDialog } from "@/components/LibraryMissingDialog";
 import { HelpDialog } from "@/components/HelpDialog";
@@ -44,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   );
   const sidebarWidth = clampSidebarWidth(Number(storedWidth) || SIDEBAR_WIDTH_DEFAULT_PX);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [skillPickerOpen, setSkillPickerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [presetDialog, setPresetDialog] = useState<{ open: boolean; preset: Preset | null }>({
@@ -75,6 +77,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   const shell = useMemo<ShellActions>(
     () => ({
       openCommandPalette: () => setPaletteOpen(true),
+      openSkillPicker: () => setSkillPickerOpen(true),
       openHelp: () => setHelpOpen(true),
       openPresetDialog: (preset) => setPresetDialog({ open: true, preset: preset ?? null }),
       openAddProject: () => setAddProjectOpen(true),
@@ -89,6 +92,11 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   useHotkey(SHORTCUT_KEYS.palette, (event) => {
     event.preventDefault();
     setPaletteOpen((open) => !open);
+  });
+  useHotkey(SHORTCUT_KEYS.quickOpen, (event) => {
+    event.preventDefault();
+    setPaletteOpen(false);
+    setSkillPickerOpen((open) => !open);
   });
   useHotkey(SHORTCUT_KEYS.settings, (event) => {
     event.preventDefault();
@@ -124,6 +132,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
           </SidebarProvider>
 
           <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+          <SkillPicker open={skillPickerOpen} onOpenChange={setSkillPickerOpen} />
           <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
           <PresetDialog
             open={presetDialog.open}

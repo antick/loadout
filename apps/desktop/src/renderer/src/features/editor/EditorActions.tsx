@@ -41,6 +41,7 @@ export function EditorActions({
 }: EditorActionsProps): ReactNode {
   const { t } = useTranslation();
   const saveShortcut = useShortcutLabel("save");
+  const viewShortcut = useShortcutLabel("editorView");
 
   return (
     <>
@@ -65,7 +66,7 @@ export function EditorActions({
                 key={mode}
                 value={mode}
                 aria-label={t(`editor.view.${mode}`)}
-                title={t(`editor.view.${mode}`)}
+                title={`${t(`editor.view.${mode}`)} (${viewShortcut})`}
               >
                 <Icon />
               </ToggleGroupItem>

@@ -84,7 +84,9 @@
       "sectionLibrary": "Show the library in the sidebar",
       "sectionAgents": "Show agents in the sidebar",
       "sectionPresets": "Show presets in the sidebar",
-      "sectionProjects": "Show projects in the sidebar"
+      "sectionProjects": "Show projects in the sidebar",
+      "editorView": "Switch the editor between text, text and preview, and preview",
+      "editorWrap": "Wrap long lines in the editor, or stop wrapping"
     }
   }
 }

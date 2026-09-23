@@ -239,7 +239,8 @@
     "newPreset": "New preset",
     "toggleTheme": "Switch between light and dark",
     "settings": "Open settings",
-    "help": "Open the quick-start guide"
+    "help": "Open the quick-start guide",
+    "editSkill": "Open a skill in the editor"
   },
   "help": {
     "title": "Quick start",
@@ -303,7 +304,8 @@
       "find": "Search the current page",
       "sidebar": "Fold the sidebar away or bring it back",
       "settings": "Open settings",
-      "escape": "Leave selection mode or close a dialog"
+      "escape": "Leave selection mode or close a dialog",
+      "quickOpen": "Open a skill in the editor"
     }
   },
   "closeDialog": {
@@ -327,5 +329,13 @@
   "appUpdate": {
     "available": "{{app}} {{version}} is available",
     "view": "View"
+  },
+  "skillPicker": {
+    "title": "Open a skill",
+    "description": "Type part of a skill's name to open it in the editor.",
+    "placeholder": "Open a skill in the editor",
+    "heading": "Library",
+    "empty": "No skill matches.",
+    "noSkills": "The library has no skills yet."
   }
 }

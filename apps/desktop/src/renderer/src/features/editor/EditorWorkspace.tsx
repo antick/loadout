@@ -37,11 +37,11 @@ import { useEditorSession } from "@/features/editor/use-editor-session";
 import { useLeaveGuard } from "@/features/editor/use-leave-guard";
 import { useSaveReport } from "@/features/editor/use-save-report";
 import { useEditorFile, useEditorFiles } from "@/hooks/queries/editor";
-import { useHotkey } from "@/hooks/use-hotkey";
+import { isDialogOpen, useHotkey } from "@/hooks/use-hotkey";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { api } from "@/lib/api";
 import { DEFAULT_EDITOR_VIEW, EDITOR_VIEWS, type EditorView, STORAGE_KEYS } from "@/lib/constants";
-import { SHORTCUT_KEYS } from "@/lib/shortcuts";
+import { ALT_SHORTCUT_KEYS, SHORTCUT_KEYS } from "@/lib/shortcuts";
 import { locationKey } from "@/lib/skill-location";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { toastError } from "@/lib/toast";
@@ -187,6 +187,22 @@ export function EditorWorkspace({
     event.preventDefault();
     saveActive();
   });
+
+  // ⌘\ steps through text, text and preview, and preview; ⌥Z wraps long lines or stops.
+  useHotkey(SHORTCUT_KEYS.editorView, (event) => {
+    if (!language.previewable || isDialogOpen()) return;
+    event.preventDefault();
+    setView(EDITOR_VIEWS[(EDITOR_VIEWS.indexOf(view) + 1) % EDITOR_VIEWS.length] ?? "edit");
+  });
+  useHotkey(
+    ALT_SHORTCUT_KEYS.editorWrap,
+    (event) => {
+      if (isDialogOpen()) return;
+      event.preventDefault();
+      setWrap((on) => !on);
+    },
+    { mod: false, alt: true },
+  );
 
   const resolveConflict = async (action: "overwrite" | "disk"): Promise<void> => {
     if (!conflict) return;

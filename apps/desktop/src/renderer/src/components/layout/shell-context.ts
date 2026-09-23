@@ -4,6 +4,8 @@ import { createContext, useContext } from "react";
 /** App-wide dialogs owned by the shell. Any page can open them through `useShell()`. */
 export interface ShellActions {
   openCommandPalette(): void;
+  /** ⌘P: pick a library skill and open it in the editor. */
+  openSkillPicker(): void;
   openHelp(): void;
   /** Create a preset, or edit the one given. */
   openPresetDialog(preset?: Preset): void;

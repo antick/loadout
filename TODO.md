@@ -170,10 +170,6 @@ The editor (`/library/$skillId/edit`) shipped without these. Each one is a separ
   - **To do:** let the file path give way first (hide it below a width), or move it into the
     editor's status bar.
   - **Code:** `apps/desktop/src/renderer/src/components/layout/PageHeader.tsx`, `features/editor/EditorWorkspace.tsx`
-- [ ] **Not in the command palette.** Editing opens from a skill's panel, its "…" menu or its
-      file names (library, agent folders and projects), but the palette has no "Edit <skill>".
-  - **To do:** an "Edit" entry per skill in the palette, opening `editLink(location)`.
-  - **Code:** `apps/desktop/src/renderer/src/components/CommandPalette.tsx`, `lib/skill-location.ts`
 - [ ] **Not tested yet.** The editor was click-tested on macOS only. The update guard for edits
       is covered by core tests against a local Git fixture, never against a real remote update.
   - **To check:** on Windows and Linux, saving keeps CRLF files and file permissions as they were,

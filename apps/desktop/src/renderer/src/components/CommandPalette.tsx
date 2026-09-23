@@ -5,6 +5,7 @@ import {
   Folder,
   FolderSearch,
   LifeBuoy,
+  PencilLine,
   Package,
   Plus,
   Settings,
@@ -52,6 +53,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
   const projects = useProjects();
   const agents = useAvailableAgents();
   const settingsLabel = useShortcutLabel("settings");
+  const quickOpenLabel = useShortcutLabel("quickOpen");
 
   const run = (action: () => void): void => {
     onOpenChange(false);
@@ -81,6 +83,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
           >
             <FolderSearch />
             {t("palette.scan")}
+          </CommandItem>
+          <CommandItem onSelect={() => run(() => shell.openSkillPicker())}>
+            <PencilLine />
+            {t("palette.editSkill")}
+            <CommandShortcut>{quickOpenLabel}</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => run(() => backupNow.mutate())}>
             <CloudUpload />

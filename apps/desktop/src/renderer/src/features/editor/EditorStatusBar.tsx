@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CursorPosition } from "@/features/editor/CodeEditor";
+import { useShortcutLabel } from "@/hooks/use-shortcut-label";
 import { cn } from "@/lib/utils";
 
 export type SaveState = "saved" | "unsaved" | "saving";
@@ -66,6 +67,7 @@ export function EditorStatusBar({
   onToggleFiles,
 }: EditorStatusBarProps): ReactNode {
   const { t } = useTranslation();
+  const wrapShortcut = useShortcutLabel("editorWrap");
   return (
     <footer className="flex h-7 shrink-0 items-center gap-3 border-t bg-background px-2 text-xs text-muted-foreground">
       <BarButton label={t("editor.status.files")} pressed={filesOpen} onClick={onToggleFiles}>
@@ -87,7 +89,11 @@ export function EditorStatusBar({
       </output>
       {languageLabel ? <span>{languageLabel}</span> : null}
       {eol ? <span className="font-mono uppercase">{eol}</span> : null}
-      <BarButton label={t("editor.status.wrap")} pressed={wrap} onClick={onToggleWrap}>
+      <BarButton
+        label={`${t("editor.status.wrap")} (${wrapShortcut})`}
+        pressed={wrap}
+        onClick={onToggleWrap}
+      >
         <WrapText />
       </BarButton>
     </footer>
