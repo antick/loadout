@@ -1,9 +1,12 @@
-import { existsSync, readFileSync, readdirSync, renameSync } from "node:fs";
-import { cpSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, readdirSync, renameSync, rmdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import {
+  APP_DATA_DIR_NAME,
   APP_SLUG,
+  CLI_BIN_DIR_NAME,
+  DEV_APP_DATA_DIR_NAME,
+  LIBRARY_CONFIG_FILE,
   LIBRARY_DIR_NAME,
   type LibraryLocation,
   type LibraryWarning,
@@ -12,8 +15,9 @@ import { errorMessage } from "./errors";
 import {
   canonicalPath,
   ensureDir,
-  isInside,
   normalizeAbsolutePath,
+  pathsOverlap,
+  removePathSync,
   writeJsonAtomic,
 } from "./util/fs";
 
@@ -44,7 +48,7 @@ interface LocationConfig {
 
 export interface ResolveOptions {
   homeDir?: string;
-  /** OS config folder override (tests). */
+  /** OS config folder override (tests): where older versions kept the library location. */
   configDir?: string;
   /** Use this base folder and skip the saved location entirely (CLI `--library`, tests). */
   baseDir?: string;
@@ -60,8 +64,31 @@ export interface ResolvedLibrary {
 const DB_FILE = `${APP_SLUG}.db`;
 const LOCK_FILE = `.${APP_SLUG}.lock`;
 const CRASH_FILE = "last-crash.json";
-const CONFIG_FILE = "library.json";
 const METADATA_DIR = `.${APP_SLUG}`;
+const SKILLS_DIR = "skills";
+const CACHE_DIR = "cache";
+const HISTORY_DIR = "history";
+const LOGS_DIR = "logs";
+
+/** What the library is made of. Only these move when the library moves. */
+const LIBRARY_ENTRIES: readonly string[] = [
+  SKILLS_DIR,
+  DB_FILE,
+  `${DB_FILE}-wal`,
+  `${DB_FILE}-shm`,
+  HISTORY_DIR,
+  CACHE_DIR,
+  LOGS_DIR,
+];
+
+/** What stays in the home data folder wherever the library is. */
+const HOME_ENTRIES: ReadonlySet<string> = new Set([
+  LIBRARY_CONFIG_FILE,
+  CLI_BIN_DIR_NAME,
+  APP_DATA_DIR_NAME,
+  DEV_APP_DATA_DIR_NAME,
+  LOCK_FILE,
+]);
 
 export function osConfigDir(home: string): string {
   if (process.platform === "darwin") return join(home, "Library", "Application Support");
@@ -69,21 +96,21 @@ export function osConfigDir(home: string): string {
   return process.env.XDG_CONFIG_HOME ?? join(home, ".config");
 }
 
-function buildPaths(baseDir: string, defaultBaseDir: string, configPath: string): LibraryPaths {
-  const skillsDir = join(baseDir, "skills");
+function buildPaths(baseDir: string, defaultBaseDir: string): LibraryPaths {
+  const skillsDir = join(baseDir, SKILLS_DIR);
   return {
     defaultBaseDir,
     baseDir,
     skillsDir,
     metadataDir: join(skillsDir, METADATA_DIR),
-    cacheDir: join(baseDir, "cache"),
-    historyDir: join(baseDir, "history"),
-    logsDir: join(baseDir, "logs"),
-    binDir: join(defaultBaseDir, "bin"),
+    cacheDir: join(baseDir, CACHE_DIR),
+    historyDir: join(baseDir, HISTORY_DIR),
+    logsDir: join(baseDir, LOGS_DIR),
+    binDir: join(defaultBaseDir, CLI_BIN_DIR_NAME),
     dbPath: join(baseDir, DB_FILE),
     lockPath: join(baseDir, LOCK_FILE),
-    crashMarkerPath: join(baseDir, "logs", CRASH_FILE),
-    configPath,
+    crashMarkerPath: join(baseDir, LOGS_DIR, CRASH_FILE),
+    configPath: join(defaultBaseDir, LIBRARY_CONFIG_FILE),
   };
 }
 
@@ -108,33 +135,82 @@ function readConfig(
   }
 }
 
-function isEmptyOrMissing(path: string): boolean {
-  if (!existsSync(path)) return true;
+/** A move may only fill a folder that holds nothing of its own (the home folder's files aside). */
+function canReceive(target: string, defaultBaseDir: string): boolean {
+  if (!existsSync(target)) return true;
   try {
-    return readdirSync(path).length === 0;
+    const entries = readdirSync(target);
+    const isHome = canonicalPath(target) === canonicalPath(defaultBaseDir);
+    return entries.every((name) => isHome && HOME_ENTRIES.has(name));
   } catch {
     return false;
   }
 }
 
-/** Move the library. Returns false when it could not be done safely; the source is then kept. */
-function migrate(source: string, target: string, notes: string[]): boolean {
-  if (isInside(source, target) || !isEmptyOrMissing(target)) {
-    notes.push(`Library move skipped: target ${target} is inside the source or not empty`);
+/** Move one entry, by rename when possible and by copy across disks. */
+function moveEntry(from: string, to: string): void {
+  try {
+    renameSync(from, to);
+  } catch {
+    cpSync(from, to, { recursive: true });
+    removePathSync(from);
+  }
+}
+
+/**
+ * Move the library's own entries (skills, database, history, cache, logs) from one folder to
+ * another; the home folder's files stay. All or nothing: a failure moves back what was moved.
+ * Returns false when it could not be done safely; the source is then kept.
+ */
+function migrate(source: string, target: string, defaultBaseDir: string, notes: string[]): boolean {
+  if (pathsOverlap(canonicalPath(source), canonicalPath(target))) {
+    notes.push(`Library move skipped: ${target} and ${source} contain one another`);
     return false;
   }
+  if (!canReceive(target, defaultBaseDir)) {
+    notes.push(`Library move skipped: ${target} is not empty`);
+    return false;
+  }
+  const entries = LIBRARY_ENTRIES.filter((name) => existsSync(join(source, name)));
+  const moved: string[] = [];
   try {
-    ensureDir(dirname(target));
-    if (existsSync(target)) readdirSync(target);
-    try {
-      renameSync(source, target);
-    } catch {
-      cpSync(source, target, { recursive: true });
+    ensureDir(target);
+    for (const name of entries) {
+      moveEntry(join(source, name), join(target, name));
+      moved.push(name);
     }
-    return true;
   } catch (error) {
     notes.push(`Library move failed: ${errorMessage(error)}`);
+    for (const name of moved.toReversed()) {
+      try {
+        moveEntry(join(target, name), join(source, name));
+      } catch (rollback) {
+        notes.push(`Could not move ${name} back: ${errorMessage(rollback)}`);
+      }
+    }
     return false;
+  }
+  // A custom location that is now empty is ours to tidy up; the home folder always stays.
+  if (canonicalPath(source) !== canonicalPath(defaultBaseDir)) {
+    removePathSync(join(source, LOCK_FILE));
+    try {
+      rmdirSync(source);
+    } catch {
+      // Something else lives there too; leave it.
+    }
+  }
+  return true;
+}
+
+/** Older versions kept the location file in the OS config folder. Bring it home once. */
+function adoptLegacyConfig(legacyPath: string, configPath: string, notes: string[]): void {
+  if (existsSync(configPath) || !existsSync(legacyPath)) return;
+  try {
+    ensureDir(dirname(configPath));
+    moveEntry(legacyPath, configPath);
+    notes.push(`Moved the library location file from ${legacyPath} to ${configPath}`);
+  } catch (error) {
+    notes.push(`Could not move the library location file: ${errorMessage(error)}`);
   }
 }
 
@@ -142,13 +218,16 @@ function migrate(source: string, target: string, notes: string[]): boolean {
 export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   const home = options.homeDir ?? homedir();
   const defaultBaseDir = join(home, LIBRARY_DIR_NAME);
-  const configPath = join(options.configDir ?? osConfigDir(home), APP_SLUG, CONFIG_FILE);
+  const configPath = join(defaultBaseDir, LIBRARY_CONFIG_FILE);
   const warnings: LibraryWarning[] = [];
   const notes: string[] = [];
 
   if (options.baseDir) {
-    return { paths: buildPaths(options.baseDir, defaultBaseDir, configPath), warnings, notes };
+    return { paths: buildPaths(options.baseDir, defaultBaseDir), warnings, notes };
   }
+
+  const legacyDir = options.configDir ?? osConfigDir(home);
+  adoptLegacyConfig(join(legacyDir, APP_SLUG, LIBRARY_CONFIG_FILE), configPath, notes);
 
   const config = readConfig(configPath, warnings, notes);
   let baseDir = defaultBaseDir;
@@ -164,7 +243,7 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   if (pending) {
     let keepMarker = false;
     const same = canonicalPath(pending) === canonicalPath(baseDir);
-    if (existsSync(pending) && !same && !migrate(pending, baseDir, notes)) {
+    if (existsSync(pending) && !same && !migrate(pending, baseDir, defaultBaseDir, notes)) {
       warnings.push("migration_incomplete");
       baseDir = pending;
       keepMarker = true;
@@ -175,7 +254,7 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   }
 
   return {
-    paths: buildPaths(baseDir, defaultBaseDir, configPath),
+    paths: buildPaths(baseDir, defaultBaseDir),
     warnings: [...new Set(warnings)],
     notes,
   };

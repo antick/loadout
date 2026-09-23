@@ -79,15 +79,25 @@ their outcome and rely on the same invalidation.
 
 ## Library on disk
 
+Everything lives in one home data folder, `~/.loadout`. The library can be moved elsewhere in
+Settings; then only the library's own entries move and the rest stays home.
+
 ```
-~/.loadout/
-  loadout.db            SQLite (metadata; rebuilt from files when missing)
+~/.loadout/                home data folder (always here)
+  library.json             where the library is, when it was moved (absent otherwise)
+  bin/                     published CLI for agents
+  app/                     the desktop app's own files (app-dev/ for the development build)
+  — the library, unless moved —
+  loadout.db               SQLite (metadata; rebuilt from files when missing)
   skills/                  one folder per skill — also the backup Git repository
-    .loadout/           portable metadata: schema.json, skills/<id>.json, presets/<id>.json
+    .loadout/              portable metadata: schema.json, skills/<id>.json, presets/<id>.json
+  history/                 earlier versions of files saved in the editor (this computer only)
   cache/repos/             Git clone cache
   logs/                    rotating logs, crash marker
-  bin/                     published CLI for agents
 ```
+
+A library move (`paths.ts`) moves `skills/`, the database, `history/`, `cache/` and `logs/` as a
+whole or not at all, and only into an empty folder (the home data folder's own files aside).
 
 `schema.json` holds the metadata format version and the highest app version that has written the
 library. Sync, clone and restore refuse a backup whose format is newer than the app knows

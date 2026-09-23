@@ -3,6 +3,17 @@ export const APP_ID = "sh.potion.loadout";
 /** Folder name under the home directory, and the prefix for anything else we name on disk. */
 export const APP_SLUG = "loadout";
 export const LIBRARY_DIR_NAME = `.${APP_SLUG}`;
+/**
+ * Inside the home data folder (`~/.loadout`), next to the library: the desktop app's own files
+ * (window state, encrypted credentials, interface preferences, Electron caches). The development
+ * build keeps its own, so both can run side by side.
+ */
+export const APP_DATA_DIR_NAME = "app";
+export const DEV_APP_DATA_DIR_NAME = "app-dev";
+/** Where the library lives when it is not in the home data folder. Kept in the home folder. */
+export const LIBRARY_CONFIG_FILE = "library.json";
+/** Published command-line tool, in the home data folder. */
+export const CLI_BIN_DIR_NAME = "bin";
 export const CLI_BINARY_NAME = APP_SLUG;
 
 /** File names that mark a folder as a skill, in priority order. */
