@@ -7,6 +7,7 @@ import { APP_SLUG, type ErrorCode } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, cancelled, isAppError } from "../errors";
 import { type ExecResult, exec } from "../util/exec";
+import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
 import {
   copyDir,
   dirSize,
@@ -152,9 +153,9 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
   ): Promise<ExecResult> {
     const proxy = call.network ? ctx.settings.proxy() : null;
     // Config flags only count when they come before the subcommand.
-    const proxyFlags = proxy ? ["-c", `http.proxy=${proxy}`, "-c", `https.proxy=${proxy}`] : [];
+    const flags = configFlags([...BYTE_EXACT_CONFIG, ...proxyConfig(proxy)]);
     try {
-      return await exec(GIT, [...proxyFlags, ...args], {
+      return await exec(GIT, [...flags, ...args], {
         cwd: call.cwd,
         // Never block on a credential prompt; keep messages in English so they can be classified.
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0", LC_ALL: "C" },

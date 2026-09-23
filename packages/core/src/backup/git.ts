@@ -2,6 +2,7 @@ import type { ErrorCode } from "@loadout/shared";
 import type { SecretStore } from "../context";
 import { AppError, isAppError } from "../errors";
 import { type ExecResult, exec } from "../util/exec";
+import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
 import { authEnvironment, maskUrlCredentials } from "./credentials";
 import { deviceEmail } from "./device";
 
@@ -16,7 +17,7 @@ const MAX_DETAIL_LENGTH = 600;
  * to ask for a signing passphrase.
  */
 const FIXED_CONFIG = [
-  "core.autocrlf=false",
+  ...BYTE_EXACT_CONFIG,
   "core.quotepath=false",
   "commit.gpgsign=false",
   "tag.gpgsign=false",
@@ -126,15 +127,10 @@ export function createGit(deps: GitDeps): Git {
     config.push(`user.name=${device}`, `user.email=${deviceEmail(device)}`);
     let authEnv: Record<string, string> = {};
     if (options.network) {
-      const proxy = deps.proxy();
-      if (proxy) config.push(`http.proxy=${proxy}`, `https.proxy=${proxy}`);
+      config.push(...proxyConfig(deps.proxy()));
       authEnv = await authEnvironment(deps.secrets, options.remoteUrl ?? deps.remoteUrl());
     }
-    const fullArgs = [
-      ...config.flatMap((entry) => ["-c", entry]),
-      ...(options.globalArgs ?? []),
-      ...args,
-    ];
+    const fullArgs = [...configFlags(config), ...(options.globalArgs ?? []), ...args];
     try {
       return await exec(GIT_BINARY, fullArgs, {
         cwd: options.cwd ?? deps.repoDir,

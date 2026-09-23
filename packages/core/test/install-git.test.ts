@@ -227,6 +227,17 @@ describe("marketplace install", () => {
     expect(leftoverCheckouts(tmp)).toEqual([]);
   });
 
+  it("keeps line endings as committed when Git would convert them (Git for Windows)", async () => {
+    const globalConfig = join(world.root, "gitconfig");
+    writeFile(globalConfig, "[core]\n\tautocrlf = true\n");
+    restores.push(setEnv({ GIT_CONFIG_GLOBAL: globalConfig }));
+
+    const skill = await install.api.fromMarket("acme/skills", "pdf");
+
+    expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo pdf");
+    expect(readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8")).not.toContain("\r");
+  });
+
   it("fails cleanly for an unknown skill or a malformed source", async () => {
     await expect(install.api.fromMarket("acme/skills", "nope")).rejects.toMatchObject({
       code: "NOT_FOUND",
