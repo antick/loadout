@@ -182,7 +182,18 @@
       "lastChecked": "Last checked {{when}}",
       "neverChecked": "Not checked automatically yet",
       "apply": "Install updates automatically",
-      "applyHint": "Updates that would delete files are never installed without asking."
+      "applyHint": "Updates that would delete files are never installed without asking.",
+      "ttl": "Trust a check for",
+      "ttlHint": "A skill checked more recently than this is not asked again. Check now on a skill always asks.",
+      "ttlOptions": {
+        "0": "Always ask again",
+        "15": "15 minutes",
+        "60": "1 hour",
+        "360": "6 hours",
+        "1440": "1 day"
+      },
+      "ttlMinutes_one": "{{count}} minute",
+      "ttlMinutes_other": "{{count}} minutes"
     },
     "backup": {
       "title": "Backup options",

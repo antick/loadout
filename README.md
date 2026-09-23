@@ -138,6 +138,8 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   tracking.
 - Background checks every hour, 6 hours or day, with optional automatic updates. Updates that
   would delete files are never applied automatically.
+- **Check updates** skips skills checked within the last hour; Settings → Skill updates sets how
+  long a check is trusted, from "always ask again" to a day. **Check now** on one skill always asks.
 
 ### Backup and sync
 

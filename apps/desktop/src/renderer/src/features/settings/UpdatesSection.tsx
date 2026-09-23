@@ -7,7 +7,7 @@ import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSettings } from "@/hooks/queries/settings";
-import { AUTO_UPDATE_INTERVALS } from "./constants";
+import { AUTO_UPDATE_INTERVALS, UPDATE_CHECK_TTL_OPTIONS } from "./constants";
 
 /** How often skills are checked against their sources, and whether updates install themselves. */
 export function UpdatesSection(): ReactNode {
@@ -17,8 +17,14 @@ export function UpdatesSection(): ReactNode {
   const setSetting = useSetSetting();
   const intervalId = useId();
   const applyId = useId();
+  const ttlId = useId();
   if (!settings) return null;
   const off = settings.autoUpdateInterval === "off";
+  // A value set outside this list (e.g. by an older build) is still shown rather than hidden.
+  const ttl = String(settings.updateCheckTtlMinutes);
+  const ttlOptions: readonly string[] = UPDATE_CHECK_TTL_OPTIONS.some((option) => option === ttl)
+    ? UPDATE_CHECK_TTL_OPTIONS
+    : [...UPDATE_CHECK_TTL_OPTIONS, ttl];
 
   return (
     <Panel title={t("settings.updates.title")} description={t("settings.updates.description")}>
@@ -53,6 +59,26 @@ export function UpdatesSection(): ReactNode {
             checked={settings.autoUpdateApply && !off}
             disabled={off}
             onCheckedChange={(value) => setSetting.mutate({ key: "autoUpdateApply", value })}
+          />
+        </SettingRow>
+        <SettingRow
+          label={t("settings.updates.ttl")}
+          description={t("settings.updates.ttlHint")}
+          htmlFor={ttlId}
+        >
+          <OptionSelect
+            id={ttlId}
+            value={ttl}
+            options={ttlOptions}
+            labelOf={(option) =>
+              UPDATE_CHECK_TTL_OPTIONS.some((known) => known === option)
+                ? t(`settings.updates.ttlOptions.${option}`)
+                : t("settings.updates.ttlMinutes", { count: Number(option) })
+            }
+            onChange={(value) =>
+              setSetting.mutate({ key: "updateCheckTtlMinutes", value: Number(value) })
+            }
+            className="w-40"
           />
         </SettingRow>
       </div>
