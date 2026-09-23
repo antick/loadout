@@ -46,6 +46,8 @@ export const SIDEBAR_RECENT_SKILLS = 5;
 
 export const APP_UPDATE_CHECK_DELAY_MS = 3000;
 export const SEARCH_DEBOUNCE_MS = 200;
+/** A click this soon after a skill's panel opened is the second half of a double-click. */
+export const DOUBLE_CLICK_WINDOW_MS = 400;
 export const QUERY_STALE_MS = 30_000;
 export const TOAST_DURATION_MS = 4000;
 /** Paths listed in a conflict toast before the rest is summarised as "+N more". */

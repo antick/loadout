@@ -1,3 +1,4 @@
+import type { SkillAction } from "@/components/skill-action";
 import type { Skill } from "@loadout/shared";
 import type { MouseEvent, ReactNode } from "react";
 
@@ -12,6 +13,8 @@ export interface SkillItemProps {
   onSelectToggle?: (skill: Skill, modifiers: { shiftKey: boolean }) => void;
   /** Highlight as the currently opened skill. */
   current?: boolean;
+  /** Right-click menu of the item; its "edit" action also runs on double-click. */
+  menuActions?: readonly SkillAction[];
   /** Slot for menus and buttons. */
   actions?: ReactNode;
   /** Slot for the agent badges, usually `<SkillAgentBadges />`. */

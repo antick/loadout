@@ -319,6 +319,7 @@ function ProjectWorkspace({
               selection={selection}
               currentId={openId}
               onOpen={(group) => setOpenId(group.id)}
+              menuActions={(group) => actions.actionsFor(group)}
               renderActions={(group) => (
                 <>
                   {project.supportsToggle ? (

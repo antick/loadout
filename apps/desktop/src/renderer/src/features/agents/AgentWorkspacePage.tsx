@@ -210,6 +210,10 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
           currentId={openPath}
           onOpen={(view) => setOpenPath(view.id)}
           renderBadges={managedBadge}
+          menuActions={(view) => {
+            const skill = skillOf(view);
+            return skill ? actionsFor(skill) : [];
+          }}
           renderActions={(view) => {
             const skill = skillOf(view);
             return skill ? <SkillActionMenu name={view.name} actions={actionsFor(skill)} /> : null;

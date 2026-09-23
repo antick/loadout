@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { SkillAction } from "@/components/skill-action";
 import type { Selection } from "@/hooks/use-selection";
 import type { ViewMode } from "@/lib/constants";
 import type { LocalSkillView } from "./local-skill-view";
@@ -18,6 +19,8 @@ export interface LocalSkillCollectionProps<T extends LocalSkillView> {
   renderBadges?: (item: T) => ReactNode;
   renderActions?: (item: T) => ReactNode;
   renderFooter?: (item: T) => ReactNode;
+  /** Right-click menu per item; its "edit" action also runs on double-click. */
+  menuActions?: (item: T) => readonly SkillAction[];
 }
 
 /** The filtered skills as a grid of cards or a list of rows, wired to one selection. */
@@ -30,6 +33,7 @@ export function LocalSkillCollection<T extends LocalSkillView>({
   renderBadges,
   renderActions,
   renderFooter,
+  menuActions,
 }: LocalSkillCollectionProps<T>): ReactNode {
   const Item = viewMode === "grid" ? LocalSkillCard : LocalSkillRow;
   return (
@@ -47,6 +51,7 @@ export function LocalSkillCollection<T extends LocalSkillView>({
           // While selecting, a click anywhere picks the item, so per-item controls step aside.
           actions={selection.active ? null : renderActions?.(item)}
           footer={renderFooter?.(item)}
+          menuActions={menuActions?.(item)}
         />
       ))}
     </div>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import type { SkillAction } from "./skill-action";
+import type { SkillAction } from "@/components/skill-action";
 
 /** Actions as buttons: only the primary ones on a card, all of them in the detail sheet. */
 export function SkillActionButtons({

@@ -1,3 +1,4 @@
+import type { SkillAction } from "@/components/skill-action";
 import type { MouseEvent, ReactNode } from "react";
 import type { LocalSkillView } from "./local-skill-view";
 
@@ -13,6 +14,8 @@ export interface LocalSkillItemProps {
   current?: boolean;
   /** Extra chips after the sync status, e.g. "Managed". */
   badges?: ReactNode;
+  /** Right-click menu of the item; its "edit" action also runs on double-click. */
+  menuActions?: readonly SkillAction[];
   /** Slot for menus, switches and buttons at the top right. */
   actions?: ReactNode;
   /** Slot under the content: agent dots, the primary sync action. */

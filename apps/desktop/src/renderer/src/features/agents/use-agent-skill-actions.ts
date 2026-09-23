@@ -4,7 +4,7 @@ import { ArrowDownToLine, ArrowUpFromLine, CircleMinus, PencilLine, Trash2 } fro
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
-import type { SkillAction } from "@/features/local-skills/skill-action";
+import { EDIT_ACTION_ID, type SkillAction } from "@/components/skill-action";
 import {
   type LocalSkillRef,
   useDeleteLocalSkill,
@@ -42,7 +42,7 @@ export function useAgentSkillActions(
       };
       const actions: SkillAction[] = [
         {
-          id: "edit",
+          id: EDIT_ACTION_ID,
           label: t("editor.open"),
           icon: PencilLine,
           // A deployed link is the library skill; the editor opens that one.

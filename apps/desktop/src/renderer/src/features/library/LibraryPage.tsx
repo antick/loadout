@@ -38,6 +38,7 @@ import { LibrarySelectionActions } from "@/features/library/LibrarySelectionActi
 import { LibraryToolbar } from "@/features/library/LibraryToolbar";
 import { SkillDetailSheet } from "@/features/library/SkillDetailSheet";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
 import { useCheckAllUpdates, useUpdateSkills } from "@/hooks/mutations/library";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -74,6 +75,7 @@ export function LibraryPage({
   const checkAll = useCheckAllUpdates();
   const updateMany = useUpdateSkills();
   const deleteSkills = useDeleteSkills();
+  const actionsFor = useLibrarySkillActions();
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
   const [rest, setRest] = useState(EMPTY_FILTERS);
@@ -117,6 +119,7 @@ export function LibraryPage({
       onSelectToggle={(target, modifiers) => selection.toggle(target.id, modifiers)}
       onOpen={(target) => onOpenSkill(target.id)}
       footer={<SkillAgentBadges skill={skill} />}
+      menuActions={actionsFor(skill)}
       actions={
         <IconButton
           size="icon-xs"

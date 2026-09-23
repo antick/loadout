@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
-import type { SkillAction } from "@/features/local-skills/skill-action";
+import { EDIT_ACTION_ID, type SkillAction } from "@/components/skill-action";
 import {
   type ProjectSkillRef,
   useDeleteProjectSkill,
@@ -85,7 +85,7 @@ export function useProjectSkillActions(
       const actions: SkillAction[] = lead
         ? [
             {
-              id: "edit",
+              id: EDIT_ACTION_ID,
               label: t("editor.open"),
               icon: PencilLine,
               run: () =>

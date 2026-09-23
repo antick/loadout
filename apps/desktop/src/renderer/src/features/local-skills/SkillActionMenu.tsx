@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { SkillAction } from "./skill-action";
+import { type SkillAction, splitActions } from "@/components/skill-action";
 
 function menuEntry(action: SkillAction): ReactNode {
   const Icon = action.icon;
@@ -36,8 +36,7 @@ export function SkillActionMenu({
 }): ReactNode {
   const { t } = useTranslation();
   if (actions.length === 0) return null;
-  const safe = actions.filter((action) => !action.destructive);
-  const destructive = actions.filter((action) => action.destructive);
+  const { safe, destructive } = splitActions(actions);
 
   return (
     <DropdownMenu>
