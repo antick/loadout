@@ -145,7 +145,7 @@ The editor (`/library/$skillId/edit`) shipped without these. Each one is a separ
     (`skills.createFile`, `renameFile`, `deleteFile`), updates `editedFiles` and the content hash,
     refreshes copy deployments like a save does, and never touches the main document's existence
     (a skill without `SKILL.md` stops being a skill).
-  - **Code:** `packages/core/src/skills/editor.ts`, `apps/desktop/src/renderer/src/features/editor/EditorFileList.tsx`
+  - **Code:** `packages/core/src/editor/files.ts`, `packages/core/src/editor/service.ts`, `apps/desktop/src/renderer/src/features/editor/EditorFileList.tsx`
 - [ ] **Edits made outside the app are not tracked.** Only saves made in the editor are recorded
       in `editedFiles`, so an update replaces a hand edit of the library folder without asking.
   - **To do:** remember the content hash each skill had right after it last came from its source
@@ -164,7 +164,7 @@ The editor (`/library/$skillId/edit`) shipped without these. Each one is a separ
       its lines use, so its other lines change on the first save.
   - **To do:** keep the ending of each untouched line (diff the saved text against the original
     lines), or at least say so in the status bar before the first save.
-  - **Code:** `packages/core/src/skills/text-file.ts`
+  - **Code:** `packages/core/src/editor/text-file.ts`
 - [ ] **Narrow windows.** At the minimum window width with the sidebar open, the skill name in the
       top bar is cut off, because the file path and the editor buttons share the row.
   - **To do:** let the file path give way first (hide it below a width), or move it into the
@@ -192,8 +192,6 @@ The editor (`/library/$skillId/edit`) shipped without these. Each one is a separ
 - [ ] `loadout --version` prints the CLI package version, not the app version.
 - [ ] No `--dry-run` on `skills deploy` / `skills undeploy`.
 - [ ] Dashboard stat-card subtitles truncate at narrow widths ("2 of 2 installed for an …").
-- [ ] "Settings → Agents" links from the agent pages go to `/settings`; point them at
-      `/settings?section=agents`.
 - [ ] Marketplace search results are not cached (boards are, for 5 minutes).
 - [ ] After "upload to library" of a brand-new skill fails to adopt, the library folder is kept and
       gets re-indexed as an orphan on the next start. Clean it up on failure.
