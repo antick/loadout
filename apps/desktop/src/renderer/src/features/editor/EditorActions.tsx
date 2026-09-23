@@ -77,10 +77,18 @@ export function EditorActions({
       <Button variant="outline" size="sm" onClick={onDone}>
         {t("editor.done")}
       </Button>
-      <Button size="sm" disabled={!canSave} onClick={onSave}>
+      <Button
+        size="sm"
+        disabled={!canSave}
+        onClick={onSave}
+        title={`${t("editor.save")} (${saveShortcut})`}
+      >
         {saving ? <Spinner /> : <Save />}
         {t("editor.save")}
-        <Kbd className="bg-primary-foreground/15 text-primary-foreground">{saveShortcut}</Kbd>
+        {/* Dropped in a narrow window so the skill's name keeps its room in the top bar. */}
+        <Kbd className="bg-primary-foreground/15 text-primary-foreground max-lg:hidden">
+          {saveShortcut}
+        </Kbd>
       </Button>
     </>
   );

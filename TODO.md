@@ -165,11 +165,6 @@ The editor (`/library/$skillId/edit`) shipped without these. Each one is a separ
   - **To do:** keep the ending of each untouched line (diff the saved text against the original
     lines), or at least say so in the status bar before the first save.
   - **Code:** `packages/core/src/editor/text-file.ts`
-- [ ] **Narrow windows.** At the minimum window width with the sidebar open, the skill name in the
-      top bar is cut off, because the file path and the editor buttons share the row.
-  - **To do:** let the file path give way first (hide it below a width), or move it into the
-    editor's status bar.
-  - **Code:** `apps/desktop/src/renderer/src/components/layout/PageHeader.tsx`, `features/editor/EditorWorkspace.tsx`
 - [ ] **Not tested yet.** The editor was click-tested on macOS only. The update guard for edits
       is covered by core tests against a local Git fixture, never against a real remote update.
   - **To check:** on Windows and Linux, saving keeps CRLF files and file permissions as they were,

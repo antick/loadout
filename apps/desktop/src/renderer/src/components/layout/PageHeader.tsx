@@ -57,8 +57,11 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
                 </span>
               ))}
               <h1 className="truncate text-[0.9375rem] font-semibold tracking-tight">{title}</h1>
+              {/* When the bar is tight the subtitle gives way long before the title does. */}
               {subtitle ? (
-                <span className="truncate text-[0.8125rem] text-muted-foreground">{subtitle}</span>
+                <span className="min-w-0 shrink-[1000] truncate text-[0.8125rem] text-muted-foreground">
+                  {subtitle}
+                </span>
               ) : null}
             </div>,
             slots.title,
