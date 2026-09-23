@@ -310,8 +310,33 @@ Linux installers are built for x64 and arm64. Standalone CLI executables are bui
 or `-- --all`, into `packages/cli/dist/standalone` with a `SHA256SUMS` file. Targets other than
 this computer's download the matching official Node binary; macOS targets need a Mac to sign.
 
-Installer signing and cross-platform packaging verification are still pending;
-`pnpm package` is a build command, not a guarantee of a signed release.
+Installer signing is still pending; `pnpm package` is a build command, not a guarantee of a
+signed release.
+
+## Releases
+
+GitHub Actions runs `pnpm check` on Linux and macOS for every push to `main` and every pull
+request (`.github/workflows/ci.yml`).
+
+`.github/workflows/release.yml` builds the installers and collects them in a draft prerelease:
+macOS (Apple Silicon and Intel, DMG and ZIP), Windows (NSIS installer), Linux (AppImage and DEB,
+x64 and arm64), plus the standalone CLI executables with their `SHA256SUMS`. To cut a release:
+
+1. Set the new version in `apps/desktop/package.json` and commit it.
+2. Tag the commit with that version and push the tag, for example for 0.2.0:
+
+   ```bash
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+
+   Or run **Release builds** by hand from the repository's Actions tab; it tags the current
+   commit with the version.
+
+3. When the workflow finishes, open the draft under Releases, check the files, and publish it.
+
+A tag that does not match the version in `apps/desktop/package.json` stops the workflow. The builds
+are not signed yet, so macOS asks to confirm the first launch and Windows SmartScreen warns.
 
 ## Layout
 
