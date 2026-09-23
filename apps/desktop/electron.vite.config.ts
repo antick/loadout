@@ -8,6 +8,8 @@ import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 const WORKSPACE_PACKAGES = ["@loadout/core", "@loadout/shared"];
 // Pure-JS runtime deps of the workspace packages are bundled too, so the packaged app needs no node_modules.
 const BUNDLED_DEPS = [...WORKSPACE_PACKAGES, "yaml", "fflate"];
+// Pins the renderer dev server (`--rendererOnly` browser preview); vite picks a free port without it.
+const RENDERER_PORT = Number(process.env.LOADOUT_RENDERER_PORT) || undefined;
 
 export default defineConfig({
   main: {
@@ -31,6 +33,7 @@ export default defineConfig({
   },
   renderer: {
     root: resolve(__dirname, "src/renderer"),
+    server: { port: RENDERER_PORT, strictPort: RENDERER_PORT !== undefined },
     resolve: {
       alias: { "@": resolve(__dirname, "src/renderer/src") },
     },

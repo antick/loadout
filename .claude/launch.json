@@ -6,6 +6,22 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@loadout/landing", "run", "preview", "--port", "4399"],
       "port": 4399
+    },
+    {
+      "name": "desktop-mock",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@loadout/desktop",
+        "exec",
+        "electron-vite",
+        "dev",
+        "--rendererOnly"
+      ],
+      "port": 5199,
+      "env": {
+        "LOADOUT_RENDERER_PORT": "5199"
+      }
     }
   ]
 }
