@@ -61,6 +61,11 @@ export class AgentRegistry {
     return candidates.find((path) => existsSync(path)) ?? (candidates[0] as string);
   }
 
+  /** A home-relative path on this machine, preferring the OS config folder variant that exists. */
+  homePath(relative: string): string {
+    return this.#firstExisting(relative);
+  }
+
   customAgents(): CustomAgentRecord[] {
     const builtIn = new Set(BUILT_IN_AGENTS.map((a) => a.key));
     return this.#ctx.settings

@@ -4,6 +4,7 @@ export * from "./constants";
 export * from "./errors";
 export * from "./events";
 export * from "./format";
+export * from "./instructions";
 export * from "./settings";
 export * from "./types";
 export * from "./version";

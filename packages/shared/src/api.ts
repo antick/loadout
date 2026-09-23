@@ -53,6 +53,7 @@ import type {
   SyncOutcome,
   UpdateResult,
 } from "./types";
+import type { InstructionFile } from "./instructions";
 import type { SettingKey, SettingValue, Settings } from "./settings";
 
 /**
@@ -99,6 +100,14 @@ export interface EditorApi {
   /** Earlier versions of one file, newest first. */
   fileVersions(location: SkillLocation, path: string): Promise<SkillFileVersion[]>;
   readFileVersion(location: SkillLocation, path: string, versionId: string): Promise<string>;
+}
+
+/** Instruction files (`CLAUDE.md`, `AGENTS.md`, …) of the available agents. Edited via `editor`. */
+export interface InstructionsApi {
+  /** Global files when `projectId` is null, else that project's. One entry per distinct file. */
+  list(projectId: string | null): Promise<InstructionFile[]>;
+  /** Create the (empty) file a location points at. Does nothing when it already exists. */
+  create(location: SkillLocation): Promise<InstructionFile>;
 }
 
 export interface DeployApi {
@@ -265,6 +274,7 @@ export interface LoadoutApi {
   agents: AgentsApi;
   skills: SkillsApi;
   editor: EditorApi;
+  instructions: InstructionsApi;
   deploy: DeployApi;
   install: InstallApi;
   market: MarketApi;
@@ -287,6 +297,7 @@ export const CORE_NAMESPACES = [
   "agents",
   "skills",
   "editor",
+  "instructions",
   "deploy",
   "install",
   "market",

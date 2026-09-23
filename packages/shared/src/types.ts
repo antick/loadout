@@ -196,11 +196,16 @@ export interface SkillFile {
   modifiedAt: number;
 }
 
-/** Where a skill being edited lives: the library, an agent's global folder, or a project. */
+/**
+ * What the editor opens: a skill in the library, an agent's global folder or a project, or an
+ * agent's instruction file.
+ */
 export type SkillLocation =
   | { kind: "library"; skillId: string }
   | { kind: "agent"; agentKey: string; relativePath: string }
-  | { kind: "project"; projectId: string; relativePath: string; agentKey: string };
+  | { kind: "project"; projectId: string; relativePath: string; agentKey: string }
+  /** An agent's instruction file: global when `projectId` is null, else in that project. */
+  | { kind: "instructions"; agentKey: string; projectId: string | null };
 
 /** Another copy of the same skill in the same project, in another agent's folder. */
 export interface SkillCopy {

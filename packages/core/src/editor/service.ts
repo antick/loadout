@@ -1,11 +1,18 @@
-import type { EditorApi, SaveSkillFileResult, Skill } from "@loadout/shared";
+import type {
+  DataScope,
+  EditorApi,
+  SaveSkillFileResult,
+  Skill,
+  SkillLocation,
+} from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
+import type { InstructionFinder } from "../instructions/finder";
 import type { ProjectStore } from "../projects/store";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import { hashDir } from "../util/hash";
-import { applyToCopy, listFiles, readFileAt, segmentsOf, writeFileAt } from "./files";
+import { applyToCopy, listFolderFiles, readFileAt, segmentsOf, writeFileAt } from "./files";
 import type { FileHistory } from "./history";
 import { type ResolvedLocation, createLocationResolver } from "./locations";
 
@@ -20,9 +27,17 @@ export interface EditorServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
   projects: ProjectStore;
+  instructions: InstructionFinder;
   history: FileHistory;
   /** After a library edit: rewrite copy deployments, leaving copies edited in place. */
   refreshCopies(skill: Skill): Promise<CopyRefresh>;
+}
+
+/** What an edit outside the library changes: an agent's folder or a project. */
+function scopeOf(location: SkillLocation): DataScope {
+  if (location.kind === "agent") return "agents";
+  if (location.kind === "instructions" && location.projectId === null) return "agents";
+  return "projects";
 }
 
 export interface EditorService {
@@ -72,7 +87,7 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
 
     files: async (location) => {
       const resolved = resolve(location);
-      return listFiles(resolved.folder.dir, new Set(resolved.librarySkill?.editedFiles ?? []));
+      return listFolderFiles(resolved.folder, new Set(resolved.librarySkill?.editedFiles ?? []));
     },
 
     readFile: async (location, path) => readFileAt(resolve(location).folder, path),
@@ -110,7 +125,7 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
       });
       if (result.written) {
         // A copy that turned out to be a library link was saved as the library skill.
-        ctx.touched(result.skill ? "skills" : location.kind === "agent" ? "agents" : "projects");
+        ctx.touched(result.skill ? "skills" : scopeOf(location));
       }
       return result;
     },

@@ -1,8 +1,9 @@
-import { basename } from "node:path";
+import { basename, dirname } from "node:path";
 import type { EditTarget, Skill, SkillCopy, SkillLocation } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { invalid, notFound } from "../errors";
+import type { InstructionFinder, InstructionLocation } from "../instructions/finder";
 import type { ProjectStore } from "../projects/store";
 import { findVariants } from "../projects/scan";
 import { findTarget, resolveTargets } from "../projects/targets";
@@ -27,13 +28,14 @@ export interface LocationDeps {
   store: SkillStore;
   registry: AgentRegistry;
   projects: ProjectStore;
+  instructions: InstructionFinder;
 }
 
 const LIBRARY_LABEL = "Library";
 const PLACE_SEPARATOR = " · ";
 
 export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
-  const { store, registry, projects } = deps;
+  const { store, registry, projects, instructions } = deps;
 
   function library(skill: Skill): ResolvedLocation {
     return {
@@ -159,6 +161,36 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
     };
   }
 
+  /** An agent's instruction file: its folder, limited to that one file. Links are followed. */
+  function instructionFile(location: InstructionLocation): ResolvedLocation {
+    const file = instructions.find(location);
+    if (!file.exists) throw notFound(`${file.path} does not exist yet`);
+    const real = canonicalPath(file.path);
+    const project = instructions.projectOf(location);
+    const readers = file.readers.map((reader) => reader.agentName).join(", ");
+    const placeLabel = project ? `${project.name}${PLACE_SEPARATOR}${readers}` : readers;
+    return {
+      location,
+      folder: {
+        dir: dirname(real),
+        label: file.name,
+        historyKey: `instructions:${real}`,
+        only: basename(real),
+      },
+      librarySkill: null,
+      otherCopies: [],
+      target: {
+        location,
+        name: file.name,
+        folderName: file.name,
+        path: file.path,
+        placeLabel,
+        librarySkillId: null,
+        otherCopies: [],
+      },
+    };
+  }
+
   return function resolve(location: SkillLocation): ResolvedLocation {
     switch (location?.kind) {
       case "library":
@@ -167,6 +199,8 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
         return agentCopy(location.agentKey, location.relativePath);
       case "project":
         return projectCopy(location.projectId, location.relativePath, location.agentKey);
+      case "instructions":
+        return instructionFile(location);
       default:
         throw invalid("Unknown skill location");
     }

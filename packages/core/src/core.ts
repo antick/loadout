@@ -7,6 +7,7 @@ import { type CoreOptions, createContext } from "./create-context";
 import { createDeployService } from "./deploy";
 import { createEditorService, createFileHistory } from "./editor";
 import { createInstallService } from "./install";
+import { createInstructionFinder, createInstructionsService } from "./instructions";
 import { createMarketService } from "./market";
 import { createPresetsService } from "./presets";
 import { createProjectsService } from "./projects";
@@ -66,10 +67,13 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const presets = createPresetsService(ctx, { store, registry, deploy });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install });
   const projects = createProjectsService(ctx, { store, registry, deploy, install });
+  const finder = createInstructionFinder({ registry, projects: projects.projects });
+  const instructions = createInstructionsService(ctx, { finder });
   const editor = createEditorService(ctx, {
     store,
     registry,
     projects: projects.projects,
+    instructions: finder,
     history,
     refreshCopies: async (skill) => {
       const report = await deploy.refreshCopies(skill, { keepModified: true });
@@ -105,6 +109,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     agents: agents.api,
     skills: skills.api,
     editor: editor.api,
+    instructions: instructions.api,
     deploy: deploy.api,
     install: install.api,
     market: market.api,

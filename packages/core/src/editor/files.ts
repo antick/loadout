@@ -37,6 +37,8 @@ export interface EditableFolder {
   label: string;
   /** Key of this folder's earlier versions in the file history. */
   historyKey: string;
+  /** Only this file of the folder can be listed or edited (an instruction file in `~/.claude`). */
+  only?: string;
 }
 
 export interface LocatedFile {
@@ -66,6 +68,9 @@ export function locate(folder: EditableFolder, path: unknown): LocatedFile {
   const segments = segmentsOf(path);
   const relative = segments.join("/");
   if (segments.some(isIgnoredContentName)) throw unsupported(`${relative} cannot be edited`);
+  if (folder.only !== undefined && relative !== folder.only) {
+    throw invalid(`${relative} is not part of ${folder.label}`);
+  }
   const absolute = resolveInside(folder.dir, path);
   const stat = lstatOrNull(absolute);
   if (!stat) throw notFound(`${relative} no longer exists in ${folder.label}`);
@@ -115,6 +120,24 @@ export function changedOnDisk(path: string, currentHash: string): AppError {
     `${path} changed on disk after you opened it. Reload it, or save again to overwrite it.`,
     { path, currentHash },
   );
+}
+
+/** The files of an opened folder: its one file when it is limited to one, else every file. */
+export function listFolderFiles(
+  folder: EditableFolder,
+  edited: ReadonlySet<string> = new Set(),
+): SkillFileEntry[] {
+  if (folder.only === undefined) return listFiles(folder.dir, edited);
+  const file = locate(folder, folder.only);
+  return [
+    {
+      path: file.relative,
+      size: file.stat.size,
+      locked: lockOf(file.absolute, file.stat.size),
+      main: true,
+      edited: edited.has(file.relative),
+    },
+  ];
 }
 
 /** Every content file of the folder, main document first. */
