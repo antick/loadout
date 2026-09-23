@@ -2,11 +2,14 @@ import { type ComponentProps, type ReactNode, useMemo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
+import { HighlightedCode } from "@/components/HighlightedCode";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { parseFrontmatter } from "@/lib/frontmatter";
 import { cn } from "@/lib/utils";
 
 const EXTERNAL_LINK_PATTERN = /^https?:\/\//i;
+const FENCE_LANGUAGE_PATTERN = /(?:^|\s)language-(\S+)/;
+const TRAILING_NEWLINE_PATTERN = /\n$/;
 
 /** Links never navigate the app window: web links open in the browser, the rest do nothing. */
 function MarkdownLink({ href, children, ...props }: ComponentProps<"a">): ReactNode {
@@ -77,9 +80,24 @@ const BASE_COMPONENTS: Components = {
       {...props}
     />
   ),
-  code: ({ node: _node, ...props }) => (
-    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]" {...props} />
-  ),
+  code: ({ node: _node, className, children, ...props }) => {
+    // Fenced blocks carry their language as `language-<name>`; inline code carries none.
+    const language = FENCE_LANGUAGE_PATTERN.exec(className ?? "")?.[1];
+    if (language) {
+      return (
+        <HighlightedCode
+          code={String(children).replace(TRAILING_NEWLINE_PATTERN, "")}
+          language={language}
+          className={className}
+        />
+      );
+    }
+    return (
+      <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]" {...props}>
+        {children}
+      </code>
+    );
+  },
   table: ({ node: _node, ...props }) => (
     <div className="my-3 overflow-x-auto rounded-lg border">
       <table className="w-full border-collapse text-sm" {...props} />

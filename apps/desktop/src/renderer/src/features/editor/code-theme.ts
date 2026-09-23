@@ -1,4 +1,4 @@
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, type TagStyle, syntaxHighlighting } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
@@ -86,7 +86,8 @@ const chrome = EditorView.theme({
   },
 });
 
-const highlight = HighlightStyle.define([
+/** Token colours, shared by the editor and the code blocks of the Markdown preview. */
+export const HIGHLIGHT_RULES: readonly TagStyle[] = [
   { tag: tags.heading1, fontWeight: "700", fontSize: "1.1em" },
   { tag: [tags.heading2, tags.heading3], fontWeight: "650" },
   { tag: [tags.heading4, tags.heading5, tags.heading6], fontWeight: "600" },
@@ -119,6 +120,9 @@ const highlight = HighlightStyle.define([
   },
   { tag: [tags.typeName, tags.className, tags.namespace], color: "var(--warning)" },
   { tag: tags.invalid, color: "var(--danger)" },
-]);
+];
 
-export const codeTheme: Extension = [chrome, syntaxHighlighting(highlight)];
+export const codeTheme: Extension = [
+  chrome,
+  syntaxHighlighting(HighlightStyle.define([...HIGHLIGHT_RULES])),
+];

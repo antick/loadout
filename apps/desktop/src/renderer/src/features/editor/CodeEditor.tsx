@@ -123,7 +123,7 @@ export function CodeEditor({
           ]),
         ),
         keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
-        parts.language.of(lang.extension()),
+        parts.language.of(lang.support() ?? []),
         parts.wrap.of(wrapLines ? EditorView.lineWrapping : []),
         parts.label.of(labelExtensions()),
         codeTheme,
@@ -164,7 +164,7 @@ export function CodeEditor({
     // A parked state carries the settings it was created with.
     view.dispatch({
       effects: [
-        compartments.current.language.reconfigure(language.extension()),
+        compartments.current.language.reconfigure(language.support() ?? []),
         compartments.current.wrap.reconfigure(wrap ? EditorView.lineWrapping : []),
         compartments.current.label.reconfigure(labelExtensions()),
       ],
@@ -189,7 +189,7 @@ export function CodeEditor({
 
   useEffect(() => {
     viewRef.current?.dispatch({
-      effects: compartments.current.language.reconfigure(language.extension()),
+      effects: compartments.current.language.reconfigure(language.support() ?? []),
     });
   }, [language]);
 

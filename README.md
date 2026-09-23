@@ -34,6 +34,8 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
   skills folder, or in a project. File list, highlighted editor, live Markdown preview (side by
   side, stacked or on its own), search, undo, `⌘S` to save. Open it with **Edit** on a skill's
   panel or its "…" menu, or by clicking one of its files.
+- Code blocks in every Markdown preview (the editor, a skill's panel) are coloured like the
+  editor for TypeScript, JavaScript, Python, shell, JSON, YAML and Markdown; others stay plain.
 - A project skill usually has a copy per agent folder. Saving one copy also gives the change to
   the copies that were identical (switch it off per save), and says which copies kept their own
   changes. A copy that is really a link into the library is edited as the library skill.
