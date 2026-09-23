@@ -1,4 +1,5 @@
-import type { AutoBackupEvent, InstallProgress } from "./types";
+import type { AutoBackupEvent } from "./types";
+import type { InstallProgress } from "./types-install";
 
 /** Main → renderer notifications. Payload type per event name. */
 export interface AppEvents {

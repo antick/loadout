@@ -8,7 +8,6 @@ import type {
   ApplyResult,
   BackupConflict,
   BackupStatus,
-  BatchImportResult,
   BatchResult,
   BatchUpdateResult,
   BrokenSkillFolder,
@@ -19,16 +18,12 @@ import type {
   DeviceFlowPoll,
   DeviceFlowStart,
   DiagnosticInfo,
-  GitPreview,
   GithubAuthMethod,
   GithubConnectResult,
-  InstallSelection,
   LibraryLocation,
   LocalSkill,
   LogExcerpt,
   LogExport,
-  MarketBoard,
-  MarketSkill,
   MergeSummary,
   Preset,
   PresetAgentToggle,
@@ -38,7 +33,6 @@ import type {
   ProjectTarget,
   PushToLibraryOptions,
   PushToLibraryResult,
-  ScanResult,
   SizeReport,
   Skill,
   SkillDocument,
@@ -55,6 +49,14 @@ import type {
   SyncOutcome,
   UpdateResult,
 } from "./types";
+import type {
+  BatchImportResult,
+  GitPreview,
+  InstallSelection,
+  MarketBoard,
+  MarketSkill,
+  ScanResult,
+} from "./types-install";
 import type { InstructionFile } from "./instructions";
 import type { ClearableArea, RemoveAllDataOptions, StorageReport } from "./storage";
 import type { SettingKey, SettingValue, Settings } from "./settings";
