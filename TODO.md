@@ -71,7 +71,8 @@ Core logic behind all of these has tests; this is about the UI wiring.
 
 ### 6. Windows and Linux
 
-- **State:** never run.
+- **State:** the check suite runs on Windows in CI (`.github/workflows/ci.yml`); the app itself
+  has never been run there.
 - **To check:** symlink → junction → copy fallback (`packages/core/src/deploy/engine.ts`), the
   `.cmd` CLI launcher (`packages/core/src/system/cli-publish.ts`), `safeStorage` without a keyring on
   Linux, window chrome without the macOS inset title bar, tray icon rendering, path compaction with
@@ -186,4 +187,3 @@ The editor (`/library/$skillId/edit`) shipped without these. Each one is a separ
 - [ ] Marketplace search results are not cached (boards are, for 5 minutes).
 - [ ] After "upload to library" of a brand-new skill fails to adopt, the library folder is kept and
       gets re-indexed as an orphan on the next start. Clean it up on failure.
-- [ ] `docs/ARCHITECTURE.md` does not list `util/async.ts`.

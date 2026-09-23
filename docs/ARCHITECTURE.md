@@ -35,7 +35,7 @@
 | `activity.ts`        | Activity history                                                                                |
 | `db/`                | SQLite wrapper (`node:sqlite`) and migrations                                                   |
 | `settings/store.ts`  | Typed settings + internal JSON blobs (`INTERNAL_KEYS`)                                          |
-| `util/`              | `fs` (copy, atomic write, containment), `hash` (content hash), `names`, `exec`                  |
+| `util/`              | `fs` (copy, atomic write, containment, links), `hash`, `names`, `exec`, `async`, `git-config`   |
 | `skills/store.ts`    | All SQL for skills, tags, deployments                                                           |
 | `skills/metadata.ts` | Frontmatter + document lookup                                                                   |
 | `skills/portable.ts` | Portable metadata files and database rebuild                                                    |
