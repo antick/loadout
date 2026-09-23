@@ -54,6 +54,7 @@ import type {
   UpdateResult,
 } from "./types";
 import type { InstructionFile } from "./instructions";
+import type { ClearableArea, RemoveAllDataOptions, StorageReport } from "./storage";
 import type { SettingKey, SettingValue, Settings } from "./settings";
 
 /**
@@ -254,6 +255,13 @@ export interface SystemApi {
   dismissAgentControl(): Promise<void>;
 }
 
+/** What Loadout keeps on disk, and emptying the parts that can be rebuilt. */
+export interface StorageApi {
+  report(): Promise<StorageReport>;
+  /** Empty one area. Returns the bytes freed. Never touches a clone that is in use. */
+  clear(area: ClearableArea): Promise<number>;
+}
+
 /** Implemented by the Electron main process, not by core. */
 export interface AppApi {
   info(): Promise<AppInfo>;
@@ -266,6 +274,14 @@ export interface AppApi {
   quit(): Promise<void>;
   hideToTray(): Promise<void>;
   restart(): Promise<void>;
+  /** Empty the app's own cache (Chromium's HTTP, code and GPU caches). */
+  clearAppCache(): Promise<void>;
+  /**
+   * Remove every file Loadout keeps on this computer and quit. Links into the library are taken
+   * out of agent folders first; copies too when asked. Project folders and the backup remote
+   * are left alone. Deletion finishes after the app has exited.
+   */
+  removeAllData(options: RemoveAllDataOptions): Promise<void>;
   /** Answer the "close or minimise?" prompt raised by `window:close-requested`. */
   resolveClose(action: "hide" | "quit", remember: boolean): Promise<void>;
 }
@@ -285,6 +301,7 @@ export interface LoadoutApi {
   backup: BackupApi;
   settings: SettingsApi;
   system: SystemApi;
+  storage: StorageApi;
   app: AppApi;
 }
 
@@ -308,6 +325,7 @@ export const CORE_NAMESPACES = [
   "backup",
   "settings",
   "system",
+  "storage",
 ] as const satisfies readonly (keyof CoreApi)[];
 
 export const API_NAMESPACES = [...CORE_NAMESPACES, "app"] as const;

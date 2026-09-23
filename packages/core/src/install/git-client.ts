@@ -52,6 +52,8 @@ export interface GitClient {
   lsRemote(url: string, options?: RemoteOptions): Promise<string | null>;
   listRefs(url: string, options?: RemoteOptions): Promise<RemoteRefs>;
   checkout(url: string, options?: CheckoutOptions): Promise<Checkout>;
+  /** Empty the clone cache, leaving clones in use alone. Returns the bytes freed. */
+  clearCache(): Promise<number>;
 }
 
 export interface GitClientOptions {
@@ -217,6 +219,19 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     }
   }
 
+  async function clearCache(): Promise<number> {
+    let freed = 0;
+    for (const entry of readDirSafe(reposDir)) {
+      const path = join(reposDir, entry.name);
+      const owner = join(reposDir, entry.name.split(PARTIAL_MARK)[0] ?? "");
+      if (queues.has(path) || queues.has(owner)) continue;
+      const size = entry.isDirectory() ? dirSize(path) : (statOrNull(path)?.size ?? 0);
+      await removePath(path);
+      freed += size;
+    }
+    return freed;
+  }
+
   async function fetchInto(
     slot: string,
     ref: string,
@@ -301,6 +316,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
   }
 
   return {
+    clearCache,
     gitVersion: async () => {
       try {
         const result = await run(["--version"], {});

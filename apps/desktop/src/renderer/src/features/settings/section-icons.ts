@@ -1,6 +1,7 @@
 import {
   Bot,
   CloudUpload,
+  HardDrive,
   Info,
   type LucideIcon,
   Network,
@@ -14,6 +15,7 @@ import type { SettingsSection } from "./constants";
 export const SETTINGS_SECTION_ICONS: Record<SettingsSection, LucideIcon> = {
   agents: Bot,
   general: Settings2,
+  storage: HardDrive,
   network: Network,
   updates: RefreshCw,
   backup: CloudUpload,

@@ -1,0 +1,99 @@
+{
+  "settings": {
+    "sections": {
+      "storage": {
+        "title": "Storage",
+        "description": "Where {{app}} keeps its data, how much space it takes, and how to clean it up."
+      }
+    },
+    "storage": {
+      "home": {
+        "title": "Data folder",
+        "description": "Everything {{app}} keeps on this computer is in this folder. The library part can be moved below."
+      },
+      "areas": {
+        "skills": {
+          "title": "Skills",
+          "description": "One folder per skill. Also the Git repository that backup pushes."
+        },
+        "database": {
+          "title": "Database",
+          "description": "Deployments, projects, settings and activity. Rebuilt from the skill folders if lost."
+        },
+        "history": {
+          "title": "Editor history",
+          "description": "Earlier versions of files you saved in the editor, the last 20 per file.",
+          "clearEffect": "Every earlier version of every file goes. Your skills and their current text stay."
+        },
+        "cache": {
+          "title": "Download cache",
+          "description": "Copies of Git repositories kept to make installs and update checks faster.",
+          "clearEffect": "The next install or update check downloads its repository again. A download in progress is left alone."
+        },
+        "logs": {
+          "title": "Logs",
+          "description": "What {{app}} did and what went wrong, for troubleshooting.",
+          "clearEffect": "Old logs are deleted and the current one is emptied."
+        },
+        "cli": {
+          "title": "Command-line tool",
+          "description": "The loadout command your agents run. Published again each time the app starts."
+        },
+        "app": {
+          "title": "App data",
+          "description": "Window size, your GitHub sign-in (encrypted), interface preferences, drafts and the app's cache.",
+          "clearEffect": "Only the app's cache is emptied. Your sign-in, preferences and drafts stay."
+        }
+      },
+      "empty": "Empty",
+      "clear": "Clear",
+      "confirmClear": {
+        "title": "Clear {{area}}?"
+      },
+      "cleared": "{{area}} cleared, {{size}} freed",
+      "clearedApp": "{{area}}: cache cleared",
+      "window": {
+        "title": "Interface",
+        "description": "Kept in the app data folder for this computer only.",
+        "preferences": {
+          "title": "Interface preferences",
+          "description_one": "Sidebar width and sections, grid or list views, editor layout. {{count}} saved.",
+          "description_other": "Sidebar width and sections, grid or list views, editor layout. {{count}} saved.",
+          "action": "Reset",
+          "done": "Interface preferences reset"
+        },
+        "drafts": {
+          "title": "Unsaved editor drafts",
+          "description_one": "Text typed in the editor but never saved. {{count}} kept.",
+          "description_other": "Text typed in the editor but never saved. {{count}} kept.",
+          "action": "Discard",
+          "done": "Unsaved drafts discarded"
+        }
+      },
+      "outside": {
+        "title": "Outside this folder",
+        "description": "{{app}} also writes to these places. Removing the data folder does not touch them, except where said.",
+        "agents": "Agent skills folders (such as ~/.claude/skills) get links or copies of your skills. Removing all data takes the links out; copies only when you ask.",
+        "projects": "Project folders get the skills and instruction files you add there. They are your project's files and are never removed.",
+        "backup": "Your backup repository, when backup is set up. It stays on its host.",
+        "keychain": "On macOS, the system keychain holds the key your GitHub sign-in is encrypted with. Removing all data deletes it.",
+        "system": "The operating system keeps a few small files of its own for every app, such as saved window state on macOS."
+      },
+      "removeAll": {
+        "title": "Remove all data",
+        "description": "Delete everything {{app}} keeps on this computer and quit. Use this before uninstalling or to start over.",
+        "button": "Remove all data…",
+        "confirmTitle": "Remove all {{app}} data?",
+        "deletes": "The data folder {{path}} is deleted: every skill in the library, the database, editor history, logs, the command-line tool and the app's own data. This cannot be undone.",
+        "links": "Links to library skills in agent folders are removed first, because they would point at nothing. A library moved elsewhere is removed too.",
+        "keeps": "Project folders and your backup repository are left alone. {{app}} quits when it is done; opening it again starts fresh.",
+        "copies": "Also delete the skill copies {{app}} put into agent folders",
+        "confirm": "Remove and quit"
+      },
+      "errors": {
+        "clear": "Could not clear it.",
+        "removeAll": "Could not remove the data."
+      }
+    }
+  }
+}

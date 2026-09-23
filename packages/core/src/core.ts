@@ -13,6 +13,7 @@ import { createPresetsService } from "./presets";
 import { createProjectsService } from "./projects";
 import { createSkillsService } from "./skills/service";
 import type { SkillStore } from "./skills/store";
+import { type StorageService, createStorageService } from "./storage";
 import { createSystemService } from "./system";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
@@ -37,6 +38,8 @@ export interface Core {
   ctx: CoreContext;
   store: SkillStore;
   registry: AgentRegistry;
+  /** For the host: removing all data needs the deploy clean-up before it quits. */
+  storage: StorageService;
   background: CoreBackground;
   /** Folders worth watching for outside changes. */
   watchPaths(): string[];
@@ -95,6 +98,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     },
   });
   const system = createSystemService(ctx, { store, install, deploy, registry });
+  const storage = createStorageService(ctx, { deploy, git: install.git });
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),
@@ -120,6 +124,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     backup: backup.api,
     settings,
     system: system.api,
+    storage: storage.api,
   };
 
   const background: CoreBackground = {
@@ -162,6 +167,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     ctx,
     store,
     registry,
+    storage,
     background,
     watchPaths: () => [
       ctx.paths.skillsDir,

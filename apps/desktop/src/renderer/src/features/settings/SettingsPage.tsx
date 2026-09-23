@@ -8,11 +8,13 @@ import { BackupSection } from "./BackupSection";
 import type { SettingsSection } from "./constants";
 import { GeneralSection } from "./GeneralSection";
 import { NetworkSection } from "./NetworkSection";
+import { StorageSection } from "./StorageSection";
 import { UpdatesSection } from "./UpdatesSection";
 
 const SECTION_VIEWS: Record<SettingsSection, () => ReactNode> = {
   agents: AgentsSection,
   general: GeneralSection,
+  storage: StorageSection,
   network: NetworkSection,
   updates: UpdatesSection,
   backup: BackupSection,

@@ -6,6 +6,7 @@ export * from "./events";
 export * from "./format";
 export * from "./instructions";
 export * from "./settings";
+export * from "./storage";
 export * from "./types";
 export * from "./version";
 export * from "./skill-checks";

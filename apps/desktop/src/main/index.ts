@@ -9,9 +9,11 @@ import {
   DEV_APP_DATA_DIR_NAME,
   LIBRARY_DIR_NAME,
   type LoadoutApi,
+  type RemoveAllDataOptions,
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
 import { type AppDataMove, adoptAppData, removeOldAppData } from "./app-data";
+import { startRemoval } from "./remover";
 import { APP_ICON_FILE, CRASH_DUMPS_DIR, SECRETS_FILE } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
@@ -116,6 +118,34 @@ function handleClose(event: Electron.Event): void {
   else send("window:close-requested", {});
 }
 
+/**
+ * Remove every file Loadout keeps and exit. Agent folders are cleaned while the library is still
+ * open; the files go once the app is gone. No backup on the way out: there is nothing to keep.
+ */
+async function removeAllData(options: RemoveAllDataOptions): Promise<void> {
+  if (!core) return;
+  const closing = core;
+  const plan = await closing.storage.prepareRemoval(options);
+  closing.ctx.log.info(`Removing all data; ${plan.undeployed} deployments taken out of agents`);
+  core = null;
+  quitting = true;
+  watcher?.stop();
+  tray?.dispose();
+  tray = null;
+  closing.background.stop();
+  closing.close();
+  startRemoval(
+    {
+      pid: process.pid,
+      paths: [...plan.paths, ...(existsSync(legacyAppDataDir) ? [legacyAppDataDir] : [])],
+      emptyDirs: plan.emptyDirs,
+      keychainService: process.platform === "darwin" ? `${app.getName()} Safe Storage` : null,
+    },
+    process.execPath,
+  );
+  app.exit(0);
+}
+
 function openWindow(): void {
   mainWindow = createMainWindow(appIconPath);
   mainWindow.on("close", handleClose);
@@ -167,6 +197,7 @@ function start(): void {
       bundledCliPath: existsSync(bundledCliPath) ? bundledCliPath : null,
       nodeRunner: { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" } },
       downloadsDir: app.getPath("downloads"),
+      appDataDir,
     },
   });
 
@@ -176,6 +207,7 @@ function start(): void {
       window: () => mainWindow,
       quit,
       hideToTray,
+      removeAllData,
       resolveClose: (action, remember) => {
         if (remember) core?.ctx.settings.set("closeAction", action);
         if (action === "quit") quit();

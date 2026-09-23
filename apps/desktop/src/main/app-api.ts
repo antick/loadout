@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
-import { type BrowserWindow, app, clipboard, dialog, shell } from "electron";
-import { APP_NAME, type AppApi, type Platform } from "@loadout/shared";
+import { type BrowserWindow, app, clipboard, dialog, session, shell } from "electron";
+import { APP_NAME, type AppApi, type Platform, type RemoveAllDataOptions } from "@loadout/shared";
 import { ARCHIVE_EXTENSIONS } from "./constants";
 import { checkForUpdate } from "./updater";
 
@@ -9,6 +9,8 @@ export interface AppApiDeps {
   quit(): void;
   hideToTray(): void;
   resolveClose(action: "hide" | "quit", remember: boolean): void;
+  /** Clean agent folders, close the library, start the clean-up process and exit. */
+  removeAllData(options: RemoveAllDataOptions): Promise<void>;
 }
 
 /** The part of the API only Electron can provide: dialogs, shell, clipboard, app lifecycle. */
@@ -51,5 +53,12 @@ export function createAppApi(deps: AppApiDeps): AppApi {
       deps.quit();
     },
     resolveClose: async (action, remember) => deps.resolveClose(action, remember),
+    clearAppCache: async () => {
+      const web = session.defaultSession;
+      await web.clearCache();
+      await web.clearCodeCaches({});
+      await web.clearStorageData({ storages: ["shadercache", "cachestorage", "serviceworkers"] });
+    },
+    removeAllData: (options) => deps.removeAllData(options),
   };
 }

@@ -50,6 +50,7 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.updates.root,
     keys.market.root,
     keys.system.root,
+    keys.storage.root,
   ],
   agents: [
     keys.agents.root,

@@ -37,6 +37,8 @@ export interface HostBridge {
   /** Program and leading arguments that run a Node script (the app's own runtime). */
   nodeRunner: { command: string; env: Record<string, string> } | null;
   downloadsDir: string;
+  /** The desktop app's own data folder (`~/.loadout/app`), or null outside the app. */
+  appDataDir: string | null;
 }
 
 /** Everything a service needs. Built once by `createCore`. */

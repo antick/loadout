@@ -43,7 +43,14 @@ export function createFileLogger(logsDir: string, echo = false): Logger {
     try {
       appendFileSync(filePath, line);
     } catch {
-      // Ignore: a full or read-only disk should not break the operation being logged.
+      // The folder may have been removed while running (or cleared from Settings): make it
+      // again once. A full or read-only disk should not break the operation being logged.
+      try {
+        ensureDir(logsDir);
+        appendFileSync(filePath, line);
+      } catch {
+        // Give up on this line.
+      }
     }
     if (echo) (level === "error" || level === "warn" ? console.error : console.log)(line.trimEnd());
   };

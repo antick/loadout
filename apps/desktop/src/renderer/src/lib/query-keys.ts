@@ -19,6 +19,10 @@ export const keys = {
     file: (location: string, path: string) => ["editor", "file", location, path] as const,
     versions: (location: string, path: string) => ["editor", "versions", location, path] as const,
   },
+  storage: {
+    root: ["storage"] as const,
+    report: ["storage", "report"] as const,
+  },
   instructions: {
     root: ["instructions"] as const,
     list: (projectId: string | null) => ["instructions", "list", projectId ?? ""] as const,

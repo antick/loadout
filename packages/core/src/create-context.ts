@@ -51,6 +51,7 @@ function defaultHost(home: string): HostBridge {
     bundledCliPath: null,
     nodeRunner: null,
     downloadsDir: join(home, "Downloads"),
+    appDataDir: null,
   };
 }
 

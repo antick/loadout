@@ -8,7 +8,7 @@
       },
       "general": {
         "title": "General",
-        "description": "The library folder, how skills are installed, appearance and window behaviour."
+        "description": "How skills are installed, appearance and window behaviour."
       },
       "network": {
         "title": "Network",

@@ -12,7 +12,6 @@ import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSettings } from "@/hooks/queries/settings";
 import { LANGUAGES } from "@/lib/i18n";
 import { CLOSE_ACTIONS, DEPLOY_MODES, TEXT_SIZE_OPTIONS, THEME_OPTIONS } from "./constants";
-import { LibraryLocationCard } from "./LibraryLocationCard";
 
 const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon } as const;
 
@@ -51,8 +50,6 @@ export function GeneralSection(): ReactNode {
 
   return (
     <div className="flex flex-col gap-3">
-      <LibraryLocationCard />
-
       <Panel
         title={t("settings.general.deploy.title")}
         description={t("settings.general.deploy.description")}

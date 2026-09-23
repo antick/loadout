@@ -30,6 +30,7 @@ import {
 import { createEditorMockHandlers } from "@/lib/dev-mock-editor";
 import { createInstallMockHandlers } from "@/lib/dev-mock-install";
 import { withInstructionMocks } from "@/lib/dev-mock-instructions";
+import { createStorageMockHandlers } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
 import { createSystemMockHandlers } from "@/lib/dev-mock-system";
@@ -366,6 +367,8 @@ Object.assign(
     }),
   ),
 );
+
+Object.assign(handlers, createStorageMockHandlers(HOME));
 
 /** Install the fake bridge. Call only in development, and only when the real one is missing. */
 export function installDevMock(): void {

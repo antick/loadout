@@ -37,6 +37,9 @@ function seedFiles(home: string, projects: Project[]): Map<string, string> {
   ]);
 }
 
+const isInstructions = (location: SkillLocation): location is InstructionLocation =>
+  location.kind === "instructions";
+
 function hashOf(content: string): string {
   return `mock-${content.length}-${[...content].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)}`;
 }
@@ -106,8 +109,6 @@ export function withInstructionMocks(
     };
   }
 
-  const isInstructions = (location: SkillLocation): location is InstructionLocation =>
-    location.kind === "instructions";
   const route =
     (name: string, own: (location: InstructionLocation, ...rest: never[]) => unknown): Handler =>
     (...args: never[]) => {

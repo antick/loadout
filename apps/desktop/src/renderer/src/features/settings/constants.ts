@@ -1,6 +1,7 @@
 export const SETTINGS_SECTIONS = [
   "agents",
   "general",
+  "storage",
   "network",
   "updates",
   "backup",

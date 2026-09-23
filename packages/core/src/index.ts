@@ -4,4 +4,5 @@ export { type Core, type CoreBackground, type CoreCreateOptions, createCore } fr
 export type { CoreOptions } from "./create-context";
 export { LOG_FILE_NAME, type Logger, createFileLogger, silentLogger } from "./log";
 export { type LibraryPaths, type ResolveOptions, resolveLibrary } from "./paths";
+export { type RemovalPlan, type StorageService } from "./storage";
 export type { ResolvedAgent } from "./agents/registry";

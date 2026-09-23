@@ -38,6 +38,11 @@ export interface DeployService {
   applyPairs(pairs: PairRef[], action: "add" | "remove"): Promise<ApplyResult>;
   /** Remove every deployment of a skill, keeping anything we cannot prove we put there. */
   removeAllForSkill(skill: Skill): Promise<void>;
+  /**
+   * Remove every link into the library from every agent folder, and every copy too when asked.
+   * Returns how many deployment rows were dropped.
+   */
+  removeEverywhere(options: { includeCopies: boolean }): Promise<number>;
   /** Same, for one agent. Returns how many deployment rows were dropped. */
   removeAllForAgent(agentKey: string): Promise<number>;
   /** Re-copy every copy-mode deployment after the library content of `skill` changed. */
@@ -150,6 +155,11 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         store.deployments().filter((row) => row.skillId === skill.id),
       );
     },
+
+    removeEverywhere: ({ includeCopies }) =>
+      removeRows("undeploy everything", () =>
+        store.deployments().filter((row) => includeCopies || row.mode === "symlink"),
+      ),
 
     removeAllForAgent: (agentKey) =>
       removeRows(`undeploy everything from ${agentName(agentKey)}`, () =>
