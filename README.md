@@ -6,6 +6,8 @@ A skill is a folder with a `SKILL.md`. Loadout keeps every skill in one library
 (`~/.loadout`) and deploys it, by symlink or copy, into the skills folder of each agent you
 use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
+![Loadout dashboard: skills in the library, deploy coverage, connected agents and recent activity](docs/screenshots/dashboard.png)
+
 ## Install
 
 Download the installer for your system from the
@@ -15,6 +17,32 @@ The builds are not signed with an Apple or Windows certificate yet, so macOS and
 for one extra click the first time. [docs/INSTALL.md](docs/INSTALL.md) says which file to pick
 and exactly what to click on macOS, Windows and Linux. After the first start, Loadout updates
 itself.
+
+## Screenshots
+
+**Library.** Every skill in one place, with its source, tags and the agents it is deployed to.
+
+![The library: skill cards with tags and one badge per agent](docs/screenshots/library.png)
+
+**A skill.** The rendered `SKILL.md`, its files, where it came from, and switches per agent.
+
+![A skill's panel: its document, files, source and tags](docs/screenshots/skill-detail.png)
+
+**Editor.** Edit any file of a skill with a live preview. Every save keeps the version it replaced.
+
+![The editor: the skill's files, the Markdown source and its preview side by side](docs/screenshots/editor.png)
+
+**An agent.** Everything in the agent's skills folder, its instruction file, and presets to apply in one click.
+
+![Claude Code's page: its skills, sync status and presets](docs/screenshots/agent-workspace.png)
+
+**A project.** Skills that live inside a project, per agent, with the project's instruction files.
+
+![A project's page: its skills and instruction files for each agent](docs/screenshots/project.png)
+
+**Install.** Browse the skills.sh marketplace, or install from a folder, a `.zip`, a Git repository or a link.
+
+![The marketplace: popular skills with one-click install](docs/screenshots/marketplace.png)
 
 ## Features
 
