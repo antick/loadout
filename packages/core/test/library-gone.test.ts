@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { pruneBrokenLinks } from "../src/deploy";
@@ -50,15 +50,40 @@ describe("pruneBrokenLinks", () => {
   });
 });
 
+/**
+ * Delete a folder the way a user can while the app runs. macOS and Linux remove everything;
+ * Windows refuses to delete the open database file, so that one stays and the rest goes.
+ */
+function removeWhatCanBe(dir: string): void {
+  try {
+    rmSync(dir, { recursive: true, force: true });
+  } catch {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      try {
+        rmSync(path, { recursive: true, force: true });
+      } catch {
+        if (entry.isDirectory()) removeWhatCanBe(path);
+      }
+    }
+  }
+}
+
+/** Everything left under `dir`, or null when the folder itself is gone. */
+function remaining(dir: string): string[] | null {
+  return existsSync(dir) ? readdirSync(dir, { recursive: true }).map(String).sort() : null;
+}
+
 describe("abandoning a deleted library", () => {
   it("writes nothing back, even with a change still waiting to be written", async () => {
     const world = createTestWorld();
     try {
       world.ctx.touched("skills");
-      rmSync(world.base, { recursive: true, force: true });
+      removeWhatCanBe(world.base);
+      const left = remaining(world.base);
       world.abandon();
       await new Promise((resolve) => setImmediate(resolve));
-      expect(existsSync(world.base)).toBe(false);
+      expect(remaining(world.base)).toEqual(left);
     } finally {
       world.cleanup();
     }
