@@ -1,0 +1,88 @@
+---
+import { ALL_RELEASES_URL, APP_VERSION, DOWNLOADS_URL, INSTALL_GUIDE } from "../lib/site";
+---
+
+<section class="wrap section install" id="install" aria-labelledby="install-title">
+  <span class="chapter-label">Installation</span>
+  <h2 id="install-title">Three steps, once</h2>
+  <ol>
+    <li>
+      <h3>Download the installer for your system</h3>
+      <p>
+        Version {APP_VERSION} for macOS (Apple silicon and Intel), Windows, and Linux (AppImage or
+        .deb).
+      </p>
+      <div class="actions">
+        <a class="button" href={DOWNLOADS_URL}>Download the latest release</a>
+        <a class="text-link" href={ALL_RELEASES_URL}>All releases</a>
+      </div>
+    </li>
+    <li>
+      <h3>Open it the first time</h3>
+      <p>
+        The builds are not signed with an Apple or Microsoft certificate yet, so macOS and Windows
+        ask for one extra click. <a href={INSTALL_GUIDE}>The install steps</a> say which file to
+        pick and exactly what to click.
+      </p>
+    </li>
+    <li>
+      <h3>That's it</h3>
+      <p>
+        From then on Loadout updates itself: it finds new versions, checks each download against
+        its release checksum and installs it with one restart.
+      </p>
+    </li>
+  </ol>
+</section>
+
+<style>
+  ol {
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+
+  li {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    padding: 1.5rem 0 1.75rem 4.5rem;
+    border-top: 1px solid var(--rule);
+    counter-increment: step;
+  }
+
+  li::before {
+    content: counter(step);
+    position: absolute;
+    top: 1.375rem;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 2px solid var(--signal);
+    border-radius: 50%;
+    color: var(--signal-ink);
+    font-family: var(--font-head);
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  p {
+    max-width: var(--measure);
+    color: var(--slate);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+  }
+
+  .install {
+    padding-bottom: var(--space-section);
+  }
+</style>

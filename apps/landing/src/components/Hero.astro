@@ -1,43 +1,168 @@
 ---
 import { AGENT_COUNT } from "../lib/agents";
-import LinkBoard from "./LinkBoard.astro";
+
+/** Numbered callouts on Figure 1, placed in percent of the screenshot, with their legend. */
+const callouts = [
+  { x: 5.2, y: 20, text: "Sections: home, library, agents, presets and projects" },
+  { x: 50.3, y: 17, text: "How much of your library is switched on for an agent" },
+  { x: 74.4, y: 17, text: "The agents Loadout found on this computer" },
+  { x: 26.4, y: 49.8, text: "Install skills from anywhere in one click" },
+  { x: 26.4, y: 58.7, text: "Every change, and which agent it went to" },
+];
 ---
 
 <section class="wrap hero" aria-labelledby="hero-title">
   <div class="copy">
-    <h1 id="hero-title">One skill library for every coding agent.</h1>
+    <span class="chapter-label">An operator's guide for your AI agents</span>
+    <h1 id="hero-title">Pack your skills once. Every agent carries them.</h1>
     <p class="lede">
-      Loadout keeps your agent skills in one folder and links them into Claude Code, Codex, Cursor
-      and {AGENT_COUNT - 3} other agents. Change a skill once and every agent that uses it sees the
-      change.
+      Loadout is a desktop app that keeps every agent skill in one library on your computer and
+      links it into Claude Code, Codex, Cursor and {AGENT_COUNT - 3} other agents. Change a skill
+      once and every agent that uses it has the new version.
     </p>
     <div class="actions">
-      <a class="button" href="#download">Get Loadout</a>
-      <a class="button quiet" href="#what-it-does">See what it does</a>
+      <a class="button" href="#install">Download Loadout</a>
+      <a class="text-link" href="#what-it-does">Read the manual</a>
     </div>
+    <dl class="spec">
+      <div><dt>Agents supported</dt><dd>{AGENT_COUNT}</dd></div>
+      <div><dt>Installs skills from</dt><dd>Folders, .zip, Git, skills.sh</dd></div>
+      <div><dt>Runs on</dt><dd>macOS, Windows, Linux</dd></div>
+      <div><dt>Licence</dt><dd>GPL-3.0, open source</dd></div>
+    </dl>
   </div>
-  <LinkBoard />
+
+  <figure class="figure fig-one">
+    <span class="figure-no">Fig. 1 The dashboard</span>
+    <div class="shot">
+      <img
+        src="/figures/dashboard.jpg"
+        width="1600"
+        height="1042"
+        alt="The Loadout dashboard: library size, deploy coverage, connected agents, install buttons and recent activity."
+      />
+      {
+        callouts.map((callout, index) => (
+          <span
+            class="marker"
+            style={`left: ${callout.x}%; top: ${callout.y}%`}
+            aria-hidden="true"
+          >
+            {index + 1}
+          </span>
+        ))
+      }
+    </div>
+    <figcaption>
+      <ol>{callouts.map((callout) => <li>{callout.text}</li>)}</ol>
+    </figcaption>
+  </figure>
 </section>
 
 <style>
   .hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(2.5rem, 6vw, 5rem);
-    align-items: center;
-    padding-block: clamp(2.5rem, 7vw, 6rem) var(--space-section);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(2.5rem, 5vw, 4rem);
+    align-items: start;
+    padding-top: clamp(3rem, 7vw, 5rem);
+  }
+
+  .lede {
+    margin-top: 1.5rem;
   }
 
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 1.25rem;
     margin-top: 2rem;
+  }
+
+  .spec {
+    margin: 2.5rem 0 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .spec div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 0.625rem;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.9375rem;
+  }
+
+  .spec dt {
+    color: var(--slate);
+  }
+
+  .spec dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .shot {
+    position: relative;
+  }
+
+  .marker {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--signal);
+    color: var(--on-signal);
+    font-family: var(--font-head);
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 0 0 4px var(--paper);
+    transform: translate(-50%, -50%);
+  }
+
+  figcaption ol {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1.75rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: callout;
+    font-size: 0.9375rem;
+  }
+
+  figcaption li {
+    counter-increment: callout;
+  }
+
+  figcaption li::before {
+    content: counter(callout);
+    margin-right: 0.5rem;
+    color: var(--signal-ink);
+    font-family: var(--font-head);
+    font-weight: 700;
   }
 
   @media (max-width: 60rem) {
     .hero {
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 40rem) {
+    figcaption ol {
+      grid-template-columns: 1fr;
+    }
+
+    .marker {
+      width: 1.375rem;
+      height: 1.375rem;
+      font-size: 0.75rem;
+      box-shadow: 0 0 0 3px var(--paper);
     }
   }
 </style>

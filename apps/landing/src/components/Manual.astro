@@ -1,0 +1,236 @@
+---
+import { AGENT_COUNT } from "../lib/agents";
+import { LIBRARY_DIR } from "../lib/site";
+
+interface Chapter {
+  topic: string;
+  title: string;
+  body: string;
+  /** A real command or path, when it says it faster than a sentence. */
+  example?: string;
+  figure: { src: string; caption: string; alt: string };
+}
+
+// Figures start at 2: Figure 1 is the dashboard in the hero.
+const FIRST_FIGURE = 2;
+
+const chapters: Chapter[] = [
+  {
+    topic: "Library",
+    title: "Every skill in one place",
+    body: `All your skills live in ${LIBRARY_DIR}, whatever agent they are for. Search them, tag them, filter by source or status, and see at a glance which agents carry each one. Every skill is checked against the Agent Skills format, and the ones that need fixing say so.`,
+    figure: {
+      src: "/figures/library.jpg",
+      caption: "The library",
+      alt: "The library: skill cards with their tags and one badge per agent they are deployed to.",
+    },
+  },
+  {
+    topic: "Agents",
+    title: "Issue a skill to any agent",
+    body: `Switch a skill on for any of ${AGENT_COUNT} agents and Loadout links it into that agent's skills folder, or copies it if you prefer. Each agent's page shows everything in its folder, including skills put there by hand, and whether each one matches the library.`,
+    example: "~/.codex/skills/code-review → ~/.loadout/skills/code-review",
+    figure: {
+      src: "/figures/agent-workspace.jpg",
+      caption: "An agent's page",
+      alt: "Claude Code's page: its skills, their sync status, its instruction file and presets.",
+    },
+  },
+  {
+    topic: "Presets",
+    title: "Kits for the job",
+    body: "A preset is a named set of skills, such as Frontend or Office documents. Switch the whole set on for an agent or a project in one click, and off again when the work is done. A preset shows 2/4 when only some of its skills are there.",
+    figure: {
+      src: "/figures/project.jpg",
+      caption: "A project with its presets",
+      alt: "A project page with preset pills and the project's skills per agent.",
+    },
+  },
+  {
+    topic: "Editor",
+    title: "Edit skills where they live",
+    body: "Open any file of a skill, in the library, an agent's folder or a project, and edit it beside a live preview. Problems in SKILL.md are marked on their line as you type. Unsaved text survives quitting, and the last 20 versions of every file are kept.",
+    figure: {
+      src: "/figures/editor.jpg",
+      caption: "The editor",
+      alt: "The editor: the skill's files on the left, the Markdown source in the middle and its preview on the right.",
+    },
+  },
+  {
+    topic: "Install",
+    title: "Get skills from anywhere",
+    body: "Browse the skills.sh marketplace, or install from a folder, a .zip or .skill file, a download link or a Git repository. Git itself is optional for public GitHub and GitLab repositories. Skills already in your agents' folders can be imported in one go.",
+    example: "loadout skills install owner/repo --all",
+    figure: {
+      src: "/figures/marketplace.jpg",
+      caption: "The marketplace",
+      alt: "The marketplace tab: popular skills with an install button each.",
+    },
+  },
+];
+
+const extras = [
+  {
+    title: "Updates without surprises",
+    body: "Checks skills against where they came from, on demand or on a schedule. Before an update changes anything, it lists the files it would delete and the edits you made.",
+  },
+  {
+    title: "Backup and sync",
+    body: "Your library is a Git repository. Push it to a private repository and keep several computers in step, merged skill by skill.",
+  },
+  {
+    title: "Your agents can drive it",
+    body: "A loadout command-line tool and a bundled skill let an agent install, switch on and update skills itself, under the same safety rules as the app.",
+  },
+  {
+    title: "Instruction files",
+    body: "Edit CLAUDE.md, AGENTS.md, GEMINI.md and the rest, globally and per project, from the same editor.",
+  },
+  {
+    title: "Four colour palettes",
+    body: "Flight gear, Blueprint, Risograph and Iris & butter, each in light and dark.",
+  },
+  {
+    title: "It updates itself",
+    body: "Loadout finds new versions itself, downloads one when you say so, checks it against the release checksum and installs it with one restart.",
+  },
+];
+---
+
+<section class="wrap section" id="what-it-does" aria-labelledby="manual-title">
+  <span class="chapter-label">What it does</span>
+  <h2 id="manual-title">The manual, in five figures</h2>
+
+  {
+    chapters.map((chapter, index) => (
+      <article class:list={["chapter", { flip: index % 2 === 1 }]}>
+        <div class="text">
+          <span class="chapter-label">{chapter.topic}</span>
+          <h3>{chapter.title}</h3>
+          <p>{chapter.body}</p>
+          {chapter.example ? <code class="example">{chapter.example}</code> : null}
+        </div>
+        <figure class="figure">
+          <span class="figure-no">
+            Fig. {FIRST_FIGURE + index} {chapter.figure.caption}
+          </span>
+          <img
+            src={chapter.figure.src}
+            alt={chapter.figure.alt}
+            width="1600"
+            height="1042"
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+      </article>
+    ))
+  }
+
+  <div class="extras">
+    <h3 class="extras-title">Also in the box</h3>
+    <dl>
+      {
+        extras.map((extra) => (
+          <div>
+            <dt>{extra.title}</dt>
+            <dd>{extra.body}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style>
+  h2 {
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  .chapter {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+    padding-block: clamp(2rem, 4vw, 3rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .chapter.flip {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  }
+
+  .chapter.flip .text {
+    order: 2;
+  }
+
+  .text h3 {
+    font-size: clamp(1.5rem, 2.4vw, 1.875rem);
+    font-weight: 700;
+  }
+
+  .text p {
+    max-width: var(--measure);
+    margin-top: 0.875rem;
+    color: var(--slate);
+  }
+
+  .example {
+    display: block;
+    margin-top: 1.125rem;
+    padding: 0.625rem 0.875rem;
+    border-left: 3px solid var(--signal);
+    background: var(--panel);
+    overflow-wrap: anywhere;
+  }
+
+  .extras {
+    margin-top: clamp(2rem, 4vw, 3rem);
+    padding-top: clamp(2rem, 4vw, 3rem);
+    border-top: 2px solid var(--rule-strong);
+  }
+
+  .extras-title {
+    margin-bottom: 1.5rem;
+  }
+
+  .extras dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.75rem 2.5rem;
+    margin: 0;
+  }
+
+  .extras dt {
+    font-family: var(--font-head);
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .extras dd {
+    margin: 0.375rem 0 0;
+    color: var(--slate);
+    font-size: 0.9875rem;
+  }
+
+  @media (max-width: 60rem) {
+    .chapter,
+    .chapter.flip {
+      grid-template-columns: 1fr;
+    }
+
+    .chapter.flip .text {
+      order: 0;
+    }
+
+    .extras dl {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .extras dl {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

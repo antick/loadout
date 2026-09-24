@@ -1,53 +1,74 @@
 ---
 import { APP_NAME } from "@loadout/shared";
-import { GITHUB_URL } from "../lib/site";
+import { APP_VERSION, GITHUB_URL } from "../lib/site";
 ---
 
-<header class="wrap header">
+<header class="wrap docbar">
   <a class="brand" href="/" aria-label={`${APP_NAME} home`}>
-    <img src="/brand.svg" alt="" width="32" height="32" />
+    <img src="/brand.svg" alt="" width="28" height="28" />
     <span>{APP_NAME}</span>
   </a>
   <nav aria-label="On this page">
     <a class="optional" href="#what-it-does">What it does</a>
     <a class="optional" href="#agents">Agents</a>
-    <a href="#download">Download</a>
+    <a class="optional" href="#safety">Safety</a>
+    <a href="#install">Install</a>
     <a href={GITHUB_URL}>GitHub</a>
   </nav>
+  <span class="edition">Version {APP_VERSION} for macOS, Windows and Linux</span>
 </header>
 
 <style>
-  .header {
+  .docbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-block: 1.25rem;
+    gap: 1.5rem;
+    padding-block: 1.125rem 0.875rem;
+    border-bottom: 2px solid var(--rule-strong);
   }
 
   .brand {
     display: inline-flex;
     align-items: center;
     gap: 0.625rem;
+    font-family: var(--font-head);
     font-size: 1.25rem;
-    font-weight: 780;
-    font-stretch: 78%;
+    font-weight: 700;
     text-decoration: none;
   }
 
   nav {
     display: flex;
-    gap: clamp(1rem, 2.5vw, 1.75rem);
-    font-size: 0.9375rem;
+    gap: clamp(1rem, 2.4vw, 1.75rem);
+    margin-left: auto;
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 600;
   }
 
   nav a {
-    text-decoration: none;
     color: var(--slate);
+    text-decoration: none;
   }
 
   nav a:hover {
     color: var(--ink);
+  }
+
+  .edition {
+    padding: 0.125rem 0.5rem;
+    border: 1.5px solid var(--rule-strong);
+    border-radius: 3px;
+    font-family: var(--font-head);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 64rem) {
+    .edition {
+      display: none;
+    }
   }
 
   @media (max-width: 40rem) {
