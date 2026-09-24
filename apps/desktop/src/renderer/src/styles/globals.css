@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
-@import "@fontsource-variable/archivo/wdth.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -123,7 +122,6 @@
 @theme inline {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
-  --font-display: "Archivo Variable", "Geist Variable", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -271,15 +269,10 @@
 }
 
 @layer components {
-  /*
-   * Display type: Archivo, condensed and heavy, the voice of the landing page's headlines. Only
-   * for page titles, greetings, big numbers and panel headings; everything else stays in Geist.
-   */
+  /* Headings: page titles, greetings, big numbers and panel titles. One place to restyle them. */
   .type-display {
-    font-family: var(--font-display);
-    font-stretch: 82%;
-    font-weight: 720;
-    letter-spacing: -0.005em;
+    font-weight: 620;
+    letter-spacing: -0.018em;
   }
 }
 

@@ -56,7 +56,7 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
                   <ChevronRight className="size-3.5 self-center" />
                 </span>
               ))}
-              <h1 className="type-display truncate text-[1.0625rem]">{title}</h1>
+              <h1 className="type-display truncate text-[0.9375rem]">{title}</h1>
               {/* When the bar is tight the subtitle gives way long before the title does. */}
               {subtitle ? (
                 <span className="min-w-0 shrink-[1000] truncate text-[0.8125rem] text-muted-foreground">
