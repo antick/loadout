@@ -17,6 +17,8 @@ export interface PageHeaderSlots {
   actions: HTMLElement | null;
   /** Title-bar cell above the sidebar, where the sidebar section puts its name and action. */
   sidebarHeader: HTMLElement | null;
+  /** Next to the sidebar toggle: the section's buttons while the sidebar is folded away. */
+  sidebarActions: HTMLElement | null;
 }
 
 export const ShellContext = createContext<ShellActions | null>(null);
@@ -25,6 +27,7 @@ export const PageHeaderSlotsContext = createContext<PageHeaderSlots>({
   title: null,
   actions: null,
   sidebarHeader: null,
+  sidebarActions: null,
 });
 
 /** Open the shell's dialogs (command palette, help, preset editor, link project). */

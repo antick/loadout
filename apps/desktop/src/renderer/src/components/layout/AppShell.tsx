@@ -61,6 +61,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
   const [sidebarHeaderSlot, setSidebarHeaderSlot] = useState<HTMLElement | null>(null);
+  const [sidebarActionsSlot, setSidebarActionsSlot] = useState<HTMLElement | null>(null);
   const [takeoverSlot, setTakeoverSlot] = useState<HTMLElement | null>(null);
   const [claims, setClaims] = useState(0);
   const [takeoverShown, setTakeoverShown] = useState(true);
@@ -91,8 +92,13 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     [],
   );
   const slots = useMemo(
-    () => ({ title: titleSlot, actions: actionsSlot, sidebarHeader: sidebarHeaderSlot }),
-    [titleSlot, actionsSlot, sidebarHeaderSlot],
+    () => ({
+      title: titleSlot,
+      actions: actionsSlot,
+      sidebarHeader: sidebarHeaderSlot,
+      sidebarActions: sidebarActionsSlot,
+    }),
+    [titleSlot, actionsSlot, sidebarHeaderSlot, sidebarActionsSlot],
   );
 
   useHotkey(SHORTCUT_KEYS.palette, (event) => {
@@ -123,6 +129,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               titleSlotRef={setTitleSlot}
               actionsSlotRef={setActionsSlot}
               sidebarHeaderRef={setSidebarHeaderSlot}
+              sidebarActionsRef={setSidebarActionsSlot}
             />
             <div className="flex min-h-0 flex-1">
               <SidebarSlotRefContext.Provider value={setTakeoverSlot}>

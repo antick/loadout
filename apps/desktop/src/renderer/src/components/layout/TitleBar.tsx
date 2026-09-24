@@ -21,6 +21,8 @@ export interface TitleBarProps {
   actionsSlotRef: (node: HTMLElement | null) => void;
   /** Receives the cell above the sidebar, where the sidebar section puts its name. */
   sidebarHeaderRef: (node: HTMLElement | null) => void;
+  /** Receives the spot next to the sidebar toggle for the section's buttons while folded. */
+  sidebarActionsRef: (node: HTMLElement | null) => void;
 }
 
 /**
@@ -33,6 +35,7 @@ export function TitleBar({
   titleSlotRef,
   actionsSlotRef,
   sidebarHeaderRef,
+  sidebarActionsRef,
 }: TitleBarProps): ReactNode {
   const { t } = useTranslation();
   const shell = useShell();
@@ -70,6 +73,11 @@ export function TitleBar({
           className="app-no-drag text-muted-foreground"
           aria-label={t("shell.toggleSidebar")}
           title={t("shell.toggleSidebar")}
+        />
+        {/* Filled only while the sidebar is folded: its section's buttons, then a divider. */}
+        <div
+          ref={sidebarActionsRef}
+          className="app-no-drag flex shrink-0 items-center gap-1 border-r pr-3 empty:hidden"
         />
         <div ref={titleSlotRef} className="min-w-0 flex-1" />
         <button

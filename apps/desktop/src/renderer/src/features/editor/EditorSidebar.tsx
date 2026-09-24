@@ -1,10 +1,9 @@
 import type { EditTarget, SkillFileEntry } from "@loadout/shared";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { ChevronLeft, Copy } from "lucide-react";
-import { type ReactNode, useContext } from "react";
-import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { PageHeaderSlotsContext } from "@/components/layout/shell-context";
+import { SidebarHeaderPortal } from "@/components/layout/SidebarHeaderPortal";
 import { useIsMac } from "@/components/layout/WindowDragRegion";
 import { SidebarContent, SidebarSeparator } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,28 +37,30 @@ export function EditorSidebar({
   onSelect,
 }: EditorSidebarProps): ReactNode {
   const { t } = useTranslation();
-  const slots = useContext(PageHeaderSlotsContext);
   const isMac = useIsMac();
   const inset = isMac ? MAC_WINDOW_CONTROLS_WIDTH_PX - ACTIVITY_BAR_WIDTH_PX : undefined;
 
+  const back = (
+    <Link
+      {...backLink}
+      className="app-no-drag inline-flex h-7 min-w-0 items-center gap-1 rounded-md px-1.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+    >
+      <ChevronLeft className="size-4 shrink-0" />
+      <span className="truncate">{backLabel}</span>
+    </Link>
+  );
   const header = (
     <div
       className="flex h-full w-(--sidebar-width) items-center pr-2 pl-2"
       style={inset ? { paddingLeft: inset - 8 } : undefined}
     >
-      <Link
-        {...backLink}
-        className="app-no-drag inline-flex h-7 min-w-0 items-center gap-1 rounded-md px-1.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
-      >
-        <ChevronLeft className="size-4 shrink-0" />
-        <span className="truncate">{backLabel}</span>
-      </Link>
+      {back}
     </div>
   );
 
   return (
     <>
-      {slots.sidebarHeader ? createPortal(header, slots.sidebarHeader) : null}
+      <SidebarHeaderPortal header={header} folded={back} />
       <SidebarContent className="gap-0 pb-3">
         <div className="px-4 pt-3 pb-2">
           <p data-selectable className="truncate text-sm font-semibold tracking-tight">
