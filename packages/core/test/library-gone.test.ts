@@ -83,7 +83,11 @@ describe("abandoning a deleted library", () => {
       const left = remaining(world.base);
       world.abandon();
       await new Promise((resolve) => setImmediate(resolve));
-      expect(remaining(world.base)).toEqual(left);
+      // Nothing new may appear. Closing the database can remove SQLite's own side files
+      // (Windows keeps them while the database is open), which is not writing back.
+      const after = remaining(world.base);
+      if (left === null) expect(after).toBeNull();
+      else expect((after ?? []).filter((entry) => !left.includes(entry))).toEqual([]);
     } finally {
       world.cleanup();
     }
