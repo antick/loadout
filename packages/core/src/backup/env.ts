@@ -87,7 +87,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
   /**
    * Metadata that came in with a clone, merge or restore is another device's word. The rebuild
    * joins `path` onto the library folder as it is, so a file naming a folder outside the library
-   * is removed before the rebuild can index — and later delete — something that is not ours.
+   * is removed before the rebuild can index (and later delete) something that is not ours.
    */
   function dropUnsafeMetadata(): void {
     for (const { path, file } of metadataFiles()) {
@@ -100,7 +100,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
   /**
    * A rebuild refreshes an existing skill from its files but keeps the installed revision it
    * already had. After a merge that would make the next metadata write undo the other device's
-   * revision, and the two devices would trade commits for ever — so carry it over here.
+   * revision, and the two devices would trade commits for ever. So carry it over here.
    */
   function adoptRevisions(): void {
     for (const { file } of metadataFiles()) {

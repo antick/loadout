@@ -26,7 +26,7 @@ export interface ParsedRemote {
   kind: RemoteKind;
   /** Lower-cased host (with port) for http and ssh remotes. */
   host: string | null;
-  /** True only for `https://` — the one transport a token is sent over. */
+  /** True only for `https://`, the one transport a token is sent over. */
   secure: boolean;
   /** The URL with any embedded credentials removed. */
   cleanUrl: string;

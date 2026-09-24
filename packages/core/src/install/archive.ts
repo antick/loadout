@@ -67,7 +67,7 @@ function readUnixModes(data: Buffer): Map<string, number> {
   return modes;
 }
 
-/** Relative, `/`-separated and free of `..` — or null for an entry that must not be written. */
+/** Relative, `/`-separated and free of `..`, or null for an entry that must not be written. */
 function safeEntryPath(name: string): string | null {
   const path = name.replaceAll("\\", "/");
   if (path.startsWith("/") || /^[A-Za-z]:/.test(path)) return null;

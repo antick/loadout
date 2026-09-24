@@ -296,7 +296,7 @@ describe("global workspace", () => {
     // The sibling agent of a shared folder has no row of its own; the path is still ours.
     const refused = await rejection(api().deleteLocal("warp", "managed"));
     expect(refused.message).toBe(
-      `Skill is managed by ${APP_NAME} — remove it from the agent first.`,
+      `Skill is managed by ${APP_NAME}. Remove it from the agent first.`,
     );
     expect(existsSync(join(world.home, ".agents", "skills", "managed"))).toBe(true);
 
@@ -371,7 +371,7 @@ describe("global workspace", () => {
       expect(folder).toMatchObject({ relativePath: "copied", managed: true });
       const refused = await rejection(api().deleteBroken("claude_code", "copied"));
       expect(refused.message).toBe(
-        `${APP_NAME} put this folder here — deploy the skill again to repair it.`,
+        `${APP_NAME} put this folder here. Deploy the skill again to repair it.`,
       );
       expect(existsSync(join(claude, "copied"))).toBe(true);
     });

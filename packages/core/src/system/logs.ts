@@ -78,7 +78,7 @@ function exportDir(ctx: CoreContext): string {
 }
 
 /**
- * Bundle what a bug report needs. The entries are picked one by one — never a folder sweep — so
+ * Bundle what a bug report needs. The entries are picked one by one, never a folder sweep, so
  * the database, the library config and anything credential-like can not end up in the archive.
  */
 export function exportLogs(ctx: CoreContext, diagnostics: DiagnosticInfo): LogExport {

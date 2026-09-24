@@ -38,7 +38,7 @@ export function createFileLogger(logsDir: string, echo = false): Logger {
   const filePath = join(logsDir, LOG_FILE_NAME);
   rotate(filePath);
   const write = (level: LogLevel, message: string, error?: unknown): void => {
-    const suffix = error === undefined ? "" : ` — ${errorMessage(error)}`;
+    const suffix = error === undefined ? "" : `: ${errorMessage(error)}`;
     const line = `${new Date().toISOString()} ${level.toUpperCase().padEnd(5)} ${message}${suffix}\n`;
     try {
       appendFileSync(filePath, line);

@@ -1,7 +1,7 @@
 /**
  * Standalone CLI downloads: one executable per OS that needs no Node installed, built as a Node
  * single executable application (SEA). The bundle is injected into the official Node binary of
- * each target, which must be the same Node version that prepares the blob — this one.
+ * each target, which must be the same Node version that prepares the blob: this one.
  *
  *   node scripts/standalone.mjs                 this computer's platform only
  *   node scripts/standalone.mjs --all           every target (macOS targets need a Mac to sign)

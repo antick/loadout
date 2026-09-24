@@ -38,7 +38,7 @@ export function countConflicts(db: Database): number {
 
 /**
  * Record a conflict. When the skill is already waiting, only the remote version it points at
- * moves forward — the date it was first noticed stays. Returns true for a new conflict.
+ * moves forward; the date it was first noticed stays. Returns true for a new conflict.
  */
 export function recordConflict(
   db: Database,

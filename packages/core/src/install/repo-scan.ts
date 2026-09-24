@@ -42,7 +42,7 @@ const CONTAINER_DIRS = ["skills", "skill"] as const;
 /** Hidden folders every agent reads, so a skill inside one is not tied to a single agent. */
 const SHARED_HIDDEN_DIRS: ReadonlySet<string> = new Set([".agents"]);
 
-/** Lexically inside, and — once it exists, so links can be followed — really inside too. */
+/** Lexically inside, and (once it exists, so links can be followed) really inside too. */
 function assertInside(repoDir: string, path: string, label: string): void {
   const reallyInside =
     lstatOrNull(path) === null || isInside(canonicalPath(repoDir), canonicalPath(path));

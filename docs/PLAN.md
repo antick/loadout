@@ -1,4 +1,4 @@
-# Loadout — build plan and feature checklist
+# Loadout: build plan and feature checklist
 
 One desktop app to manage AI agent skills across every coding tool. A _skill_ is a folder with a
 `SKILL.md` (YAML frontmatter + instructions). Loadout keeps every skill in one central **library**
@@ -13,7 +13,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 | Monorepo   | Turborepo + pnpm workspaces, Node 22+                                          |
 | Desktop    | Electron, electron-vite, electron-builder                                      |
 | UI         | React 19, TanStack Router (file based), TanStack Query, Tailwind v4, shadcn/ui |
-| Domain     | `@loadout/core` — plain Node TypeScript, no Electron imports                   |
+| Domain     | `@loadout/core`: plain Node TypeScript, no Electron imports                    |
 | Storage    | SQLite through Node's built-in `node:sqlite` (no native modules)               |
 | Git        | system `git` through `child_process`                                           |
 | Lint / fmt | oxlint, oxfmt                                                                  |
@@ -135,10 +135,10 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Sidebar: dashboard, library, install, agents, presets, projects, backup, settings
 - [x] Dashboard: stats, quick actions, recent activity, agent-control setup card
 - [x] Command palette (⌘K): skills, presets, projects, actions
-- [~] Theme (light / dark / system), text size, language — only English ships; add `locales/<code>.json` + an entry in `LANGUAGES`
+- [~] Theme (light / dark / system), text size, language. Only English ships; add `locales/<code>.json` + an entry in `LANGUAGES`
 - [x] Tray icon, close behaviour (ask / hide / quit), single instance
 - [x] File watcher refreshes the UI when skills change on disk or through the CLI
-- [x] App self-update — checks `latest.json` in the public releases repository, downloads with a SHA-256 check, replaces the app and restarts (macOS, AppImage), runs the silent installer (Windows) or opens the package (.deb)
+- [x] App self-update: checks `latest.json` in the newest GitHub release of this repository, downloads with a SHA-256 check, replaces the app and restarts (macOS, AppImage), runs the silent installer (Windows) or opens the package (.deb)
 - [x] Diagnostics, log files, export logs zip, crash banner, report issue
 - [x] Help / quick-start guide
 - [x] Network proxy setting

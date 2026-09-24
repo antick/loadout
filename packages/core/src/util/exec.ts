@@ -21,7 +21,7 @@ export interface ExecResult {
 const DEFAULT_TIMEOUT_MS = 120_000;
 
 /**
- * Run a program to completion without a shell. Never rejects on a non-zero exit — callers decide.
+ * Run a program to completion without a shell. Never rejects on a non-zero exit; callers decide.
  * Rejects on spawn failure, timeout (TIMEOUT) and abort (CANCELLED).
  */
 export function exec(
@@ -63,7 +63,7 @@ export function exec(
         reject(
           new AppError(
             "TIMEOUT",
-            `${command} timed out after ${Math.round(timeoutMs / 1000)}s — check your network connection`,
+            `${command} timed out after ${Math.round(timeoutMs / 1000)}s. Check your network connection`,
           ),
         ),
       );

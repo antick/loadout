@@ -12,7 +12,7 @@ const IGNORED_SEGMENTS = [`${sep}.git${sep}`, `${sep}node_modules${sep}`];
 
 /**
  * Watches folders (the library, agents' and projects' skills folders) so changes made outside the
- * app — by hand, by an agent, or through the CLI — show up without a manual refresh. The list is
+ * app (by hand, by an agent, or through the CLI) show up without a manual refresh. The list is
  * asked for again every minute, so folders created later are picked up.
  */
 export function watchFolders(resolvePaths: () => string[], onChange: () => void): FolderWatcher {

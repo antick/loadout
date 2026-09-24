@@ -26,7 +26,7 @@
 
 | Path                 | Owns                                                                                            |
 | -------------------- | ----------------------------------------------------------------------------------------------- |
-| `core.ts`            | `createCore(options)` — builds the context, wires every service, returns `CoreApi` + helpers    |
+| `core.ts`            | `createCore(options)`: builds the context, wires every service, returns `CoreApi` + helpers     |
 | `context.ts`         | `CoreContext`, `SecretStore`, `HostBridge`                                                      |
 | `errors.ts`          | `AppError`, helpers, `toErrorShape`                                                             |
 | `paths.ts`           | Library location, move-on-restart, warnings                                                     |
@@ -88,9 +88,9 @@ Settings; then only the library's own entries move and the rest stays home.
   library.json             where the library is, when it was moved (absent otherwise)
   bin/                     published CLI for agents
   app/                     the desktop app's own files (app-dev/ for the development build)
-  — the library, unless moved —
+  (the library, unless moved)
   loadout.db               SQLite (metadata; rebuilt from files when missing)
-  skills/                  one folder per skill — also the backup Git repository
+  skills/                  one folder per skill, also the backup Git repository
     .loadout/              portable metadata: schema.json, skills/<id>.json, presets/<id>.json
   history/                 earlier versions of files saved in the editor (this computer only)
   cache/repos/             Git clone cache

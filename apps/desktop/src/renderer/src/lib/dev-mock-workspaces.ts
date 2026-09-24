@@ -392,7 +392,7 @@ export function createWorkspaceMockHandlers(
       const found = broken[agentKey]?.find((entry) => entry.relativePath === relativePath);
       if (!found) return ctx.fail("NOT_FOUND", `No broken folder at ${relativePath}`);
       if (found.managed) {
-        ctx.fail("INVALID_INPUT", "This copy was deployed by the app — deploy it again instead.");
+        ctx.fail("INVALID_INPUT", "This copy was deployed by the app. Deploy it again instead.");
       }
       if (relativePath === "tmp")
         ctx.fail("IO", "The folder is read-only, so it could not be deleted.");

@@ -12,7 +12,7 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 
 /**
  * Size rules. A skill over the per-skill limit is kept out of the backup through a managed block
- * in `.gitignore` — unless git already tracks it, because untracking would look like a delete to
+ * in `.gitignore`, unless git already tracks it, because untracking would look like a delete to
  * every other device. The block is rebuilt before each commit, so a skill that shrank comes back.
  */
 

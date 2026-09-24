@@ -207,7 +207,7 @@ export function createWorkspaceService(
       const agent = registry.get(agentKey);
       const entry = requireLocalSkill(agent.skillsDir, relativePath);
       if (rowsAtPath(store.deployments(), entry.path).length > 0) {
-        throw invalid(`Skill is managed by ${APP_NAME} — remove it from the agent first.`);
+        throw invalid(`Skill is managed by ${APP_NAME}. Remove it from the agent first.`);
       }
       await removePath(entry.path);
       ctx.activity.record("remove", entry.name, `${agent.displayName}: local skill deleted`);
@@ -225,7 +225,7 @@ export function createWorkspaceService(
       const folder = brokenFolders(agent).find((entry) => entry.relativePath === wanted);
       if (!folder) throw notFound(`No broken folder at ${relativePath}`);
       if (folder.managed) {
-        throw invalid(`${APP_NAME} put this folder here — deploy the skill again to repair it.`);
+        throw invalid(`${APP_NAME} put this folder here. Deploy the skill again to repair it.`);
       }
       await removePath(folder.path);
       ctx.activity.record("remove", folder.dirName, `${agent.displayName}: broken folder deleted`);

@@ -122,7 +122,7 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
         if (settled) {
           // Already where it should be; a second copy is only ours to drop when it is a link.
           if (!lstatOrNull(source.path)?.isSymbolicLink()) {
-            throw invalid("Duplicate skill entry is not a symlink — resolve manually");
+            throw invalid("Duplicate skill entry is not a symlink. Resolve it manually");
           }
           leftovers.push(source);
           continue;

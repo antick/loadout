@@ -237,7 +237,7 @@ export class SkillStore {
       (s) => s.name.toLowerCase() === reference.toLowerCase() || s.dirName === reference,
     );
     if (matches.length === 1 && matches[0]) return matches[0];
-    if (matches.length > 1) throw notFound(`Several skills are called "${reference}" — use the id`);
+    if (matches.length > 1) throw notFound(`Several skills are called "${reference}". Use the id`);
     throw notFound(`Skill not found: ${reference}`);
   }
 

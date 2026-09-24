@@ -23,7 +23,7 @@ export const cancelled = (message = "Operation cancelled"): AppError =>
 export function targetConflict(conflicts: TargetConflict[]): AppError {
   const first = conflicts[0];
   const summary = first
-    ? `Refusing to replace "${first.path}": it ${first.reason}. The existing content was left untouched — import it into the library, or move it aside, and try again.`
+    ? `Refusing to replace "${first.path}": it ${first.reason}. The existing content was left untouched. Import it into the library, or move it aside, and try again.`
     : "Target conflict";
   const extra = conflicts.length > 1 ? ` (+${conflicts.length - 1} more)` : "";
   return new AppError("TARGET_CONFLICT", summary + extra, { conflicts });

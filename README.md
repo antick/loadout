@@ -3,7 +3,7 @@
 One desktop app to manage AI agent skills across every coding tool.
 
 A skill is a folder with a `SKILL.md`. Loadout keeps every skill in one library
-(`~/.loadout`) and deploys it — by symlink or copy — into the skills folder of each agent you
+(`~/.loadout`) and deploys it, by symlink or copy, into the skills folder of each agent you
 use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
 ## Install

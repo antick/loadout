@@ -1,6 +1,6 @@
 /**
  * Schema migrations, applied in order. `PRAGMA user_version` holds the number applied so far.
- * Never edit a shipped migration — append a new one.
+ * Never edit a shipped migration; append a new one.
  * All timestamps are epoch milliseconds; ids are UUID strings.
  */
 export const MIGRATIONS: readonly string[] = [

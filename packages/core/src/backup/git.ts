@@ -38,7 +38,7 @@ export type GitErrorCode = Extract<
 >;
 
 /**
- * First match wins, so the specific causes come before the broad "conflict" rule — git's hints
+ * First match wins, so the specific causes come before the broad "conflict" rule: git's hints
  * for other failures can mention that word too.
  */
 const ERROR_RULES: readonly (readonly [GitErrorCode, RegExp])[] = [
@@ -104,7 +104,7 @@ export interface Git {
   run(args: string[], options?: GitCallOptions): Promise<ExecResult>;
   /** Like `run`, returning trimmed stdout. */
   text(args: string[], options?: GitCallOptions): Promise<string>;
-  /** Run and hand back the result whatever the exit code — for questions git answers by failing. */
+  /** Run and hand back the result whatever the exit code, for questions git answers by failing. */
   probe(args: string[], options?: GitCallOptions): Promise<ExecResult>;
   available(): Promise<boolean>;
 }

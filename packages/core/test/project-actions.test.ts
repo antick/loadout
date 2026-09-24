@@ -75,7 +75,7 @@ describe("project actions", () => {
 
       makeSkill(claudeOff, "dup", { body: "a second real copy" });
       const error = await rejection(api().setSkillEnabled(project.id, "dup", true));
-      expect(error.message).toBe("Duplicate skill entry is not a symlink — resolve manually");
+      expect(error.message).toBe("Duplicate skill entry is not a symlink. Resolve it manually");
       expect(existsSync(join(claudeOff, "dup", "SKILL.md"))).toBe(true);
     });
 
