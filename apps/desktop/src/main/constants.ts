@@ -33,6 +33,10 @@ export const UPDATE_RECHECK_MS = 6 * 60 * 60 * 1000;
 export const UPDATE_TIMEOUT_MS = 15_000;
 /** Progress events while downloading an update, at most this often. */
 export const UPDATE_PROGRESS_INTERVAL_MS = 250;
+/** No data for this long: the download reconnects and continues where it stopped. */
+export const UPDATE_STALL_MS = 30_000;
+/** Connections tried for one download before it gives up (the next try continues it). */
+export const UPDATE_DOWNLOAD_ATTEMPTS = 5;
 /** How long the replacement waits for the app to exit (the backup on quit runs first). */
 export const UPDATE_EXIT_WAIT_SECONDS = 180;
 /**

@@ -106,7 +106,9 @@ describe("update service", () => {
     const status = await updates.download();
     expect(status.phase).toBe("error");
     expect(status.error).toMatch(/checksum/);
-    expect(existsSync(join(root, "updates", "1.1.0"))).toBe(false);
+    const saved = join(root, "updates", "1.1.0", "loadout_1.1.0_amd64.deb");
+    expect(existsSync(saved)).toBe(false);
+    expect(existsSync(`${saved}.part`)).toBe(false);
   });
 
   it("keeps a finished download across restarts and clears older ones", async () => {

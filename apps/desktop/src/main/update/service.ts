@@ -208,7 +208,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       deps.log.info(`Update ${version} downloaded and checked`);
       return set({ phase: "ready", progress: null });
     } catch (error) {
-      await rm(dir, { recursive: true, force: true });
+      // What arrived stays in the folder, so the next download continues it.
       if (controller.signal.aborted) return set({ phase: "available", progress: null });
       deps.log.warn(`Update ${version} download failed`, error);
       return set({ phase: "error", progress: null, error: message(error) });
