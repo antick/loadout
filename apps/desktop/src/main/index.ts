@@ -6,6 +6,7 @@ import { AppError, type Core, createCore } from "@loadout/core";
 import {
   APP_DATA_DIR_NAME,
   APP_ID,
+  APP_NAME,
   DEV_APP_DATA_DIR_NAME,
   LIBRARY_DIR_NAME,
   type LoadoutApi,
@@ -56,6 +57,9 @@ const send = createEventSender(() => BrowserWindow.getAllWindows());
 // The app's own files live in the home data folder next to the library, not in the OS app data
 // folder. Set before anything reads the path (the single-instance lock does).
 const legacyAppDataDir = app.getPath("userData");
+// The name macOS shows in the app menu (About, Hide, Quit). Without it Electron uses the package
+// name. Set after reading the old data folder above, which was named the old way.
+app.setName(APP_NAME);
 const appDataDir = join(
   homedir(),
   LIBRARY_DIR_NAME,

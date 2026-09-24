@@ -8,13 +8,13 @@
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev --watch",
+    "dev": "node scripts/name-dev-electron.mjs && electron-vite dev --watch",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
     "test": "vitest run --passWithNoTests",
     "package": "electron-builder --config electron-builder.yml",
-    "postinstall": "install-electron"
+    "postinstall": "install-electron && node scripts/name-dev-electron.mjs"
   },
   "devDependencies": {
     "@codemirror/commands": "6.11.1",
@@ -32,7 +32,6 @@
     "@dnd-kit/modifiers": "9.0.0",
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
-    "@fontsource-variable/archivo": "5.3.0",
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@lezer/highlight": "1.2.3",
