@@ -2,7 +2,7 @@
 @import "@fontsource-variable/geist-mono";
 
 /*
- * Loadout site. Cool paper and graphite ink from the app's icon; mint only where something is
+ * Loadout site. Cool paper and graphite ink from the app's icon; signal orange only where something is
  * linked, the way a deployed skill is linked into an agent's folder.
  */
 :root {
@@ -11,12 +11,12 @@
   --ink: #1b1e27;
   --slate: #566070;
   --rule: #d6dbe2;
-  --mint: #78e0c2;
-  --mint-ink: #0e7560;
+  --signal: #ff7527;
+  --signal-ink: #c33e00;
   --band: #1b1e27;
   --band-ink: #e8ebef;
   --band-slate: #9aa3b2;
-  --focus: #0e7560;
+  --focus: #c33e00;
 
   --font-text: "Archivo Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
@@ -36,9 +36,9 @@
     --ink: #e8ebef;
     --slate: #9aa3b2;
     --rule: #2b303b;
-    --mint-ink: #78e0c2;
+    --signal-ink: #ff7527;
     --band: #0e1015;
-    --focus: #78e0c2;
+    --focus: #ff7527;
     color-scheme: dark;
   }
 }
@@ -109,7 +109,7 @@ a {
 }
 
 a:hover {
-  color: var(--mint-ink);
+  color: var(--signal-ink);
 }
 
 code,
@@ -162,7 +162,7 @@ code,
 
 .button:hover {
   color: var(--paper);
-  background: color-mix(in srgb, var(--ink) 86%, var(--mint-ink));
+  background: color-mix(in srgb, var(--ink) 86%, var(--signal-ink));
 }
 
 .button.quiet {

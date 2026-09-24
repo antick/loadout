@@ -101,7 +101,7 @@ const SOME_LINKED = `Linked into {linked} of these ${agents.length} agents. Edit
     top: 50%;
     left: 100%;
     width: calc(var(--spine-gap) / 2);
-    border-top: var(--line) solid var(--mint-ink);
+    border-top: var(--line) solid var(--signal-ink);
   }
 
   .board.empty .source::after {
@@ -145,7 +145,7 @@ const SOME_LINKED = `Linked into {linked} of these ${agents.length} agents. Edit
 
   li:has([aria-pressed="true"])::before {
     border-top-style: solid;
-    border-top-color: var(--mint-ink);
+    border-top-color: var(--signal-ink);
     transform-origin: left;
   }
 
@@ -189,7 +189,7 @@ const SOME_LINKED = `Linked into {linked} of these ${agents.length} agents. Edit
   }
 
   button[aria-pressed="true"] {
-    border-color: var(--mint-ink);
+    border-color: var(--signal-ink);
     background: var(--panel);
     color: var(--ink);
   }
@@ -229,7 +229,7 @@ const SOME_LINKED = `Linked into {linked} of these ${agents.length} agents. Edit
   }
 
   [aria-pressed="true"] .switch {
-    background: var(--mint-ink);
+    background: var(--signal-ink);
   }
 
   [aria-pressed="true"] .switch::after {
@@ -256,7 +256,7 @@ const SOME_LINKED = `Linked into {linked} of these ${agents.length} agents. Edit
       width: 0;
       height: 1.25rem;
       border-top: 0;
-      border-left: var(--line) solid var(--mint-ink);
+      border-left: var(--line) solid var(--signal-ink);
     }
 
     .board.empty .source::after {
