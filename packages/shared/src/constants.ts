@@ -30,7 +30,9 @@ export const SKILL_DOCUMENT_FILES = [
 
 /** The source repository. Its GitHub releases hold the installers and the update feed. */
 export const RELEASES_REPO = "antick/loadout";
-export const RELEASES_URL = `https://github.com/${RELEASES_REPO}/releases`;
+/** The source code on GitHub. */
+export const SOURCE_URL = `https://github.com/${RELEASES_REPO}`;
+export const RELEASES_URL = `${SOURCE_URL}/releases`;
 /** Page of the newest published release. */
 export const LATEST_RELEASE_URL = `${RELEASES_URL}/latest`;
 /** Which file to download and what to click on first launch. */

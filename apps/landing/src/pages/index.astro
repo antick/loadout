@@ -8,7 +8,7 @@ import Hero from "../components/Hero.astro";
 import Safety from "../components/Safety.astro";
 import Base from "../layouts/Base.astro";
 import { AGENT_COUNT } from "../lib/agents";
-import { PARENT_NAME, PARENT_URL } from "../lib/site";
+import { ALL_RELEASES_URL, GITHUB_URL, PARENT_NAME, PARENT_URL } from "../lib/site";
 ---
 
 <Base
@@ -25,7 +25,8 @@ import { PARENT_NAME, PARENT_URL } from "../lib/site";
   </main>
   <footer class="wrap">
     <p>
-      {APP_NAME} is a <a href={PARENT_URL}>{PARENT_NAME}</a> project.
+      {APP_NAME} is a <a href={PARENT_URL}>{PARENT_NAME}</a> project. It is open source:{" "}
+      <a href={GITHUB_URL}>source on GitHub</a>, <a href={ALL_RELEASES_URL}>releases</a>.
     </p>
   </footer>
 </Base>

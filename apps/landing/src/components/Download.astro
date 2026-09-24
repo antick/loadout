@@ -1,5 +1,5 @@
 ---
-import { DOWNLOADS_URL, INSTALL_GUIDE } from "../lib/site";
+import { ALL_RELEASES_URL, DOWNLOADS_URL, GITHUB_URL, INSTALL_GUIDE } from "../lib/site";
 
 const platforms = ["macOS", "Windows", "Linux"];
 const platformList = `${platforms.slice(0, -1).join(", ")} and ${platforms.at(-1)}`;
@@ -14,6 +14,12 @@ const platformList = `${platforms.slice(0, -1).join(", ")} and ${platforms.at(-1
         <div class="actions">
           <a class="button" href={DOWNLOADS_URL}>
             Download the latest release
+          </a>
+          <a class="button quiet" href={ALL_RELEASES_URL}>
+            All releases
+          </a>
+          <a class="button quiet" href={GITHUB_URL}>
+            Source on GitHub
           </a>
         </div>
         <p class="note">
