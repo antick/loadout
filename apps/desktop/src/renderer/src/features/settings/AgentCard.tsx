@@ -80,7 +80,7 @@ export function AgentCard({
             <StatusBadge tone="neutral" label={t("settings.agents.badge.notInstalled")} />
           )}
           {agent.isCustom ? (
-            <StatusBadge tone="brass" label={t("settings.agents.badge.custom")} />
+            <StatusBadge tone="kit" label={t("settings.agents.badge.custom")} />
           ) : null}
           {agent.hasPathOverride || agent.hasProjectPathOverride ? (
             <StatusBadge tone="info" label={t("settings.agents.badge.customPath")} />

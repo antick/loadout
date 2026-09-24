@@ -165,7 +165,7 @@ export function LocalTab(): ReactNode {
           icon={FolderTree}
           title={t("install.local.bulkTitle")}
           description={t("install.local.bulkDescription")}
-          tone="brass"
+          tone="kit"
           disabled={Boolean(bulkTask)}
           onClick={() => void chooseBulk()}
         />

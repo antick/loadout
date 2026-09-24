@@ -119,6 +119,26 @@
           "body": "Every agent and project gets its own copy that works anywhere, including in repositories you share with a team."
         }
       },
+      "palette": {
+        "title": "Colours",
+        "description": "Each palette comes in a light and a dark version. Appearance below picks light, dark or the system's.",
+        "blueprint": {
+          "title": "Blueprint",
+          "body": "Prussian-blue ink on blueprint paper, with a faint drafting grid. In dark mode, the blueprint itself."
+        },
+        "risograph": {
+          "title": "Risograph",
+          "body": "A two-ink print: federal-blue ink everywhere, fluorescent pink for what matters, riso yellow for presets."
+        },
+        "flight": {
+          "title": "Flight gear",
+          "body": "Glacier white or night slate, with international orange as the one signal colour."
+        },
+        "iris": {
+          "title": "Iris & butter",
+          "body": "Aubergine ink, iris violet and soft butter yellow. Calm, with a late-evening dark mode."
+        }
+      },
       "appearance": {
         "title": "Appearance",
         "theme": "Theme",

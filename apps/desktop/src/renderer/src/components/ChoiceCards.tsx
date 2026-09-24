@@ -7,6 +7,8 @@ export interface Choice<T extends string> {
   title: string;
   /** What choosing this means, in a sentence. */
   description?: string;
+  /** Something to show under the text, such as a picture of the choice. */
+  preview?: ReactNode;
   disabled?: boolean;
 }
 
@@ -57,13 +59,14 @@ export function ChoiceCards<T extends string>({
               disabled={choice.disabled}
               className="mt-0.5"
             />
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium">{choice.title}</span>
               {choice.description ? (
                 <span className="mt-0.5 block text-sm text-muted-foreground">
                   {choice.description}
                 </span>
               ) : null}
+              {choice.preview ? <span className="mt-2.5 block">{choice.preview}</span> : null}
             </span>
           </label>
         );

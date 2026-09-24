@@ -70,10 +70,11 @@
       "copyHint": "Skills are copied into agent folders. Change it in Settings."
     },
     "theme": {
-      "label": "Theme",
+      "label": "Mode",
       "system": "System",
       "light": "Light",
-      "dark": "Dark"
+      "dark": "Dark",
+      "palette": "Colours"
     }
   },
   "help": {

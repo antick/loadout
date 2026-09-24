@@ -1,0 +1,88 @@
+/*
+ * Blueprint: cyanotype. Light mode is pale blueprint paper with Prussian-blue ink; dark mode is
+ * the blueprint itself, deep Prussian blue with chalk-white lines and safety-yellow kits. A faint
+ * drafting grid sits behind the page in both.
+ */
+[data-theme="blueprint"] {
+  --background: oklch(0.968 0.014 240);
+  --foreground: oklch(0.29 0.085 258);
+  --card: oklch(0.99 0.006 240);
+  --popover: oklch(0.99 0.006 240);
+  --primary: oklch(0.43 0.14 258);
+  --primary-foreground: oklch(0.98 0.01 240);
+  --secondary: oklch(0.935 0.022 242);
+  --secondary-foreground: oklch(0.32 0.08 258);
+  --muted: oklch(0.935 0.022 242);
+  --muted-foreground: oklch(0.5 0.06 252);
+  --accent: oklch(0.925 0.028 242);
+  --accent-foreground: oklch(0.29 0.085 258);
+  --destructive: oklch(0.56 0.19 25);
+  --destructive-foreground: oklch(0.99 0.005 240);
+  --border: oklch(0.87 0.035 245);
+  --input: oklch(0.86 0.04 245);
+  --ring: oklch(0.55 0.14 250);
+  --selected: oklch(0.9 0.05 243);
+  --selected-foreground: oklch(0.33 0.11 258);
+  --sidebar: oklch(0.945 0.022 242);
+  --sidebar-foreground: oklch(0.36 0.075 256);
+  --sidebar-accent: oklch(0.915 0.03 243);
+  --sidebar-accent-foreground: oklch(0.29 0.085 258);
+  --sidebar-border: oklch(0.87 0.035 245);
+  --rail: oklch(0.915 0.032 243);
+  --rail-foreground: oklch(0.45 0.07 255);
+  --rail-hover: oklch(0.89 0.04 244);
+  --rail-active-foreground: oklch(0.29 0.1 258);
+  --rail-selected: oklch(0.975 0.012 240);
+  --rail-indicator: oklch(0.43 0.14 258);
+  --rail-border: oklch(0.87 0.035 245);
+  --kit: oklch(0.6 0.15 58);
+  --overlay: oklch(0.29 0.085 258 / 40%);
+  --grid-line: oklch(0.43 0.14 258 / 5%);
+}
+
+[data-theme="blueprint"].dark {
+  --background: oklch(0.31 0.095 258);
+  --foreground: oklch(0.97 0.012 235);
+  --card: oklch(0.355 0.095 257);
+  --popover: oklch(0.355 0.095 257);
+  --primary: oklch(0.93 0.03 235);
+  --primary-foreground: oklch(0.3 0.095 258);
+  --secondary: oklch(0.38 0.095 257);
+  --secondary-foreground: oklch(0.97 0.012 235);
+  --muted: oklch(0.38 0.095 257);
+  --muted-foreground: oklch(0.82 0.045 238);
+  --accent: oklch(0.39 0.095 257);
+  --accent-foreground: oklch(0.98 0.01 235);
+  --destructive: oklch(0.74 0.16 22);
+  --destructive-foreground: oklch(0.25 0.08 258);
+  --border: oklch(1 0 0 / 17%);
+  --input: oklch(1 0 0 / 22%);
+  --ring: oklch(0.9 0.05 230);
+  --selected: oklch(1 0 0 / 14%);
+  --selected-foreground: oklch(0.99 0.005 235);
+  --sidebar: oklch(0.285 0.09 258);
+  --sidebar-foreground: oklch(0.88 0.035 238);
+  --sidebar-accent: oklch(0.34 0.095 257);
+  --sidebar-accent-foreground: oklch(0.99 0.005 235);
+  --sidebar-border: oklch(1 0 0 / 13%);
+  --rail: oklch(0.265 0.087 258);
+  --rail-foreground: oklch(0.78 0.05 238);
+  --rail-hover: oklch(0.32 0.09 258);
+  --rail-active-foreground: oklch(0.99 0.005 235);
+  --rail-selected: oklch(0.34 0.095 257);
+  --rail-indicator: oklch(0.88 0.15 95);
+  --rail-border: oklch(1 0 0 / 13%);
+  --kit: oklch(0.88 0.15 95);
+  --overlay: oklch(0.2 0.07 258 / 55%);
+  --grid-line: oklch(1 0 0 / 4.5%);
+  /* Flat, like ink on paper: lines instead of shadows. */
+  --shadow-xs-value: none;
+  --shadow-sm-value: none;
+}
+
+[data-theme="blueprint"] [data-slot="sidebar-inset"] {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}

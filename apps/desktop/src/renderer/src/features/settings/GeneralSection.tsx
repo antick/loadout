@@ -1,4 +1,9 @@
-import type { CloseActionSetting, DeployMode } from "@loadout/shared";
+import {
+  type CloseActionSetting,
+  type DeployMode,
+  PALETTES,
+  type PaletteSetting,
+} from "@loadout/shared";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +17,7 @@ import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSettings } from "@/hooks/queries/settings";
 import { LANGUAGES } from "@/lib/i18n";
 import { CLOSE_ACTIONS, DEPLOY_MODES, TEXT_SIZE_OPTIONS, THEME_OPTIONS } from "./constants";
+import { PalettePreview } from "./PalettePreview";
 
 const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon } as const;
 
@@ -29,6 +35,12 @@ export function GeneralSection(): ReactNode {
     value: mode,
     title: t(`settings.general.deploy.${mode}.title`),
     description: t(`settings.general.deploy.${mode}.body`),
+  }));
+  const paletteChoices: Choice<PaletteSetting>[] = PALETTES.map((palette) => ({
+    value: palette,
+    title: t(`settings.general.palette.${palette}.title`),
+    description: t(`settings.general.palette.${palette}.body`),
+    preview: <PalettePreview palette={palette} />,
   }));
   const closeChoices: Choice<CloseActionSetting>[] = CLOSE_ACTIONS.map((action) => ({
     value: action,
@@ -60,6 +72,19 @@ export function GeneralSection(): ReactNode {
           choices={deployChoices}
           className="md:grid-cols-2"
           onChange={(value) => setSetting.mutate({ key: "deployMode", value })}
+        />
+      </Panel>
+
+      <Panel
+        title={t("settings.general.palette.title")}
+        description={t("settings.general.palette.description")}
+      >
+        <ChoiceCards
+          label={t("settings.general.palette.title")}
+          value={settings.palette}
+          choices={paletteChoices}
+          className="md:grid-cols-2"
+          onChange={(value) => setSetting.mutate({ key: "palette", value })}
         />
       </Panel>
 

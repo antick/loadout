@@ -2,6 +2,7 @@ import { createHashHistory, createRouter, RouterProvider } from "@tanstack/react
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { applyAppearance, restoreAppearance } from "@/lib/appearance";
 import { routeTree } from "./routeTree.gen";
 import "./styles/globals.css";
 
@@ -12,6 +13,9 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+// Colours of the last run, before anything is drawn; settings confirm them once they load.
+applyAppearance(restoreAppearance());
 
 async function start(): Promise<void> {
   // Plain-browser preview only: the guard lets the bundler drop the mock from production builds.

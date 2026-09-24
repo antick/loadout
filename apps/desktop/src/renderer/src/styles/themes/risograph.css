@@ -1,0 +1,83 @@
+/*
+ * Risograph: a two-ink print. Every word is federal-blue ink (no black anywhere), fluorescent
+ * pink is the second ink, riso yellow marks kits. Shadows are hard offsets, like misregistration.
+ */
+[data-theme="risograph"] {
+  --background: oklch(0.975 0.005 285);
+  --foreground: oklch(0.36 0.15 266);
+  --card: oklch(0.995 0.002 285);
+  --popover: oklch(0.995 0.002 285);
+  --primary: oklch(0.63 0.24 355);
+  --primary-foreground: oklch(0.99 0.01 355);
+  --secondary: oklch(0.945 0.018 280);
+  --secondary-foreground: oklch(0.36 0.15 266);
+  --muted: oklch(0.945 0.018 280);
+  --muted-foreground: oklch(0.55 0.1 268);
+  --accent: oklch(0.94 0.025 330);
+  --accent-foreground: oklch(0.36 0.15 266);
+  --destructive: oklch(0.56 0.2 28);
+  --destructive-foreground: oklch(0.99 0.01 285);
+  --border: oklch(0.88 0.04 275);
+  --input: oklch(0.87 0.045 275);
+  --ring: oklch(0.63 0.24 355);
+  --selected: oklch(0.93 0.05 355);
+  --selected-foreground: oklch(0.48 0.2 355);
+  --sidebar: oklch(0.955 0.015 280);
+  --sidebar-foreground: oklch(0.42 0.13 266);
+  --sidebar-accent: oklch(0.93 0.025 280);
+  --sidebar-accent-foreground: oklch(0.36 0.15 266);
+  --sidebar-border: oklch(0.88 0.04 275);
+  --rail: oklch(0.935 0.025 280);
+  --rail-foreground: oklch(0.5 0.12 268);
+  --rail-hover: oklch(0.91 0.035 280);
+  --rail-active-foreground: oklch(0.36 0.15 266);
+  --rail-selected: oklch(0.99 0.004 285);
+  --rail-indicator: oklch(0.63 0.24 355);
+  --rail-border: oklch(0.88 0.04 275);
+  --kit: oklch(0.6 0.13 85);
+  --overlay: oklch(0.36 0.15 266 / 35%);
+  --shadow-xs-value: 2px 2px 0 0 oklch(0.36 0.15 266 / 8%);
+  --shadow-sm-value: 3px 3px 0 0 oklch(0.36 0.15 266 / 10%);
+  --shadow-md-value: 4px 4px 0 0 oklch(0.36 0.15 266 / 12%);
+  --shadow-lg-value: 6px 6px 0 0 oklch(0.36 0.15 266 / 14%);
+}
+
+[data-theme="risograph"].dark {
+  --background: oklch(0.25 0.085 268);
+  --foreground: oklch(0.96 0.012 285);
+  --card: oklch(0.29 0.09 268);
+  --popover: oklch(0.29 0.09 268);
+  --primary: oklch(0.74 0.2 355);
+  --primary-foreground: oklch(0.25 0.085 268);
+  --secondary: oklch(0.32 0.09 268);
+  --secondary-foreground: oklch(0.96 0.012 285);
+  --muted: oklch(0.32 0.09 268);
+  --muted-foreground: oklch(0.78 0.06 280);
+  --accent: oklch(0.33 0.09 268);
+  --accent-foreground: oklch(0.97 0.01 285);
+  --destructive: oklch(0.74 0.17 25);
+  --destructive-foreground: oklch(0.22 0.08 268);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.74 0.2 355);
+  --selected: oklch(0.74 0.2 355 / 18%);
+  --selected-foreground: oklch(0.86 0.12 355);
+  --sidebar: oklch(0.225 0.08 268);
+  --sidebar-foreground: oklch(0.86 0.04 280);
+  --sidebar-accent: oklch(0.29 0.09 268);
+  --sidebar-accent-foreground: oklch(0.97 0.01 285);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --rail: oklch(0.205 0.075 268);
+  --rail-foreground: oklch(0.75 0.06 280);
+  --rail-hover: oklch(0.27 0.085 268);
+  --rail-active-foreground: oklch(0.98 0.01 285);
+  --rail-selected: oklch(0.3 0.09 268);
+  --rail-indicator: oklch(0.74 0.2 355);
+  --rail-border: oklch(1 0 0 / 9%);
+  --kit: oklch(0.9 0.15 98);
+  --overlay: oklch(0.15 0.06 268 / 60%);
+  --shadow-xs-value: 2px 2px 0 0 oklch(0 0 0 / 22%);
+  --shadow-sm-value: 3px 3px 0 0 oklch(0 0 0 / 25%);
+  --shadow-md-value: 4px 4px 0 0 oklch(0 0 0 / 28%);
+  --shadow-lg-value: 6px 6px 0 0 oklch(0 0 0 / 32%);
+}

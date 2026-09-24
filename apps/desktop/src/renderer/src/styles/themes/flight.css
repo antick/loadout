@@ -1,0 +1,75 @@
+/*
+ * Flight gear: an aerospace kit. Glacier white or night slate, with international orange (the
+ * colour of flight suits and rescue gear) as the one signal, and steel blue for kits.
+ */
+[data-theme="flight"] {
+  --background: oklch(0.975 0.006 230);
+  --foreground: oklch(0.27 0.02 245);
+  --card: oklch(0.995 0.003 230);
+  --popover: oklch(0.995 0.003 230);
+  --primary: oklch(0.64 0.21 38);
+  --primary-foreground: oklch(0.99 0.01 60);
+  --secondary: oklch(0.945 0.01 232);
+  --secondary-foreground: oklch(0.3 0.02 245);
+  --muted: oklch(0.945 0.01 232);
+  --muted-foreground: oklch(0.52 0.025 245);
+  --accent: oklch(0.935 0.012 232);
+  --accent-foreground: oklch(0.27 0.02 245);
+  --destructive: oklch(0.55 0.2 22);
+  --destructive-foreground: oklch(0.99 0.005 230);
+  --border: oklch(0.895 0.014 235);
+  --input: oklch(0.885 0.016 235);
+  --ring: oklch(0.64 0.21 38);
+  --selected: oklch(0.94 0.045 45);
+  --selected-foreground: oklch(0.47 0.16 38);
+  --sidebar: oklch(0.955 0.009 232);
+  --sidebar-foreground: oklch(0.36 0.022 245);
+  --sidebar-accent: oklch(0.925 0.012 232);
+  --sidebar-accent-foreground: oklch(0.27 0.02 245);
+  --sidebar-border: oklch(0.895 0.014 235);
+  --rail: oklch(0.935 0.012 232);
+  --rail-foreground: oklch(0.5 0.025 245);
+  --rail-hover: oklch(0.905 0.014 232);
+  --rail-active-foreground: oklch(0.27 0.02 245);
+  --rail-selected: oklch(0.99 0.004 230);
+  --rail-indicator: oklch(0.64 0.21 38);
+  --rail-border: oklch(0.895 0.014 235);
+  --kit: oklch(0.52 0.1 235);
+  --overlay: oklch(0.27 0.02 245 / 40%);
+}
+
+[data-theme="flight"].dark {
+  --background: oklch(0.235 0.022 245);
+  --foreground: oklch(0.95 0.008 232);
+  --card: oklch(0.27 0.024 245);
+  --popover: oklch(0.27 0.024 245);
+  --primary: oklch(0.72 0.19 45);
+  --primary-foreground: oklch(0.2 0.03 45);
+  --secondary: oklch(0.3 0.024 245);
+  --secondary-foreground: oklch(0.95 0.008 232);
+  --muted: oklch(0.3 0.024 245);
+  --muted-foreground: oklch(0.74 0.02 240);
+  --accent: oklch(0.31 0.025 245);
+  --accent-foreground: oklch(0.96 0.006 232);
+  --destructive: oklch(0.72 0.17 22);
+  --destructive-foreground: oklch(0.2 0.02 245);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.72 0.19 45);
+  --selected: oklch(0.72 0.19 45 / 16%);
+  --selected-foreground: oklch(0.85 0.12 55);
+  --sidebar: oklch(0.215 0.02 245);
+  --sidebar-foreground: oklch(0.84 0.012 238);
+  --sidebar-accent: oklch(0.28 0.024 245);
+  --sidebar-accent-foreground: oklch(0.97 0.006 232);
+  --sidebar-border: oklch(1 0 0 / 7%);
+  --rail: oklch(0.215 0.02 245);
+  --rail-foreground: oklch(0.7 0.02 240);
+  --rail-hover: oklch(0.27 0.024 245);
+  --rail-active-foreground: oklch(0.97 0.006 232);
+  --rail-selected: oklch(0.29 0.025 245);
+  --rail-indicator: oklch(0.72 0.19 45);
+  --rail-border: oklch(1 0 0 / 7%);
+  --kit: oklch(0.78 0.09 230);
+  --overlay: oklch(0.14 0.02 245 / 60%);
+}

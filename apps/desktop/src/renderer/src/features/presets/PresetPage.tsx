@@ -127,7 +127,7 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
         </div>
       </header>
 
-      <InlineNotice tone="brass" icon={Info}>
+      <InlineNotice tone="kit" icon={Info}>
         {t("presetPage.applyNote")}
       </InlineNotice>
 

@@ -95,11 +95,11 @@ export function PresetBar({
                 }}
                 className={cn(
                   "inline-flex h-7 items-center gap-1.5 rounded-full border py-0 pr-2.5 pl-1 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60",
-                  active && "border-brass/40 bg-brass/15 text-brass",
-                  partial && "border-brass/30 bg-brass/5 text-foreground",
+                  active && "border-kit/40 bg-kit/15 text-kit",
+                  partial && "border-kit/30 bg-kit/5 text-foreground",
                   !active &&
                     !partial &&
-                    "border-border bg-card text-muted-foreground hover:border-brass/40 hover:text-foreground",
+                    "border-border bg-card text-muted-foreground hover:border-kit/40 hover:text-foreground",
                 )}
               >
                 <PresetIcon icon={preset.icon} size="sm" className="rounded-full" />
@@ -107,7 +107,7 @@ export function PresetBar({
                 {busy ? <Spinner className="size-3" /> : null}
                 {!busy && active ? <Check className="size-3" /> : null}
                 {!busy && partial ? (
-                  <span className="font-mono text-[0.625rem] tabular-nums text-brass">
+                  <span className="font-mono text-[0.625rem] tabular-nums text-kit">
                     {state.installed}/{state.total}
                   </span>
                 ) : null}

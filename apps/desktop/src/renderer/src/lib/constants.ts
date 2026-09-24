@@ -2,6 +2,8 @@ import { APP_SLUG } from "@loadout/shared";
 
 /** Prefix for every localStorage key the renderer writes. */
 export const STORAGE_PREFIX = `${APP_SLUG}:`;
+/** Local copy of the palette and mode, read before the first paint. */
+export const APPEARANCE_STORAGE_KEY = `${STORAGE_PREFIX}appearance`;
 
 /** Un-prefixed localStorage keys; always go through `usePersistedState`. */
 export const STORAGE_KEYS = {

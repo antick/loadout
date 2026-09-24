@@ -1,14 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type StatusTone =
-  | "neutral"
-  | "primary"
-  | "success"
-  | "warning"
-  | "info"
-  | "danger"
-  | "brass";
+export type StatusTone = "neutral" | "primary" | "success" | "warning" | "info" | "danger" | "kit";
 
 /** Token-backed text + tinted background per tone. Reuse for any semantic chip. */
 export const TONE_CLASSES: Record<StatusTone, string> = {
@@ -18,7 +11,7 @@ export const TONE_CLASSES: Record<StatusTone, string> = {
   warning: "bg-warning/15 text-warning",
   info: "bg-info/15 text-info",
   danger: "bg-danger/15 text-danger",
-  brass: "bg-brass/15 text-brass",
+  kit: "bg-kit/15 text-kit",
 };
 
 /** Solid dot colour per tone, for compact status dots. */
@@ -29,7 +22,7 @@ export const TONE_DOT_CLASSES: Record<StatusTone, string> = {
   warning: "bg-warning",
   info: "bg-info",
   danger: "bg-danger",
-  brass: "bg-brass",
+  kit: "bg-kit",
 };
 
 export interface StatusBadgeProps {
