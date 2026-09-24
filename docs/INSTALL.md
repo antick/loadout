@@ -2,7 +2,7 @@
 
 Loadout is a desktop app that manages AI agent skills across your coding tools.
 
-Download it from the [latest release](https://github.com/antick/loadout-releases/releases/latest).
+Download it from the [latest release](https://github.com/antick/loadout/releases/latest).
 This page says which file to pick and what to click the first time you open it.
 
 **Why the extra clicks?** Loadout is not signed with a paid Apple or Microsoft certificate yet.
@@ -107,4 +107,4 @@ Loadout can't update itself in these cases, and says so in Settings → About:
 - **macOS:** it's running from the disk image or the Downloads folder. Move it to Applications
   and open it from there.
 - **Any system:** your user can't change the folder it's installed in. Download the new version
-  from the [latest release](https://github.com/antick/loadout-releases/releases/latest) instead.
+  from the [latest release](https://github.com/antick/loadout/releases/latest) instead.

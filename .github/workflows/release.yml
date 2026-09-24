@@ -1,16 +1,12 @@
 name: Release builds
 
 # Builds installers for every platform, writes the update feed (latest.json) and collects them
-# in a draft release in the public releases repository. Start it by pushing a tag that matches
-# the app version (v0.1.0 for version 0.1.0), or by hand from the Actions tab.
-#
-# The source repository is private, so installers are published in a separate public repository
-# that holds only release files. Publishing needs a token for it in the `RELEASES_TOKEN` secret;
-# README.md → Releases has the one-time setup. Nothing reaches users until the draft is
-# published by hand: the app's update check only sees published releases.
+# in a draft release. Start it by pushing a tag that matches the app version (v0.1.0 for version
+# 0.1.0), or by hand from the Actions tab. Nothing reaches users until the draft is published by
+# hand: the app's update check only sees the newest published release.
 #
 # The builds are not signed with an Apple or Windows certificate: macOS asks to confirm the first
-# launch, Windows SmartScreen warns. The public repository's README tells users what to click.
+# launch, Windows SmartScreen warns. docs/INSTALL.md tells users what to click.
 
 on:
   push:
@@ -28,9 +24,6 @@ env:
   # No signing certificate is configured; do not let electron-builder look for one. macOS builds
   # still get an ad-hoc signature (`identity: "-"` in electron-builder.yml).
   CSC_IDENTITY_AUTO_DISCOVERY: "false"
-  # Public repository for installers and the update feed. Same as RELEASES_REPO in
-  # packages/shared/src/constants.ts.
-  RELEASES_REPO: antick/loadout-releases
 
 jobs:
   version:
@@ -122,9 +115,11 @@ jobs:
           path: packages/cli/dist/standalone/*
 
   release:
-    name: Draft release in the public repository
+    name: Draft release
     needs: [version, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout (feed script and commit history for the notes)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -147,7 +142,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
         run: |
           node apps/desktop/scripts/update-feed.mjs dist \
-            --version "${TAG#v}" --repo "$RELEASES_REPO" \
+            --version "${TAG#v}" --repo "$GITHUB_REPOSITORY" \
             --require darwin-arm64 --require darwin-x64 --require win32-x64 \
             --require linux-x64-appimage --require linux-arm64-appimage \
             --require linux-x64-deb --require linux-arm64-deb
@@ -162,7 +157,7 @@ jobs:
               | sed -nE "s/^$1(\([^)]*\))?!?: (.*)$/- \2/p"
           }
           {
-            echo "Which file to download and what to click the first time: https://github.com/${RELEASES_REPO}#install-loadout"
+            echo "Which file to download and what to click the first time: https://github.com/${GITHUB_REPOSITORY}/blob/main/docs/INSTALL.md"
             echo
             echo "Already using Loadout? It updates itself: Settings → About → Check for updates."
             if [ -z "$previous" ]; then
@@ -179,17 +174,15 @@ jobs:
 
       - name: Create or update the draft
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.version.outputs.tag }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::error::The RELEASES_TOKEN secret is missing. README.md → Releases explains how to add it."
-            exit 1
-          fi
-          if gh release view "$TAG" --repo "$RELEASES_REPO" > /dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --repo "$RELEASES_REPO" --clobber
-            gh release edit "$TAG" --repo "$RELEASES_REPO" --notes-file notes.md
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file notes.md
           else
-            gh release create "$TAG" dist/* --repo "$RELEASES_REPO" \
-              --draft --title "Loadout ${TAG#v}" --notes-file notes.md
+            gh release create "$TAG" dist/* \
+              --draft --target "$GITHUB_SHA" \
+              --title "Loadout ${TAG#v}" --notes-file notes.md
           fi

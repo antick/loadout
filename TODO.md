@@ -21,19 +21,14 @@ Last full pass: 2026-09-19. `pnpm check` clean (390 tests), app click-tested on 
   is created and the first backup pushes.
 - **Code:** `packages/core/src/backup/github.ts`, `apps/desktop/src/renderer/src/features/backup/DeviceSignIn.tsx`
 
-### 2. First public release
+### 2. Test a self-update on Windows and Linux
 
-- **State:** self-update is built and was tested end to end on macOS arm64 (0.1.0 updated itself to
-  0.1.1 from a local feed). The public repository `antick/loadout-releases` exists, holding only
-  its README. Nothing is published yet, so the landing page's download button leads to an empty
-  releases page.
-- **To do:**
-  1. Add the `RELEASES_TOKEN` secret (README → Releases → One-time setup).
-  2. Push the tag `v0.1.0`, wait for **Release builds**, publish the draft in `loadout-releases`.
-  3. Install 0.1.0 from the public release on a Mac following `docs/INSTALL.md` word for word.
-     Then release 0.1.1 and confirm the installed copy updates itself.
-- **Code:** `apps/desktop/src/main/update/`, `.github/workflows/release.yml`,
-  `apps/desktop/scripts/update-feed.mjs`
+- **State:** self-update was tested end to end on macOS arm64, from a local feed and from the
+  published release. The Windows silent reinstall, the AppImage replacement and the `.deb`
+  handoff have never run on those systems.
+- **To do:** install the previous release on Windows and on Linux (AppImage and `.deb`), publish a
+  newer one, and click **Update**, then **Restart now**. `docs/INSTALL.md` is what users follow.
+- **Code:** `apps/desktop/src/main/update/`
 
 ### 3. Code signing
 

@@ -9,7 +9,7 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 ## Install
 
 Download the installer for your system from the
-[latest release](https://github.com/antick/loadout-releases/releases/latest).
+[latest release](https://github.com/antick/loadout/releases/latest).
 
 The builds are not signed with an Apple or Windows certificate yet, so macOS and Windows ask
 for one extra click the first time. [docs/INSTALL.md](docs/INSTALL.md) says which file to pick
@@ -360,31 +360,13 @@ always matches the app.
 GitHub Actions runs `pnpm check` on Linux and macOS for every push to `main` and every pull
 request (`.github/workflows/ci.yml`).
 
-This repository stays private. Installers go to a separate public repository that holds only
-release files: [antick/loadout-releases](https://github.com/antick/loadout-releases). The app's
-update check reads `latest.json` from its newest published release, and the landing page links
-there.
+Installers are published as GitHub releases of this repository. The app's update check reads
+`latest.json` from the newest published release, and the landing page links there.
 
 `.github/workflows/release.yml` builds macOS (Apple Silicon and Intel, DMG and ZIP), Windows
 (NSIS installer) and Linux (AppImage and DEB, x64 and arm64) installers and the standalone CLI
 executables. It then writes `latest.json` (version, and per system the download link, size and
-SHA-256) with `apps/desktop/scripts/update-feed.mjs`, and puts everything in a **draft** release
-in the public repository.
-
-### One-time setup: the token that publishes releases
-
-The workflow needs permission to write to the public repository.
-
-1. Go to github.com/settings/personal-access-tokens/new.
-2. **Token name:** `loadout releases`. **Resource owner:** `antick`. **Expiration:** your choice.
-   When it expires, releases stop until you repeat these steps.
-3. **Repository access:** **Only select repositories** → `antick/loadout-releases`.
-4. **Permissions** → **Repository permissions** → **Contents**: **Read and write**.
-5. Click **Generate token** and copy it.
-6. Go to github.com/antick/loadout/settings/secrets/actions → **New repository secret**.
-   **Name:** `RELEASES_TOKEN`. **Secret:** paste the token. Click **Add secret**.
-
-Without it, the workflow's last step stops with "The RELEASES_TOKEN secret is missing".
+SHA-256) with `apps/desktop/scripts/update-feed.mjs`, and puts everything in a **draft** release.
 
 ### Cut a release
 
@@ -398,8 +380,8 @@ Without it, the workflow's last step stops with "The RELEASES_TOKEN secret is mi
 
    Or run **Release builds** by hand from this repository's Actions tab.
 
-3. When the workflow finishes, open github.com/antick/loadout-releases/releases, check the draft
-   and click **Publish release**.
+3. When the workflow finishes, open github.com/antick/loadout/releases, check the draft and click
+   **Publish release**.
 
 Publishing puts the release live. Every running copy of Loadout offers it within six hours, or
 right away through Settings → About → Check for updates. A draft is invisible to users and to
@@ -407,16 +389,6 @@ the update check.
 
 A tag that doesn't match the version in `apps/desktop/package.json` stops the workflow. Don't
 mark a release as a pre-release: the update check only sees the newest full release.
-
-The public repository's README is [docs/INSTALL.md](docs/INSTALL.md). When you change one, copy
-it to the other:
-
-```bash
-gh api --method PUT repos/antick/loadout-releases/contents/README.md \
-  -f message="docs: update install steps" \
-  -f content="$(base64 < docs/INSTALL.md)" \
-  -f sha="$(gh api repos/antick/loadout-releases/contents/README.md -q .sha)"
-```
 
 ### Test an update locally
 
