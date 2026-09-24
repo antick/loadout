@@ -237,7 +237,7 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
   activity and recently updated skills.
 - Command palette (`⌘K` / `Ctrl+K`) for skills, presets, projects, agents and actions, including
   "Open a skill in the editor" (`⌘P` / `Ctrl+P`).
-- Four colour palettes (Blueprint, Risograph, Flight gear, Iris & butter), each in light and dark, plus light, dark or system mode. Pick them in Settings (with a preview of each) or from the status bar; the choice is remembered and applied before the window first draws. Four text sizes.
+- Four colour palettes (Flight gear, the default, then Blueprint, Risograph and Iris & butter), each in light and dark, plus light, dark or system mode. Pick them in Settings (with a preview of each) or from the status bar; the choice is remembered and applied before the window first draws. Four text sizes.
 - Tray icon, and a choice of what the close button does: ask, keep in tray or quit.
 - Single instance, remembered window size, links open in your browser.
 - Activity history, rotating logs, export logs as a zip, copy diagnostics, crash notice.

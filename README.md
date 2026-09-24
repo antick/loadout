@@ -44,11 +44,11 @@ itself.
 
 ![The marketplace: popular skills with one-click install](docs/screenshots/marketplace.png)
 
-**Colours.** Four palettes (Blueprint, Risograph, Flight gear, Iris & butter), each with a light and a dark version. Pick one in Settings or from the status bar; Loadout remembers it.
+**Colours.** Four palettes (Flight gear, Blueprint, Risograph, Iris & butter), each with a light and a dark version. Pick one in Settings or from the status bar; Loadout remembers it.
 
 ![The palette picker in Settings: four palettes, each shown in light and dark](docs/screenshots/palettes.png)
 
-![The library in Blueprint's dark mode](docs/screenshots/library-dark.png)
+![The library in Flight gear's dark mode](docs/screenshots/library-dark.png)
 
 ## Features
 
