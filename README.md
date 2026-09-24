@@ -44,9 +44,11 @@ itself.
 
 ![The marketplace: popular skills with one-click install](docs/screenshots/marketplace.png)
 
-**Dark mode.** Light, dark or follow the system, from the status bar or Settings.
+**Colours.** Four palettes (Blueprint, Risograph, Flight gear, Iris & butter), each with a light and a dark version. Pick one in Settings or from the status bar; Loadout remembers it.
 
-![The library in dark mode](docs/screenshots/library-dark.png)
+![The palette picker in Settings: four palettes, each shown in light and dark](docs/screenshots/palettes.png)
+
+![The library in Blueprint's dark mode](docs/screenshots/library-dark.png)
 
 ## Features
 
@@ -64,7 +66,7 @@ itself.
 - **Command line:** a `loadout` CLI with JSON output, and a bundled skill that lets your agents manage skills themselves.
 - **App updates:** Loadout updates itself and checks every download against the release checksum.
 - **Storage:** everything lives in `~/.loadout`, with sizes, clean-up, a movable library and a remove-everything button.
-- **App:** dashboard, command palette (`⌘K`), keyboard shortcuts, light and dark themes, tray icon and status bar.
+- **App:** dashboard, command palette (`⌘K`), keyboard shortcuts, four colour palettes in light and dark, tray icon and status bar.
 
 Every feature in detail, current limitations and what still needs testing:
 [docs/FEATURES.md](docs/FEATURES.md).
