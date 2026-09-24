@@ -44,6 +44,10 @@ itself.
 
 ![The marketplace: popular skills with one-click install](docs/screenshots/marketplace.png)
 
+**Dark mode.** Light, dark or follow the system, from the status bar or Settings.
+
+![The library in dark mode](docs/screenshots/library-dark.png)
+
 ## Features
 
 - **Library:** one folder for every skill, with search, tags, filters, batch actions and checks against the Agent Skills format.
