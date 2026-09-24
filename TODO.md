@@ -21,24 +21,28 @@ Last full pass: 2026-09-19. `pnpm check` clean (390 tests), app click-tested on 
   is created and the first backup pushes.
 - **Code:** `packages/core/src/backup/github.ts`, `apps/desktop/src/renderer/src/features/backup/DeviceSignIn.tsx`
 
-### 2. App updates
+### 2. First public release
 
-- **State:** the check only notifies. No release feed exists, so Settings says updates are not
-  configured. There is no in-app installer.
-- **To do:** pick where releases live, publish a JSON feed `{ "version", "url" }`, set
-  `UPDATE_FEED_URL`. Then decide on in-app install (electron-updater needs signed builds — see 3).
-- **Code:** `apps/desktop/src/main/updater.ts`, `apps/desktop/src/main/constants.ts`
+- **State:** self-update is built and was tested end to end on macOS arm64 (0.1.0 updated itself to
+  0.1.1 from a local feed). The public repository `antick/loadout-releases` exists, holding only
+  its README. Nothing is published yet, so the landing page's download button leads to an empty
+  releases page.
+- **To do:**
+  1. Add the `RELEASES_TOKEN` secret (README → Releases → One-time setup).
+  2. Push the tag `v0.1.0`, wait for **Release builds**, publish the draft in `loadout-releases`.
+  3. Install 0.1.0 from the public release on a Mac following `docs/INSTALL.md` word for word.
+     Then release 0.1.1 and confirm the installed copy updates itself.
+- **Code:** `apps/desktop/src/main/update/`, `.github/workflows/release.yml`,
+  `apps/desktop/scripts/update-feed.mjs`
 
-### 3. Code signing and installers
+### 3. Code signing
 
-- **State:** the unpacked macOS build runs, unsigned. `pnpm package` (dmg / zip / nsis / AppImage /
-  deb) has never been run to the end.
-- **To do:** Apple Developer ID + notarisation, Windows certificate; run `pnpm package` on each OS;
-  add a release workflow that also attaches the standalone CLI files
-  (`pnpm --filter @loadout/cli run build:standalone -- --all`, run on a Mac).
-- **Needs an email:** the `.deb` build stops with "Please specify author 'email'". Add
-  `maintainer: Name <email>` under `linux:` in `apps/desktop/electron-builder.yml` (it is printed
-  in every package). The AppImage builds without it.
+- **State:** macOS builds carry an ad-hoc signature (`identity: "-"`), so macOS offers "Open
+  Anyway" instead of calling the app damaged. Windows builds are unsigned. `docs/INSTALL.md`
+  walks users through both warnings. The self-updater does not need signing.
+- **To do (optional):** an Apple Developer ID plus notarisation removes the macOS warning. Set
+  `mac.identity` to the certificate name, turn `hardenedRuntime` back on, add `notarize`. A Windows
+  certificate removes SmartScreen. The updater keeps working unchanged after either.
 - **Code:** `apps/desktop/electron-builder.yml`
 
 ## Verify (built, never exercised for real)

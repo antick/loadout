@@ -138,7 +138,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [~] Theme (light / dark / system), text size, language — only English ships; add `locales/<code>.json` + an entry in `LANGUAGES`
 - [x] Tray icon, close behaviour (ask / hide / quit), single instance
 - [x] File watcher refreshes the UI when skills change on disk or through the CLI
-- [~] App update check and notification — checks a JSON feed (`LOADOUT_UPDATE_FEED`); no feed is configured yet and there is no in-app installer
+- [x] App self-update — checks `latest.json` in the public releases repository, downloads with a SHA-256 check, replaces the app and restarts (macOS, AppImage), runs the silent installer (Windows) or opens the package (.deb)
 - [x] Diagnostics, log files, export logs zip, crash banner, report issue
 - [x] Help / quick-start guide
 - [x] Network proxy setting

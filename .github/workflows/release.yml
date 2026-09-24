@@ -162,7 +162,7 @@ jobs:
               | sed -nE "s/^$1(\([^)]*\))?!?: (.*)$/- \2/p"
           }
           {
-            echo "Install: https://github.com/${RELEASES_REPO}#install"
+            echo "Which file to download and what to click the first time: https://github.com/${RELEASES_REPO}#install-loadout"
             echo
             echo "Already using Loadout? It updates itself: Settings → About → Check for updates."
             if [ -z "$previous" ]; then

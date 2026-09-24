@@ -1,13 +1,17 @@
+import { INSTALL_GUIDE_URL, LATEST_RELEASE_URL } from "@loadout/shared";
+
 /** Where the page lives, and the links it points at. One place to change them. */
 export const SITE_URL = "https://loadout.potion.sh";
 export const PARENT_URL = "https://potion.sh";
 export const PARENT_NAME = "potion.sh";
 
 /**
- * Where installers are published. Empty while there is no public release: the page then says so
- * instead of showing download buttons that lead nowhere.
+ * Where installers are published: the newest release in the public releases repository. Empty
+ * would make the page say installers are not published yet.
  */
-export const DOWNLOADS_URL = "";
+export const DOWNLOADS_URL = LATEST_RELEASE_URL;
+/** Builds are not signed yet: the first launch needs one extra click, explained here. */
+export const INSTALL_GUIDE = INSTALL_GUIDE_URL;
 
 /** The skill the hero shows being linked into agents' folders. */
 export const HERO_SKILL = "code-review";

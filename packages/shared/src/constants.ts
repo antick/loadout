@@ -36,6 +36,8 @@ export const RELEASES_REPO = "antick/loadout-releases";
 export const RELEASES_URL = `https://github.com/${RELEASES_REPO}/releases`;
 /** Page of the newest published release. */
 export const LATEST_RELEASE_URL = `${RELEASES_URL}/latest`;
+/** Which file to download and what to click on first launch (the public repository's README). */
+export const INSTALL_GUIDE_URL = `https://github.com/${RELEASES_REPO}#install-loadout`;
 /** Release file describing the release: version and one download per system. */
 export const UPDATE_FEED_FILE = "latest.json";
 /** Always the feed of the newest published (not draft, not prerelease) release. */

@@ -1,5 +1,5 @@
 ---
-import { DOWNLOADS_URL } from "../lib/site";
+import { DOWNLOADS_URL, INSTALL_GUIDE } from "../lib/site";
 
 const platforms = ["macOS", "Windows", "Linux"];
 const platformList = `${platforms.slice(0, -1).join(", ")} and ${platforms.at(-1)}`;
@@ -16,6 +16,11 @@ const platformList = `${platforms.slice(0, -1).join(", ")} and ${platforms.at(-1
             Download the latest release
           </a>
         </div>
+        <p class="note">
+          The builds are not signed with an Apple or Microsoft certificate yet, so the first launch
+          needs one extra click. <a href={INSTALL_GUIDE}>The install steps</a> say which file to pick
+          and what to click. After that, Loadout updates itself.
+        </p>
       </>
     ) : (
       <p class="lede">Installers for {platformList} are not published yet.</p>
@@ -26,6 +31,12 @@ const platformList = `${platforms.slice(0, -1).join(", ")} and ${platforms.at(-1
 <style>
   .download {
     padding-bottom: clamp(3rem, 7vw, 5rem);
+  }
+
+  .note {
+    margin-top: 1.25rem;
+    max-width: 38rem;
+    color: var(--slate);
   }
 
   .actions {

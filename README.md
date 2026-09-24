@@ -6,6 +6,16 @@ A skill is a folder with a `SKILL.md`. Loadout keeps every skill in one library
 (`~/.loadout`) and deploys it — by symlink or copy — into the skills folder of each agent you
 use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 
+## Install
+
+Download the installer for your system from the
+[latest release](https://github.com/antick/loadout-releases/releases/latest).
+
+The builds are not signed with an Apple or Windows certificate yet, so macOS and Windows ask
+for one extra click the first time. [docs/INSTALL.md](docs/INSTALL.md) says which file to pick
+and exactly what to click on macOS, Windows and Linux. After the first start, Loadout updates
+itself.
+
 ## Features
 
 ### Library
@@ -241,6 +251,13 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 - Tray icon, and a choice of what the close button does: ask, keep in tray or quit.
 - Single instance, remembered window size, links open in your browser.
 - Activity history, rotating logs, export logs as a zip, copy diagnostics, crash notice.
+- Updates itself. It checks for a new version on start and every six hours, and offers it in a
+  message and in Settings → About. **Update** downloads it with progress and checks it against
+  the release's SHA-256 checksum. **Restart now** closes the app, swaps in the new version and
+  opens it again: in place on macOS and for an AppImage, through a silent installer on Windows.
+  A `.deb` install opens the new package in the system installer. The next start says whether
+  the update arrived. When the app can't replace itself, for example when it runs from the disk
+  image or from a folder the user can't write to, it says why and links to the release page.
 - Quick-start guide.
 
 See [docs/FEATURES.md](docs/FEATURES.md) for current limitations and what still needs testing.
@@ -343,9 +360,33 @@ always matches the app.
 GitHub Actions runs `pnpm check` on Linux and macOS for every push to `main` and every pull
 request (`.github/workflows/ci.yml`).
 
-`.github/workflows/release.yml` builds the installers and collects them in a draft prerelease:
-macOS (Apple Silicon and Intel, DMG and ZIP), Windows (NSIS installer), Linux (AppImage and DEB,
-x64 and arm64), plus the standalone CLI executables with their `SHA256SUMS`. To cut a release:
+This repository stays private. Installers go to a separate public repository that holds only
+release files: [antick/loadout-releases](https://github.com/antick/loadout-releases). The app's
+update check reads `latest.json` from its newest published release, and the landing page links
+there.
+
+`.github/workflows/release.yml` builds macOS (Apple Silicon and Intel, DMG and ZIP), Windows
+(NSIS installer) and Linux (AppImage and DEB, x64 and arm64) installers and the standalone CLI
+executables. It then writes `latest.json` (version, and per system the download link, size and
+SHA-256) with `apps/desktop/scripts/update-feed.mjs`, and puts everything in a **draft** release
+in the public repository.
+
+### One-time setup: the token that publishes releases
+
+The workflow needs permission to write to the public repository.
+
+1. Go to github.com/settings/personal-access-tokens/new.
+2. **Token name:** `loadout releases`. **Resource owner:** `antick`. **Expiration:** your choice.
+   When it expires, releases stop until you repeat these steps.
+3. **Repository access:** **Only select repositories** → `antick/loadout-releases`.
+4. **Permissions** → **Repository permissions** → **Contents**: **Read and write**.
+5. Click **Generate token** and copy it.
+6. Go to github.com/antick/loadout/settings/secrets/actions → **New repository secret**.
+   **Name:** `RELEASES_TOKEN`. **Secret:** paste the token. Click **Add secret**.
+
+Without it, the workflow's last step stops with "The RELEASES_TOKEN secret is missing".
+
+### Cut a release
 
 1. Set the new version in `apps/desktop/package.json` and commit it.
 2. Tag the commit with that version and push the tag, for example for 0.2.0:
@@ -355,13 +396,44 @@ x64 and arm64), plus the standalone CLI executables with their `SHA256SUMS`. To 
    git push origin v0.2.0
    ```
 
-   Or run **Release builds** by hand from the repository's Actions tab; it tags the current
-   commit with the version.
+   Or run **Release builds** by hand from this repository's Actions tab.
 
-3. When the workflow finishes, open the draft under Releases, check the files, and publish it.
+3. When the workflow finishes, open github.com/antick/loadout-releases/releases, check the draft
+   and click **Publish release**.
 
-A tag that does not match the version in `apps/desktop/package.json` stops the workflow. The builds
-are not signed yet, so macOS asks to confirm the first launch and Windows SmartScreen warns.
+Publishing puts the release live. Every running copy of Loadout offers it within six hours, or
+right away through Settings → About → Check for updates. A draft is invisible to users and to
+the update check.
+
+A tag that doesn't match the version in `apps/desktop/package.json` stops the workflow. Don't
+mark a release as a pre-release: the update check only sees the newest full release.
+
+The public repository's README is [docs/INSTALL.md](docs/INSTALL.md). When you change one, copy
+it to the other:
+
+```bash
+gh api --method PUT repos/antick/loadout-releases/contents/README.md \
+  -f message="docs: update install steps" \
+  -f content="$(base64 < docs/INSTALL.md)" \
+  -f sha="$(gh api repos/antick/loadout-releases/contents/README.md -q .sha)"
+```
+
+### Test an update locally
+
+Updates can be tried end to end on one Mac without publishing anything:
+
+1. Build two versions: `pnpm build`, then in `apps/desktop` run
+   `pnpm exec electron-builder --config electron-builder.yml --mac zip --arm64 --publish never`
+   once as is and once with `-c.extraMetadata.version=0.1.1` added.
+2. Unzip the older zip somewhere you can write to, with `ditto -x -k <zip> <folder>`.
+3. Put the newer zip in its own folder. Write its feed with
+   `node apps/desktop/scripts/update-feed.mjs <folder> --version 0.1.1 --base-url http://127.0.0.1:8765`,
+   and serve the folder with `python3 -m http.server 8765 --bind 127.0.0.1`.
+4. Start the older app with `LOADOUT_UPDATE_FEED=http://127.0.0.1:8765/latest.json` set, and click
+   **Update**, then **Restart now**.
+
+`LOADOUT_UPDATE_FEED` is also the only way a development build (`pnpm dev`) checks for updates;
+a development build never replaces itself.
 
 ## Layout
 
