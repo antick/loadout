@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BrowserWindow, app, net, session } from "electron";
+import { BrowserWindow, app, net, session, shell } from "electron";
 import { AppError, type Core, createCore } from "@loadout/core";
 import {
   APP_DATA_DIR_NAME,
@@ -10,15 +10,26 @@ import {
   LIBRARY_DIR_NAME,
   type LoadoutApi,
   type RemoveAllDataOptions,
+  UPDATE_FEED_URL,
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
 import { type AppDataMove, adoptAppData, removeOldAppData } from "./app-data";
 import { startRemoval } from "./remover";
 import { revealInFileManager } from "./reveal";
-import { APP_ICON_FILE, CRASH_DUMPS_DIR, SECRETS_FILE } from "./constants";
+import {
+  APP_ICON_FILE,
+  CRASH_DUMPS_DIR,
+  SECRETS_FILE,
+  UPDATES_DIR,
+  UPDATE_CHECK_DELAY_MS,
+  UPDATE_FEED_OVERRIDE_ENV,
+  UPDATE_RECHECK_MS,
+} from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
 import { type TrayController, createTrayController } from "./tray-controller";
+import { locateApp } from "./update/locate";
+import { type UpdateService, createUpdateService } from "./update/service";
 import { type FolderWatcher, watchFolders } from "./watcher";
 import { createMainWindow, focusWindow } from "./window";
 
@@ -30,6 +41,7 @@ let tray: TrayController | null = null;
 let quitting = false;
 /** The library was deleted while running: nothing may write to it any more. */
 let libraryGone = false;
+let updateTimer: NodeJS.Timeout | null = null;
 
 const resourcesDir = app.isPackaged
   ? join(process.resourcesPath, "resources")
@@ -185,6 +197,46 @@ function recordCrash(error: unknown): void {
   }
 }
 
+/** Self-update: a published build checks the release feed; a development build only a test feed. */
+function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService {
+  const override = process.env[UPDATE_FEED_OVERRIDE_ENV];
+  const updates = createUpdateService({
+    currentVersion: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    location: locateApp({
+      platform: process.platform,
+      execPath: process.execPath,
+      appImage: process.env.APPIMAGE,
+      packaged: app.isPackaged,
+    }),
+    feedUrl: override || (app.isPackaged ? UPDATE_FEED_URL : null),
+    updatesDir: join(appDataDir, UPDATES_DIR),
+    logsDir,
+    // `net.fetch` honours the session proxy, which follows the proxy setting.
+    fetchImpl: ((input, init) => net.fetch(input as string, init as RequestInit)) as typeof fetch,
+    emit: (status) => send("app-update:status", status),
+    quit,
+    openPath: (path) => shell.openPath(path),
+    log,
+  });
+  const checkQuietly = (): void => {
+    const phase = updates.status().phase;
+    if (phase === "downloading" || phase === "ready" || phase === "installing") return;
+    void updates.check();
+  };
+  void updates
+    .start()
+    .catch((error: unknown) => log.warn("Could not read earlier update downloads", error))
+    .finally(() => {
+      updateTimer = setTimeout(() => {
+        checkQuietly();
+        updateTimer = setInterval(checkQuietly, UPDATE_RECHECK_MS);
+      }, UPDATE_CHECK_DELAY_MS);
+    });
+  return updates;
+}
+
 function start(): void {
   app.dock?.setIcon(appIconPath);
   core = createCore({
@@ -225,6 +277,7 @@ function start(): void {
       quit,
       hideToTray,
       removeAllData,
+      updates: createUpdates(core.ctx.log, core.ctx.paths.logsDir),
       resolveClose: (action, remember) => {
         if (remember) core?.ctx.settings.set("closeAction", action);
         if (action === "quit") quit();
@@ -284,6 +337,7 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.on("before-quit", (event) => {
     quitting = true;
+    if (updateTimer) clearTimeout(updateTimer);
     if (!core) return;
     const closing = core;
     core = null;

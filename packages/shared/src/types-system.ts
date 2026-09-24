@@ -136,13 +136,55 @@ export interface ActivityEntry {
   at: number;
 }
 
-export interface AppUpdateInfo {
-  hasUpdate: boolean;
+/** Where the app-update flow stands. */
+export type AppUpdatePhase =
+  | "idle"
+  | "checking"
+  | "up_to_date"
+  | "available"
+  | "downloading"
+  | "ready"
+  | "installing"
+  | "error";
+
+/**
+ * How this copy of the app takes an update: `replace` swaps the app in place and restarts it
+ * (macOS, AppImage), `installer` runs the downloaded installer and restarts (Windows), `package`
+ * opens the downloaded package in the system installer (Linux .deb).
+ */
+export type AppUpdateMethod = "replace" | "installer" | "package";
+
+/** Why this copy cannot update itself. The release page is offered instead. */
+export type AppUpdateBlocker =
+  /** A development build with no test feed set. */
+  | "not_configured"
+  /** A development build: it checks, but never replaces itself. */
+  | "development"
+  /** macOS runs the app from a temporary copy because it was opened where it was downloaded. */
+  | "translocated"
+  /** Running straight from the mounted disk image. */
+  | "disk_image"
+  /** The app's folder cannot be written by this user. */
+  | "read_only"
+  /** The release has no build for this system. */
+  | "no_build";
+
+export interface AppUpdateStatus {
+  phase: AppUpdatePhase;
   currentVersion: string;
+  /** Newest published version, once a check found one. */
   latestVersion: string | null;
-  releaseUrl: string | null;
-  /** No update feed is configured for this build. */
-  configured: boolean;
+  /** Release page of `latestVersion`, or the releases list. */
+  releaseUrl: string;
+  method: AppUpdateMethod;
+  blocker: AppUpdateBlocker | null;
+  /** Bytes received and expected while downloading. */
+  progress: { received: number; total: number } | null;
+  /** Last check, as a timestamp. */
+  checkedAt: number | null;
+  error: string | null;
+  /** The previous run started an update: whether it arrived. Reported once. */
+  lastInstall: { version: string; ok: boolean; at: number } | null;
 }
 
 export interface DiagnosticInfo {

@@ -4,7 +4,7 @@ import { type BrowserWindow, app, clipboard, dialog, session, shell } from "elec
 import { APP_NAME, type AppApi, type Platform, type RemoveAllDataOptions } from "@loadout/shared";
 import { ARCHIVE_EXTENSIONS, EXPORT_EXTENSION } from "./constants";
 import { revealInFileManager } from "./reveal";
-import { checkForUpdate } from "./updater";
+import type { UpdateService } from "./update/service";
 
 export interface AppApiDeps {
   window(): BrowserWindow | null;
@@ -13,6 +13,7 @@ export interface AppApiDeps {
   resolveClose(action: "hide" | "quit", remember: boolean): void;
   /** Clean agent folders, close the library, start the clean-up process and exit. */
   removeAllData(options: RemoveAllDataOptions): Promise<void>;
+  updates: UpdateService;
 }
 
 /** The part of the API only Electron can provide: dialogs, shell, clipboard, app lifecycle. */
@@ -57,7 +58,11 @@ export function createAppApi(deps: AppApiDeps): AppApi {
     },
     revealPath: revealInFileManager,
     copyText: async (text) => clipboard.writeText(text),
-    checkUpdate: () => checkForUpdate(),
+    updateStatus: async () => deps.updates.status(),
+    checkUpdate: () => deps.updates.check(),
+    downloadUpdate: () => deps.updates.download(),
+    cancelUpdate: async () => deps.updates.cancel(),
+    installUpdate: () => deps.updates.install(),
     quit: async () => deps.quit(),
     hideToTray: async () => deps.hideToTray(),
     restart: async () => {

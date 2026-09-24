@@ -1,13 +1,5 @@
 import { formatRelative } from "@loadout/shared";
-import {
-  Bug,
-  ClipboardCopy,
-  ExternalLink,
-  FileArchive,
-  LifeBuoy,
-  RefreshCw,
-  TriangleAlert,
-} from "lucide-react";
+import { Bug, ClipboardCopy, FileArchive, LifeBuoy, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -15,34 +7,20 @@ import { useShell } from "@/components/layout/shell-context";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useClearLastCrash, useOpenExternal } from "@/hooks/mutations/app";
-import {
-  useCheckAppUpdate,
-  useCopyDiagnostics,
-  useExportLogs,
-} from "@/hooks/mutations/settings-page";
-import { useAppInfo, useLastCrash, useLibraryLocation } from "@/hooks/queries/app";
+import { useClearLastCrash } from "@/hooks/mutations/app";
+import { useCopyDiagnostics, useExportLogs } from "@/hooks/mutations/settings-page";
+import { useLastCrash, useLibraryLocation } from "@/hooks/queries/app";
+import { AppUpdatePanel } from "./AppUpdatePanel";
 
 /** Version and updates, help, and everything needed for a useful bug report. */
 export function AboutSection(): ReactNode {
   const { t } = useTranslation();
   const shell = useShell();
-  const info = useAppInfo();
   const crash = useLastCrash();
   const location = useLibraryLocation();
   const clearCrash = useClearLastCrash();
-  const checkUpdate = useCheckAppUpdate();
   const exportLogs = useExportLogs();
   const copyDiagnostics = useCopyDiagnostics();
-  const openExternal = useOpenExternal();
-  const update = checkUpdate.data;
-  const releaseUrl = update?.releaseUrl;
-
-  let updateText: string | null = null;
-  if (update && !update.configured) updateText = t("settings.about.updatesNotConfigured");
-  else if (update?.hasUpdate)
-    updateText = t("settings.about.updateAvailable", { version: update.latestVersion ?? "" });
-  else if (update) updateText = t("settings.about.upToDate");
 
   return (
     <div className="flex flex-col gap-3">
@@ -75,36 +53,7 @@ export function AboutSection(): ReactNode {
         </InlineNotice>
       ))}
 
-      <Panel>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-semibold tracking-tight">{info.data?.name}</p>
-            <p className="font-mono text-xs text-muted-foreground">
-              {info.data ? t("shell.version", { version: info.data.version }) : null}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={checkUpdate.isPending}
-            onClick={() => checkUpdate.mutate()}
-          >
-            {checkUpdate.isPending ? <Spinner /> : <RefreshCw />}
-            {t("settings.about.checkUpdates")}
-          </Button>
-        </div>
-        {updateText ? (
-          <output className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            {updateText}
-            {update?.hasUpdate && releaseUrl ? (
-              <Button variant="link" size="xs" onClick={() => openExternal.mutate(releaseUrl)}>
-                {t("settings.about.viewRelease")}
-                <ExternalLink />
-              </Button>
-            ) : null}
-          </output>
-        ) : null}
-      </Panel>
+      <AppUpdatePanel />
 
       <Panel
         title={t("settings.about.supportTitle")}

@@ -1,7 +1,7 @@
 /** DEV ONLY. Seed data for the in-memory preview bridge in `dev-mock.ts`. */
 import type {
   AgentInfo,
-  AppUpdateInfo,
+  AppUpdateStatus,
   BackupStatus,
   Deployment,
   LibraryLocation,
@@ -237,12 +237,17 @@ export const SEED_PROJECTS: Project[] = [
   },
 ];
 
-export const SEED_APP_UPDATE: AppUpdateInfo = {
-  hasUpdate: false,
+export const SEED_APP_UPDATE: AppUpdateStatus = {
+  phase: "idle",
   currentVersion: "0.1.0-dev",
   latestVersion: null,
-  releaseUrl: null,
-  configured: false,
+  releaseUrl: "https://example.com/releases",
+  method: "replace",
+  blocker: "not_configured",
+  progress: null,
+  checkedAt: null,
+  error: null,
+  lastInstall: null,
 };
 
 export const SEED_BACKUP_STATUS: BackupStatus = {

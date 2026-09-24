@@ -1,4 +1,4 @@
-import type { AutoBackupEvent } from "./types";
+import type { AppUpdateStatus, AutoBackupEvent } from "./types";
 import type { InstallProgress } from "./types-install";
 
 /** Main → renderer notifications. Payload type per event name. */
@@ -14,6 +14,8 @@ export interface AppEvents {
   "app:navigate": { to: string };
   /** The library folder or its database was deleted while the app ran. */
   "library:missing": { path: string };
+  /** The app-update flow moved: checked, downloading (with progress), ready, failed. */
+  "app-update:status": AppUpdateStatus;
 }
 
 export type DataScope = "skills" | "agents" | "presets" | "projects" | "backup" | "settings";
@@ -28,6 +30,7 @@ export const APP_EVENT_NAMES = [
   "window:close-requested",
   "app:navigate",
   "library:missing",
+  "app-update:status",
 ] as const satisfies readonly AppEventName[];
 
 export const IPC_INVOKE_CHANNEL = "loadout:invoke";

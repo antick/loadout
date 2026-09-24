@@ -1,6 +1,6 @@
 import type {
   AppInfo,
-  AppUpdateInfo,
+  AppUpdateStatus,
   BackupStatus,
   CrashInfo,
   DiagnosticInfo,
@@ -19,14 +19,12 @@ export function useAppInfo(): UseQueryResult<AppInfo> {
   });
 }
 
-/** Latest app-update check. Disabled until `enabled` so the shell can delay it after launch. */
-export function useAppUpdate(enabled: boolean): UseQueryResult<AppUpdateInfo> {
+/** Where the app-update flow stands. Kept current by `app-update:status` events. */
+export function useAppUpdate(): UseQueryResult<AppUpdateStatus> {
   return useQuery({
     queryKey: keys.app.update,
-    queryFn: () => api.app.checkUpdate(),
-    enabled,
+    queryFn: () => api.app.updateStatus(),
     staleTime: Number.POSITIVE_INFINITY,
-    retry: false,
   });
 }
 

@@ -14,9 +14,18 @@ extraResources:
 asar: true
 extraMetadata:
   homepage: https://loadout.potion.sh
+# File names are read by scripts/update-feed.mjs to build the update feed: change both together.
 mac:
   category: public.app-category.developer-tools
   icon: build/icon.icns
+  # Ad-hoc signature ("-"): no Apple certificate, but a complete, valid signature. Without one,
+  # macOS calls a downloaded app "damaged" instead of letting the user open it anyway, and the
+  # updater could not check the download's integrity.
+  identity: "-"
+  # The hardened runtime only matters for notarisation, which needs a real certificate. With an
+  # ad-hoc signature it would stop the app loading its own frameworks.
+  hardenedRuntime: false
+  artifactName: Loadout-${version}-mac-${arch}.${ext}
   target:
     - dmg
     - zip
@@ -24,6 +33,8 @@ win:
   icon: build/icon.ico
   target:
     - nsis
+nsis:
+  artifactName: Loadout-Setup-${version}-${arch}.${ext}
 linux:
   category: Development
   # Otherwise derived from the package name `@loadout/desktop`, which is not a valid file name.
@@ -34,6 +45,8 @@ linux:
       arch: [x64, arm64]
     - target: deb
       arch: [x64, arm64]
+appImage:
+  artifactName: Loadout-${version}-${arch}.${ext}
 deb:
   packageName: loadout
   artifactName: loadout_${version}_${arch}.${ext}

@@ -1,7 +1,6 @@
 import {
   type AgentInfo,
   APP_NAME,
-  type AppUpdateInfo,
   type CustomAgentInput,
   formatDateTime,
   type LibraryLocation,
@@ -174,16 +173,6 @@ export function useRestartApp(): UseMutationResult<void, unknown, void> {
   return useMutation({
     mutationFn: () => api.app.restart(),
     onError: (error) => toastError(error),
-  });
-}
-
-/** Look for a newer app version now. */
-export function useCheckAppUpdate(): UseMutationResult<AppUpdateInfo, unknown, void> {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => api.app.checkUpdate(),
-    onSuccess: (info) => queryClient.setQueryData(keys.app.update, info),
-    onError: (error) => toastError(error, "settings.about.updateFailed"),
   });
 }
 

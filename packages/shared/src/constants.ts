@@ -28,6 +28,19 @@ export const SKILL_DOCUMENT_FILES = [
   "readme.md",
 ] as const;
 
+/**
+ * Public repository holding the installers and the update feed. Only release files live there;
+ * the source repository stays private.
+ */
+export const RELEASES_REPO = "antick/loadout-releases";
+export const RELEASES_URL = `https://github.com/${RELEASES_REPO}/releases`;
+/** Page of the newest published release. */
+export const LATEST_RELEASE_URL = `${RELEASES_URL}/latest`;
+/** Release file describing the release: version and one download per system. */
+export const UPDATE_FEED_FILE = "latest.json";
+/** Always the feed of the newest published (not draft, not prerelease) release. */
+export const UPDATE_FEED_URL = `${RELEASES_URL}/latest/download/${UPDATE_FEED_FILE}`;
+
 export const MARKETPLACE_NAME = "skills.sh";
 export const MARKETPLACE_URL = "https://skills.sh";
 

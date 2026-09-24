@@ -26,14 +26,28 @@ export const WATCH_SELF_WRITE_MUTE_MS = 1200;
 /** Agent folders can appear after launch; re-resolve what to watch this often. */
 export const WATCH_RESCAN_MS = 60_000;
 
-/** First update check after launch, and the HTTP timeout for it. */
+/** App updates: first check after launch, then how often while the app runs. */
 export const UPDATE_CHECK_DELAY_MS = 3000;
-export const UPDATE_CHECK_TIMEOUT_MS = 15_000;
+export const UPDATE_RECHECK_MS = 6 * 60 * 60 * 1000;
+/** Timeout for fetching the update feed. */
+export const UPDATE_TIMEOUT_MS = 15_000;
+/** Progress events while downloading an update, at most this often. */
+export const UPDATE_PROGRESS_INTERVAL_MS = 250;
+/** How long the replacement waits for the app to exit (the backup on quit runs first). */
+export const UPDATE_EXIT_WAIT_SECONDS = 180;
 /**
- * JSON endpoint describing the newest release: `{ "version": "1.2.3", "url": "https://…" }`.
- * Empty until a release feed exists; the UI then says updates are not configured.
+ * A test feed instead of the published one, e.g. `http://127.0.0.1:8080/latest.json`. Also the
+ * only way a development build checks for updates.
  */
-export const UPDATE_FEED_URL = process.env.LOADOUT_UPDATE_FEED ?? "";
+export const UPDATE_FEED_OVERRIDE_ENV = "LOADOUT_UPDATE_FEED";
+/** Inside the app data folder: downloaded updates. */
+export const UPDATES_DIR = "updates";
+/** Inside the updates folder: the checked download waiting to be installed. */
+export const UPDATE_READY_FILE = "ready.json";
+/** Inside the updates folder: written just before an install, read by the next start. */
+export const UPDATE_PENDING_FILE = "pending-install.json";
+/** Inside the logs folder: what the replacement did after the app quit. */
+export const UPDATE_LOG_FILE = "update.log";
 
 export const ARCHIVE_EXTENSIONS = ["zip", "skill"];
 /** What "Export as .zip" saves. */

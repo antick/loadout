@@ -63,7 +63,6 @@ export const SIDEBAR_WIDTH_STEP_PX = 16;
 /** Skills listed under "Recently changed" in the library panel. */
 export const SIDEBAR_RECENT_SKILLS = 5;
 
-export const APP_UPDATE_CHECK_DELAY_MS = 3000;
 export const SEARCH_DEBOUNCE_MS = 200;
 export const QUERY_STALE_MS = 30_000;
 export const TOAST_DURATION_MS = 4000;

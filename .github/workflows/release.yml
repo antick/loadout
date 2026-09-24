@@ -1,11 +1,16 @@
 name: Release builds
 
-# Builds installers for every platform and collects them in a draft prerelease. Start it by
-# pushing a tag that matches the app version (v0.1.0 for version 0.1.0), or by hand from the
-# Actions tab, which tags the current commit with the app version.
+# Builds installers for every platform, writes the update feed (latest.json) and collects them
+# in a draft release in the public releases repository. Start it by pushing a tag that matches
+# the app version (v0.1.0 for version 0.1.0), or by hand from the Actions tab.
 #
-# The builds are not signed yet: macOS asks to confirm the first launch, Windows SmartScreen
-# warns. Signing and notarisation are listed as pending in docs/FEATURES.md.
+# The source repository is private, so installers are published in a separate public repository
+# that holds only release files. Publishing needs a token for it in the `RELEASES_TOKEN` secret;
+# README.md → Releases has the one-time setup. Nothing reaches users until the draft is
+# published by hand: the app's update check only sees published releases.
+#
+# The builds are not signed with an Apple or Windows certificate: macOS asks to confirm the first
+# launch, Windows SmartScreen warns. The public repository's README tells users what to click.
 
 on:
   push:
@@ -20,8 +25,12 @@ permissions:
   contents: read
 
 env:
-  # No signing identity is configured; do not let electron-builder look for one.
+  # No signing certificate is configured; do not let electron-builder look for one. macOS builds
+  # still get an ad-hoc signature (`identity: "-"` in electron-builder.yml).
   CSC_IDENTITY_AUTO_DISCOVERY: "false"
+  # Public repository for installers and the update feed. Same as RELEASES_REPO in
+  # packages/shared/src/constants.ts.
+  RELEASES_REPO: antick/loadout-releases
 
 jobs:
   version:
@@ -113,29 +122,74 @@ jobs:
           path: packages/cli/dist/standalone/*
 
   release:
-    name: Draft prerelease
+    name: Draft release in the public repository
     needs: [version, build]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
+      - name: Checkout (feed script and commit history for the notes)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
       - name: Download every build
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: dist
           merge-multiple: true
 
-      - name: Create or update the draft
+      - name: Write the update feed
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.version.outputs.tag }}
         run: |
-          if gh release view "$TAG" > /dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
+          node apps/desktop/scripts/update-feed.mjs dist \
+            --version "${TAG#v}" --repo "$RELEASES_REPO" \
+            --require darwin-arm64 --require darwin-x64 --require win32-x64 \
+            --require linux-x64-appimage --require linux-arm64-appimage \
+            --require linux-x64-deb --require linux-arm64-deb
+
+      - name: Write the release notes
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          previous="$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_SHA}^" 2>/dev/null || true)"
+          changes() {
+            git log --no-merges --format='%s' "${previous}..${GITHUB_SHA}" \
+              | sed -nE "s/^$1(\([^)]*\))?!?: (.*)$/- \2/p"
+          }
+          {
+            echo "Install: https://github.com/${RELEASES_REPO}#install"
+            echo
+            echo "Already using Loadout? It updates itself: Settings → About → Check for updates."
+            if [ -z "$previous" ]; then
+              echo
+              echo "First public release."
+            else
+              features="$(changes feat)"
+              fixes="$(changes fix)"
+              if [ -n "$features" ]; then printf '\n## New\n\n%s\n' "$features"; fi
+              if [ -n "$fixes" ]; then printf '\n## Fixed\n\n%s\n' "$fixes"; fi
+            fi
+          } > notes.md
+          cat notes.md
+
+      - name: Create or update the draft
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::The RELEASES_TOKEN secret is missing. README.md → Releases explains how to add it."
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "$RELEASES_REPO" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --repo "$RELEASES_REPO" --clobber
+            gh release edit "$TAG" --repo "$RELEASES_REPO" --notes-file notes.md
           else
-            gh release create "$TAG" dist/* \
-              --draft --prerelease --generate-notes \
-              --target "$GITHUB_SHA" \
-              --title "Loadout ${TAG#v}"
+            gh release create "$TAG" dist/* --repo "$RELEASES_REPO" \
+              --draft --title "Loadout ${TAG#v}" --notes-file notes.md
           fi

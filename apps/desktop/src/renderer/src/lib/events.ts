@@ -91,7 +91,11 @@ export function subscribeAppEvents(
   const offUpdates = onAppEvent("updates:auto-ran", () =>
     invalidateScopes(queryClient, ["skills", "settings"]),
   );
+  const offAppUpdate = onAppEvent("app-update:status", (status) =>
+    queryClient.setQueryData(keys.app.update, status),
+  );
   return () => {
+    offAppUpdate();
     offData();
     offNavigate();
     offBackup();

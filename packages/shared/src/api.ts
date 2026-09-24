@@ -4,7 +4,7 @@ import type {
   AgentControlStatus,
   AgentInfo,
   AppInfo,
-  AppUpdateInfo,
+  AppUpdateStatus,
   ApplyResult,
   BackupConflict,
   BackupStatus,
@@ -288,7 +288,19 @@ export interface AppApi {
   openExternal(url: string): Promise<void>;
   revealPath(path: string): Promise<void>;
   copyText(text: string): Promise<void>;
-  checkUpdate(): Promise<AppUpdateInfo>;
+  /** Where the app-update flow stands. Changes arrive as `app-update:status` events too. */
+  updateStatus(): Promise<AppUpdateStatus>;
+  /** Look for a newer release now. */
+  checkUpdate(): Promise<AppUpdateStatus>;
+  /** Download and verify the newer release. Resolves once it is ready to install. */
+  downloadUpdate(): Promise<AppUpdateStatus>;
+  /** Stop a download in progress. */
+  cancelUpdate(): Promise<AppUpdateStatus>;
+  /**
+   * Install the downloaded release. For `replace` and `installer` the app quits and the new
+   * version starts; for `package` the system installer opens and the app keeps running.
+   */
+  installUpdate(): Promise<void>;
   quit(): Promise<void>;
   hideToTray(): Promise<void>;
   restart(): Promise<void>;

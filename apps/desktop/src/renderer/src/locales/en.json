@@ -330,7 +330,20 @@
   },
   "appUpdate": {
     "available": "{{app}} {{version}} is available",
-    "view": "View"
+    "update": "Update",
+    "download": "Download",
+    "later": "Later",
+    "ready": "{{app}} {{version}} is ready",
+    "readyRestart": "Restart to finish updating. It takes a few seconds.",
+    "readyPackage": "Open the installer to finish updating.",
+    "restart": "Restart now",
+    "openInstaller": "Open installer",
+    "installed": "Updated to {{app}} {{version}}",
+    "notInstalled": "The update to {{version}} did not finish",
+    "notInstalledDescription": "{{app}} is still on the previous version. What happened is in update.log in the logs folder.",
+    "details": "Details",
+    "downloadFailed": "The update could not be downloaded",
+    "installFailed": "Could not start the update"
   },
   "skillPicker": {
     "title": "Open a skill",
