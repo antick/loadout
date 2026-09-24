@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "One desktop app to manage AI agent skills across every coding tool.",
+  "license": "GPL-3.0-only",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

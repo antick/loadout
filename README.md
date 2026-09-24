@@ -447,3 +447,9 @@ a development build never replaces itself.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the rules and
 [docs/PLAN.md](docs/PLAN.md) for the feature checklist, and [TODO.md](TODO.md) for pending work.
+
+## License
+
+Loadout is free software under the [GNU General Public License v3.0](LICENSE) (`GPL-3.0-only`).
+You may use, change and share it. If you distribute it or a changed version, you must share the
+source under the same license.

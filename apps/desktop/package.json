@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Loadout desktop app",
+  "license": "GPL-3.0-only",
   "author": "Pankaj",
   "type": "module",
   "main": "./out/main/index.js",

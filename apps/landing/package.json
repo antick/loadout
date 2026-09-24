@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "The Loadout landing page at loadout.potion.sh",
+  "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
