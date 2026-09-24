@@ -64,10 +64,10 @@ describe("checking a SKILL.md", () => {
   });
 });
 
-describe("where a problem is", () => {
-  const lineOf = (issues: readonly SkillIssue[], code: string): number | undefined =>
-    issues.find((issue) => issue.code === code)?.line;
+const lineOf = (issues: readonly SkillIssue[], code: string): number | undefined =>
+  issues.find((issue) => issue.code === code)?.line;
 
+describe("where a problem is", () => {
   it("points at the frontmatter key a problem is about", () => {
     const text = doc("license: MIT\nname: PDF_Tools\ndescription: Read PDFs.", "Body\n");
     const issues = checkSkillDocument(text, "pdf").issues;
