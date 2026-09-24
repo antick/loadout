@@ -81,7 +81,7 @@ export function AppUpdatePanel(): ReactNode {
     <Panel>
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-base font-semibold tracking-tight">{info.data?.name}</p>
+          <p className="type-display text-lg">{info.data?.name}</p>
           <p className="font-mono text-xs text-muted-foreground">
             {info.data ? t("shell.version", { version: info.data.version }) : null}
           </p>

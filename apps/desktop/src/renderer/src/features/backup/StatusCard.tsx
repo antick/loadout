@@ -111,9 +111,7 @@ export function StatusCard({
           <Icon className="size-5" />
         </span>
         <div className="min-w-48 flex-1">
-          <h2 className="text-base font-semibold tracking-tight">
-            {t(`backupPage.status.title.${key}`)}
-          </h2>
+          <h2 className="type-display text-lg">{t(`backupPage.status.title.${key}`)}</h2>
           <p data-selectable className="mt-0.5 text-sm text-muted-foreground">
             {mode.kind === "failed" && errorText
               ? errorText

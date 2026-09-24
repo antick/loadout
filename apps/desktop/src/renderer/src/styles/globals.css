@@ -2,94 +2,233 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/archivo/wdth.css";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Loadout theme.
- * Graphite neutrals with a faint cool tint, one mint accent, and a small set of
- * semantic status hues. Every colour used by components comes from these tokens.
+ * Loadout theme, in two layers.
+ *
+ * 1. Palette: raw colour scales, defined once and the same in both modes. Ink is the blue-black
+ *    of the app icon, mint its signal colour, brass the colour of presets (the "kits"). Change a
+ *    hue here and every role built on it follows.
+ * 2. Roles: what a colour is for (background, card, selection, the activity rail...), set per
+ *    mode from the palette. Components only ever use roles, never palette steps or raw values.
  */
 :root {
+  /* Ink: cool blue-black neutrals. 900 is the icon's background (#1b1e27). */
+  --ink-0: oklch(0.995 0.002 265);
+  --ink-50: oklch(0.982 0.004 265);
+  --ink-100: oklch(0.962 0.007 265);
+  --ink-150: oklch(0.938 0.009 265);
+  --ink-200: oklch(0.905 0.012 266);
+  --ink-300: oklch(0.83 0.016 266);
+  --ink-400: oklch(0.7 0.02 267);
+  --ink-500: oklch(0.56 0.022 267);
+  --ink-600: oklch(0.45 0.022 268);
+  --ink-700: oklch(0.35 0.021 269);
+  --ink-750: oklch(0.3 0.02 269);
+  --ink-800: oklch(0.27 0.019 270);
+  --ink-850: oklch(0.25 0.018 270);
+  --ink-900: oklch(0.236 0.018 270);
+  --ink-925: oklch(0.21 0.016 270);
+  --ink-950: oklch(0.185 0.014 271);
+
+  /* Mint: the signal colour. 300 is the icon's mint (#78e0c2), 600 the landing page's ink mint. */
+  --mint-50: oklch(0.975 0.022 172);
+  --mint-100: oklch(0.945 0.045 172);
+  --mint-200: oklch(0.9 0.075 172);
+  --mint-300: oklch(0.835 0.107 173);
+  --mint-400: oklch(0.74 0.12 173);
+  --mint-500: oklch(0.62 0.11 174);
+  --mint-600: oklch(0.503 0.092 174);
+  --mint-700: oklch(0.43 0.078 175);
+  --mint-800: oklch(0.36 0.062 176);
+  --mint-900: oklch(0.29 0.045 177);
+
+  /* Brass: presets, custom and linked things. */
+  --brass-100: oklch(0.95 0.04 85);
+  --brass-300: oklch(0.86 0.1 82);
+  --brass-400: oklch(0.79 0.125 78);
+  --brass-500: oklch(0.7 0.13 72);
+  --brass-600: oklch(0.58 0.115 66);
+  --brass-700: oklch(0.48 0.095 62);
+
+  /* Violet: only for code keywords. */
+  --violet-400: oklch(0.76 0.12 300);
+  --violet-600: oklch(0.52 0.16 298);
+
+  /* Status hues, tuned to sit with the palette. */
+  --green-400: oklch(0.8 0.15 150);
+  --green-600: oklch(0.55 0.13 150);
+  --amber-400: oklch(0.83 0.14 78);
+  --amber-600: oklch(0.63 0.14 62);
+  --blue-400: oklch(0.76 0.11 245);
+  --blue-600: oklch(0.54 0.14 255);
+  --red-400: oklch(0.72 0.17 22);
+  --red-600: oklch(0.56 0.19 25);
+
+  /* Roles, light mode. */
   --radius: 0.625rem;
 
-  --background: oklch(0.985 0.002 250);
-  --foreground: oklch(0.2 0.012 255);
-  --card: oklch(1 0 0);
+  --background: var(--ink-50);
+  --foreground: var(--ink-900);
+  --card: var(--ink-0);
   --card-foreground: var(--foreground);
-  --popover: oklch(1 0 0);
+  --popover: var(--ink-0);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.52 0.115 172);
-  --primary-foreground: oklch(0.985 0.01 172);
-  --secondary: oklch(0.955 0.004 250);
-  --secondary-foreground: oklch(0.27 0.012 255);
-  --muted: oklch(0.96 0.004 250);
-  --muted-foreground: oklch(0.5 0.012 255);
-  --accent: oklch(0.945 0.006 250);
-  --accent-foreground: oklch(0.24 0.012 255);
-  --destructive: oklch(0.58 0.2 25);
-  --border: oklch(0.915 0.005 250);
-  --input: oklch(0.9 0.006 250);
-  --ring: oklch(0.62 0.11 172);
+  --primary: var(--mint-600);
+  --primary-foreground: var(--mint-50);
+  --secondary: var(--ink-100);
+  --secondary-foreground: var(--ink-800);
+  --muted: var(--ink-100);
+  --muted-foreground: var(--ink-500);
+  --accent: var(--ink-100);
+  --accent-foreground: var(--ink-900);
+  --destructive: var(--red-600);
+  --destructive-foreground: var(--ink-0);
+  --border: var(--ink-200);
+  --input: var(--ink-200);
+  --ring: var(--mint-500);
 
-  --sidebar: oklch(0.968 0.004 250);
-  --sidebar-foreground: oklch(0.32 0.012 255);
+  /* Something picked: the open skill, the current sidebar entry. */
+  --selected: var(--mint-100);
+  --selected-foreground: var(--mint-800);
+
+  /* The sidebar lists, one step darker than the page. */
+  --sidebar: var(--ink-100);
+  --sidebar-foreground: var(--ink-700);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.93 0.006 250);
-  --sidebar-accent-foreground: oklch(0.2 0.012 255);
-  --sidebar-border: oklch(0.91 0.005 250);
+  --sidebar-accent: var(--ink-150);
+  --sidebar-accent-foreground: var(--ink-900);
+  --sidebar-selected: var(--selected);
+  --sidebar-selected-foreground: var(--selected-foreground);
+  --sidebar-border: var(--ink-200);
   --sidebar-ring: var(--ring);
 
-  --success: oklch(0.56 0.13 155);
-  --warning: oklch(0.66 0.14 70);
-  --info: oklch(0.56 0.13 245);
-  --danger: oklch(0.58 0.2 25);
-  --violet: oklch(0.55 0.17 295);
+  /* The activity rail: dark ink in both modes, like the app icon; mint marks the section. */
+  --rail: var(--ink-900);
+  --rail-foreground: var(--ink-400);
+  --rail-hover: var(--ink-800);
+  --rail-active-foreground: var(--ink-50);
+  --rail-selected: var(--ink-750);
+  --rail-indicator: var(--mint-300);
+  --rail-border: var(--ink-900);
+
+  --success: var(--green-600);
+  --warning: var(--amber-600);
+  --info: var(--blue-600);
+  --danger: var(--red-600);
+  --brass: var(--brass-600);
+
+  /* Agent monograms: eight tints of one lightness and strength, picked from the palette's hues. */
+  --agent-1: oklch(0.68 0.11 173);
+  --agent-2: oklch(0.68 0.11 245);
+  --agent-3: oklch(0.68 0.11 300);
+  --agent-4: oklch(0.7 0.11 78);
+  --agent-5: oklch(0.68 0.11 15);
+  --agent-6: oklch(0.68 0.1 205);
+  --agent-7: oklch(0.68 0.11 140);
+  --agent-8: oklch(0.68 0.11 45);
+
+  /* Code in the editor and in Markdown previews. */
+  --syntax-keyword: var(--violet-600);
+  --syntax-string: var(--green-600);
+  --syntax-number: var(--amber-600);
+  --syntax-type: var(--brass-600);
+  --syntax-function: var(--blue-600);
+  --syntax-property: var(--mint-600);
+  --syntax-link: var(--blue-600);
+  --syntax-code: var(--brass-700);
+  --syntax-comment: var(--ink-500);
+  --syntax-inserted: var(--green-600);
+  --syntax-deleted: var(--red-600);
 
   --chart-1: var(--primary);
   --chart-2: var(--info);
   --chart-3: var(--warning);
-  --chart-4: var(--violet);
+  --chart-4: var(--brass);
   --chart-5: var(--danger);
+
+  /* Behind dialogs and sheets. */
+  --overlay: oklch(0.185 0.014 271 / 45%);
+  /* Shadows are tinted with ink, not grey. */
+  --shadow-xs-value: 0 1px 2px 0 oklch(0.236 0.018 270 / 6%);
+  --shadow-sm-value:
+    0 1px 3px 0 oklch(0.236 0.018 270 / 8%), 0 1px 2px -1px oklch(0.236 0.018 270 / 6%);
+  --shadow-md-value:
+    0 4px 10px -2px oklch(0.236 0.018 270 / 10%), 0 2px 4px -2px oklch(0.236 0.018 270 / 6%);
+  --shadow-lg-value:
+    0 14px 32px -8px oklch(0.236 0.018 270 / 18%), 0 4px 10px -4px oklch(0.236 0.018 270 / 8%);
 }
 
 .dark {
-  --background: oklch(0.165 0.006 255);
-  --foreground: oklch(0.94 0.004 250);
-  --card: oklch(0.2 0.007 255);
+  --background: var(--ink-925);
+  --foreground: var(--ink-100);
+  --card: var(--ink-850);
   --card-foreground: var(--foreground);
-  --popover: oklch(0.215 0.008 255);
+  --popover: var(--ink-850);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.8 0.13 168);
-  --primary-foreground: oklch(0.2 0.04 172);
-  --secondary: oklch(0.26 0.008 255);
-  --secondary-foreground: oklch(0.94 0.004 250);
-  --muted: oklch(0.245 0.008 255);
-  --muted-foreground: oklch(0.68 0.012 255);
-  --accent: oklch(0.27 0.009 255);
-  --accent-foreground: oklch(0.96 0.004 250);
-  --destructive: oklch(0.68 0.19 22);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 13%);
-  --ring: oklch(0.7 0.12 168);
+  --primary: var(--mint-300);
+  --primary-foreground: var(--mint-900);
+  --secondary: var(--ink-800);
+  --secondary-foreground: var(--ink-100);
+  --muted: var(--ink-800);
+  --muted-foreground: var(--ink-400);
+  --accent: var(--ink-800);
+  --accent-foreground: var(--ink-50);
+  --destructive: var(--red-400);
+  --destructive-foreground: var(--ink-950);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: var(--mint-400);
 
-  --sidebar: oklch(0.145 0.006 255);
-  --sidebar-foreground: oklch(0.8 0.008 250);
-  --sidebar-accent: oklch(0.235 0.009 255);
-  --sidebar-accent-foreground: oklch(0.97 0.004 250);
-  --sidebar-border: oklch(1 0 0 / 7%);
+  --selected: oklch(0.835 0.107 173 / 17%);
+  --selected-foreground: var(--mint-200);
 
-  --success: oklch(0.78 0.15 155);
-  --warning: oklch(0.82 0.14 80);
-  --info: oklch(0.76 0.12 240);
-  --danger: oklch(0.72 0.18 22);
-  --violet: oklch(0.76 0.13 295);
+  --sidebar: var(--ink-900);
+  --sidebar-foreground: var(--ink-300);
+  --sidebar-accent: var(--ink-800);
+  --sidebar-accent-foreground: var(--ink-50);
+  --sidebar-border: oklch(1 0 0 / 6%);
+
+  --rail: var(--ink-950);
+  --rail-foreground: var(--ink-500);
+  --rail-hover: var(--ink-850);
+  --rail-selected: var(--ink-800);
+  --rail-border: oklch(1 0 0 / 6%);
+
+  --success: var(--green-400);
+  --warning: var(--amber-400);
+  --info: var(--blue-400);
+  --danger: var(--red-400);
+  --brass: var(--brass-400);
+
+  --syntax-keyword: var(--violet-400);
+  --syntax-string: var(--green-400);
+  --syntax-number: var(--amber-400);
+  --syntax-type: var(--brass-300);
+  --syntax-function: var(--blue-400);
+  --syntax-property: var(--mint-300);
+  --syntax-link: var(--blue-400);
+  --syntax-code: var(--brass-300);
+  --syntax-comment: var(--ink-400);
+  --syntax-inserted: var(--green-400);
+  --syntax-deleted: var(--red-400);
+
+  --overlay: oklch(0.12 0.01 271 / 60%);
+  /* In the dark, depth comes from a faint lit top edge, like machined metal. */
+  --shadow-xs-value: inset 0 1px 0 0 oklch(1 0 0 / 4%), 0 1px 2px 0 oklch(0 0 0 / 30%);
+  --shadow-sm-value: inset 0 1px 0 0 oklch(1 0 0 / 5%), 0 1px 3px 0 oklch(0 0 0 / 35%);
+  --shadow-md-value: inset 0 1px 0 0 oklch(1 0 0 / 5%), 0 4px 12px -2px oklch(0 0 0 / 45%);
+  --shadow-lg-value: inset 0 1px 0 0 oklch(1 0 0 / 6%), 0 16px 36px -8px oklch(0 0 0 / 55%);
 }
 
 @theme inline {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
+  --font-display: "Archivo Variable", "Geist Variable", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -111,6 +250,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -118,7 +258,24 @@
   --color-warning: var(--warning);
   --color-info: var(--info);
   --color-danger: var(--danger);
-  --color-violet: var(--violet);
+  --color-brass: var(--brass);
+  --color-selected: var(--selected);
+  --color-selected-foreground: var(--selected-foreground);
+  --color-overlay: var(--overlay);
+  --color-rail: var(--rail);
+  --color-rail-foreground: var(--rail-foreground);
+  --color-rail-hover: var(--rail-hover);
+  --color-rail-active-foreground: var(--rail-active-foreground);
+  --color-rail-selected: var(--rail-selected);
+  --color-rail-indicator: var(--rail-indicator);
+  --color-rail-border: var(--rail-border);
+  --color-sidebar-selected: var(--sidebar-selected);
+  --color-sidebar-selected-foreground: var(--sidebar-selected-foreground);
+
+  --shadow-xs: var(--shadow-xs-value);
+  --shadow-sm: var(--shadow-sm-value);
+  --shadow-md: var(--shadow-md-value);
+  --shadow-lg: var(--shadow-lg-value);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -149,6 +306,10 @@
     font-feature-settings: "ss01", "cv11";
     overflow: hidden;
     user-select: none;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 28%, transparent);
   }
 
   input,
@@ -211,6 +372,19 @@
     background: color-mix(in oklab, var(--foreground) 26%, transparent);
     background-clip: content-box;
     border: 3px solid transparent;
+  }
+}
+
+@layer components {
+  /*
+   * Display type: Archivo, condensed and heavy, the voice of the landing page's headlines. Only
+   * for page titles, greetings, big numbers and panel headings; everything else stays in Geist.
+   */
+  .type-display {
+    font-family: var(--font-display);
+    font-stretch: 82%;
+    font-weight: 720;
+    letter-spacing: -0.005em;
   }
 }
 

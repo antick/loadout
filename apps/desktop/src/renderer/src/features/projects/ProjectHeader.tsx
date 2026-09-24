@@ -29,7 +29,7 @@ export function ProjectHeader({ project, counts }: ProjectHeaderProps): ReactNod
           {counts ? <span>{t("projectPage.enabledOf", counts)}</span> : null}
           {linked ? (
             <StatusBadge
-              tone="violet"
+              tone="brass"
               icon={<FolderSymlink />}
               label={t("projectPage.linkedBadge")}
             />

@@ -32,9 +32,7 @@ export function SettingsPage({ section }: { section: SettingsSection }): ReactNo
       <PageHeader title={t("nav.settings")} subtitle={t(`settings.sections.${section}.title`)} />
       <div className="flex min-w-0 max-w-4xl flex-1 flex-col gap-4">
         <header>
-          <h2 className="text-base font-semibold tracking-tight">
-            {t(`settings.sections.${section}.title`)}
-          </h2>
+          <h2 className="type-display text-lg">{t(`settings.sections.${section}.title`)}</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {t(`settings.sections.${section}.description`)}
           </p>

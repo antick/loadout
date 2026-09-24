@@ -10,9 +10,9 @@ describe("highlightCode", () => {
     const code = 'const name = "loadout";\nreturn 42;';
     const tokens = highlightCode(code, languageForFence("ts"));
     expect(tokens.map((token) => token.text).join("")).toBe(code);
-    expect(styleOf(tokens, "const")).toEqual({ color: "var(--violet)" });
-    expect(styleOf(tokens, '"loadout"')).toEqual({ color: "var(--success)" });
-    expect(styleOf(tokens, "42")).toEqual({ color: "var(--warning)" });
+    expect(styleOf(tokens, "const")).toEqual({ color: "var(--syntax-keyword)" });
+    expect(styleOf(tokens, '"loadout"')).toEqual({ color: "var(--syntax-string)" });
+    expect(styleOf(tokens, "42")).toEqual({ color: "var(--syntax-number)" });
   });
 
   it("knows fence names that are not file extensions", () => {
@@ -23,16 +23,16 @@ describe("highlightCode", () => {
 
   it("colours the line-by-line languages too", () => {
     const sql = highlightCode("SELECT 'a' FROM t;", languageForFence("postgres"));
-    expect(styleOf(sql, "SELECT")).toEqual({ color: "var(--violet)" });
-    expect(styleOf(sql, "'a'")).toEqual({ color: "var(--success)" });
+    expect(styleOf(sql, "SELECT")).toEqual({ color: "var(--syntax-keyword)" });
+    expect(styleOf(sql, "'a'")).toEqual({ color: "var(--syntax-string)" });
 
     const go = highlightCode("func main() { return 7 }", languageForFence("golang"));
-    expect(styleOf(go, "func")).toEqual({ color: "var(--violet)" });
-    expect(styleOf(go, "7")).toEqual({ color: "var(--warning)" });
+    expect(styleOf(go, "func")).toEqual({ color: "var(--syntax-keyword)" });
+    expect(styleOf(go, "7")).toEqual({ color: "var(--syntax-number)" });
 
     const patch = highlightCode("+added\n-removed", languageForFence("diff"));
-    expect(styleOf(patch, "+added")).toEqual({ color: "var(--success)" });
-    expect(styleOf(patch, "-removed")).toEqual({ color: "var(--danger)" });
+    expect(styleOf(patch, "+added")).toEqual({ color: "var(--syntax-inserted)" });
+    expect(styleOf(patch, "-removed")).toEqual({ color: "var(--syntax-deleted)" });
   });
 
   it("picks a file's language by its whole name, then its extension", () => {

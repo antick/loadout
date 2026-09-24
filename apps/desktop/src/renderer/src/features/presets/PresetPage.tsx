@@ -120,14 +120,14 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
       <header className="flex items-start gap-3">
         <PresetIcon icon={preset.icon} size="lg" />
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold tracking-tight">{preset.name}</h2>
+          <h2 className="type-display truncate text-lg">{preset.name}</h2>
           <p className="text-sm text-muted-foreground">
             {preset.description ?? t("presetPage.noDescription")}
           </p>
         </div>
       </header>
 
-      <InlineNotice tone="violet" icon={Info}>
+      <InlineNotice tone="brass" icon={Info}>
         {t("presetPage.applyNote")}
       </InlineNotice>
 

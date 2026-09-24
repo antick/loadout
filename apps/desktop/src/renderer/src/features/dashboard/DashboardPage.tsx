@@ -49,9 +49,7 @@ export function DashboardPage(): ReactNode {
     <div className="flex flex-col gap-6 px-6 py-5">
       <PageHeader title={t("nav.dashboard")} />
       <header>
-        <p className="text-lg font-semibold tracking-tight">
-          {t(greetingKey(new Date().getHours()))}
-        </p>
+        <p className="type-display text-2xl">{t(greetingKey(new Date().getHours()))}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {empty
             ? t("dashboard.summaryEmpty")

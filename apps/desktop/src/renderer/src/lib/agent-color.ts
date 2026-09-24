@@ -1,24 +1,23 @@
 import type { CSSProperties } from "react";
 
-const HUE_STEPS = 24;
-const HUE_STEP_DEGREES = 360 / HUE_STEPS;
-/** Lightness and chroma of the base tint; it is mixed with theme tokens so both themes look right. */
-const TINT_BASE = "0.68 0.15";
+/** Agent colours are the `--agent-1` … `--agent-8` tokens in globals.css. */
+export const AGENT_TINT_COUNT = 8;
+/** How much of the tint goes into the monogram's background and text; the rest is theme tokens. */
 const BACKGROUND_MIX_PERCENT = 20;
-const FOREGROUND_MIX_PERCENT = 55;
+const FOREGROUND_MIX_PERCENT = 60;
 
-/** Stable hue (0–359) for an agent key, snapped to a small wheel so neighbours stay distinct. */
-export function agentHue(agentKey: string): number {
+/** Stable tint (1 to AGENT_TINT_COUNT) for an agent key. */
+export function agentTintIndex(agentKey: string): number {
   let hash = 0;
   for (let i = 0; i < agentKey.length; i += 1) {
     hash = (hash * 31 + agentKey.charCodeAt(i)) >>> 0;
   }
-  return Math.round((hash % HUE_STEPS) * HUE_STEP_DEGREES);
+  return (hash % AGENT_TINT_COUNT) + 1;
 }
 
 /** Inline tint for an agent monogram: a soft background and readable text in light and dark. */
 export function agentTintStyle(agentKey: string): CSSProperties {
-  const tint = `oklch(${TINT_BASE} ${agentHue(agentKey)})`;
+  const tint = `var(--agent-${agentTintIndex(agentKey)})`;
   return {
     backgroundColor: `color-mix(in oklab, ${tint} ${BACKGROUND_MIX_PERCENT}%, var(--card))`,
     color: `color-mix(in oklab, ${tint} ${FOREGROUND_MIX_PERCENT}%, var(--foreground))`,

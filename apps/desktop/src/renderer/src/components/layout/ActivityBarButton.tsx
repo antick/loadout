@@ -22,7 +22,7 @@ export interface ActivityBarButtonProps {
 }
 
 const BASE =
-  "relative flex w-full flex-col items-center gap-1 rounded-lg px-0.5 py-1.5 text-sidebar-foreground/75 transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&_svg]:size-[18px] [&_svg]:shrink-0";
+  "relative flex w-full flex-col items-center gap-1 rounded-lg px-0.5 py-1.5 text-rail-foreground transition-colors outline-none hover:bg-rail-hover hover:text-rail-active-foreground focus-visible:ring-2 focus-visible:ring-rail-indicator [&_svg]:size-[18px] [&_svg]:shrink-0";
 
 /** One entry of the activity bar: an icon with a caption, a tooltip and its active states. */
 export function ActivityBarButton({
@@ -38,15 +38,15 @@ export function ActivityBarButton({
 }: ActivityBarButtonProps): ReactNode {
   const className = cn(
     BASE,
-    (current || selected) && "text-sidebar-accent-foreground",
-    selected && "bg-sidebar-accent",
+    (current || selected) && "text-rail-active-foreground [&_svg]:text-rail-indicator",
+    selected && "bg-rail-selected",
   );
   const body = (
     <>
       <span
         aria-hidden="true"
         className={cn(
-          "absolute top-1/2 -left-1.5 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary transition-opacity",
+          "absolute top-1/2 -left-1.5 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-rail-indicator shadow-[0_0_10px_1px_var(--rail-indicator)] transition-opacity",
           current ? "opacity-100" : "opacity-0",
         )}
       />

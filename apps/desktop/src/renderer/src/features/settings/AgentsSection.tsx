@@ -31,7 +31,7 @@ interface SortableAgent {
 function Counter({ label, value }: { label: string; value: number }): ReactNode {
   return (
     <div className="rounded-lg border bg-card px-4 py-2.5">
-      <p className="text-xl font-semibold tracking-tight tabular-nums">{value}</p>
+      <p className="type-display text-2xl tabular-nums">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );

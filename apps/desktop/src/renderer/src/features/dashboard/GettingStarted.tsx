@@ -22,7 +22,7 @@ export function GettingStarted(): ReactNode {
 
   return (
     <section className="rounded-lg border bg-card p-6">
-      <h2 className="text-base font-semibold tracking-tight">{t("dashboard.start.title")}</h2>
+      <h2 className="type-display text-lg">{t("dashboard.start.title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.start.body")}</p>
       <ol className="mt-5 grid gap-4 md:grid-cols-3">
         {STEPS.map(({ id, icon: Icon }, index) => (

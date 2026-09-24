@@ -8,7 +8,7 @@ export type StatusTone =
   | "warning"
   | "info"
   | "danger"
-  | "violet";
+  | "brass";
 
 /** Token-backed text + tinted background per tone. Reuse for any semantic chip. */
 export const TONE_CLASSES: Record<StatusTone, string> = {
@@ -18,7 +18,7 @@ export const TONE_CLASSES: Record<StatusTone, string> = {
   warning: "bg-warning/15 text-warning",
   info: "bg-info/15 text-info",
   danger: "bg-danger/15 text-danger",
-  violet: "bg-violet/15 text-violet",
+  brass: "bg-brass/15 text-brass",
 };
 
 /** Solid dot colour per tone, for compact status dots. */
@@ -29,7 +29,7 @@ export const TONE_DOT_CLASSES: Record<StatusTone, string> = {
   warning: "bg-warning",
   info: "bg-info",
   danger: "bg-danger",
-  violet: "bg-violet",
+  brass: "bg-brass",
 };
 
 export interface StatusBadgeProps {
