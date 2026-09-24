@@ -2,7 +2,7 @@ import type { DeployMode } from "./types";
 
 export type ThemeSetting = "light" | "dark" | "system";
 /** Colour palettes, each with a light and a dark version. Order is the order shown. */
-export const PALETTES = ["blueprint", "risograph", "flight", "iris"] as const;
+export const PALETTES = ["flight", "blueprint", "risograph", "iris"] as const;
 export type PaletteSetting = (typeof PALETTES)[number];
 export type TextSizeSetting = "small" | "default" | "large" | "xlarge";
 export type LanguageSetting = "en" | "zh" | "hi";
@@ -43,7 +43,7 @@ export type SettingValue<K extends SettingKey> = Settings[K];
 export const DEFAULT_SETTINGS: Settings = {
   deployMode: "symlink",
   theme: "system",
-  palette: "blueprint",
+  palette: "flight",
   textSize: "default",
   language: "en",
   closeAction: "ask",

@@ -1,4 +1,9 @@
-import { type PaletteSetting, TEXT_SIZE_SCALE, type ThemeSetting } from "@loadout/shared";
+import {
+  DEFAULT_SETTINGS,
+  type PaletteSetting,
+  TEXT_SIZE_SCALE,
+  type ThemeSetting,
+} from "@loadout/shared";
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { useSetting, useSettings } from "@/hooks/queries/settings";
 import { DARK_QUERY, applyAppearance, rememberAppearance } from "@/lib/appearance";
@@ -19,7 +24,7 @@ const TEXT_SCALE_VAR = "--app-text-scale";
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "system",
-  palette: "blueprint",
+  palette: DEFAULT_SETTINGS.palette,
   resolvedTheme: "light",
 });
 

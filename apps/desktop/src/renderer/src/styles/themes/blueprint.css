@@ -1,7 +1,6 @@
 /*
  * Blueprint: cyanotype. Light mode is pale blueprint paper with Prussian-blue ink; dark mode is
- * the blueprint itself, deep Prussian blue with chalk-white lines and safety-yellow kits. A faint
- * drafting grid sits behind the page in both.
+ * the blueprint itself, deep Prussian blue with chalk-white lines and safety-yellow kits.
  */
 [data-theme="blueprint"] {
   --background: oklch(0.968 0.014 240);
@@ -37,7 +36,6 @@
   --rail-border: oklch(0.87 0.035 245);
   --kit: oklch(0.6 0.15 58);
   --overlay: oklch(0.29 0.085 258 / 40%);
-  --grid-line: oklch(0.43 0.14 258 / 5%);
 }
 
 [data-theme="blueprint"].dark {
@@ -74,15 +72,7 @@
   --rail-border: oklch(1 0 0 / 13%);
   --kit: oklch(0.88 0.15 95);
   --overlay: oklch(0.2 0.07 258 / 55%);
-  --grid-line: oklch(1 0 0 / 4.5%);
   /* Flat, like ink on paper: lines instead of shadows. */
   --shadow-xs-value: none;
   --shadow-sm-value: none;
-}
-
-[data-theme="blueprint"] [data-slot="sidebar-inset"] {
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 24px 24px;
 }

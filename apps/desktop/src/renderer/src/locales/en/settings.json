@@ -124,7 +124,7 @@
         "description": "Each palette comes in a light and a dark version. Appearance below picks light, dark or the system's.",
         "blueprint": {
           "title": "Blueprint",
-          "body": "Prussian-blue ink on blueprint paper, with a faint drafting grid. In dark mode, the blueprint itself."
+          "body": "Prussian-blue ink on blueprint paper. In dark mode, the blueprint itself."
         },
         "risograph": {
           "title": "Risograph",

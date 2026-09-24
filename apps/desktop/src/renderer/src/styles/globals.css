@@ -18,9 +18,9 @@
  * To add a palette: copy a file in ./themes, change its values, import it below and add its id
  * to PALETTES in packages/shared/src/settings.ts. A test checks every file sets every role.
  */
+@import "./themes/flight.css";
 @import "./themes/blueprint.css";
 @import "./themes/risograph.css";
-@import "./themes/flight.css";
 @import "./themes/iris.css";
 
 /*
