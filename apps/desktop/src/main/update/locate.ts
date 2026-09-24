@@ -1,5 +1,5 @@
 import { accessSync, constants } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, posix } from "node:path";
 import type { AppUpdateBlocker, AppUpdateMethod } from "@loadout/shared";
 
 /** Where the running app lives and how it can be replaced. */
@@ -32,7 +32,7 @@ function canWrite(path: string): boolean {
 
 /** `/Applications/Loadout.app/Contents/MacOS/Loadout` → `/Applications/Loadout.app`. */
 function macBundle(execPath: string): string | null {
-  const bundle = resolve(execPath, "..", "..", "..");
+  const bundle = posix.resolve(execPath, "..", "..", "..");
   return bundle.endsWith(".app") ? bundle : null;
 }
 
@@ -47,7 +47,7 @@ export function locateApp(input: LocateInput): AppLocation {
     else if (!blocker && bundle?.includes("/AppTranslocation/")) blocker = "translocated";
     else if (!blocker && bundle?.startsWith("/Volumes/") && !writable(bundle)) {
       blocker = "disk_image";
-    } else if (!blocker && bundle && !(writable(bundle) && writable(dirname(bundle)))) {
+    } else if (!blocker && bundle && !(writable(bundle) && writable(posix.dirname(bundle)))) {
       blocker = "read_only";
     }
     return { method: "replace", target: bundle, blocker };
