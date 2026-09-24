@@ -21,7 +21,9 @@ jobs:
       matrix:
         # File handling (links, junctions, copies, locks, line endings, path separators) differs
         # on each, so every one runs the full check.
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Ubuntu is pinned: `ubuntu-latest` moves to a new release on its own, which changes the
+        # build without a commit here. Move this by hand when the time comes.
+        os: [ubuntu-24.04, macos-latest, windows-latest]
     env:
       # Tests make Git commits; name them without touching the runner's Git config.
       GIT_AUTHOR_NAME: Loadout CI

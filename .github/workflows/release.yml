@@ -28,7 +28,7 @@ env:
 jobs:
   version:
     name: Read the version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       tag: ${{ steps.version.outputs.tag }}
     steps:
@@ -60,7 +60,7 @@ jobs:
             args: --mac --arm64 --x64
             standalone_cli: true
           - name: Linux
-            os: ubuntu-latest
+            os: ubuntu-24.04
             args: --linux
             standalone_cli: false
           - name: Windows
@@ -117,7 +117,7 @@ jobs:
   release:
     name: Draft release
     needs: [version, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
