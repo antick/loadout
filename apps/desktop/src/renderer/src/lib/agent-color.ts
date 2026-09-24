@@ -1,3 +1,4 @@
+import { AGENT_PRIORITY_ORDER } from "@loadout/shared";
 import type { CSSProperties } from "react";
 
 /** Agent colours are the `--agent-1` … `--agent-8` tokens in globals.css. */
@@ -6,8 +7,14 @@ export const AGENT_TINT_COUNT = 8;
 const BACKGROUND_MIX_PERCENT = 20;
 const FOREGROUND_MIX_PERCENT = 60;
 
-/** Stable tint (1 to AGENT_TINT_COUNT) for an agent key. */
+/**
+ * Stable tint (1 to AGENT_TINT_COUNT) for an agent key. Common agents take the tints in their
+ * default order, so the ones usually shown side by side never share a colour; the rest (and
+ * custom agents) get one from a hash of the key.
+ */
 export function agentTintIndex(agentKey: string): number {
+  const position = AGENT_PRIORITY_ORDER.indexOf(agentKey);
+  if (position >= 0) return (position % AGENT_TINT_COUNT) + 1;
   let hash = 0;
   for (let i = 0; i < agentKey.length; i += 1) {
     hash = (hash * 31 + agentKey.charCodeAt(i)) >>> 0;

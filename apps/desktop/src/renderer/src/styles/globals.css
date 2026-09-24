@@ -205,6 +205,16 @@
   --danger: var(--red-400);
   --brass: var(--brass-400);
 
+  /* The same eight agent hues, lifted so they glow on ink instead of sinking into it. */
+  --agent-1: oklch(0.8 0.11 173);
+  --agent-2: oklch(0.8 0.1 245);
+  --agent-3: oklch(0.8 0.1 300);
+  --agent-4: oklch(0.82 0.11 78);
+  --agent-5: oklch(0.78 0.11 15);
+  --agent-6: oklch(0.8 0.09 205);
+  --agent-7: oklch(0.8 0.11 140);
+  --agent-8: oklch(0.8 0.11 45);
+
   --syntax-keyword: var(--violet-400);
   --syntax-string: var(--green-400);
   --syntax-number: var(--amber-400);
