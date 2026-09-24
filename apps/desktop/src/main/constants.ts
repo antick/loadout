@@ -4,8 +4,11 @@ export const WINDOW_DEFAULT_WIDTH = 1320;
 export const WINDOW_DEFAULT_HEIGHT = 860;
 export const WINDOW_MIN_WIDTH = 960;
 export const WINDOW_MIN_HEIGHT = 620;
-/** Where macOS draws the window buttons inside our own title bar. */
-export const TRAFFIC_LIGHT_POSITION = { x: 16, y: 17 };
+/**
+ * Where macOS draws the window buttons inside our own title bar. The buttons are 14px tall, so
+ * y = (42 - 14) / 2 centres them in the 42px bar (TOP_BAR_HEIGHT_CLASS in the renderer).
+ */
+export const TRAFFIC_LIGHT_POSITION = { x: 16, y: 14 };
 
 export const WINDOW_STATE_FILE = "window-state.json";
 export const SECRETS_FILE = "secrets.json";

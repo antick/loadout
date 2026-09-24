@@ -47,7 +47,8 @@ export const EDITOR_PANE_MIN_HEIGHT_PX = 160;
  * between the buttons and a title.
  */
 export const MAC_WINDOW_CONTROLS_WIDTH_PX = 96;
-export const TOP_BAR_HEIGHT_CLASS = "h-12";
+/** 42px: room for the 32px buttons inside, and the window buttons centred by TRAFFIC_LIGHT_POSITION. */
+export const TOP_BAR_HEIGHT_CLASS = "h-[2.625rem]";
 /** Width of the activity bar, the icon strip at the far left beside the sidebar. */
 export const ACTIVITY_BAR_WIDTH_PX = 68;
 export const STATUS_BAR_HEIGHT_CLASS = "h-7";
