@@ -39,6 +39,9 @@ linux:
   category: Development
   # Otherwise derived from the package name `@loadout/desktop`, which is not a valid file name.
   executableName: loadout
+  # Required by the .deb build and printed in every package. A GitHub no-reply address keeps a
+  # personal e-mail out of the public installers.
+  maintainer: Pankaj <antick@users.noreply.github.com>
   icon: build/icon.png
   target:
     - target: AppImage
