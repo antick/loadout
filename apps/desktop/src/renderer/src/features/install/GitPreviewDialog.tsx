@@ -1,7 +1,8 @@
 import type { GitPreview, InstallSelection, RepoSkillPreview } from "@loadout/shared";
-import { FileArchive, GitBranch, GitCommitHorizontal, RefreshCw } from "lucide-react";
+import { FileArchive, GitBranch, GitCommitHorizontal, RefreshCw, SearchX } from "lucide-react";
 import { type FormEvent, type ReactNode, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineNotice } from "@/components/InlineNotice";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -73,7 +74,10 @@ function PreviewRow({ skill, checked, name, onToggle, onRename }: PreviewRowProp
   );
 }
 
-/** Own component so each preview starts with everything ticked and the names from the repository. */
+/**
+ * Own component so each preview starts fresh: the skills the typed text named ticked (or all of
+ * them when it named none), and the names from the repository.
+ */
 function PreviewForm({
   preview,
   submitRef,
@@ -87,7 +91,7 @@ function PreviewForm({
 }): ReactNode {
   const { t } = useTranslation();
   const [checked, setChecked] = useState<ReadonlySet<string>>(
-    () => new Set(preview.skills.map((skill) => skill.relPath)),
+    () => new Set(preview.selected ?? preview.skills.map((skill) => skill.relPath)),
   );
   const [names, setNames] = useState<Record<string, string>>({});
 
@@ -140,6 +144,15 @@ function PreviewForm({
           </div>
         </DialogDescription>
       </DialogHeader>
+
+      {preview.missing.length > 0 ? (
+        <InlineNotice tone="warning" icon={SearchX}>
+          {t("install.git.missing", {
+            count: preview.missing.length,
+            names: preview.missing.join(", "),
+          })}
+        </InlineNotice>
+      ) : null}
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">{t("install.git.previewHint")}</p>

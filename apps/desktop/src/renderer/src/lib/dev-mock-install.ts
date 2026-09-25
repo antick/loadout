@@ -3,8 +3,8 @@
  * `dev-mock.ts`. Installs take a moment and report progress so toasts, progress panels and Cancel
  * can be tried in a plain browser. Magic inputs: searching "offline" or cloning a URL containing
  * "offline" fails with NETWORK, "private" fails with GIT_AUTH, "empty" finds no skills. A link
- * ending in `.zip` / `.skill` is treated as an archive; an archive whose name contains "bundle"
- * holds several skills.
+ * ending in an archive extension is treated as an archive; an archive whose name contains "bundle"
+ * holds several skills. A repository typed as `owner/repo@name` ticks only that skill.
  */
 import {
   MARKETPLACE_URL,
@@ -142,6 +142,22 @@ const REPO_SKILLS = [
     description: "Check a Terraform plan for risky changes before it is applied.",
   },
 ] as const;
+
+/** `owner/repo@skill` or `…#main@skill` → the skill to tick, as the real parser reads it. */
+function namedSkill(text: string): string | null {
+  const at = text.lastIndexOf("@");
+  return at > text.lastIndexOf("/") && at > text.indexOf(":") ? text.slice(at + 1) || null : null;
+}
+
+/** What the real backend reports for a named skill: which rows to tick, which names are absent. */
+function requested(
+  skills: GitPreview["skills"],
+  name: string | null,
+): Pick<GitPreview, "selected" | "missing"> {
+  if (!name) return { selected: null, missing: [] };
+  const matches = skills.filter((entry) => entry.name === name).map((entry) => entry.relPath);
+  return { selected: matches, missing: matches.length > 0 ? [] : [name] };
+}
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -355,17 +371,21 @@ export function createInstallMockHandlers(
             branch: null,
             revision: null,
             skills: repoUrl.includes("empty") ? [] : archiveSkills(repoUrl),
+            selected: null,
+            missing: [],
           };
         }
+        const skills = repoUrl.includes("empty")
+          ? []
+          : REPO_SKILLS.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
         return {
           previewId,
           kind,
           repoUrl,
-          branch: repoUrl.includes("/tree/") ? "main" : null,
+          branch: repoUrl.includes("/tree/") || repoUrl.includes("#") ? "main" : null,
           revision: "4f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39",
-          skills: repoUrl.includes("empty")
-            ? []
-            : REPO_SKILLS.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) })),
+          skills,
+          ...requested(skills, namedSkill(repoUrl)),
         };
       }),
     "install.previewArchive": async (archivePath: string): Promise<GitPreview> => {
@@ -379,6 +399,8 @@ export function createInstallMockHandlers(
         branch: null,
         revision: null,
         skills: archiveSkills(archivePath),
+        selected: null,
+        missing: [],
       };
     },
     "install.confirmGit": async (previewId: string, items: InstallSelection[]) => {

@@ -29,7 +29,7 @@ export const SOURCE_FILTER_ALL = "__all__";
 /** Shown under the Git URL field; clicking one fills the field. Not translated: they are syntax. */
 export const GIT_URL_EXAMPLES = [
   "owner/repo",
-  "https://github.com/owner/repo",
+  "owner/repo@my-skill",
   "https://github.com/owner/repo/tree/main/skills/my-skill",
   "git@github.com:owner/repo.git",
   "https://example.com/my-skill.zip",

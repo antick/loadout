@@ -19,6 +19,7 @@ import {
 import type { InstallIntoLibrary, InstallRecord } from "./library";
 import { createPreviewSessions, emitProgress } from "./preview-sessions";
 import { type FoundSkill, listRepoSkills, resolveSkillDir } from "./repo-scan";
+import { matchRequested } from "./requested";
 
 export interface GitInstallerDeps {
   store: SkillStore;
@@ -84,22 +85,30 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     }));
   }
 
-  async function previewRepository(repoUrl: string): Promise<GitPreview> {
+  /**
+   * Clone and list a repository. `key` is the text as the caller sent it (progress and cancel go
+   * by it); `repoUrl` the repository part of it; `wanted` skills named outside the URL.
+   */
+  async function previewRepository(
+    key: string,
+    repoUrl: string,
+    wanted: readonly string[] = [],
+  ): Promise<GitPreview> {
     // Validate before anything else, so a bad URL never reaches git.
     const parsed = parseGitSource(repoUrl, { allowLocalPath: deps.allowLocalGitSources });
-    const handle = cancels.register(repoUrl);
+    const handle = cancels.register(key);
     let cleanup: (() => Promise<void>) | null = null;
     try {
-      emitProgress(ctx, repoUrl, "cloning");
+      emitProgress(ctx, key, "cloning");
       const source = await resolveSource(parsed, handle.signal);
       const checkout = await git.checkout(source.cloneUrl, {
         branch: source.branch,
         subpath: source.subpath,
         signal: handle.signal,
-        onPercent: percentProgress(repoUrl),
+        onPercent: percentProgress(key),
       });
       cleanup = checkout.cleanup;
-      emitProgress(ctx, repoUrl, "scanning");
+      emitProgress(ctx, key, "scanning");
       const scanRoot = resolveSkillDir(checkout.dir, source.subpath);
       const found = listRepoSkills(scanRoot, { libraryDir: ctx.paths.skillsDir });
       if (handle.signal.aborted) throw cancelled();
@@ -107,7 +116,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       const repoIdentity = normalizeRepoUrl(source.cloneUrl);
       const typedUrl = repoUrl.trim();
       const previewId = await sessions.open({
-        key: repoUrl,
+        key,
         dirs: new Map(found.map((skill) => [skill.relPath, skill.dir])),
         record: (dir) => ({
           sourceType: "git",
@@ -131,6 +140,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
           found,
           (s) => s.sourceUrl !== null && normalizeRepoUrl(s.sourceUrl) === repoIdentity,
         ),
+        ...matchRequested(found, source.skill ? [source.skill, ...wanted] : wanted),
       };
     } finally {
       await cleanup?.();
@@ -171,6 +181,8 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         branch: null,
         revision: null,
         skills: previewSkills(found, installed),
+        selected: null,
+        missing: [],
       };
     } finally {
       await cleanup?.();
@@ -206,7 +218,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
   return {
     previewGit: async (input) => {
       const link = archiveLink(input);
-      return link ? previewLink(input, link) : previewRepository(input);
+      return link ? previewLink(input, link) : previewRepository(input, input);
     },
 
     previewArchive: async (archivePath) => {

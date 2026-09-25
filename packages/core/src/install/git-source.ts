@@ -11,6 +11,8 @@ export interface GitSource {
    * `branch` and `subpath` are only a first guess until {@link resolveTreeRef} has seen the remote.
    */
   treeTail: string | null;
+  /** A skill named in the text (`owner/repo@skill`, `#main@skill`): the one to preselect. */
+  skill: string | null;
 }
 
 export interface GitInputOptions {
@@ -29,20 +31,54 @@ export interface RemoteRefs {
 export type ListRefs = (cloneUrl: string) => Promise<RemoteRefs>;
 
 const GITHUB_URL = "https://github.com";
+const GITLAB_URL = "https://gitlab.com";
 const GIT_SUFFIX = ".git";
 const URL_PREFIXES = ["https://", "http://", "ssh://"] as const;
 const LOCAL_URL_PREFIX = "file://";
+const GITHUB_PREFIX = "github:";
+const GITLAB_PREFIX = "gitlab:";
 /** `git@host:owner/repo.git` */
 const SCP_STYLE = /^git@[\w.-]+:[^\s]+$/i;
+const REPO_SEGMENT = String.raw`[A-Za-z0-9_][\w.-]*`;
 /** `owner/repo`, the GitHub shorthand. Never starts with `.`, `-`, `/` or `~`, so it is never a path. */
-const SHORTHAND = /^[A-Za-z0-9_][\w.-]*\/[A-Za-z0-9_][\w.-]*$/;
+const SHORTHAND = new RegExp(`^${REPO_SEGMENT}\\/${REPO_SEGMENT}$`);
+/** `owner/repo/path/in/repo`, optionally `@skill`. */
+const SHORTHAND_WITH_PATH = new RegExp(
+  `^${REPO_SEGMENT}\\/${REPO_SEGMENT}(?:\\/[^\\s@]+)?(?:@[^\\s/@]+)?$`,
+);
+/** `group/sub/repo` after `gitlab:`: GitLab nests groups. */
+const GITLAB_PATH = new RegExp(`^${REPO_SEGMENT}(?:\\/${REPO_SEGMENT})+$`);
 const GITHUB_TREE = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/tree\/(.+)$/i;
+/** A link to a repository's `SKILL.md` on GitHub: the skill is the folder around it. */
+const GITHUB_SKILL_FILE =
+  /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/blob\/(.+)\/skill\.md$/i;
+/** `https://host/group/repo/-/tree/branch/path`, the GitLab spelling, self-hosted too. */
+const GITLAB_TREE = /^(https:\/\/[^/\s]+)\/(.+?)(?:\.git)?\/-\/tree\/(.+)$/i;
+/** A skill page on the marketplace: `https://skills.sh/owner/repo/skill`. */
+const MARKET_PAGE = /^https:\/\/(?:www\.)?skills\.sh\/([\w.-]+)\/([\w.-]+)\/([\w.:-]+)\/?$/i;
+/** First path segments of the marketplace that are site pages, not owners. */
+const MARKET_SITE_PAGES: ReadonlySet<string> = new Set([
+  "api",
+  "audits",
+  "docs",
+  "official",
+  "p",
+  "packs",
+  "site",
+  "topic",
+]);
 const SCHEME_NOT_ALLOWED =
   "URL scheme not allowed. Use https://, http://, ssh://, git@host:owner/repo.git or owner/repo.";
+const CLIMBS_OUT = "A path inside the repository cannot contain '..'";
 
 function hasUrlPrefix(text: string): boolean {
   const lower = text.toLowerCase();
   return URL_PREFIXES.some((prefix) => lower.startsWith(prefix));
+}
+
+function hasHostPrefix(text: string): boolean {
+  const lower = text.toLowerCase();
+  return lower.startsWith(GITHUB_PREFIX) || lower.startsWith(GITLAB_PREFIX);
 }
 
 function isLocalSource(text: string): boolean {
@@ -57,42 +93,146 @@ function githubCloneUrl(owner: string, repo: string): string {
   return `${GITHUB_URL}/${owner}/${stripGitSuffix(repo)}${GIT_SUFFIX}`;
 }
 
+/** Text that can only mean a repository, so a `#fragment` on it names a branch or tag. */
+function isGitLike(text: string): boolean {
+  return (
+    hasUrlPrefix(text) ||
+    hasHostPrefix(text) ||
+    SCP_STYLE.test(text) ||
+    SHORTHAND_WITH_PATH.test(text)
+  );
+}
+
 /** Trim and check the typed text. Returns the trimmed text, throws INVALID_INPUT otherwise. */
 export function validateGitInput(input: string, options: GitInputOptions = {}): string {
   const text = input.trim();
   if (!text) throw invalid("Repository URL is required");
   // A leading dash would be read by git as an option; whitespace never belongs in a URL.
   if (text.startsWith("-") || /\s/.test(text)) throw invalid(SCHEME_NOT_ALLOWED);
-  if (hasUrlPrefix(text) || SCP_STYLE.test(text) || SHORTHAND.test(text)) return text;
+  const bare = splitFragment(text).text;
+  if (isGitLike(bare)) {
+    // `github:` and `gitlab:` say little on their own; what follows must be a repository.
+    if (hasHostPrefix(bare)) parseWithoutFragment(bare);
+    return text;
+  }
   if (options.allowLocalPath && isLocalSource(text)) return text;
   throw invalid(SCHEME_NOT_ALLOWED);
+}
+
+/** `text#ref@skill` → its parts. Only a repository's text has a fragment; anything else is kept. */
+function splitFragment(text: string): { text: string; ref: string | null; skill: string | null } {
+  const hash = text.indexOf("#");
+  if (hash === -1) return { text, ref: null, skill: null };
+  const before = text.slice(0, hash);
+  if (!isGitLike(before)) return { text, ref: null, skill: null };
+  const fragment = text.slice(hash + 1);
+  const at = fragment.indexOf("@");
+  const ref = (at === -1 ? fragment : fragment.slice(0, at)) || null;
+  const skill = (at === -1 ? "" : fragment.slice(at + 1)) || null;
+  return { text: before, ref, skill };
+}
+
+/** `a/b/c` with no empty, `.` or `..` segment; throws on a path that would climb out. */
+function cleanPath(path: string): string | null {
+  const segments = path.split("/").filter(Boolean).map(decodeSegment);
+  if (segments.some((segment) => segment === ".." || segment === ".")) throw invalid(CLIMBS_OUT);
+  return segments.length > 0 ? segments.join("/") : null;
+}
+
+/** `owner/repo[/path][@skill]`, the text after `github:` or on its own. */
+function parseShorthand(text: string): GitSource {
+  const at = text.lastIndexOf("@");
+  const skill = at > text.lastIndexOf("/") ? text.slice(at + 1) || null : null;
+  const repoPath = skill === null ? text : text.slice(0, at);
+  const [owner = "", repo = "", ...rest] = repoPath.split("/");
+  return {
+    cloneUrl: githubCloneUrl(owner, repo),
+    branch: null,
+    subpath: cleanPath(rest.join("/")),
+    treeTail: null,
+    skill,
+  };
+}
+
+/** A `/tree/` tail split on its first segment; see {@link GitSource.treeTail}. */
+function fromTreeTail(cloneUrl: string, rawTail: string): GitSource {
+  const segments = (cleanPath(rawTail) ?? "").split("/").filter(Boolean);
+  const [first, ...rest] = segments;
+  if (first === undefined)
+    return { cloneUrl, branch: null, subpath: null, treeTail: null, skill: null };
+  return {
+    cloneUrl,
+    branch: first,
+    subpath: rest.length > 0 ? rest.join("/") : null,
+    treeTail: rest.length > 0 ? segments.join("/") : null,
+    skill: null,
+  };
+}
+
+function parseWithoutFragment(text: string): GitSource {
+  const lower = text.toLowerCase();
+  if (lower.startsWith(GITHUB_PREFIX)) {
+    const rest = text.slice(GITHUB_PREFIX.length);
+    if (!SHORTHAND_WITH_PATH.test(rest)) throw invalid(SCHEME_NOT_ALLOWED);
+    return parseShorthand(rest);
+  }
+  if (lower.startsWith(GITLAB_PREFIX)) {
+    const rest = stripGitSuffix(text.slice(GITLAB_PREFIX.length));
+    if (!GITLAB_PATH.test(rest)) throw invalid(SCHEME_NOT_ALLOWED);
+    return {
+      cloneUrl: `${GITLAB_URL}/${rest}${GIT_SUFFIX}`,
+      branch: null,
+      subpath: null,
+      treeTail: null,
+      skill: null,
+    };
+  }
+
+  const tree = GITHUB_TREE.exec(text);
+  if (tree) {
+    const [, owner = "", repo = "", rawTail = ""] = tree;
+    return fromTreeTail(githubCloneUrl(owner, repo), rawTail);
+  }
+  const skillFile = GITHUB_SKILL_FILE.exec(text);
+  if (skillFile) {
+    const [, owner = "", repo = "", rawTail = ""] = skillFile;
+    return fromTreeTail(githubCloneUrl(owner, repo), rawTail);
+  }
+  const gitlabTree = GITLAB_TREE.exec(text);
+  if (gitlabTree) {
+    const [, origin = "", path = "", rawTail = ""] = gitlabTree;
+    return fromTreeTail(`${origin}/${path}${GIT_SUFFIX}`, rawTail);
+  }
+  const marketPage = MARKET_PAGE.exec(text);
+  if (marketPage && !MARKET_SITE_PAGES.has((marketPage[1] ?? "").toLowerCase())) {
+    const [, owner = "", repo = "", skill = ""] = marketPage;
+    return {
+      cloneUrl: githubCloneUrl(owner, repo),
+      branch: null,
+      subpath: null,
+      treeTail: null,
+      skill,
+    };
+  }
+
+  if (SHORTHAND_WITH_PATH.test(text)) return parseShorthand(text);
+  return { cloneUrl: text, branch: null, subpath: null, treeTail: null, skill: null };
 }
 
 /** Understand every accepted source form. Validates first, so callers need not. */
 export function parseGitSource(input: string, options: GitInputOptions = {}): GitSource {
   const text = validateGitInput(input, options);
-  const plain = { branch: null, subpath: null, treeTail: null };
-
-  const tree = GITHUB_TREE.exec(text);
-  if (tree) {
-    const [, owner = "", repo = "", rawTail = ""] = tree;
-    const segments = rawTail.split("/").filter(Boolean).map(decodeSegment);
-    const [first, ...rest] = segments;
-    const cloneUrl = githubCloneUrl(owner, repo);
-    if (first === undefined) return { cloneUrl, ...plain };
-    return {
-      cloneUrl,
-      branch: first,
-      subpath: rest.length > 0 ? rest.join("/") : null,
-      treeTail: rest.length > 0 ? segments.join("/") : null,
-    };
+  if (options.allowLocalPath && isLocalSource(text)) {
+    return { cloneUrl: text, branch: null, subpath: null, treeTail: null, skill: null };
   }
-
-  if (SHORTHAND.test(text)) {
-    const [owner = "", repo = ""] = text.split("/");
-    return { cloneUrl: githubCloneUrl(owner, repo), ...plain };
-  }
-  return { cloneUrl: text, ...plain };
+  const fragment = splitFragment(text);
+  const source = parseWithoutFragment(fragment.text);
+  return {
+    ...source,
+    // A branch in a tree URL wins over one in a fragment: the tree URL is the more specific.
+    branch: source.branch ?? fragment.ref,
+    skill: fragment.skill ?? source.skill,
+  };
 }
 
 function decodeSegment(segment: string): string {

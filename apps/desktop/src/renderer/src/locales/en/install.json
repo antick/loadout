@@ -133,6 +133,8 @@
       "previewTitle_one": "{{count}} skill found",
       "previewTitle_other": "{{count}} skills found",
       "previewHint": "Tick what you want and rename anything before it lands in the library.",
+      "missing_one": "{{names}} is not in here. Pick from what is, or check the spelling.",
+      "missing_other": "These are not in here: {{names}}. Pick from what is, or check the spelling.",
       "nameFor": "Library name for {{name}}",
       "alreadyInstalled": "Already in the library. Importing it again updates that copy.",
       "importSelected_one": "Import selected ({{count}})",

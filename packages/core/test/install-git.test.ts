@@ -49,6 +49,37 @@ function cacheSlots(): string[] {
   return existsSync(repos) ? readdirSync(repos) : [];
 }
 
+describe("named skills and refs in the typed text", () => {
+  it("ticks the skill named after @ and says which names the repository lacks", async () => {
+    const named = await install.api.previewGit("acme/skills@pdf");
+    expect(named.skills.map((skill) => skill.relPath)).toEqual(["docx", "pdf"]);
+    expect(named).toMatchObject({ selected: ["pdf"], missing: [] });
+    await install.api.cancelPreview(named.previewId);
+
+    const typo = await install.api.previewGit("acme/skills#main@pfd");
+    expect(typo).toMatchObject({ branch: "main", selected: [], missing: ["pfd"] });
+    await install.api.cancelPreview(typo.previewId);
+
+    const plain = await install.api.previewGit("acme/skills");
+    expect(plain).toMatchObject({ selected: null, missing: [] });
+    await install.api.cancelPreview(plain.previewId);
+  });
+
+  it("opens a folder inside the repository from the shorthand and records the typed text", async () => {
+    const preview = await install.api.previewGit("github:acme/skills/skills/pdf");
+    expect(preview.skills.map((skill) => skill.name)).toEqual(["pdf"]);
+    const [pdf] = await install.api.confirmGit(preview.previewId, [
+      { relPath: preview.skills[0]?.relPath ?? "", name: "" },
+    ]);
+    expect(pdf).toMatchObject({
+      sourceType: "git",
+      sourceRef: "github:acme/skills/skills/pdf",
+      sourceUrl: "https://github.com/acme/skills.git",
+      sourceSubpath: "skills/pdf",
+    });
+  });
+});
+
 describe("git preview and confirm", () => {
   it("lists the skills of a repository, then installs the chosen ones under new names", async () => {
     const head = git(remote, "rev-parse", "HEAD");

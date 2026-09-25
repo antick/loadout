@@ -10,7 +10,7 @@ import {
   validateGitInput,
 } from "../src/install/git-source";
 
-const NONE = { branch: null, subpath: null, treeTail: null };
+const NONE = { branch: null, subpath: null, treeTail: null, skill: null };
 
 function expectInvalid(run: () => unknown): void {
   try {
@@ -53,16 +53,108 @@ describe("parseGitSource", () => {
       branch: "main",
       subpath: null,
       treeTail: null,
+      skill: null,
     });
     expect(parseGitSource("https://github.com/acme/skills.git/tree/main/skills/pdf/")).toEqual({
       cloneUrl: "https://github.com/acme/skills.git",
       branch: "main",
       subpath: "skills/pdf",
       treeTail: "main/skills/pdf",
+      skill: null,
     });
-    // Only that host, and only /tree/: anything else is an ordinary URL.
+    // Only /tree/ and a link to a SKILL.md: any other GitHub page is an ordinary URL.
     expect(parseGitSource("https://github.com/acme/skills/blob/main/x").branch).toBeNull();
     expect(parseGitSource("https://gitlab.com/acme/skills/tree/main/x").branch).toBeNull();
+  });
+
+  it("reads a link to a SKILL.md on GitHub as the folder around it", () => {
+    expect(
+      parseGitSource("https://github.com/acme/skills/blob/main/skills/pdf/SKILL.md"),
+    ).toMatchObject({
+      cloneUrl: "https://github.com/acme/skills.git",
+      branch: "main",
+      treeTail: "main/skills/pdf",
+    });
+  });
+
+  it("reads GitLab tree URLs, self-hosted and nested groups included", () => {
+    expect(
+      parseGitSource("https://gitlab.com/group/sub/skills/-/tree/main/skills/pdf"),
+    ).toMatchObject({
+      cloneUrl: "https://gitlab.com/group/sub/skills.git",
+      branch: "main",
+      subpath: "skills/pdf",
+      treeTail: "main/skills/pdf",
+    });
+    expect(parseGitSource("https://git.acme.dev/team/skills/-/tree/dev")).toMatchObject({
+      cloneUrl: "https://git.acme.dev/team/skills.git",
+      branch: "dev",
+      subpath: null,
+    });
+  });
+
+  it("reads github: and gitlab: prefixes", () => {
+    expect(parseGitSource("github:acme/skills")).toEqual({
+      cloneUrl: "https://github.com/acme/skills.git",
+      ...NONE,
+    });
+    expect(parseGitSource("github:acme/skills/tools@pdf")).toMatchObject({
+      subpath: "tools",
+      skill: "pdf",
+    });
+    expect(parseGitSource("gitlab:group/sub/skills")).toEqual({
+      cloneUrl: "https://gitlab.com/group/sub/skills.git",
+      ...NONE,
+    });
+  });
+
+  it("reads a path inside the repository and a skill name after @", () => {
+    expect(parseGitSource("acme/skills/skills/pdf")).toEqual({
+      cloneUrl: "https://github.com/acme/skills.git",
+      ...NONE,
+      subpath: "skills/pdf",
+    });
+    expect(parseGitSource("acme/skills@pdf")).toEqual({
+      cloneUrl: "https://github.com/acme/skills.git",
+      ...NONE,
+      skill: "pdf",
+    });
+    // An @ in the host part of an address is not a skill name.
+    expect(parseGitSource("git@github.com:acme/skills.git").skill).toBeNull();
+    expect(parseGitSource("ssh://git@github.com/acme/skills.git").skill).toBeNull();
+  });
+
+  it("reads a branch or tag after #, with an optional skill", () => {
+    expect(parseGitSource("acme/skills#dev")).toEqual({
+      cloneUrl: "https://github.com/acme/skills.git",
+      ...NONE,
+      branch: "dev",
+    });
+    expect(parseGitSource("acme/skills#v1.2@pdf")).toMatchObject({ branch: "v1.2", skill: "pdf" });
+    expect(parseGitSource("https://gitlab.com/acme/skills.git#main@pdf")).toMatchObject({
+      cloneUrl: "https://gitlab.com/acme/skills.git",
+      branch: "main",
+      skill: "pdf",
+    });
+    expect(parseGitSource("git@github.com:acme/skills.git#release/2")).toMatchObject({
+      cloneUrl: "git@github.com:acme/skills.git",
+      branch: "release/2",
+    });
+  });
+
+  it("reads a marketplace skill page as its repository and skill", () => {
+    expect(parseGitSource("https://skills.sh/vercel-labs/skills/find-skills")).toEqual({
+      cloneUrl: "https://github.com/vercel-labs/skills.git",
+      ...NONE,
+      skill: "find-skills",
+    });
+    // Site pages are not owners.
+    expect(parseGitSource("https://skills.sh/topic/react/x").skill).toBeNull();
+  });
+
+  it("refuses a path that climbs out of the repository", () => {
+    expectInvalid(() => parseGitSource("acme/skills/../../etc"));
+    expectInvalid(() => parseGitSource("https://github.com/acme/skills/tree/main/../x"));
   });
 
   it("rejects everything else", () => {
@@ -79,8 +171,9 @@ describe("parseGitSource", () => {
       "C:\\repos\\skills",
       "C:/repos/skills",
       "justaword",
-      "owner/repo/extra",
       "owner/repo with space",
+      "github:justaword",
+      "gitlab:",
       "--upload-pack=evil",
       "-o/x",
     ]) {

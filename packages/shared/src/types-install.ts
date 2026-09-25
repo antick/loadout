@@ -23,6 +23,10 @@ export interface GitPreview {
   branch: string | null;
   revision: string | null;
   skills: RepoSkillPreview[];
+  /** Preview keys to tick when the list opens; null ticks every skill. */
+  selected: string[] | null;
+  /** Skills the typed text asked for by name that the source does not hold. */
+  missing: string[];
 }
 
 export interface InstallSelection {

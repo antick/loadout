@@ -63,8 +63,11 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
 - From a link to an archive in any of those formats, pasted where a Git URL goes. The skill is marked
   **Link**; checking it downloads the link again and compares, and **Download again** updates it.
 - Import every skill inside a folder in one go, with live progress.
-- From Git: `https`, `ssh`, `git@`, `owner/repo`, and GitHub tree URLs that carry a branch and a
-  subfolder.
+- From Git: `https`, `ssh`, `git@`, `owner/repo`, `owner/repo/path/in/repo`, `github:` and
+  `gitlab:` prefixes, GitHub and GitLab tree URLs that carry a branch and a subfolder, a GitHub
+  link to a skill's `SKILL.md`, and a skills.sh skill page. `#branch` picks a branch or tag.
+- Naming a skill (`owner/repo@skill`, `#main@skill`) ticks only that skill in the preview; a name
+  the repository does not hold is reported instead of guessed.
 - Git preview: the repository is cloned first, then you tick the skills you want and can rename
   each before it lands in the library.
 - No Git installed: public GitHub and GitLab repositories still install, update and preview. The
