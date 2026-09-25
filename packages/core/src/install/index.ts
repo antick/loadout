@@ -46,6 +46,7 @@ export {
 } from "./download";
 export { archiveLink, archiveLinkName, skillFileLink } from "./archive-link";
 export { crossSiteHost, siteOf } from "./redirects";
+export { type SkillsCommand, agentKeyFor, parseSkillsCommand } from "./skills-command";
 export { skillFileFolder } from "./web-install";
 export {
   type WellKnownEntry,

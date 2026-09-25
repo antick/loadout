@@ -35,7 +35,20 @@ export interface GitPreview {
    * (`acceptRedirect`), because the link no longer says where the files come from.
    */
   redirectedTo: string | null;
+  /** Agents a pasted `skills add … -a` command named, as agent keys: offered after installing. */
+  agents: string[];
+  /** Agent names in that command that match no agent here. */
+  unknownAgents: string[];
+  /** The command asked for every agent (`-a '*'` or `--all`). */
+  allAgents: boolean;
 }
+
+/** A preview's agent fields when no command named any agents. */
+export const NO_REQUESTED_AGENTS: Pick<GitPreview, "agents" | "unknownAgents" | "allAgents"> = {
+  agents: [],
+  unknownAgents: [],
+  allAgents: false,
+};
 
 export interface InstallSelection {
   relPath: string;

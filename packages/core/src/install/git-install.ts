@@ -1,4 +1,10 @@
-import type { ConfirmOptions, GitPreview, InstallSelection, Skill } from "@loadout/shared";
+import {
+  type ConfirmOptions,
+  type GitPreview,
+  type InstallSelection,
+  NO_REQUESTED_AGENTS,
+  type Skill,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { cancelled, invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
@@ -20,6 +26,7 @@ import type { InstallIntoLibrary } from "./library";
 import { createPreviewSessions, emitProgress } from "./preview-sessions";
 import { listRepoSkills, resolveSkillDir } from "./repo-scan";
 import { matchRequested } from "./requested";
+import { type SkillsCommand, agentKeyFor, parseSkillsCommand } from "./skills-command";
 import { createWebPreviews } from "./web-install";
 import { isSiteCandidate } from "./well-known";
 
@@ -33,6 +40,8 @@ export interface GitInstallerDeps {
   allowLocalGitSources?: boolean;
   /** How long an unconfirmed preview keeps its checkout (tests shorten it). */
   previewTtlMs?: number;
+  /** Every agent key there is, to read the agents a pasted `skills add` command names. */
+  agentKeys(): ReadonlySet<string>;
 }
 
 export interface GitInstaller {
@@ -132,6 +141,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         ),
         ...matchRequested(found, source.skill ? [source.skill, ...wanted] : wanted),
         redirectedTo: null,
+        ...NO_REQUESTED_AGENTS,
       };
     } finally {
       await cleanup?.();
@@ -160,8 +170,37 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     return previewRepository(key, text, wanted);
   }
 
+  /** Preview what a pasted `skills add` command installs, with its skills ticked. */
+  async function previewCommand(key: string, command: SkillsCommand): Promise<GitPreview> {
+    const preview = await previewSource(
+      key,
+      command.source,
+      command.allSkills ? [] : command.skills,
+    );
+    const known = deps.agentKeys();
+    const agents: string[] = [];
+    const unknownAgents: string[] = [];
+    for (const id of command.agents) {
+      const agentKey = agentKeyFor(id, known);
+      if (agentKey) {
+        if (!agents.includes(agentKey)) agents.push(agentKey);
+      } else unknownAgents.push(id);
+    }
+    return {
+      ...preview,
+      // `--skill '*'` or `--all` takes everything, whatever the source text named.
+      ...(command.allSkills ? { selected: null, missing: [] } : {}),
+      agents,
+      unknownAgents,
+      allAgents: command.allAgents,
+    };
+  }
+
   return {
-    previewGit: (input) => previewSource(input, input.trim()),
+    previewGit: (input) => {
+      const command = parseSkillsCommand(input);
+      return command ? previewCommand(input, command) : previewSource(input, input.trim());
+    },
 
     previewArchive: async (archivePath) => {
       const path = archivePath.trim();

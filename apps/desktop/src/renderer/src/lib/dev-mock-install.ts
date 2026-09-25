@@ -9,6 +9,7 @@
  * was redirected to another site, so confirming needs `acceptRedirect`.
  */
 import {
+  NO_REQUESTED_AGENTS,
   type BatchImportResult,
   type ConfirmOptions,
   type DiscoveredSkill,
@@ -20,7 +21,7 @@ import {
   type Skill,
   type SourceType,
 } from "@loadout/shared";
-import { guessSource } from "@/features/install/source-guess";
+import { commandSource, guessSource } from "@/features/install/source-guess";
 import { HOME, LIBRARY } from "@/lib/dev-mock-data";
 import { createMarketMockHandlers } from "@/lib/dev-mock-market";
 
@@ -106,6 +107,36 @@ function requested(
 }
 
 const MOVED_TO_HOST = "files.elsewhere.net";
+/** Agent ids the mock knows, as a pasted command spells them. */
+const MOCK_AGENT_IDS: Readonly<Record<string, string>> = {
+  "claude-code": "claude_code",
+  cursor: "cursor",
+  codex: "codex",
+  opencode: "opencode",
+};
+
+/** A pasted `skills add` command, read roughly: flags with values, `*` for every one. */
+function mockCommand(
+  text: string,
+): Pick<GitPreview, "agents" | "unknownAgents" | "allAgents"> & { skills: string[] } {
+  const tokens = text.trim().split(/\s+/);
+  const result = { skills: [] as string[], agents: [] as string[], unknownAgents: [] as string[] };
+  let allAgents = tokens.includes("--all");
+  let flag: "skill" | "agent" | null = null;
+  for (const token of tokens) {
+    if (token === "-s" || token === "--skill") flag = "skill";
+    else if (token === "-a" || token === "--agent") flag = "agent";
+    else if (token.startsWith("-")) flag = null;
+    else if (flag === "skill") result.skills.push(token);
+    else if (flag === "agent" && token.replaceAll("'", "") === "*") allAgents = true;
+    else if (flag === "agent") {
+      const key = MOCK_AGENT_IDS[token];
+      if (key) result.agents.push(key);
+      else result.unknownAgents.push(token);
+    }
+  }
+  return { ...result, allAgents };
+}
 
 const SITE_SKILLS = [
   { relPath: "orders", name: "orders", description: "Look up and refund orders." },
@@ -300,21 +331,26 @@ export function createInstallMockHandlers(
       return result;
     },
 
-    "install.previewGit": (repoUrl: string) =>
-      tracked(repoUrl, async (): Promise<GitPreview> => {
+    "install.previewGit": (typed: string) =>
+      tracked(typed, async (): Promise<GitPreview> => {
+        const source = commandSource(typed);
+        const command = source ? mockCommand(typed) : null;
+        const { skills: named, ...agents } = command ?? { ...NO_REQUESTED_AGENTS, skills: [] };
+        // Progress goes by the text as typed; the rest reads the source inside a command.
+        const repoUrl = source ?? typed;
         if (repoUrl.includes("offline")) ctx.fail("NETWORK", "Could not resolve host.");
         const kind = guessSource(repoUrl);
-        await clone(repoUrl, kind === "repository" ? "cloning" : "downloading");
+        await clone(typed, kind === "repository" ? "cloning" : "downloading");
         if (repoUrl.includes("private")) {
           ctx.fail("GIT_AUTH", "The repository refused access: authentication failed.");
         }
-        ctx.emitProgress({ key: repoUrl, phase: "scanning" });
+        ctx.emitProgress({ key: typed, phase: "scanning" });
         await wait(STEP_MS * 3);
-        checkCancelled(repoUrl);
+        checkCancelled(typed);
         const names = new Set(ctx.getSkills().map((entry) => entry.name));
         const previewId = `preview-${Date.now()}`;
         const redirectedTo = repoUrl.includes("moved") ? MOVED_TO_HOST : null;
-        previewUrls.set(previewId, { key: repoUrl, kind, local: false, redirectedTo });
+        previewUrls.set(previewId, { key: typed, kind, local: false, redirectedTo });
         if (kind !== "repository") {
           const skills = repoUrl.includes("empty") ? [] : webSkills(kind, repoUrl, names);
           return {
@@ -324,8 +360,9 @@ export function createInstallMockHandlers(
             branch: null,
             revision: null,
             skills,
-            ...requested(skills, null),
+            ...requested(skills, named[0] ?? null),
             redirectedTo,
+            ...agents,
           };
         }
         const skills = repoUrl.includes("empty")
@@ -338,8 +375,9 @@ export function createInstallMockHandlers(
           branch: repoUrl.includes("/tree/") || repoUrl.includes("#") ? "main" : null,
           revision: "4f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39",
           skills,
-          ...requested(skills, namedSkill(repoUrl)),
+          ...requested(skills, named[0] ?? namedSkill(repoUrl)),
           redirectedTo: null,
+          ...agents,
         };
       }),
     "install.previewArchive": async (archivePath: string): Promise<GitPreview> => {
@@ -356,6 +394,7 @@ export function createInstallMockHandlers(
         selected: null,
         missing: [],
         redirectedTo: null,
+        ...NO_REQUESTED_AGENTS,
       };
     },
     "install.confirmGit": async (

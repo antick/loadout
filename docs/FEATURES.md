@@ -76,6 +76,10 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
   link to a skill's `SKILL.md`, and a skills.sh skill page. `#branch` picks a branch or tag.
 - Naming a skill (`owner/repo@skill`, `#main@skill`) ticks only that skill in the preview; a name
   the repository does not hold is reported instead of guessed.
+- Paste the install command a skill page shows (`npx skills add owner/repo --skill x -a
+claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is previewed with the named
+  skills ticked, and after importing the deploy panel opens with the named agents ticked. Agent
+  names Loadout does not know are listed, not guessed. Nothing deploys until you confirm.
 - Git preview: the repository is cloned first, then you tick the skills you want and can rename
   each before it lands in the library.
 - No Git installed: public GitHub and GitLab repositories still install, update and preview. The

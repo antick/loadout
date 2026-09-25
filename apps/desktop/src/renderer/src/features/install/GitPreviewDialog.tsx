@@ -4,7 +4,7 @@ import type {
   InstallSelection,
   RepoSkillPreview,
 } from "@loadout/shared";
-import { GitBranch, GitCommitHorizontal, RefreshCw, SearchX, ShieldAlert } from "lucide-react";
+import { Bot, GitBranch, GitCommitHorizontal, RefreshCw, SearchX, ShieldAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
+import { useAgents } from "@/hooks/queries/agents";
 import { cn } from "@/lib/utils";
 
 /** Characters of a commit id shown in the header. */
@@ -77,6 +78,36 @@ function PreviewRow({ skill, checked, name, onToggle, onRename }: PreviewRowProp
         ) : null}
       </div>
     </li>
+  );
+}
+
+/** What a pasted `skills add … -a` command asked for, and which of its agents are unknown here. */
+function RequestedAgentsNotice({ preview }: { preview: GitPreview }): ReactNode {
+  const { t } = useTranslation();
+  const agents = useAgents();
+  const { unknownAgents, allAgents } = preview;
+  if (!allAgents && preview.agents.length === 0 && unknownAgents.length === 0) return null;
+  const names = preview.agents.map(
+    (key) => agents.data?.find((agent) => agent.key === key)?.displayName ?? key,
+  );
+  return (
+    <InlineNotice tone="info" icon={Bot}>
+      {allAgents || names.length > 0 ? (
+        <p>
+          {allAgents
+            ? t("install.git.agentsAll")
+            : t("install.git.agentsNamed", { names: names.join(", ") })}
+        </p>
+      ) : null}
+      {unknownAgents.length > 0 ? (
+        <p className="text-muted-foreground">
+          {t("install.git.agentsUnknown", {
+            count: unknownAgents.length,
+            names: unknownAgents.join(", "),
+          })}
+        </p>
+      ) : null}
+    </InlineNotice>
   );
 }
 
@@ -168,6 +199,8 @@ function PreviewForm({
           </label>
         </InlineNotice>
       ) : null}
+
+      <RequestedAgentsNotice preview={preview} />
 
       {preview.missing.length > 0 ? (
         <InlineNotice tone="warning" icon={SearchX}>

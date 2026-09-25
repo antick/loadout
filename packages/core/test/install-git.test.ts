@@ -65,6 +65,30 @@ describe("named skills and refs in the typed text", () => {
     await install.api.cancelPreview(plain.previewId);
   });
 
+  it("reads a pasted skills add command: its source, skills and agents", async () => {
+    const preview = await install.api.previewGit(
+      "npx skills add acme/skills --skill pdf -a claude-code nobody-knows",
+    );
+    expect(preview).toMatchObject({
+      repoUrl: "https://github.com/acme/skills.git",
+      selected: ["pdf"],
+      missing: [],
+      agents: ["claude_code"],
+      unknownAgents: ["nobody-knows"],
+      allAgents: false,
+    });
+    expect(
+      install.progressFor("npx skills add acme/skills --skill pdf -a claude-code nobody-knows"),
+    ).toContain("cloning");
+    const [pdf] = await install.api.confirmGit(preview.previewId, [{ relPath: "pdf", name: "" }]);
+    // The source is what the command installs from, not the whole command.
+    expect(pdf).toMatchObject({ sourceRef: "acme/skills", sourceSubpath: "skills/pdf" });
+
+    const all = await install.api.previewGit("npx skills add acme/skills@pdf --all");
+    expect(all).toMatchObject({ selected: null, allAgents: true });
+    await install.api.cancelPreview(all.previewId);
+  });
+
   it("opens a folder inside the repository from the shorthand and records the typed text", async () => {
     const preview = await install.api.previewGit("github:acme/skills/skills/pdf");
     expect(preview.skills.map((skill) => skill.name)).toEqual(["pdf"]);

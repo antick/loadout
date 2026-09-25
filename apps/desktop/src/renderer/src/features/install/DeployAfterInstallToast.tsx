@@ -1,6 +1,6 @@
 import type { Skill } from "@loadout/shared";
 import { X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { IconButton } from "@/components/IconButton";
@@ -11,9 +11,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 
+/** Agents to tick when the panel opens: some keys, or every agent. */
+export type DeployPreselection = readonly string[] | "all";
+
 export interface DeployAfterInstallToastProps {
   /** The skills that were just installed. */
   skills: readonly Skill[];
+  /** Ticked when the agents have loaded; keys of agents that are not available are ignored. */
+  preselect?: DeployPreselection;
   onClose: () => void;
 }
 
@@ -23,14 +28,24 @@ export interface DeployAfterInstallToastProps {
  */
 export function DeployAfterInstallToast({
   skills,
+  preselect,
   onClose,
 }: DeployAfterInstallToastProps): ReactNode {
   const { t } = useTranslation();
   const agents = useAvailableAgents();
   const apply = useApplySkills();
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
+  const seeded = useRef(false);
 
   const all = agents.data ?? [];
+
+  // Tick what the source asked for once the agent list is known, and only once.
+  useEffect(() => {
+    if (seeded.current || !preselect || !agents.data) return;
+    seeded.current = true;
+    const keys = agents.data.map((agent) => agent.key);
+    setChosen(new Set(preselect === "all" ? keys : keys.filter((key) => preselect.includes(key))));
+  }, [agents.data, preselect]);
   const allChosen = all.length > 0 && chosen.size === all.length;
 
   const toggle = (agentKey: string): void => {

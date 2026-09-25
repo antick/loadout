@@ -67,6 +67,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     install,
     allowLocalGitSources: deps.allowLocalGitSources,
     previewTtlMs: deps.previewTtlMs,
+    agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
   const scan = createScanService(ctx, { store, registry, install });
 

@@ -33,6 +33,7 @@ export const GIT_URL_EXAMPLES = [
   "https://github.com/owner/repo/tree/main/skills/my-skill",
   "git@github.com:owner/repo.git",
   "https://example.com/my-skill.zip",
+  "npx skills add owner/repo --skill my-skill",
 ] as const;
 
 /** A link to an archive; the backend decides for real, this only picks wording. */

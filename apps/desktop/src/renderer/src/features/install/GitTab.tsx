@@ -10,7 +10,12 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { GIT_DOWNLOAD_URL, GIT_URL_EXAMPLES } from "@/features/install/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
-import { SOURCE_KIND_ICONS, guessSource } from "@/features/install/source-guess";
+import {
+  COMMAND_ICON,
+  SOURCE_KIND_ICONS,
+  commandSource,
+  guessSource,
+} from "@/features/install/source-guess";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useCancelPreview, useConfirmGit, usePreviewGit } from "@/hooks/mutations/install";
@@ -78,7 +83,7 @@ export function GitTab(): ReactNode {
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<GitPreview | null>(null);
   const [emptyRepo, setEmptyRepo] = useState<Pick<GitPreview, "kind" | "repoUrl"> | null>(null);
-  const InputIcon = SOURCE_KIND_ICONS[guessSource(url)];
+  const InputIcon = commandSource(url) ? COMMAND_ICON : SOURCE_KIND_ICONS[guessSource(url)];
 
   const mounted = useRef(true);
   useEffect(() => {

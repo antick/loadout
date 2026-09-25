@@ -1,5 +1,10 @@
 import { relative } from "node:path";
-import type { GitPreview, RepoSkillPreview, Skill } from "@loadout/shared";
+import {
+  type GitPreview,
+  NO_REQUESTED_AGENTS,
+  type RepoSkillPreview,
+  type Skill,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { cancelled } from "../errors";
 import type { SkillStore } from "../skills/store";
@@ -93,6 +98,7 @@ export function createFetchedPreviews(
         skills: previewRows(store, found, options.installed),
         ...matchRequested(found, options.wanted ?? []),
         redirectedTo,
+        ...NO_REQUESTED_AGENTS,
       };
     } finally {
       await cleanup?.();

@@ -1,7 +1,10 @@
 import { ApiError, type InstallProgress, type Skill } from "@loadout/shared";
 import { createElement } from "react";
 import { toast } from "sonner";
-import { DeployAfterInstallToast } from "@/features/install/DeployAfterInstallToast";
+import {
+  DeployAfterInstallToast,
+  type DeployPreselection,
+} from "@/features/install/DeployAfterInstallToast";
 import { INSTALL_SUCCESS_TOAST_MS } from "@/features/install/constants";
 import { onAppEvent } from "@/lib/events";
 import { i18n } from "@/lib/i18n";
@@ -29,6 +32,11 @@ export interface InstallTaskSuccess {
   skills?: readonly Skill[];
   /** Offer "View" (opening the library) even though the result carries no skills. */
   viewLibrary?: boolean;
+  /**
+   * Agents the source asked for (a pasted `skills add … -a` command): the deploy panel opens at
+   * once with them ticked, and nothing is deployed until the user confirms.
+   */
+  deployTo?: DeployPreselection;
 }
 
 export interface InstallTaskOptions<T> {
@@ -145,10 +153,14 @@ export function cancelInstallTask(key: string): void {
   });
 }
 
-function showDeployToast(skills: readonly Skill[]): void {
+function showDeployToast(skills: readonly Skill[], preselect?: DeployPreselection): void {
   toast.custom(
     (toastId) =>
-      createElement(DeployAfterInstallToast, { skills, onClose: () => toast.dismiss(toastId) }),
+      createElement(DeployAfterInstallToast, {
+        skills,
+        preselect,
+        onClose: () => toast.dismiss(toastId),
+      }),
     { duration: Number.POSITIVE_INFINITY },
   );
 }
@@ -178,6 +190,7 @@ function showSuccessToast(
         ? { label: i18n.t("install.toast.deploy"), onClick: () => showDeployToast(skills) }
         : undefined,
   });
+  if (skills.length > 0 && success.deployTo) showDeployToast(skills, success.deployTo);
 }
 
 function showFailureToast(id: string, error: unknown, navigation: InstallTaskNavigation): void {
