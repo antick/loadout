@@ -53,6 +53,7 @@ import type {
   BatchImportResult,
   GitPreview,
   InstallSelection,
+  ConfirmOptions,
   MarketBoard,
   MarketSkill,
   ScanResult,
@@ -135,7 +136,12 @@ export interface InstallApi {
   previewGit(repoUrl: string): Promise<GitPreview>;
   /** List the skills in an archive file, for archives that hold more than one. */
   previewArchive(archivePath: string): Promise<GitPreview>;
-  confirmGit(previewId: string, items: InstallSelection[]): Promise<Skill[]>;
+  /** Refused while the preview's download moved to another site and `acceptRedirect` is unset. */
+  confirmGit(
+    previewId: string,
+    items: InstallSelection[],
+    options?: ConfirmOptions,
+  ): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
   fromMarket(source: string, skillId: string): Promise<Skill>;
   /** Returns whether anything was running under that key. */

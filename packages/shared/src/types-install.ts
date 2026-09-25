@@ -16,9 +16,12 @@ export interface RepoSkillPreview {
 export interface GitPreview {
   /** Handle for confirm / cancel. */
   previewId: string;
-  /** A Git repository, or an archive (a link on the web or a file on this computer). */
-  kind: "repository" | "archive";
-  /** Clone URL of a repository; the link or file path of an archive. */
+  /**
+   * A Git repository, an archive (a link on the web or a file on this computer), a lone
+   * `SKILL.md` on the web, or a site that publishes skills at a well-known address.
+   */
+  kind: "repository" | "archive" | "file" | "site";
+  /** Clone URL of a repository; the link or file path of an archive or file; a site's address. */
   repoUrl: string;
   branch: string | null;
   revision: string | null;
@@ -27,11 +30,21 @@ export interface GitPreview {
   selected: string[] | null;
   /** Skills the typed text asked for by name that the source does not hold. */
   missing: string[];
+  /**
+   * Host of another site a download link was sent on to. Installing needs the user to accept it
+   * (`acceptRedirect`), because the link no longer says where the files come from.
+   */
+  redirectedTo: string | null;
 }
 
 export interface InstallSelection {
   relPath: string;
   name: string;
+}
+
+export interface ConfirmOptions {
+  /** The user saw {@link GitPreview.redirectedTo} and still wants to install. */
+  acceptRedirect?: boolean;
 }
 
 export type InstallPhase =

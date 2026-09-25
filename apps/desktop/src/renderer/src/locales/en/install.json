@@ -12,7 +12,7 @@
       },
       "git": {
         "label": "Git or link",
-        "subtitle": "Fetch a repository or a .zip link and pick what to keep"
+        "subtitle": "Fetch a repository, a site or a link and pick what to keep"
       },
       "scan": {
         "label": "Agent folders",
@@ -23,8 +23,8 @@
       "starting": "Getting ready…",
       "cloning": "Fetching the repository…",
       "cloningPercent": "Fetching the repository… {{percent}}%",
-      "downloading": "Downloading the archive…",
-      "downloadingPercent": "Downloading the archive… {{percent}}%",
+      "downloading": "Downloading…",
+      "downloadingPercent": "Downloading… {{percent}}%",
       "scanning": "Looking for skills…",
       "installing": "Copying into the library…",
       "installingNamed": "Copying {{name}} into the library…",
@@ -50,7 +50,9 @@
       "imported_other": "Imported {{count}} skills",
       "view": "View",
       "deploy": "Deploy to agents…",
-      "downloading": "Downloading the archive"
+      "downloading": "Downloading the archive",
+      "downloadingFile": "Downloading the file",
+      "fetchingSite": "Fetching {{host}}"
     },
     "errors": {
       "generic": "The install did not finish.",
@@ -126,8 +128,8 @@
       "dropHint": "Drop a skill folder or an archive (.zip, .skill, .tar.gz) anywhere here, or choose one below."
     },
     "git": {
-      "urlLabel": "Repository or archive link",
-      "urlHint": "Nothing is installed yet: the repository or archive is fetched first so you can choose. A link to a .zip or .skill file works too.",
+      "urlLabel": "Repository, site or link",
+      "urlHint": "Nothing is installed yet: it is fetched first so you can choose. Works with Git repositories, links to an archive or a SKILL.md, and sites that publish skills (a /.well-known/agent-skills index).",
       "examples": "For example",
       "preview": "Preview",
       "previewTitle_one": "{{count}} skill found",
@@ -139,15 +141,37 @@
       "alreadyInstalled": "Already in the library. Importing it again updates that copy.",
       "importSelected_one": "Import selected ({{count}})",
       "importSelected_other": "Import selected ({{count}})",
-      "emptyTitle": "No skills in this repository",
-      "emptyDescription": "A skill is a folder with a SKILL.md file. For a large repository, paste the link to the exact folder instead.",
+      "empty": {
+        "repository": {
+          "title": "No skills in this repository",
+          "description": "A skill is a folder with a SKILL.md file. For a large repository, paste the link to the exact folder instead."
+        },
+        "archive": {
+          "title": "No skills in this archive",
+          "description": "A skill is a folder with a SKILL.md file. This archive has none."
+        },
+        "file": {
+          "title": "This file is not a skill",
+          "description": "A skill's SKILL.md starts with a name and a description between --- lines."
+        },
+        "site": {
+          "title": "No skills could be read from this site",
+          "description": "The site lists skills, but none of them arrived in a usable shape."
+        }
+      },
+      "kind": {
+        "repository": "Git repository",
+        "archive": "Archive",
+        "file": "SKILL.md file",
+        "site": "Site with a skills index"
+      },
+      "redirected": "This download moved to {{host}}, a different site than the link you pasted. Only install it if you trust that site.",
+      "trustHost": "I trust {{host}}",
       "privateTitle": "Private repositories",
       "privateDescription": "Cloning uses the Git on this computer, so whatever works in your terminal works here: an SSH key for git@ addresses, or a credential helper for https. {{app}} never asks for or stores a Git password.",
       "noGitTitle": "Git is not installed",
       "noGitDescription": "Public repositories on GitHub and GitLab still install: {{app}} downloads them directly. Private repositories and other hosts need Git.",
-      "getGit": "Get Git",
-      "emptyArchiveTitle": "No skills in this archive",
-      "emptyArchiveDescription": "A skill is a folder with a SKILL.md file. This archive has none."
+      "getGit": "Get Git"
     },
     "scan": {
       "loadFailed": "Could not scan this computer",

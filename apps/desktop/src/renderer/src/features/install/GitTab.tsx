@@ -1,12 +1,5 @@
-import type { GitPreview, InstallSelection } from "@loadout/shared";
-import {
-  ExternalLink,
-  FileArchive,
-  GitBranch,
-  KeyRound,
-  PackageSearch,
-  TriangleAlert,
-} from "lucide-react";
+import type { ConfirmOptions, GitPreview, InstallSelection } from "@loadout/shared";
+import { ExternalLink, KeyRound, PackageSearch, TriangleAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
@@ -14,13 +7,10 @@ import { ProgressPanel } from "@/components/ProgressPanel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import {
-  ARCHIVE_LINK_PATTERN,
-  GIT_DOWNLOAD_URL,
-  GIT_URL_EXAMPLES,
-} from "@/features/install/constants";
+import { GIT_DOWNLOAD_URL, GIT_URL_EXAMPLES } from "@/features/install/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
+import { SOURCE_KIND_ICONS, guessSource } from "@/features/install/source-guess";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useCancelPreview, useConfirmGit, usePreviewGit } from "@/hooks/mutations/install";
@@ -88,7 +78,7 @@ export function GitTab(): ReactNode {
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<GitPreview | null>(null);
   const [emptyRepo, setEmptyRepo] = useState<Pick<GitPreview, "kind" | "repoUrl"> | null>(null);
-  const isLink = ARCHIVE_LINK_PATTERN.test(url.trim());
+  const InputIcon = SOURCE_KIND_ICONS[guessSource(url)];
 
   const mounted = useRef(true);
   useEffect(() => {
@@ -123,10 +113,14 @@ export function GitTab(): ReactNode {
     setPreview(null);
   };
 
-  const confirm = async (confirmed: GitPreview, items: InstallSelection[]): Promise<void> => {
+  const confirm = async (
+    confirmed: GitPreview,
+    items: InstallSelection[],
+    options: ConfirmOptions,
+  ): Promise<void> => {
     // Confirming consumes the checkout whether or not it works, so the dialog closes right away.
     setPreview(null);
-    const installed = await confirmGit(confirmed, items);
+    const installed = await confirmGit(confirmed, items, options);
     if (installed && mounted.current) setUrl("");
   };
 
@@ -137,7 +131,9 @@ export function GitTab(): ReactNode {
           <FieldLabel htmlFor="install-git-url">{t("install.git.urlLabel")}</FieldLabel>
           <div className="flex items-center gap-2">
             <InputGroup className="h-9 flex-1">
-              <InputGroupAddon>{isLink ? <FileArchive /> : <GitBranch />}</InputGroupAddon>
+              <InputGroupAddon>
+                <InputIcon />
+              </InputGroupAddon>
               <InputGroupInput
                 id="install-git-url"
                 value={url}
@@ -186,16 +182,8 @@ export function GitTab(): ReactNode {
       {emptyRepo && !running ? (
         <EmptyState
           icon={PackageSearch}
-          title={t(
-            emptyRepo.kind === "archive"
-              ? "install.git.emptyArchiveTitle"
-              : "install.git.emptyTitle",
-          )}
-          description={t(
-            emptyRepo.kind === "archive"
-              ? "install.git.emptyArchiveDescription"
-              : "install.git.emptyDescription",
-          )}
+          title={t(`install.git.empty.${emptyRepo.kind}.title`)}
+          description={t(`install.git.empty.${emptyRepo.kind}.description`)}
           className="rounded-lg border border-dashed"
         >
           <span className="max-w-full truncate font-mono text-xs text-muted-foreground">
@@ -209,7 +197,7 @@ export function GitTab(): ReactNode {
       <GitPreviewDialog
         preview={preview}
         onDismiss={dismiss}
-        onConfirm={(confirmed, items) => void confirm(confirmed, items)}
+        onConfirm={(confirmed, items, options) => void confirm(confirmed, items, options)}
       />
     </div>
   );

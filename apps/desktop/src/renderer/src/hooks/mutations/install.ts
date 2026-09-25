@@ -1,5 +1,6 @@
 import type {
   BatchImportResult,
+  ConfirmOptions,
   DiscoveredSkill,
   GitPreview,
   InstallSelection,
@@ -10,8 +11,8 @@ import type {
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { ARCHIVE_LINK_PATTERN } from "@/features/install/constants";
 import type { InstallTaskSuccess } from "@/features/install/install-tasks";
+import { guessSource, hostOf } from "@/features/install/source-guess";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -102,9 +103,17 @@ export function useImportFolder(): (folder: string) => Promise<BatchImportResult
   );
 }
 
+/** Progress title for fetching typed text, by what it probably is. */
+const FETCH_TITLES = {
+  repository: "install.toast.cloning",
+  archive: "install.toast.downloading",
+  file: "install.toast.downloadingFile",
+  site: "install.toast.fetchingSite",
+} as const;
+
 /**
- * Fetch a repository, or download an archive link, and list its skills. Cancellable. Silent on
- * success: the dialog opens.
+ * Fetch a repository, a site or a link, and list its skills. Cancellable. Silent on success: the
+ * dialog opens.
  */
 export function usePreviewGit(): (repoUrl: string) => Promise<GitPreview | null> {
   const { t } = useTranslation();
@@ -113,11 +122,7 @@ export function usePreviewGit(): (repoUrl: string) => Promise<GitPreview | null>
     (repoUrl) =>
       run({
         key: repoUrl,
-        title: t(
-          ARCHIVE_LINK_PATTERN.test(repoUrl.trim())
-            ? "install.toast.downloading"
-            : "install.toast.cloning",
-        ),
+        title: t(FETCH_TITLES[guessSource(repoUrl)], { host: hostOf(repoUrl) }),
         run: () => api.install.previewGit(repoUrl),
         cancel: () => api.install.cancel(repoUrl),
       }),
@@ -140,15 +145,16 @@ export function usePreviewArchive(): UseMutationResult<GitPreview, unknown, stri
 export function useConfirmGit(): (
   preview: GitPreview,
   items: InstallSelection[],
+  options?: ConfirmOptions,
 ) => Promise<Skill[] | null> {
   const { t } = useTranslation();
   const { run } = useInstallTask();
   return useCallback(
-    (preview, items) =>
+    (preview, items, options) =>
       run({
         key: preview.repoUrl,
         title: t("install.toast.installingCount", { count: items.length }),
-        run: () => api.install.confirmGit(preview.previewId, items),
+        run: () => api.install.confirmGit(preview.previewId, items, options),
         success: (installed) => {
           const [only] = installed;
           return only && installed.length === 1

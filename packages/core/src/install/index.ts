@@ -15,6 +15,7 @@ export {
   type GitSource,
   type ListRefs,
   type RemoteRefs,
+  isPlainUrl,
   marketSourceToUrl,
   normalizeRepoUrl,
   parseGitSource,
@@ -43,7 +44,20 @@ export {
   createDownload,
   percentReporter,
 } from "./download";
-export { archiveLink, archiveLinkName } from "./archive-link";
+export { archiveLink, archiveLinkName, skillFileLink } from "./archive-link";
+export { crossSiteHost, siteOf } from "./redirects";
+export { skillFileFolder } from "./web-install";
+export {
+  type WellKnownEntry,
+  type WellKnownIndex,
+  fetchWellKnownSkill,
+  findWellKnownIndex,
+  isSiteCandidate,
+  isWellKnownIndexUrl,
+  parseWellKnownIndex,
+  readWellKnownIndex,
+  sha256Digest,
+} from "./well-known";
 export { GIT_NEEDED, withHttpFallback } from "./git-fallback";
 export { type HttpGit, createHttpGit, parseAdvertisement } from "./http-git";
 export {
@@ -60,4 +74,5 @@ export {
   archiveExtension,
   extractArchive,
   isArchivePath,
+  unpackArchiveInto,
 } from "./archive";

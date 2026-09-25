@@ -31,8 +31,9 @@ export interface CustomAgentInput {
 // ── Skills ──
 
 /**
- * Where a library skill came from, in the order filters list them. `url` is a `.zip` / `.skill`
- * archive linked on the web.
+ * Where a library skill came from, in the order filters list them. `url` is something on the web
+ * that is not a repository: an archive link, a link to a `SKILL.md`, or a skill a site publishes
+ * in its well-known index (then `sourceUrl` is the index and `sourceSubpath` the skill's name).
  */
 export const SOURCE_TYPES = ["local", "import", "git", "marketplace", "url"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];

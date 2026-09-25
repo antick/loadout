@@ -60,8 +60,16 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
 
 - From a folder, from an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`), or by dropping either onto the page. An
   archive holding several skills opens the same pick-and-rename list as a Git repository.
-- From a link to an archive in any of those formats, pasted where a Git URL goes. The skill is marked
-  **Link**; checking it downloads the link again and compares, and **Download again** updates it.
+- From a link to an archive in any of those formats, or to a lone `SKILL.md`, pasted where a Git
+  URL goes. The skill is marked **Link**; checking it downloads the link again and compares, and
+  **Download again** updates it.
+- From a site that publishes skills at `/.well-known/agent-skills/index.json` (or the older
+  `/.well-known/skills/`), e.g. `https://mintlify.com/docs`. Both index formats are read, each
+  download must match the digest the site lists, and a path only takes the skills below it.
+  Checking downloads the skill again; one the site stopped listing shows as missing at source.
+- A download link that moves to another site (not `github.com` to `codeload.github.com`, which is
+  one site) says so in the preview, and Import stays off until you tick that you trust the site.
+  The CLI asks for `--yes`.
 - Import every skill inside a folder in one go, with live progress.
 - From Git: `https`, `ssh`, `git@`, `owner/repo`, `owner/repo/path/in/repo`, `github:` and
   `gitlab:` prefixes, GitHub and GitLab tree URLs that carry a branch and a subfolder, a GitHub

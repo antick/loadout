@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BrowserWindow, app, net, session, shell } from "electron";
+import { BrowserWindow, app, session, shell } from "electron";
 import { AppError, type Core, createCore } from "@loadout/core";
 import {
   APP_DATA_DIR_NAME,
@@ -29,6 +29,7 @@ import {
 import { createEventSender, registerIpc } from "./ipc";
 import { createSecretStore } from "./secrets";
 import { type TrayController, createTrayController } from "./tray-controller";
+import { appFetch } from "./net-fetch";
 import { locateApp } from "./update/locate";
 import { type UpdateService, createUpdateService } from "./update/service";
 import { type FolderWatcher, watchFolders } from "./watcher";
@@ -217,8 +218,7 @@ function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService 
     feedUrl: override || (app.isPackaged ? UPDATE_FEED_URL : null),
     updatesDir: join(appDataDir, UPDATES_DIR),
     logsDir,
-    // `net.fetch` honours the session proxy, which follows the proxy setting.
-    fetchImpl: ((input, init) => net.fetch(input as string, init as RequestInit)) as typeof fetch,
+    fetchImpl: appFetch,
     emit: (status) => send("app-update:status", status),
     quit,
     openPath: (path) => shell.openPath(path),
@@ -259,8 +259,7 @@ function start(): void {
       send(event, payload);
     },
     echoLogs: !app.isPackaged,
-    // `net.fetch` honours the session proxy, which follows the proxy setting.
-    fetchImpl: ((input, init) => net.fetch(input as string, init as RequestInit)) as typeof fetch,
+    fetchImpl: appFetch,
     host: {
       appVersion: app.getVersion(),
       revealPath: revealInFileManager,

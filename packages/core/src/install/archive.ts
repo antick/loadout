@@ -167,11 +167,23 @@ export async function unpackArchive(data: Buffer, name: string): Promise<Unpacke
   const stem = file.slice(0, file.length - extension.length);
   const root = join(parent, trySanitizeSkillName(stem) ?? FALLBACK_ARCHIVE_NAME);
   try {
-    if (isTarData(data, file)) unpackTar(data, root);
-    else unpackZip(data, root);
+    unpackArchiveInto(data, file, root);
     return { root, cleanup };
   } catch (error) {
     await cleanup();
+    throw error;
+  }
+}
+
+/**
+ * Unpack archive bytes into `root`, which the caller owns and cleans up. `name` is only a hint for
+ * the format when the bytes do not say.
+ */
+export function unpackArchiveInto(data: Buffer, name: string, root: string): void {
+  try {
+    if (isTarData(data, name)) unpackTar(data, root);
+    else unpackZip(data, root);
+  } catch (error) {
     if (isAppError(error)) throw error;
     throw invalid(`Could not read the archive: ${errorMessage(error)}`);
   }

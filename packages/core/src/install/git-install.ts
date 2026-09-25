@@ -1,25 +1,27 @@
-import { relative } from "node:path";
-import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
+import type { ConfirmOptions, GitPreview, InstallSelection, Skill } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { cancelled, invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
-import { toPosix } from "../util/fs";
-import { listArchiveSkills, unpackArchive, unpackArchiveFile } from "./archive";
-import { archiveLink, archiveLinkName } from "./archive-link";
+import { unpackArchiveFile } from "./archive";
+import { archiveLink, skillFileLink } from "./archive-link";
 import type { CancelRegistry } from "./cancel";
-import { type Download, percentReporter } from "./download";
+import type { Download } from "./download";
+import { createFetchedPreviews, previewRows, subpathOf } from "./fetched-preview";
 import type { GitClient } from "./git-client";
 import {
   type GitSource,
+  isPlainUrl,
   marketSourceToUrl,
   normalizeRepoUrl,
   parseGitSource,
   resolveTreeRef,
 } from "./git-source";
-import type { InstallIntoLibrary, InstallRecord } from "./library";
+import type { InstallIntoLibrary } from "./library";
 import { createPreviewSessions, emitProgress } from "./preview-sessions";
-import { type FoundSkill, listRepoSkills, resolveSkillDir } from "./repo-scan";
+import { listRepoSkills, resolveSkillDir } from "./repo-scan";
 import { matchRequested } from "./requested";
+import { createWebPreviews } from "./web-install";
+import { isSiteCandidate } from "./well-known";
 
 export interface GitInstallerDeps {
   store: SkillStore;
@@ -34,11 +36,15 @@ export interface GitInstallerDeps {
 }
 
 export interface GitInstaller {
-  /** A Git repository, or a link to an archive. */
+  /** A Git repository, a link to an archive or a `SKILL.md`, or a site that publishes skills. */
   previewGit(input: string): Promise<GitPreview>;
   /** An archive file on this computer (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`). */
   previewArchive(archivePath: string): Promise<GitPreview>;
-  confirmGit(previewId: string, items: InstallSelection[]): Promise<Skill[]>;
+  confirmGit(
+    previewId: string,
+    items: InstallSelection[],
+    options?: ConfirmOptions,
+  ): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
   fromMarket(source: string, skillId: string): Promise<Skill>;
   /** Delete every checkout still waiting for a confirm. Call on shutdown. */
@@ -47,21 +53,16 @@ export interface GitInstaller {
 
 const PERCENT_TOTAL = 100;
 
-/** Folder of a skill relative to `root`; null when the skill is the root itself. */
-function subpathOf(root: string, dir: string): string | null {
-  return toPosix(relative(root, dir)) || null;
-}
-
 export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): GitInstaller {
   const { store, git, download, cancels, install } = deps;
   const sessions = createPreviewSessions(ctx, install, deps.previewTtlMs);
+  const previewFetched = createFetchedPreviews(ctx, { store, cancels, sessions });
+  const web = createWebPreviews(ctx, { download, cancels, previewFetched });
 
-  /** Forward the download percentage of a checkout or an archive. */
-  function percentProgress(
-    key: string,
-    phase: "cloning" | "downloading" = "cloning",
-  ): (percent: number) => void {
-    return (percent) => emitProgress(ctx, key, phase, { current: percent, total: PERCENT_TOTAL });
+  /** Forward the download percentage of a checkout. */
+  function percentProgress(key: string): (percent: number) => void {
+    return (percent) =>
+      emitProgress(ctx, key, "cloning", { current: percent, total: PERCENT_TOTAL });
   }
 
   /** Settle the branch / subpath split of a tree URL against the refs the remote really has. */
@@ -71,18 +72,6 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       git.listRefs(url, { signal }),
     );
     return { ...source, ...split, treeTail: null };
-  }
-
-  function previewSkills(
-    found: FoundSkill[],
-    installed: (skill: Skill) => boolean,
-  ): RepoSkillPreview[] {
-    return found.map((skill) => ({
-      relPath: skill.relPath,
-      name: skill.name,
-      description: skill.description,
-      alreadyInstalled: store.findByName(skill.name).some(installed),
-    }));
   }
 
   /**
@@ -136,11 +125,13 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         repoUrl: source.cloneUrl,
         branch: source.branch,
         revision: checkout.revision,
-        skills: previewSkills(
+        skills: previewRows(
+          store,
           found,
           (s) => s.sourceUrl !== null && normalizeRepoUrl(s.sourceUrl) === repoIdentity,
         ),
         ...matchRequested(found, source.skill ? [source.skill, ...wanted] : wanted),
+        redirectedTo: null,
       };
     } finally {
       await cleanup?.();
@@ -149,93 +140,45 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
   }
 
   /**
-   * Download (or read) an archive, unpack it and list its skills. `record` gives the source
-   * fields of a skill at `subpath` inside the archive (null when the archive root is the skill).
+   * Understand the typed text and preview what it points at: an archive link, a `SKILL.md` link, a
+   * site with a skills index, or else a repository. `wanted` names skills to tick.
    */
-  async function previewUnpacked(
+  async function previewSource(
     key: string,
-    shownAs: string,
-    unpack: (signal: AbortSignal) => Promise<{ root: string; cleanup(): Promise<void> }>,
-    record: (subpath: string | null) => InstallRecord,
-    installed: (skill: Skill) => boolean,
+    text: string,
+    wanted: readonly string[] = [],
   ): Promise<GitPreview> {
-    const handle = cancels.register(key);
-    let cleanup: (() => Promise<void>) | null = null;
-    try {
-      const archive = await unpack(handle.signal);
-      cleanup = archive.cleanup;
-      emitProgress(ctx, key, "scanning");
-      const found = listArchiveSkills(archive.root);
-      if (handle.signal.aborted) throw cancelled();
-      const previewId = await sessions.open({
-        key,
-        dirs: new Map(found.map((skill) => [skill.relPath, skill.dir])),
-        record: (dir) => record(subpathOf(archive.root, dir)),
-        cleanup: archive.cleanup,
-      });
-      cleanup = null;
-      return {
-        previewId,
-        kind: "archive",
-        repoUrl: shownAs,
-        branch: null,
-        revision: null,
-        skills: previewSkills(found, installed),
-        selected: null,
-        missing: [],
-      };
-    } finally {
-      await cleanup?.();
-      handle.done();
+    const link = archiveLink(text);
+    if (link) return web.archiveLink(key, link, wanted);
+    const file = skillFileLink(text);
+    if (file) return web.skillFile(key, file);
+    // Only an address no repository pattern claimed can be a site; the rest stay Git sources.
+    if (isSiteCandidate(text) && isPlainUrl(text)) {
+      const index = await web.findSite(key, text);
+      if (index) return web.site(key, text, index, wanted);
     }
-  }
-
-  async function previewLink(input: string, link: string): Promise<GitPreview> {
-    return previewUnpacked(
-      input,
-      link,
-      async (signal) => {
-        emitProgress(ctx, input, "downloading");
-        const data = await download(link, {
-          signal,
-          subject: "The archive",
-          onProgress: percentReporter(percentProgress(input, "downloading")),
-        });
-        if (signal.aborted) throw cancelled();
-        return unpackArchive(data, archiveLinkName(link));
-      },
-      (subpath) => ({
-        sourceType: "url",
-        sourceRef: link,
-        sourceUrl: link,
-        sourceSubpath: subpath,
-        updateStatus: "up_to_date",
-      }),
-      (s) => s.sourceType === "url" && s.sourceRef === link,
-    );
+    return previewRepository(key, text, wanted);
   }
 
   return {
-    previewGit: async (input) => {
-      const link = archiveLink(input);
-      return link ? previewLink(input, link) : previewRepository(input, input);
-    },
+    previewGit: (input) => previewSource(input, input.trim()),
 
     previewArchive: async (archivePath) => {
       const path = archivePath.trim();
       if (!path) throw invalid("Archive path is required");
-      return previewUnpacked(
-        archivePath,
-        path,
-        () => unpackArchiveFile(path),
-        (subpath) => ({
+      return previewFetched({
+        key: archivePath,
+        kind: "archive",
+        shownAs: path,
+        fetch: () => unpackArchiveFile(path),
+        record: (subpath) => ({
           sourceType: "local",
           sourceRef: path,
           sourceSubpath: subpath,
           updateStatus: "local_only",
         }),
-        (s) => s.sourceType === "local" && s.sourceRef === path,
-      );
+        installed: (s) => s.sourceType === "local" && s.sourceRef === path,
+      });
     },
 
     confirmGit: sessions.confirm,

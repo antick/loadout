@@ -1,5 +1,10 @@
-import type { GitPreview, InstallSelection, RepoSkillPreview } from "@loadout/shared";
-import { FileArchive, GitBranch, GitCommitHorizontal, RefreshCw, SearchX } from "lucide-react";
+import type {
+  ConfirmOptions,
+  GitPreview,
+  InstallSelection,
+  RepoSkillPreview,
+} from "@loadout/shared";
+import { GitBranch, GitCommitHorizontal, RefreshCw, SearchX, ShieldAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -14,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
 import { cn } from "@/lib/utils";
 
 /** Characters of a commit id shown in the header. */
@@ -24,7 +30,7 @@ export interface GitPreviewDialogProps {
   preview: GitPreview | null;
   /** Closed without importing: the caller discards the checkout. */
   onDismiss: (preview: GitPreview) => void;
-  onConfirm: (preview: GitPreview, items: InstallSelection[]) => void;
+  onConfirm: (preview: GitPreview, items: InstallSelection[], options: ConfirmOptions) => void;
 }
 
 interface PreviewRowProps {
@@ -87,9 +93,12 @@ function PreviewForm({
   preview: GitPreview;
   submitRef: RefObject<HTMLButtonElement | null>;
   onDismiss: () => void;
-  onConfirm: (items: InstallSelection[]) => void;
+  onConfirm: (items: InstallSelection[], options: ConfirmOptions) => void;
 }): ReactNode {
   const { t } = useTranslation();
+  const [trusted, setTrusted] = useState(false);
+  const needsTrust = preview.redirectedTo !== null && !trusted;
+  const KindIcon = SOURCE_KIND_ICONS[preview.kind];
   const [checked, setChecked] = useState<ReadonlySet<string>>(
     () => new Set(preview.selected ?? preview.skills.map((skill) => skill.relPath)),
   );
@@ -114,7 +123,9 @@ function PreviewForm({
         relPath: skill.relPath,
         name: (names[skill.relPath] ?? skill.name).trim() || skill.name,
       }));
-    if (items.length > 0) onConfirm(items);
+    if (items.length > 0 && !needsTrust) {
+      onConfirm(items, { acceptRedirect: preview.redirectedTo !== null && trusted });
+    }
   };
 
   return (
@@ -124,7 +135,10 @@ function PreviewForm({
         <DialogDescription asChild>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span className="flex min-w-0 items-center gap-1 font-mono text-xs" data-selectable>
-              {preview.kind === "archive" ? <FileArchive className="size-3 shrink-0" /> : null}
+              <KindIcon
+                className="size-3 shrink-0"
+                aria-label={t(`install.git.kind.${preview.kind}`)}
+              />
               <span className="truncate" title={preview.repoUrl}>
                 {preview.repoUrl}
               </span>
@@ -144,6 +158,16 @@ function PreviewForm({
           </div>
         </DialogDescription>
       </DialogHeader>
+
+      {preview.redirectedTo ? (
+        <InlineNotice tone="warning" icon={ShieldAlert}>
+          <p>{t("install.git.redirected", { host: preview.redirectedTo })}</p>
+          <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm font-medium">
+            <Checkbox checked={trusted} onCheckedChange={(value) => setTrusted(value === true)} />
+            {t("install.git.trustHost", { host: preview.redirectedTo })}
+          </label>
+        </InlineNotice>
+      ) : null}
 
       {preview.missing.length > 0 ? (
         <InlineNotice tone="warning" icon={SearchX}>
@@ -185,7 +209,7 @@ function PreviewForm({
         <Button type="button" variant="ghost" onClick={onDismiss}>
           {t("common.cancel")}
         </Button>
-        <Button ref={submitRef} type="submit" disabled={checked.size === 0}>
+        <Button ref={submitRef} type="submit" disabled={checked.size === 0 || needsTrust}>
           {t("install.git.importSelected", { count: checked.size })}
         </Button>
       </DialogFooter>
@@ -221,7 +245,7 @@ export function GitPreviewDialog({
             preview={preview}
             submitRef={submit}
             onDismiss={() => onDismiss(preview)}
-            onConfirm={(items) => onConfirm(preview, items)}
+            onConfirm={(items, options) => onConfirm(preview, items, options)}
           />
         ) : null}
       </DialogContent>

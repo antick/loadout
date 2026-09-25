@@ -1,5 +1,7 @@
-import { isAbsolute, relative } from "node:path";
-import { MARKETPLACE_NAME, type Skill, type SourceType } from "@loadout/shared";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { isAbsolute, join, relative } from "node:path";
+import { APP_SLUG, MARKETPLACE_NAME, type Skill, type SourceType } from "@loadout/shared";
 import { AppError, invalid, notFound } from "../errors";
 import {
   type Download,
@@ -7,15 +9,20 @@ import {
   archiveLinkName,
   archiveSkillDir,
   extractArchive,
+  fetchWellKnownSkill,
   isArchivePath,
+  isWellKnownIndexUrl,
   marketSourceToUrl,
   normalizeRepoUrl,
   parseGitSource,
+  parseWellKnownIndex,
   redactUrl,
   resolveSkillDir,
+  skillFileFolder,
+  skillFileLink,
   unpackArchive,
 } from "../install";
-import { isSkillDir, statOrNull, toPosix } from "../util/fs";
+import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
 
 /**
  * Where a library skill's upstream lives and how to open it. Shared by check, update and the
@@ -129,6 +136,67 @@ const noCleanup = async (): Promise<void> => undefined;
  */
 export type DownloadCache = Map<string, Promise<Buffer>>;
 
+/** Download `link` once per round of checks. */
+function cachedDownload(
+  download: Download,
+  link: string,
+  subject: string,
+  cache?: DownloadCache,
+): Promise<Buffer> {
+  let pending = cache?.get(link);
+  if (!pending) {
+    pending = download(link, { subject });
+    cache?.set(link, pending);
+  }
+  return pending;
+}
+
+const SITE_CHECK_PREFIX = `${APP_SLUG}-site-check-`;
+
+/** Find the skill again in the index of the site it came from, and download it. */
+async function openSiteSource(
+  skill: Skill,
+  indexUrl: string,
+  download: Download,
+  cache?: DownloadCache,
+): Promise<OpenedSource> {
+  const name = skill.sourceSubpath;
+  if (!name) throw invalid("This skill does not record its name on the site it came from");
+  const data = await cachedDownload(download, indexUrl, "The skills index", cache);
+  let raw: unknown;
+  try {
+    raw = JSON.parse(data.toString("utf8"));
+  } catch {
+    throw invalid(`The skills index at ${redactUrl(indexUrl)} could not be read`);
+  }
+  const entries = parseWellKnownIndex(raw, indexUrl);
+  if (!entries) throw invalid(`${redactUrl(indexUrl)} is no longer a skills index`);
+  const entry = entries.find((candidate) => candidate.name === name);
+  if (!entry) throw notFound(`${name} is no longer published at ${new URL(indexUrl).host}`);
+  const root = await mkdtemp(join(tmpdir(), SITE_CHECK_PREFIX));
+  const cleanup = (): Promise<void> => removePath(root).catch(() => undefined);
+  try {
+    const dir = await fetchWellKnownSkill(download, entry, join(root, name));
+    return { dir, revision: LINK_REVISION, subpath: name, cleanup };
+  } catch (error) {
+    await cleanup();
+    throw error;
+  }
+}
+
+/** Download a lone `SKILL.md` again. */
+async function openSkillFileSource(
+  link: string,
+  download: Download,
+  cache?: DownloadCache,
+): Promise<OpenedSource> {
+  const folder = await skillFileFolder(
+    link,
+    await cachedDownload(download, link, "The file", cache),
+  );
+  return { dir: folder.root, revision: LINK_REVISION, subpath: null, cleanup: folder.cleanup };
+}
+
 async function openLinkSource(
   skill: Skill,
   download: Download,
@@ -136,11 +204,11 @@ async function openLinkSource(
 ): Promise<OpenedSource> {
   const link = skill.sourceRef;
   if (!link) throw invalid(MISSING_SOURCE_REF);
-  let pending = cache?.get(link);
-  if (!pending) {
-    pending = download(link, { subject: "The archive" });
-    cache?.set(link, pending);
+  if (isWellKnownIndexUrl(skill.sourceUrl)) {
+    return openSiteSource(skill, skill.sourceUrl, download, cache);
   }
+  if (skillFileLink(link)) return openSkillFileSource(link, download, cache);
+  const pending = cachedDownload(download, link, "The archive", cache);
   const archive = await unpackArchive(await pending, archiveLinkName(link));
   try {
     return {

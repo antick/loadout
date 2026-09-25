@@ -54,6 +54,8 @@ const GITHUB_SKILL_FILE =
   /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/blob\/(.+)\/skill\.md$/i;
 /** `https://host/group/repo/-/tree/branch/path`, the GitLab spelling, self-hosted too. */
 const GITLAB_TREE = /^(https:\/\/[^/\s]+)\/(.+?)(?:\.git)?\/-\/tree\/(.+)$/i;
+/** A GitLab page showing a skill's `SKILL.md`: the skill is the folder around it. */
+const GITLAB_SKILL_FILE = /^(https:\/\/[^/\s]+)\/(.+?)(?:\.git)?\/-\/blob\/(.+)\/skill\.md$/i;
 /** A skill page on the marketplace: `https://skills.sh/owner/repo/skill`. */
 const MARKET_PAGE = /^https:\/\/(?:www\.)?skills\.sh\/([\w.-]+)\/([\w.-]+)\/([\w.:-]+)\/?$/i;
 /** First path segments of the marketplace that are site pages, not owners. */
@@ -198,7 +200,7 @@ function parseWithoutFragment(text: string): GitSource {
     const [, owner = "", repo = "", rawTail = ""] = skillFile;
     return fromTreeTail(githubCloneUrl(owner, repo), rawTail);
   }
-  const gitlabTree = GITLAB_TREE.exec(text);
+  const gitlabTree = GITLAB_TREE.exec(text) ?? GITLAB_SKILL_FILE.exec(text);
   if (gitlabTree) {
     const [, origin = "", path = "", rawTail = ""] = gitlabTree;
     return fromTreeTail(`${origin}/${path}${GIT_SUFFIX}`, rawTail);
@@ -217,6 +219,24 @@ function parseWithoutFragment(text: string): GitSource {
 
   if (SHORTHAND_WITH_PATH.test(text)) return parseShorthand(text);
   return { cloneUrl: text, branch: null, subpath: null, treeTail: null, skill: null };
+}
+
+/**
+ * True when no repository pattern claims `text`: it is an address as typed, with no branch, path,
+ * skill name or host shorthand read out of it. Only such an address may be a site with an index.
+ */
+export function isPlainUrl(text: string): boolean {
+  try {
+    const source = parseGitSource(text);
+    return (
+      source.cloneUrl === text.trim() &&
+      source.branch === null &&
+      source.subpath === null &&
+      source.skill === null
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** Understand every accepted source form. Validates first, so callers need not. */

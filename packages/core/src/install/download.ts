@@ -14,6 +14,13 @@ export interface DownloadOptions {
   subject?: string;
   /** Address to name in messages when `url` is an internal one the user never typed. */
   label?: string;
+  /**
+   * Follow redirects one by one and report each new address. Without it redirects are followed
+   * silently, which is all most downloads need.
+   */
+  onRedirect?: (to: string) => void;
+  /** Give up after this long; defaults to five minutes. */
+  timeoutMs?: number;
 }
 
 /** Fetch a URL into memory, with a size cap, a timeout, cancelling and progress. */
@@ -34,6 +41,11 @@ const DEFAULT_SUBJECT = "The file";
 /** Answers that often mean "busy, ask again": GitLab sends 406 while it builds an archive. */
 const RETRY_STATUSES: ReadonlySet<number> = new Set([406, 429, 502, 503, 504]);
 const RETRY_DELAY_MS = 2000;
+/** Hops followed when redirects are followed by hand; browsers stop at about the same. */
+const MAX_REDIRECTS = 10;
+const REDIRECT_MIN = 300;
+const REDIRECT_MAX = 399;
+const WEB_PROTOCOLS: ReadonlySet<string> = new Set(["https:", "http:"]);
 
 const PERCENT_TOTAL = 100;
 
@@ -89,6 +101,21 @@ async function readBody(
   return Buffer.concat(chunks);
 }
 
+function isRedirect(response: Response): boolean {
+  return response.status >= REDIRECT_MIN && response.status <= REDIRECT_MAX;
+}
+
+/** Where a redirect points, resolved against the address that answered with it. */
+function redirectTarget(response: Response, from: string, shown: string): string {
+  const location = response.headers.get("location");
+  if (!location) throw new AppError("NETWORK", `${shown} sent a redirect without an address`);
+  const target = new URL(location, from);
+  if (!WEB_PROTOCOLS.has(target.protocol)) {
+    throw new AppError("NETWORK", `${shown} redirected to an address that is not http(s)`);
+  }
+  return target.toString();
+}
+
 /**
  * Downloads through `fetchImpl`: the desktop app passes a proxy-aware one, the CLI the built-in
  * `fetch`. Errors are AppErrors with the URL's credentials removed.
@@ -99,14 +126,26 @@ export function createDownload(fetchImpl: typeof fetch = fetch): Download {
     const limit = options.maxBytes ?? MAX_DOWNLOAD_BYTES;
     const shown = redactUrl(options.label ?? url);
     if (signal?.aborted) throw cancelled();
-    const timeout = AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS);
+    const timeout = AbortSignal.timeout(options.timeoutMs ?? DOWNLOAD_TIMEOUT_MS);
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-    const request = (): Promise<Response> =>
-      fetchImpl(url, {
+    const fetchOnce = (address: string): Promise<Response> =>
+      fetchImpl(address, {
         headers: { "User-Agent": APP_SLUG, ...(accept ? { Accept: accept } : {}) },
-        redirect: "follow",
+        redirect: options.onRedirect ? "manual" : "follow",
         signal: combined,
       });
+    const request = async (): Promise<Response> => {
+      if (!options.onRedirect) return fetchOnce(url);
+      let address = url;
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+        const response = await fetchOnce(address);
+        if (!isRedirect(response)) return response;
+        await response.body?.cancel().catch(() => undefined);
+        address = redirectTarget(response, address, shown);
+        options.onRedirect(address);
+      }
+      throw new AppError("NETWORK", `${shown} redirected too many times`);
+    };
     try {
       let response = await request();
       if (RETRY_STATUSES.has(response.status)) {

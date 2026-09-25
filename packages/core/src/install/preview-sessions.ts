@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { InstallPhase, InstallProgress, InstallSelection, Skill } from "@loadout/shared";
+import type {
+  ConfirmOptions,
+  InstallPhase,
+  InstallProgress,
+  InstallSelection,
+  Skill,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { invalid } from "../errors";
 import type { InstallIntoLibrary, InstallRecord } from "./library";
@@ -16,12 +22,14 @@ export interface PreviewSession {
   /** Source fields of a skill installed from `dir`. */
   record(dir: string): InstallRecord;
   cleanup(): Promise<void>;
+  /** Host of another site the download moved to; confirming needs `acceptRedirect`. */
+  redirectedTo?: string | null;
 }
 
 export interface PreviewSessions {
   /** Keep a session; returns its id. */
   open(session: PreviewSession): Promise<string>;
-  confirm(previewId: string, items: InstallSelection[]): Promise<Skill[]>;
+  confirm(previewId: string, items: InstallSelection[], options?: ConfirmOptions): Promise<Skill[]>;
   cancel(previewId: string): Promise<void>;
   /** Delete every session still waiting for a confirm. Call on shutdown. */
   dispose(): Promise<void>;
@@ -64,10 +72,16 @@ export function createPreviewSessions(
       return id;
     },
 
-    confirm: async (previewId, items) => {
+    confirm: async (previewId, items, options = {}) => {
       await sweepExpired();
       const session = sessions.get(previewId);
       if (!session) throw invalid(SESSION_EXPIRED);
+      // Checked before the session is spent, so the user can still confirm the host and retry.
+      if (session.redirectedTo && !options.acceptRedirect) {
+        throw invalid(
+          `The download moved to ${session.redirectedTo}. Confirm you trust that site to install from it.`,
+        );
+      }
       // Taken out first: a second confirm must not race this one for the same folder.
       sessions.delete(previewId);
       try {

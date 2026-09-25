@@ -1,27 +1,28 @@
 /**
- * DEV ONLY. Marketplace, install and scan handlers for the in-memory preview bridge in
+ * DEV ONLY. Install and scan handlers for the in-memory preview bridge in
  * `dev-mock.ts`. Installs take a moment and report progress so toasts, progress panels and Cancel
- * can be tried in a plain browser. Magic inputs: searching "offline" or cloning a URL containing
+ * can be tried in a plain browser. Magic inputs: cloning a URL containing
  * "offline" fails with NETWORK, "private" fails with GIT_AUTH, "empty" finds no skills. A link
  * ending in an archive extension is treated as an archive; an archive whose name contains "bundle"
- * holds several skills. A repository typed as `owner/repo@name` ticks only that skill.
+ * holds several skills. A repository typed as `owner/repo@name` ticks only that skill. A link to a
+ * SKILL.md holds one skill; any other web address is a site with three. A link containing "moved"
+ * was redirected to another site, so confirming needs `acceptRedirect`.
  */
 import {
-  MARKETPLACE_URL,
   type BatchImportResult,
+  type ConfirmOptions,
   type DiscoveredSkill,
   type ErrorCode,
   type GitPreview,
   type InstallProgress,
   type InstallSelection,
-  type MarketBoard,
-  type MarketSkill,
   type ScanResult,
   type Skill,
   type SourceType,
 } from "@loadout/shared";
-import { ARCHIVE_LINK_PATTERN } from "@/features/install/constants";
+import { guessSource } from "@/features/install/source-guess";
 import { HOME, LIBRARY } from "@/lib/dev-mock-data";
+import { createMarketMockHandlers } from "@/lib/dev-mock-market";
 
 export interface InstallMockContext {
   getSkills(): Skill[];
@@ -34,61 +35,6 @@ export interface InstallMockContext {
 const STEP_MS = 180;
 const CLONE_STEPS = 10;
 const PERCENT = 100;
-const BOARD_SIZE = 60;
-
-const SOURCES = [
-  "acme/frontend",
-  "acme/agent-skills",
-  "northwind/devtools",
-  "quietriver/writing",
-  "lumen-labs/data-skills",
-  "harbor/ops-playbooks",
-] as const;
-const TOPICS = [
-  "react-patterns",
-  "api-design",
-  "sql-tuning",
-  "release-notes",
-  "test-writer",
-  "pdf-toolkit",
-  "changelog",
-  "accessibility-audit",
-  "docker-compose",
-  "incident-report",
-  "data-cleaning",
-  "meeting-notes",
-  "regex-helper",
-  "commit-lint",
-  "design-tokens",
-  "onboarding-guide",
-  "log-triage",
-  "spreadsheet-formulas",
-  "terraform-review",
-  "prompt-library",
-] as const;
-
-function pick<T>(list: readonly T[], index: number): T {
-  return list[index % list.length] as T;
-}
-
-const CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 130 }, (_, index) => {
-  const source = pick(SOURCES, index * 7 + (index % 3));
-  const round = Math.floor(index / TOPICS.length);
-  const skillId = round === 0 ? pick(TOPICS, index) : `${pick(TOPICS, index)}-${round + 1}`;
-  return {
-    id: `${source}/${skillId}`,
-    skillId,
-    name: skillId,
-    source,
-    installs: Math.round(980_000 / (index + 1) ** 1.3) + ((index * 37) % 90),
-  };
-});
-
-const BOARD_ORDER: Record<MarketBoard, (index: number) => number> = {
-  all_time: (index) => index,
-  hot: (index) => (index * 17) % CATALOG.length,
-  trending: (index) => (index * 29 + 11) % CATALOG.length,
-};
 
 const DISCOVERED: Omit<DiscoveredSkill, "imported">[] = [
   {
@@ -159,6 +105,14 @@ function requested(
   return { selected: matches, missing: matches.length > 0 ? [] : [name] };
 }
 
+const MOVED_TO_HOST = "files.elsewhere.net";
+
+const SITE_SKILLS = [
+  { relPath: "orders", name: "orders", description: "Look up and refund orders." },
+  { relPath: "catalog", name: "catalog", description: "Search the product catalog." },
+  { relPath: "support", name: "support", description: "Answer support tickets in house style." },
+] as const;
+
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -179,7 +133,10 @@ export function createInstallMockHandlers(
   const running = new Set<string>();
   const importedFingerprints = new Set<string>(["commit-messages"]);
   /** The real backend reports confirm progress under the URL the preview was made from. */
-  const previewUrls = new Map<string, { key: string; kind: GitPreview["kind"]; local: boolean }>();
+  const previewUrls = new Map<
+    string,
+    { key: string; kind: GitPreview["kind"]; local: boolean; redirectedTo?: string | null }
+  >();
 
   /** Skills a mock archive holds: several for a "bundle", else one named after the file. */
   function archiveSkills(source: string): GitPreview["skills"] {
@@ -192,6 +149,22 @@ export function createInstallMockHandlers(
         }))
       : [{ relPath: baseName(source), name: baseName(source), description: "From an archive." }];
     return skills.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
+  }
+
+  /** Skills of a web source that is not a repository: an archive, a lone SKILL.md or a site. */
+  function webSkills(
+    kind: GitPreview["kind"],
+    url: string,
+    names: ReadonlySet<string>,
+  ): GitPreview["skills"] {
+    if (kind === "archive") return archiveSkills(url);
+    if (kind === "site") {
+      return SITE_SKILLS.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
+    }
+    const folder = url.split("/").at(-2) ?? "skill";
+    return [
+      { relPath: folder, name: folder, description: "From a link.", alreadyInstalled: false },
+    ];
   }
 
   function makeSkill(name: string, sourceType: SourceType, extra: Partial<Skill> = {}): Skill {
@@ -257,16 +230,6 @@ export function createInstallMockHandlers(
     }
   }
 
-  function withInstalled(entries: Omit<MarketSkill, "installed">[]): MarketSkill[] {
-    const installed = new Set(
-      ctx
-        .getSkills()
-        .filter((entry) => entry.sourceType === "marketplace")
-        .map((entry) => entry.sourceRef),
-    );
-    return entries.map((entry) => ({ ...entry, installed: installed.has(entry.id) }));
-  }
-
   function scanResult(): ScanResult {
     const skills = DISCOVERED.map((entry) => ({
       ...entry,
@@ -291,19 +254,8 @@ export function createInstallMockHandlers(
   }
 
   return {
+    ...createMarketMockHandlers(ctx),
     "app.pickArchive": () => `${HOME}/Downloads/pdf-toolkit.skill`,
-
-    "market.board": (board: MarketBoard) =>
-      withInstalled(
-        Array.from({ length: BOARD_SIZE }, (_, index) => pick(CATALOG, BOARD_ORDER[board](index))),
-      ),
-    "market.search": (query: string, limit?: number) => {
-      const needle = query.trim().toLowerCase();
-      if (needle === "offline") ctx.fail("NETWORK", `Could not resolve host: ${MARKETPLACE_URL}`);
-      return withInstalled(
-        CATALOG.filter((entry) => entry.id.toLowerCase().includes(needle)).slice(0, limit ?? 50),
-      );
-    },
 
     "install.fromMarket": (source: string, skillId: string) => {
       const key = `${source}/${skillId}`;
@@ -351,8 +303,8 @@ export function createInstallMockHandlers(
     "install.previewGit": (repoUrl: string) =>
       tracked(repoUrl, async (): Promise<GitPreview> => {
         if (repoUrl.includes("offline")) ctx.fail("NETWORK", "Could not resolve host.");
-        const archive = ARCHIVE_LINK_PATTERN.test(repoUrl.trim());
-        await clone(repoUrl, archive ? "downloading" : "cloning");
+        const kind = guessSource(repoUrl);
+        await clone(repoUrl, kind === "repository" ? "cloning" : "downloading");
         if (repoUrl.includes("private")) {
           ctx.fail("GIT_AUTH", "The repository refused access: authentication failed.");
         }
@@ -361,18 +313,19 @@ export function createInstallMockHandlers(
         checkCancelled(repoUrl);
         const names = new Set(ctx.getSkills().map((entry) => entry.name));
         const previewId = `preview-${Date.now()}`;
-        const kind = archive ? "archive" : "repository";
-        previewUrls.set(previewId, { key: repoUrl, kind, local: false });
-        if (archive) {
+        const redirectedTo = repoUrl.includes("moved") ? MOVED_TO_HOST : null;
+        previewUrls.set(previewId, { key: repoUrl, kind, local: false, redirectedTo });
+        if (kind !== "repository") {
+          const skills = repoUrl.includes("empty") ? [] : webSkills(kind, repoUrl, names);
           return {
             previewId,
             kind,
             repoUrl: repoUrl.trim(),
             branch: null,
             revision: null,
-            skills: repoUrl.includes("empty") ? [] : archiveSkills(repoUrl),
-            selected: null,
-            missing: [],
+            skills,
+            ...requested(skills, null),
+            redirectedTo,
           };
         }
         const skills = repoUrl.includes("empty")
@@ -386,6 +339,7 @@ export function createInstallMockHandlers(
           revision: "4f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39",
           skills,
           ...requested(skills, namedSkill(repoUrl)),
+          redirectedTo: null,
         };
       }),
     "install.previewArchive": async (archivePath: string): Promise<GitPreview> => {
@@ -401,12 +355,20 @@ export function createInstallMockHandlers(
         skills: archiveSkills(archivePath),
         selected: null,
         missing: [],
+        redirectedTo: null,
       };
     },
-    "install.confirmGit": async (previewId: string, items: InstallSelection[]) => {
+    "install.confirmGit": async (
+      previewId: string,
+      items: InstallSelection[],
+      options?: ConfirmOptions,
+    ) => {
       const installed: Skill[] = [];
       const preview = previewUrls.get(previewId);
       if (!preview) return ctx.fail("INVALID_INPUT", "The preview has expired. Try again.");
+      if (preview.redirectedTo && !options?.acceptRedirect) {
+        return ctx.fail("INVALID_INPUT", `The download moved to ${preview.redirectedTo}.`);
+      }
       previewUrls.delete(previewId);
       for (const [index, item] of items.entries()) {
         ctx.emitProgress({
@@ -418,7 +380,7 @@ export function createInstallMockHandlers(
         });
         await wait(STEP_MS * 3);
         const description = REPO_SKILLS.find((entry) => entry.name === item.relPath)?.description;
-        if (preview.kind === "archive") {
+        if (preview.kind !== "repository") {
           installed.push(
             makeSkill(item.name, preview.local ? "local" : "url", {
               description,
