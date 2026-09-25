@@ -128,12 +128,12 @@ export interface DeployApi {
 }
 
 export interface InstallApi {
-  /** A folder containing a skill, or a `.zip` / `.skill` archive. */
+  /** A folder containing a skill, or an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`). */
   fromPath(sourcePath: string, name?: string): Promise<Skill>;
   importFolder(folderPath: string): Promise<BatchImportResult>;
-  /** Fetch a Git repository, or download a `.zip` / `.skill` link, and list the skills in it. */
+  /** Fetch a Git repository, or download an archive link, and list the skills in it. */
   previewGit(repoUrl: string): Promise<GitPreview>;
-  /** List the skills in a `.zip` / `.skill` file, for archives that hold more than one. */
+  /** List the skills in an archive file, for archives that hold more than one. */
   previewArchive(archivePath: string): Promise<GitPreview>;
   confirmGit(previewId: string, items: InstallSelection[]): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;

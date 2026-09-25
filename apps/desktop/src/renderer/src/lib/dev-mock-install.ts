@@ -152,7 +152,7 @@ function baseName(path: string): string {
     path
       .split(/[\\/]/)
       .findLast(Boolean)
-      ?.replace(/\.(zip|skill)$/, "") ?? path
+      ?.replace(/\.(zip|skill|tar\.gz|tgz|tar)$/, "") ?? path
   );
 }
 

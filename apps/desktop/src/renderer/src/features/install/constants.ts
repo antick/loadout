@@ -35,14 +35,15 @@ export const GIT_URL_EXAMPLES = [
   "https://example.com/my-skill.zip",
 ] as const;
 
-/** A link to a `.zip` / `.skill` file; the backend decides for real, this only picks wording. */
-export const ARCHIVE_LINK_PATTERN = /^https?:\/\/[^?#\s]+\.(zip|skill)(?:[?#]\S*)?$/i;
+/** A link to an archive; the backend decides for real, this only picks wording. */
+export const ARCHIVE_LINK_PATTERN =
+  /^https?:\/\/[^?#\s]+\.(zip|skill|tar|tgz|tar\.gz)(?:[?#]\S*)?$/i;
 
 /** Where to get Git, offered when it is missing. */
 export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
 
 /** Archive types the installer accepts, for the option card's hint. */
-export const ARCHIVE_EXTENSIONS = [".zip", ".skill"] as const;
+export const ARCHIVE_EXTENSIONS = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 
 /** Errors listed in a batch result before the rest collapse into "and N more". */
 export const BATCH_ERRORS_MAX_VISIBLE = 5;

@@ -208,11 +208,16 @@ describe("install from an archive", () => {
   });
 
   it("rejects other file types and unreadable archives", async () => {
+    writeFile(join(sources, "skill.rar"), "x");
     writeFile(join(sources, "skill.tar.gz"), "x");
     writeFile(join(sources, "broken.zip"), "not a zip");
+    await expect(install.api.fromPath(join(sources, "skill.rar"))).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: "Unsupported archive format: .rar",
+    });
     await expect(install.api.fromPath(join(sources, "skill.tar.gz"))).rejects.toMatchObject({
       code: "INVALID_INPUT",
-      message: "Unsupported archive format: .gz",
+      message: "The archive is empty or damaged",
     });
     await expect(install.api.fromPath(join(sources, "broken.zip"))).rejects.toMatchObject({
       code: "INVALID_INPUT",

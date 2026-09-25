@@ -3,7 +3,7 @@ import { extname } from "node:path";
 import { type ExportResult, type Skill, formatBytes } from "@loadout/shared";
 import { type Zippable, zipSync } from "fflate";
 import { invalid } from "../errors";
-import { ARCHIVE_EXTENSIONS } from "../install/archive";
+import { ZIP_EXTENSIONS } from "../install/archive";
 import { isInside, normalizeAbsolutePath, statOrNull, writeFileAtomic } from "../util/fs";
 import { listContentFiles } from "../util/hash";
 
@@ -25,8 +25,8 @@ const COMPRESSION_LEVEL = 6;
 /** The file an export may write: absolute, an archive name, never inside the library. */
 export function exportTarget(destPath: string, skillsDir: string): string {
   const path = normalizeAbsolutePath(destPath, "Export path");
-  if (!ARCHIVE_EXTENSIONS.includes(extname(path).toLowerCase())) {
-    throw invalid(`Export to a ${ARCHIVE_EXTENSIONS.join(" or ")} file`);
+  if (!ZIP_EXTENSIONS.includes(extname(path).toLowerCase())) {
+    throw invalid(`Export to a ${ZIP_EXTENSIONS.join(" or ")} file`);
   }
   if (isInside(skillsDir, path)) throw invalid("Export somewhere outside the skill library");
   if (statOrNull(path)?.isDirectory()) throw invalid(`${path} is a folder`);

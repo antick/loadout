@@ -58,9 +58,9 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
 
 ### Install
 
-- From a folder, from a `.zip` or `.skill` archive, or by dropping either onto the page. An
+- From a folder, from an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`), or by dropping either onto the page. An
   archive holding several skills opens the same pick-and-rename list as a Git repository.
-- From a link to a `.zip` or `.skill` file, pasted where a Git URL goes. The skill is marked
+- From a link to an archive in any of those formats, pasted where a Git URL goes. The skill is marked
   **Link**; checking it downloads the link again and compares, and **Download again** updates it.
 - Import every skill inside a folder in one go, with live progress.
 - From Git: `https`, `ssh`, `git@`, `owner/repo`, and GitHub tree URLs that carry a branch and a

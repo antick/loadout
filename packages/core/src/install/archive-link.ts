@@ -2,7 +2,7 @@ import { posix } from "node:path";
 import { isArchivePath } from "./archive";
 
 /**
- * Links to a `.zip` / `.skill` file on the web. Recognised by the path of the URL alone, so a
+ * Links to an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`) on the web. Recognised by the path of the URL alone, so a
  * query string (`?download=1`) or a fragment does not hide it, and a repository URL never matches.
  */
 

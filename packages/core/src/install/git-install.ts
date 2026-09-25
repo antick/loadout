@@ -33,9 +33,9 @@ export interface GitInstallerDeps {
 }
 
 export interface GitInstaller {
-  /** A Git repository, or a link to a `.zip` / `.skill` archive. */
+  /** A Git repository, or a link to an archive. */
   previewGit(input: string): Promise<GitPreview>;
-  /** A `.zip` / `.skill` file on this computer. */
+  /** An archive file on this computer (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`). */
   previewArchive(archivePath: string): Promise<GitPreview>;
   confirmGit(previewId: string, items: InstallSelection[]): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;

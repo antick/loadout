@@ -8,6 +8,7 @@ import { errorMessage, invalid, isAppError, notFound } from "../errors";
 import { isInside, isSkillDir, removePath, resolveInside } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { type FoundSkill, findSkillDirs, listRepoSkills, preferNeutralCopies } from "./repo-scan";
+import { isGzip, isTar, readTar } from "./tar";
 
 /** An unpacked archive. Always call `cleanup`. */
 export interface ExtractedArchive {
@@ -16,12 +17,17 @@ export interface ExtractedArchive {
   cleanup(): Promise<void>;
 }
 
-export const ARCHIVE_EXTENSIONS: readonly string[] = [".zip", ".skill"];
+/** Archives Loadout writes (export) as well as reads. */
+export const ZIP_EXTENSIONS: readonly string[] = [".zip", ".skill"];
+/** Read only. `.tar.gz` comes before `.tar` so the longest match wins. */
+export const TAR_EXTENSIONS: readonly string[] = [".tar.gz", ".tgz", ".tar"];
+export const ARCHIVE_EXTENSIONS: readonly string[] = [...ZIP_EXTENSIONS, ...TAR_EXTENSIONS];
 const EXTRACT_DIR_PREFIX = `${APP_SLUG}-archive-`;
 const FALLBACK_ARCHIVE_NAME = "archive";
 const SKILL_SEARCH_DEPTH = 4;
 /** Refuse to unpack more than this: a small zip can expand to fill the disk. */
 const MAX_UNPACKED_BYTES = 512 * 1024 * 1024;
+const ZIP_MAGIC = [0x50, 0x4b] as const;
 
 // ZIP central directory layout (APPNOTE 4.3.12 / 4.3.16).
 const END_SIGNATURE = 0x06054b50;
@@ -35,8 +41,26 @@ const MODE_SYMLINK = 0o120000;
 const EXECUTABLE_BITS = 0o111;
 const EXECUTABLE_MODE = 0o755;
 
+/** The archive extension `path` ends with (`.tar.gz`, `.zip`, …), or null. */
+export function archiveExtension(path: string): string | null {
+  const lower = path.toLowerCase();
+  return ARCHIVE_EXTENSIONS.find((extension) => lower.endsWith(extension)) ?? null;
+}
+
 export function isArchivePath(path: string): boolean {
-  return ARCHIVE_EXTENSIONS.includes(extname(path).toLowerCase());
+  return archiveExtension(path) !== null;
+}
+
+function isZip(data: Buffer): boolean {
+  return data[0] === ZIP_MAGIC[0] && data[1] === ZIP_MAGIC[1];
+}
+
+/** Tar by its bytes when they say so, else by the name it came under. */
+function isTarData(data: Buffer, name: string): boolean {
+  if (isZip(data)) return false;
+  if (isGzip(data) || isTar(data)) return true;
+  const extension = archiveExtension(name);
+  return extension !== null && TAR_EXTENSIONS.includes(extension);
 }
 
 /**
@@ -76,7 +100,33 @@ function safeEntryPath(name: string): string | null {
   return segments.join("/");
 }
 
-function unpack(data: Buffer, root: string): void {
+/** Write one entry below `root`; `bytes` null means a folder. Unsafe paths are skipped. */
+function writeEntry(root: string, name: string, bytes: Uint8Array | null, mode: number): void {
+  const relative = safeEntryPath(name);
+  if (relative === null) return;
+  const target = join(root, relative);
+  if (!isInside(root, target)) return;
+  if (bytes === null) {
+    mkdirSync(target, { recursive: true });
+    return;
+  }
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, bytes);
+  if (process.platform !== "win32" && (mode & EXECUTABLE_BITS) !== 0) {
+    chmodSync(target, EXECUTABLE_MODE);
+  }
+}
+
+function unpackTar(data: Buffer, root: string): void {
+  const entries = readTar(data, MAX_UNPACKED_BYTES);
+  if (entries.length === 0) throw invalid("The archive is empty or damaged");
+  mkdirSync(root, { recursive: true });
+  for (const entry of entries) {
+    writeEntry(root, entry.name, entry.kind === "directory" ? null : entry.data, entry.mode);
+  }
+}
+
+function unpackZip(data: Buffer, root: string): void {
   const modes = readUnixModes(data);
   let unpacked = 0;
   const files = unzipSync(data, {
@@ -93,20 +143,7 @@ function unpack(data: Buffer, root: string): void {
   });
   mkdirSync(root, { recursive: true });
   for (const [name, bytes] of Object.entries(files)) {
-    const relative = safeEntryPath(name);
-    if (relative === null) continue;
-    const target = join(root, relative);
-    if (!isInside(root, target)) continue;
-    if (name.endsWith("/")) {
-      mkdirSync(target, { recursive: true });
-      continue;
-    }
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, bytes);
-    const mode = modes.get(name) ?? 0;
-    if (process.platform !== "win32" && (mode & EXECUTABLE_BITS) !== 0) {
-      chmodSync(target, EXECUTABLE_MODE);
-    }
+    writeEntry(root, name, name.endsWith("/") ? null : bytes, modes.get(name) ?? 0);
   }
 }
 
@@ -125,10 +162,13 @@ export interface UnpackedArchive {
 export async function unpackArchive(data: Buffer, name: string): Promise<UnpackedArchive> {
   const parent = await mkdtemp(join(tmpdir(), EXTRACT_DIR_PREFIX));
   const cleanup = (): Promise<void> => removePath(parent).catch(() => undefined);
-  const stem = basename(name, extname(name));
+  const file = basename(name);
+  const extension = archiveExtension(file) ?? extname(file);
+  const stem = file.slice(0, file.length - extension.length);
   const root = join(parent, trySanitizeSkillName(stem) ?? FALLBACK_ARCHIVE_NAME);
   try {
-    unpack(data, root);
+    if (isTarData(data, file)) unpackTar(data, root);
+    else unpackZip(data, root);
     return { root, cleanup };
   } catch (error) {
     await cleanup();
@@ -137,7 +177,7 @@ export async function unpackArchive(data: Buffer, name: string): Promise<Unpacke
   }
 }
 
-/** Read a `.zip` / `.skill` file from disk and unpack it. */
+/** Read a `.zip`, `.skill`, `.tar`, `.tar.gz` or `.tgz` file from disk and unpack it. */
 export async function unpackArchiveFile(archivePath: string): Promise<UnpackedArchive> {
   if (!isArchivePath(archivePath)) {
     throw invalid(`Unsupported archive format: ${extname(archivePath) || basename(archivePath)}`);
@@ -172,7 +212,7 @@ export function archiveSkillDir(root: string, subpath?: string | null): string {
   return skills[0] ?? root;
 }
 
-/** Unpack a `.zip` / `.skill` file into a temp folder and find the skill inside it. */
+/** Unpack an archive file into a temp folder and find the skill inside it. */
 export async function extractArchive(
   archivePath: string,
   subpath?: string | null,

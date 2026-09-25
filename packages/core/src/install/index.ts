@@ -55,6 +55,9 @@ export {
   unpackArchive,
   unpackArchiveFile,
   ARCHIVE_EXTENSIONS,
+  TAR_EXTENSIONS,
+  ZIP_EXTENSIONS,
+  archiveExtension,
   extractArchive,
   isArchivePath,
 } from "./archive";

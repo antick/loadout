@@ -10,7 +10,7 @@ export type InstallSource =
   | { kind: "git"; url: string }
   | { kind: "market"; source: string; skillId: string };
 
-const ARCHIVE_SUFFIXES = [".zip", ".skill"] as const;
+const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 const PATH_START = /^(?:~|\.{1,2}(?:[\\/]|$)|[\\/]|[A-Za-z]:[\\/])/;
 const REPO = String.raw`[A-Za-z0-9_][\w.-]*\/[A-Za-z0-9_][\w.-]*`;
 const SHORTHAND = new RegExp(`^${REPO}$`);
@@ -151,8 +151,8 @@ export const installCommand: CommandSpec = {
   usage: "<source> [--name <name>] [--skill <id>…] [--all]",
   flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG],
   notes: [
-    "Sources: ./folder, ./archive.zip, ./archive.skill, a git URL, owner/repo, owner/repo@skill,",
-    "or a link to a .zip / .skill file (https://…/skill.zip).",
+    "Sources: ./folder, ./archive.zip (.skill, .tar, .tar.gz, .tgz), a git URL, owner/repo,",
+    "owner/repo@skill, or a link to an archive (https://…/skill.zip).",
     "A folder must start with ./, ../, / or ~/ - a bare owner/repo always means GitHub.",
   ],
   run,

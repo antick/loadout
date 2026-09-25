@@ -56,6 +56,7 @@ export const UPDATE_PENDING_FILE = "pending-install.json";
 /** Inside the logs folder: what the replacement did after the app quit. */
 export const UPDATE_LOG_FILE = "update.log";
 
-export const ARCHIVE_EXTENSIONS = ["zip", "skill"];
+/** File picker filter; `gz` covers `.tar.gz`, since a filter only sees the last extension. */
+export const ARCHIVE_EXTENSIONS = ["zip", "skill", "tar", "gz", "tgz"];
 /** What "Export as .zip" saves. */
 export const EXPORT_EXTENSION = "zip";

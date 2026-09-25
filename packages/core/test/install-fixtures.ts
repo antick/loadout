@@ -138,3 +138,46 @@ export function leftoverCheckouts(tmpDir: string): string[] {
 export function skillsDirOf(world: TestWorld): string {
   return join(world.base, "skills");
 }
+
+export interface TarFixtureEntry {
+  name: string;
+  content?: string;
+  /** `0` file (default), `5` folder, `2` symbolic link, `L` GNU long name. */
+  type?: "0" | "5" | "2" | "L";
+  mode?: number;
+  linkTarget?: string;
+}
+
+const TAR_BLOCK = 512;
+
+function tarField(header: Buffer, at: number, length: number, value: string): void {
+  header.write(value.slice(0, length), at, length, "utf8");
+}
+
+function tarOctal(value: number, digits: number): string {
+  return `${value.toString(8).padStart(digits - 1, "0")}\0`;
+}
+
+/** A ustar archive built byte by byte, so tests can include hostile names and links. */
+export function tarBuffer(entries: TarFixtureEntry[]): Buffer {
+  const blocks: Buffer[] = [];
+  for (const entry of entries) {
+    const body = Buffer.from(entry.content ?? "", "utf8");
+    const header = Buffer.alloc(TAR_BLOCK);
+    tarField(header, 0, 100, entry.name);
+    tarField(header, 100, 8, tarOctal(entry.mode ?? 0o644, 8));
+    tarField(header, 124, 12, tarOctal(body.length, 12));
+    tarField(header, 136, 12, tarOctal(0, 12));
+    header.fill(0x20, 148, 156);
+    tarField(header, 156, 1, entry.type ?? "0");
+    tarField(header, 157, 100, entry.linkTarget ?? "");
+    tarField(header, 257, 6, "ustar\0");
+    tarField(header, 263, 2, "00");
+    let sum = 0;
+    for (const byte of header) sum += byte;
+    tarField(header, 148, 8, tarOctal(sum, 7).padEnd(8, " "));
+    blocks.push(header, body, Buffer.alloc((TAR_BLOCK - (body.length % TAR_BLOCK)) % TAR_BLOCK));
+  }
+  blocks.push(Buffer.alloc(TAR_BLOCK * 2));
+  return Buffer.concat(blocks);
+}

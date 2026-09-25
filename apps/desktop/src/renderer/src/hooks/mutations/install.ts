@@ -70,7 +70,7 @@ export function useInstallFromMarket(): (skill: MarketSkill) => Promise<Skill | 
   );
 }
 
-/** Install a skill folder or a `.zip` / `.skill` archive, optionally under another name. */
+/** Install a skill folder or an archive, optionally under another name. */
 export function useInstallFromPath(): (path: string, name?: string) => Promise<Skill | null> {
   const { t } = useTranslation();
   const { run } = useInstallTask();
