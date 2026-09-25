@@ -1,4 +1,4 @@
-import type { MarketBoard, MarketSkill, ScanResult } from "@loadout/shared";
+import type { MarketBoard, MarketSkill, MarketSkillDetail, ScanResult } from "@loadout/shared";
 import { type UseQueryResult, keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -23,6 +23,20 @@ export function useMarketSearch(query: string, limit: number): UseQueryResult<Ma
     queryFn: () => api.market.search(trimmed, limit),
     enabled: trimmed.length > 0,
     placeholderData: keepPreviousData,
+  });
+}
+
+/** How long a skill's audits and document count as fresh; the backend caches them longer. */
+const MARKET_DETAIL_STALE_MS = 300_000;
+
+/** Audits and SKILL.md of one marketplace skill, for its detail sheet. */
+export function useMarketDetail(
+  skill: Pick<MarketSkill, "id" | "source" | "skillId">,
+): UseQueryResult<MarketSkillDetail> {
+  return useQuery({
+    queryKey: keys.market.detail(skill.id),
+    queryFn: () => api.market.detail(skill.source, skill.skillId),
+    staleTime: MARKET_DETAIL_STALE_MS,
   });
 }
 

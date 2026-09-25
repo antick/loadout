@@ -109,7 +109,28 @@
       "emptyFiltered": "This contributor has nothing in the current results.",
       "resultCount_one": "{{count}} result",
       "resultCount_other": "{{count}} results",
-      "loadMore": "Load more"
+      "loadMore": "Load more",
+      "detail": {
+        "open": "Details of {{name}}",
+        "repository": "Repository",
+        "auditsTitle": "Security audits",
+        "auditsHint": "Published by {{marketplace}} from outside auditors. A signal worth reading, not a guarantee.",
+        "auditsNone": "No audits published for this skill yet.",
+        "auditsFailed": "The audits could not be loaded. Check your connection, or read them on the web.",
+        "risk": "Risk: {{level}}",
+        "status": {
+          "pass": "Pass",
+          "warn": "Warn",
+          "fail": "Fail",
+          "unknown": "Unknown"
+        },
+        "inLibrary": "In your library",
+        "deployedTo": "Deployed to",
+        "notDeployed": "Not deployed to any agent yet.",
+        "openInLibrary": "Open in library",
+        "documentMissing": "The SKILL.md could not be found in the repository.",
+        "documentFailed": "The details could not be loaded. Check your connection and try again."
+      }
     },
     "local": {
       "folderTitle": "Choose a skill folder",

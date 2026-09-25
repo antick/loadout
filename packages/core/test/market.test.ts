@@ -208,3 +208,134 @@ describe("marketplace service", () => {
     await expect(market.api.search("pdf")).rejects.toMatchObject({ code: "NETWORK" });
   });
 });
+
+describe("marketplace skill detail", () => {
+  const AUDIT_URL = `${MARKETPLACE_URL}/api/v1/skills/audit/acme/skills/pdf`;
+  const TREE_URL = "https://api.github.com/repos/acme/skills/git/trees/HEAD?recursive=1";
+  const RAW_URL = "https://raw.githubusercontent.com/acme/skills/HEAD/skills/pdf/SKILL.md";
+  const DOCUMENT = "---\nname: pdf\ndescription: Read PDFs\n---\n\n# PDF\n";
+  const AUDITS = {
+    audits: [
+      { provider: "Socket", slug: "socket", status: "pass", summary: "No alerts" },
+      { provider: "Snyk", slug: "snyk", status: "WARN", riskLevel: "MEDIUM" },
+      { provider: "Odd", status: "maybe" },
+      { slug: "nameless", status: "fail" },
+    ],
+  };
+
+  let detailWorld: TestWorld;
+  beforeEach(() => {
+    detailWorld = createTestWorld();
+  });
+  afterEach(() => detailWorld.cleanup());
+
+  function serve(routes: Record<string, () => Response>): FakeCall[] {
+    const { fetchImpl, calls } = fakeFetch((url) =>
+      (routes[url] ?? (() => new Response("", { status: 404 })))(),
+    );
+    const service = createMarketService(detailWorld.ctx, { store: detailWorld.store, fetchImpl });
+    detail = service.api.detail;
+    return calls;
+  }
+  let detail: ReturnType<typeof createMarketService>["api"]["detail"];
+
+  it("reads the audits and finds the skill's document through the repository listing", async () => {
+    const calls = serve({
+      [AUDIT_URL]: () => json(AUDITS),
+      [TREE_URL]: () =>
+        json({
+          tree: [
+            { type: "blob", path: "README.md" },
+            { type: "blob", path: "skills/pdf/SKILL.md" },
+            { type: "blob", path: "archive/old/pdf/SKILL.md" },
+            { type: "blob", path: "skills/docx/SKILL.md" },
+          ],
+        }),
+      [RAW_URL]: () => html(DOCUMENT),
+    });
+    const result = await detail("acme/skills", "pdf");
+    expect(result).toMatchObject({
+      id: "acme/skills/pdf",
+      pageUrl: `${MARKETPLACE_URL}/acme/skills/pdf`,
+      repoUrl: "https://github.com/acme/skills",
+      document: DOCUMENT,
+      documentPath: "skills/pdf/SKILL.md",
+    });
+    expect(result.audits).toEqual([
+      {
+        provider: "Socket",
+        status: "pass",
+        summary: "No alerts",
+        riskLevel: null,
+        auditedAt: null,
+        url: `${MARKETPLACE_URL}/acme/skills/pdf/security/socket`,
+      },
+      {
+        provider: "Snyk",
+        status: "warn",
+        summary: null,
+        riskLevel: "MEDIUM",
+        auditedAt: null,
+        url: `${MARKETPLACE_URL}/acme/skills/pdf/security/snyk`,
+      },
+      {
+        provider: "Odd",
+        status: "unknown",
+        summary: null,
+        riskLevel: null,
+        auditedAt: null,
+        url: `${MARKETPLACE_URL}/acme/skills/pdf`,
+      },
+    ]);
+
+    // A full answer is cached: looking again asks nobody.
+    calls.length = 0;
+    await detail("acme/skills", "pdf");
+    expect(calls).toEqual([]);
+  });
+
+  it("guesses the usual folders when the listing is out of reach, and tells no audits from unknown", async () => {
+    serve({
+      [AUDIT_URL]: () => new Response("", { status: 404 }),
+      [TREE_URL]: () => new Response("rate limited", { status: 403 }),
+      [RAW_URL]: () => html(DOCUMENT),
+    });
+    const guessed = await detail("acme/skills", "pdf");
+    expect(guessed).toMatchObject({ audits: [], document: DOCUMENT });
+
+    serve({ [AUDIT_URL.replace("/pdf", "/docx")]: () => new Response("", { status: 500 }) });
+    expect(await detail("acme/skills", "docx")).toMatchObject({
+      audits: null,
+      document: null,
+      documentPath: null,
+    });
+  });
+
+  it("finds a skill whose folder is named differently, by the name in its document", async () => {
+    const prefix = "https://raw.githubusercontent.com/acme/skills/HEAD/skills";
+    serve({
+      [AUDIT_URL.replace("/pdf", "/acme-pdf-tools")]: () => json({ audits: [] }),
+      [TREE_URL]: () =>
+        json({
+          tree: [
+            { type: "blob", path: "skills/pdf/SKILL.md" },
+            { type: "blob", path: "skills/pdf-tools/SKILL.md" },
+            { type: "blob", path: "skills/docx/SKILL.md" },
+          ],
+        }),
+      [`${prefix}/pdf/SKILL.md`]: () => html("---\nname: plain-pdf\n---\n"),
+      [`${prefix}/pdf-tools/SKILL.md`]: () =>
+        html("---\nname: 'acme-pdf-tools'\n---\n# Right one\n"),
+    });
+    // Both folders overlap the id; only the name inside tells them apart.
+    expect(await detail("acme/skills", "acme-pdf-tools")).toMatchObject({
+      documentPath: "skills/pdf-tools/SKILL.md",
+    });
+  });
+
+  it("refuses sources and ids that are not the marketplace's shape", async () => {
+    serve({});
+    await expect(detail("acme", "pdf")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(detail("acme/skills", "../x")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  });
+});

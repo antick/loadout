@@ -87,6 +87,10 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   repositories and other hosts need Git, and the Git tab says so.
 - Marketplace (skills.sh): hot, trending and all-time boards, keyword search, contributor filter,
   one-click install, open the skill on the web.
+- Click a marketplace skill to read it before installing: the security audits skills.sh publishes
+  (pass, warn or fail per auditor, with a link to each), its `SKILL.md` found in its GitHub
+  repository, and, when it is already in the library, which agents have it. Details are cached
+  for half an hour; a part that cannot be loaded says so and the rest still shows.
 - Scan this machine: find skills already sitting in agent folders and import one or all of them.
 - Progress for every install, cancel while cloning, timeouts, and a network proxy setting.
 - After an install, deploy to agents straight from the success toast.

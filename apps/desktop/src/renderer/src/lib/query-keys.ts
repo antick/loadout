@@ -64,6 +64,7 @@ export const keys = {
     root: ["market"] as const,
     board: (board: MarketBoard) => ["market", "board", board] as const,
     search: (query: string) => ["market", "search", query] as const,
+    detail: (id: string) => ["market", "detail", id] as const,
   },
   backup: {
     root: ["backup"] as const,

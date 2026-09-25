@@ -16,6 +16,8 @@ export interface MarketSkillCardProps {
   onInstall: (skill: MarketSkill) => void;
   onCancel: (skill: MarketSkill) => void;
   onViewOnWeb: (skill: MarketSkill) => void;
+  /** Open the detail sheet: audits and SKILL.md. */
+  onOpen: (skill: MarketSkill) => void;
   /** Narrow the list to this skill's contributor. */
   onFilterSource: (source: string) => void;
 }
@@ -27,15 +29,25 @@ export function MarketSkillCard({
   onInstall,
   onCancel,
   onViewOnWeb,
+  onOpen,
   onFilterSource,
 }: MarketSkillCardProps): ReactNode {
   const { t } = useTranslation();
 
   return (
-    <article className="flex min-h-28 flex-col gap-1.5 rounded-lg border bg-card p-3 transition-colors duration-150 hover:border-primary/40 hover:bg-accent/40">
+    <article className="relative flex min-h-28 flex-col gap-1.5 rounded-lg border bg-card p-3 transition-colors duration-150 has-[button[data-card-open]:focus-visible]:ring-2 has-[button[data-card-open]:focus-visible]:ring-ring hover:border-primary/40 hover:bg-accent/40">
       <div className="flex items-start gap-2">
         <h3 className="min-w-0 flex-1 truncate text-sm font-medium" title={skill.name}>
-          {skill.name}
+          {/* Stretched over the card, so a click anywhere but the buttons opens the details. */}
+          <button
+            type="button"
+            data-card-open
+            onClick={() => onOpen(skill)}
+            aria-label={t("install.market.detail.open", { name: skill.name })}
+            className="text-left outline-none after:absolute after:inset-0 after:rounded-lg after:content-['']"
+          >
+            {skill.name}
+          </button>
         </h3>
         {skill.installed ? (
           <StatusBadge tone="success" label={t("install.market.inLibrary")} icon={<Check />} />
@@ -47,7 +59,7 @@ export function MarketSkillCard({
           <button
             type="button"
             onClick={() => onFilterSource(skill.source)}
-            className="-mx-1 w-fit max-w-full truncate rounded px-1 text-left font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="relative -mx-1 w-fit max-w-full truncate rounded px-1 text-left font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             {skill.source}
           </button>
@@ -55,7 +67,8 @@ export function MarketSkillCard({
         <TooltipContent side="bottom">{t("install.market.onlyThisSource")}</TooltipContent>
       </Tooltip>
 
-      <div className="mt-auto flex items-center gap-1 pt-1.5">
+      {/* Above the card's open button for its own buttons only; the rest still opens the details. */}
+      <div className="pointer-events-none relative mt-auto flex items-center gap-1 pt-1.5 [&_button]:pointer-events-auto">
         <span
           className="flex min-w-0 flex-1 items-center gap-1 text-xs text-muted-foreground tabular-nums"
           title={t("install.market.installs", { count: skill.installs })}

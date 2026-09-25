@@ -56,6 +56,7 @@ import type {
   ConfirmOptions,
   MarketBoard,
   MarketSkill,
+  MarketSkillDetail,
   ScanResult,
 } from "./types-install";
 import type { InstructionFile } from "./instructions";
@@ -154,6 +155,8 @@ export interface InstallApi {
 export interface MarketApi {
   board(board: MarketBoard): Promise<MarketSkill[]>;
   search(query: string, limit?: number): Promise<MarketSkill[]>;
+  /** Security audits and the `SKILL.md` of one skill, to read before installing it. */
+  detail(source: string, skillId: string): Promise<MarketSkillDetail>;
 }
 
 export interface UpdatesApi {

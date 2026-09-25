@@ -1,11 +1,76 @@
 /**
  * DEV ONLY. Marketplace handlers for the in-memory preview bridge in `dev-mock.ts`: boards,
- * search, and whether each entry is in the library. Searching "offline" fails with NETWORK.
+ * search, whether each entry is in the library, and a skill's detail. Searching "offline" fails
+ * with NETWORK. Details vary by skill: every third has no audits yet, every fifth could not load
+ * them, and every seventh has no SKILL.md to show.
  */
-import { MARKETPLACE_URL, type MarketBoard, type MarketSkill } from "@loadout/shared";
+import {
+  MARKETPLACE_URL,
+  type MarketAudit,
+  type MarketBoard,
+  type MarketSkill,
+  type MarketSkillDetail,
+} from "@loadout/shared";
 import type { InstallMockContext } from "@/lib/dev-mock-install";
 
 const BOARD_SIZE = 60;
+const DETAIL_DELAY_MS = 600;
+const NO_AUDITS_EVERY = 3;
+const AUDITS_FAIL_EVERY = 5;
+const NO_DOCUMENT_EVERY = 7;
+const DAY_MS = 86_400_000;
+
+function mockAudits(pageUrl: string, index: number): MarketAudit[] {
+  const auditedAt = new Date(Date.now() - ((index % 9) + 1) * DAY_MS).toISOString();
+  return [
+    {
+      provider: "Gen Agent Trust Hub",
+      slug: "agent-trust-hub",
+      status: "pass",
+      summary: "Reads files and runs one shell command; nothing is sent elsewhere.",
+      riskLevel: "SAFE",
+    },
+    { provider: "Socket", slug: "socket", status: "pass", summary: "No alerts", riskLevel: null },
+    {
+      provider: "Snyk",
+      slug: "snyk",
+      status: index % 2 === 0 ? "warn" : "pass",
+      summary: index % 2 === 0 ? "Risk: MEDIUM · 1 issue" : "No issues",
+      riskLevel: index % 2 === 0 ? "MEDIUM" : "LOW",
+    },
+  ].map((audit) => ({
+    provider: audit.provider,
+    status: audit.status as MarketAudit["status"],
+    summary: audit.summary,
+    riskLevel: audit.riskLevel,
+    auditedAt,
+    url: `${pageUrl}/security/${audit.slug}`,
+  }));
+}
+
+function mockDocument(skillId: string): string {
+  return [
+    "---",
+    `name: ${skillId}`,
+    `description: Preview copy of ${skillId}, shown before installing.`,
+    "---",
+    "",
+    `# ${skillId}`,
+    "",
+    "Use this skill when the task matches its name. It reads the files you point at and",
+    "suggests changes before making them.",
+    "",
+    "## Steps",
+    "",
+    "1. Read the relevant files.",
+    "2. Explain the plan in two sentences.",
+    "3. Make the change, then run the checks.",
+    "",
+    "```sh",
+    "npm test",
+    "```",
+  ].join("\n");
+}
 
 const SOURCES = [
   "acme/frontend",
@@ -47,6 +112,31 @@ const CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 130 }, (_
   const round = Math.floor(index / TOPICS.length);
   const skillId = round === 0 ? pick(TOPICS, index) : `${pick(TOPICS, index)}-${round + 1}`;
   return {
+    "market.detail": async (source: string, skillId: string): Promise<MarketSkillDetail> => {
+      await new Promise((resolve) => window.setTimeout(resolve, DETAIL_DELAY_MS));
+      const id = `${source}/${skillId}`;
+      const index =
+        Math.max(
+          0,
+          CATALOG.findIndex((entry) => entry.id === id),
+        ) + 1;
+      const pageUrl = `${MARKETPLACE_URL}/${id}`;
+      return {
+        id,
+        source,
+        skillId,
+        pageUrl,
+        repoUrl: `https://github.com/${source}`,
+        audits:
+          index % AUDITS_FAIL_EVERY === 0
+            ? null
+            : index % NO_AUDITS_EVERY === 0
+              ? []
+              : mockAudits(pageUrl, index),
+        document: index % NO_DOCUMENT_EVERY === 0 ? null : mockDocument(skillId),
+        documentPath: index % NO_DOCUMENT_EVERY === 0 ? null : `skills/${skillId}/SKILL.md`,
+      };
+    },
     id: `${source}/${skillId}`,
     skillId,
     name: skillId,
@@ -75,6 +165,31 @@ export function createMarketMockHandlers(
   }
 
   return {
+    "market.detail": async (source: string, skillId: string): Promise<MarketSkillDetail> => {
+      await new Promise((resolve) => window.setTimeout(resolve, DETAIL_DELAY_MS));
+      const id = `${source}/${skillId}`;
+      const index =
+        Math.max(
+          0,
+          CATALOG.findIndex((entry) => entry.id === id),
+        ) + 1;
+      const pageUrl = `${MARKETPLACE_URL}/${id}`;
+      return {
+        id,
+        source,
+        skillId,
+        pageUrl,
+        repoUrl: `https://github.com/${source}`,
+        audits:
+          index % AUDITS_FAIL_EVERY === 0
+            ? null
+            : index % NO_AUDITS_EVERY === 0
+              ? []
+              : mockAudits(pageUrl, index),
+        document: index % NO_DOCUMENT_EVERY === 0 ? null : mockDocument(skillId),
+        documentPath: index % NO_DOCUMENT_EVERY === 0 ? null : `skills/${skillId}/SKILL.md`,
+      };
+    },
     "market.board": (board: MarketBoard) =>
       withInstalled(
         Array.from({ length: BOARD_SIZE }, (_, index) => pick(CATALOG, BOARD_ORDER[board](index))),

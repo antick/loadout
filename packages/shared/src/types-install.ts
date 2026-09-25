@@ -105,6 +105,40 @@ export interface ScanResult {
 
 export type MarketBoard = "hot" | "trending" | "all_time";
 
+export type MarketAuditStatus = "pass" | "warn" | "fail" | "unknown";
+
+/** One security audit the marketplace publishes for a skill. */
+export interface MarketAudit {
+  provider: string;
+  status: MarketAuditStatus;
+  /** The auditor's one-line finding, e.g. "No alerts". */
+  summary: string | null;
+  /** As the auditor spells it, e.g. `SAFE`, `MEDIUM`. */
+  riskLevel: string | null;
+  /** ISO date of the audit. */
+  auditedAt: string | null;
+  /** The audit's page on the marketplace. */
+  url: string;
+}
+
+/** What to read before installing a marketplace skill. */
+export interface MarketSkillDetail {
+  /** `owner/repo/skill`. */
+  id: string;
+  source: string;
+  skillId: string;
+  /** The skill's page on the marketplace. */
+  pageUrl: string;
+  /** The GitHub repository it installs from. */
+  repoUrl: string;
+  /** Null when the audits could not be fetched; empty when none are published. */
+  audits: MarketAudit[] | null;
+  /** The skill's `SKILL.md`; null when it could not be found or fetched. */
+  document: string | null;
+  /** Where that file sits in the repository. */
+  documentPath: string | null;
+}
+
 export interface MarketSkill {
   /** `owner/repo/skill`. */
   id: string;

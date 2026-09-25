@@ -6,7 +6,7 @@ import {
   type MarketBoard,
   type MarketSkill,
 } from "@loadout/shared";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ExternalLink, SearchX, Store } from "lucide-react";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,6 +38,7 @@ import {
   SOURCE_FILTER_ALL,
 } from "@/features/install/constants";
 import { filterBySource, marketSkillUrl, sourceOptions } from "@/features/install/market-filters";
+import { MarketDetailSheet } from "@/features/install/MarketDetailSheet";
 import { MarketSkillCard } from "@/features/install/MarketSkillCard";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
@@ -75,6 +76,8 @@ export function MarketTab(): ReactNode {
   const [limit, setLimit] = useState(MARKET_SEARCH_LIMIT_STEP);
   const [source, setSource] = useState<string>(SOURCE_FILTER_ALL);
   const [page, setPage] = useState(0);
+  const [detailFor, setDetailFor] = useState<MarketSkill | null>(null);
+  const navigate = useNavigate();
 
   const debouncedQuery = useDebouncedValue(query, MARKET_SEARCH_DEBOUNCE_MS).trim();
   const searching = debouncedQuery.length >= MARKET_SEARCH_MIN_CHARS;
@@ -257,6 +260,7 @@ export function MarketTab(): ReactNode {
                 onInstall={(entry) => void install(entry)}
                 onCancel={(entry) => cancel(marketTaskKey(entry))}
                 onViewOnWeb={(entry) => openExternal.mutate(marketSkillUrl(MARKETPLACE_URL, entry))}
+                onOpen={setDetailFor}
                 onFilterSource={(next) => {
                   setSource(next);
                   setPage(0);
@@ -296,6 +300,15 @@ export function MarketTab(): ReactNode {
           )}
         </>
       )}
+
+      <MarketDetailSheet
+        skill={detailFor}
+        task={detailFor ? task(marketTaskKey(detailFor)) : undefined}
+        onInstall={(entry) => void install(entry)}
+        onCancel={(entry) => cancel(marketTaskKey(entry))}
+        onOpenLibrary={(skillId) => void navigate({ to: "/library", search: { skill: skillId } })}
+        onClose={() => setDetailFor(null)}
+      />
     </div>
   );
 }
