@@ -1,6 +1,11 @@
 {
   "localSkills": {
     "disabled": "Disabled",
+    "duplicates": {
+      "badge": "Loaded twice",
+      "shared_folder": "{{agent}} also reads {{folder}}, which has its own copy of this skill. The agent may load it twice.",
+      "global": "{{agent}} also has this skill installed globally. In this project it may load it twice."
+    },
     "partlyDisabled": "Partly disabled",
     "fileCount_one": "{{count}} file",
     "fileCount_other": "{{count}} files",

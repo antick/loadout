@@ -1,4 +1,4 @@
-import type { LocalSkill, SyncStatus } from "@loadout/shared";
+import type { LocalSkill, SkillDuplicate, SyncStatus } from "@loadout/shared";
 
 /** Whether the copies of a skill are switched on: every copy, some of them, or none. */
 export type EnabledState = "all" | "partial" | "none";
@@ -19,6 +19,8 @@ export interface LocalSkillView {
   syncStatus: SyncStatus;
   enabledState: EnabledState;
   librarySkillId: string | null;
+  /** Other copies the same agent loads (a shared folder, or its global folder for a project). */
+  duplicates: readonly SkillDuplicate[];
 }
 
 /** One folder of an agent's global skills folder as a list entry. */
@@ -33,5 +35,6 @@ export function toLocalSkillView(skill: LocalSkill): LocalSkillView {
     syncStatus: skill.syncStatus,
     enabledState: skill.enabled ? "all" : "none",
     librarySkillId: skill.librarySkillId,
+    duplicates: skill.duplicates,
   };
 }

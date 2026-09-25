@@ -22,6 +22,7 @@ import {
   toPosix,
 } from "../util/fs";
 import { hashDir } from "../util/hash";
+import { withSharedFolderDuplicates } from "./duplicates";
 import {
   type LocalSyncDeps,
   pushLocalToLibrary,
@@ -151,7 +152,7 @@ export function createWorkspaceService(
           isManaged: (skill) => store.deployment(skill.id, agent.key) !== null,
         }),
       );
-      return sortByAttention(skills);
+      return sortByAttention(withSharedFolderDuplicates(agent, skills));
     },
 
     counts: async (agentKeys) => {

@@ -56,6 +56,15 @@ export function groupProjectSkills(skills: readonly LocalSkill[]): ProjectSkillG
           lead.librarySkillId ??
           variants.find((variant) => variant.librarySkillId !== null)?.librarySkillId ??
           null,
+        // Copies of one skill can find the same global copy (agents sharing a folder): once each.
+        duplicates: variants
+          .flatMap((variant) => variant.duplicates)
+          .filter(
+            (duplicate, index, all) =>
+              all.findIndex(
+                (other) => other.path === duplicate.path && other.agentKey === duplicate.agentKey,
+              ) === index,
+          ),
         variants,
       },
     ];

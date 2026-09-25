@@ -19,6 +19,7 @@ import type {
   SyncStatus,
 } from "@loadout/shared";
 import { HOME, HOUR, NOW } from "@/lib/dev-mock-data";
+import { mockDuplicates } from "@/lib/dev-mock-duplicates";
 
 export interface WorkspaceMockContext {
   getSkills(): Skill[];
@@ -201,6 +202,7 @@ export function createWorkspaceMockHandlers(
           ? `${HOME}/.loadout/skills/${dirNameOf(entry.relativePath)}`
           : null,
       syncStatus: entry.status,
+      duplicates: mockDuplicates(entry.agentKey, dirNameOf(entry.relativePath), root, displayName),
     };
   }
 

@@ -32,6 +32,7 @@ function copy(
     managed: false,
     linkTarget: null,
     syncStatus,
+    duplicates: [],
     ...extra,
   };
 }
@@ -58,6 +59,20 @@ describe("groupProjectSkills", () => {
     ]);
     expect(groups.map((group) => group.id)).toEqual(["review", "alpha"]);
     expect(groups[0]?.variants).toHaveLength(2);
+  });
+
+  it("lists each other copy once, however many variants found it", () => {
+    const global = {
+      where: "global" as const,
+      agentKey: "claude_code",
+      agentDisplayName: "Claude Code",
+      path: "/home/me/.claude/skills/review",
+    };
+    const [group] = groupProjectSkills([
+      copy("review", "claude_code", "in_sync", { duplicates: [global] }),
+      copy("review", "cursor", "in_sync", { duplicates: [global] }),
+    ]);
+    expect(group?.duplicates).toEqual([global]);
   });
 
   it("takes the worst status of the variants", () => {

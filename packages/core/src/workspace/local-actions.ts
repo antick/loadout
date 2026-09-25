@@ -65,6 +65,7 @@ export function toLocalSkill(
     managed: match !== null && (owner.isManaged?.(match) ?? false),
     linkTarget: lstatOrNull(entry.path)?.isSymbolicLink() ? canonicalPath(entry.path) : null,
     syncStatus: classifySync(entry, match),
+    duplicates: [],
   };
 }
 

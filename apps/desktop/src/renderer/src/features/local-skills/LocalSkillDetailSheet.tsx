@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { editLink } from "@/lib/skill-location";
+import { DuplicatesNotice } from "./DuplicatesNotice";
 import type { LocalSkillView } from "./local-skill-view";
 import { LocalSkillMeta } from "./LocalSkillMeta";
 
@@ -97,6 +98,7 @@ export function LocalSkillDetailSheet({
             </SheetHeader>
 
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4">
+              <DuplicatesNotice duplicates={item.duplicates} />
               {children}
 
               <section className="flex flex-col gap-2">

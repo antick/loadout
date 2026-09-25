@@ -19,6 +19,7 @@ function folder(syncStatus: SyncStatus, managed: boolean): LocalSkill {
     managed,
     linkTarget: null,
     syncStatus,
+    duplicates: [],
   };
 }
 

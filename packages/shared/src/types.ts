@@ -341,6 +341,19 @@ export interface ApplyResult {
 export type SyncStatus = "local_only" | "in_sync" | "local_newer" | "library_newer" | "diverged";
 
 /** A skill folder found in an agent's global folder or in a project. */
+/** Another copy of a skill that the same agent also loads, so it may see the skill twice. */
+export interface SkillDuplicate {
+  /**
+   * `shared_folder`: a folder the agent reads besides its own, such as `~/.agents/skills`.
+   * `global`: the agent's global skills folder, for a skill that is also in a project.
+   */
+  where: "shared_folder" | "global";
+  agentKey: string;
+  agentDisplayName: string;
+  /** The other copy's folder. */
+  path: string;
+}
+
 export interface LocalSkill {
   name: string;
   dirName: string;
@@ -362,6 +375,8 @@ export interface LocalSkill {
    */
   linkTarget: string | null;
   syncStatus: SyncStatus;
+  /** Other copies the same agent loads; empty when this is the only one. */
+  duplicates: SkillDuplicate[];
 }
 
 /**

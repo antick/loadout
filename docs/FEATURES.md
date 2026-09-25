@@ -134,6 +134,9 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - One page per agent listing everything in its skills folder, including skills installed outside
   the app.
 - Status per skill: local only, in sync, local changed, library changed, conflict.
+- **Loaded twice**: a skill in the agent's own folder that a shared folder it also reads (such as
+  `~/.agents/skills` for Codex) holds as well is marked, and its panel says where the other copy
+  is. A link to the same folder counts as one copy.
 - Upload a skill to the library (it becomes managed), pull the library version, remove it from the
   agent, or delete a local skill.
 - Add skills from the library with search, tag and source filters and Shift-click range selection.
@@ -158,6 +161,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - Linked workspaces: manage any folder as a skills root, with its own disabled folder.
 - Nested skill folders, and one row per skill across every agent folder in the project.
 - Enable and disable project skills.
+- A switched-on project skill that the same agent also has globally is marked **Loaded twice**,
+  with the global copy's path in its panel.
 - Status against the library, with **Update library**, **Update project** and **Restore library
   version**.
 - A guard refuses to update the library when several copies of a skill each hold their own changes.
