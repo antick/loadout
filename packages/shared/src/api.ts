@@ -233,6 +233,9 @@ export interface ProjectsApi {
   addLinked(name: string, path: string, disabledPath?: string | null): Promise<Project>;
   remove(id: string): Promise<void>;
   reorder(ids: string[]): Promise<void>;
+  setPinned(id: string, pinned: boolean): Promise<void>;
+  /** The project page was opened: counts toward the sidebar's Frequent group. */
+  recordOpen(id: string): Promise<void>;
   scan(root: string): Promise<string[]>;
   /**
    * Projects the user works in that are not linked yet: from Claude Code's and the editors'

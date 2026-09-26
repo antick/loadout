@@ -18,7 +18,7 @@ import type {
   SkillDocument,
   SyncStatus,
 } from "@loadout/shared";
-import { HOME, HOUR, NOW } from "@/lib/dev-mock-data";
+import { HOME, HOUR, NO_PROJECT_ACTIVITY, NOW } from "@/lib/dev-mock-data";
 import { mockDuplicates } from "@/lib/dev-mock-duplicates";
 
 export interface WorkspaceMockContext {
@@ -331,6 +331,7 @@ export function createWorkspaceMockHandlers(
       skillCount: 0,
       syncHealth: { local_only: 0, in_sync: 0, local_newer: 0, library_newer: 0, diverged: 0 },
       missing: false,
+      ...NO_PROJECT_ACTIVITY,
       createdAt: NOW,
       updatedAt: NOW,
     };

@@ -86,4 +86,5 @@ export const INTERNAL_KEYS = {
   backupRestoredFrom: "backup.restoredFrom",
   githubAuthMethod: "backup.githubAuthMethod",
   projectExportAgents: (projectId: string) => `projects.exportAgents:${projectId}`,
+  projectActivity: "projects.activity",
 } as const;

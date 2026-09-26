@@ -418,6 +418,11 @@ export interface Project {
   syncHealth: SyncHealth;
   /** The folder no longer exists on disk. */
   missing: boolean;
+  /** Pinned to the top of the sidebar on this computer. */
+  pinned: boolean;
+  /** Times it was opened here in the last 30 days (a visit counts once). */
+  recentOpens: number;
+  lastOpenedAt: number | null;
   createdAt: number;
   updatedAt: number;
 }

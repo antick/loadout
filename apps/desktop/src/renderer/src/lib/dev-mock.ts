@@ -233,6 +233,17 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
   "projects.reorder": (ids: string[]) => {
     projects = reorder(projects, ids);
   },
+  "projects.setPinned": (id: string, pinned: boolean) => {
+    projects = projects.map((entry) => (entry.id === id ? { ...entry, pinned } : entry));
+    emitChanged("projects");
+  },
+  "projects.recordOpen": (id: string) => {
+    projects = projects.map((entry) =>
+      entry.id === id
+        ? { ...entry, recentOpens: entry.recentOpens + 1, lastOpenedAt: Date.now() }
+        : entry,
+    );
+  },
 
   "workspace.counts": (agentKeys: string[]) =>
     Object.fromEntries(

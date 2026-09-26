@@ -42,6 +42,32 @@ export function useReorderProjects(): UseMutationResult<
   });
 }
 
+/** Pin a project to the top of the sidebar, or unpin it. */
+export function useSetProjectPinned(): UseMutationResult<
+  void,
+  unknown,
+  { projectId: string; pinned: boolean }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, pinned }) => api.projects.setPinned(projectId, pinned),
+    onError: (error) => toastError(error, "errors.pinProject"),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.projects.all }),
+  });
+}
+
+/**
+ * Count an open of a project page, for the sidebar's Frequent group. Silent: a count that could
+ * not be saved is not worth telling anyone about.
+ */
+export function useRecordProjectOpen(): UseMutationResult<void, unknown, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => api.projects.recordOpen(projectId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.projects.all }),
+  });
+}
+
 /** Open the project folder in the OS file manager. */
 export function useRevealProject(): UseMutationResult<void, unknown, string> {
   return useMutation({

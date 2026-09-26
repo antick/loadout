@@ -194,6 +194,9 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   folders it already has; filter, tick and add. Looked for only when the tab opens. On macOS,
   folders in Desktop, Documents, Downloads, iCloud or an external drive are listed but not opened
   (that would make macOS ask for access out of the blue) until you add them.
+- Pin projects (right-click in the sidebar, or the project page's "…" menu): they head the
+  Projects sidebar under **Pinned**. With more than six projects, **Frequent** lists the three
+  opened most in the last 30 days (a visit counts once). Both are kept on this computer only.
 - Linked workspaces: manage any folder as a skills root, with its own disabled folder.
 - Nested skill folders, and one row per skill across every agent folder in the project.
 - Enable and disable project skills.

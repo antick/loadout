@@ -34,7 +34,8 @@
     "reveal": "Could not open the folder.",
     "copy": "Could not copy to the clipboard.",
     "openLink": "Could not open the link.",
-    "backup": "Backup failed."
+    "backup": "Backup failed.",
+    "pinProject": "Could not pin the project."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -191,6 +192,8 @@
     "linkTitle": "Link a project",
     "linkDescription": "Choose a project folder to manage the skills inside it.",
     "remove": "Remove project",
+    "pin": "Pin to the top",
+    "unpin": "Unpin",
     "removeTitle": "Remove “{{name}}” from {{app}}?",
     "removeDescription": "The project only leaves this list. Files in the project folder are not deleted.",
     "removed": "Removed project “{{name}}”",

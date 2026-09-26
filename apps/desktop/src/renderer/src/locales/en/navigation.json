@@ -41,7 +41,10 @@
     "projects": {
       "show": "Show the skills of {{name}}",
       "hide": "Hide the skills of {{name}}",
-      "empty": "No skills in this project yet."
+      "empty": "No skills in this project yet.",
+      "pinned": "Pinned",
+      "frequent": "Frequent",
+      "all": "All projects"
     }
   },
   "statusBar": {

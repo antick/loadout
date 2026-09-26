@@ -199,6 +199,30 @@ const HEALTHY: SyncHealth = {
   diverged: 0,
 };
 
+/** A project nobody pinned or opened yet. */
+export const NO_PROJECT_ACTIVITY = { pinned: false, recentOpens: 0, lastOpenedAt: null } as const;
+
+/** Small projects that make the list long enough for the sidebar's Frequent group. */
+const EXTRA_PROJECTS = ["docs-site", "mobile-app", "infra", "design-system"].map(
+  (name, index): Project => ({
+    id: `pr-${name}`,
+    name,
+    path: `${HOME}/code/${name}`,
+    type: "project",
+    supportsToggle: true,
+    sortOrder: 3 + index,
+    skillCount: 1,
+    syncHealth: HEALTHY,
+    missing: false,
+    ...NO_PROJECT_ACTIVITY,
+    // Opened often lately, so two of them show under Frequent.
+    recentOpens: [9, 6, 1, 0][index] ?? 0,
+    lastOpenedAt: NOW - index * HOUR,
+    createdAt: NOW,
+    updatedAt: NOW,
+  }),
+);
+
 export const SEED_PROJECTS: Project[] = [
   {
     id: "pr-shop",
@@ -210,6 +234,8 @@ export const SEED_PROJECTS: Project[] = [
     skillCount: 4,
     syncHealth: HEALTHY,
     missing: false,
+    ...NO_PROJECT_ACTIVITY,
+    pinned: true,
     createdAt: NOW,
     updatedAt: NOW,
   },
@@ -223,6 +249,9 @@ export const SEED_PROJECTS: Project[] = [
     skillCount: 2,
     syncHealth: { ...HEALTHY, diverged: 1 },
     missing: false,
+    ...NO_PROJECT_ACTIVITY,
+    recentOpens: 4,
+    lastOpenedAt: NOW - 2 * HOUR,
     createdAt: NOW,
     updatedAt: NOW,
   },
@@ -236,9 +265,11 @@ export const SEED_PROJECTS: Project[] = [
     skillCount: 0,
     syncHealth: { ...HEALTHY, in_sync: 0, local_only: 0 },
     missing: true,
+    ...NO_PROJECT_ACTIVITY,
     createdAt: NOW,
     updatedAt: NOW,
   },
+  ...EXTRA_PROJECTS,
 ];
 
 export const SEED_APP_UPDATE: AppUpdateStatus = {

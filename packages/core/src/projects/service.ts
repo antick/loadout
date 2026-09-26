@@ -17,6 +17,7 @@ import { type LibraryIndex, indexLibrary } from "../workspace/local-scan";
 import { type ProjectActionsDeps, createProjectActions } from "./actions";
 import { osConfigDir } from "../paths";
 import { findProjects, listProjectSkills, summarize } from "./scan";
+import { ProjectActivity } from "./activity";
 import { suggestProjects } from "./suggest";
 import { type ProjectRecord, ProjectStore } from "./store";
 import {
@@ -61,6 +62,7 @@ export function createProjectsService(
 ): ProjectsService {
   const { store, registry } = deps;
   const projects = new ProjectStore(ctx.db);
+  const activity = new ProjectActivity(ctx.settings);
   const actions = createProjectActions(ctx, deps);
 
   const library = (): LibraryIndex => indexLibrary(store.list(), store.deployments());
@@ -88,6 +90,7 @@ export function createProjectsService(
       sortOrder: record.sortOrder,
       ...summarize(skills),
       missing,
+      ...activity.summary(record.id),
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };
@@ -163,12 +166,25 @@ export function createProjectsService(
       projects.get(id);
       projects.delete(id);
       ctx.settings.deleteRaw(INTERNAL_KEYS.projectExportAgents(id));
+      activity.forget(id);
       ctx.touched("projects");
     },
 
     reorder: async (ids) => {
       projects.reorder(ids);
       ctx.touched("projects");
+    },
+
+    setPinned: async (id, pinned) => {
+      projects.get(id);
+      activity.setPinned(id, pinned);
+      ctx.touched("projects");
+    },
+
+    // No change notice: opening a page must not make every project view reload.
+    recordOpen: async (id) => {
+      projects.get(id);
+      activity.recordOpen(id);
     },
 
     scan: async (root) => findProjects(requireFolder(root, "Folder"), projectSkillDirs(registry)),

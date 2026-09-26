@@ -5,6 +5,8 @@ import {
   FolderSearch,
   ListChecks,
   MoreHorizontal,
+  Pin,
+  PinOff,
   Plus,
   RotateCw,
   SearchX,
@@ -37,7 +39,12 @@ import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
 import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
 import { useRefreshProject } from "@/hooks/mutations/project-detail";
-import { useRemoveProject, useRevealProject } from "@/hooks/mutations/projects";
+import {
+  useRecordProjectOpen,
+  useRemoveProject,
+  useRevealProject,
+  useSetProjectPinned,
+} from "@/hooks/mutations/projects";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useProjectSkills, useProjectTargets } from "@/hooks/queries/project-detail";
 import { useProjects } from "@/hooks/queries/projects";
@@ -108,6 +115,10 @@ function ProjectWorkspace({
   const refresh = useRefreshProject();
   const removeProject = useRemoveProject();
   const revealProject = useRevealProject();
+  const setPinned = useSetProjectPinned();
+  const { mutate: recordOpen } = useRecordProjectOpen();
+  // Once per visit: the page is mounted afresh for every project.
+  useEffect(() => recordOpen(project.id), [recordOpen, project.id]);
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
   const [enabledFilter, setEnabledFilter] = useState<EnabledFilter>("all");
   const [openId, setOpenId] = useState<string | null>(
@@ -195,6 +206,14 @@ function ProjectWorkspace({
                 <IconButton label={t("projectPage.more")} icon={<MoreHorizontal />} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() =>
+                    setPinned.mutate({ projectId: project.id, pinned: !project.pinned })
+                  }
+                >
+                  {project.pinned ? <PinOff /> : <Pin />}
+                  {t(project.pinned ? "projects.unpin" : "projects.pin")}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={project.missing}
                   onSelect={() => revealProject.mutate(project.id)}
