@@ -154,8 +154,8 @@ export function useConfirmGit(): (
   const { t } = useTranslation();
   const { run } = useInstallTask();
   return useCallback(
-    (preview, items, options) =>
-      run({
+    async (preview, items, options) => {
+      const installed = await run({
         key: preview.repoUrl,
         title: t("install.toast.installingCount", { count: items.length }),
         run: () => api.install.confirmGit(preview.previewId, items, options),
@@ -173,7 +173,12 @@ export function useConfirmGit(): (
           const deployTo = preview.allAgents ? "all" : preview.agents;
           return deployTo.length > 0 ? { ...summary, deployTo } : summary;
         },
-      }),
+      });
+      // Declining a flagged install leaves the checkout waiting; nothing will confirm it now.
+      // Cancelling a preview that was already used up does nothing.
+      if (!installed) void api.install.cancelPreview(preview.previewId).catch(() => undefined);
+      return installed;
+    },
     [run, t],
   );
 }
