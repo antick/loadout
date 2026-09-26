@@ -236,6 +236,7 @@
     "create": {
       "title": "New skill",
       "description": "Start a skill from scratch. It goes into the library, and you write its instructions in the editor next.",
+      "descriptionProject": "Start a skill from scratch, straight in {{project}}. It stays out of the library until you choose Add to library.",
       "name": "Name",
       "namePlaceholder": "code-review",
       "nameHint": "Lowercase letters, numbers and hyphens. It is also the folder name.",
@@ -243,7 +244,8 @@
         "format": "Use only lowercase letters, numbers and single hyphens, with no hyphen at either end.",
         "too_long": "Keep the name to {{max}} characters or fewer.",
         "reserved": "Windows keeps this name for itself, so it cannot be a folder name.",
-        "taken": "The library already has a skill called {{name}}."
+        "taken": "The library already has a skill called {{name}}.",
+        "takenProject": "{{project}} already has a skill called {{name}} in the chosen agent folders."
       },
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Reviews a diff for bugs and risky changes. Use when asked to review code or a pull request.",
@@ -253,6 +255,18 @@
       "submit": "Create and edit",
       "created": "Created {{name}}",
       "createdHint": "Write its instructions, then deploy it to your agents.",
+      "createdInProjectHint": "Write its instructions. Use Add to library when other projects need it too.",
+      "place": {
+        "label": "Create in",
+        "library": "Library",
+        "agents": "Agent folders",
+        "libraryHint": "The library keeps it, and you deploy it to your agents from there.",
+        "projectHint": "Only this project gets it. Use Add to library later to reuse it elsewhere.",
+        "pickAgent": "Pick at least one agent folder.",
+        "noAgents": "No agent can hold skills in this project yet. Switch one on in Settings → Agents.",
+        "moreFolders_one": "{{path}} and {{count}} more folder",
+        "moreFolders_other": "{{path}} and {{count}} more folders"
+      },
       "error": "Could not create the skill."
     }
   },

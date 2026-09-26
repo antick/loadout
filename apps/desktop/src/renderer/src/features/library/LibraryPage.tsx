@@ -170,7 +170,7 @@ export function LibraryPage({
           <ScanSearch />
           {t("library.empty.scan")}
         </Button>
-        <Button variant="outline" size="sm" onClick={shell.openNewSkill}>
+        <Button variant="outline" size="sm" onClick={() => shell.openNewSkill()}>
           <FilePlus2 />
           {t("library.empty.create")}
         </Button>
@@ -241,7 +241,7 @@ export function LibraryPage({
             <Button
               variant="outline"
               size="sm"
-              onClick={shell.openNewSkill}
+              onClick={() => shell.openNewSkill()}
               title={t("library.newSkill")}
             >
               <FilePlus2 />

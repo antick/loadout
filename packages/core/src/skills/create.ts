@@ -32,6 +32,17 @@ const DESCRIPTION_MESSAGES = {
   too_long: `The description can be at most ${SKILL_DESCRIPTION_MAX} characters.`,
 } as const;
 
+/** The name and description trimmed, or an error saying what is wrong with them. */
+export function checkNewSkill(input: CreateSkillInput): CreateSkillInput {
+  const name = input.name.trim();
+  const description = input.description.trim();
+  const nameProblem = newSkillNameProblem(name);
+  if (nameProblem) throw invalid(NAME_MESSAGES[nameProblem]);
+  const descriptionProblem = newSkillDescriptionProblem(description);
+  if (descriptionProblem) throw invalid(DESCRIPTION_MESSAGES[descriptionProblem]);
+  return { name, description };
+}
+
 /**
  * Whether `name` is taken in the library, by a skill's name or by any folder. Compared without
  * case, so a skill never lands next to one whose name differs only in case.
@@ -56,12 +67,7 @@ export async function createSkill(
   install: InstallIntoLibrary,
   input: CreateSkillInput,
 ): Promise<Skill> {
-  const name = input.name.trim();
-  const description = input.description.trim();
-  const nameProblem = newSkillNameProblem(name);
-  if (nameProblem) throw invalid(NAME_MESSAGES[nameProblem]);
-  const descriptionProblem = newSkillDescriptionProblem(description);
-  if (descriptionProblem) throw invalid(DESCRIPTION_MESSAGES[descriptionProblem]);
+  const { name, description } = checkNewSkill(input);
   if (isSkillNameTaken(ctx, store, name)) {
     throw exists(`The library already has a skill or folder named ${name}.`);
   }

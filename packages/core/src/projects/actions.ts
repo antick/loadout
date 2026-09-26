@@ -1,11 +1,22 @@
 import { renameSync, rmdirSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { LocalSkill, PushToLibraryOptions, PushToLibraryResult, Skill } from "@loadout/shared";
+import {
+  type CreateSkillInput,
+  type LocalSkill,
+  NEW_SKILL_DOCUMENT,
+  type ProjectCopyRef,
+  type PushToLibraryOptions,
+  type PushToLibraryResult,
+  type Skill,
+  newSkillDocument,
+} from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { writeTarget } from "../deploy";
 import { AppError, errorMessage, exists, invalid, notFound, unsupported } from "../errors";
-import { ensureDir, isInside, lstatOrNull, removePath } from "../util/fs";
+import { checkNewSkill } from "../skills/create";
+import { ensureDir, isInside, lstatOrNull, readDirSafe, removePath } from "../util/fs";
 import {
   type LocalSyncDeps,
   pushLocalToLibrary,
@@ -30,6 +41,11 @@ export interface ProjectActionsDeps extends LocalSyncDeps {
 export interface ProjectActions {
   setSkillEnabled(project: ProjectRecord, relativePath: string, enabled: boolean): Promise<void>;
   exportSkill(skill: Skill, project: ProjectRecord, agentKeys?: string[]): Promise<void>;
+  createSkill(
+    project: ProjectRecord,
+    input: CreateSkillInput,
+    agentKeys?: string[],
+  ): Promise<ProjectCopyRef>;
   pushToLibrary(
     project: ProjectRecord,
     relativePath: string,
@@ -174,6 +190,44 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       const names = targets.map((target) => target.displayName).join(", ");
       ctx.activity.record("deploy", skill.name, `${project.name}: ${names}`);
       ctx.touched("projects");
+    },
+
+    createSkill: async (project, input, agentKeys) => {
+      const { name, description } = checkNewSkill(input);
+      const targets = exportTargets(project, agentKeys);
+      const [first] = targets;
+      if (!first) throw invalid("No enabled installed agents selected for this project");
+      // Compared without case, like the library, so the name never sits next to a near twin.
+      const wanted = name.toLowerCase();
+      for (const target of targets) {
+        const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
+        const taken = roots.some((root) =>
+          readDirSafe(root).some((entry) => entry.name.toLowerCase() === wanted),
+        );
+        if (taken) {
+          throw exists(`${target.displayName} already has a skill named ${name} in this project`);
+        }
+      }
+      const document = newSkillDocument({ name, description });
+      await ctx.lock.run(`create ${name}`, async () => {
+        const written: string[] = [];
+        try {
+          for (const target of targets) {
+            const dir = join(target.enabledRoot, name);
+            ensureDir(dir);
+            written.push(dir);
+            await writeFile(join(dir, NEW_SKILL_DOCUMENT), document);
+          }
+        } catch (error) {
+          // Everywhere or nowhere: take back the folders this call made.
+          for (const dir of written) await removePath(dir);
+          throw error;
+        }
+      });
+      const names = targets.map((target) => target.displayName).join(", ");
+      ctx.activity.record("create", name, `${project.name}: ${names}`);
+      ctx.touched("projects");
+      return { relativePath: name, agentKey: first.key };
     },
 
     pushToLibrary: async (project, relativePath, options = {}) => {

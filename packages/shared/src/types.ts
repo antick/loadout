@@ -428,6 +428,13 @@ export interface Project {
 }
 
 /** A project-level deploy target. Agents sharing one project folder are merged into one target. */
+/** One agent's copy of a project skill: what the project editor opens. */
+export interface ProjectCopyRef {
+  /** The skill folder, relative to the agent's skills folder inside the project. */
+  relativePath: string;
+  agentKey: string;
+}
+
 export interface ProjectTarget {
   key: string;
   displayName: string;

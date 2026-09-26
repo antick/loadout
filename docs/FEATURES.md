@@ -31,7 +31,8 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
   Loadout on another computer. `loadout skills export <ref>… --out file.zip` does the same.
 - New skill: a name (checked against the Agent Skills rules and the library as you type, and also
   the folder name) and a description write a `SKILL.md` with a short outline, then the editor
-  opens on it. From the Library header, its empty state, Home, or the command palette.
+  opens on it. From the Library header, its empty state, Home, or the command palette. Its
+  **Create in** choice can put it straight in a linked project instead (see Projects).
   `loadout skills create <name> --description <text>` does the same.
 - Deleting a skill removes its library copy, preset links and every copy the app deployed.
 - The database is rebuilt from the skill files if it is ever lost.
@@ -214,6 +215,9 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   version**.
 - A guard refuses to update the library when several copies of a skill each hold their own changes.
 - Add library skills to a project with an agent picker that remembers your choice.
+- **New skill** on a project page writes a new skill straight into the project's folders for the
+  agents you tick (the remembered choice, or else the first usual agent), not the library, and
+  opens that copy in the editor. **Add to library** brings it into the library later.
 - Preset pills, batch enable, disable, update, tag and delete, reorder and remove projects.
 
 ### Skill updates

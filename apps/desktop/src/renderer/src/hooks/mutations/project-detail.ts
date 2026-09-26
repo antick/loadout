@@ -1,5 +1,7 @@
 import type {
   BatchResult,
+  CreateSkillInput,
+  ProjectCopyRef,
   PushToLibraryOptions,
   PushToLibraryResult,
   SkillVersion,
@@ -81,6 +83,28 @@ export function useExportSkill(): UseMutationResult<void, unknown, ExportSkillIn
           : t("projectPage.toast.exported", { name }),
       ),
     onError: (error) => toastError(error, "projectPage.errors.export"),
+    onSettled: () => invalidateProject(queryClient),
+  });
+}
+
+export interface CreateProjectSkillInput {
+  projectId: string;
+  skill: CreateSkillInput;
+  /** Agents whose project folders get the new skill. */
+  agentKeys: string[];
+}
+
+/** Write a new skill straight into a project; resolves to the copy to open in the editor. */
+export function useCreateProjectSkill(): UseMutationResult<
+  ProjectCopyRef,
+  unknown,
+  CreateProjectSkillInput
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, skill, agentKeys }: CreateProjectSkillInput) =>
+      api.projects.createSkill(projectId, skill, agentKeys),
+    onError: (error) => toastError(error, "library.create.error"),
     onSettled: () => invalidateProject(queryClient),
   });
 }

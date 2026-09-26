@@ -66,7 +66,7 @@ export function HomePanel(): ReactNode {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={shell.openNewSkill}>
+              <SidebarMenuButton onClick={() => shell.openNewSkill()}>
                 <FilePlus2 />
                 <span>{t("sidebar.home.newSkill")}</span>
               </SidebarMenuButton>

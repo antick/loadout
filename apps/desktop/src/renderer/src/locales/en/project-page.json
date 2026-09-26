@@ -8,6 +8,7 @@
     "more": "More project actions",
     "select": "Select",
     "addSkills": "Add skills",
+    "newSkill": "New skill",
     "search": "Search this project",
     "presetsHint_one": "Counts a skill once the project's agent folder has it",
     "presetsHint_other": "Counts a skill once all {{count}} agent folders have it",

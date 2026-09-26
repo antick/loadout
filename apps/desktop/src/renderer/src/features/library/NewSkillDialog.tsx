@@ -25,15 +25,20 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateSkill } from "@/hooks/mutations/library";
+import { useCreateProjectSkill } from "@/hooks/mutations/project-detail";
 import { useAppInfo, useLibraryLocation } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
 import { compactHome, joinPath } from "@/lib/paths";
 import { toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { NewSkillPlaceField } from "./NewSkillPlaceField";
+import { useNewSkillPlace } from "./use-new-skill-place";
 
 export interface NewSkillDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Start with this project chosen instead of the library. */
+  projectId?: string | null;
 }
 
 /** Library names and folder names, lower-cased: a new skill may match neither. */
@@ -44,10 +49,14 @@ function takenNames(skills: readonly Skill[] | undefined): Set<string> {
 }
 
 /** The form lives in its own component so every opening starts empty. */
-function NewSkillForm({ onOpenChange }: Omit<NewSkillDialogProps, "open">): ReactNode {
+function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "open">): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const create = useCreateSkill();
+  const createInLibrary = useCreateSkill();
+  const createInProject = useCreateProjectSkill();
+  const place = useNewSkillPlace(projectId ?? null);
+  const { project } = place;
+  const pending = createInLibrary.isPending || createInProject.isPending;
   const { data: skills } = useSkills();
   const { data: location } = useLibraryLocation();
   const { data: info } = useAppInfo();
@@ -59,53 +68,89 @@ function NewSkillForm({ onOpenChange }: Omit<NewSkillDialogProps, "open">): Reac
   const [nameTouched, setNameTouched] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const taken = useMemo(() => takenNames(skills), [skills]);
+  const libraryNames = useMemo(() => takenNames(skills), [skills]);
+  const taken = project ? place.taken : libraryNames;
   const trimmedName = name.trim();
   const trimmedDescription = description.trim();
-  const nameProblem = newSkillNameProblem(trimmedName) ?? (taken.has(trimmedName) ? "taken" : null);
+  const nameProblem =
+    newSkillNameProblem(trimmedName) ??
+    (taken.has(trimmedName) ? (project ? "takenProject" : "taken") : null);
   const descriptionProblem = newSkillDescriptionProblem(trimmedDescription);
   const showNameProblem =
     nameProblem !== null && nameProblem !== "empty" && (nameTouched || submitted);
   const showDescriptionProblem = descriptionProblem === "too_long";
-  const valid = nameProblem === null && descriptionProblem === null;
+  const placeReady = place.ready && (!project || place.targets.length > 0);
+  const valid = nameProblem === null && descriptionProblem === null && placeReady;
 
-  const folder =
-    location && trimmedName && !nameProblem
-      ? compactHome(
-          joinPath(
-            location.path,
-            `${LIBRARY_SKILLS_DIR_NAME}/${trimmedName}/${NEW_SKILL_DOCUMENT}`,
-          ),
-          info?.homeDir,
-        )
-      : null;
+  const [firstTarget] = place.targets;
+  const folderPath =
+    !trimmedName || nameProblem
+      ? null
+      : project
+        ? firstTarget
+          ? joinPath(
+              project.path,
+              [firstTarget.relativeDir, trimmedName, NEW_SKILL_DOCUMENT].filter(Boolean).join("/"),
+            )
+          : null
+        : location
+          ? joinPath(
+              location.path,
+              `${LIBRARY_SKILLS_DIR_NAME}/${trimmedName}/${NEW_SKILL_DOCUMENT}`,
+            )
+          : null;
+  const folder = folderPath ? compactHome(folderPath, info?.homeDir) : null;
+  const moreFolders = project ? place.targets.length - 1 : 0;
+
+  const created = (name: string): void => {
+    onOpenChange(false);
+    toastSuccess(
+      t("library.create.created", { name }),
+      t(project ? "library.create.createdInProjectHint" : "library.create.createdHint"),
+    );
+  };
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     setSubmitted(true);
-    if (!valid || create.isPending) return;
-    create.mutate(
-      { name: trimmedName, description: trimmedDescription },
-      {
-        onSuccess: (skill) => {
-          onOpenChange(false);
-          toastSuccess(
-            t("library.create.created", { name: skill.name }),
-            t("library.create.createdHint"),
-          );
-          void navigate({ to: "/library/$skillId/edit", params: { skillId: skill.id } });
+    if (!valid || pending) return;
+    const skill = { name: trimmedName, description: trimmedDescription };
+    if (project) {
+      createInProject.mutate(
+        { projectId: project.id, skill, agentKeys: place.agentKeys },
+        {
+          onSuccess: (ref) => {
+            created(skill.name);
+            void navigate({
+              to: "/projects/$projectId/edit",
+              params: { projectId: project.id },
+              search: { skill: ref.relativePath, agent: ref.agentKey },
+            });
+          },
         },
+      );
+      return;
+    }
+    createInLibrary.mutate(skill, {
+      onSuccess: (saved) => {
+        created(saved.name);
+        void navigate({ to: "/library/$skillId/edit", params: { skillId: saved.id } });
       },
-    );
+    });
   };
 
   return (
     <form onSubmit={submit} className="contents" noValidate>
       <DialogHeader>
         <DialogTitle>{t("library.create.title")}</DialogTitle>
-        <DialogDescription>{t("library.create.description")}</DialogDescription>
+        <DialogDescription>
+          {project
+            ? t("library.create.descriptionProject", { project: project.name })
+            : t("library.create.description")}
+        </DialogDescription>
       </DialogHeader>
       <FieldGroup>
+        {place.projects.length > 0 ? <NewSkillPlaceField place={place} /> : null}
         <Field data-invalid={showNameProblem || undefined}>
           <FieldLabel htmlFor={nameId}>{t("library.create.name")}</FieldLabel>
           <Input
@@ -125,13 +170,16 @@ function NewSkillForm({ onOpenChange }: Omit<NewSkillDialogProps, "open">): Reac
               {t(`library.create.nameProblem.${nameProblem}`, {
                 max: SKILL_NAME_MAX,
                 name: trimmedName,
+                project: project?.name,
               })}
             </FieldError>
           ) : (
             <FieldDescription>
               {folder ? (
                 <span className="block truncate font-mono text-xs" title={folder}>
-                  {folder}
+                  {moreFolders > 0
+                    ? t("library.create.place.moreFolders", { path: folder, count: moreFolders })
+                    : folder}
                 </span>
               ) : (
                 t("library.create.nameHint")
@@ -176,8 +224,8 @@ function NewSkillForm({ onOpenChange }: Omit<NewSkillDialogProps, "open">): Reac
         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={!valid || create.isPending}>
-          {create.isPending ? <Spinner /> : null}
+        <Button type="submit" disabled={!valid || pending}>
+          {pending ? <Spinner /> : null}
           {t("library.create.submit")}
         </Button>
       </DialogFooter>
@@ -185,12 +233,15 @@ function NewSkillForm({ onOpenChange }: Omit<NewSkillDialogProps, "open">): Reac
   );
 }
 
-/** Start a skill from scratch: a name and a description, then straight into the editor. */
-export function NewSkillDialog({ open, onOpenChange }: NewSkillDialogProps): ReactNode {
+/**
+ * Start a skill from scratch, in the library or straight in a project: a name and a description,
+ * then into the editor.
+ */
+export function NewSkillDialog({ open, onOpenChange, projectId }: NewSkillDialogProps): ReactNode {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        <NewSkillForm onOpenChange={onOpenChange} />
+        <NewSkillForm onOpenChange={onOpenChange} projectId={projectId} />
       </DialogContent>
     </Dialog>
   );

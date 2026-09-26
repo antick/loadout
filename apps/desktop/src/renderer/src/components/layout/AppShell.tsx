@@ -56,7 +56,10 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   const [skillPickerOpen, setSkillPickerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
-  const [newSkillOpen, setNewSkillOpen] = useState(false);
+  const [newSkill, setNewSkill] = useState<{ open: boolean; projectId: string | null }>({
+    open: false,
+    projectId: null,
+  });
   const [presetDialog, setPresetDialog] = useState<{ open: boolean; preset: Preset | null }>({
     open: false,
     preset: null,
@@ -91,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
       openHelp: () => setHelpOpen(true),
       openPresetDialog: (preset) => setPresetDialog({ open: true, preset: preset ?? null }),
       openAddProject: () => setAddProjectOpen(true),
-      openNewSkill: () => setNewSkillOpen(true),
+      openNewSkill: (projectId) => setNewSkill({ open: true, projectId: projectId ?? null }),
     }),
     [],
   );
@@ -164,7 +167,11 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
                 void navigate({ to: "/presets/$presetId", params: { presetId: saved.id } });
             }}
           />
-          <NewSkillDialog open={newSkillOpen} onOpenChange={setNewSkillOpen} />
+          <NewSkillDialog
+            open={newSkill.open}
+            projectId={newSkill.projectId}
+            onOpenChange={(open) => setNewSkill((previous) => ({ ...previous, open }))}
+          />
           <FlaggedInstallDialog />
           <AddProjectDialog
             open={addProjectOpen}

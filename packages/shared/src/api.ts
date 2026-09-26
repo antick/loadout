@@ -30,6 +30,7 @@ import type {
   PresetDeployStatus,
   PresetInput,
   Project,
+  ProjectCopyRef,
   ProjectSuggestion,
   ProjectTarget,
   PushToLibraryOptions,
@@ -248,6 +249,11 @@ export interface ProjectsApi {
   skills(id: string): Promise<LocalSkill[]>;
   document(id: string, relativePath: string, agentKey: string): Promise<SkillDocument>;
   exportSkill(skillId: string, id: string, agentKeys?: string[]): Promise<void>;
+  /**
+   * Write a new skill straight into the project's folders for the chosen agents, not the
+   * library. Resolves to the copy to open in the editor.
+   */
+  createSkill(id: string, input: CreateSkillInput, agentKeys?: string[]): Promise<ProjectCopyRef>;
   /** Push a project skill (all its per-agent copies, given by relative path) to the library. */
   pushToLibrary(
     id: string,

@@ -1,6 +1,7 @@
 import { APP_NAME, type Project } from "@loadout/shared";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import {
+  FilePlus2,
   FolderOpen,
   FolderSearch,
   ListChecks,
@@ -19,6 +20,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useShell } from "@/components/layout/shell-context";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { Button } from "@/components/ui/button";
@@ -109,6 +111,7 @@ function ProjectWorkspace({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const shell = useShell();
   const skills = useProjectSkills(project.missing ? null : project.id);
   const targets = useProjectTargets(project.id);
   const instructionFiles = useInstructionFiles(project.id, project.type === "project");
@@ -236,6 +239,15 @@ function ProjectWorkspace({
             >
               <ListChecks />
               {t("projectPage.select")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={project.missing}
+              onClick={() => shell.openNewSkill(project.id)}
+            >
+              <FilePlus2 />
+              {t("projectPage.newSkill")}
             </Button>
             <Button
               size="sm"
