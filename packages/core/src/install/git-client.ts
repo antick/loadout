@@ -2,10 +2,10 @@ import { randomUUID } from "node:crypto";
 import { existsSync, renameSync, utimesSync } from "node:fs";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { APP_SLUG, type ErrorCode } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { AppError, cancelled, isAppError } from "../errors";
+import { AppError, cancelled, invalid, isAppError } from "../errors";
 import { type ExecResult, exec } from "../util/exec";
 import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
 import {
@@ -13,9 +13,11 @@ import {
   dirSize,
   ensureDir,
   isDirectory,
+  isInside,
   readDirSafe,
   removePath,
   statOrNull,
+  toPosix,
 } from "../util/fs";
 import { sha256Hex } from "../util/hash";
 import { trySanitizeSkillName } from "../util/names";
@@ -29,6 +31,7 @@ import {
   refLists,
 } from "./git-refs";
 import { type RemoteRefs, normalizeRepoUrl, redactUrl, repoNameFromUrl } from "./git-source";
+import { MANIFEST_PATTERNS, applyWorkingTree, folderPattern } from "./git-sparse";
 
 export interface CheckoutOptions {
   /** Branch or tag; null means the remote's default branch. */
@@ -37,6 +40,11 @@ export interface CheckoutOptions {
   revision?: string | null;
   /** Folder the caller cares about. Accepted for narrow clones later; today the clone is whole. */
   subpath?: string | null;
+  /**
+   * Check out only the skill documents (`SKILL.md`). The caller lists or finds skills from them,
+   * then calls `materialize` for the folders it really uses before reading any other file.
+   */
+  manifestsOnly?: boolean;
   signal?: AbortSignal;
   /** Download progress, 0–100, reported once per whole percent. */
   onPercent?: (percent: number) => void;
@@ -47,8 +55,21 @@ export interface Checkout {
   dir: string;
   /** Commit the files were taken from. */
   revision: string;
+  /** Only the skill documents are here so far (a `manifestsOnly` checkout Git could narrow). */
+  partial: boolean;
+  /**
+   * Give these folders (inside `dir`) all their files, from the same commit. Does nothing for a
+   * whole checkout. Call it before reading, copying or scanning anything in them.
+   */
+  materialize(dirs: readonly string[]): Promise<void>;
   cleanup(): Promise<void>;
 }
+
+/** What a checkout that is already whole says to `materialize`. */
+export const WHOLE_CHECKOUT = {
+  partial: false,
+  materialize: async (): Promise<void> => undefined,
+} as const;
 
 export interface RemoteOptions {
   branch?: string | null;
@@ -75,6 +96,14 @@ export interface GitClientOptions {
 
 const GIT = "git";
 const GIT_TIMEOUT_MS = 300_000;
+/**
+ * Files bigger than this come later, only when a checkout needs them. Skill documents and text
+ * arrive with the clone, so a typical skill repository is complete in one trip; big files
+ * (images, PDFs, fonts, models) wait until a skill that holds them is installed. Measured on
+ * GitHub: a 97 MB repository cloned in 2.4 s instead of 6.2 s. At 64 KB a 3.5 MB repository
+ * needed a second trip for one long SKILL.md; at 256 KB it clones as fast as a full clone.
+ */
+const CLONE_FILTER = "--filter=blob:limit=256k";
 const CACHE_LIMIT_BYTES = 1024 * 1024 * 1024;
 const REPOS_DIR_NAME = "repos";
 const SLOT_HEX_LENGTH = 16;
@@ -292,7 +321,19 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     try {
       await runOk(
         `Failed to clone ${redactUrl(url)}`,
-        ["clone", "--depth", "1", "--progress", ...branch, "--", url, partial],
+        // Big files come later, only when a checkout needs them (see `git-sparse.ts`).
+        [
+          "clone",
+          "--depth",
+          "1",
+          CLONE_FILTER,
+          "--no-checkout",
+          "--progress",
+          ...branch,
+          "--",
+          url,
+          partial,
+        ],
         { network: true, signal: options.signal, onLine: percentReader(options.onPercent) },
       );
       renameSync(partial, slot);
@@ -316,6 +357,23 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     await removePath(slot);
     await prune(slot);
     await cloneFresh(slot, url, options);
+  }
+
+  /** Put the wanted files of the slot on disk (all when `patterns` is null). */
+  async function fillTree(
+    slot: string,
+    url: string,
+    patterns: readonly string[] | null,
+    signal?: AbortSignal,
+  ): Promise<{ partial: boolean }> {
+    const tree = await applyWorkingTree(run, slot, patterns, signal);
+    if (tree.failure) {
+      ctx.log.warn(`Checking out every file of ${redactUrl(url)}: ${tree.failure}`);
+    }
+    if (tree.reset.code !== 0) {
+      throw gitFailure(`Failed to fetch the files of ${redactUrl(url)}`, tree.reset.stderr);
+    }
+    return { partial: tree.partial };
   }
 
   async function pinRevision(slot: string, url: string, options: CheckoutOptions): Promise<string> {
@@ -364,28 +422,62 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
 
     checkout: async (url, checkoutOptions = {}) => {
       const slot = slotFor(url);
-      return withSlot(slot, async () => {
+      const { dir, revision, partial, cleanup } = await withSlot(slot, async () => {
         if (checkoutOptions.signal?.aborted) throw cancelled();
         await prepareSlot(slot, url, checkoutOptions);
-        const revision = await pinRevision(slot, url, checkoutOptions);
+        const pinned = await pinRevision(slot, url, checkoutOptions);
+        const tree = await fillTree(
+          slot,
+          url,
+          checkoutOptions.manifestsOnly ? MANIFEST_PATTERNS : null,
+          checkoutOptions.signal,
+        );
         // Folder mtime is the "last used" stamp the cache pruning sorts by.
         const now = new Date();
         utimesSync(slot, now, now);
 
         const parent = await mkdtemp(join(tmpdir(), CLONE_DIR_PREFIX));
         // Named after the repository so a skill at the repo root infers a sensible name.
-        const dir = join(parent, trySanitizeSkillName(repoNameFromUrl(url)) ?? FALLBACK_REPO_NAME);
-        const cleanup = (): Promise<void> => removePath(parent).catch(() => undefined);
+        const target = join(
+          parent,
+          trySanitizeSkillName(repoNameFromUrl(url)) ?? FALLBACK_REPO_NAME,
+        );
+        const remove = (): Promise<void> => removePath(parent).catch(() => undefined);
         try {
-          await copyDir(slot, dir, { skipSymlinks: true });
-          if (!isDirectory(dir)) ensureDir(dir);
+          await copyDir(slot, target, { skipSymlinks: true });
+          if (!isDirectory(target)) ensureDir(target);
           if (checkoutOptions.signal?.aborted) throw cancelled();
         } catch (error) {
-          await cleanup();
+          await remove();
           throw error;
         }
-        return { dir, revision, cleanup };
+        return { dir: target, revision: pinned, partial: tree.partial, cleanup: remove };
       });
+
+      let whole = !partial;
+      const materialize = async (wanted: readonly string[]): Promise<void> => {
+        if (whole || wanted.length === 0) return;
+        const folders = wanted.map((path) => {
+          if (!isInside(dir, path)) throw invalid(`Not inside the checkout: ${path}`);
+          return toPosix(relative(dir, path));
+        });
+        await withSlot(slot, async () => {
+          // Another checkout of this repository may have moved the cache on since.
+          await pinRevision(slot, url, { revision });
+          // The repository root is a skill: nothing less than every file will do.
+          const patterns = folders.includes("")
+            ? null
+            : [...MANIFEST_PATTERNS, ...folders.map(folderPattern)];
+          const tree = await fillTree(slot, url, patterns);
+          if (!tree.partial) whole = true;
+          for (const folder of whole ? [""] : folders) {
+            const target = join(dir, folder);
+            await removePath(target);
+            await copyDir(join(slot, folder), target, { skipSymlinks: true });
+          }
+        });
+      };
+      return { dir, revision, partial, materialize, cleanup };
     },
   };
 }

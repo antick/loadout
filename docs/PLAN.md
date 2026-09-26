@@ -165,6 +165,6 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - Drag-and-drop install (Install → This computer) is built, but a real drag from the file manager has not been tried yet.
 - Windows and Linux are untested. Symlink → junction → copy fallback and the `.cmd` CLI launcher exist but have never run.
 - The CLI cannot read tokens saved by the desktop app (they are encrypted with the OS keychain), so `loadout git sync` to an HTTPS + token remote only works from the app. SSH remotes and git credential helpers work from both.
-- Git clones are always shallow full clones (no sparse checkout of one subfolder).
+- Git clones are shallow and partial: files over 256 KB, and every file outside the chosen skills, arrive only when needed.
 - An interrupted backup merge is not auto-recovered; sync stops with a clear error and "Use the remote backup" fixes it.
 - Renderer components have unit tests only for pure logic (filters, grouping, backup mode). There are no UI interaction tests.

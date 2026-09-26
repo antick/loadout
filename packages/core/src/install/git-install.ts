@@ -105,6 +105,8 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       const checkout = await git.checkout(source.cloneUrl, {
         branch: source.branch,
         subpath: source.subpath,
+        // The list needs only each skill's SKILL.md; confirming fetches the chosen folders.
+        manifestsOnly: true,
         signal: handle.signal,
         onPercent: percentProgress(key),
       });
@@ -128,6 +130,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
           sourceRevision: checkout.revision,
           updateStatus: "up_to_date",
         }),
+        materialize: checkout.materialize,
         cleanup: checkout.cleanup,
       });
       cleanup = null;
@@ -240,10 +243,13 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         const checkout = await git.checkout(cloneUrl, {
           signal: handle.signal,
           onPercent: percentProgress(key),
+          // Found by its SKILL.md; then only that folder is fetched in full.
+          manifestsOnly: true,
         });
         cleanup = checkout.cleanup;
         emitProgress(ctx, key, "installing", { name: id });
         const dir = resolveSkillDir(checkout.dir, undefined, id);
+        await checkout.materialize([dir]);
         if (handle.signal.aborted) throw cancelled();
         const skill = await installChecked(
           install,

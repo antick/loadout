@@ -122,13 +122,15 @@ Core logic behind all of these has tests; this is about the UI wiring.
   holds the lock and flush when it ends.
 - **Code:** `packages/core/src/create-context.ts`
 
-### 11. Sparse Git clones
+### 11. Sparse Git clones (done)
 
-- **State:** every clone is a full shallow clone. Fine for normal repositories, slow for very large
-  monorepos when only one subfolder is wanted.
-- **To do:** `clone --filter=blob:none --sparse` + `sparse-checkout set <subpath>` when a clean
-  subpath is known, falling back to a full clone.
-- **Code:** `packages/core/src/install/git-client.ts` (`checkout({ subpath })` is accepted and ignored today)
+- **State:** clones are partial (`--filter=blob:limit=256k`): files over 256 KB arrive only when
+  needed. Previews, marketplace installs and updates check out only the `SKILL.md` files, then
+  fetch the chosen skill folders (`checkout({ manifestsOnly })` + `materialize`). Falls back to
+  every file when Git is older than 2.35 or the server ignores the filter.
+- **Left:** `checkout({ subpath })` is still accepted and unused; `manifestsOnly` replaced it.
+  Never timed on a slow corporate proxy.
+- **Code:** `packages/core/src/install/git-client.ts`, `git-sparse.ts`
 
 ### 12. Agent logos
 

@@ -12,6 +12,7 @@ import {
   type Checkout,
   type CheckoutOptions,
   type RemoteOptions,
+  WHOLE_CHECKOUT,
 } from "./git-client";
 import { pickRevision, refCandidates, refLists } from "./git-refs";
 import { type RemoteRefs, normalizeRepoUrl, redactUrl, repoNameFromUrl } from "./git-source";
@@ -170,7 +171,8 @@ export function createHttpGit(download: Download): HttpGit {
         const dir = join(parent, trySanitizeSkillName(repo) ?? FALLBACK_REPO_NAME);
         renameSync(wrappedRoot(unpacked.root), dir);
         ensureDir(dir);
-        return { dir, revision, cleanup };
+        // The archive holds every file, so there is nothing left to fetch later.
+        return { dir, revision, cleanup, ...WHOLE_CHECKOUT };
       } catch (error) {
         await cleanup();
         if (isAppError(error)) throw error;

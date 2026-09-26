@@ -262,11 +262,14 @@ export async function openRemoteSource(
     revision,
     subpath: target.subpath,
     signal,
+    // Found by its SKILL.md; then only the skill's own folder is fetched in full.
+    manifestsOnly: true,
   });
   try {
     const dir = resolveSkillDir(checkout.dir, target.subpath, target.locator);
     // Without a locator the resolver may hand back a container folder; that is not the skill.
     if (!isSkillDir(dir)) throw notFound("The skill is no longer in the repository");
+    await checkout.materialize([dir]);
     return {
       dir,
       revision: checkout.revision,

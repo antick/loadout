@@ -22,6 +22,11 @@ export interface PreviewSession {
   dirs: Map<string, string>;
   /** Source fields of a skill installed from `dir`. */
   record(dir: string): InstallRecord;
+  /**
+   * Fetch all files of these folders; a repository preview only has the skill documents until
+   * then. Absent when every file is already there.
+   */
+  materialize?(dirs: readonly string[]): Promise<void>;
   cleanup(): Promise<void>;
   /** Host of another site the download moved to; confirming needs `acceptRedirect`. */
   redirectedTo?: string | null;
@@ -92,6 +97,8 @@ export function createPreviewSessions(
       }));
       // Also before the session is spent: after reading the findings the user can still say yes.
       const checkable = chosen.flatMap(({ dir, name }) => (dir ? [{ name, dir }] : []));
+      // Whole folders before anything reads them: the safety check, then the install.
+      await session.materialize?.(checkable.map((entry) => entry.dir));
       const checked = safety
         ? await safety.check(checkable, {
             acceptRisk: options.acceptRisk,
