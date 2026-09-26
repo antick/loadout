@@ -277,6 +277,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   `--library` to work on another library.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.
+- Without the app: `pnpm add -g @antick/loadout` (Node.js 22.13 or newer), or the standalone
+  executables attached to each release. `loadout --version` prints the app's version.
 - Standalone CLI executables for macOS, Linux (x64 and arm64) and Windows, for machines without
   the app: `pnpm --filter @loadout/cli run build:standalone -- --all`.
 - A bundled `manage-skills` skill teaches your agents to install, deploy and update skills through

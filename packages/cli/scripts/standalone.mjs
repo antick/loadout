@@ -37,7 +37,7 @@ const NODE_CACHE_DIR = join(tmpdir(), "loadout-node-binaries");
 const SUMS_FILE = "SHA256SUMS";
 
 const nodeVersion = process.versions.node;
-const { version } = JSON.parse(readFileSync("package.json", "utf8"));
+const { version } = JSON.parse(readFileSync("../../apps/desktop/package.json", "utf8"));
 const hostTarget = `${process.platform === "win32" ? "win" : process.platform}-${process.arch}`;
 
 function run(command, args) {

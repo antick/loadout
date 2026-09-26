@@ -144,6 +144,13 @@ Replace the example path, skill name and agent keys with your own. The app also 
 the CLI to `~/.loadout/bin/loadout` when it starts. To let an agent manage skills,
 use the agent-control setup card on the Dashboard.
 
+Without the app, install the CLI from npm (Node.js 22.13 or newer):
+
+```bash
+pnpm add -g @antick/loadout
+loadout --help
+```
+
 ## Development commands
 
 | Command        | What it does                                  |
@@ -198,6 +205,17 @@ the update check.
 
 A tag that doesn't match the version in `apps/desktop/package.json` stops the workflow. Don't
 mark a release as a pre-release: the update check only sees the newest full release.
+
+### Publish the CLI to npm
+
+The CLI is also on npm as `@antick/loadout`, at the app's version. After publishing a release:
+
+1. Sign in once: `pnpm login` (an npm account that owns the `antick` scope).
+2. Build the package: `pnpm --filter @loadout/cli run pack:npm`. It lands in
+   `packages/cli/dist/npm`: a small launcher, the bundled CLI, a README and the licence.
+3. Publish it: `cd packages/cli/dist/npm && pnpm publish --access public`.
+
+npm refuses to publish the same version twice, so bump `apps/desktop/package.json` first.
 
 ### Test an update locally
 
