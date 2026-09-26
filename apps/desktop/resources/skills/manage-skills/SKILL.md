@@ -61,6 +61,7 @@ sb skills list --query pdf --json          # text in the name, description, tags
 sb skills show <ref> --json
 sb skills status <ref> --json              # which agents have it, and is it really on disk
 sb repo show --json                        # library location and counts
+sb doctor --json                           # everything that needs a look; exit 1 on errors
 
 # Install (library only)
 sb skills install ./path/to/skill-folder --json

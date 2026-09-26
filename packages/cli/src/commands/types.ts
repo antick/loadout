@@ -33,4 +33,6 @@ export interface CommandGroup {
   name: string;
   summary: string;
   commands: readonly CommandSpec[];
+  /** A group that is one command on its own, run as `loadout <group>` (e.g. `doctor`). */
+  standalone?: CommandSpec;
 }

@@ -29,6 +29,10 @@ function usageShape(message: string): ErrorShape {
 function findCommand(path: readonly string[]): { group?: CommandGroup; command?: CommandSpec } {
   const [groupName, commandName] = path;
   const group = COMMAND_GROUPS.find((candidate) => candidate.name === groupName);
+  if (group?.standalone) {
+    if (commandName !== undefined) throw new UsageError(`Unexpected argument: ${commandName}`);
+    return { group, command: group.standalone };
+  }
   const command = group?.commands.find((candidate) => candidate.name === commandName);
   return { group, command };
 }

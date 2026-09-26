@@ -255,6 +255,12 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 
 ### Command line and agent control
 
+- `loadout doctor`: one report of everything that needs a look, grouped by area: skill format
+  problems, deployments missing on disk, copies changed in an agent's folder, skills loaded
+  twice, broken folders and skills outside the library in agent folders, failed update checks,
+  backup conflicts, skills the safety check flagged, missing project folders and library
+  location problems. Agents sharing a folder are named in one line. Exit code 1 on any error;
+  `--all` adds what is only good to know, such as available updates.
 - `loadout` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands (including
   `skills create`, `skills validate` for the format checks, exit code 1 on errors,
   `skills list --query` for a text search, `skills diff` to compare copies or the source with the
@@ -347,7 +353,7 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 
 ## CLI features
 
-The CLI supports the `repo`, `agents`, `skills`, `presets` and `git` command groups,
+The CLI supports the `repo`, `agents`, `skills`, `presets` and `git` command groups and `doctor`,
 JSON output, a custom library location and dry runs for selected commands. It can install,
 list, inspect, validate, deploy, remove, update and adopt skills; manage preset membership and deployment;
 and sync, pull or restore Git backups. Run `pnpm cli --help` for usage.

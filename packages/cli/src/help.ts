@@ -71,10 +71,14 @@ export function groupHelp(group: CommandGroup): string {
 }
 
 export function commandHelp(group: CommandGroup, command: CommandSpec): string {
+  const invocation =
+    group.standalone === command
+      ? `${CLI_BINARY_NAME} ${group.name}`
+      : `${CLI_BINARY_NAME} ${group.name} ${command.name}`;
   const lines = [
-    `${CLI_BINARY_NAME} ${group.name} ${command.name} - ${command.summary}`,
+    `${invocation} - ${command.summary}`,
     "",
-    `Usage: ${CLI_BINARY_NAME} ${group.name} ${command.name} ${command.usage}`.trimEnd(),
+    `Usage: ${invocation} ${command.usage}`.trimEnd(),
   ];
   if (command.flags.length > 0) lines.push("", "Options:", ...flagRows(command.flags));
   lines.push("", "Global options:", ...flagRows(GLOBAL_FLAGS));

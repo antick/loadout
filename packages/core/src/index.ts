@@ -8,3 +8,4 @@ export { type RemovalPlan, type StorageService } from "./storage";
 export type { ResolvedAgent } from "./agents/registry";
 export { isRemoteSource } from "./updates";
 export { diffTrees } from "./updates/diff";
+export { checkHealth } from "./health/doctor";

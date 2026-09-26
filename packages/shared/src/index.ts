@@ -15,3 +15,4 @@ export * from "./new-skill";
 export * from "./safety";
 export * from "./wsl";
 export * from "./skill-search";
+export * from "./health";
