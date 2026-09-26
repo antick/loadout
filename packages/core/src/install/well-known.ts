@@ -195,10 +195,11 @@ function candidates(url: URL): Candidate[] {
   if (isWellKnownIndexUrl(url.toString())) {
     return [{ indexUrl: `${origin}${url.pathname}`, scoped: path !== "" }];
   }
-  return WELL_KNOWN_PATHS.flatMap((known) => [
-    ...(path ? [{ indexUrl: `${origin}${path}/${known}/${INDEX_FILE}`, scoped: true }] : []),
-    { indexUrl: `${origin}/${known}/${INDEX_FILE}`, scoped: false },
-  ]);
+  return WELL_KNOWN_PATHS.flatMap((known) => {
+    const atRoot: Candidate = { indexUrl: `${origin}/${known}/${INDEX_FILE}`, scoped: false };
+    if (!path) return [atRoot];
+    return [{ indexUrl: `${origin}${path}/${known}/${INDEX_FILE}`, scoped: true }, atRoot];
+  });
 }
 
 /**

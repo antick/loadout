@@ -55,6 +55,10 @@ function flaggedMessage(flagged: readonly FlaggedSkill[]): string {
   return `The safety check flagged ${subject}. Read the findings, then install anyway only if you trust the source.`;
 }
 
+function toRecord(skill: Skill, contentHash: string, report: SafetyReport): SafetyRecord {
+  return { ...report, skillId: skill.id, contentHash, stale: skill.contentHash !== contentHash };
+}
+
 export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): SafetyService {
   const { store } = deps;
   const reports = new SafetyStore(ctx.paths.cacheDir);
@@ -86,10 +90,6 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
       );
     }
     return found;
-  }
-
-  function toRecord(skill: Skill, contentHash: string, report: SafetyReport): SafetyRecord {
-    return { ...report, skillId: skill.id, contentHash, stale: skill.contentHash !== contentHash };
   }
 
   async function scanOne(found: ScannerProgram, skill: Skill): Promise<SafetyRecord> {

@@ -115,31 +115,6 @@ const CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 130 }, (_
   const round = Math.floor(index / TOPICS.length);
   const skillId = round === 0 ? pick(TOPICS, index) : `${pick(TOPICS, index)}-${round + 1}`;
   return {
-    "market.detail": async (source: string, skillId: string): Promise<MarketSkillDetail> => {
-      await new Promise((resolve) => window.setTimeout(resolve, DETAIL_DELAY_MS));
-      const id = `${source}/${skillId}`;
-      const index =
-        Math.max(
-          0,
-          CATALOG.findIndex((entry) => entry.id === id),
-        ) + 1;
-      const pageUrl = `${MARKETPLACE_URL}/${id}`;
-      return {
-        id,
-        source,
-        skillId,
-        pageUrl,
-        repoUrl: `https://github.com/${source}`,
-        audits:
-          index % AUDITS_FAIL_EVERY === 0
-            ? null
-            : index % NO_AUDITS_EVERY === 0
-              ? []
-              : mockAudits(pageUrl, index),
-        document: index % NO_DOCUMENT_EVERY === 0 ? null : mockDocument(skillId),
-        documentPath: index % NO_DOCUMENT_EVERY === 0 ? null : `skills/${skillId}/SKILL.md`,
-      };
-    },
     id: `${source}/${skillId}`,
     skillId,
     name: skillId,

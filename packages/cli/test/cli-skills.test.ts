@@ -42,38 +42,38 @@ describe("skills create", () => {
   });
 });
 
+/** Prints a flagged report for a skill whose SKILL.md says EVIL, a clean one otherwise. */
+function fakeScanner(dir: string): string {
+  const flagged = JSON.stringify({
+    risk_assessment: { score: 90, recommendation: "DO_NOT_INSTALL", max_issue_severity: "HIGH" },
+    issues: [
+      {
+        id: "P1",
+        category: "Prompt Injection",
+        pattern: "Instruction Override",
+        severity: "HIGH",
+        confidence: 0.8,
+        location: { file: "SKILL.md", start_line: 6 },
+        finding: "EVIL",
+      },
+    ],
+    metadata: { skillspector_version: "9.9.9" },
+  });
+  const clean = JSON.stringify({
+    risk_assessment: { score: 0, recommendation: "SAFE" },
+    issues: [],
+  });
+  const path = join(dir, "skillspector");
+  writeFileSync(
+    path,
+    `#!/bin/sh\nif grep -q EVIL "$2/SKILL.md"; then echo '${flagged}'; exit 1; fi\necho '${clean}'\n`,
+  );
+  chmodSync(path, 0o755);
+  return path;
+}
+
 // The stand-in scanner is a shell script, so not on Windows.
 describe.skipIf(process.platform === "win32")("skills scan and the safety check", () => {
-  /** Prints a flagged report for a skill whose SKILL.md says EVIL, a clean one otherwise. */
-  function fakeScanner(dir: string): string {
-    const flagged = JSON.stringify({
-      risk_assessment: { score: 90, recommendation: "DO_NOT_INSTALL", max_issue_severity: "HIGH" },
-      issues: [
-        {
-          id: "P1",
-          category: "Prompt Injection",
-          pattern: "Instruction Override",
-          severity: "HIGH",
-          confidence: 0.8,
-          location: { file: "SKILL.md", start_line: 6 },
-          finding: "EVIL",
-        },
-      ],
-      metadata: { skillspector_version: "9.9.9" },
-    });
-    const clean = JSON.stringify({
-      risk_assessment: { score: 0, recommendation: "SAFE" },
-      issues: [],
-    });
-    const path = join(dir, "skillspector");
-    writeFileSync(
-      path,
-      `#!/bin/sh\nif grep -q EVIL "$2/SKILL.md"; then echo '${flagged}'; exit 1; fi\necho '${clean}'\n`,
-    );
-    chmodSync(path, 0o755);
-    return path;
-  }
-
   it("stops a flagged install, installs it with --accept-risk, and scans the library", async () => {
     sandbox.cleanup();
     const scannerDir = mkdtempSync(join(tmpdir(), "cli-scanner-"));

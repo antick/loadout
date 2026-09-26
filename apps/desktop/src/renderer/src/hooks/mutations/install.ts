@@ -161,14 +161,14 @@ export function useConfirmGit(): (
         run: () => api.install.confirmGit(preview.previewId, items, options),
         runAcceptingRisk: () =>
           api.install.confirmGit(preview.previewId, items, { ...options, acceptRisk: true }),
-        success: (installed) => {
-          const [only] = installed;
+        success: (skills) => {
+          const [only] = skills;
           const summary =
-            only && installed.length === 1
+            only && skills.length === 1
               ? installedOne(t, only)
               : {
-                  message: t("install.toast.installedCount", { count: installed.length }),
-                  skills: installed,
+                  message: t("install.toast.installedCount", { count: skills.length }),
+                  skills,
                 };
           const deployTo = preview.allAgents ? "all" : preview.agents;
           return deployTo.length > 0 ? { ...summary, deployTo } : summary;

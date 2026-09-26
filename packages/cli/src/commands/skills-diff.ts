@@ -71,11 +71,12 @@ function compareDeployments(skill: Skill, agentKeys: readonly string[]): Compari
   return skill.deployments
     .filter((deployment) => wanted.size === 0 || wanted.has(deployment.agentKey))
     .map((deployment): Comparison => {
-      const base = { against: deployment.agentKey, path: deployment.targetPath, entries: [] };
-      if (deployment.mode === "symlink") return { ...base, state: "linked" };
-      if (!existsSync(deployment.targetPath)) return { ...base, state: "missing" };
-      const entries = diffTrees(skill.libraryPath, deployment.targetPath);
-      return { ...base, state: entries.length > 0 ? "differs" : "same", entries };
+      const against = deployment.agentKey;
+      const path = deployment.targetPath;
+      if (deployment.mode === "symlink") return { against, path, state: "linked", entries: [] };
+      if (!existsSync(path)) return { against, path, state: "missing", entries: [] };
+      const entries = diffTrees(skill.libraryPath, path);
+      return { against, path, state: entries.length > 0 ? "differs" : "same", entries };
     });
 }
 

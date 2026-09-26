@@ -102,10 +102,10 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   const folder = folderPath ? compactHome(folderPath, info?.homeDir) : null;
   const moreFolders = project ? place.targets.length - 1 : 0;
 
-  const created = (name: string): void => {
+  const created = (createdName: string): void => {
     onOpenChange(false);
     toastSuccess(
-      t("library.create.created", { name }),
+      t("library.create.created", { name: createdName }),
       t(project ? "library.create.createdInProjectHint" : "library.create.createdHint"),
     );
   };

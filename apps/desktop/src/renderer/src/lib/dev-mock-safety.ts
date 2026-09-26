@@ -87,7 +87,7 @@ function wait(ms: number): Promise<void> {
 }
 
 function baseName(path: string): string {
-  return path.split(/[\\/]/).filter(Boolean).at(-1) ?? path;
+  return path.split(/[\\/]/).findLast(Boolean) ?? path;
 }
 
 export function withSafetyMocks(

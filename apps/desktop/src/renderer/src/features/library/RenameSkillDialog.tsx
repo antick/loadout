@@ -82,9 +82,9 @@ function RenameSkillForm({
   const taken = useMemo(
     () =>
       new Set(
-        (skills ?? [])
-          .filter((other) => other.id !== skill.id)
-          .flatMap((other) => [other.name.toLowerCase(), other.dirName.toLowerCase()]),
+        (skills ?? []).flatMap((other) =>
+          other.id === skill.id ? [] : [other.name.toLowerCase(), other.dirName.toLowerCase()],
+        ),
       ),
     [skills, skill.id],
   );

@@ -145,8 +145,13 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
       skills = skills.map((entry) => (entry.id === skillId ? renamed : entry));
       emitChanged("skills", "projects");
     }
-    const agents = found.deployments.map((deployment) => deployment.agentKey);
-    const result = { dryRun: Boolean(options?.dryRun), from: found.name, to: name, agents };
+    const agentKeys = found.deployments.map((entry) => entry.agentKey);
+    const result = {
+      dryRun: Boolean(options?.dryRun),
+      from: found.name,
+      to: name,
+      agents: agentKeys,
+    };
     return {
       ...result,
       skill: options?.dryRun ? found : renamed,

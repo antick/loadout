@@ -79,16 +79,20 @@ function byLength(a: string, b: string): number {
   return a.length - b.length || a.localeCompare(b);
 }
 
+/** The folder a file sits in, lower-cased: `skills/pdf/SKILL.md` → `pdf`. */
+function folderOf(path: string): string {
+  return path.split("/").at(-2)?.toLowerCase() ?? "";
+}
+
 /** Candidate `SKILL.md` paths for `skillId` among a repository's files. */
 export function documentCandidates(paths: readonly string[], skillId: string): DocumentCandidates {
   const documents = paths.filter((path) => path.split("/").at(-1)?.toLowerCase() === SKILL_FILE);
   const id = skillId.toLowerCase();
-  const folder = (path: string): string => path.split("/").at(-2)?.toLowerCase() ?? "";
-  const named = documents.filter((path) => folder(path) === id).sort(byLength);
+  const named = documents.filter((path) => folderOf(path) === id).sort(byLength);
   if (named[0]) return { sure: named[0], maybe: [] };
   if (documents.length === 1) return { sure: documents[0] ?? null, maybe: [] };
   const overlapping = documents.filter((path) => {
-    const name = folder(path);
+    const name = folderOf(path);
     return name.length >= MIN_OVERLAP && (id.includes(name) || name.includes(id));
   });
   return { sure: null, maybe: overlapping.sort(byLength) };

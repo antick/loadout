@@ -53,6 +53,19 @@ export function SafetyVerdictBadge({
   );
 }
 
+/** Each finding with a stable key: its rule and place, plus a count for exact repeats. */
+function keyedFindings(
+  findings: readonly SafetyFinding[],
+): { key: string; finding: SafetyFinding }[] {
+  const seen = new Map<string, number>();
+  return findings.map((finding) => {
+    const place = `${finding.id}:${finding.file}:${finding.line}`;
+    const repeat = seen.get(place) ?? 0;
+    seen.set(place, repeat + 1);
+    return { key: `${place}:${repeat}`, finding };
+  });
+}
+
 function FindingItem({ finding }: { finding: SafetyFinding }): ReactNode {
   const { t } = useTranslation();
   const where = finding.line ? `${finding.file}:${finding.line}` : finding.file;
@@ -125,11 +138,8 @@ export function SafetyReportView({
       {stale ? <p className="text-xs text-muted-foreground">{t("safety.staleHint")}</p> : null}
       {report.findings.length > 0 ? (
         <ul className="flex flex-col divide-y">
-          {report.findings.map((finding, index) => (
-            <FindingItem
-              key={`${finding.id}:${finding.file}:${finding.line}:${index}`}
-              finding={finding}
-            />
+          {keyedFindings(report.findings).map(({ key, finding }) => (
+            <FindingItem key={key} finding={finding} />
           ))}
         </ul>
       ) : (

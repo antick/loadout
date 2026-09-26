@@ -46,8 +46,9 @@ function nameTaken(store: SkillStore, skill: Skill, name: string): boolean {
   const wanted = name.toLowerCase();
   const others = store
     .list()
-    .filter((other) => other.id !== skill.id)
-    .flatMap((other) => [other.name.toLowerCase(), other.dirName.toLowerCase()]);
+    .flatMap((other) =>
+      other.id === skill.id ? [] : [other.name.toLowerCase(), other.dirName.toLowerCase()],
+    );
   const folders = readDirSafe(dirname(skill.libraryPath))
     .map((entry) => entry.name)
     .filter((entry) => entry !== skill.dirName)
