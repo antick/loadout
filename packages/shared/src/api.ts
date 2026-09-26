@@ -382,22 +382,29 @@ export type ApiNamespace = keyof LoadoutApi;
 /** Everything core implements. */
 export type CoreApi = Omit<LoadoutApi, "app">;
 
-export const CORE_NAMESPACES = [
-  "agents",
-  "skills",
-  "editor",
-  "instructions",
-  "deploy",
-  "install",
-  "market",
-  "updates",
-  "presets",
-  "workspace",
-  "projects",
-  "backup",
-  "settings",
-  "system",
-  "storage",
-] as const satisfies readonly (keyof CoreApi)[];
+/**
+ * A record rather than a list so the compiler refuses a namespace added to `CoreApi` but not
+ * here: the IPC bridge only forwards namespaces named in `API_NAMESPACES`.
+ */
+const CORE_NAMESPACE_KEYS: Record<keyof CoreApi, true> = {
+  agents: true,
+  skills: true,
+  editor: true,
+  instructions: true,
+  deploy: true,
+  install: true,
+  market: true,
+  safety: true,
+  updates: true,
+  presets: true,
+  workspace: true,
+  projects: true,
+  backup: true,
+  settings: true,
+  system: true,
+  storage: true,
+};
 
-export const API_NAMESPACES = [...CORE_NAMESPACES, "app"] as const;
+export const CORE_NAMESPACES = Object.keys(CORE_NAMESPACE_KEYS) as (keyof CoreApi)[];
+
+export const API_NAMESPACES: ApiNamespace[] = [...CORE_NAMESPACES, "app"];
