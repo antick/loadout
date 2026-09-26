@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { formatBytes } from "@loadout/shared";
 import { AppError, invalid, isAppError, notFound } from "../errors";
 import { resolveInside } from "../util/fs";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
@@ -114,6 +115,8 @@ function currentEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
     return null;
   }
   if (!WEB_PROTOCOLS.has(resolved.protocol)) return null;
+  // An index read over https never sends its downloads over plain http.
+  if (resolved.protocol === "http:" && new URL(indexUrl).protocol === "https:") return null;
   return {
     name: value.name,
     description: text,
@@ -275,19 +278,33 @@ export async function fetchWellKnownSkill(
   }
   const base = entry.fileBase;
   if (!base) throw invalid(`The index entry for ${entry.name} lists no files`);
+  let total = 0;
   for (const file of entry.files) {
     const isDocument = file.toLowerCase() === SKILL_FILE.toLowerCase();
+    // Each file comes from the skill's own folder on the site; `http://elsewhere/x` would not.
+    const address = new URL(file, base).toString();
+    if (!address.startsWith(base)) {
+      throw invalid(`The index entry for ${entry.name} lists a file outside its folder: ${file}`);
+    }
+    let data: Buffer;
     try {
-      const data = await download(new URL(file, base).toString(), {
+      data = await download(address, {
         signal,
         subject,
         maxBytes: isDocument ? MAX_SKILL_FILE_BYTES : MAX_ARTIFACT_BYTES,
       });
-      writeInside(root, isDocument ? SKILL_FILE : file, data);
     } catch (error) {
       // The document is the skill; a missing extra file is skipped, as other tools do.
       if (isDocument || isAppError(error, "CANCELLED")) throw error;
+      continue;
     }
+    total += data.length;
+    if (total > MAX_ARTIFACT_BYTES) {
+      throw invalid(
+        `The files of ${entry.name} add up to more than ${formatBytes(MAX_ARTIFACT_BYTES)}`,
+      );
+    }
+    writeInside(root, isDocument ? SKILL_FILE : file, data);
   }
   return root;
 }

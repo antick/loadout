@@ -8,7 +8,7 @@ import { errorMessage, invalid, isAppError, notFound } from "../errors";
 import { isInside, isSkillDir, removePath, resolveInside } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { type FoundSkill, findSkillDirs, listRepoSkills, preferNeutralCopies } from "./repo-scan";
-import { isGzip, isTar, readTar } from "./tar";
+import { MAX_ARCHIVE_ENTRIES, isGzip, isTar, readTar } from "./tar";
 
 /** An unpacked archive. Always call `cleanup`. */
 export interface ExtractedArchive {
@@ -129,8 +129,13 @@ function unpackTar(data: Buffer, root: string): void {
 function unpackZip(data: Buffer, root: string): void {
   const modes = readUnixModes(data);
   let unpacked = 0;
+  let entries = 0;
   const files = unzipSync(data, {
     filter: (file) => {
+      entries += 1;
+      if (entries > MAX_ARCHIVE_ENTRIES) {
+        throw invalid(`The archive holds more than ${MAX_ARCHIVE_ENTRIES} entries`);
+      }
       if (safeEntryPath(file.name) === null) return false;
       // A link inside an archive could point anywhere; skills never need one.
       if (((modes.get(file.name) ?? 0) & MODE_TYPE_MASK) === MODE_SYMLINK) return false;

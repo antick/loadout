@@ -6,6 +6,7 @@ import {
   crossSiteHost,
   findWellKnownIndex,
   isSiteCandidate,
+  parseWellKnownIndex,
   sha256Digest,
   siteOf,
   skillFileLink,
@@ -236,6 +237,47 @@ describe("a site that publishes skills", () => {
     ]);
     expect(readFileSync(join(orders?.libraryPath ?? "", "ref", "api.md"), "utf8")).toBe("api\n");
     expect((await world.updates.api.check(orders?.id ?? "", true)).updateStatus).toBe("up_to_date");
+  });
+
+  it("refuses an older index whose file list reaches outside the skill's folder", async () => {
+    web.served.set(
+      SHOP_INDEX,
+      json({
+        skills: [
+          {
+            name: "orders",
+            description: "Handle orders",
+            files: ["SKILL.md", "http://169.254.169.254/latest/meta-data"],
+          },
+        ],
+      }),
+    );
+    web.served.set(`${SHOP}/.well-known/skills/orders/SKILL.md`, Buffer.from(skillMd("orders")));
+    await expect(world.install.api.previewGit(`${SHOP}/`)).rejects.toThrow("outside its folder");
+    expect(web.requests.some((url) => url.includes("169.254"))).toBe(false);
+  });
+
+  it("drops a plain-http download listed by an https index", () => {
+    const digest = `sha256:${"a".repeat(64)}`;
+    const entry = (url: string) => ({
+      name: "pdf",
+      type: "skill-md",
+      description: "Read PDFs",
+      url,
+      digest,
+    });
+    expect(
+      parseWellKnownIndex(
+        { $schema: SCHEMA, skills: [entry("http://cdn.example.com/a.md")] },
+        DOCS_INDEX,
+      ),
+    ).toBeNull();
+    expect(
+      parseWellKnownIndex(
+        { $schema: SCHEMA, skills: [entry("https://cdn.example.com/a.md")] },
+        DOCS_INDEX,
+      ),
+    ).toHaveLength(1);
   });
 
   it("does not widen a path to the whole site", async () => {

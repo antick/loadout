@@ -87,15 +87,30 @@ function isZeroBlock(block: Buffer): boolean {
  * Every file and folder of a `.tar` (gzipped or not). `maxBytes` caps the unpacked size, so a small
  * download cannot expand to fill the memory.
  */
-export function readTar(input: Buffer, maxBytes: number): TarEntry[] {
+/**
+ * Most entries an archive may hold. Generous for a whole repository, but a pile of empty files
+ * (which the byte cap alone never stops) cannot exhaust memory.
+ */
+export const MAX_ARCHIVE_ENTRIES = 100_000;
+
+export function readTar(
+  input: Buffer,
+  maxBytes: number,
+  maxEntries: number = MAX_ARCHIVE_ENTRIES,
+): TarEntry[] {
   const data = isGzip(input) ? gunzipSync(input, { maxOutputLength: maxBytes + BLOCK * 4 }) : input;
   const entries: TarEntry[] = [];
   let at = 0;
   let longName: string | null = null;
   let total = 0;
+  let headers = 0;
   while (at + BLOCK <= data.length) {
     const header = data.subarray(at, at + BLOCK);
     if (isZeroBlock(header)) break;
+    headers += 1;
+    if (headers > maxEntries) {
+      throw invalid(`The archive holds more than ${maxEntries} entries`);
+    }
     const size = readOctal(header, SIZE_FIELD.at, SIZE_FIELD.length);
     const type = String.fromCharCode(header[TYPE_AT] ?? 0);
     const bodyStart = at + BLOCK;

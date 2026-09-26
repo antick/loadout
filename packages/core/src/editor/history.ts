@@ -39,11 +39,17 @@ function compareVersions(a: string, b: string): number {
   return Number(bTime) - Number(aTime) || Number(bCount) - Number(aCount);
 }
 
+/** One folder name for any text. `encodeURIComponent` keeps dots, so `.` and `..` get encoded too. */
+function flatName(text: string): string {
+  const encoded = encodeURIComponent(text);
+  return /^\.+$/.test(encoded) ? encoded.replaceAll(".", "%2E") : encoded;
+}
+
 export function createFileHistory(historyDir: string): FileHistory {
   // One flat folder name per file: the relative path cannot escape or collide once encoded.
-  const skillDir = (skillId: string): string => join(historyDir, encodeURIComponent(skillId));
+  const skillDir = (skillId: string): string => join(historyDir, flatName(skillId));
   const fileDir = (skillId: string, path: string): string =>
-    join(skillDir(skillId), encodeURIComponent(path));
+    join(skillDir(skillId), flatName(path));
 
   function versionIds(dir: string): string[] {
     return readDirSafe(dir)
