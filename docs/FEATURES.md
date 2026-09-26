@@ -91,6 +91,9 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   repositories and other hosts need Git, and the Git tab says so.
 - Marketplace (skills.sh): hot, trending and all-time boards, keyword search, contributor filter,
   one-click install, open the skill on the web.
+- Offline, a board or a search falls back to the last copy fetched, and the page says so with
+  its age ("Could not reach skills.sh. This is the copy from 2 hours ago.") and **Try again**.
+  The last 100 searches are kept for this.
 - Click a marketplace skill to read it before installing: the security audits skills.sh publishes
   (pass, warn or fail per auditor, with a link to each), its `SKILL.md` found in its GitHub
   repository, and, when it is already in the library, which agents have it. Details are cached

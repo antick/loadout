@@ -132,7 +132,9 @@
         "openInLibrary": "Open in library",
         "documentMissing": "The SKILL.md could not be found in the repository.",
         "documentFailed": "The details could not be loaded. Check your connection and try again."
-      }
+      },
+      "cached": "Could not reach {{marketplace}}. This is the copy from {{when}}.",
+      "retry": "Try again"
     },
     "local": {
       "folderTitle": "Choose a skill folder",

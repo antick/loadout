@@ -56,7 +56,7 @@ import type {
   InstallSelection,
   ConfirmOptions,
   MarketBoard,
-  MarketSkill,
+  MarketListing,
   MarketSkillDetail,
   ScanResult,
 } from "./types-install";
@@ -175,8 +175,10 @@ export interface SafetyApi {
 }
 
 export interface MarketApi {
-  board(board: MarketBoard): Promise<MarketSkill[]>;
-  search(query: string, limit?: number): Promise<MarketSkill[]>;
+  /** A ranking; offline, the last copy fetched, with `cachedAt` saying how old it is. */
+  board(board: MarketBoard): Promise<MarketListing>;
+  /** Live search; offline, the last answer to the same search, with `cachedAt`. */
+  search(query: string, limit?: number): Promise<MarketListing>;
   /** Security audits and the `SKILL.md` of one skill, to read before installing it. */
   detail(source: string, skillId: string): Promise<MarketSkillDetail>;
 }

@@ -103,6 +103,9 @@ const TOPICS = [
   "prompt-library",
 ] as const;
 
+/** Age of the "offline" trending board in the preview. */
+const OFFLINE_COPY_AGE_MS = 2 * 60 * 60 * 1000;
+
 function pick<T>(list: readonly T[], index: number): T {
   return list[index % list.length] as T;
 }
@@ -190,16 +193,22 @@ export function createMarketMockHandlers(
         documentPath: index % NO_DOCUMENT_EVERY === 0 ? null : `skills/${skillId}/SKILL.md`,
       };
     },
-    "market.board": (board: MarketBoard) =>
-      withInstalled(
+    // The "trending" board plays the offline case: an older copy, with how old it is.
+    "market.board": (board: MarketBoard) => ({
+      skills: withInstalled(
         Array.from({ length: BOARD_SIZE }, (_, index) => pick(CATALOG, BOARD_ORDER[board](index))),
       ),
+      cachedAt: board === "trending" ? Date.now() - OFFLINE_COPY_AGE_MS : null,
+    }),
     "market.search": (query: string, limit?: number) => {
       const needle = query.trim().toLowerCase();
       if (needle === "offline") ctx.fail("NETWORK", `Could not resolve host: ${MARKETPLACE_URL}`);
-      return withInstalled(
-        CATALOG.filter((entry) => entry.id.toLowerCase().includes(needle)).slice(0, limit ?? 50),
-      );
+      return {
+        skills: withInstalled(
+          CATALOG.filter((entry) => entry.id.toLowerCase().includes(needle)).slice(0, limit ?? 50),
+        ),
+        cachedAt: null,
+      };
     },
   };
 }

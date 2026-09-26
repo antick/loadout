@@ -87,10 +87,13 @@ describe("marketplace service", () => {
     const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
 
     const hot = await market.api.board("hot");
-    expect(hot).toEqual([
-      { id: "acme/skills/pdf", ...PDF, installed: false },
-      { id: "acme/skills/docx", ...DOCX, installed: false },
-    ]);
+    expect(hot).toEqual({
+      skills: [
+        { id: "acme/skills/pdf", ...PDF, installed: false },
+        { id: "acme/skills/docx", ...DOCX, installed: false },
+      ],
+      cachedAt: null,
+    });
     await market.api.board("trending");
     await market.api.board("all_time");
     await market.api.board("hot");
@@ -109,7 +112,7 @@ describe("marketplace service", () => {
   it("marks skills the library already has, even on a cached listing", async () => {
     const { fetchImpl } = fakeFetch(() => html(STREAMED_PAGE));
     const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
-    expect((await market.api.board("hot")).map((s) => s.installed)).toEqual([false, false]);
+    expect((await market.api.board("hot")).skills.map((s) => s.installed)).toEqual([false, false]);
 
     world.store.insert({
       name: "pdf",
@@ -130,7 +133,7 @@ describe("marketplace service", () => {
       contentHash: "h2",
       updateStatus: "up_to_date",
     });
-    expect((await market.api.board("hot")).map((s) => s.installed)).toEqual([true, false]);
+    expect((await market.api.board("hot")).skills.map((s) => s.installed)).toEqual([true, false]);
   });
 
   it("refetches after five minutes and falls back to the old listing when offline", async () => {
@@ -149,12 +152,15 @@ describe("marketplace service", () => {
     await market.api.board("hot");
     expect(calls).toHaveLength(1);
     age(301_000);
-    await market.api.board("hot");
+    expect((await market.api.board("hot")).cachedAt).toBeNull();
     expect(calls).toHaveLength(2);
 
     online = false;
-    age(301_000);
-    expect((await market.api.board("hot")).map((s) => s.skillId)).toEqual(["pdf", "docx"]);
+    age(7_200_000);
+    const offline = await market.api.board("hot");
+    expect(offline.skills.map((s) => s.skillId)).toEqual(["pdf", "docx"]);
+    // Says how old the copy is, so the page can tell the user.
+    expect(Date.now() - (offline.cachedAt ?? 0)).toBeGreaterThanOrEqual(7_200_000);
     await expect(market.api.board("trending")).rejects.toMatchObject({ code: "NETWORK" });
   });
 
@@ -169,7 +175,7 @@ describe("marketplace service", () => {
     body = html("<html>redesigned</html>");
     await expect(market.api.board("hot")).rejects.toMatchObject({ code: "NETWORK" });
     body = html(NEXT_DATA_PAGE);
-    expect(await market.api.board("hot")).toHaveLength(2);
+    expect((await market.api.board("hot")).skills).toHaveLength(2);
     expect(calls).toHaveLength(3);
   });
 
@@ -185,11 +191,14 @@ describe("marketplace service", () => {
     const { fetchImpl, calls } = fakeFetch(() => json({ skills: [PDF, DOCX, PDF] }));
     const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
 
-    expect(await market.api.search("   ")).toEqual([]);
+    expect(await market.api.search("   ")).toEqual({ skills: [], cachedAt: null });
     expect(calls).toEqual([]);
 
     const found = await market.api.search(" pdf & more ", 1);
-    expect(found).toEqual([{ id: "acme/skills/pdf", ...PDF, installed: false }]);
+    expect(found).toEqual({
+      skills: [{ id: "acme/skills/pdf", ...PDF, installed: false }],
+      cachedAt: null,
+    });
     await market.api.search("x", 100_000);
     await market.api.search("x");
     expect(calls.map((c) => c.url)).toEqual([
@@ -203,9 +212,31 @@ describe("marketplace service", () => {
     let body: Response = json([PDF]);
     const { fetchImpl } = fakeFetch(() => body.clone());
     const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
-    expect((await market.api.search("pdf")).map((s) => s.id)).toEqual(["acme/skills/pdf"]);
+    expect((await market.api.search("pdf")).skills.map((s) => s.id)).toEqual(["acme/skills/pdf"]);
     body = html("<html>not json</html>");
-    await expect(market.api.search("pdf")).rejects.toMatchObject({ code: "NETWORK" });
+    await expect(market.api.search("docx")).rejects.toMatchObject({ code: "NETWORK" });
+  });
+
+  it("falls back to the last answer to the same search when offline, and keeps only recent ones", async () => {
+    let online = true;
+    const { fetchImpl } = fakeFetch(() => {
+      if (!online) throw new TypeError("fetch failed");
+      return json([PDF]);
+    });
+    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    await market.api.search("PDF");
+    online = false;
+    const offline = await market.api.search(" pdf ");
+    expect(offline.skills.map((s) => s.id)).toEqual(["acme/skills/pdf"]);
+    expect(offline.cachedAt).toBeTypeOf("number");
+    await expect(market.api.search("never searched")).rejects.toMatchObject({ code: "NETWORK" });
+
+    online = true;
+    for (let i = 0; i < 105; i += 1) await market.api.search(`q${i}`);
+    const kept = world.ctx.db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM market_cache WHERE cache_key LIKE 'search:%'",
+    );
+    expect(kept?.n).toBe(100);
   });
 });
 

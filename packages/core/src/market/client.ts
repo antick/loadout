@@ -4,6 +4,7 @@ import {
   MARKETPLACE_URL,
   type MarketApi,
   type MarketBoard,
+  type MarketListing,
   type MarketSkill,
   type MarketSkillDetail,
 } from "@loadout/shared";
@@ -36,6 +37,9 @@ const SEARCH_PATH = "/api/search";
 const REQUEST_TIMEOUT_MS = 15_000;
 const BOARD_CACHE_TTL_MS = 300_000;
 const BOARD_CACHE_PREFIX = "board:";
+const SEARCH_CACHE_PREFIX = "search:";
+/** Searches kept for offline use; the oldest go first. */
+const MAX_CACHED_SEARCHES = 100;
 const DETAIL_CACHE_PREFIX = "detail:";
 /** Audits and documents change far less often than rankings. */
 const DETAIL_CACHE_TTL_MS = 1_800_000;
@@ -74,7 +78,7 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
   function readCache<T = MarketEntry[]>(
     key: string,
     ttlMs = BOARD_CACHE_TTL_MS,
-  ): { entries: T; fresh: boolean } | null {
+  ): { entries: T; fresh: boolean; fetchedAt: number } | null {
     const row = ctx.db.get<CacheRow>(
       "SELECT data, fetched_at FROM market_cache WHERE cache_key = ?",
       key,
@@ -82,7 +86,7 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     if (!row) return null;
     try {
       const entries = JSON.parse(row.data) as T;
-      return { entries, fresh: Date.now() - row.fetched_at < ttlMs };
+      return { entries, fresh: Date.now() - row.fetched_at < ttlMs, fetchedAt: row.fetched_at };
     } catch {
       return null;
     }
@@ -96,6 +100,33 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
       JSON.stringify(entries),
       Date.now(),
     );
+  }
+
+  /** Only the latest searches are kept for offline use. */
+  function pruneSearches(): void {
+    ctx.db.run(
+      `DELETE FROM market_cache WHERE cache_key LIKE ? AND cache_key NOT IN (
+         SELECT cache_key FROM market_cache WHERE cache_key LIKE ?
+         ORDER BY fetched_at DESC LIMIT ?)`,
+      `${SEARCH_CACHE_PREFIX}%`,
+      `${SEARCH_CACHE_PREFIX}%`,
+      MAX_CACHED_SEARCHES,
+    );
+  }
+
+  function live(entries: MarketEntry[]): MarketListing {
+    return { skills: withInstalled(entries), cachedAt: null };
+  }
+
+  /** Offline with an earlier answer beats an error page; the caller says how old it is. */
+  function orCached(
+    error: unknown,
+    cached: { entries: MarketEntry[]; fetchedAt: number } | null,
+    what: string,
+  ): MarketListing {
+    if (!cached || !isAppError(error)) throw error;
+    ctx.log.warn(`Showing a cached ${MARKETPLACE_NAME} ${what}`, error);
+    return { skills: withInstalled(cached.entries), cachedAt: cached.fetchedAt };
   }
 
   /** `installed` is worked out on every call, never cached: the library changes under the cache. */
@@ -126,35 +157,40 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
       if (!(board in BOARD_PATHS)) throw invalid(`Unknown marketplace board: ${board}`);
       const key = `${BOARD_CACHE_PREFIX}${board}`;
       const cached = readCache(key);
-      if (cached?.fresh) return withInstalled(cached.entries);
+      if (cached?.fresh) return live(cached.entries);
       try {
         const entries = await fetchBoard(board);
         writeCache(key, entries);
-        return withInstalled(entries);
+        return live(entries);
       } catch (error) {
-        // Offline with an old listing beats an error page.
-        if (!cached || !isAppError(error)) throw error;
-        ctx.log.warn(`Showing a cached ${MARKETPLACE_NAME} board`, error);
-        return withInstalled(cached.entries);
+        return orCached(error, cached, "board");
       }
     },
 
     search: async (query, limit = DEFAULT_SEARCH_LIMIT) => {
       const q = query.trim();
-      if (!q) return [];
+      if (!q) return { skills: [], cachedAt: null };
       const capped = Math.min(
         Math.max(Math.floor(limit) || DEFAULT_SEARCH_LIMIT, 1),
         MAX_SEARCH_LIMIT,
       );
       const url = `${MARKETPLACE_URL}${SEARCH_PATH}?q=${encodeURIComponent(q)}&limit=${capped}`;
-      const response = await request(url, "application/json");
-      let body: unknown;
+      const key = `${SEARCH_CACHE_PREFIX}${capped}:${q.toLowerCase()}`;
       try {
-        body = await response.json();
-      } catch {
-        throw new AppError("NETWORK", `The ${MARKETPLACE_NAME} search answer could not be read`);
+        const response = await request(url, "application/json");
+        let body: unknown;
+        try {
+          body = await response.json();
+        } catch {
+          throw new AppError("NETWORK", `The ${MARKETPLACE_NAME} search answer could not be read`);
+        }
+        const entries = parseSearchResponse(body).slice(0, capped);
+        writeCache(key, entries);
+        pruneSearches();
+        return live(entries);
+      } catch (error) {
+        return orCached(error, readCache(key), "search");
       }
-      return withInstalled(parseSearchResponse(body).slice(0, capped));
     },
 
     detail: async (source, skillId) => {

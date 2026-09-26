@@ -1,10 +1,16 @@
-import type { MarketBoard, MarketSkill, MarketSkillDetail, ScanResult } from "@loadout/shared";
+import type {
+  MarketBoard,
+  MarketListing,
+  MarketSkill,
+  MarketSkillDetail,
+  ScanResult,
+} from "@loadout/shared";
 import { type UseQueryResult, keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
 /** One marketplace leaderboard. The backend caches boards, so switching back is instant. */
-export function useMarketBoard(board: MarketBoard, enabled = true): UseQueryResult<MarketSkill[]> {
+export function useMarketBoard(board: MarketBoard, enabled = true): UseQueryResult<MarketListing> {
   return useQuery({
     queryKey: keys.market.board(board),
     queryFn: () => api.market.board(board),
@@ -16,7 +22,7 @@ export function useMarketBoard(board: MarketBoard, enabled = true): UseQueryResu
  * Marketplace keyword search. Raising `limit` refetches with more results while the current ones
  * stay on screen. Disabled for a blank query.
  */
-export function useMarketSearch(query: string, limit: number): UseQueryResult<MarketSkill[]> {
+export function useMarketSearch(query: string, limit: number): UseQueryResult<MarketListing> {
   const trimmed = query.trim();
   return useQuery({
     queryKey: [...keys.market.search(trimmed), limit],

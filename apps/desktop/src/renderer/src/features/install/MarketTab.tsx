@@ -5,13 +5,15 @@ import {
   MARKETPLACE_URL,
   type MarketBoard,
   type MarketSkill,
+  formatRelative,
 } from "@loadout/shared";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ExternalLink, SearchX, Store } from "lucide-react";
+import { CloudOff, ExternalLink, RefreshCw, SearchX, Store } from "lucide-react";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { InlineNotice } from "@/components/InlineNotice";
 import { Pager, pageCount, pageSlice } from "@/components/Pager";
 import { SearchInput } from "@/components/SearchInput";
 import { Button } from "@/components/ui/button";
@@ -89,7 +91,8 @@ export function MarketTab(): ReactNode {
   const install = useInstallFromMarket();
   const openExternal = useOpenExternal();
 
-  const results = useMemo(() => active.data ?? [], [active.data]);
+  const results = useMemo(() => active.data?.skills ?? [], [active.data]);
+  const cachedAt = active.data?.cachedAt ?? null;
   const sources = useMemo(() => sourceOptions(results), [results]);
   const filtered = useMemo(() => filterBySource(results, source), [results, source]);
 
@@ -199,6 +202,29 @@ export function MarketTab(): ReactNode {
         <p className="-mt-2 text-xs text-muted-foreground">
           {t("install.market.searchScope", { marketplace: MARKETPLACE_NAME })}
         </p>
+      ) : null}
+
+      {cachedAt !== null && !active.isPending ? (
+        <InlineNotice
+          tone="warning"
+          icon={CloudOff}
+          actions={
+            <Button
+              variant="ghost"
+              size="xs"
+              disabled={active.isFetching}
+              onClick={() => void active.refetch()}
+            >
+              {active.isFetching ? <Spinner /> : <RefreshCw />}
+              {t("install.market.retry")}
+            </Button>
+          }
+        >
+          {t("install.market.cached", {
+            marketplace: MARKETPLACE_NAME,
+            when: formatRelative(cachedAt),
+          })}
+        </InlineNotice>
       ) : null}
 
       {active.isPending ? (

@@ -142,6 +142,16 @@ export interface MarketSkillDetail {
   documentPath: string | null;
 }
 
+/** A marketplace board or search result. */
+export interface MarketListing {
+  skills: MarketSkill[];
+  /**
+   * Set when the marketplace could not be reached and an earlier copy is shown instead: when that
+   * copy was fetched (epoch ms). Null for a live answer.
+   */
+  cachedAt: number | null;
+}
+
 export interface MarketSkill {
   /** `owner/repo/skill`. */
   id: string;
