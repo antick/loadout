@@ -186,16 +186,16 @@ describe("without git", () => {
   });
 
   it("asks for Git for hosts it cannot download from, and never sends credentials", async () => {
-    for (const url of [
-      "https://example.com/acme/skills.git",
-      "git@github.com:acme/skills.git",
-      "https://user:token@github.com/acme/skills.git",
-    ]) {
+    for (const url of ["https://example.com/acme/skills.git", "git@github.com:acme/skills.git"]) {
       await expect(install.api.previewGit(url)).rejects.toMatchObject({
         code: "GIT_MISSING",
         message: GIT_NEEDED,
       });
     }
+    // A token in the address is refused before anything is fetched or stored.
+    await expect(
+      install.api.previewGit("https://user:token@github.com/acme/skills.git"),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     expect(web.requests.some((url) => url.includes("token"))).toBe(false);
   });
 });

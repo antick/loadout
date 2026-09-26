@@ -271,5 +271,21 @@ describe("url helpers", () => {
       "https://github.com/acme/skills.git",
     );
     expect(redactUrl("git@github.com:acme/skills.git")).toBe("git@github.com:acme/skills.git");
+    expect(
+      redactUrl("fatal: could not read https://ghp_x@github.com/a/b and https://u:p@h/c"),
+    ).toBe("fatal: could not read https://github.com/a/b and https://h/c");
+  });
+
+  it("refuses a user name, password or token in an http address", () => {
+    for (const input of [
+      "https://user:token@github.com/acme/skills.git",
+      "https://ghp_abc@github.com/acme/skills",
+      "http://u@example.com/r.git",
+    ]) {
+      expectInvalid(() => validateGitInput(input));
+    }
+    expect(validateGitInput("ssh://git@github.com/acme/skills.git")).toBe(
+      "ssh://git@github.com/acme/skills.git",
+    );
   });
 });

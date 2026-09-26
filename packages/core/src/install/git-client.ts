@@ -94,6 +94,8 @@ export interface GitClientOptions {
   binary?: string;
 }
 
+/** Transports Git may use for skills; `file` covers local repositories. */
+const GIT_TRANSPORTS = "https:http:ssh:git:file";
 const GIT = "git";
 const GIT_TIMEOUT_MS = 300_000;
 /**
@@ -202,7 +204,13 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
       return await exec(binary, [...flags, ...args], {
         cwd: call.cwd,
         // Never block on a credential prompt; keep messages in English so they can be classified.
-        env: { ...process.env, GIT_TERMINAL_PROMPT: "0", LC_ALL: "C" },
+        // Only real transports: no `<helper>::` remote helpers from a stored or restored URL.
+        env: {
+          ...process.env,
+          GIT_TERMINAL_PROMPT: "0",
+          LC_ALL: "C",
+          GIT_ALLOW_PROTOCOL: GIT_TRANSPORTS,
+        },
         timeoutMs: GIT_TIMEOUT_MS,
         signal: call.signal,
         onStderrLine: call.onLine,

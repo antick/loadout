@@ -17,6 +17,7 @@ import {
   parseGitSource,
   parseWellKnownIndex,
   redactUrl,
+  validateGitInput,
   resolveSkillDir,
   skillFileFolder,
   skillFileLink,
@@ -85,8 +86,9 @@ export function remoteTargetOf(skill: Skill): RemoteTarget {
   }
   if (skill.sourceType !== "git") throw invalid("This skill does not come from a repository");
   if (skill.sourceUrl) {
+    // The URL may come from another device's backup: it gets the same check as a typed one.
     return {
-      url: skill.sourceUrl,
+      url: validateGitInput(skill.sourceUrl, { allowLocalPath: true }),
       branch: skill.sourceBranch,
       subpath: skill.sourceSubpath,
       locator: null,

@@ -69,6 +69,9 @@ const MARKET_SITE_PAGES: ReadonlySet<string> = new Set([
   "site",
   "topic",
 ]);
+const HTTP_USERINFO = /^https?:\/\/[^/@\s]+@/i;
+const CREDENTIALS_NOT_ALLOWED =
+  "Leave the user name, password or token out of the address. For a private repository, sign Git in once (a credential helper or an SSH key) and use the plain URL.";
 const SCHEME_NOT_ALLOWED =
   "URL scheme not allowed. Use https://, http://, ssh://, git@host:owner/repo.git or owner/repo.";
 const CLIMBS_OUT = "A path inside the repository cannot contain '..'";
@@ -112,6 +115,9 @@ export function validateGitInput(input: string, options: GitInputOptions = {}): 
   // A leading dash would be read by git as an option; whitespace never belongs in a URL.
   if (text.startsWith("-") || /\s/.test(text)) throw invalid(SCHEME_NOT_ALLOWED);
   const bare = splitFragment(text).text;
+  // A password or token typed into the address would be stored, shown and backed up with the
+  // skill. Git asks the credential helper (or uses SSH keys) instead.
+  if (HTTP_USERINFO.test(bare)) throw invalid(CREDENTIALS_NOT_ALLOWED);
   if (isGitLike(bare)) {
     // `github:` and `gitlab:` say little on their own; what follows must be a repository.
     if (hasHostPrefix(bare)) parseWithoutFragment(bare);
@@ -314,5 +320,5 @@ export function repoNameFromUrl(url: string): string {
 
 /** Hide `user:token@` so credentials never reach a message or the log. */
 export function redactUrl(url: string): string {
-  return url.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/i, "$1");
+  return url.replace(/\b([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/gi, "$1");
 }
