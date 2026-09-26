@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
+  FilePlus2,
   BookOpen,
   CloudUpload,
   FolderPlus,
@@ -62,6 +63,12 @@ export function HomePanel(): ReactNode {
                   <ScanSearch />
                   <span>{t("sidebar.home.scan")}</span>
                 </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={shell.openNewSkill}>
+                <FilePlus2 />
+                <span>{t("sidebar.home.newSkill")}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

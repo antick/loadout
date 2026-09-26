@@ -24,6 +24,7 @@ import { LibraryWarningBanner } from "@/components/LibraryWarningBanner";
 import { PresetDialog } from "@/components/PresetDialog";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { FirstRunDialog } from "@/features/backup/FirstRunDialog";
+import { NewSkillDialog } from "@/features/library/NewSkillDialog";
 import { AddProjectDialog } from "@/features/projects/AddProjectDialog";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -54,6 +55,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   const [skillPickerOpen, setSkillPickerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
+  const [newSkillOpen, setNewSkillOpen] = useState(false);
   const [presetDialog, setPresetDialog] = useState<{ open: boolean; preset: Preset | null }>({
     open: false,
     preset: null,
@@ -88,6 +90,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
       openHelp: () => setHelpOpen(true),
       openPresetDialog: (preset) => setPresetDialog({ open: true, preset: preset ?? null }),
       openAddProject: () => setAddProjectOpen(true),
+      openNewSkill: () => setNewSkillOpen(true),
     }),
     [],
   );
@@ -160,6 +163,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
                 void navigate({ to: "/presets/$presetId", params: { presetId: saved.id } });
             }}
           />
+          <NewSkillDialog open={newSkillOpen} onOpenChange={setNewSkillOpen} />
           <AddProjectDialog
             open={addProjectOpen}
             onOpenChange={setAddProjectOpen}

@@ -9,6 +9,7 @@
  * was redirected to another site, so confirming needs `acceptRedirect`.
  */
 import {
+  type CreateSkillInput,
   NO_REQUESTED_AGENTS,
   type BatchImportResult,
   type ConfirmOptions,
@@ -302,6 +303,14 @@ export function createInstallMockHandlers(
           sourceRevision: "a1b2c3d",
         });
       });
+    },
+    "skills.create": async (input: CreateSkillInput) => {
+      await wait(STEP_MS * 2);
+      const name = input.name.trim();
+      if (ctx.getSkills().some((entry) => entry.name.toLowerCase() === name.toLowerCase())) {
+        ctx.fail("ALREADY_EXISTS", `The library already has a skill or folder named ${name}.`);
+      }
+      return makeSkill(name, "import", { description: input.description.trim() });
     },
     "install.fromPath": async (sourcePath: string, name?: string) => {
       await wait(STEP_MS * 3);

@@ -62,6 +62,7 @@
       "failed": "Failed",
       "kind": {
         "install": "Installed",
+        "create": "Created",
         "remove": "Removed",
         "edit": "Edited",
         "update": "Updated",

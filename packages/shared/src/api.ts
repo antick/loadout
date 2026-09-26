@@ -59,6 +59,7 @@ import type {
   MarketSkillDetail,
   ScanResult,
 } from "./types-install";
+import type { CreateSkillInput } from "./new-skill";
 import type { InstructionFile } from "./instructions";
 import type { ClearableArea, RemoveAllDataOptions, StorageReport } from "./storage";
 import type { SettingKey, SettingValue, Settings } from "./settings";
@@ -85,6 +86,8 @@ export interface AgentsApi {
 export interface SkillsApi {
   list(): Promise<Skill[]>;
   get(skillId: string): Promise<Skill>;
+  /** Write a new skill into the library from a name and description. ALREADY_EXISTS when taken. */
+  create(input: CreateSkillInput): Promise<Skill>;
   document(skillId: string): Promise<SkillDocument>;
   remove(skillId: string): Promise<void>;
   removeMany(skillIds: string[]): Promise<BatchResult>;

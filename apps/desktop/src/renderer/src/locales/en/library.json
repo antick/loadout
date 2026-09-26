@@ -8,6 +8,7 @@
     "updateAll": "Update all ({{count}})",
     "select": "Select",
     "install": "Install",
+    "newSkill": "New skill",
     "deleteSkill": "Delete {{name}}",
     "toolbar": {
       "search": "Search name, description, tags or source",
@@ -45,7 +46,8 @@
       "title": "The library is empty",
       "description": "Install skills from the marketplace, Git or a folder, or import the ones your agents already have.",
       "install": "Install skills",
-      "scan": "Scan this machine"
+      "scan": "Scan this machine",
+      "create": "New skill"
     },
     "noMatches": {
       "title": "Nothing matches",
@@ -229,6 +231,28 @@
       "doneDescription": "{{path}} ({{size}})",
       "showFile": "Show file",
       "failed": "Could not export."
+    },
+    "create": {
+      "title": "New skill",
+      "description": "Start a skill from scratch. It goes into the library, and you write its instructions in the editor next.",
+      "name": "Name",
+      "namePlaceholder": "code-review",
+      "nameHint": "Lowercase letters, numbers and hyphens. It is also the folder name.",
+      "nameProblem": {
+        "format": "Use only lowercase letters, numbers and single hyphens, with no hyphen at either end.",
+        "too_long": "Keep the name to {{max}} characters or fewer.",
+        "reserved": "Windows keeps this name for itself, so it cannot be a folder name.",
+        "taken": "The library already has a skill called {{name}}."
+      },
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Reviews a diff for bugs and risky changes. Use when asked to review code or a pull request.",
+      "descriptionHint": "Say what it does and when to use it. Agents read this to decide whether to load the skill.",
+      "descriptionTooLong": "Keep the description to {{max}} characters or fewer.",
+      "counter": "{{count}} / {{max}}",
+      "submit": "Create and edit",
+      "created": "Created {{name}}",
+      "createdHint": "Write its instructions, then deploy it to your agents.",
+      "error": "Could not create the skill."
     }
   },
   "batchDeploy": {

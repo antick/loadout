@@ -1,5 +1,6 @@
 import {
   type BatchResult,
+  type CreateSkillInput,
   type BatchUpdateResult,
   type ExportResult,
   type Project,
@@ -50,6 +51,16 @@ function describeFailures(failed: readonly { name: string; message: string }[]):
 }
 
 const FAILURE_LIST_CLASS = "text-xs whitespace-pre-line break-words";
+
+/** Write a new skill into the library. The dialog that calls it words the success itself. */
+export function useCreateSkill(): UseMutationResult<Skill, unknown, CreateSkillInput> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateSkillInput) => api.skills.create(input),
+    onError: (error) => toastError(error, "library.create.error"),
+    onSettled: () => invalidateSkills(queryClient),
+  });
+}
 
 /** Look upstream for every skill that has a source. */
 export function useCheckAllUpdates(): UseMutationResult<BatchResult, unknown, void> {

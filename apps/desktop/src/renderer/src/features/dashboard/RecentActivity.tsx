@@ -4,6 +4,7 @@ import {
   ArrowUpCircle,
   CloudUpload,
   FileArchive,
+  FilePlus2,
   FolderInput,
   History,
   Layers,
@@ -27,6 +28,7 @@ import { ACTIVITY_LIMIT } from "./constants";
 
 const KIND_ICONS: Record<ActivityKind, LucideIcon> = {
   install: PackagePlus,
+  create: FilePlus2,
   remove: Trash2,
   edit: Pencil,
   update: ArrowUpCircle,

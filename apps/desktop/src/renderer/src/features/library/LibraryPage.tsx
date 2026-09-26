@@ -2,6 +2,7 @@ import type { Skill } from "@loadout/shared";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowUpCircle,
+  FilePlus2,
   FilterX,
   Library,
   ListChecks,
@@ -16,6 +17,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useShell } from "@/components/layout/shell-context";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
 import { SkillAgentBadges } from "@/components/SkillAgentBadges";
 import { SkillCard } from "@/components/SkillCard";
@@ -70,6 +72,7 @@ export function LibraryPage({
 }: LibraryPageProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const shell = useShell();
   const skills = useSkills();
   const allTags = useAllTags();
   const checkAll = useCheckAllUpdates();
@@ -167,6 +170,10 @@ export function LibraryPage({
           <ScanSearch />
           {t("library.empty.scan")}
         </Button>
+        <Button variant="outline" size="sm" onClick={shell.openNewSkill}>
+          <FilePlus2 />
+          {t("library.empty.create")}
+        </Button>
       </EmptyState>
     );
   } else if (visible.length === 0) {
@@ -230,6 +237,15 @@ export function LibraryPage({
             >
               <ListChecks />
               <span className="max-xl:sr-only">{t("library.select")}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={shell.openNewSkill}
+              title={t("library.newSkill")}
+            >
+              <FilePlus2 />
+              <span className="max-xl:sr-only">{t("library.newSkill")}</span>
             </Button>
             <Button size="sm" asChild>
               <Link to="/install">

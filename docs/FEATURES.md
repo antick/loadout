@@ -29,6 +29,10 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
 - Export: one skill or a selection as a single `.zip`, from the skill's panel, its right-click menu
   or batch mode. Each skill is a folder inside, so the file installs again anywhere, including in
   Loadout on another computer. `loadout skills export <ref>… --out file.zip` does the same.
+- New skill: a name (checked against the Agent Skills rules and the library as you type, and also
+  the folder name) and a description write a `SKILL.md` with a short outline, then the editor
+  opens on it. From the Library header, its empty state, Home, or the command palette.
+  `loadout skills create <name> --description <text>` does the same.
 - Deleting a skill removes its library copy, preset links and every copy the app deployed.
 - The database is rebuilt from the skill files if it is ever lost.
 
@@ -204,7 +208,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 ### Command line and agent control
 
 - `loadout` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands (including
-  `skills validate` for the format checks, exit code 1 on errors, and `skills export`),
+  `skills create`, `skills validate` for the format checks, exit code 1 on errors, and
+  `skills export`),
   `--json` output with stable error codes, `--dry-run` and `--yes` for destructive commands, and
   `--library` to work on another library.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own

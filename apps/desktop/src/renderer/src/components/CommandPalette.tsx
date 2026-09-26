@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
+  FilePlus2,
   CloudUpload,
   Download,
   Folder,
@@ -83,6 +84,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
           >
             <FolderSearch />
             {t("palette.scan")}
+          </CommandItem>
+          <CommandItem onSelect={() => run(() => shell.openNewSkill())}>
+            <FilePlus2 />
+            {t("palette.newSkill")}
           </CommandItem>
           <CommandItem onSelect={() => run(() => shell.openSkillPicker())}>
             <PencilLine />

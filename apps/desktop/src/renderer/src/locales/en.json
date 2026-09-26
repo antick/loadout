@@ -237,6 +237,7 @@
     "agents": "Agents",
     "install": "Install skills",
     "scan": "Scan this computer and import",
+    "newSkill": "New skill",
     "backupNow": "Back up now",
     "newPreset": "New preset",
     "toggleTheme": "Switch between light and dark",

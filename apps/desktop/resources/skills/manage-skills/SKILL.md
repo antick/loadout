@@ -68,6 +68,9 @@ sb skills install https://github.com/owner/repo --skill pdf-tools --json
 sb skills install owner/repo --all --json          # every skill in the repository
 sb skills install owner/repo@skill-name --json     # one marketplace skill
 
+# Start a new skill from scratch (name: lowercase letters, numbers, hyphens)
+sb skills create my-skill --description "What it does and when to use it" --json
+
 # Deploy / undeploy (repeat --agent for several agents)
 sb skills deploy <ref> --agent claude_code --agent cursor --json
 sb skills undeploy <ref> --agent cursor --json

@@ -17,6 +17,7 @@ beforeEach(() => {
     store: world.store,
     removeDeployments: async () => undefined,
     history: createFileHistory(world.ctx.paths.historyDir),
+    install: world.install.installIntoLibrary,
   });
   out = join(world.root, "out");
 });

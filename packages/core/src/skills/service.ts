@@ -3,6 +3,8 @@ import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { listTopLevel, removePath } from "../util/fs";
 import type { FileHistory } from "../editor/history";
+import type { InstallIntoLibrary } from "../install/library";
+import { createSkill } from "./create";
 import { exportTarget, writeSkillsArchive } from "./export";
 import { readSkillDocument } from "./metadata";
 import type { SkillStore } from "./store";
@@ -13,6 +15,8 @@ export interface SkillsServiceDeps {
   removeDeployments: (skill: Skill) => Promise<void>;
   /** Earlier versions kept by the editor; a removed skill's go with it. */
   history: FileHistory;
+  /** The one way into the library; a new skill goes in through it too. */
+  install: InstallIntoLibrary;
 }
 
 export interface SkillsService {
@@ -43,6 +47,8 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
     list: async () => store.list(),
 
     get: async (skillId) => store.get(skillId),
+
+    create: async (input) => createSkill(ctx, store, deps.install, input),
 
     document: async (skillId): Promise<SkillDocument> => {
       const skill = store.get(skillId);

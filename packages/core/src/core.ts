@@ -68,12 +68,13 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const deploy = createDeployService(ctx, { store, registry });
   const agents = createAgentsService(ctx, { registry, deploy });
   const history = createFileHistory(ctx.paths.historyDir);
+  const install = createInstallService(ctx, { store, registry, fetchImpl: options.fetchImpl });
   const skills = createSkillsService(ctx, {
     store,
     removeDeployments: deploy.removeAllForSkill,
     history,
+    install: install.installIntoLibrary,
   });
-  const install = createInstallService(ctx, { store, registry, fetchImpl: options.fetchImpl });
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
   const updates = createUpdatesService(ctx, { store, install, deploy });
   const presets = createPresetsService(ctx, { store, registry, deploy });

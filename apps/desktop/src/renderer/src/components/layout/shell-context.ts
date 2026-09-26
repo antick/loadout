@@ -9,6 +9,8 @@ export interface ShellActions {
   openHelp(): void;
   /** Create a preset, or edit the one given. */
   openPresetDialog(preset?: Preset): void;
+  /** Start a new skill in the library; the editor opens once it is created. */
+  openNewSkill(): void;
   openAddProject(): void;
 }
 

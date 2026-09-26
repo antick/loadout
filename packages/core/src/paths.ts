@@ -2,6 +2,7 @@ import { cpSync, existsSync, readFileSync, readdirSync, renameSync, rmdirSync } 
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import {
+  LIBRARY_SKILLS_DIR_NAME,
   APP_DATA_DIR_NAME,
   APP_SLUG,
   CLI_BIN_DIR_NAME,
@@ -65,7 +66,7 @@ const DB_FILE = `${APP_SLUG}.db`;
 const LOCK_FILE = `.${APP_SLUG}.lock`;
 const CRASH_FILE = "last-crash.json";
 const METADATA_DIR = `.${APP_SLUG}`;
-const SKILLS_DIR = "skills";
+const SKILLS_DIR = LIBRARY_SKILLS_DIR_NAME;
 const CACHE_DIR = "cache";
 const HISTORY_DIR = "history";
 const LOGS_DIR = "logs";

@@ -11,4 +11,5 @@ export * from "./types";
 export * from "./types-install";
 export * from "./version";
 export * from "./skill-checks";
+export * from "./new-skill";
 export * from "./wsl";

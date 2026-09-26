@@ -16,6 +16,9 @@ export const LIBRARY_CONFIG_FILE = "library.json";
 export const CLI_BIN_DIR_NAME = "bin";
 export const CLI_BINARY_NAME = APP_SLUG;
 
+/** Folder inside the library that holds one folder per skill. */
+export const LIBRARY_SKILLS_DIR_NAME = "skills";
+
 /** File names that mark a folder as a skill, in priority order. */
 export const SKILL_MARKER_FILES = ["SKILL.md", "skill.md"] as const;
 /** Files shown as a skill's document when present, in priority order. */

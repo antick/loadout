@@ -93,7 +93,7 @@ function reorder<T extends { id: string; sortOrder: number }>(items: T[], ids: s
 }
 
 const SAMPLE_DOCUMENT = (name: string, description: string | null): string =>
-  `---\nname: ${name}\ndescription: ${description ?? ""}\n---\n\n# ${name}\n\n${description ?? ""}\n\n## Steps\n\n1. Read the request.\n2. Do the work in small steps.\n3. Check the result.\n\n\`\`\`sh\necho "done"\n\`\`\`\n`;
+  `---\nname: ${name}\ndescription: ${JSON.stringify(description ?? "")}\n---\n\n# ${name}\n\n${description ?? ""}\n\n## Steps\n\n1. Read the request.\n2. Do the work in small steps.\n3. Check the result.\n\n\`\`\`sh\necho "done"\n\`\`\`\n`;
 
 // `never[]` accepts handlers with any parameter list; arguments arrive untyped over the fake bridge.
 const handlers: Record<string, (...args: never[]) => unknown> = {
