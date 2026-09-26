@@ -86,6 +86,19 @@ async function prepareBlob() {
   return blob;
 }
 
+/** SHA-256 of one file of this Node release, from the release's own SHASUMS256.txt. */
+async function publishedSha256(fileName) {
+  const url = `${NODE_DIST_URL}/v${nodeVersion}/SHASUMS256.txt`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Download failed (${response.status}): ${url}`);
+  const line = (await response.text())
+    .split("\n")
+    .find((entry) => entry.trim().endsWith(`  ${fileName}`));
+  const sum = line?.trim().split(/\s+/)[0];
+  if (!sum || !/^[0-9a-f]{64}$/.test(sum)) throw new Error(`No checksum for ${fileName} in ${url}`);
+  return sum;
+}
+
 /** The official Node binary for a target, downloaded once into a temp cache. */
 async function nodeBinary(target) {
   if (target === hostTarget) return process.execPath;
@@ -101,7 +114,12 @@ async function nodeBinary(target) {
   console.log(`Downloading ${url}`);
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Download failed (${response.status}): ${url}`);
-  writeFileSync(archive, Buffer.from(await response.arrayBuffer()));
+  const data = Buffer.from(await response.arrayBuffer());
+  // The binary goes into every release: it must be byte for byte the one nodejs.org lists.
+  const expected = await publishedSha256(`${name}.${windows ? "zip" : "tar.xz"}`);
+  const actual = createHash("sha256").update(data).digest("hex");
+  if (actual !== expected) throw new Error(`Checksum mismatch for ${url}`);
+  writeFileSync(archive, data);
   if (windows && process.platform !== "win32") {
     run("unzip", ["-q", "-o", archive, inner, "-d", NODE_CACHE_DIR]);
   } else {
