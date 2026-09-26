@@ -98,6 +98,11 @@ Watch it in the background if the agent supports that, and tell the user it is r
 On failure: `gh run view <run-id> --log-failed`, report the failing job and the error lines, and
 stop. Do not publish anything. Do not delete or move the tag without asking the user.
 
+The push to `main` also starts **CI** (`gh run list --workflow ci.yml --limit 1`). Wait for it
+too before publishing. A test that fails on one system only and passes elsewhere may be a
+flake: rerun just that job once (`gh run rerun <run-id> --failed`). Passing on the rerun, go on
+and tell the user which test flaked; failing again, stop and report it.
+
 ## 6. Publish the desktop release
 
 The workflow leaves a **draft**. Check it before publishing:
@@ -119,15 +124,29 @@ latest release on its own.
 
 ## 7. Publish the CLI to npm
 
+Build it from the tag itself, in a separate checkout, so nothing committed after the tag (or
+left uncommitted) ends up in the package:
+
 ```sh
+git worktree add "/tmp/loadout-v<version>" "v<version>"
+cd "/tmp/loadout-v<version>"
+pnpm install --frozen-lockfile
 pnpm --filter @loadout/cli run pack:npm
-node -p "require('./packages/cli/dist/npm/package.json').version"   # must equal <version>
-cd packages/cli/dist/npm && pnpm publish --access public
+node packages/cli/dist/npm/loadout.mjs --version         # must print <version>
+cd packages/cli/dist/npm && pnpm publish --access public --no-git-checks
 ```
 
-If npm asks for a one-time password, ask the user for the code and pass it with `--otp <code>`.
+npm usually wants a second factor to publish:
+
+- "requires additional authentication, but pnpm is not running in an interactive terminal":
+  the agent cannot answer it. Give the user the two commands to run in their own terminal
+  (`cd /tmp/loadout-v<version>/packages/cli/dist/npm` then
+  `pnpm publish --access public --no-git-checks`), wait for them to say it is done, then go on.
+- It asks for a one-time password: ask the user for the code and add `--otp <code>`.
+
 npm never accepts a version twice; `EPUBLISHCONFLICT` means it is already published, so report
-it and move on.
+it and move on. Afterwards remove the checkout from the repository root:
+`git worktree remove "/tmp/loadout-v<version>"`.
 
 ## 8. Verify and report
 
