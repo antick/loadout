@@ -71,7 +71,7 @@ export function writeSkill(parent: string, name: string, body = `# ${name}\n`): 
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, "SKILL.md"),
-    `---\nname: ${name}\ndescription: Test ${name}\n---\n\n${body}`,
+    `---\nname: ${name}\ndescription: Test skill ${name} for the CLI tests.\n---\n\n${body}`,
   );
   return dir;
 }

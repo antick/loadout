@@ -7,10 +7,12 @@ import { type TestWorld, createTestWorld, writeFile } from "./helpers";
 
 const codes = (issues: readonly SkillIssue[]): string[] => issues.map((issue) => issue.code);
 const doc = (frontmatter: string, body = "Body\n"): string => `---\n${frontmatter}\n---\n${body}`;
+/** Long enough not to be flagged as too short. */
+const DESCRIPTION = "Read and fill in PDF forms.";
 
 describe("checking a SKILL.md", () => {
   it("accepts a well-formed skill", () => {
-    const result = checkSkillDocument(doc("name: pdf\ndescription: Read PDFs."), "pdf");
+    const result = checkSkillDocument(doc(`name: pdf\ndescription: ${DESCRIPTION}`), "pdf");
     expect(result.issues).toEqual([]);
   });
 
@@ -39,13 +41,28 @@ describe("checking a SKILL.md", () => {
   });
 
   it("warns on names that break the naming rules or differ from the folder", () => {
-    const issues = checkSkillDocument(doc("name: PDF--Tools\ndescription: x"), "pdf").issues;
+    const issues = checkSkillDocument(
+      doc(`name: PDF--Tools\ndescription: ${DESCRIPTION}`),
+      "pdf",
+    ).issues;
     expect(codes(issues)).toEqual(["name_format", "name_mismatch"]);
     expect(issues.every((issue) => issue.severity === "warning")).toBe(true);
     const long = "a".repeat(65);
-    expect(codes(checkSkillDocument(doc(`name: ${long}\ndescription: x`), long).issues)).toEqual([
-      "name_too_long",
-    ]);
+    expect(
+      codes(checkSkillDocument(doc(`name: ${long}\ndescription: ${DESCRIPTION}`), long).issues),
+    ).toEqual(["name_too_long"]);
+  });
+
+  it("warns on a description too short to say what the skill does and when", () => {
+    const [issue] = checkSkillDocument(doc("name: pdf\ndescription: Read PDFs."), "pdf").issues;
+    expect(issue).toMatchObject({
+      code: "description_too_short",
+      severity: "warning",
+      params: { length: 10, min: 20 },
+      line: 3,
+    });
+    const enough = doc(`name: pdf\ndescription: ${"d".repeat(20)}`);
+    expect(checkSkillDocument(enough, "pdf").issues).toEqual([]);
   });
 
   it("warns on an overlong description, compatibility note or document", () => {
@@ -114,7 +131,7 @@ describe("links in SKILL.md", () => {
 
   it("flags links that climb out of the skill", () => {
     const result = checkSkillDocument(
-      doc("name: pdf\ndescription: x", "[x](../other/SKILL.md)"),
+      doc(`name: pdf\ndescription: ${DESCRIPTION}`, "[x](../other/SKILL.md)"),
       "pdf",
     );
     expect(result.issues).toMatchObject([
@@ -147,7 +164,10 @@ describe("checking library skills", () => {
   it("reports linked files that are missing", () => {
     const skill = addSkill(
       "pdf",
-      doc("name: pdf\ndescription: x", "[ok](scripts/run.sh) [gone](references/missing.md)"),
+      doc(
+        `name: pdf\ndescription: ${DESCRIPTION}`,
+        "[ok](scripts/run.sh) [gone](references/missing.md)",
+      ),
       { "scripts/run.sh": "echo\n" },
     );
     expect(inspectSkillFolder(skill.libraryPath)).toMatchObject([
@@ -159,7 +179,7 @@ describe("checking library skills", () => {
     const skill = addSkill("pdf", doc("name: pdf"));
     expect(codes(world.store.get(skill.id).issues)).toEqual(["description_missing"]);
 
-    writeFile(join(skill.libraryPath, "SKILL.md"), doc("name: pdf\ndescription: Fixed."));
+    writeFile(join(skill.libraryPath, "SKILL.md"), doc(`name: pdf\ndescription: ${DESCRIPTION}`));
     world.store.update(skill.id, { contentHash: hashDir(skill.libraryPath) });
     expect(world.store.get(skill.id).issues).toEqual([]);
   });

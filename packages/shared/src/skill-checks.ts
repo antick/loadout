@@ -20,6 +20,7 @@ export const SKILL_ISSUE_CODES = [
   "name_format",
   "name_too_long",
   "name_mismatch",
+  "description_too_short",
   "description_too_long",
   "compatibility_too_long",
   "document_too_long",
@@ -47,6 +48,11 @@ export interface DocumentCheck {
 
 export const SKILL_NAME_MAX = 64;
 export const SKILL_DESCRIPTION_MAX = 1024;
+/**
+ * Below this many characters a description rarely says both what the skill does and when to use
+ * it, which is all an agent has to go on when choosing a skill.
+ */
+export const SKILL_DESCRIPTION_MIN = 20;
 export const SKILL_COMPATIBILITY_MAX = 500;
 /** The specification recommends keeping SKILL.md under this many lines. */
 export const SKILL_DOCUMENT_MAX_LINES = 500;
@@ -60,6 +66,7 @@ const SEVERITY: Record<SkillIssueCode, SkillIssueSeverity> = {
   name_format: "warning",
   name_too_long: "warning",
   name_mismatch: "warning",
+  description_too_short: "warning",
   description_too_long: "warning",
   compatibility_too_long: "warning",
   document_too_long: "warning",
@@ -77,6 +84,8 @@ const MESSAGES: Record<SkillIssueCode, (params: Record<string, string | number>)
     `The name "${p.name}" should use only lowercase letters, numbers and single hyphens, and not start or end with a hyphen.`,
   name_too_long: (p) => `The name is ${p.length} characters; the limit is ${p.max}.`,
   name_mismatch: (p) => `The name "${p.name}" differs from the folder name "${p.folder}".`,
+  description_too_short: (p) =>
+    `The description is only ${p.length} characters; say what the skill does and when to use it (${p.min} or more).`,
   description_too_long: (p) => `The description is ${p.length} characters; the limit is ${p.max}.`,
   compatibility_too_long: (p) =>
     `The compatibility note is ${p.length} characters; the limit is ${p.max}.`,
@@ -274,6 +283,15 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     if (name !== folderName) {
       head.push(skillIssue("name_mismatch", { name, folder: folderName }, line));
     }
+  }
+  if (description && description.length < SKILL_DESCRIPTION_MIN) {
+    head.push(
+      skillIssue(
+        "description_too_short",
+        { length: description.length, min: SKILL_DESCRIPTION_MIN },
+        keyLine("description"),
+      ),
+    );
   }
   if (description && description.length > SKILL_DESCRIPTION_MAX) {
     head.push(

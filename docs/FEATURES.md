@@ -22,7 +22,8 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
 - Skill checks against the Agent Skills format. Errors (no `SKILL.md`, no frontmatter, YAML that
   does not parse, no name or description) put the skill under **Needs attention** with a
   "Needs fixing" badge that opens the editor. Warnings (name rules, name differs from the folder,
-  over-long description or `SKILL.md`, links to files that are not in the skill) are listed in the
+  a description under 20 characters, an over-long description or `SKILL.md`, links to files that
+  are not in the skill) are listed in the
   skill's panel. The editor runs the same checks on unsaved text, and each problem names its
   line; click it to jump there. `loadout skills validate` prints the line too.
 - Batch mode: deploy to agents, add to a preset, tag, export, update or delete many skills at once.

@@ -22,6 +22,7 @@
       "name_format": "The name “{{name}}” should use only lowercase letters, numbers and single hyphens, and not start or end with a hyphen.",
       "name_too_long": "The name is {{length}} characters; the limit is {{max}}.",
       "name_mismatch": "The name “{{name}}” differs from the folder name “{{folder}}”. Some agents expect them to match.",
+      "description_too_short": "The description is only {{length}} characters. Say what the skill does and when to use it ({{min}} characters or more), since that is all an agent reads when choosing a skill.",
       "description_too_long": "The description is {{length}} characters; the limit is {{max}}.",
       "compatibility_too_long": "The compatibility note is {{length}} characters; the limit is {{max}}.",
       "document_too_long": "SKILL.md is {{lines}} lines. Keeping it under {{max}} and moving detail into other files is recommended.",
