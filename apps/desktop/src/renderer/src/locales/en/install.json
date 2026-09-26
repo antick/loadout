@@ -26,6 +26,8 @@
       "downloading": "Downloading…",
       "downloadingPercent": "Downloading… {{percent}}%",
       "scanning": "Looking for skills…",
+      "checking": "Running the safety check…",
+      "checkingCount": "Safety check {{current}}/{{total}}: {{name}}",
       "installing": "Copying into the library…",
       "installingNamed": "Copying {{name}} into the library…",
       "installingCount": "Importing {{current}}/{{total}}: {{name}}",

@@ -3,6 +3,7 @@ import type {
   BatchImportResult,
   DiscoveredLocation,
   DiscoveredSkill,
+  InstallOptions,
   ScanResult,
   Skill,
   SourceType,
@@ -11,6 +12,7 @@ import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import type { InstallIntoLibrary } from "../install/library";
+import { type SafetyGate, batchFailureMessage, installChecked } from "../install/safety-gate";
 import { findSkillDirs } from "../install/repo-scan";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
@@ -29,11 +31,12 @@ export interface ScanServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
   install: InstallIntoLibrary;
+  safety?: SafetyGate;
 }
 
 export interface ScanService {
   scanLocal(): Promise<ScanResult>;
-  importDiscovered(path: string, name?: string): Promise<Skill>;
+  importDiscovered(path: string, name?: string, options?: InstallOptions): Promise<Skill>;
   importAllDiscovered(): Promise<BatchImportResult>;
 }
 
@@ -161,24 +164,33 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     return { agentsScanned, skillsFound: paths.size, skills: lastScan };
   }
 
-  async function importOne(path: string, name?: string): Promise<Skill> {
+  async function importOne(
+    path: string,
+    name?: string,
+    options: InstallOptions = {},
+  ): Promise<Skill> {
     const source = normalizeAbsolutePath(path, "Skill path");
     if (!isSkillDir(source)) throw invalid(`No SKILL.md found in ${source}`);
     // Copy only: the original folder stays where it is and is neither deployed nor adopted.
-    return install({
-      sourceDir: source,
-      name,
-      keepExisting: true,
-      activityKind: "import",
-      record: { sourceType: "import", sourceRef: source, updateStatus: "local_only" },
-    });
+    return installChecked(
+      install,
+      deps.safety,
+      {
+        sourceDir: source,
+        name,
+        keepExisting: true,
+        activityKind: "import",
+        record: { sourceType: "import", sourceRef: source, updateStatus: "local_only" },
+      },
+      { ...options, progressKey: path },
+    );
   }
 
   return {
     scanLocal: async () => scan(),
 
-    importDiscovered: async (path, name) => {
-      const skill = await importOne(path, name);
+    importDiscovered: async (path, name, options) => {
+      const skill = await importOne(path, name, options);
       const found = canonicalPath(path);
       for (const group of lastScan ?? []) {
         if (group.locations.some((l) => canonicalPath(l.path) === found)) group.imported = true;
@@ -199,7 +211,8 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
           group.imported = true;
           result.imported += 1;
         } catch (error) {
-          result.errors.push({ name: group.name, message: errorMessage(error) });
+          const message = batchFailureMessage(error, errorMessage(error));
+          result.errors.push({ name: group.name, message });
         }
       }
       return result;

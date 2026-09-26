@@ -27,7 +27,7 @@ export interface Sandbox {
   cleanup(): void;
 }
 
-export function createSandbox(): Sandbox {
+export function createSandbox(options: { safetyScannerPath?: string | null } = {}): Sandbox {
   const root = mkdtempSync(join(tmpdir(), "cli-test-"));
   const home = join(root, "home");
   mkdirSync(join(home, AGENT_DIR), { recursive: true });
@@ -41,7 +41,12 @@ export function createSandbox(): Sandbox {
       version: VERSION,
       cwd: root,
       homeDir: home,
-      coreOptions: { homeDir: home, configDir: join(root, "config"), logger: silentLogger },
+      coreOptions: {
+        homeDir: home,
+        configDir: join(root, "config"),
+        logger: silentLogger,
+        safetyScannerPath: options.safetyScannerPath ?? null,
+      },
     });
     return {
       code,

@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
   FilePlus2,
+  ShieldCheck,
   CloudUpload,
   Download,
   Folder,
@@ -15,6 +16,7 @@ import {
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { useScanLibrary } from "@/hooks/mutations/safety";
 import { useShell } from "@/components/layout/shell-context";
 import { PresetIcon } from "@/components/PresetIcon";
 import { useTheme } from "@/components/providers/ThemeProvider";
@@ -49,6 +51,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
   const { resolvedTheme } = useTheme();
   const setSetting = useSetSetting();
   const backupNow = useBackupNow();
+  const scanLibrary = useScanLibrary();
   const skills = useSkills();
   const presets = usePresets();
   const projects = useProjects();
@@ -93,6 +96,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
             <PencilLine />
             {t("palette.editSkill")}
             <CommandShortcut>{quickOpenLabel}</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => run(() => void scanLibrary(false))}>
+            <ShieldCheck />
+            {t("palette.safetyScan")}
           </CommandItem>
           <CommandItem onSelect={() => run(() => backupNow.mutate())}>
             <CloudUpload />

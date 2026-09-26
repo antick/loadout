@@ -195,32 +195,6 @@ describe("skills: install, deploy, status, remove", () => {
   });
 });
 
-describe("skills create", () => {
-  it("writes a new skill and refuses a bad or taken name", async () => {
-    const run = await cli(
-      "skills",
-      "create",
-      "release-notes",
-      "--description",
-      "Draft notes.",
-      "--json",
-    );
-    expect(run.code).toBe(EXIT_OK);
-    const skill = run.json() as { name: string; libraryPath: string };
-    expect(skill.name).toBe("release-notes");
-    expect(readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8")).toContain(
-      "description: Draft notes.",
-    );
-
-    const taken = await cli("skills", "create", "release-notes", "--description", "x", "--json");
-    expect(taken.code).toBe(EXIT_FAILED);
-    expect(taken.json()).toMatchObject({ ok: false, code: "ALREADY_EXISTS" });
-    const bad = await cli("skills", "create", "Release Notes", "--description", "x", "--json");
-    expect(bad.json()).toMatchObject({ ok: false, code: "INVALID_INPUT" });
-    expect((await cli("skills", "create", "notes", "--json")).code).toBe(EXIT_USAGE);
-  });
-});
-
 describe("skills validate", () => {
   it("reports format problems and fails only on errors", async () => {
     writeSkill(join(root, "src"), "good", "See [notes](notes.md).\n");
@@ -460,6 +434,7 @@ describe("published launcher", () => {
         homeDir: home,
         configDir: join(root, "config"),
         logger: silentLogger,
+        safetyScannerPath: null,
         host: {
           appVersion: VERSION,
           bundledCliPath: bundle,

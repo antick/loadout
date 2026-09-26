@@ -7,6 +7,7 @@ import type { CoreContext } from "./context";
 import { type CoreOptions, createContext } from "./create-context";
 import { createDeployService, pruneBrokenLinks } from "./deploy";
 import { createEditorService, createFileHistory } from "./editor";
+import { createSafetyService } from "./safety";
 import { createInstallService } from "./install";
 import { createInstructionFinder, createInstructionsService } from "./instructions";
 import { createMarketService } from "./market";
@@ -22,6 +23,11 @@ import { createWorkspaceService } from "./workspace";
 export interface CoreCreateOptions extends CoreOptions {
   /** Proxy-aware fetch supplied by the host. Defaults to the global `fetch`. */
   fetchImpl?: typeof fetch;
+  /**
+   * Tests only: the safety scanner program to use (null: none), instead of looking for one on
+   * this machine, so results never depend on what the developer has installed.
+   */
+  safetyScannerPath?: string | null;
 }
 
 /** Long-running work the host starts once and stops on quit. */
@@ -68,7 +74,20 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const deploy = createDeployService(ctx, { store, registry });
   const agents = createAgentsService(ctx, { registry, deploy });
   const history = createFileHistory(ctx.paths.historyDir);
-  const install = createInstallService(ctx, { store, registry, fetchImpl: options.fetchImpl });
+  const safety = createSafetyService(ctx, {
+    store,
+    findProgram:
+      options.safetyScannerPath === undefined
+        ? undefined
+        : () =>
+            options.safetyScannerPath ? { path: options.safetyScannerPath, version: null } : null,
+  });
+  const install = createInstallService(ctx, {
+    store,
+    registry,
+    fetchImpl: options.fetchImpl,
+    safety,
+  });
   const skills = createSkillsService(ctx, {
     store,
     removeDeployments: deploy.removeAllForSkill,
@@ -127,6 +146,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     deploy: deploy.api,
     install: install.api,
     market: market.api,
+    safety: safety.api,
     updates: updates.api,
     presets: presets.api,
     workspace: workspace.api,

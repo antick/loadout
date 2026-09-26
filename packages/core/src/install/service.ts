@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { BatchImportResult, InstallApi, Skill } from "@loadout/shared";
+import type { BatchImportResult, InstallApi, InstallOptions, Skill } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, notFound } from "../errors";
@@ -21,6 +21,7 @@ import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
 import { createHttpGit } from "./http-git";
 import { type InstallIntoLibrary, type InstallRecord, installIntoLibrary } from "./library";
+import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
 
 export interface InstallServiceDeps {
   store: SkillStore;
@@ -34,6 +35,8 @@ export interface InstallServiceDeps {
    * ignores the proxy setting, so the desktop app injects a proxy-aware one; tests a fake.
    */
   fetchImpl?: typeof fetch;
+  /** Safety checks before installs; absent in tests that do not need them. */
+  safety?: SafetyGate;
 }
 
 export interface InstallService {
@@ -65,24 +68,35 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     download,
     cancels,
     install,
+    safety: deps.safety,
     allowLocalGitSources: deps.allowLocalGitSources,
     previewTtlMs: deps.previewTtlMs,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
-  const scan = createScanService(ctx, { store, registry, install });
+  const scan = createScanService(ctx, { store, registry, install, safety: deps.safety });
 
-  async function fromPath(sourcePath: string, name?: string): Promise<Skill> {
+  async function fromPath(
+    sourcePath: string,
+    name?: string,
+    options: InstallOptions = {},
+  ): Promise<Skill> {
     const path = normalizeAbsolutePath(sourcePath, "Source path");
     const stat = statOrNull(path);
     if (!stat) throw notFound(`Nothing found at ${path}`);
     const record: InstallRecord = { ...LOCAL_RECORD, sourceRef: path };
+    const checked = { ...options, progressKey: sourcePath };
     if (stat.isDirectory()) {
       if (!isSkillDir(path)) throw invalid(`No SKILL.md found in ${path}`);
-      return install({ sourceDir: path, name, record });
+      return installChecked(install, deps.safety, { sourceDir: path, name, record }, checked);
     }
     const archive = await extractArchive(path);
     try {
-      return await install({ sourceDir: archive.skillDir, name, record });
+      return await installChecked(
+        install,
+        deps.safety,
+        { sourceDir: archive.skillDir, name, record },
+        checked,
+      );
     } finally {
       await archive.cleanup();
     }
@@ -111,10 +125,13 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
         continue;
       }
       try {
-        await install({ sourceDir: child, record: { ...LOCAL_RECORD, sourceRef: child } });
+        await installChecked(install, deps.safety, {
+          sourceDir: child,
+          record: { ...LOCAL_RECORD, sourceRef: child },
+        });
         result.imported += 1;
       } catch (error) {
-        result.errors.push({ name, message: errorMessage(error) });
+        result.errors.push({ name, message: batchFailureMessage(error, errorMessage(error)) });
       }
     }
     ctx.emit("install:progress", { key: folderPath, phase: "done" });

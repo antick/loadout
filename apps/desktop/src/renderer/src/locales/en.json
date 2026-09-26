@@ -238,6 +238,7 @@
     "install": "Install skills",
     "scan": "Scan this computer and import",
     "newSkill": "New skill",
+    "safetyScan": "Run the safety check on the library",
     "backupNow": "Back up now",
     "newPreset": "New preset",
     "toggleTheme": "Switch between light and dark",

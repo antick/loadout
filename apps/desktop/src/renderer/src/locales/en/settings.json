@@ -18,6 +18,10 @@
         "title": "Skill updates",
         "description": "Keep skills from Git and the marketplace current."
       },
+      "safety": {
+        "title": "Safety",
+        "description": "Check skills for prompt injection, credential theft and risky scripts before they reach your agents."
+      },
       "backup": {
         "title": "Backup",
         "description": "Options for backing the library up to a Git repository."
@@ -214,6 +218,36 @@
       },
       "ttlMinutes_one": "{{count}} minute",
       "ttlMinutes_other": "{{count}} minutes"
+    },
+    "safety": {
+      "title": "SkillSpector",
+      "description": "NVIDIA's open-source scanner for agent skills. {{app}} runs it on this computer in static mode: no AI model and no API key.",
+      "about": "About SkillSpector",
+      "found": "SkillSpector {{version}} is ready.",
+      "unknownVersion": "(version unknown)",
+      "missing": "SkillSpector is not installed, so skills are installed without a safety check.",
+      "installCaption": "Install it with uv:",
+      "missingAfter": "Then come back here: {{app}} looks for it on its own. If it is somewhere unusual, set its path below.",
+      "onInstall": "Check skills before installing",
+      "onInstallHint": "Every install is scanned before anything is written. A flagged skill is not installed until you have read the findings and chosen to go ahead. Adds a few seconds per skill.",
+      "library": "Check the library",
+      "libraryNeedsScanner": "Needs SkillSpector.",
+      "scanNow": "Check new and changed",
+      "rescanAll": "Check all again",
+      "coverage": {
+        "scanned": "{{count}} of {{total}} checked",
+        "unsafe_one": "{{count}} flagged",
+        "unsafe_other": "{{count}} flagged",
+        "caution_one": "{{count}} to review",
+        "caution_other": "{{count}} to review",
+        "due_one": "{{count}} new or changed",
+        "due_other": "{{count}} new or changed"
+      },
+      "path": "SkillSpector program",
+      "pathHint": "Leave empty to find it on its own (PATH, ~/.local/bin, Homebrew). Set the full path when it lives elsewhere.",
+      "pathPlaceholder": "Found automatically",
+      "pathSaved": "Scanner path saved",
+      "pathCleared": "Looking for the scanner on its own again"
     },
     "backup": {
       "title": "Backup options",

@@ -1,6 +1,7 @@
 import {
   type ConfirmOptions,
   type GitPreview,
+  type InstallOptions,
   type InstallSelection,
   NO_REQUESTED_AGENTS,
   type Skill,
@@ -23,6 +24,7 @@ import {
   resolveTreeRef,
 } from "./git-source";
 import type { InstallIntoLibrary } from "./library";
+import { type SafetyGate, installChecked } from "./safety-gate";
 import { createPreviewSessions, emitProgress } from "./preview-sessions";
 import { listRepoSkills, resolveSkillDir } from "./repo-scan";
 import { matchRequested } from "./requested";
@@ -36,6 +38,7 @@ export interface GitInstallerDeps {
   download: Download;
   cancels: CancelRegistry;
   install: InstallIntoLibrary;
+  safety?: SafetyGate;
   /** Tests only: let a local folder stand in for a remote repository. */
   allowLocalGitSources?: boolean;
   /** How long an unconfirmed preview keeps its checkout (tests shorten it). */
@@ -55,7 +58,7 @@ export interface GitInstaller {
     options?: ConfirmOptions,
   ): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
-  fromMarket(source: string, skillId: string): Promise<Skill>;
+  fromMarket(source: string, skillId: string, options?: InstallOptions): Promise<Skill>;
   /** Delete every checkout still waiting for a confirm. Call on shutdown. */
   dispose(): Promise<void>;
 }
@@ -64,7 +67,7 @@ const PERCENT_TOTAL = 100;
 
 export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): GitInstaller {
   const { store, git, download, cancels, install } = deps;
-  const sessions = createPreviewSessions(ctx, install, deps.previewTtlMs);
+  const sessions = createPreviewSessions(ctx, install, deps.previewTtlMs, deps.safety);
   const previewFetched = createFetchedPreviews(ctx, { store, cancels, sessions });
   const web = createWebPreviews(ctx, { download, cancels, previewFetched });
 
@@ -223,7 +226,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     confirmGit: sessions.confirm,
     cancelPreview: sessions.cancel,
 
-    fromMarket: async (source, skillId) => {
+    fromMarket: async (source, skillId, options = {}) => {
       const cloneUrl = marketSourceToUrl(source);
       const id = skillId.trim();
       if (!id || id === "." || id === ".." || /[\\/]/.test(id)) {
@@ -242,21 +245,26 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         emitProgress(ctx, key, "installing", { name: id });
         const dir = resolveSkillDir(checkout.dir, undefined, id);
         if (handle.signal.aborted) throw cancelled();
-        const skill = await install({
-          sourceDir: dir,
-          name: id,
-          record: {
-            sourceType: "marketplace",
-            sourceRef: key,
-            sourceUrl: cloneUrl,
-            sourceSubpath: subpathOf(checkout.dir, dir),
-            sourceBranch: null,
-            sourceRevision: checkout.revision,
-            updateStatus: "up_to_date",
-            // Installing what is already installed refreshes it instead of adding `<id>-2`.
-            replaceSkillId: store.findBySource("marketplace", key)?.id ?? null,
+        const skill = await installChecked(
+          install,
+          deps.safety,
+          {
+            sourceDir: dir,
+            name: id,
+            record: {
+              sourceType: "marketplace",
+              sourceRef: key,
+              sourceUrl: cloneUrl,
+              sourceSubpath: subpathOf(checkout.dir, dir),
+              sourceBranch: null,
+              sourceRevision: checkout.revision,
+              updateStatus: "up_to_date",
+              // Installing what is already installed refreshes it instead of adding `<id>-2`.
+              replaceSkillId: store.findBySource("marketplace", key)?.id ?? null,
+            },
           },
-        });
+          { ...options, progressKey: key },
+        );
         emitProgress(ctx, key, "done", { name: skill.name });
         return skill;
       } finally {

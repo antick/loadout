@@ -2,7 +2,13 @@ import { notFound } from "@loadout/core";
 import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
-import { YES_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
+import {
+  ACCEPT_RISK_FLAG,
+  YES_FLAG,
+  limitPositionals,
+  positional,
+  resolveUserPath,
+} from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 export type InstallSource =
@@ -109,7 +115,10 @@ async function installFromPreview(context: CommandContext, preview: GitPreview):
         `The download moved to ${preview.redirectedTo}, another site than the link names. Add --yes to install from it anyway.`,
       );
     }
-    return await core.api.install.confirmGit(preview.previewId, items, { acceptRedirect });
+    return await core.api.install.confirmGit(preview.previewId, items, {
+      acceptRedirect,
+      acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
+    });
   } catch (error) {
     // The temporary clone is ours to clean up when nothing got installed from it.
     await core.api.install.cancelPreview(preview.previewId).catch(() => undefined);
@@ -129,7 +138,8 @@ async function installFromPath(context: CommandContext, path: string): Promise<S
     if (preview.skills.length > 1) return installFromPreview(context, preview);
     await core.api.install.cancelPreview(preview.previewId);
   }
-  return [await core.api.install.fromPath(path, name)];
+  const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
+  return [await core.api.install.fromPath(path, name, { acceptRisk })];
 }
 
 async function run(context: CommandContext): Promise<CommandResult> {
@@ -142,7 +152,11 @@ async function run(context: CommandContext): Promise<CommandResult> {
     installed = await installFromPath(context, resolveUserPath(source.path, cwd, core.ctx.homeDir));
   } else if (source.kind === "market") {
     if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
-    installed = [await core.api.install.fromMarket(source.source, source.skillId)];
+    installed = [
+      await core.api.install.fromMarket(source.source, source.skillId, {
+        acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
+      }),
+    ];
   } else {
     installed = await installFromPreview(context, await core.api.install.previewGit(source.url));
   }
@@ -154,13 +168,15 @@ async function run(context: CommandContext): Promise<CommandResult> {
 export const installCommand: CommandSpec = {
   name: "install",
   summary: "Add a skill to the library (does not deploy it)",
-  usage: "<source> [--name <name>] [--skill <id>…] [--all] [--yes]",
-  flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG, YES_FLAG],
+  usage: "<source> [--name <name>] [--skill <id>…] [--all] [--yes] [--accept-risk]",
+  flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG, YES_FLAG, ACCEPT_RISK_FLAG],
   notes: [
     "Sources: ./folder, ./archive.zip (.skill, .tar, .tar.gz, .tgz), a git URL, owner/repo,",
     "owner/repo@skill, a link to an archive or a SKILL.md, or a site that publishes skills",
     "(https://example.com, read from /.well-known/agent-skills/index.json).",
     "--yes also accepts a download that moved to another site than the link names.",
+    "With SkillSpector installed, skills are safety-checked first; a flagged one fails with",
+    "UNSAFE and its findings. --accept-risk installs it anyway.",
     "A folder must start with ./, ../, / or ~/ - a bare owner/repo always means GitHub.",
   ],
   run,

@@ -1,5 +1,6 @@
 /** Install and marketplace types. Split from `types.ts` to keep both files small. */
 
+import type { InstallOptions } from "./safety";
 import type { BatchFailure } from "./types";
 
 // ── Install ──
@@ -55,7 +56,7 @@ export interface InstallSelection {
   name: string;
 }
 
-export interface ConfirmOptions {
+export interface ConfirmOptions extends InstallOptions {
   /** The user saw {@link GitPreview.redirectedTo} and still wants to install. */
   acceptRedirect?: boolean;
 }
@@ -64,6 +65,8 @@ export type InstallPhase =
   | "cloning"
   | "downloading"
   | "scanning"
+  /** The safety scanner is reading the skills. */
+  | "checking"
   | "installing"
   | "deploying"
   | "done";

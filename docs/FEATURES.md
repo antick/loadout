@@ -133,6 +133,28 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   guard. A file that does not exist yet is created empty first.
 - Agents that read a folder of rule files (Cline, Roo Code, Kiro and others) are not covered.
 
+### Safety check
+
+- Optional, with NVIDIA SkillSpector (open source) installed on the computer. Settings → Safety
+  says whether it was found (on `PATH`, in `~/.local/bin` or Homebrew, or at a path you set) and
+  shows the `uv tool install` command when it was not. Without it nothing changes.
+- Static checks only (`--no-llm`): no AI model and no API key.
+- **Before every install** (folder, archive, Git, link, site, marketplace, agent folders), before
+  anything is written. A flagged skill (risk score over 50, or a high or critical finding) is not
+  installed: a dialog lists its findings (severity, category, file and line, the text that matched,
+  why) with **Don't install** focused and **Install anyway** beside it. Batch imports skip
+  flagged skills and list them as failures. A scanner that fails or times out never blocks.
+  Switch the check off in Settings.
+- Reports are kept per skill in the library cache. Flagged and "review" skills carry a chip in the
+  library; the skill panel has a **Safety** tab with the full report and **Check again**. A report
+  of a skill that changed since is marked as such.
+- Check the library for new and changed skills, or all again, from Settings → Safety or the
+  command palette, with progress.
+- CLI: `skills scan <ref>… | --all [--force]`; installs fail with `UNSAFE` and the findings, and
+  `--accept-risk` installs anyway. The bundled agent skill tells agents never to accept on their
+  own.
+- Not covered yet: skill updates are not checked.
+
 ### Agent workspaces
 
 - One page per agent listing everything in its skills folder, including skills installed outside

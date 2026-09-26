@@ -18,13 +18,22 @@ import { PresetsTab } from "@/features/library/detail/PresetsTab";
 import { ProjectsTab } from "@/features/library/detail/ProjectsTab";
 import { RemovalGuardDialog } from "@/features/library/detail/RemovalGuardDialog";
 import { SkillDetailHeader } from "@/features/library/detail/SkillDetailHeader";
+import { SafetyTab } from "@/features/library/detail/SafetyTab";
 import { SourceTab } from "@/features/library/detail/SourceTab";
 import { useSkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useSkill } from "@/hooks/queries/skills";
 
-const DETAIL_TABS = ["document", "source", "compare", "agents", "presets", "projects"] as const;
+const DETAIL_TABS = [
+  "document",
+  "source",
+  "safety",
+  "compare",
+  "agents",
+  "presets",
+  "projects",
+] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
 const DEFAULT_TAB: DetailTab = "document";
 const TAB_PANEL_CLASS = "min-h-0 flex-1 overflow-y-auto px-6 py-5";
@@ -77,6 +86,9 @@ function SkillDetailBody({ skill, onClose }: { skill: Skill; onClose: () => void
         </TabsContent>
         <TabsContent value="source" className={TAB_PANEL_CLASS}>
           <SourceTab skill={skill} refresh={refresh} />
+        </TabsContent>
+        <TabsContent value="safety" className={TAB_PANEL_CLASS}>
+          <SafetyTab skill={skill} />
         </TabsContent>
         <TabsContent value="compare" className={TAB_PANEL_CLASS}>
           <CompareTab skill={skill} />

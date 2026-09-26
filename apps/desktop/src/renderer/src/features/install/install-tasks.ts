@@ -6,6 +6,7 @@ import {
   type DeployPreselection,
 } from "@/features/install/DeployAfterInstallToast";
 import { INSTALL_SUCCESS_TOAST_MS } from "@/features/install/constants";
+import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { onAppEvent } from "@/lib/events";
 import { i18n } from "@/lib/i18n";
 import { errorMessage } from "@/lib/toast";
@@ -48,6 +49,11 @@ export interface InstallTaskOptions<T> {
   cancel?: () => Promise<unknown>;
   /** What to say when it worked. Return null to finish silently (the caller shows the result). */
   success?: (result: T) => InstallTaskSuccess | null;
+  /**
+   * The same install, told to go ahead with skills the safety check flagged. When present, a
+   * flagged install asks the user (with the findings) instead of failing.
+   */
+  runAcceptingRisk?: () => Promise<T>;
 }
 
 /** Navigation the toasts need; supplied by the hook because the store lives outside the router. */
@@ -104,6 +110,9 @@ export function installPhaseText(progress: InstallProgress | null): string {
     return i18n.t(`install.phase.${phase}Percent`, {
       percent: Math.round((current / total) * PERCENT),
     });
+  }
+  if (phase === "checking" && current !== undefined && total && total > 1) {
+    return i18n.t("install.phase.checkingCount", { current, total, name: name ?? "" });
   }
   if (phase === "installing" && current !== undefined && total) {
     return i18n.t("install.phase.installingCount", { current, total, name: name ?? "" });
@@ -214,6 +223,34 @@ function showFailureToast(id: string, error: unknown, navigation: InstallTaskNav
   });
 }
 
+const DECLINED = Symbol("declined");
+
+/**
+ * Run the task; when the safety check stops it and the task can go ahead anyway, show the
+ * findings and let the user choose. DECLINED when they chose not to install.
+ */
+async function runOrAskAboutRisk<T>(
+  options: InstallTaskOptions<T>,
+  toastId: string,
+): Promise<T | typeof DECLINED> {
+  try {
+    return await options.run();
+  } catch (error) {
+    const flagged = error instanceof ApiError ? (error.details?.flagged ?? []) : [];
+    if (!options.runAcceptingRisk || !(error instanceof ApiError) || error.code !== "UNSAFE") {
+      throw error;
+    }
+    toast.dismiss(toastId);
+    if (!(await askToInstallFlagged(flagged))) {
+      toast.info(i18n.t("safety.prompt.notInstalled"), { id: toastId });
+      return DECLINED;
+    }
+    const task = tasks.get(options.key);
+    if (task) showRunningToast(task);
+    return options.runAcceptingRisk();
+  }
+}
+
 /**
  * Run one install with a persistent progress toast (phase text, Cancel where possible) and a final
  * toast for the outcome. Resolves with the result, or null when it failed or was cancelled; the
@@ -223,7 +260,7 @@ export async function runInstallTask<T>(
   options: InstallTaskOptions<T>,
   navigation: InstallTaskNavigation,
 ): Promise<T | null> {
-  const { key, title, run, cancel, success } = options;
+  const { key, title, cancel, success } = options;
   if (tasks.has(key)) return null;
 
   const id = `${TOAST_ID_PREFIX}${key}`;
@@ -245,7 +282,8 @@ export async function runInstallTask<T>(
   });
 
   try {
-    const result = await run();
+    const result = await runOrAskAboutRisk(options, id);
+    if (result === DECLINED) return null;
     const outcome = success?.(result) ?? null;
     if (outcome) showSuccessToast(id, outcome, navigation);
     else toast.dismiss(id);

@@ -11,6 +11,7 @@ import {
   type DataScope,
   DEFAULT_SETTINGS,
   type ErrorCode,
+  type ErrorDetails,
   type Preset,
   type PresetInput,
   type Settings,
@@ -31,6 +32,7 @@ import {
 import { createEditorMockHandlers } from "@/lib/dev-mock-editor";
 import { createInstallMockHandlers } from "@/lib/dev-mock-install";
 import { withInstructionMocks } from "@/lib/dev-mock-instructions";
+import { withSafetyMocks } from "@/lib/dev-mock-safety";
 import { createStorageMockHandlers } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
@@ -45,6 +47,7 @@ class MockError extends Error {
   constructor(
     readonly code: ErrorCode,
     message: string,
+    readonly details?: ErrorDetails,
   ) {
     super(message);
   }
@@ -390,6 +393,19 @@ Object.assign(
 );
 
 Object.assign(handlers, createStorageMockHandlers(HOME));
+Object.assign(
+  handlers,
+  withSafetyMocks(
+    {
+      home: HOME,
+      getSkills: () => skills,
+      fail: (code, message, details) => {
+        throw new MockError(code, message, details);
+      },
+    },
+    handlers,
+  ),
+);
 
 /** Install the fake bridge. Call only in development, and only when the real one is missing. */
 export function installDevMock(): void {
@@ -408,16 +424,18 @@ export function installDevMock(): void {
           } catch (error) {
             const code = error instanceof MockError ? error.code : "INTERNAL";
             const details =
-              code === "TARGET_CONFLICT"
-                ? {
-                    conflicts: [
-                      {
-                        path: `${HOME}/.claude/skills/release-notes`,
-                        reason: "not installed from the library",
-                      },
-                    ],
-                  }
-                : undefined;
+              error instanceof MockError && error.details
+                ? error.details
+                : code === "TARGET_CONFLICT"
+                  ? {
+                      conflicts: [
+                        {
+                          path: `${HOME}/.claude/skills/release-notes`,
+                          reason: "not installed from the library",
+                        },
+                      ],
+                    }
+                  : undefined;
             resolve({
               ok: false,
               error: {

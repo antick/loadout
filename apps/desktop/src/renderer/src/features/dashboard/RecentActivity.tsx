@@ -10,6 +10,7 @@ import {
   Layers,
   type LucideIcon,
   PackagePlus,
+  ShieldCheck,
   Pencil,
   Plug,
   Trash2,
@@ -29,6 +30,7 @@ import { ACTIVITY_LIMIT } from "./constants";
 const KIND_ICONS: Record<ActivityKind, LucideIcon> = {
   install: PackagePlus,
   create: FilePlus2,
+  scan: ShieldCheck,
   remove: Trash2,
   edit: Pencil,
   update: ArrowUpCircle,

@@ -1,3 +1,4 @@
+import type { FlaggedSkill } from "./safety";
 import type { TargetConflict } from "./types";
 
 /** Stable machine-readable error codes, shared by the app, the IPC bridge and the CLI. */
@@ -7,6 +8,8 @@ export const ERROR_CODES = [
   "ALREADY_EXISTS",
   "TARGET_CONFLICT",
   "CHANGED_ON_DISK",
+  /** The safety scanner flagged a skill; the details list it (`flagged`). */
+  "UNSAFE",
   "CANCELLED",
   "NETWORK",
   "TIMEOUT",
@@ -35,6 +38,7 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
 
 export interface ErrorDetails {
   conflicts?: TargetConflict[];
+  flagged?: FlaggedSkill[];
   [key: string]: unknown;
 }
 

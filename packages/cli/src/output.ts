@@ -54,6 +54,9 @@ export function printResult(io: CliIo, json: boolean, value: unknown, text: stri
   io.stdout(`${json ? JSON.stringify(value ?? null) : text}\n`);
 }
 
+/** Findings listed per flagged skill in text mode; `--json` has them all. */
+const FLAGGED_FINDINGS_SHOWN = 5;
+
 /** Failures go to stderr in both modes, so stdout only ever carries a result. */
 export function printError(io: CliIo, json: boolean, error: ErrorShape): void {
   if (json) {
@@ -66,5 +69,13 @@ export function printError(io: CliIo, json: boolean, error: ErrorShape): void {
   for (const conflict of error.details?.conflicts ?? []) {
     lines.push(`  ${conflict.path} ${conflict.reason}`);
   }
+  for (const { name, report } of error.details?.flagged ?? []) {
+    lines.push(`  ${name}: risk ${report.score}/100, ${report.recommendation}`);
+    for (const finding of report.findings.slice(0, FLAGGED_FINDINGS_SHOWN)) {
+      const where = finding.line ? `${finding.file}:${finding.line}` : finding.file;
+      lines.push(`    ${finding.severity} ${finding.category}: ${where} ${finding.excerpt}`);
+    }
+  }
+  if (error.code === "UNSAFE") lines.push("Add --accept-risk to install it anyway.");
   io.stderr(`${lines.join("\n")}\n`);
 }

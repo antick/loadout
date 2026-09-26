@@ -7,6 +7,8 @@ import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UpdateStatusBadge } from "@/components/UpdateStatusBadge";
+import { SafetyVerdictBadge } from "@/features/safety/SafetyReportView";
+import { useSafetyReports } from "@/hooks/queries/safety";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +32,7 @@ export function SkillIndicators({
     <>
       <UpdateStatusBadge status={skill.updateStatus} compact={compact} showAll={showAll} />
       <CheckBadges skill={skill} compact={compact} showAll={showAll} />
+      <SafetyBadge skill={skill} compact={compact} showAll={showAll} />
       {skill.hasConflict ? (
         <Link
           to="/backup"
@@ -64,6 +67,25 @@ export function SkillIndicators({
       ) : null}
     </>
   );
+}
+
+/**
+ * The last safety check. Lists show only what needs a look (flagged, to review) and only while it
+ * still holds; detail views show every verdict, stale ones marked.
+ */
+function SafetyBadge({
+  skill,
+  compact,
+  showAll,
+}: {
+  skill: Skill;
+  compact?: boolean;
+  showAll?: boolean;
+}): ReactNode {
+  const record = useSafetyReports().get(skill.id);
+  if (!record) return null;
+  if (!showAll && (record.stale || record.verdict === "safe")) return null;
+  return <SafetyVerdictBadge verdict={record.verdict} compact={compact} stale={record.stale} />;
 }
 
 /** Errors on every view (they keep agents from using the skill); warnings only in detail views. */

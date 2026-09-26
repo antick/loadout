@@ -27,8 +27,8 @@
         },
         "cache": {
           "title": "Download cache",
-          "description": "Copies of Git repositories kept to make installs and update checks faster.",
-          "clearEffect": "The next install or update check downloads its repository again. A download in progress is left alone."
+          "description": "Copies of Git repositories kept to make installs and update checks faster, and the last safety-check reports.",
+          "clearEffect": "The next install or update check downloads its repository again, and skills need a new safety check. A download in progress is left alone."
         },
         "logs": {
           "title": "Logs",

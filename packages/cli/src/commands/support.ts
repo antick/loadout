@@ -11,6 +11,12 @@ export const YES_FLAG: FlagSpec = {
   description: "Confirm a destructive action. Never implied, not even by --json.",
 };
 
+export const ACCEPT_RISK_FLAG: FlagSpec = {
+  name: "accept-risk",
+  type: "boolean",
+  description: "Install skills the safety check flags. Read the findings first.",
+};
+
 export const DRY_RUN_FLAG: FlagSpec = {
   name: "dry-run",
   type: "boolean",

@@ -61,6 +61,7 @@ import type {
   ScanResult,
 } from "./types-install";
 import type { CreateSkillInput } from "./new-skill";
+import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } from "./safety";
 import type { InstructionFile } from "./instructions";
 import type { ClearableArea, RemoveAllDataOptions, StorageReport } from "./storage";
 import type { SettingKey, SettingValue, Settings } from "./settings";
@@ -135,25 +136,42 @@ export interface DeployApi {
 
 export interface InstallApi {
   /** A folder containing a skill, or an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`). */
-  fromPath(sourcePath: string, name?: string): Promise<Skill>;
+  fromPath(sourcePath: string, name?: string, options?: InstallOptions): Promise<Skill>;
   importFolder(folderPath: string): Promise<BatchImportResult>;
   /** Fetch a Git repository, or download an archive link, and list the skills in it. */
   previewGit(repoUrl: string): Promise<GitPreview>;
   /** List the skills in an archive file, for archives that hold more than one. */
   previewArchive(archivePath: string): Promise<GitPreview>;
-  /** Refused while the preview's download moved to another site and `acceptRedirect` is unset. */
+  /**
+   * Refused while the preview's download moved to another site and `acceptRedirect` is unset,
+   * and with UNSAFE while the safety scanner flags a ticked skill and `acceptRisk` is unset.
+   * Nothing is installed then, and the preview stays open for another try.
+   */
   confirmGit(
     previewId: string,
     items: InstallSelection[],
     options?: ConfirmOptions,
   ): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
-  fromMarket(source: string, skillId: string): Promise<Skill>;
+  fromMarket(source: string, skillId: string, options?: InstallOptions): Promise<Skill>;
   /** Returns whether anything was running under that key. */
   cancel(key: string): Promise<boolean>;
   scanLocal(): Promise<ScanResult>;
-  importDiscovered(path: string, name?: string): Promise<Skill>;
+  importDiscovered(path: string, name?: string, options?: InstallOptions): Promise<Skill>;
   importAllDiscovered(): Promise<BatchImportResult>;
+}
+
+/** Safety checks with the optional SkillSpector scanner. */
+export interface SafetyApi {
+  status(): Promise<SafetyStatus>;
+  /** The last report of every library skill that has one. */
+  list(): Promise<SafetyRecord[]>;
+  scanSkill(skillId: string): Promise<SafetyRecord>;
+  /**
+   * Scan library skills with no report or a stale one; every skill when `force`. Progress goes
+   * out as `install:progress` under `SAFETY_SCAN_LIBRARY_KEY`.
+   */
+  scanLibrary(force?: boolean): Promise<SafetyScanSummary>;
 }
 
 export interface MarketApi {
@@ -342,6 +360,7 @@ export interface LoadoutApi {
   deploy: DeployApi;
   install: InstallApi;
   market: MarketApi;
+  safety: SafetyApi;
   updates: UpdatesApi;
   presets: PresetsApi;
   workspace: WorkspaceApi;

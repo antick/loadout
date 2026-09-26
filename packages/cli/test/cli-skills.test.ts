@@ -1,0 +1,108 @@
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { EXIT_FAILED, EXIT_OK, EXIT_USAGE } from "../src/run";
+import { type Run, type Sandbox, createSandbox, writeSkill } from "./harness";
+
+/** `skills create` and `skills scan`, and the safety check on `skills install`. */
+
+let sandbox: Sandbox;
+const cli = (...argv: string[]): Promise<Run> => sandbox.cli(...argv);
+
+beforeEach(() => {
+  sandbox = createSandbox();
+});
+
+afterEach(() => sandbox.cleanup());
+
+describe("skills create", () => {
+  it("writes a new skill and refuses a bad or taken name", async () => {
+    const run = await cli(
+      "skills",
+      "create",
+      "release-notes",
+      "--description",
+      "Draft notes.",
+      "--json",
+    );
+    expect(run.code).toBe(EXIT_OK);
+    const skill = run.json() as { name: string; libraryPath: string };
+    expect(skill.name).toBe("release-notes");
+    expect(readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8")).toContain(
+      "description: Draft notes.",
+    );
+
+    const taken = await cli("skills", "create", "release-notes", "--description", "x", "--json");
+    expect(taken.code).toBe(EXIT_FAILED);
+    expect(taken.json()).toMatchObject({ ok: false, code: "ALREADY_EXISTS" });
+    const bad = await cli("skills", "create", "Release Notes", "--description", "x", "--json");
+    expect(bad.json()).toMatchObject({ ok: false, code: "INVALID_INPUT" });
+    expect((await cli("skills", "create", "notes", "--json")).code).toBe(EXIT_USAGE);
+  });
+});
+
+// The stand-in scanner is a shell script, so not on Windows.
+describe.skipIf(process.platform === "win32")("skills scan and the safety check", () => {
+  /** Prints a flagged report for a skill whose SKILL.md says EVIL, a clean one otherwise. */
+  function fakeScanner(dir: string): string {
+    const flagged = JSON.stringify({
+      risk_assessment: { score: 90, recommendation: "DO_NOT_INSTALL", max_issue_severity: "HIGH" },
+      issues: [
+        {
+          id: "P1",
+          category: "Prompt Injection",
+          pattern: "Instruction Override",
+          severity: "HIGH",
+          confidence: 0.8,
+          location: { file: "SKILL.md", start_line: 6 },
+          finding: "EVIL",
+        },
+      ],
+      metadata: { skillspector_version: "9.9.9" },
+    });
+    const clean = JSON.stringify({
+      risk_assessment: { score: 0, recommendation: "SAFE" },
+      issues: [],
+    });
+    const path = join(dir, "skillspector");
+    writeFileSync(
+      path,
+      `#!/bin/sh\nif grep -q EVIL "$2/SKILL.md"; then echo '${flagged}'; exit 1; fi\necho '${clean}'\n`,
+    );
+    chmodSync(path, 0o755);
+    return path;
+  }
+
+  it("stops a flagged install, installs it with --accept-risk, and scans the library", async () => {
+    sandbox.cleanup();
+    const scannerDir = mkdtempSync(join(tmpdir(), "cli-scanner-"));
+    sandbox = createSandbox({ safetyScannerPath: fakeScanner(scannerDir) });
+    const evil = writeSkill(join(sandbox.root, "src"), "evil", "EVIL");
+    const fine = writeSkill(join(sandbox.root, "src"), "fine");
+    try {
+      expect((await sandbox.cli("skills", "install", fine)).code).toBe(EXIT_OK);
+      const stopped = await sandbox.cli("skills", "install", evil);
+      expect(stopped.code).toBe(EXIT_FAILED);
+      expect(stopped.stderr).toContain("Error (UNSAFE)");
+      expect(stopped.stderr).toContain("HIGH Prompt Injection: SKILL.md:6 EVIL");
+      expect(stopped.stderr).toContain("--accept-risk");
+      const json = await sandbox.cli("skills", "install", evil, "--json");
+      expect(json.json()).toMatchObject({
+        ok: false,
+        code: "UNSAFE",
+        details: { flagged: [{ name: "evil", report: { verdict: "unsafe", score: 90 } }] },
+      });
+
+      expect((await sandbox.cli("skills", "install", evil, "--accept-risk")).code).toBe(EXIT_OK);
+      const scan = await sandbox.cli("skills", "scan", "--all", "--force");
+      expect(scan.stdout).toContain("Checked 2 skills: 1 flagged, 0 to review.");
+      expect((await sandbox.cli("skills", "scan", "evil")).stdout).toContain(
+        "evil: unsafe (risk 90/100, HIGH Prompt Injection in SKILL.md)",
+      );
+      expect((await sandbox.cli("skills", "scan")).code).toBe(EXIT_USAGE);
+    } finally {
+      rmSync(scannerDir, { recursive: true, force: true });
+    }
+  });
+});

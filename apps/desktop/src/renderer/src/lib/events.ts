@@ -51,6 +51,8 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.market.root,
     keys.system.root,
     keys.storage.root,
+    // Reports say whether they are stale by comparing content hashes.
+    keys.safety.root,
   ],
   agents: [
     keys.agents.root,
@@ -62,7 +64,8 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   presets: [keys.presets.root, keys.skills.root],
   projects: [keys.projects.root, keys.editor.root, keys.instructions.root],
   backup: [keys.backup.root],
-  settings: [keys.settings.root, keys.system.root],
+  settings: [keys.settings.root, keys.system.root, keys.safety.root],
+  safety: [keys.safety.root, keys.system.root],
 };
 
 /** Invalidate everything that depends on the given data scopes. */

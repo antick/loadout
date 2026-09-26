@@ -1,0 +1,67 @@
+{
+  "safety": {
+    "verdict": {
+      "safe": "Passed",
+      "caution": "Review",
+      "unsafe": "Flagged"
+    },
+    "staleLabel": "{{verdict}}, changed since",
+    "staleHint": "The skill changed after this check. Check it again to be sure.",
+    "score": "Risk {{score}}/100",
+    "countOf": {
+      "CRITICAL_one": "{{count}} critical",
+      "CRITICAL_other": "{{count}} critical",
+      "HIGH_one": "{{count}} high",
+      "HIGH_other": "{{count}} high",
+      "MEDIUM_one": "{{count}} medium",
+      "MEDIUM_other": "{{count}} medium",
+      "LOW_one": "{{count}} low",
+      "LOW_other": "{{count}} low"
+    },
+    "severity": {
+      "CRITICAL": "Critical",
+      "HIGH": "High",
+      "MEDIUM": "Medium",
+      "LOW": "Low"
+    },
+    "scannedAt": "Checked {{when}} · SkillSpector {{version}}",
+    "noFindings": "No findings.",
+    "prompt": {
+      "titleOne": "The safety check flagged {{name}}",
+      "titleMany_one": "The safety check flagged {{count}} skill",
+      "titleMany_other": "The safety check flagged {{count}} skills",
+      "description": "SkillSpector found things a skill should not do, such as overriding your agent's instructions, reading credentials or running downloaded code. Nothing has been installed. Install anyway only if you know and trust where it comes from.",
+      "dontInstall": "Don't install",
+      "installAnyway": "Install anyway",
+      "notInstalled": "Not installed"
+    },
+    "scanned": {
+      "safe": "Safety check passed",
+      "caution": "Safety check: worth a look",
+      "unsafe": "Safety check flagged this skill"
+    },
+    "library": {
+      "running": "Checking the library",
+      "done_one": "Checked {{count}} skill",
+      "done_other": "Checked {{count}} skills",
+      "upToDate": "Every report is current",
+      "unsafe_one": "{{count}} flagged",
+      "unsafe_other": "{{count}} flagged",
+      "caution_one": "{{count}} to review",
+      "caution_other": "{{count}} to review",
+      "failed_one": "{{count}} could not be checked",
+      "failed_other": "{{count}} could not be checked"
+    },
+    "detail": {
+      "title": "Safety check",
+      "none": "Not checked yet.",
+      "check": "Check now",
+      "checkAgain": "Check again",
+      "needsScanner": "Install SkillSpector to check skills for prompt injection, credential theft and risky scripts.",
+      "openSettings": "Set it up"
+    },
+    "errors": {
+      "scan": "Could not run the safety check."
+    }
+  }
+}

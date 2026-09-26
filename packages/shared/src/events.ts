@@ -18,7 +18,15 @@ export interface AppEvents {
   "app-update:status": AppUpdateStatus;
 }
 
-export type DataScope = "skills" | "agents" | "presets" | "projects" | "backup" | "settings";
+export type DataScope =
+  | "skills"
+  | "agents"
+  | "presets"
+  | "projects"
+  | "backup"
+  | "settings"
+  /** Safety reports: kept apart from `skills` so a scan never counts as a library change. */
+  | "safety";
 
 export type AppEventName = keyof AppEvents;
 

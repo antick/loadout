@@ -4,6 +4,7 @@ export const SETTINGS_SECTIONS = [
   "storage",
   "network",
   "updates",
+  "safety",
   "backup",
   "cli",
   "about",

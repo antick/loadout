@@ -116,6 +116,7 @@
       "tabs": {
         "document": "Document",
         "source": "Source",
+        "safety": "Safety",
         "compare": "Compare",
         "agents": "Agents",
         "presets": "Presets",

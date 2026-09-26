@@ -9,6 +9,7 @@ import type {
 import type { CoreContext } from "../context";
 import { invalid } from "../errors";
 import type { InstallIntoLibrary, InstallRecord } from "./library";
+import type { SafetyGate } from "./safety-gate";
 
 /**
  * Something fetched and unpacked (a repository checkout, an archive) that the user is still
@@ -51,6 +52,7 @@ export function createPreviewSessions(
   ctx: CoreContext,
   install: InstallIntoLibrary,
   ttlMs: number = PREVIEW_TTL_MS,
+  safety?: SafetyGate,
 ): PreviewSessions {
   const sessions = new Map<string, PreviewSession & { createdAt: number }>();
 
@@ -82,21 +84,42 @@ export function createPreviewSessions(
           `The download moved to ${session.redirectedTo}. Confirm you trust that site to install from it.`,
         );
       }
+      // An unknown key stays in the list: it fails in turn below, as it always has.
+      const chosen = items.map((item) => ({
+        item,
+        dir: session.dirs.get(item.relPath) ?? null,
+        name: item.name.trim() || item.relPath,
+      }));
+      // Also before the session is spent: after reading the findings the user can still say yes.
+      const checkable = chosen.flatMap(({ dir, name }) => (dir ? [{ name, dir }] : []));
+      const checked = safety
+        ? await safety.check(checkable, {
+            acceptRisk: options.acceptRisk,
+            progressKey: session.key,
+          })
+        : [];
+      const reportOf = new Map(
+        checkable.map((entry, index) => [entry.dir, checked[index] ?? null]),
+      );
       // Taken out first: a second confirm must not race this one for the same folder.
+      if (!sessions.has(previewId)) throw invalid(SESSION_EXPIRED);
       sessions.delete(previewId);
       try {
         const installed: Skill[] = [];
-        for (const [index, item] of items.entries()) {
-          const dir = session.dirs.get(item.relPath);
+        for (const [index, { item, dir, name }] of chosen.entries()) {
           if (!dir) throw invalid(`'${item.relPath}' is not one of the skills in this preview`);
           emitProgress(ctx, session.key, "installing", {
             current: index + 1,
-            total: items.length,
-            name: item.name.trim() || item.relPath,
+            total: chosen.length,
+            name,
           });
-          installed.push(
-            await install({ sourceDir: dir, name: item.name, record: session.record(dir) }),
-          );
+          const skill = await install({
+            sourceDir: dir,
+            name: item.name,
+            record: session.record(dir),
+          });
+          safety?.remember(skill, reportOf.get(dir) ?? null);
+          installed.push(skill);
         }
         emitProgress(ctx, session.key, "done");
         return installed;

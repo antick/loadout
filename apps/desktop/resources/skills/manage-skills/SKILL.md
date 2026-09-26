@@ -80,6 +80,10 @@ sb skills check --all --json
 sb skills update <ref> --json
 sb skills update --all --json
 
+# Safety check with SkillSpector, when the user has it installed
+sb skills scan <ref> --json
+sb skills scan --all --json
+
 # Format checks (Agent Skills rules); exit code 1 when a skill has an error
 sb skills validate <ref> --json
 sb skills validate --all --json
@@ -148,6 +152,7 @@ a result on stdout - read its `failed` list.
 | `NOT_FOUND`                                                                     | No such skill, preset, agent, folder or version; or the name is ambiguous                                           | List first, then use the id.                                                                                                                                      |
 | `TARGET_CONFLICT`                                                               | A folder with that name already exists in the agent's folder and Loadout did not put it there. Nothing was changed. | Report `details.conflicts[].path`. Offer: adopt it (`skills adopt <agent skills folder>`), or let the user move it aside. **Never delete or rename it yourself.** |
 | `ALREADY_EXISTS`                                                                | Name already taken                                                                                                  | Pick another name or use the existing item.                                                                                                                       |
+| `UNSAFE`                                                                        | The safety check flagged the skill (prompt injection, credential access, downloaded code). Nothing was installed.   | Show the user `details.flagged[].report.findings`. Add `--accept-risk` only after the user explicitly says to install it anyway. **Never decide that yourself.**  |
 | `BUSY`                                                                          | The app or another command is working on the library                                                                | Wait a few seconds and retry once.                                                                                                                                |
 | `NETWORK`, `TIMEOUT`                                                            | Could not reach the source                                                                                          | Retry once, then report.                                                                                                                                          |
 | `GIT_MISSING`                                                                   | git is not installed                                                                                                | Tell the user; git sources and backup need it.                                                                                                                    |

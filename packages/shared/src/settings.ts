@@ -35,6 +35,10 @@ export interface Settings {
   /** OAuth app client id for GitHub device sign-in. Empty hides that option. */
   githubClientId: string;
   agentControlPrompt: AgentControlPrompt;
+  /** Run the safety scanner on every install, before anything is written. Needs the scanner. */
+  safetyScanOnInstall: boolean;
+  /** The SkillSpector program to run; empty looks for it on this machine. */
+  safetyScannerPath: string;
 }
 
 export type SettingKey = keyof Settings;
@@ -59,6 +63,8 @@ export const DEFAULT_SETTINGS: Settings = {
   skillAwareMerge: true,
   githubClientId: "",
   agentControlPrompt: "",
+  safetyScanOnInstall: true,
+  safetyScannerPath: "",
 };
 
 export const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS) as SettingKey[];

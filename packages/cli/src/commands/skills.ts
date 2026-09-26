@@ -7,6 +7,7 @@ import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
 import { exportCommand } from "./skills-export";
 import { installCommand } from "./skills-install";
+import { scanCommand } from "./skills-scan";
 import { checkCommand, updateCommand } from "./skills-update";
 import { validateCommand } from "./skills-validate";
 import {
@@ -282,6 +283,7 @@ export const skillsGroup: CommandGroup = {
     checkCommand,
     updateCommand,
     validateCommand,
+    scanCommand,
     adoptCommand,
     exportCommand,
     {

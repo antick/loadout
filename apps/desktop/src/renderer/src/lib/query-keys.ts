@@ -61,6 +61,11 @@ export const keys = {
     sourceDocument: (skillId: string) => ["updates", "source-document", skillId] as const,
     sourceDiff: (skillId: string) => ["updates", "source-diff", skillId] as const,
   },
+  safety: {
+    root: ["safety"] as const,
+    status: ["safety", "status"] as const,
+    list: ["safety", "list"] as const,
+  },
   market: {
     root: ["market"] as const,
     board: (board: MarketBoard) => ["market", "board", board] as const,
