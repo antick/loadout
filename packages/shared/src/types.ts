@@ -329,6 +329,11 @@ export interface TargetConflict {
   reason: string;
 }
 
+export interface ApplyOptions {
+  /** Work out what would change and report it; write nothing. */
+  dryRun?: boolean;
+}
+
 export interface ApplyResult {
   added: number;
   removed: number;

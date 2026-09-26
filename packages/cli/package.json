@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@loadout/core": "workspace:*",
-    "@loadout/shared": "workspace:*"
+    "@loadout/shared": "workspace:*",
+    "diff": "9.0.0"
   },
   "devDependencies": {
     "@types/node": "24.13.6",

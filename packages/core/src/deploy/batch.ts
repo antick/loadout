@@ -1,4 +1,4 @@
-import type { ApplyResult, TargetConflict } from "@loadout/shared";
+import type { ApplyOptions, ApplyResult, TargetConflict } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
@@ -18,7 +18,11 @@ export interface BatchDeps {
   ops: DeployOperations;
 }
 
-export type BatchApply = (pairs: PairRef[], action: "add" | "remove") => Promise<ApplyResult>;
+export type BatchApply = (
+  pairs: PairRef[],
+  action: "add" | "remove",
+  options?: ApplyOptions,
+) => Promise<ApplyResult>;
 
 export const REASON_TWO_SKILLS = "is claimed by two different skills";
 const MISSING_SKILL_MESSAGE = "This skill is no longer in the library";
@@ -105,6 +109,25 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
     return result;
   }
 
+  /** What `add` would do: the same plan and conflicts, counted instead of written. */
+  function previewAdd(refs: PairRef[]): ApplyResult {
+    const result = emptyResult();
+    const planned = plan(refs, result);
+    result.conflicts = findConflicts(planned);
+    if (result.conflicts.length === 0) result.added = planned.length;
+    return result;
+  }
+
+  /** What `remove` would do: every pair with a deployment row would be taken away. */
+  function previewRemove(refs: PairRef[]): ApplyResult {
+    const result = emptyResult();
+    for (const ref of refs) {
+      if (store.deployment(ref.skillId, ref.agentKey)) result.removed += 1;
+      else result.skipped += 1;
+    }
+    return result;
+  }
+
   function remove(refs: PairRef[]): ApplyResult {
     const result = emptyResult();
     for (const ref of refs) {
@@ -124,7 +147,8 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
     return result;
   }
 
-  return async (refs, action) => {
+  return async (refs, action, options = {}) => {
+    if (options.dryRun) return action === "add" ? previewAdd(refs) : previewRemove(refs);
     const result = await ctx.lock.run(action === "add" ? "deploy skills" : "undeploy skills", () =>
       action === "add" ? add(refs) : remove(refs),
     );

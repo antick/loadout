@@ -1,12 +1,12 @@
 import {
   SOURCE_TYPES,
   hasSkillErrors,
+  matchesSkillQuery,
   type Skill,
   type SourceType,
   type UpdateStatus,
 } from "@loadout/shared";
 import { matchesTagFilter } from "@/lib/tag-filter";
-import { matchesQuery } from "@/lib/utils";
 
 export const FILTER_ALL = "all";
 
@@ -92,14 +92,7 @@ export function filterSkills(skills: readonly Skill[], filters: LibraryFilters):
   return skills
     .filter(
       (skill) =>
-        matchesQuery(
-          filters.query,
-          skill.name,
-          skill.description,
-          skill.tags.join(" "),
-          skill.sourceRef,
-          skill.sourceUrl,
-        ) &&
+        matchesSkillQuery(skill, filters.query) &&
         (filters.source === FILTER_ALL || skill.sourceType === filters.source) &&
         matchesStatus(skill, filters.status) &&
         matchesTagFilter(skill.tags, filters.tags),

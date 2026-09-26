@@ -361,6 +361,9 @@ importers:
       '@loadout/shared':
         specifier: workspace:*
         version: link:../shared
+      diff:
+        specifier: 9.0.0
+        version: 9.0.0
     devDependencies:
       '@types/node':
         specifier: 24.13.6

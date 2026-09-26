@@ -1,10 +1,11 @@
 import { lstatSync } from "node:fs";
 import { errorMessage, targetConflict } from "@loadout/core";
-import { SOURCE_TYPES, type Skill } from "@loadout/shared";
+import { SOURCE_TYPES, type Skill, matchesSkillQuery } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
+import { diffCommand } from "./skills-diff";
 import { exportCommand } from "./skills-export";
 import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
@@ -15,6 +16,7 @@ import {
   DRY_RUN_FLAG,
   YES_FLAG,
   describeApply,
+  describeDryApply,
   limitPositionals,
   positional,
   positionalsFrom,
@@ -29,6 +31,13 @@ const TAG_FLAG = {
   type: "list",
   value: "tag",
   description: "Only skills carrying this tag. Repeat to require several.",
+} as const;
+const QUERY_FLAG = {
+  name: "query",
+  short: "q",
+  type: "string",
+  value: "text",
+  description: "Only skills with this text in the name, description, tags or source.",
 } as const;
 const SOURCE_FLAG = {
   name: "source",
@@ -63,11 +72,13 @@ async function list({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
   const tags = flagList(args, TAG_FLAG.name).map((tag) => tag.toLowerCase());
   const source = flagString(args, SOURCE_FLAG.name);
+  const query = flagString(args, QUERY_FLAG.name) ?? "";
   if (source !== undefined && !SOURCE_TYPES.some((type) => type === source)) {
     throw new UsageError(`--source must be one of: ${SOURCE_TYPES.join(", ")}.`);
   }
   const value = (await core.api.skills.list()).filter(
     (skill) =>
+      matchesSkillQuery(skill, query) &&
       (source === undefined || skill.sourceType === source) &&
       tags.every((tag) => skill.tags.some((own) => own.toLowerCase() === tag)),
   );
@@ -203,17 +214,19 @@ function deployer(action: "add" | "remove") {
   return async ({ core, args }: CommandContext): Promise<CommandResult> => {
     const skills = resolveSkills(core, positionalsFrom(args, 0, "a skill"));
     const agents = requireAgents(core, args, action === "add");
-    const value = await core.api.deploy.apply(
+    const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
+    const result = await core.api.deploy.apply(
       skills.map((skill) => skill.id),
       agents.map((agent) => agent.key),
       action,
+      { dryRun },
     );
     // A refusal to overwrite someone else's folder is the answer, not a footnote in a summary.
-    if (value.conflicts.length > 0) throw targetConflict(value.conflicts);
+    if (result.conflicts.length > 0) throw targetConflict(result.conflicts);
     return {
-      value,
-      text: describeApply(value),
-      exitCode: value.failed.length > 0 ? 1 : 0,
+      value: { dryRun, ...result },
+      text: dryRun ? describeDryApply(result) : describeApply(result),
+      exitCode: result.failed.length > 0 ? 1 : 0,
     };
   };
 }
@@ -244,8 +257,8 @@ export const skillsGroup: CommandGroup = {
     {
       name: "list",
       summary: "List library skills",
-      usage: "[--tag <tag>…] [--source <type>]",
-      flags: [TAG_FLAG, SOURCE_FLAG],
+      usage: "[--query <text>] [--tag <tag>…] [--source <type>]",
+      flags: [QUERY_FLAG, TAG_FLAG, SOURCE_FLAG],
       run: list,
     },
     { name: "show", summary: "Show one skill in full", usage: "<ref>", flags: [], run: show },
@@ -261,16 +274,16 @@ export const skillsGroup: CommandGroup = {
     {
       name: "deploy",
       summary: "Make skills available to agents",
-      usage: "<ref>… --agent <key>…",
-      flags: [AGENT_FLAG],
+      usage: "<ref>… --agent <key>… [--dry-run]",
+      flags: [AGENT_FLAG, DRY_RUN_FLAG],
       notes: [DEPLOY_NOTE],
       run: deployer("add"),
     },
     {
       name: "undeploy",
       summary: "Take skills away from agents (the library keeps them)",
-      usage: "<ref>… --agent <key>…",
-      flags: [AGENT_FLAG],
+      usage: "<ref>… --agent <key>… [--dry-run]",
+      flags: [AGENT_FLAG, DRY_RUN_FLAG],
       run: deployer("remove"),
     },
     {
@@ -283,6 +296,7 @@ export const skillsGroup: CommandGroup = {
     checkCommand,
     updateCommand,
     validateCommand,
+    diffCommand,
     scanCommand,
     adoptCommand,
     exportCommand,

@@ -5,6 +5,7 @@ import type {
   AgentInfo,
   AppInfo,
   AppUpdateStatus,
+  ApplyOptions,
   ApplyResult,
   BackupConflict,
   BackupStatus,
@@ -131,8 +132,16 @@ export interface InstructionsApi {
 export interface DeployApi {
   deploy(skillId: string, agentKey: string): Promise<void>;
   undeploy(skillId: string, agentKey: string): Promise<void>;
-  /** Add (or remove) every skill × agent pair, skipping pairs already in the wanted state. */
-  apply(skillIds: string[], agentKeys: string[], action: "add" | "remove"): Promise<ApplyResult>;
+  /**
+   * Add (or remove) every skill × agent pair, skipping pairs already in the wanted state. With
+   * `dryRun`, report the same counts and conflicts without writing anything.
+   */
+  apply(
+    skillIds: string[],
+    agentKeys: string[],
+    action: "add" | "remove",
+    options?: ApplyOptions,
+  ): Promise<ApplyResult>;
 }
 
 export interface InstallApi {

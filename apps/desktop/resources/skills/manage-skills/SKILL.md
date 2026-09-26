@@ -57,6 +57,7 @@ Examples write `sb` for the literal path you found above.
 sb agents list --installed --json          # agent keys, enabled state, skills folders
 sb skills list --json                      # everything in the library
 sb skills list --tag writing --source git --json
+sb skills list --query pdf --json          # text in the name, description, tags or source
 sb skills show <ref> --json
 sb skills status <ref> --json              # which agents have it, and is it really on disk
 sb repo show --json                        # library location and counts
@@ -74,6 +75,11 @@ sb skills create my-skill --description "What it does and when to use it" --json
 # Deploy / undeploy (repeat --agent for several agents)
 sb skills deploy <ref> --agent claude_code --agent cursor --json
 sb skills undeploy <ref> --agent cursor --json
+sb skills deploy <ref> --agent cursor --dry-run --json   # what would change; writes nothing
+
+# How copies (or the source) differ from the library, file by file
+sb skills diff <ref> --json
+sb skills diff <ref> --upstream --json
 
 # Updates: check first, then update
 sb skills check --all --json

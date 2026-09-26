@@ -192,7 +192,6 @@ The editor (`/library/$skillId/edit`) shipped without these. Each one is a separ
 - [ ] `resolveUserPath` / `canonical()` in `packages/cli` duplicate helpers from core's `util/fs`.
       Export them from core and delete the copies.
 - [ ] `loadout --version` prints the CLI package version, not the app version.
-- [ ] No `--dry-run` on `skills deploy` / `skills undeploy`.
 - [ ] Dashboard stat-card subtitles truncate at narrow widths ("2 of 2 installed for an …").
 - [ ] After "upload to library" of a brand-new skill fails to adopt, the library folder is kept and
       gets re-indexed as an orphan on the next start. Clean it up on failure.

@@ -256,9 +256,11 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 ### Command line and agent control
 
 - `loadout` CLI with `repo`, `agents`, `skills`, `presets` and `git` commands (including
-  `skills create`, `skills validate` for the format checks, exit code 1 on errors, and
-  `skills export`),
-  `--json` output with stable error codes, `--dry-run` and `--yes` for destructive commands, and
+  `skills create`, `skills validate` for the format checks, exit code 1 on errors,
+  `skills list --query` for a text search, `skills diff` to compare copies or the source with the
+  library, and `skills export`),
+  `--json` output with stable error codes, `--dry-run` for destructive commands and for
+  `skills deploy` / `skills undeploy`, `--yes` for destructive commands, and
   `--library` to work on another library.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.
@@ -356,8 +358,8 @@ The following capabilities are not currently available through the CLI:
 - Search the marketplace from the CLI.
 - Change an existing skill to a Git source while preserving its identity, tags and deployments.
 - Adopt multiple paths in one command, with optional Git-source association.
-- Preview skill/preset deployment and removal using `--dry-run`.
-- Additional library filters: text query, preset, deployed agent, untagged and no-preset.
+- Preview preset deployment and removal using `--dry-run`.
+- Additional library filters: preset, deployed agent, untagged and no-preset.
 - Global tag listing/renaming/deletion and replacing a skill's complete tag set.
 - Preset editing, deployment preview and dedicated deployment-status commands.
 - Separate Git clone, commit and push commands. Loadout provides combined `git sync`,

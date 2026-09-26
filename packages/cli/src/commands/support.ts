@@ -120,6 +120,11 @@ export function mergeApply(total: ApplyResult, part: ApplyResult): ApplyResult {
   };
 }
 
+/** A dry run's counts: what would change, and a reminder that nothing did. */
+export function describeDryApply(result: ApplyResult): string {
+  return `Would add ${plural(result.added, "deployment")} and remove ${result.removed}; ${result.skipped} already as wanted. Nothing was changed.`;
+}
+
 export function describeApply(result: ApplyResult): string {
   const lines = [
     `${plural(result.added, "deployment")} added, ${result.removed} removed, ${result.skipped} already as wanted.`,

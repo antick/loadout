@@ -1,12 +1,12 @@
 import { isAbsolute } from "node:path";
-import type { ApplyResult, BatchFailure, DeployApi, Skill, TargetConflict } from "@loadout/shared";
+import type { BatchFailure, DeployApi, Skill, TargetConflict } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
 import { canonicalPath, lstatOrNull } from "../util/fs";
 import { hashDir } from "../util/hash";
-import { type PairRef, createBatchApply } from "./batch";
+import { type BatchApply, createBatchApply } from "./batch";
 import { rowsAtPath, samePath } from "./evidence";
 import { type DeployPair, createDeployOperations } from "./operations";
 
@@ -35,7 +35,7 @@ export interface RefreshOptions {
 export interface DeployService {
   api: DeployApi;
   /** Like `api.apply`, for pairs that are not a full skills × agents grid (preset toggles). */
-  applyPairs(pairs: PairRef[], action: "add" | "remove"): Promise<ApplyResult>;
+  applyPairs: BatchApply;
   /** Remove every deployment of a skill, keeping anything we cannot prove we put there. */
   removeAllForSkill(skill: Skill): Promise<void>;
   /**
@@ -139,10 +139,11 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       });
     },
 
-    apply: (skillIds, agentKeys, action) =>
+    apply: (skillIds, agentKeys, action, options) =>
       applyPairs(
         skillIds.flatMap((skillId) => agentKeys.map((agentKey) => ({ skillId, agentKey }))),
         action,
+        options,
       ),
   };
 
