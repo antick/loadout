@@ -1,7 +1,13 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { APP_ID, type AppUpdateStatus, RELEASES_URL, isNewerVersion } from "@loadout/shared";
+import {
+  APP_ID,
+  type AppUpdateStatus,
+  RELEASES_URL,
+  UPDATE_FEED_SIGNATURE_SUFFIX,
+  isNewerVersion,
+} from "@loadout/shared";
 import {
   UPDATE_EXIT_WAIT_SECONDS,
   UPDATE_LOG_FILE,
@@ -11,7 +17,13 @@ import {
   UPDATE_TIMEOUT_MS,
 } from "../constants";
 import { downloadVerified } from "./download";
-import { type UpdateFeed, type UpdateFeedFile, parseUpdateFeed, updateTargetFor } from "./feed";
+import {
+  type UpdateFeed,
+  type UpdateFeedFile,
+  isFeedSignedBy,
+  parseUpdateFeed,
+  updateTargetFor,
+} from "./feed";
 import { prepareAppImage, prepareMacBundle, startSwap, startWindowsInstaller } from "./install";
 import type { AppLocation } from "./locate";
 
@@ -22,6 +34,11 @@ export interface UpdateServiceDeps {
   location: AppLocation;
   /** Null when this build has no feed (a development build without a test feed). */
   feedUrl: string | null;
+  /**
+   * The release key's public half: the feed must come with a signature from it. Null only for a
+   * development build reading a test feed.
+   */
+  feedPublicKey: string | null;
   /** Downloads and working copies; the service owns everything inside. */
   updatesDir: string;
   logsDir: string;
@@ -135,6 +152,18 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     deps.emit(state);
   }
 
+  /** Refuse a feed whose signature is missing or not from the release key. */
+  async function requireSignature(feedUrl: string, feedBytes: Uint8Array, publicKey: string) {
+    const response = await deps.fetchImpl(`${feedUrl}${UPDATE_FEED_SIGNATURE_SUFFIX}`, {
+      signal: AbortSignal.timeout(UPDATE_TIMEOUT_MS),
+      cache: "no-store",
+    });
+    const signature = response.ok ? await response.text() : "";
+    if (!isFeedSignedBy(feedBytes, signature, publicKey)) {
+      throw new Error("The update feed is not signed by Loadout's release key, so it was ignored.");
+    }
+  }
+
   async function check(): Promise<AppUpdateStatus> {
     if (!deps.feedUrl || state.phase === "downloading" || state.phase === "installing") {
       return state;
@@ -151,7 +180,9 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
         return set({ phase: "up_to_date", checkedAt: Date.now(), latestVersion: null });
       }
       if (!response.ok) throw new Error(`The update check failed (${response.status})`);
-      feed = parseUpdateFeed(await response.json(), deps.feedUrl);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (deps.feedPublicKey) await requireSignature(deps.feedUrl, bytes, deps.feedPublicKey);
+      feed = parseUpdateFeed(JSON.parse(new TextDecoder().decode(bytes)), deps.feedUrl);
     } catch (error) {
       return set({ phase: before === "ready" ? "ready" : "error", error: message(error) });
     }

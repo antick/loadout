@@ -1,3 +1,4 @@
+import { createPublicKey, verify } from "node:crypto";
 import { isNewerVersion } from "@loadout/shared";
 
 /**
@@ -80,6 +81,24 @@ function parseFile(raw: unknown, feedUrl: string): UpdateFeedFile | null {
 }
 
 /** Validate a downloaded feed. Entries that are malformed or point elsewhere are dropped. */
+/** The feed's bytes carry a valid ed25519 signature from the release key. */
+export function isFeedSignedBy(
+  feed: Uint8Array,
+  signatureBase64: string,
+  publicKey: string,
+): boolean {
+  try {
+    const key = createPublicKey({
+      key: Buffer.from(publicKey, "base64"),
+      format: "der",
+      type: "spki",
+    });
+    return verify(null, feed, key, Buffer.from(signatureBase64.trim(), "base64"));
+  } catch {
+    return false;
+  }
+}
+
 export function parseUpdateFeed(raw: unknown, feedUrl: string): UpdateFeed {
   if (!isRecord(raw) || typeof raw.version !== "string" || !VERSION_PATTERN.test(raw.version)) {
     throw new Error("The update feed has no valid version");

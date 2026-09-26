@@ -11,6 +11,7 @@ import {
   LIBRARY_DIR_NAME,
   type LoadoutApi,
   type RemoveAllDataOptions,
+  UPDATE_FEED_PUBLIC_KEY,
   UPDATE_FEED_URL,
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
@@ -217,6 +218,8 @@ function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService 
       packaged: app.isPackaged,
     }),
     feedUrl: override || (app.isPackaged ? UPDATE_FEED_URL : null),
+    // Only a development build's test feed goes unsigned.
+    feedPublicKey: override ? null : UPDATE_FEED_PUBLIC_KEY,
     updatesDir: join(appDataDir, UPDATES_DIR),
     logsDir,
     fetchImpl: appFetch,

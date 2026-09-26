@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, generateKeyPairSync, sign } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,6 +11,12 @@ const PACKAGE_URL = "https://example.test/releases/download/v1.1.0/loadout_1.1.0
 const PACKAGE = Buffer.from("new package bytes");
 
 let root: string;
+
+/** The test's own release key: the feed it serves is signed with it. */
+const RELEASE_KEY = generateKeyPairSync("ed25519");
+const PUBLIC_KEY = RELEASE_KEY.publicKey.export({ type: "spki", format: "der" }).toString("base64");
+const signFeed = (text: string, key = RELEASE_KEY.privateKey): string =>
+  sign(null, Buffer.from(text), key).toString("base64");
 
 function feed(overrides: Record<string, unknown> = {}) {
   return {
@@ -28,12 +34,21 @@ function feed(overrides: Record<string, unknown> = {}) {
   };
 }
 
-/** A fetch that serves the feed and the package, or a status for the feed. */
-function fakeFetch(feedBody: unknown, feedStatus = 200, packageBytes = PACKAGE): typeof fetch {
+/**
+ * A fetch that serves the feed, its signature and the package, or a status for the feed.
+ * `signature` null serves none; by default the feed is signed with the test's release key.
+ */
+function fakeFetch(
+  feedBody: unknown,
+  feedStatus = 200,
+  packageBytes = PACKAGE,
+  signature: string | null = signFeed(JSON.stringify(feedBody)),
+): typeof fetch {
   return (async (input: string) => {
     if (input === FEED_URL) {
       return new Response(JSON.stringify(feedBody), { status: feedStatus });
     }
+    if (input === `${FEED_URL}.sig` && signature !== null) return new Response(signature);
     if (input === PACKAGE_URL) return new Response(packageBytes);
     return new Response("missing", { status: 404 });
   }) as typeof fetch;
@@ -47,6 +62,7 @@ function service(overrides: Partial<UpdateServiceDeps> = {}) {
     arch: "x64",
     location: { method: "package", target: null, blocker: null },
     feedUrl: FEED_URL,
+    feedPublicKey: PUBLIC_KEY,
     updatesDir: join(root, "updates"),
     logsDir: join(root, "logs"),
     fetchImpl: fakeFetch(feed()),
@@ -72,6 +88,26 @@ describe("update service", () => {
 
     const same = service({ fetchImpl: fakeFetch(feed({ version: "1.0.0" })) });
     expect((await same.updates.check()).phase).toBe("up_to_date");
+  });
+
+  it("ignores a feed that is unsigned, signed by another key, or changed after signing", async () => {
+    const other = generateKeyPairSync("ed25519").privateKey;
+    const body = feed();
+    for (const fetchImpl of [
+      fakeFetch(body, 200, PACKAGE, null),
+      fakeFetch(body, 200, PACKAGE, signFeed(JSON.stringify(body), other)),
+      fakeFetch(body, 200, PACKAGE, signFeed(JSON.stringify({ ...body, version: "9.9.9" }))),
+    ]) {
+      const status = await service({ fetchImpl }).updates.check();
+      expect(status).toMatchObject({ phase: "error" });
+      expect(status.error).toContain("not signed by Loadout's release key");
+    }
+  });
+
+  it("reads an unsigned test feed only when no release key is required", async () => {
+    const fetchImpl = fakeFetch(feed(), 200, PACKAGE, null);
+    const status = await service({ fetchImpl, feedPublicKey: null }).updates.check();
+    expect(status).toMatchObject({ phase: "available", latestVersion: "1.1.0" });
   });
 
   it("treats a missing feed (nothing published yet) as up to date", async () => {

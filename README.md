@@ -206,6 +206,13 @@ the update check.
 A tag that doesn't match the version in `apps/desktop/package.json` stops the workflow. Don't
 mark a release as a pre-release: the update check only sees the newest full release.
 
+The workflow signs `latest.json` with an ed25519 key (repository secret
+`UPDATE_FEED_SIGNING_KEY`) and uploads `latest.json.sig`. From 0.2.1 on, the app ignores a feed
+without a valid signature from that key; its public half is `UPDATE_FEED_PUBLIC_KEY` in
+`packages/shared/src/constants.ts`. Keep a copy of the private key somewhere safe (a password
+manager): losing it means shipping one more release signed with it that carries a new public
+key, which is impossible without it.
+
 ### Publish the CLI to npm
 
 The CLI is also on npm as `@antick/loadout`, at the app's version. After publishing a release:

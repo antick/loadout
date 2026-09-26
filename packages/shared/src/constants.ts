@@ -48,6 +48,14 @@ export const INSTALL_GUIDE_URL = `https://github.com/${RELEASES_REPO}/blob/main/
 export const UPDATE_FEED_FILE = "latest.json";
 /** Always the feed of the newest published (not draft, not prerelease) release. */
 export const UPDATE_FEED_URL = `${RELEASES_URL}/latest/download/${UPDATE_FEED_FILE}`;
+/** Next to the feed: its ed25519 signature, base64. */
+export const UPDATE_FEED_SIGNATURE_SUFFIX = ".sig";
+/**
+ * The public half of the release signing key (SPKI DER, base64). A feed not signed with its
+ * private half, which lives only in the release workflow's secrets, is never trusted.
+ */
+export const UPDATE_FEED_PUBLIC_KEY =
+  "MCowBQYDK2VwAyEA70VnSphucHrQQC3mcrZf0J0Yl5iaspjQItuNafYfszA=";
 
 export const MARKETPLACE_NAME = "skills.sh";
 export const MARKETPLACE_URL = "https://skills.sh";

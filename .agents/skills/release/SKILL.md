@@ -111,7 +111,7 @@ The workflow leaves a **draft**. Check it before publishing:
 gh release view "v<version>" --json isDraft,assets --jq '{isDraft, assets: [.assets[].name]}'
 ```
 
-It must hold `latest.json`, a macOS DMG and ZIP, a Windows `.exe`, Linux AppImage and `.deb`
+It must hold `latest.json` and its signature `latest.json.sig`, a macOS DMG and ZIP, a Windows `.exe`, Linux AppImage and `.deb`
 files, and the `loadout-cli-<version>-*` standalone executables with `SHA256SUMS`. Anything
 missing: stop and report.
 

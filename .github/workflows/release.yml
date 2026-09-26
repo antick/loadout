@@ -152,6 +152,12 @@ jobs:
             --require linux-x64-appimage --require linux-arm64-appimage \
             --require linux-x64-deb --require linux-arm64-deb
 
+      - name: Sign the update feed
+        env:
+          # The private half of UPDATE_FEED_PUBLIC_KEY; installed apps ignore an unsigned feed.
+          UPDATE_FEED_SIGNING_KEY: ${{ secrets.UPDATE_FEED_SIGNING_KEY }}
+        run: node apps/desktop/scripts/sign-feed.mjs dist/latest.json
+
       - name: Write the release notes
         env:
           TAG: ${{ needs.version.outputs.tag }}
