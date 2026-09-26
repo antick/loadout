@@ -1,5 +1,5 @@
 import { formatRelative } from "@loadout/shared";
-import { Bug, ClipboardCopy, FileArchive, LifeBuoy, TriangleAlert } from "lucide-react";
+import { Bug, ClipboardCopy, FileArchive, LifeBuoy, ScrollText, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useClearLastCrash } from "@/hooks/mutations/app";
 import { useCopyDiagnostics, useExportLogs } from "@/hooks/mutations/settings-page";
 import { useLastCrash, useLibraryLocation } from "@/hooks/queries/app";
+import { useAppLinks } from "@/hooks/use-app-links";
 import { AppUpdatePanel } from "./AppUpdatePanel";
 
 /** Version and updates, help, and everything needed for a useful bug report. */
@@ -21,6 +22,7 @@ export function AboutSection(): ReactNode {
   const clearCrash = useClearLastCrash();
   const exportLogs = useExportLogs();
   const copyDiagnostics = useCopyDiagnostics();
+  const links = useAppLinks();
 
   return (
     <div className="flex flex-col gap-3">
@@ -64,6 +66,21 @@ export function AboutSection(): ReactNode {
             <LifeBuoy />
             {t("nav.help")}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            title={t("appLinks.reportBugHint")}
+            onClick={links.reportBug}
+          >
+            <Bug />
+            {t("appLinks.reportBug")}
+          </Button>
+          {links.version ? (
+            <Button variant="outline" size="sm" onClick={links.openReleaseNotes}>
+              <ScrollText />
+              {t("appLinks.releaseNotes")}
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             size="sm"

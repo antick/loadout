@@ -38,6 +38,10 @@ export const SOURCE_URL = `https://github.com/${RELEASES_REPO}`;
 export const RELEASES_URL = `${SOURCE_URL}/releases`;
 /** Page of the newest published release. */
 export const LATEST_RELEASE_URL = `${RELEASES_URL}/latest`;
+/** Release pages live under the tag, which is `v` plus the version. */
+export const RELEASE_TAG_URL = `${RELEASES_URL}/tag/v`;
+/** Form for a new issue; the `title` and `body` query parameters fill it in. */
+export const NEW_ISSUE_URL = `${SOURCE_URL}/issues/new`;
 /** Which file to download and what to click on first launch. */
 export const INSTALL_GUIDE_URL = `https://github.com/${RELEASES_REPO}/blob/main/docs/INSTALL.md`;
 /** Release file describing the release: version and one download per system. */

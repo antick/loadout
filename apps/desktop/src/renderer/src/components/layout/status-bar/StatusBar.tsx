@@ -12,6 +12,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StatusBarItem } from "@/components/layout/status-bar/StatusBarItem";
 import { ThemeMenu } from "@/components/layout/status-bar/ThemeMenu";
+import { VersionMenu } from "@/components/layout/status-bar/VersionMenu";
 import { Spinner } from "@/components/ui/spinner";
 import { hasUpdate, needsAttention } from "@/features/library/library-filters";
 import { useAvailableAgents } from "@/hooks/queries/agents";
@@ -54,8 +55,8 @@ function useBackgroundWork(): string | null {
 
 /**
  * The line along the bottom of the window: backup state, what in the library needs a look, any
- * work running in the background, then agents, deploy mode and the theme. Every entry opens the
- * place that explains it.
+ * work running in the background, then agents, deploy mode, the theme and the version. Every entry
+ * opens the place that explains it.
  */
 export function StatusBar(): ReactNode {
   const { t } = useTranslation();
@@ -146,6 +147,7 @@ export function StatusBar(): ReactNode {
         {t(`statusBar.deployMode.${deployMode}`)}
       </StatusBarItem>
       <ThemeMenu />
+      <VersionMenu />
     </footer>
   );
 }

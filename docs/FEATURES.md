@@ -303,8 +303,9 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - One title bar across the window, clear of the macOS window buttons, naming the sidebar section
   and the page.
 - A **status bar** along the bottom: backup state, skill count, skills that need attention,
-  available updates and background installs on the left; agents, deploy mode (symlinks or copies)
-  and the theme menu on the right. Every entry opens the page that explains it.
+  available updates and background installs on the left; agents, deploy mode (symlinks or copies),
+  the theme menu and the version on the right. Every entry opens the page that explains it; the
+  version opens this release's notes or a new GitHub issue with the version and system filled in.
 - Dashboard with library, coverage, agent, update, project and backup stats, quick actions, recent
   activity and recently updated skills.
 - Command palette (`⌘K` / `Ctrl+K`) for skills, presets, projects, agents and actions, including
@@ -312,7 +313,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - Four colour palettes (Flight gear, the default, then Blueprint, Risograph and Iris & butter), each in light and dark, plus light, dark or system mode. Pick them in Settings (with a preview of each) or from the status bar; the choice is remembered and applied before the window first draws. Four text sizes.
 - Tray icon, and a choice of what the close button does: ask, keep in tray or quit.
 - Single instance, remembered window size, links open in your browser.
-- Activity history, rotating logs, export logs as a zip, copy diagnostics, crash notice.
+- Activity history, rotating logs, export logs as a zip, copy diagnostics, crash notice. Settings →
+  About also has Report a bug and Release notes.
 - Updates itself. It checks for a new version on start and every six hours, and offers it in a
   message and in Settings → About. **Update** downloads it with progress and checks it against
   the release's SHA-256 checksum. **Restart now** closes the app, swaps in the new version and
