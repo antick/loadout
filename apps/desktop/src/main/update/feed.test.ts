@@ -55,6 +55,21 @@ describe("parseUpdateFeed", () => {
     expect(feed.files).toEqual({});
   });
 
+  it("drops a file named only with dots, which would climb out of the updates folder", () => {
+    const url = "https://github.com/owner/releases/releases/download/v1.0.0/a.zip";
+    const feed = parseUpdateFeed(
+      {
+        version: "1.0.0",
+        files: {
+          "darwin-arm64": { ...file(url), name: ".." },
+          "darwin-x64": { ...file(url), name: "." },
+        },
+      },
+      FEED_URL,
+    );
+    expect(feed.files).toEqual({});
+  });
+
   it("accepts plain HTTP only for a feed on this computer", () => {
     const local = "http://127.0.0.1:8080/latest.json";
     const feed = parseUpdateFeed(

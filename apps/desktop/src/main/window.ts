@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { BrowserWindow, type Rectangle, app, screen, shell } from "electron";
 import { APP_NAME } from "@loadout/shared";
 import {
@@ -11,6 +12,26 @@ import {
   WINDOW_STATE_FILE,
 } from "./constants";
 import { writeFileAtomicSync } from "./files";
+
+const RENDERER_ENTRY = join(import.meta.dirname, "../renderer/index.html");
+
+/** The dev server's page; never in a packaged build, whatever the environment says. */
+function devRendererUrl(): string | null {
+  return app.isPackaged ? null : (process.env.ELECTRON_RENDERER_URL ?? null);
+}
+
+/** The app's own page: the only one allowed to call the API over IPC. */
+export function isAppPage(url: string): boolean {
+  const page = url.split(/[?#]/)[0];
+  if (page === pathToFileURL(RENDERER_ENTRY).href) return true;
+  const dev = devRendererUrl();
+  if (!dev) return false;
+  try {
+    return new URL(url).origin === new URL(dev).origin;
+  } catch {
+    return false;
+  }
+}
 
 interface WindowState {
   bounds: Rectangle;
@@ -87,9 +108,9 @@ export function createMainWindow(icon: string): BrowserWindow {
     }
   });
 
-  const devUrl = process.env.ELECTRON_RENDERER_URL;
+  const devUrl = devRendererUrl();
   if (devUrl) void win.loadURL(devUrl);
-  else void win.loadFile(join(import.meta.dirname, "../renderer/index.html"));
+  else void win.loadFile(RENDERER_ENTRY);
   return win;
 }
 

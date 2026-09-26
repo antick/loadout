@@ -18,12 +18,18 @@ export function registerIpc(
   onError: (channel: string, error: unknown) => void,
   /** Refuse a namespace for now (the library is gone): return the error to answer with. */
   refuse: (namespace: string) => Error | null = () => null,
+  /** The page asking: only the app's own main frame may call the API. */
+  isTrustedPage: (url: string) => boolean = () => true,
 ): void {
   const namespaces = new Set<string>(API_NAMESPACES);
   ipcMain.handle(
     IPC_INVOKE_CHANNEL,
-    async (_event, channel: string, args: unknown[]): Promise<ApiResponse<unknown>> => {
+    async (event, channel: string, args: unknown[]): Promise<ApiResponse<unknown>> => {
       try {
+        const frame = event.senderFrame;
+        if (!frame || frame.parent !== null || !isTrustedPage(frame.url)) {
+          throw new Error(`Refused an API call from ${frame?.url ?? "an unknown page"}`);
+        }
         const [namespace, method] = channel.split(".");
         if (!namespace || !method || !namespaces.has(namespace)) {
           throw new Error(`Unknown API channel: ${channel}`);

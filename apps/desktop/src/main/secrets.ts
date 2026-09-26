@@ -7,6 +7,15 @@ import { writeFileAtomicSync } from "./files";
  * Credentials encrypted with the OS keychain (Keychain, DPAPI, libsecret) through Electron's
  * safeStorage. Only ciphertext reaches the disk.
  */
+/**
+ * Real encryption only. On Linux without a keyring, Electron falls back to `basic_text`, a fixed
+ * key anyone can undo, while still calling encryption available: treat that as unavailable.
+ */
+function encryptionUsable(): boolean {
+  if (!safeStorage.isEncryptionAvailable()) return false;
+  return process.platform !== "linux" || safeStorage.getSelectedStorageBackend() !== "basic_text";
+}
+
 export function createSecretStore(filePath: string): SecretStore {
   const read = (): Record<string, string> => {
     if (!existsSync(filePath)) return {};
@@ -20,7 +29,7 @@ export function createSecretStore(filePath: string): SecretStore {
     writeFileAtomicSync(filePath, JSON.stringify(data, null, 2));
 
   return {
-    available: () => safeStorage.isEncryptionAvailable(),
+    available: encryptionUsable,
     get: async (key) => {
       const cipher = read()[key];
       if (!cipher || !safeStorage.isEncryptionAvailable()) return null;
@@ -31,7 +40,7 @@ export function createSecretStore(filePath: string): SecretStore {
       }
     },
     set: async (key, value) => {
-      if (!safeStorage.isEncryptionAvailable()) {
+      if (!encryptionUsable()) {
         throw new Error("The system keychain is not available");
       }
       write({ ...read(), [key]: safeStorage.encryptString(value).toString("base64") });

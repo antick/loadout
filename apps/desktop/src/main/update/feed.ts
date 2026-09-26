@@ -72,7 +72,7 @@ function isAllowedUrl(url: string, feedUrl: string): boolean {
 function parseFile(raw: unknown, feedUrl: string): UpdateFeedFile | null {
   if (!isRecord(raw)) return null;
   const { name, url, sha256, size } = raw;
-  if (typeof name !== "string" || !FILE_NAME_PATTERN.test(name)) return null;
+  if (typeof name !== "string" || !FILE_NAME_PATTERN.test(name) || /^\.+$/.test(name)) return null;
   if (typeof url !== "string" || !isAllowedUrl(url, feedUrl)) return null;
   if (typeof sha256 !== "string" || !SHA256_PATTERN.test(sha256)) return null;
   if (typeof size !== "number" || !Number.isSafeInteger(size) || size <= 0) return null;

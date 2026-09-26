@@ -1,4 +1,6 @@
+import { ImageOff } from "lucide-react";
 import { type ComponentProps, type ReactNode, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -26,6 +28,24 @@ function MarkdownLink({ href, children, ...props }: ComponentProps<"a">): ReactN
     >
       {children}
     </a>
+  );
+}
+
+/**
+ * An image from the web is never fetched: a skill's author could track who opens the document.
+ * It shows as a link to open in the browser instead; images embedded as data stay inline.
+ */
+function MarkdownImage({ src, alt, ...props }: ComponentProps<"img">): ReactNode {
+  const { t } = useTranslation();
+  const source = typeof src === "string" ? src : "";
+  if (!EXTERNAL_LINK_PATTERN.test(source)) {
+    return <img alt={alt ?? ""} src={source} className="my-3 max-w-full rounded-md" {...props} />;
+  }
+  return (
+    <MarkdownLink href={source} title={source}>
+      <ImageOff className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
+      {alt ? t("markdown.remoteImageNamed", { alt }) : t("markdown.remoteImage")}
+    </MarkdownLink>
   );
 }
 
@@ -109,9 +129,7 @@ const BASE_COMPONENTS: Components = {
   td: ({ node: _node, ...props }) => (
     <td className="border-b px-3 py-1.5 align-top last:border-b-0" {...props} />
   ),
-  img: ({ node: _node, alt, ...props }) => (
-    <img alt={alt ?? ""} className="my-3 max-w-full rounded-md" {...props} />
-  ),
+  img: ({ node: _node, ...props }) => <MarkdownImage {...props} />,
   a: ({ node: _node, ...props }) => <MarkdownLink {...props} />,
   input: ({ node: _node, ...props }) => (
     <input className="mr-1.5 align-middle accent-primary" {...props} />

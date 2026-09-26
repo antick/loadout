@@ -63,6 +63,19 @@ describe("sanitizer", () => {
     expect(clean).not.toContain("sk-abc");
     expect(clean).toContain("<email>");
   });
+
+  it("hides GitLab and npm tokens and Authorization values, not ordinary words", () => {
+    const text = [
+      "glpat-abcdefghij12 npm_abcdefghijklmnop",
+      "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.x.y",
+      "Authorization: token 0123456789abcdef",
+      "the token successfully refreshed",
+    ].join("\n");
+    const clean = sanitizeText(text, "/fake/home");
+    expect(clean).not.toMatch(/glpat-|npm_a|eyJhbGci|0123456789abcdef/);
+    expect(clean).toContain("Bearer <token>");
+    expect(clean).toContain("the token successfully refreshed");
+  });
 });
 
 describe("logs", () => {

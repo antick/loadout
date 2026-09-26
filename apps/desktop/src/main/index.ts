@@ -33,7 +33,7 @@ import { appFetch } from "./net-fetch";
 import { locateApp } from "./update/locate";
 import { type UpdateService, createUpdateService } from "./update/service";
 import { type FolderWatcher, watchFolders } from "./watcher";
-import { createMainWindow, focusWindow } from "./window";
+import { createMainWindow, focusWindow, isAppPage } from "./window";
 
 let mainWindow: BrowserWindow | null = null;
 let core: Core | null = null;
@@ -204,7 +204,8 @@ function recordCrash(error: unknown): void {
 
 /** Self-update: a published build checks the release feed; a development build only a test feed. */
 function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService {
-  const override = process.env[UPDATE_FEED_OVERRIDE_ENV];
+  // A test feed is for development builds only; a published build always reads the real one.
+  const override = app.isPackaged ? undefined : process.env[UPDATE_FEED_OVERRIDE_ENV];
   const updates = createUpdateService({
     currentVersion: app.getVersion(),
     platform: process.platform,
@@ -243,6 +244,11 @@ function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService 
 
 function start(): void {
   app.dock?.setIcon(appIconPath);
+  // The app uses no browser permissions (camera, location, page notifications): refuse them all.
+  session.defaultSession.setPermissionRequestHandler((_contents, _permission, answer) =>
+    answer(false),
+  );
+  session.defaultSession.setPermissionCheckHandler(() => false);
   core = createCore({
     secrets: createSecretStore(join(app.getPath("userData"), SECRETS_FILE)),
     emit: (event, payload) => {
@@ -296,6 +302,7 @@ function start(): void {
       libraryGone && namespace !== "app"
         ? new AppError("UNSUPPORTED", "The library was deleted. Restart or quit.")
         : null,
+    isAppPage,
   );
 
   watchers = [
