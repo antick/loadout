@@ -12,6 +12,9 @@ describe("names", () => {
   it("sanitises without slugging", () => {
     expect(sanitizeSkillName("My Skill")).toBe("My Skill");
     expect(sanitizeSkillName("../../etc/passwd")).toBe("passwd");
+    expect(sanitizeSkillName(".git")).toBe("git");
+    expect(sanitizeSkillName(" ..hidden. ")).toBe("hidden");
+    expect(() => sanitizeSkillName(". .")).toThrow();
     expect(sanitizeSkillName('a<b>c:"d')).toBe("a_b_c__d");
     expect(sanitizeSkillName("trailing...")).toBe("trailing");
     expect(sanitizeSkillName("con.txt")).toBe("_con.txt");

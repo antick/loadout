@@ -22,6 +22,10 @@ const FIXED_CONFIG = [
   "commit.gpgsign=false",
   "tag.gpgsign=false",
   "advice.detachedHead=false",
+  // Nothing in the repository's own config may run a program: not a file-system monitor, not a
+  // hook. The library folder takes in third-party skills, so its .git is not trusted blindly.
+  "core.fsmonitor=false",
+  "core.hooksPath=/dev/null",
 ] as const;
 const SSH_NOISE = /^(warning: permanently added|\*\* |debug\d:)/i;
 

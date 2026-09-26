@@ -177,6 +177,23 @@ describe("backup clone, size rules and credentials", () => {
     expect((await b.api.status()).upstreamHealth).toBe("healthy");
   });
 
+  it("never runs a program named in the repository's own git config", async () => {
+    const a = track(createDevice(temp.dir, "A"));
+    a.addSkill("notes");
+    await a.api.init();
+    const marker = join(temp.dir, "fsmonitor-ran");
+    a.git("config", "core.fsmonitor", `touch '${marker}'; false`);
+    a.git("config", "core.hooksPath", join(temp.dir, "hooks"));
+    mkdirSync(join(temp.dir, "hooks"));
+    writeFileSync(join(temp.dir, "hooks", "pre-commit"), `#!/bin/sh\ntouch '${marker}'\n`, {
+      mode: 0o755,
+    });
+    a.addSkill("more");
+    await a.api.status();
+    await a.api.sync();
+    expect(existsSync(marker)).toBe(false);
+  });
+
   it("never commits a half-written metadata file, only files named like one", async () => {
     const a = track(createDevice(temp.dir, "A"));
     a.addSkill("notes");

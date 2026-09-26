@@ -20,13 +20,14 @@ function replaceControlChars(text: string): string {
 
 /**
  * Turn user or frontmatter text into a safe single folder name.
- * Keeps case and spaces; only strips what a filesystem cannot hold.
+ * Keeps case and spaces; only strips what a filesystem cannot hold, and leading dots: a skill
+ * called `.git` or `.loadout` would land on the backup repository or our own metadata.
  */
 export function sanitizeSkillName(input: string): string {
   const last = basename(input.replaceAll("\\", "/").trim());
   if (last === "." || last === "..") throw invalid(`Invalid skill name: '${input}'`);
   let name = replaceControlChars(last).replace(FORBIDDEN_CHARS, "_").trim();
-  name = name.replace(/\.+$/, "").trim();
+  name = name.replace(/^[.\s]+|[.\s]+$/g, "");
   if (!name) throw invalid(`Invalid skill name: '${input}'`);
   const stem = name.split(".")[0] ?? name;
   if (WINDOWS_DEVICE_NAMES.test(stem)) name = `_${name}`;
