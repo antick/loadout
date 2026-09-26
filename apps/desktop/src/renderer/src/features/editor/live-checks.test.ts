@@ -12,7 +12,7 @@ describe("live checks in the editor", () => {
 
   it("accepts links to files and folders that exist", () => {
     const text =
-      "---\nname: pdf\ndescription: x\n---\n[a](notes.md) [b](scripts) [c](scripts/run.sh)";
+      "---\nname: pdf\ndescription: Read and fill in PDF forms.\n---\n[a](notes.md) [b](scripts) [c](scripts/run.sh)";
     expect(checkDraft(text, "pdf", files)).toEqual([]);
   });
 
