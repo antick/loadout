@@ -138,9 +138,13 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - One page per agent listing everything in its skills folder, including skills installed outside
   the app.
 - Status per skill: local only, in sync, local changed, library changed, conflict.
-- **Loaded twice**: a skill in the agent's own folder that a shared folder it also reads (such as
-  `~/.agents/skills` for Codex) holds as well is marked, and its panel says where the other copy
-  is. A link to the same folder counts as one copy.
+- **Loaded twice**: a skill in the agent's own folder that another folder it also reads holds as
+  well is marked, and its panel says where the other copy is. A link to the same folder counts as
+  one copy. Which folders each agent reads comes from its own documentation (for example Cursor
+  also reads `~/.agents/skills`, `~/.claude/skills` and `~/.codex/skills`), and the agent's page
+  lists them under its folder.
+- Scanning for skills to import reads each shared folder once: under its owner when that agent is
+  installed, else under the installed agents that read it.
 - Upload a skill to the library (it becomes managed), pull the library version, remove it from the
   agent, or delete a local skill.
 - Add skills from the library with search, tag and source filters and Shift-click range selection.
@@ -165,8 +169,13 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - Linked workspaces: manage any folder as a skills root, with its own disabled folder.
 - Nested skill folders, and one row per skill across every agent folder in the project.
 - Enable and disable project skills.
-- A switched-on project skill that the same agent also has globally is marked **Loaded twice**,
-  with the global copy's path in its panel.
+- A switched-on project skill that the same installed agent also loads from elsewhere is marked
+  **Loaded twice**, with the other copy's path in its panel: its global folder, another global
+  folder it reads, or another folder of the project it reads (Copilot reads `.github/skills`,
+  `.claude/skills` and `.agents/skills`).
+- Project folders follow each agent's documentation: Copilot `.github/skills`; Codex, Amp,
+  Replit and Antigravity `.agents/skills`; Crush `.crush/skills`; Goose `.goose/skills`; Windsurf
+  `.windsurf/skills`.
 - Status against the library, with **Update library**, **Update project** and **Restore library
   version**.
 - A guard refuses to update the library when several copies of a skill each hold their own changes.

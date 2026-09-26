@@ -1,4 +1,4 @@
-import { basename } from "node:path";
+import { basename, join } from "node:path";
 import type { LocalSkill, SkillDuplicate } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import { samePath } from "../deploy/evidence";
@@ -8,9 +8,10 @@ import { canonicalPath, isDirectory } from "../util/fs";
 import { findLocalSkillDirs } from "./local-scan";
 
 /**
- * Copies of a skill that one agent loads more than once: from its own folder and a shared one it
- * also reads (`~/.agents/skills`), or from a project and its global folder. Only the fact is
- * reported; which copy the agent prefers is the agent's business.
+ * Copies of a skill that one agent loads more than once: from its own folder and another it also
+ * reads (`~/.agents/skills`, `~/.claude/skills`), or from a project and a global folder, or from
+ * two folders of one project. Only the fact is reported; which copy the agent prefers is the
+ * agent's business.
  */
 
 /** Skill folders in `root` by lower-case skill name and folder name. Reads names, never hashes. */
@@ -71,38 +72,70 @@ export function withSharedFolderDuplicates(
   );
 }
 
+/** Installed agents behind a project skill's target. Uninstalled agents load nothing. */
+function agentsLoading(
+  skill: LocalSkill,
+  targets: readonly ResolvedTarget[],
+  registry: AgentRegistry,
+): { agents: ResolvedAgent[]; target: ResolvedTarget | undefined } {
+  const target = targets.find((candidate) => candidate.key === skill.agentKey);
+  const agents = (target?.agentKeys ?? [skill.agentKey])
+    .flatMap((key) => registry.find(key) ?? [])
+    .filter((agent) => agent.installed);
+  return { agents, target };
+}
+
 /**
- * Mark switched-on project skills that the same agents also have in their global folder. A
- * switched-off copy is not loaded, so it is never a duplicate.
+ * Mark switched-on project skills that the same agents also load from elsewhere: their global
+ * folder or another global folder they read (`global`), or another folder of this project they
+ * read, such as Copilot reading `.claude/skills` (`shared_folder`). A switched-off copy is not
+ * loaded, so it is never a duplicate.
  */
-export function withGlobalDuplicates(
+export function withProjectDuplicates(
   skills: LocalSkill[],
   targets: readonly ResolvedTarget[],
   registry: AgentRegistry,
+  projectPath: string,
 ): LocalSkill[] {
-  const globalCopies = new Map<string, Map<string, string>>();
-  const copiesOf = (agent: ResolvedAgent): Map<string, string> => {
-    let copies = globalCopies.get(agent.key);
+  const cache = new Map<string, Map<string, string>>();
+  const copiesAt = (root: string, recursive: boolean): Map<string, string> => {
+    const key = `${recursive ? "r" : "f"}:${root}`;
+    let copies = cache.get(key);
     if (!copies) {
-      copies = copiesIn(agent.skillsDir, agent.recursiveScan);
-      globalCopies.set(agent.key, copies);
+      copies = copiesIn(root, recursive);
+      cache.set(key, copies);
     }
     return copies;
   };
   return skills.map((skill) => {
     if (!skill.enabled) return skill;
-    const target = targets.find((candidate) => candidate.key === skill.agentKey);
-    const agents = (target?.agentKeys ?? [skill.agentKey]).flatMap(
-      (key) => registry.find(key) ?? [],
-    );
-    return addDuplicates(
-      skill,
-      agents.flatMap((agent): SkillDuplicate[] => {
-        const path = otherCopy(skill, copiesOf(agent));
-        return path
-          ? [{ where: "global", agentKey: agent.key, agentDisplayName: agent.displayName, path }]
-          : [];
-      }),
-    );
+    const { agents, target } = agentsLoading(skill, targets, registry);
+    const found: SkillDuplicate[] = [];
+    const seen = new Set<string>();
+    const add = (duplicate: SkillDuplicate): void => {
+      const key = `${duplicate.agentKey}:${canonicalPath(duplicate.path)}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      found.push(duplicate);
+    };
+    for (const agent of agents) {
+      const who = { agentKey: agent.key, agentDisplayName: agent.displayName };
+      const globalRoots = [
+        { root: agent.skillsDir, recursive: agent.recursiveScan },
+        ...agent.extraScanDirs.map((root) => ({ root, recursive: false })),
+      ];
+      for (const { root, recursive } of globalRoots) {
+        const path = otherCopy(skill, copiesAt(root, recursive));
+        if (path) add({ where: "global", ...who, path });
+      }
+      // Only agent folders of a project: a linked workspace is one folder and nothing else.
+      if (!target || !target.relativeDir) continue;
+      for (const relative of agent.projectExtraScanDirs) {
+        if (relative === target.relativeDir) continue;
+        const path = otherCopy(skill, copiesAt(join(projectPath, relative), false));
+        if (path) add({ where: "shared_folder", ...who, path });
+      }
+    }
+    return addDuplicates(skill, found);
   });
 }

@@ -3,6 +3,7 @@
     "skillCount_one": "{{count}} skill",
     "skillCount_other": "{{count}} skills",
     "sharedFolder": "Shares this folder with {{agents}}, so the same skills show up there too.",
+    "alsoReads": "Also loads skills from {{folders}}. A skill in two of these folders may load twice.",
     "category": {
       "coding": "Coding",
       "assistant": "Assistants"

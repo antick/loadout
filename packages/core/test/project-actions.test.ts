@@ -125,11 +125,11 @@ describe("project actions", () => {
     it("writes once for keys that share a folder and ignores agents that cannot be used", async () => {
       const project = await api().add(repo);
       const skill = world.addSkill("alpha");
-      await api().exportSkill(skill.id, project.id, ["warp", "gitlab_duo", "codex"]);
+      await api().exportSkill(skill.id, project.id, ["warp", "gitlab_duo", "gemini_cli"]);
       expect(existsSync(join(repo, SHARED_DIR, "alpha", "SKILL.md"))).toBe(true);
-      expect(existsSync(join(repo, ".codex"))).toBe(false);
+      expect(existsSync(join(repo, ".gemini"))).toBe(false);
 
-      const error = await rejection(api().exportSkill(skill.id, project.id, ["codex"]));
+      const error = await rejection(api().exportSkill(skill.id, project.id, ["gemini_cli"]));
       expect(error.message).toBe("No enabled installed agents selected for this project");
     });
 
@@ -148,7 +148,7 @@ describe("project actions", () => {
     it("remembers the last export choice, filtered to targets that can still be used", async () => {
       const project = await api().add(repo);
       expect(await api().lastExportAgents(project.id)).toEqual([]);
-      await api().setLastExportAgents(project.id, ["cursor", "codex", "warp", "cursor"]);
+      await api().setLastExportAgents(project.id, ["cursor", "gemini_cli", "warp", "cursor"]);
       expect(await api().lastExportAgents(project.id)).toEqual(["cursor", "warp"]);
       expect((await rejection(api().setLastExportAgents("nope", []))).code).toBe("NOT_FOUND");
     });

@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { AGENT_PRIORITY_ORDER, BUILT_IN_AGENTS } from "@loadout/shared";
@@ -47,6 +47,16 @@ describe("agents service", () => {
     expect((await info("cursor")).installed).toBe(false);
     expect((await info("cline")).sharesDirWith).toEqual(["warp"]);
     expect(list[0]).not.toHaveProperty("extraScanDirs");
+    expect(list[0]).not.toHaveProperty("projectExtraScanDirs");
+  });
+
+  it("reports the other global folders an agent loads, only where they exist", async () => {
+    // ~/.claude/skills exists (Claude Code is installed); ~/.agents/skills and ~/.codex do not.
+    mkdirSync(join(world.home, ".claude", "skills"), { recursive: true });
+    expect((await info("cursor")).alsoReads).toEqual([join(world.home, ".claude", "skills")]);
+    expect((await info("claude_code")).alsoReads).toEqual([]);
+    expect((await info("github_copilot")).projectSkillsDir).toBe(".github/skills");
+    expect((await info("codex")).projectSkillsDir).toBe(".agents/skills");
   });
 
   it("orders by the saved list and slots unplaced priority agents beside their neighbour", async () => {

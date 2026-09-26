@@ -134,17 +134,20 @@ describe("projects", () => {
       const shared = targets.filter((t) => t.relativeDir === ".agents/skills");
       expect(shared).toHaveLength(1);
       expect(shared[0]).toMatchObject({
-        key: "cline",
-        displayName: "Cline / Warp / GitLab Duo",
-        agentKeys: ["cline", "warp", "gitlab_duo"],
-        // Cline is not on this machine, Warp is: the shared folder is still worth using.
+        key: "codex",
+        displayName: "Codex / Antigravity / Amp / Cline / Replit / Warp / GitLab Duo",
+        agentKeys: ["codex", "antigravity", "amp", "cline", "replit", "warp", "gitlab_duo"],
+        // Codex and Cline are not on this machine, Warp is: the shared folder is still worth using.
         installed: true,
         enabled: true,
       });
       expect(shared[0]).not.toHaveProperty("enabledRoot");
 
       expect(targets.find((t) => t.key === "opencode")?.relativeDir).toBe(".opencode/skills");
-      expect(targets.find((t) => t.key === "codex")).toMatchObject({ installed: false });
+      expect(targets.find((t) => t.key === "github_copilot")).toMatchObject({
+        relativeDir: ".github/skills",
+        installed: false,
+      });
       expect(new Set(targets.map((t) => t.relativeDir)).size).toBe(targets.length);
     });
 
@@ -156,12 +159,21 @@ describe("projects", () => {
         skillsDir: "~/sh/skills",
         projectSkillsDir: ".agents/skills/",
       });
-      await world.agents.api.setOrder(["warp", "shares", "cline"]);
+      await world.agents.api.setOrder(["warp", "shares", "cline", "codex"]);
       const targets = await api().targets(project.id);
       expect(targets.some((t) => t.agentKeys.includes("no_projects"))).toBe(false);
       expect(targets.find((t) => t.relativeDir === ".agents/skills")).toMatchObject({
-        key: "cline",
-        agentKeys: ["cline", "warp", "gitlab_duo", "shares"],
+        key: "codex",
+        agentKeys: [
+          "codex",
+          "antigravity",
+          "amp",
+          "cline",
+          "replit",
+          "warp",
+          "gitlab_duo",
+          "shares",
+        ],
       });
     });
   });
@@ -182,11 +194,13 @@ describe("projects", () => {
       ).toEqual([
         ["code-review", "claude_code", true, "local_newer", false],
         ["parked", "claude_code", false, "local_only", false],
-        ["shared-one", "cline", true, "local_only", false],
+        ["shared-one", "codex", true, "local_only", false],
         ["research/web-search", "claude_code", true, "local_only", false],
       ]);
       expect(skills[0]).toMatchObject({ librarySkillId: review.id, tags: ["quality"] });
-      expect(skills[2]?.agentDisplayName).toBe("Cline / Warp / GitLab Duo");
+      expect(skills[2]?.agentDisplayName).toBe(
+        "Codex / Antigravity / Amp / Cline / Replit / Warp / GitLab Duo",
+      );
     });
 
     it("counts skills by relative path and reports the worst status of each", async () => {

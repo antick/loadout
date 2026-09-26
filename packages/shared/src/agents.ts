@@ -11,8 +11,13 @@ export interface AgentDefinition {
   detectDir: string;
   /** Project-relative skills folder. Defaults to `skillsDir` when omitted. */
   projectSkillsDir?: string;
-  /** Extra folders (relative to home) the agent also reads. Discovery only, never a deploy target. */
+  /**
+   * Other global folders (relative to home) the agent also loads skills from, per its docs.
+   * Discovery and "loaded twice" only, never a deploy target.
+   */
   extraScanDirs?: string[];
+  /** Other project-relative folders the agent also loads skills from. Same use as above. */
+  projectExtraScanDirs?: string[];
   /** Skills live in nested category folders, so scan until a skill folder is found. */
   recursiveScan?: boolean;
   /** Defaults to "coding". */
@@ -20,7 +25,14 @@ export interface AgentDefinition {
 }
 
 export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
-  { key: "cursor", displayName: "Cursor", skillsDir: ".cursor/skills", detectDir: ".cursor" },
+  {
+    key: "cursor",
+    displayName: "Cursor",
+    skillsDir: ".cursor/skills",
+    detectDir: ".cursor",
+    extraScanDirs: [".agents/skills", ".claude/skills", ".codex/skills"],
+    projectExtraScanDirs: [".agents/skills", ".claude/skills", ".codex/skills"],
+  },
   {
     key: "claude_code",
     displayName: "Claude Code",
@@ -39,53 +51,83 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     displayName: "Codex",
     skillsDir: ".codex/skills",
     detectDir: ".codex",
+    projectSkillsDir: ".agents/skills",
     extraScanDirs: [".agents/skills"],
   },
-  { key: "grok", displayName: "Grok", skillsDir: ".grok/skills", detectDir: ".grok" },
+  {
+    key: "grok",
+    displayName: "Grok",
+    skillsDir: ".grok/skills",
+    detectDir: ".grok",
+    extraScanDirs: [".agents/skills"],
+  },
   {
     key: "opencode",
     displayName: "OpenCode",
     skillsDir: ".config/opencode/skills",
     detectDir: ".config/opencode",
     projectSkillsDir: ".opencode/skills",
+    extraScanDirs: [".claude/skills", ".agents/skills"],
+    projectExtraScanDirs: [".claude/skills", ".agents/skills"],
   },
   {
     key: "antigravity",
     displayName: "Antigravity",
     skillsDir: ".gemini/antigravity/skills",
     detectDir: ".gemini/antigravity",
+    projectSkillsDir: ".agents/skills",
+    projectExtraScanDirs: [".agent/skills"],
   },
   {
     key: "amp",
     displayName: "Amp",
     skillsDir: ".config/agents/skills",
     detectDir: ".config/agents",
+    projectSkillsDir: ".agents/skills",
+    extraScanDirs: [".agents/skills", ".claude/skills"],
+    projectExtraScanDirs: [".claude/skills"],
   },
   {
     key: "kilo_code",
     displayName: "Kilo Code",
     skillsDir: ".kilocode/skills",
     detectDir: ".kilocode",
+    extraScanDirs: [".agents/skills", ".claude/skills"],
+    projectExtraScanDirs: [".agents/skills", ".claude/skills"],
   },
-  { key: "roo_code", displayName: "Roo Code", skillsDir: ".roo/skills", detectDir: ".roo" },
+  {
+    key: "roo_code",
+    displayName: "Roo Code",
+    skillsDir: ".roo/skills",
+    detectDir: ".roo",
+    extraScanDirs: [".agents/skills"],
+    projectExtraScanDirs: [".agents/skills"],
+  },
   {
     key: "goose",
     displayName: "Goose",
     skillsDir: ".config/goose/skills",
     detectDir: ".config/goose",
+    projectSkillsDir: ".goose/skills",
+    extraScanDirs: [".agents/skills", ".claude/skills", ".config/agents/skills"],
+    projectExtraScanDirs: [".agents/skills", ".claude/skills"],
   },
   {
     key: "gemini_cli",
     displayName: "Gemini CLI",
     skillsDir: ".gemini/skills",
     detectDir: ".gemini",
+    extraScanDirs: [".agents/skills"],
+    projectExtraScanDirs: [".agents/skills"],
   },
   {
     key: "github_copilot",
     displayName: "GitHub Copilot",
     skillsDir: ".copilot/skills",
     detectDir: ".copilot",
+    projectSkillsDir: ".github/skills",
     extraScanDirs: [".agents/skills"],
+    projectExtraScanDirs: [".claude/skills", ".agents/skills"],
   },
   {
     key: "openclaw",
@@ -94,15 +136,31 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".openclaw",
     category: "assistant",
   },
-  { key: "droid", displayName: "Droid", skillsDir: ".factory/skills", detectDir: ".factory" },
+  {
+    key: "droid",
+    displayName: "Droid",
+    skillsDir: ".factory/skills",
+    detectDir: ".factory",
+    extraScanDirs: [".agents/skills", ".agent/skills"],
+    projectExtraScanDirs: [".agents/skills", ".agent/skills"],
+  },
   {
     key: "windsurf",
     displayName: "Windsurf",
     skillsDir: ".codeium/windsurf/skills",
     detectDir: ".codeium/windsurf",
+    projectSkillsDir: ".windsurf/skills",
+    extraScanDirs: [".agents/skills"],
+    projectExtraScanDirs: [".devin/skills", ".agents/skills"],
   },
   { key: "trae", displayName: "TRAE IDE", skillsDir: ".trae/skills", detectDir: ".trae" },
-  { key: "cline", displayName: "Cline", skillsDir: ".agents/skills", detectDir: ".cline" },
+  {
+    key: "cline",
+    displayName: "Cline",
+    skillsDir: ".agents/skills",
+    detectDir: ".cline",
+    projectExtraScanDirs: [".cline/skills", ".clinerules/skills", ".claude/skills"],
+  },
   {
     key: "deepagents",
     displayName: "Deep Agents",
@@ -126,8 +184,36 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     displayName: "Replit",
     skillsDir: ".config/agents/skills",
     detectDir: ".replit",
+    projectSkillsDir: ".agents/skills",
   },
-  { key: "warp", displayName: "Warp", skillsDir: ".agents/skills", detectDir: ".warp" },
+  {
+    key: "warp",
+    displayName: "Warp",
+    skillsDir: ".agents/skills",
+    detectDir: ".warp",
+    extraScanDirs: [
+      ".warp/skills",
+      ".claude/skills",
+      ".codex/skills",
+      ".cursor/skills",
+      ".gemini/skills",
+      ".copilot/skills",
+      ".factory/skills",
+      ".github/skills",
+      ".opencode/skills",
+    ],
+    projectExtraScanDirs: [
+      ".warp/skills",
+      ".claude/skills",
+      ".codex/skills",
+      ".cursor/skills",
+      ".gemini/skills",
+      ".copilot/skills",
+      ".factory/skills",
+      ".github/skills",
+      ".opencode/skills",
+    ],
+  },
   { key: "augment", displayName: "Augment", skillsDir: ".augment/skills", detectDir: ".augment" },
   { key: "bob", displayName: "IBM Bob", skillsDir: ".bob/skills", detectDir: ".bob" },
   {
@@ -147,6 +233,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     displayName: "Continue",
     skillsDir: ".continue/skills",
     detectDir: ".continue",
+    projectExtraScanDirs: [".claude/skills"],
   },
   {
     key: "cortex",
@@ -159,9 +246,19 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     displayName: "Crush",
     skillsDir: ".config/crush/skills",
     detectDir: ".config/crush",
+    projectSkillsDir: ".crush/skills",
+    extraScanDirs: [".config/agents/skills", ".agents/skills", ".claude/skills"],
+    projectExtraScanDirs: [".agents/skills", ".claude/skills", ".cursor/skills"],
   },
   { key: "iflow", displayName: "iFlow CLI", skillsDir: ".iflow/skills", detectDir: ".iflow" },
-  { key: "junie", displayName: "Junie", skillsDir: ".junie/skills", detectDir: ".junie" },
+  {
+    key: "junie",
+    displayName: "Junie",
+    skillsDir: ".junie/skills",
+    detectDir: ".junie",
+    extraScanDirs: [".agents/skills"],
+    projectExtraScanDirs: [".agents/skills"],
+  },
   { key: "kiro", displayName: "Kiro CLI", skillsDir: ".kiro/skills", detectDir: ".kiro" },
   { key: "kode", displayName: "Kode", skillsDir: ".kode/skills", detectDir: ".kode" },
   { key: "mcpjam", displayName: "MCPJam", skillsDir: ".mcpjam/skills", detectDir: ".mcpjam" },
@@ -178,6 +275,8 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     displayName: "OpenHands",
     skillsDir: ".openhands/skills",
     detectDir: ".openhands",
+    extraScanDirs: [".agents/skills"],
+    projectExtraScanDirs: [".agents/skills"],
   },
   {
     key: "pi",
@@ -189,7 +288,14 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
   },
   { key: "pochi", displayName: "Pochi", skillsDir: ".pochi/skills", detectDir: ".pochi" },
   { key: "qoder", displayName: "Qoder", skillsDir: ".qoder/skills", detectDir: ".qoder" },
-  { key: "qwen_code", displayName: "Qwen Code", skillsDir: ".qwen/skills", detectDir: ".qwen" },
+  {
+    key: "qwen_code",
+    displayName: "Qwen Code",
+    skillsDir: ".qwen/skills",
+    detectDir: ".qwen",
+    extraScanDirs: [".agents/skills"],
+    projectExtraScanDirs: [".agents/skills"],
+  },
   { key: "trae_cn", displayName: "TRAE CN", skillsDir: ".trae-cn/skills", detectDir: ".trae-cn" },
   {
     key: "zencoder",

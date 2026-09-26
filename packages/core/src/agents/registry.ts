@@ -27,10 +27,20 @@ export interface CustomAgentRecord {
 export interface ResolvedAgent extends AgentInfo {
   /** Extra folders the agent reads that exist on this machine. Discovery only. */
   extraScanDirs: string[];
+  /** Other project-relative folders the agent reads, `/` separated. Discovery only. */
+  projectExtraScanDirs: string[];
   recursiveScan: boolean;
 }
 
 const CONFIG_PREFIX = ".config/";
+
+/** `a\\b/` → `a/b`: project-relative folders compare as `/` separated, with no trailing slash. */
+function relativeDir(dir: string): string {
+  return dir
+    .split(/[\\/]+/)
+    .filter(Boolean)
+    .join("/");
+}
 
 /**
  * Resolves built-in and custom agents against this machine: detection, path overrides, enabled
@@ -108,7 +118,9 @@ export class AgentRegistry {
       projectSkillsDir: projectOverride ?? definition.projectSkillsDir ?? definition.skillsDir,
       hasProjectPathOverride: Boolean(projectOverride),
       sharesDirWith: [],
+      alsoReads: extraScanDirs,
       extraScanDirs,
+      projectExtraScanDirs: (definition.projectExtraScanDirs ?? []).map(relativeDir),
       recursiveScan: definition.recursiveScan ?? false,
     };
   }
@@ -126,7 +138,9 @@ export class AgentRegistry {
       projectSkillsDir: record.projectSkillsDir,
       hasProjectPathOverride: false,
       sharesDirWith: [],
+      alsoReads: [],
       extraScanDirs: [],
+      projectExtraScanDirs: [],
       recursiveScan: false,
     };
   }
@@ -195,7 +209,12 @@ export class AgentRegistry {
   }
 
   toInfo(agent: ResolvedAgent): AgentInfo {
-    const { extraScanDirs: _extra, recursiveScan: _recursive, ...info } = agent;
+    const {
+      extraScanDirs: _extra,
+      projectExtraScanDirs: _projectExtra,
+      recursiveScan: _recursive,
+      ...info
+    } = agent;
     return info;
   }
 }

@@ -20,6 +20,8 @@ export interface AgentInfo {
   hasProjectPathOverride: boolean;
   /** Other agents whose global skills folder is the same directory. */
   sharesDirWith: string[];
+  /** Other global folders the agent also loads skills from, absolute, that exist on this machine. */
+  alsoReads: string[];
 }
 
 export interface CustomAgentInput {

@@ -42,6 +42,51 @@ const FLAT_DEPTH = 1;
 /** Source types whose `sourceRef` is a folder on this machine. */
 const PATH_SOURCE_TYPES: ReadonlySet<SourceType> = new Set(["local", "import"]);
 
+interface ScanRoot {
+  agentKey: string;
+  dir: string;
+  /** Undefined: search until a skill folder is found (agents that keep skills in categories). */
+  maxDepth: number | undefined;
+}
+
+/**
+ * The folders to read, each once, with the agent it is reported under. An installed agent's own
+ * folder is its own. A folder agents only also read (`~/.agents/skills`, `~/.claude/skills`) is
+ * left to the agent that owns it when that agent is installed; otherwise it is reported under
+ * the installed agents that read it, or under the first one that does when none is installed.
+ * Extra folders are always flat.
+ */
+export function scanRoots(agents: readonly ResolvedAgent[]): ScanRoot[] {
+  const roots: ScanRoot[] = [];
+  const owned = new Set<string>();
+  for (const agent of agents) {
+    if (!agent.installed || !isDirectory(agent.skillsDir)) continue;
+    const dir = resolve(agent.skillsDir);
+    roots.push({
+      agentKey: agent.key,
+      dir,
+      maxDepth: agent.recursiveScan ? undefined : FLAT_DEPTH,
+    });
+    owned.add(dir);
+  }
+
+  const readers = new Map<string, ResolvedAgent[]>();
+  for (const agent of agents) {
+    for (const extra of agent.extraScanDirs) {
+      const dir = resolve(extra);
+      if (owned.has(dir) || !isDirectory(dir)) continue;
+      readers.set(dir, [...(readers.get(dir) ?? []), agent]);
+    }
+  }
+  for (const [dir, agentsReading] of readers) {
+    const installed = agentsReading.filter((agent) => agent.installed);
+    const reportedUnder = installed.length > 0 ? installed : agentsReading.slice(0, 1);
+    for (const agent of reportedUnder)
+      roots.push({ agentKey: agent.key, dir, maxDepth: FLAT_DEPTH });
+  }
+  return roots;
+}
+
 /** Add one found folder to its group; same name and same content is one skill in several places. */
 function record(
   groups: Map<string, DiscoveredSkill>,
@@ -78,13 +123,6 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
   /** Result of the latest scan. Kept in memory: it is cheap to redo and stale the moment it ends. */
   let lastScan: DiscoveredSkill[] | null = null;
 
-  /** Folders an agent reads, with how deep to look in each. Extra folders are always flat. */
-  function scanRoots(agent: ResolvedAgent): { dir: string; maxDepth: number | undefined }[] {
-    const main = { dir: agent.skillsDir, maxDepth: agent.recursiveScan ? undefined : FLAT_DEPTH };
-    const extras = agent.extraScanDirs.map((dir) => ({ dir, maxDepth: FLAT_DEPTH }));
-    return [main, ...extras].filter((root) => isDirectory(root.dir));
-  }
-
   function scan(): ScanResult {
     const library = canonicalPath(ctx.paths.skillsDir);
     const skills = store.list();
@@ -100,30 +138,27 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     );
     const libraryHashes = new Set(skills.flatMap((s) => (s.contentHash ? [s.contentHash] : [])));
 
-    const agents = registry
-      .list()
-      .filter((agent) => agent.installed || agent.extraScanDirs.length > 0);
+    const roots = scanRoots(registry.list());
     const groups = new Map<string, DiscoveredSkill>();
     const paths = new Set<string>();
 
-    for (const agent of agents) {
-      for (const root of scanRoots(agent)) {
-        // The root is a container, never a skill itself, so list its children and search those.
-        for (const entry of readDirSafe(root.dir)) {
-          const child = join(root.dir, entry.name);
-          if (!isDirectory(child)) continue;
-          const depth = root.maxDepth === undefined ? undefined : root.maxDepth - 1;
-          for (const path of findSkillDirs(child, { maxDepth: depth, libraryDir: library })) {
-            if (!isDirectory(path) || isInside(library, canonicalPath(path))) continue;
-            if (ownTargets.has(resolve(path)) || ownTargets.has(targetIdentity(path))) continue;
-            record(groups, paths, { agentKey: agent.key, path }, bySourcePath, libraryHashes);
-          }
+    for (const root of roots) {
+      // The root is a container, never a skill itself, so list its children and search those.
+      for (const entry of readDirSafe(root.dir)) {
+        const child = join(root.dir, entry.name);
+        if (!isDirectory(child)) continue;
+        const depth = root.maxDepth === undefined ? undefined : root.maxDepth - 1;
+        for (const path of findSkillDirs(child, { maxDepth: depth, libraryDir: library })) {
+          if (!isDirectory(path) || isInside(library, canonicalPath(path))) continue;
+          if (ownTargets.has(resolve(path)) || ownTargets.has(targetIdentity(path))) continue;
+          record(groups, paths, { agentKey: root.agentKey, path }, bySourcePath, libraryHashes);
         }
       }
     }
 
     lastScan = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
-    return { agentsScanned: agents.length, skillsFound: paths.size, skills: lastScan };
+    const agentsScanned = new Set(roots.map((root) => root.agentKey)).size;
+    return { agentsScanned, skillsFound: paths.size, skills: lastScan };
   }
 
   async function importOne(path: string, name?: string): Promise<Skill> {

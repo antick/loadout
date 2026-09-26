@@ -34,13 +34,16 @@ function agent(
     projectSkillsDir: `${dir}/skills`,
     hasProjectPathOverride: false,
     sharesDirWith: [],
+    alsoReads: [],
     ...extra,
   };
 }
 
 export const SEED_AGENTS: AgentInfo[] = [
   agent("claude_code", "Claude Code", ".claude"),
-  agent("cursor", "Cursor", ".cursor"),
+  agent("cursor", "Cursor", ".cursor", {
+    alsoReads: [`${HOME}/.agents/skills`, `${HOME}/.claude/skills`],
+  }),
   agent("codex", "Codex", ".codex"),
   agent("opencode", "OpenCode", ".config/opencode"),
   agent("amp", "Amp", ".config/amp", { installed: false }),

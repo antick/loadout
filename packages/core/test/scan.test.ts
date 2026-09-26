@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hashDir } from "../src/util/hash";
@@ -66,12 +66,32 @@ describe("scanning agent folders", () => {
     ]);
   });
 
-  it("scans an agent's extra folders even when the agent itself is not installed", async () => {
+  it("scans an agent's extra folders even when no agent reading them is installed", async () => {
+    rmSync(join(world.home, ".cursor"), { recursive: true });
     makeSkill(join(world.home, ".agents", "skills"), "portable");
     const result = await install.api.scanLocal();
     const portable = result.skills.find((s) => s.name === "portable");
-    expect(portable?.locations.map((l) => l.agentKey)).toContain("codex");
+    // Reported once, under the first agent that reads the folder, not under every one of them.
+    expect(portable?.locations.map((l) => l.agentKey)).toEqual(["codex"]);
     expect(result.skillsFound).toBe(1);
+  });
+
+  it("reports a folder agents also read under its owner when the owner is installed", async () => {
+    // Cursor and Claude Code are installed; Cursor also reads ~/.claude/skills.
+    makeSkill(claude, "only-claude");
+    const result = await install.api.scanLocal();
+    const found = result.skills.find((s) => s.name === "only-claude");
+    expect(found?.locations).toEqual([
+      { agentKey: "claude_code", path: join(claude, "only-claude") },
+    ]);
+  });
+
+  it("reports a folder no installed agent owns under the installed agents that read it", async () => {
+    // ~/.agents/skills belongs to Cline and Warp, neither installed; Cursor reads it.
+    makeSkill(join(world.home, ".agents", "skills"), "portable");
+    const result = await install.api.scanLocal();
+    const found = result.skills.find((s) => s.name === "portable");
+    expect(found?.locations.map((l) => l.agentKey)).toEqual(["cursor"]);
   });
 
   it("skips what Loadout deployed itself: recorded targets and links into the library", async () => {

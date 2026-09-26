@@ -11,7 +11,7 @@ import {
   pathsOverlap,
 } from "../util/fs";
 import { slugify } from "../util/names";
-import { withGlobalDuplicates } from "../workspace/duplicates";
+import { withProjectDuplicates } from "../workspace/duplicates";
 import { readLocalDocument } from "../workspace/local-actions";
 import { type LibraryIndex, indexLibrary } from "../workspace/local-scan";
 import { type ProjectActionsDeps, createProjectActions } from "./actions";
@@ -174,8 +174,14 @@ export function createProjectsService(
     targets: async (id) => targetsOf(projects.get(id)).map(toTarget),
 
     skills: async (id) => {
-      const targets = targetsOf(projects.get(id));
-      return withGlobalDuplicates(listProjectSkills(targets, library()), targets, registry);
+      const project = projects.get(id);
+      const targets = targetsOf(project);
+      return withProjectDuplicates(
+        listProjectSkills(targets, library()),
+        targets,
+        registry,
+        project.path,
+      );
     },
 
     document: async (id, relativePath, agentKey): Promise<SkillDocument> => {

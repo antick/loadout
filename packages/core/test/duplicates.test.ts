@@ -58,3 +58,67 @@ describe("skills an agent loads twice", () => {
     expect(byName.parked).toEqual([]);
   });
 });
+
+describe("folders an agent also reads", () => {
+  it("marks a project skill another project folder of the same agent holds too", async () => {
+    world.installAgents(".copilot", ".claude");
+    const repo = join(world.root, "work", "repo");
+    mkdirSync(repo, { recursive: true });
+    const project = await world.projects.api.add(repo);
+    makeSkill(join(repo, ".github", "skills"), "review");
+    const claudeCopy = makeSkill(join(repo, ".claude", "skills"), "review");
+
+    const skills = await world.projects.api.skills(project.id);
+    const copilot = skills.find((s) => s.agentKey === "github_copilot" && s.dirName === "review");
+    expect(copilot?.duplicates).toEqual([
+      {
+        where: "shared_folder",
+        agentKey: "github_copilot",
+        agentDisplayName: "GitHub Copilot",
+        path: claudeCopy,
+      },
+    ]);
+    // Claude Code reads only its own folder.
+    const claude = skills.find((s) => s.agentKey === "claude_code" && s.dirName === "review");
+    expect(claude?.duplicates).toEqual([]);
+  });
+
+  it("marks a project skill a global folder the agent also reads holds too", async () => {
+    world.installAgents(".cursor", ".claude");
+    const globalCopy = makeSkill(join(world.home, ".claude", "skills"), "lint");
+    const repo = join(world.root, "work", "repo");
+    mkdirSync(repo, { recursive: true });
+    const project = await world.projects.api.add(repo);
+    makeSkill(join(repo, ".cursor", "skills"), "lint");
+
+    const skills = await world.projects.api.skills(project.id);
+    const cursor = skills.find((s) => s.agentKey === "cursor" && s.dirName === "lint");
+    expect(cursor?.duplicates).toEqual([
+      { where: "global", agentKey: "cursor", agentDisplayName: "Cursor", path: globalCopy },
+    ]);
+  });
+
+  it("ignores agents that are not installed", async () => {
+    world.installAgents(".claude");
+    const repo = join(world.root, "work", "repo");
+    mkdirSync(repo, { recursive: true });
+    const project = await world.projects.api.add(repo);
+    // Copilot would read both, but it is not on this machine.
+    makeSkill(join(repo, ".github", "skills"), "review");
+    makeSkill(join(repo, ".claude", "skills"), "review");
+
+    const skills = await world.projects.api.skills(project.id);
+    expect(skills.flatMap((s) => s.duplicates)).toEqual([]);
+  });
+
+  it("marks a skill of Cursor's own folder that ~/.claude/skills holds too", async () => {
+    world.installAgents(".cursor", ".claude");
+    const claudeCopy = makeSkill(join(world.home, ".claude", "skills"), "commit");
+    makeSkill(join(world.home, ".cursor", "skills"), "commit");
+
+    const skills = await world.workspace.api.list("cursor");
+    expect(skills.find((s) => s.dirName === "commit")?.duplicates).toEqual([
+      { where: "shared_folder", agentKey: "cursor", agentDisplayName: "Cursor", path: claudeCopy },
+    ]);
+  });
+});
