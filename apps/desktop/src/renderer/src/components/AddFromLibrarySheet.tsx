@@ -2,7 +2,13 @@ import { type AgentInfo, type ProjectTarget, SOURCE_TYPES, type Skill } from "@l
 import { Library } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AgentAvatar } from "@/components/AgentAvatar";
+import {
+  type AgentTargetChip,
+  AgentTargetChips,
+  chosenAgentKeys,
+  initialChipKeys,
+  projectTargetChips,
+} from "@/components/AgentTargetChips";
 import { EmptyState } from "@/components/EmptyState";
 import { SearchInput } from "@/components/SearchInput";
 import { SourceBadge } from "@/components/SourceBadge";
@@ -80,12 +86,6 @@ const STATE_TONES: Record<Exclude<PickerRowState, "available">, StatusTone> = {
   unavailable: "neutral",
 };
 
-interface TargetChip {
-  key: string;
-  label: string;
-  agentKeys: readonly string[];
-}
-
 /** Pick library skills to add to an agent or a project: search, filters, target chips, range select. */
 export function AddFromLibrarySheet({
   open,
@@ -109,15 +109,9 @@ export function AddFromLibrarySheet({
   const [chipKeys, setChipKeys] = useState<ReadonlySet<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
 
-  const chips = useMemo<TargetChip[]>(() => {
+  const chips = useMemo<AgentTargetChip[]>(() => {
     if (target.kind === "none") return [];
-    if (target.kind === "project") {
-      return target.targets.map((entry) => ({
-        key: entry.key,
-        label: entry.displayName,
-        agentKeys: entry.agentKeys,
-      }));
-    }
+    if (target.kind === "project") return projectTargetChips(target.targets);
     const agent: AgentInfo | undefined = agents.data?.find(
       (entry) => entry.key === target.agentKey,
     );
@@ -130,10 +124,7 @@ export function AddFromLibrarySheet({
     ];
   }, [target, agents.data]);
 
-  const agentKeys = useMemo(
-    () => chips.filter((chip) => chipKeys.has(chip.key)).flatMap((chip) => chip.agentKeys),
-    [chips, chipKeys],
-  );
+  const agentKeys = useMemo(() => chosenAgentKeys(chips, chipKeys), [chips, chipKeys]);
 
   const infoFor = useMemo(() => {
     const fallback = (skill: Skill, keysNow: readonly string[]): PickerRowInfo => ({
@@ -174,16 +165,8 @@ export function AddFromLibrarySheet({
     setTagFilter([]);
     setSource(SOURCE_FILTER_ALL);
     exit();
-    const initial =
-      target.kind === "project" && target.initialAgentKeys
-        ? new Set(target.initialAgentKeys)
-        : null;
     setChipKeys(
-      new Set(
-        chips
-          .filter((chip) => !initial || chip.agentKeys.some((key) => initial.has(key)))
-          .map((chip) => chip.key),
-      ),
+      initialChipKeys(chips, target.kind === "project" ? target.initialAgentKeys : undefined),
     );
     // Only re-run when the sheet opens; chips are stable for one opening.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -242,60 +225,14 @@ export function AddFromLibrarySheet({
             </Select>
           </div>
           <TagFilterBar tags={allTags.data ?? []} value={tagFilter} onChange={setTagFilter} />
-          <div className={cn("flex flex-wrap items-center gap-1.5", !needsAgents && "hidden")}>
-            <span className="mr-1 text-xs font-medium tracking-wider text-muted-foreground uppercase">
-              {t("picker.targets")}
-            </span>
-            {chips.map((chip) => {
-              const on = chipKeys.has(chip.key);
-              const locked = target.kind === "agent";
-              return (
-                <button
-                  key={chip.key}
-                  type="button"
-                  aria-pressed={on}
-                  disabled={locked}
-                  onClick={() =>
-                    setChipKeys((previous) => {
-                      const next = new Set(previous);
-                      if (on) next.delete(chip.key);
-                      else next.add(chip.key);
-                      return next;
-                    })
-                  }
-                  className={cn(
-                    "inline-flex h-6 items-center gap-1.5 rounded-full border py-0 pr-2 pl-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                    on
-                      ? "border-primary/40 bg-primary/10 text-foreground"
-                      : "border-border text-muted-foreground",
-                  )}
-                >
-                  <AgentAvatar
-                    agentKey={chip.agentKeys[0] ?? chip.key}
-                    name={chip.label}
-                    size="sm"
-                    className="rounded-full"
-                    status={on ? undefined : "off"}
-                  />
-                  {chip.label}
-                </button>
-              );
-            })}
-            {target.kind === "project" && chips.length > 1 ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => setChipKeys(new Set(chips.map((chip) => chip.key)))}
-                >
-                  {t("selection.selectAll")}
-                </Button>
-                <Button variant="ghost" size="xs" onClick={() => setChipKeys(new Set())}>
-                  {t("common.clear")}
-                </Button>
-              </>
-            ) : null}
-          </div>
+          <AgentTargetChips
+            label={t("picker.targets")}
+            chips={chips}
+            selected={chipKeys}
+            onChange={setChipKeys}
+            locked={target.kind === "agent"}
+            className={cn(!needsAgents && "hidden")}
+          />
         </div>
 
         <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground">
