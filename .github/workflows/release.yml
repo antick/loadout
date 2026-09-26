@@ -152,9 +152,12 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
         run: |
           previous="$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_SHA}^" 2>/dev/null || true)"
+          # An @word in a commit subject (owner/repo@skill, @antick/loadout) would mention a
+          # GitHub user and list them as a contributor; in backticks it is plain text.
           changes() {
             git log --no-merges --format='%s' "${previous}..${GITHUB_SHA}" \
-              | sed -nE "s/^$1(\([^)]*\))?!?: (.*)$/- \2/p"
+              | sed -nE "s/^$1(\([^)]*\))?!?: (.*)$/- \2/p" \
+              | sed -E 's/(^|[^`[:alnum:]/])(@[[:alnum:]][[:alnum:]._/-]*)/\1`\2`/g'
           }
           {
             echo "Which file to download and what to click the first time: https://github.com/${GITHUB_REPOSITORY}/blob/main/docs/INSTALL.md"
