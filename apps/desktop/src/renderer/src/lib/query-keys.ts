@@ -40,6 +40,7 @@ export const keys = {
   projects: {
     root: ["projects"] as const,
     all: ["projects", "all"] as const,
+    suggestions: ["projects", "suggestions"] as const,
     skillsRoot: ["projects", "skills"] as const,
     skills: (projectId: string) => ["projects", "skills", projectId] as const,
     targets: (projectId: string) => ["projects", "targets", projectId] as const,

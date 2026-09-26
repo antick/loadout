@@ -24,6 +24,7 @@ import {
   SEED_BACKUP_STATUS,
   SEED_LIBRARY_LOCATION,
   SEED_PRESETS,
+  SEED_PROJECT_SUGGESTIONS,
   SEED_PROJECTS,
   SEED_SKILLS,
 } from "@/lib/dev-mock-data";
@@ -220,6 +221,8 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
   },
 
   "projects.list": () => [...projects].sort((a, b) => a.sortOrder - b.sortOrder),
+  "projects.suggest": () =>
+    SEED_PROJECT_SUGGESTIONS.filter((entry) => !projects.some((p) => p.path === entry.path)),
   "projects.remove": (id: string) => {
     projects = projects.filter((entry) => entry.id !== id);
     emitChanged("projects");

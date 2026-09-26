@@ -164,13 +164,14 @@
     }
   },
   "addProject": {
-    "description": "Manage the skills inside a project, find projects under a folder, or link a standalone skills folder.",
+    "description": "Link a project folder, pick one you already work in, find projects under a folder, or link a standalone skills folder.",
     "close": "Close",
     "linkedOne": "Linked “{{name}}”",
     "linkedMany_one": "Linked {{count}} project",
     "linkedMany_other": "Linked {{count}} projects",
     "tabs": {
       "folder": "Folder",
+      "suggested": "Suggested",
       "scan": "Scan",
       "linked": "Linked workspace"
     },
@@ -180,6 +181,27 @@
       "pickerTitle": "Choose a project folder",
       "hint": "Skills are read from the agent folders inside it, such as .claude/skills. Those for the default agent are created when missing.",
       "submit": "Link project"
+    },
+    "suggested": {
+      "hint": "Folders from Claude Code, Cursor, VS Code and Windsurf history, and Git repositories in ~/Projects, ~/code and similar folders.",
+      "search": "Filter by name or path",
+      "count_one": "{{count}} suggestion",
+      "count_other": "{{count}} suggestions",
+      "shown": "{{shown}} of {{count}}",
+      "refresh": "Look again",
+      "noneTitle": "Nothing to suggest",
+      "noneBody": "No project turned up that is not linked already. Use Folder or Scan to add one by hand.",
+      "noMatch": "No suggestion matches the filter.",
+      "sources": {
+        "claude_code": "Claude Code",
+        "cursor": "Cursor",
+        "vscode": "VS Code",
+        "windsurf": "Windsurf",
+        "git": "Git"
+      },
+      "guarded": "Not opened",
+      "guardedHint": "macOS asks before an app looks inside Desktop, Documents, Downloads, iCloud or an external drive. Loadout opens this folder only when you add it.",
+      "error": "Could not look for projects."
     },
     "scan": {
       "label": "Folder to search",

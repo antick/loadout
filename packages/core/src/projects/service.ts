@@ -15,7 +15,9 @@ import { withProjectDuplicates } from "../workspace/duplicates";
 import { readLocalDocument } from "../workspace/local-actions";
 import { type LibraryIndex, indexLibrary } from "../workspace/local-scan";
 import { type ProjectActionsDeps, createProjectActions } from "./actions";
+import { osConfigDir } from "../paths";
 import { findProjects, listProjectSkills, summarize } from "./scan";
+import { suggestProjects } from "./suggest";
 import { type ProjectRecord, ProjectStore } from "./store";
 import {
   DISABLED_SUFFIX,
@@ -170,6 +172,19 @@ export function createProjectsService(
     },
 
     scan: async (root) => findProjects(requireFolder(root, "Folder"), projectSkillDirs(registry)),
+
+    suggest: async () =>
+      suggestProjects({
+        homeDir: ctx.homeDir,
+        configDir: osConfigDir(ctx.homeDir),
+        platform: process.platform,
+        skillFolders: projectSkillDirs(registry),
+        exclude: [
+          ...projects.list().map((project) => project.path),
+          ctx.paths.defaultBaseDir,
+          ctx.paths.baseDir,
+        ],
+      }),
 
     targets: async (id) => targetsOf(projects.get(id)).map(toTarget),
 

@@ -30,6 +30,7 @@ import type {
   PresetDeployStatus,
   PresetInput,
   Project,
+  ProjectSuggestion,
   ProjectTarget,
   PushToLibraryOptions,
   PushToLibraryResult,
@@ -215,6 +216,11 @@ export interface ProjectsApi {
   remove(id: string): Promise<void>;
   reorder(ids: string[]): Promise<void>;
   scan(root: string): Promise<string[]>;
+  /**
+   * Projects the user works in that are not linked yet: from Claude Code's and the editors'
+   * recent folders and from Git repositories in the usual code folders. Most recent first.
+   */
+  suggest(): Promise<ProjectSuggestion[]>;
   targets(id: string): Promise<ProjectTarget[]>;
   skills(id: string): Promise<LocalSkill[]>;
   document(id: string, relativePath: string, agentKey: string): Promise<SkillDocument>;

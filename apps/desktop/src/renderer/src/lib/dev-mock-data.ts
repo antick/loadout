@@ -7,6 +7,7 @@ import type {
   LibraryLocation,
   Preset,
   Project,
+  ProjectSuggestion,
   Skill,
   SyncHealth,
 } from "@loadout/shared";
@@ -277,3 +278,38 @@ export const SEED_LIBRARY_LOCATION: LibraryLocation = {
   pendingPath: null,
   warnings: [],
 };
+
+export const SEED_PROJECT_SUGGESTIONS: ProjectSuggestion[] = [
+  {
+    path: `${HOME}/Projects/personal/recipe-box`,
+    name: "recipe-box",
+    sources: ["claude_code", "cursor", "git"],
+    lastActiveAt: NOW - 2 * HOUR,
+    skillFolders: [".claude/skills", ".agents/skills"],
+    guarded: false,
+  },
+  {
+    path: `${HOME}/code/infra`,
+    name: "infra",
+    sources: ["vscode", "git"],
+    lastActiveAt: NOW - 30 * HOUR,
+    skillFolders: [],
+    guarded: false,
+  },
+  {
+    path: `${HOME}/Documents/thesis-notes`,
+    name: "thesis-notes",
+    sources: ["claude_code"],
+    lastActiveAt: NOW - 5 * 24 * HOUR,
+    skillFolders: [],
+    guarded: true,
+  },
+  {
+    path: `${HOME}/Projects/work/design-tokens`,
+    name: "design-tokens",
+    sources: ["windsurf", "git"],
+    lastActiveAt: null,
+    skillFolders: [".github/skills"],
+    guarded: false,
+  },
+];

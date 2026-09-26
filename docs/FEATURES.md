@@ -166,6 +166,12 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 ### Projects
 
 - Link a project folder, or scan a folder tree to find projects that already have agent skills.
+- **Suggested** projects: folders from Claude Code's project list, the recent folders of Cursor,
+  VS Code and Windsurf, and Git repositories up to two levels inside `~/Projects`, `~/code` and
+  similar folders. Most recently worked on first, with where each was seen and the agent skills
+  folders it already has; filter, tick and add. Looked for only when the tab opens. On macOS,
+  folders in Desktop, Documents, Downloads, iCloud or an external drive are listed but not opened
+  (that would make macOS ask for access out of the blue) until you add them.
 - Linked workspaces: manage any folder as a skills root, with its own disabled folder.
 - Nested skill folders, and one row per skill across every agent folder in the project.
 - Enable and disable project skills.

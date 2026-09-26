@@ -247,3 +247,31 @@ export interface AppInfo {
   platform: Platform;
   homeDir: string;
 }
+
+// ── Project suggestions ──
+
+/** Where a suggested project was seen: an agent's or editor's history, or a Git repository. */
+export const PROJECT_SUGGESTION_SOURCES = [
+  "claude_code",
+  "cursor",
+  "vscode",
+  "windsurf",
+  "git",
+] as const;
+export type ProjectSuggestionSource = (typeof PROJECT_SUGGESTION_SOURCES)[number];
+
+/** A folder that looks like a project the user works in and that is not linked yet. */
+export interface ProjectSuggestion {
+  path: string;
+  name: string;
+  sources: ProjectSuggestionSource[];
+  /** Last sign of work in it (a session, a Git change); null when unknown. */
+  lastActiveAt: number | null;
+  /** Agent skills folders it already has, project-relative. Empty for folders not looked inside. */
+  skillFolders: string[];
+  /**
+   * In a folder macOS guards (Desktop, Documents, Downloads, iCloud, external drives). It was not
+   * opened, so nothing is known about its content until the user adds it.
+   */
+  guarded: boolean;
+}

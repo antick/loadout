@@ -14,6 +14,7 @@ import { toastSuccess } from "@/lib/toast";
 import { AddLinkedWorkspaceTab } from "./AddLinkedWorkspaceTab";
 import { AddProjectFolderTab } from "./AddProjectFolderTab";
 import { AddProjectScanTab } from "./AddProjectScanTab";
+import { AddProjectSuggestedTab } from "./AddProjectSuggestedTab";
 
 export interface AddProjectDialogProps {
   open: boolean;
@@ -22,7 +23,7 @@ export interface AddProjectDialogProps {
   onAdded?: (project: Project) => void;
 }
 
-const ADD_PROJECT_TABS = ["folder", "scan", "linked"] as const;
+const ADD_PROJECT_TABS = ["folder", "suggested", "scan", "linked"] as const;
 type AddProjectTab = (typeof ADD_PROJECT_TABS)[number];
 const TAB_CONTENT_CLASS = "flex flex-col gap-4";
 
@@ -71,6 +72,9 @@ function AddProjectBody({ onOpenChange, onAdded }: Omit<AddProjectDialogProps, "
         <TabsContent value="folder" className={TAB_CONTENT_CLASS}>
           <AddProjectFolderTab onCancel={close} onAdded={added} />
         </TabsContent>
+        <TabsContent value="suggested" className={TAB_CONTENT_CLASS}>
+          <AddProjectSuggestedTab onCancel={close} onAdded={added} />
+        </TabsContent>
         <TabsContent value="scan" className={TAB_CONTENT_CLASS}>
           <AddProjectScanTab onCancel={close} onAdded={added} />
         </TabsContent>
@@ -83,8 +87,8 @@ function AddProjectBody({ onOpenChange, onAdded }: Omit<AddProjectDialogProps, "
 }
 
 /**
- * Link a workspace: one project folder, several found by scanning a root, or a standalone skills
- * folder. Opened from the sidebar and the command palette through `useShell()`.
+ * Link a workspace: one project folder, projects the user already works in, several found by
+ * scanning a root, or a standalone skills folder. Opened from the sidebar and the command palette through `useShell()`.
  */
 export function AddProjectDialog({
   open,
