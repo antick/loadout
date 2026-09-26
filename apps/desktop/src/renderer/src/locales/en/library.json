@@ -268,6 +268,21 @@
         "moreFolders_other": "{{path}} and {{count}} more folders"
       },
       "error": "Could not create the skill."
+    },
+    "rename": {
+      "action": "Rename",
+      "title": "Rename {{name}}",
+      "description": "The new name becomes the folder name and the name in SKILL.md. Deployments and links in projects follow it.",
+      "submit": "Rename",
+      "movesDeployments": "Moves its deployments for {{agents}} to the new name.",
+      "noDeployments": "It is not deployed to any agent yet.",
+      "projectLinks_one": "Re-points {{count}} link in a project.",
+      "projectLinks_other": "Re-points {{count}} links in projects.",
+      "projectCopies_one": "{{count}} copy in a project keeps the name {{name}}: copies are left as they are.",
+      "projectCopies_other": "{{count}} copies in projects keep the name {{name}}: copies are left as they are.",
+      "done": "Renamed {{from}} to {{to}}",
+      "notRedeployed": "Could not deploy it again for: {{agents}}. Deploy it from the skill's Agents tab.",
+      "error": "Could not rename the skill."
     }
   },
   "batchDeploy": {

@@ -18,6 +18,7 @@ beforeEach(() => {
     removeDeployments: async () => undefined,
     history: createFileHistory(world.ctx.paths.historyDir),
     install: world.install.installIntoLibrary,
+    rename: { deploy: world.deploy, projectSkillFolders: () => [] },
   });
   out = join(world.root, "out");
 });

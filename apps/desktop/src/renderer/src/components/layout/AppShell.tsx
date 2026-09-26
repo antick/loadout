@@ -1,4 +1,4 @@
-import type { Preset } from "@loadout/shared";
+import type { Preset, Skill } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } from "react";
 import { AppUpdateToast } from "@/components/AppUpdateToast";
@@ -25,6 +25,7 @@ import { PresetDialog } from "@/components/PresetDialog";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { FirstRunDialog } from "@/features/backup/FirstRunDialog";
 import { NewSkillDialog } from "@/features/library/NewSkillDialog";
+import { RenameSkillDialog } from "@/features/library/RenameSkillDialog";
 import { FlaggedInstallDialog } from "@/features/safety/FlaggedInstallDialog";
 import { AddProjectDialog } from "@/features/projects/AddProjectDialog";
 import { useHotkey } from "@/hooks/use-hotkey";
@@ -60,6 +61,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     open: false,
     projectId: null,
   });
+  const [renaming, setRenaming] = useState<Skill | null>(null);
   const [presetDialog, setPresetDialog] = useState<{ open: boolean; preset: Preset | null }>({
     open: false,
     preset: null,
@@ -95,6 +97,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
       openPresetDialog: (preset) => setPresetDialog({ open: true, preset: preset ?? null }),
       openAddProject: () => setAddProjectOpen(true),
       openNewSkill: (projectId) => setNewSkill({ open: true, projectId: projectId ?? null }),
+      openRenameSkill: setRenaming,
     }),
     [],
   );
@@ -171,6 +174,12 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             open={newSkill.open}
             projectId={newSkill.projectId}
             onOpenChange={(open) => setNewSkill((previous) => ({ ...previous, open }))}
+          />
+          <RenameSkillDialog
+            skill={renaming}
+            onOpenChange={(open) => {
+              if (!open) setRenaming(null);
+            }}
           />
           <FlaggedInstallDialog />
           <AddProjectDialog

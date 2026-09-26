@@ -36,7 +36,7 @@ const WINDOWS = process.platform === "win32";
 const LINK_TYPES: readonly ("dir" | "junction")[] = WINDOWS ? ["dir", "junction"] : ["dir"];
 
 /** The link's own text first (cheap, works for dangling sources), then both sides resolved. */
-function linkPointsAt(linkPath: string, sourceDir: string): boolean {
+export function linkPointsAt(linkPath: string, sourceDir: string): boolean {
   try {
     const raw = readlinkSync(linkPath);
     if (resolve(dirname(linkPath), raw) === resolve(sourceDir)) return true;

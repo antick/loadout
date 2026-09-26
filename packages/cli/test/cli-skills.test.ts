@@ -106,3 +106,29 @@ describe.skipIf(process.platform === "win32")("skills scan and the safety check"
     }
   });
 });
+
+describe("skills rename", () => {
+  it("previews, then renames the folder, the name and the deployment", async () => {
+    await cli("skills", "create", "draft-notes", "--description", "Draft notes from a meeting.");
+    await cli("skills", "deploy", "draft-notes", "--agent", "claude_code");
+
+    const dry = await cli("skills", "rename", "draft-notes", "meeting-notes", "--dry-run");
+    expect(dry.stdout).toContain("Would rename draft-notes to meeting-notes.");
+    expect(dry.stdout).toContain("Nothing was changed.");
+    expect((await cli("skills", "show", "draft-notes")).code).toBe(EXIT_OK);
+
+    const run = await cli("skills", "rename", "draft-notes", "meeting-notes", "--json");
+    expect(run.code).toBe(EXIT_OK);
+    expect(run.json()).toMatchObject({
+      from: "draft-notes",
+      to: "meeting-notes",
+      agents: ["claude_code"],
+    });
+    const document = join(sandbox.libraryDir, "meeting-notes", "SKILL.md");
+    expect(readFileSync(document, "utf8")).toContain("name: meeting-notes");
+    expect(
+      readFileSync(join(sandbox.agentSkillsDir, "meeting-notes", "SKILL.md"), "utf8"),
+    ).toContain("name: meeting-notes");
+    expect((await cli("skills", "rename", "meeting-notes", "Bad Name")).code).toBe(EXIT_FAILED);
+  });
+});

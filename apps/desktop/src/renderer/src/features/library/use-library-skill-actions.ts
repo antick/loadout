@@ -1,8 +1,16 @@
 import type { Skill } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
-import { FileArchive, FolderOpen, PencilLine, RefreshCw, Trash2 } from "lucide-react";
+import {
+  FileArchive,
+  FolderOpen,
+  PencilLine,
+  RefreshCw,
+  TextCursorInput,
+  Trash2,
+} from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useShell } from "@/components/layout/shell-context";
 import type { SkillAction } from "@/components/skill-action";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useCheckSkillUpdate, useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
@@ -17,6 +25,7 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
   const check = useCheckSkillUpdate();
   const exportSkills = useExportSkills();
   const deleteSkills = useDeleteSkills();
+  const shell = useShell();
 
   return useCallback(
     (skill: Skill): SkillAction[] => {
@@ -26,6 +35,12 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
           label: t("editor.open"),
           icon: PencilLine,
           run: () => void navigate(editLink({ kind: "library", skillId: skill.id })),
+        },
+        {
+          id: "rename",
+          label: t("library.rename.action"),
+          icon: TextCursorInput,
+          run: () => shell.openRenameSkill(skill),
         },
         {
           id: "reveal",
@@ -57,6 +72,6 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
       });
       return actions;
     },
-    [t, navigate, reveal, check, exportSkills, deleteSkills],
+    [t, navigate, reveal, check, exportSkills, deleteSkills, shell],
   );
 }

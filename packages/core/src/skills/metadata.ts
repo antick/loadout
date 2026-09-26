@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { SKILL_DOCUMENT_FILES, SKILL_MARKER_FILES } from "@loadout/shared";
-import { parse } from "yaml";
+import { parse, parseDocument, stringify } from "yaml";
 import { isInside, canonicalPath, readDirSafe, statOrNull } from "../util/fs";
 import { inferSkillName } from "../util/names";
 
@@ -94,4 +94,33 @@ export function readSkillDocument(
   } catch {
     return null;
   }
+}
+
+const FRONTMATTER_BLOCK = /^(\uFEFF?\s*---[ \t]*(\r?\n))([\s\S]*?)(\r?\n---[ \t]*(?:\r?\n|$))/;
+/** A `name:` whose value sits on its own line, not a `|` or `>` block. */
+const NAME_LINE = /^name[ \t]*:[ \t]*(?![|>])[^\r\n]*$/m;
+const NAME_KEY = /^name[ \t]*:/m;
+
+/**
+ * The same document with `name` set in its frontmatter; every other line, the line endings and a
+ * byte-order mark stay as they were. A document without frontmatter comes back unchanged.
+ */
+export function setFrontmatterName(content: string, name: string): string {
+  const match = FRONTMATTER_BLOCK.exec(content);
+  if (!match) return content;
+  const [whole, open = "", eol = "\n", body = "", close = ""] = match;
+  // Quoted when YAML would read it as something else (`123`, `true`, `null`).
+  const value = stringify(name).trimEnd();
+  let next: string;
+  if (NAME_LINE.test(body)) {
+    next = body.replace(NAME_LINE, `name: ${value}`);
+  } else if (NAME_KEY.test(body)) {
+    const document = parseDocument(body);
+    document.set("name", name);
+    next = document.toString({ lineWidth: 0 }).trimEnd().replaceAll("\n", eol);
+  } else {
+    next = body ? `name: ${value}${eol}${body}` : `name: ${value}`;
+  }
+  const start = match.index;
+  return `${content.slice(0, start)}${open}${next}${close}${content.slice(start + whole.length)}`;
 }

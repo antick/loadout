@@ -116,6 +116,7 @@ export interface AutoBackupEvent {
 export type ActivityKind =
   | "install"
   | "create"
+  | "rename"
   | "scan"
   | "remove"
   | "edit"

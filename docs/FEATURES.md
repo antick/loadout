@@ -35,6 +35,13 @@ For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TO
   opens on it. From the Library header, its empty state, Home, or the command palette. Its
   **Create in** choice can put it straight in a linked project instead (see Projects).
   `loadout skills create <name> --description <text>` does the same.
+- Rename a skill from its right-click menu or its panel: the library folder, the `name` in
+  `SKILL.md`, every deployment and links inside projects follow the new name. As you type, a
+  dry run shows what moves and says why a name cannot be used: taken, badly formed, a folder
+  of that name in an agent's way, or a copy edited in an agent's folder (upload or discard
+  those edits first). Copies inside projects keep their old name. Tags, presets, safety reports
+  and edit history stay with the skill. `loadout skills rename <ref> <new-name> [--dry-run]`
+  does the same.
 - Deleting a skill removes its library copy, preset links and every copy the app deployed.
 - The database is rebuilt from the skill files if it is ever lost.
 

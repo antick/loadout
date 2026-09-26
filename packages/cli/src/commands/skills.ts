@@ -6,6 +6,7 @@ import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
 import { diffCommand } from "./skills-diff";
+import { renameCommand } from "./skills-rename";
 import { exportCommand } from "./skills-export";
 import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
@@ -264,6 +265,7 @@ export const skillsGroup: CommandGroup = {
     { name: "show", summary: "Show one skill in full", usage: "<ref>", flags: [], run: show },
     installCommand,
     createCommand,
+    renameCommand,
     {
       name: "remove",
       summary: "Delete skills from the library and undeploy them",

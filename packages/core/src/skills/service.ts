@@ -5,6 +5,7 @@ import { listTopLevel, removePath } from "../util/fs";
 import type { FileHistory } from "../editor/history";
 import type { InstallIntoLibrary } from "../install/library";
 import { createSkill } from "./create";
+import { type RenameDeps, renameSkill } from "./rename";
 import { exportTarget, writeSkillsArchive } from "./export";
 import { readSkillDocument } from "./metadata";
 import type { SkillStore } from "./store";
@@ -17,6 +18,8 @@ export interface SkillsServiceDeps {
   history: FileHistory;
   /** The one way into the library; a new skill goes in through it too. */
   install: InstallIntoLibrary;
+  /** A rename moves the skill's deployments and project links along with it. */
+  rename: Omit<RenameDeps, "store">;
 }
 
 export interface SkillsService {
@@ -88,6 +91,9 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       store.setTags(skillId, tags);
       ctx.touched("skills");
     },
+
+    rename: (skillId, name, options) =>
+      renameSkill(ctx, { store, ...deps.rename }, skillId, name, options),
 
     renameTag: async (from, to) => {
       const source = from.trim();

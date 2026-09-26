@@ -15,6 +15,7 @@ import {
   Plug,
   Trash2,
   Unplug,
+  TextCursorInput,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,6 +31,7 @@ import { ACTIVITY_LIMIT } from "./constants";
 const KIND_ICONS: Record<ActivityKind, LucideIcon> = {
   install: PackagePlus,
   create: FilePlus2,
+  rename: TextCursorInput,
   scan: ShieldCheck,
   remove: Trash2,
   edit: Pencil,

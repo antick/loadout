@@ -1,9 +1,10 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { FileArchive, FolderOpen, PencilLine, Trash2 } from "lucide-react";
+import { FileArchive, FolderOpen, PencilLine, TextCursorInput, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "@/components/IconButton";
+import { useShell } from "@/components/layout/shell-context";
 import { SkillIndicators } from "@/components/SkillIndicators";
 import { SourceBadge } from "@/components/SourceBadge";
 import { Button } from "@/components/ui/button";
@@ -19,12 +20,13 @@ export interface SkillDetailHeaderProps {
 
 /**
  * Top of the detail panel: name, description, source and update badges, tags, and the edit,
- * reveal, export and delete actions.
+ * rename, reveal, export and delete actions.
  */
 export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): ReactNode {
   const { t } = useTranslation();
   const reveal = useRevealSkill();
   const exportSkills = useExportSkills();
+  const shell = useShell();
 
   return (
     <SheetHeader className="gap-3 border-b px-6 pt-5 pb-4">
@@ -45,6 +47,11 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
               {t("editor.open")}
             </Link>
           </Button>
+          <IconButton
+            label={t("library.rename.action")}
+            icon={<TextCursorInput />}
+            onClick={() => shell.openRenameSkill(skill)}
+          />
           <IconButton
             label={t("library.detail.reveal")}
             icon={<FolderOpen />}

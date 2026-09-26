@@ -63,6 +63,7 @@
       "kind": {
         "install": "Installed",
         "create": "Created",
+        "rename": "Renamed",
         "scan": "Safety check",
         "remove": "Removed",
         "edit": "Edited",

@@ -1,4 +1,4 @@
-import type { BatchResult } from "@loadout/shared";
+import type { BatchResult, RenameResult } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -18,6 +18,34 @@ export function useSetSkillTags(): UseMutationResult<void, unknown, SetSkillTags
     mutationFn: ({ skillId, tags }: SetSkillTagsInput) => api.skills.setTags(skillId, tags),
     onError: (error) => toastError(error, "errors.saveTags"),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
+  });
+}
+
+/** Rename a library skill, its deployments and project links; says what could not follow. */
+export function useRenameSkill(): UseMutationResult<
+  RenameResult,
+  unknown,
+  { skillId: string; name: string }
+> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ skillId, name }) => api.skills.rename(skillId, name),
+    onSuccess: (result) => {
+      const title = t("library.rename.done", { from: result.from, to: result.to });
+      if (result.failed.length === 0) toastSuccess(title);
+      else
+        toast.warning(title, {
+          description: t("library.rename.notRedeployed", {
+            agents: result.failed.map((failure) => failure.name).join(", "),
+          }),
+        });
+    },
+    onError: (error) => toastError(error, "library.rename.error"),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
+      void queryClient.invalidateQueries({ queryKey: keys.projects.root });
+    },
   });
 }
 

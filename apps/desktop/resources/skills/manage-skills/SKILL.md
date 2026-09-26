@@ -95,6 +95,10 @@ sb skills scan --all --json
 sb skills validate <ref> --json
 sb skills validate --all --json
 
+# Rename (folder, name in SKILL.md, deployments and project links follow); preview first
+sb skills rename <ref> <new-name> --dry-run --json
+sb skills rename <ref> <new-name> --json
+
 # Tags
 sb skills tag <ref> --add writing --remove draft --json
 

@@ -32,12 +32,17 @@ const DESCRIPTION_MESSAGES = {
   too_long: `The description can be at most ${SKILL_DESCRIPTION_MAX} characters.`,
 } as const;
 
+/** Refuse a name a new (or renamed) skill may not have, saying what is wrong with it. */
+export function checkSkillName(name: string): void {
+  const problem = newSkillNameProblem(name);
+  if (problem) throw invalid(NAME_MESSAGES[problem]);
+}
+
 /** The name and description trimmed, or an error saying what is wrong with them. */
 export function checkNewSkill(input: CreateSkillInput): CreateSkillInput {
   const name = input.name.trim();
   const description = input.description.trim();
-  const nameProblem = newSkillNameProblem(name);
-  if (nameProblem) throw invalid(NAME_MESSAGES[nameProblem]);
+  checkSkillName(name);
   const descriptionProblem = newSkillDescriptionProblem(description);
   if (descriptionProblem) throw invalid(DESCRIPTION_MESSAGES[descriptionProblem]);
   return { name, description };

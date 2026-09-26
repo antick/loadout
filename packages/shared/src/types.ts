@@ -329,6 +329,28 @@ export interface TargetConflict {
   reason: string;
 }
 
+export interface RenameOptions {
+  /** Check the new name and report what would change; change nothing. */
+  dryRun?: boolean;
+}
+
+/** What renaming a library skill changed (or, for a dry run, would change). */
+export interface RenameResult {
+  dryRun: boolean;
+  from: string;
+  to: string;
+  /** The skill after the rename; unchanged for a dry run. */
+  skill: Skill;
+  /** Agents the skill is deployed to, moved to the new folder name. */
+  agents: string[];
+  /** Links inside project folders re-pointed at the renamed folder. */
+  projectLinks: string[];
+  /** Real folders in projects with the old name: copies, left as they are. */
+  projectCopies: string[];
+  /** Agents the skill could not be deployed to again, and why. */
+  failed: BatchFailure[];
+}
+
 export interface ApplyOptions {
   /** Work out what would change and report it; write nothing. */
   dryRun?: boolean;

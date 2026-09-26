@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { parseDocument } from "yaml";
 import { checkSkillDocument, newSkillNameProblem, toSkillNameInput } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { AgentRegistry } from "../src/agents/registry";
+import { createDeployService } from "../src/deploy";
 import { createFileHistory } from "../src/editor";
 import { type SkillsService, createSkillsService } from "../src/skills/service";
 import { type TestWorld, createTestWorld, makeSkill } from "./helpers";
@@ -29,6 +31,13 @@ beforeEach(() => {
     removeDeployments: async () => undefined,
     history: createFileHistory(world.ctx.paths.historyDir),
     install: install.installIntoLibrary,
+    rename: {
+      deploy: createDeployService(world.ctx, {
+        store: world.store,
+        registry: new AgentRegistry(world.ctx),
+      }),
+      projectSkillFolders: () => [],
+    },
   });
 });
 

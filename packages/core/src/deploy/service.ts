@@ -4,7 +4,7 @@ import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
-import { canonicalPath, lstatOrNull } from "../util/fs";
+import { canonicalPath, lstatOrNull, targetIdentity } from "../util/fs";
 import { hashDir } from "../util/hash";
 import { type BatchApply, createBatchApply } from "./batch";
 import { rowsAtPath, samePath } from "./evidence";
@@ -52,12 +52,33 @@ export interface DeployService {
    * the user asked for it: nothing at the target is preserved.
    */
   adopt(skill: Skill, agent: ResolvedAgent): Promise<void>;
+  /**
+   * Before `skill` is renamed to `renamed`: what would stop its deployments from following. A
+   * folder at the new name that is not ours is a conflict; a copy edited in the agent's folder
+   * would lose its edits when it is replaced.
+   */
+  checkRename(skill: Skill, renamed: Skill): RenameCheck;
+  /** Deploy `skill` to these agents again, e.g. after a rename. Unusable agents are reported. */
+  redeploy(skill: Skill, agentKeys: readonly string[]): Promise<RedeployReport>;
   /** Follow an agent to a new skills folder: remove at the old one, deploy at the new one. */
   moveAgentDeployments(
     agentKey: string,
     oldSkillsDir: string,
     newSkillsDir: string,
   ): Promise<RedeployReport>;
+}
+
+export interface RenameCheck {
+  conflicts: TargetConflict[];
+  editedCopies: DeploymentRecord[];
+}
+
+/** Two paths name one entry on disk (a case-insensitive file system, a linked folder). */
+function sameEntry(a: string, b: string): boolean {
+  if (targetIdentity(a) === targetIdentity(b)) return true;
+  const left = lstatOrNull(a);
+  const right = lstatOrNull(b);
+  return left !== null && right !== null && left.dev === right.dev && left.ino === right.ino;
 }
 
 const emptyReport = (): RedeployReport => ({ written: 0, conflicts: [], failed: [], kept: [] });
@@ -206,6 +227,35 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         await ops.deployPair(pair, { kind: "user_confirmed" });
       });
       ctx.touched("skills");
+    },
+
+    checkRename: (skill, renamed) => {
+      const check: RenameCheck = { conflicts: [], editedCopies: [] };
+      for (const row of store.deployments().filter((entry) => entry.skillId === skill.id)) {
+        if (row.mode === "copy" && copyWasEdited(row)) check.editedCopies.push(row);
+        const agent = registry.find(row.agentKey);
+        if (!agent?.installed || !agent.enabled) continue;
+        const refusal = ops.inspect(ops.pairFor(renamed, agent)).refusal;
+        // The skill's own deployment under a name differing only in case is not in the way.
+        if (refusal && !sameEntry(refusal.path, row.targetPath)) {
+          check.conflicts.push(refusal);
+        }
+      }
+      return check;
+    },
+
+    redeploy: async (skill, agentKeys) => {
+      const report = emptyReport();
+      await ctx.lock.run(`deploy ${skill.name}`, async () => {
+        for (const key of new Set(agentKeys)) {
+          const agent = registry.find(key);
+          if (agent?.installed && agent.enabled) await attempt(ops.pairFor(skill, agent), report);
+          else
+            report.failed.push({ name: skill.name, message: `${agentName(key)} is not available` });
+        }
+      });
+      ctx.touched("skills");
+      return report;
     },
 
     moveAgentDeployments: async (agentKey, oldSkillsDir, newSkillsDir) => {

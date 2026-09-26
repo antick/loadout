@@ -134,6 +134,27 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     skills = skills.map((entry) => (entry.id === skillId ? { ...entry, tags } : entry));
     emitChanged("skills");
   },
+  "skills.rename": (skillId: string, name: string, options?: { dryRun?: boolean }) => {
+    const found = findSkill(skillId);
+    if (skills.some((entry) => entry.id !== skillId && entry.dirName === name)) {
+      throw new MockError("ALREADY_EXISTS", `The library already has a skill named ${name}.`);
+    }
+    const libraryPath = `${found.libraryPath.slice(0, -found.dirName.length)}${name}`;
+    const renamed = { ...found, name, dirName: name, libraryPath };
+    if (!options?.dryRun) {
+      skills = skills.map((entry) => (entry.id === skillId ? renamed : entry));
+      emitChanged("skills", "projects");
+    }
+    const agents = found.deployments.map((deployment) => deployment.agentKey);
+    const result = { dryRun: Boolean(options?.dryRun), from: found.name, to: name, agents };
+    return {
+      ...result,
+      skill: options?.dryRun ? found : renamed,
+      projectLinks: [],
+      projectCopies: [],
+      failed: [],
+    };
+  },
   "skills.renameTag": (from: string, to: string) => {
     skills = skills.map((entry) => ({
       ...entry,

@@ -1,4 +1,4 @@
-import type { Preset } from "@loadout/shared";
+import type { Preset, Skill } from "@loadout/shared";
 import { createContext, useContext } from "react";
 
 /** App-wide dialogs owned by the shell. Any page can open them through `useShell()`. */
@@ -14,6 +14,8 @@ export interface ShellActions {
    * is created.
    */
   openNewSkill(projectId?: string): void;
+  /** Rename a library skill everywhere it is deployed. */
+  openRenameSkill(skill: Skill): void;
   openAddProject(): void;
 }
 

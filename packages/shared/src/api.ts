@@ -36,6 +36,8 @@ import type {
   ProjectTarget,
   PushToLibraryOptions,
   PushToLibraryResult,
+  RenameOptions,
+  RenameResult,
   SizeReport,
   Skill,
   SkillDocument,
@@ -97,6 +99,13 @@ export interface SkillsApi {
   removeMany(skillIds: string[]): Promise<BatchResult>;
   allTags(): Promise<string[]>;
   setTags(skillId: string, tags: string[]): Promise<void>;
+  /**
+   * Give a library skill a new name: its folder, the `name` in its SKILL.md, every deployment
+   * and the links projects hold to it. Refused before anything changes when the name is taken
+   * or badly formed, a folder of that name is in an agent's way, or a copy was edited in an
+   * agent's folder.
+   */
+  rename(skillId: string, name: string, options?: RenameOptions): Promise<RenameResult>;
   renameTag(from: string, to: string): Promise<void>;
   deleteTag(tag: string): Promise<void>;
   /** Open the skill's library folder in the OS file manager. */
