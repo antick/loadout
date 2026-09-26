@@ -2,6 +2,7 @@ import {
   closeSync,
   existsSync,
   ftruncateSync,
+  mkdirSync,
   openSync,
   readFileSync,
   readdirSync,
@@ -176,6 +177,19 @@ describe("backup clone, size rules and credentials", () => {
     expect((await b.api.status()).upstreamHealth).toBe("healthy");
   });
 
+  it("never commits a half-written metadata file, only files named like one", async () => {
+    const a = track(createDevice(temp.dir, "A"));
+    a.addSkill("notes");
+    const leftover = `schema.json.tmp.${"0".repeat(8)}-0000-0000-0000-${"0".repeat(12)}`;
+    mkdirSync(a.ctx.paths.metadataDir, { recursive: true });
+    writeFileSync(join(a.ctx.paths.metadataDir, leftover), "{}");
+    writeFileSync(join(a.skillsDir, "notes", "draft.tmp.md"), "kept");
+    await a.api.init();
+    const tracked = a.git("ls-files");
+    expect(tracked).not.toContain(leftover);
+    expect(tracked).toContain("notes/draft.tmp.md");
+  });
+
   it("keeps an oversized skill out of the backup through the managed ignore block", async () => {
     const a = track(createDevice(temp.dir, "A"));
     a.addSkill("small");
@@ -184,7 +198,9 @@ describe("backup clone, size rules and credentials", () => {
     await a.api.init();
 
     const ignore = readFileSync(join(a.skillsDir, ".gitignore"), "utf8");
-    expect(ignore).toContain(".DS_Store\nThumbs.db\n__pycache__/\n*.pyc\n");
+    expect(ignore).toContain(
+      ".DS_Store\nThumbs.db\n__pycache__/\n*.pyc\n*.tmp.????????-????-????-????-????????????\n",
+    );
     expect(ignore).toContain("/big\\ \\[v2\\]/\n");
     expect(ignore).toContain(`/${basename(a.ctx.paths.metadataDir)}/skills/${big.id}.json\n`);
     const tracked = a.git("ls-files");

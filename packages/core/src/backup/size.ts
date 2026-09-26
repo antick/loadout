@@ -18,7 +18,18 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 
 const IGNORE_FILE = ".gitignore";
 const GIT_DIR = ".git";
-const BASE_IGNORE_LINES = [".DS_Store", "Thumbs.db", "__pycache__/", "*.pyc"] as const;
+/**
+ * `writeFileAtomic` writes `<file>.tmp.<uuid>` and renames it. Git must never pick one up: it can
+ * vanish between git listing it and reading it, which fails the whole commit.
+ */
+const ATOMIC_TEMP_PATTERN = "*.tmp.????????-????-????-????-????????????";
+const BASE_IGNORE_LINES = [
+  ".DS_Store",
+  "Thumbs.db",
+  "__pycache__/",
+  "*.pyc",
+  ATOMIC_TEMP_PATTERN,
+] as const;
 const BLOCK_START = `# ${APP_SLUG}: skills over the backup size limit (managed, do not edit)`;
 const BLOCK_END = `# ${APP_SLUG}: end of managed block`;
 const IGNORE_SPECIAL_CHARS = /[\\*?[\]#! ]/g;
