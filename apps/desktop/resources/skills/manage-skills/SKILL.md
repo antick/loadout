@@ -1,6 +1,6 @@
 ---
 name: manage-skills
-description: Install, deploy, list, update, tag, adopt or remove AI agent skills through the Loadout command-line tool. Use whenever the user asks to add or install a skill (from a folder, zip, git URL or owner/repo), make a skill available to an agent such as Claude Code or Cursor, see which skills exist or where they are deployed, check for or apply skill updates, group skills into presets, bring an existing skills folder under management, or back up and restore the skill library.
+description: Install, deploy, list, update, tag, adopt or remove AI agent skills through the Loadout command-line tool. Use whenever the user asks to add or install a skill (from a folder, zip, git URL or owner/repo), make a skill available to an agent such as Claude Code or Cursor, see which skills exist or where they are deployed, check for or apply skill updates, group skills into presets, bring an existing skills folder under management, put back a deleted skill, or back up and restore the skill library.
 ---
 
 # Manage skills with Loadout
@@ -113,9 +113,15 @@ loadout presets undeploy "Docs work" --json
 loadout skills adopt ~/.claude/skills --dry-run --json
 loadout skills adopt ~/.claude/skills --json
 
-# Remove from the library (also undeploys everywhere)
+# Remove from the library (also undeploys everywhere); it waits in Recently removed for 30 days
 loadout skills remove <ref> --dry-run --json
 loadout skills remove <ref> --yes --json
+
+# Recently removed: deleted skills and replaced agent folders, with a way back
+loadout removed list --json
+loadout removed restore <id> --json                   # a skill comes back with tags and presets, not deployed
+loadout removed delete <id> --dry-run --json
+loadout removed delete <id> --yes --json
 
 # Backup
 loadout git status --json
@@ -130,7 +136,8 @@ none, the command fails and lists them - pick with `--skill` or confirm `--all` 
 
 ## Destructive commands
 
-`skills remove`, `presets delete` and `git restore` refuse to run without `--yes`.
+`skills remove`, `presets delete`, `removed delete` and `git restore` refuse to run without
+`--yes`.
 `--json` never implies it.
 
 1. Run the command with `--dry-run` first and read what it would do.
