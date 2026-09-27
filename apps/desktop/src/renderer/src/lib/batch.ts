@@ -2,7 +2,7 @@ import type { BatchFailure, BatchResult } from "@loadout/shared";
 import { toast } from "sonner";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
-import { type ToastAction, errorMessage, toastSuccess } from "@/lib/toast";
+import { type ToastAction, errorMessage } from "@/lib/toast";
 
 /**
  * Run one job per item, one after the other, and collect what failed. Used where the backend has
@@ -36,23 +36,29 @@ export function describeFailures(failed: readonly BatchFailure[]): string {
   return lines.join("\n");
 }
 
-/**
- * Toast a finished batch: plain success, or a warning that lists what failed. `undo` adds a
- * button that takes back what did succeed.
- */
+/** What a batch toast can carry besides its summary. */
+export interface BatchToastExtras {
+  /** A button, such as Undo, that takes back what did succeed. */
+  action?: ToastAction;
+  /** One more line, e.g. what to do so the agents see the change. */
+  description?: string | null;
+}
+
+/** Toast a finished batch: plain success, or a warning that lists what failed. */
 export function toastBatchOutcome(
   summary: string,
   failed: readonly BatchFailure[],
-  undo?: ToastAction,
+  extras: BatchToastExtras = {},
 ): void {
+  const description = extras.description ?? undefined;
   if (failed.length === 0) {
-    if (undo) toast.success(summary, { action: undo });
-    else toastSuccess(summary);
+    toast.success(summary, { description, action: extras.action });
     return;
   }
+  const lines = [describeFailures(failed), ...(description ? [description] : [])];
   toast.warning(i18n.t("localSkills.batch.withFailures", { summary, count: failed.length }), {
-    description: describeFailures(failed),
+    description: lines.join("\n"),
     descriptionClassName: "text-xs whitespace-pre-line break-all",
-    action: undo,
+    action: extras.action,
   });
 }

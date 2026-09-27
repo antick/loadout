@@ -11,6 +11,7 @@ import type {
   Skill,
   SyncHealth,
 } from "@loadout/shared";
+import { BUILT_IN_AGENTS } from "@loadout/shared";
 
 export const HOME = "/Users/dev";
 export const LIBRARY = `${HOME}/.loadout`;
@@ -37,6 +38,7 @@ function agent(
     sharesDirWith: [],
     alsoReads: [],
     homeEnv: null,
+    reload: BUILT_IN_AGENTS.find((entry) => entry.key === key)?.reload ?? null,
     ...extra,
   };
 }

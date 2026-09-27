@@ -39,16 +39,25 @@ export function toastSuccess(message: string, description?: string): void {
   toast.success(message, { description });
 }
 
-/** Toast the outcome of a deploy batch: counts, then conflicts and failures when there are any. */
-export function toastApplyResult(result: ApplyResult, action: "add" | "remove"): void {
+/**
+ * Toast the outcome of a deploy batch: counts, then conflicts and failures when there are any.
+ * `hint` is one more line, such as what to do so the agents see the change.
+ */
+export function toastApplyResult(
+  result: ApplyResult,
+  action: "add" | "remove",
+  hint?: string | null,
+): void {
   const changed = action === "add" ? result.added : result.removed;
   const summary = i18n.t(action === "add" ? "deploy.appliedAdd" : "deploy.appliedRemove", {
     count: changed,
     skipped: result.skipped,
   });
   const problems = result.conflicts.length + result.failed.length;
+  const changedAny = result.added + result.removed > 0;
+  const description = changedAny && hint ? hint : undefined;
   if (problems === 0) {
-    toast.success(summary);
+    toast.success(summary, { description });
     return;
   }
   const lines = [
@@ -56,6 +65,7 @@ export function toastApplyResult(result: ApplyResult, action: "add" | "remove"):
     ...result.failed
       .slice(0, TOAST_MAX_CONFLICT_PATHS)
       .map((failure) => `${failure.name}: ${failure.message}`),
+    ...(description ? [description] : []),
   ];
   toast.warning(i18n.t("deploy.appliedWithProblems", { summary, count: problems }), {
     description: lines.join("\n"),

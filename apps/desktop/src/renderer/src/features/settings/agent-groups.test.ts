@@ -17,6 +17,7 @@ function agent(key: string, patch: Partial<AgentInfo> = {}): AgentInfo {
     sharesDirWith: [],
     alsoReads: [],
     homeEnv: null,
+    reload: null,
     ...patch,
   };
 }

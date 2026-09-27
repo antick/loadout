@@ -14,6 +14,7 @@ import {
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { describeFailures, runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
@@ -268,9 +269,11 @@ export function useExportSkills(): UseMutationResult<
         (job) => job.name,
         (job) => api.projects.exportSkill(job.skillId, projectId, job.agentKeys),
       );
+      const agentKeys = jobs.flatMap((job) => job.agentKeys);
       toastBatchOutcome(
         t("projectPage.toast.exportedMany", { count: result.succeeded }),
         result.failed,
+        { description: result.succeeded > 0 ? reloadHintFor(queryClient, agentKeys) : null },
       );
       if (result.succeeded === 0 && result.failed.length > 0) {
         throw new Error(t("projectPage.errors.export"));
@@ -304,7 +307,7 @@ export function useDeleteVariants(): UseMutationResult<
       toastBatchOutcome(
         t("projectPage.toast.removedCopies", { count: result.succeeded }),
         result.failed,
-        undoAction(queryClient, removedIds),
+        { action: undoAction(queryClient, removedIds) },
       );
       return result;
     },
@@ -334,7 +337,7 @@ export function useDeleteProjectSkills(): UseMutationResult<
       toastBatchOutcome(
         t("projectPage.toast.deletedMany", { count: result.succeeded }),
         result.failed,
-        undoAction(queryClient, removedIds),
+        { action: undoAction(queryClient, removedIds) },
       );
       return result;
     },
@@ -391,7 +394,7 @@ export function usePullManyFromLibrary(): UseMutationResult<
       toastBatchOutcome(
         t("projectPage.toast.pulledMany", { count: result.succeeded }),
         result.failed,
-        undoAction(queryClient, removedIds),
+        { action: undoAction(queryClient, removedIds) },
       );
       return result;
     },

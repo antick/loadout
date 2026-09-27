@@ -1,11 +1,12 @@
 /**
- * The only place dates, durations and byte sizes are turned into text.
+ * The only place dates, durations, byte sizes and lists of names are turned into text.
  * Never format these inline elsewhere.
  */
 
 const DATE_TIME = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 const DATE_ONLY = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+const AND_LIST = new Intl.ListFormat(undefined, { type: "conjunction" });
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -69,4 +70,9 @@ const COMPACT_COUNT = new Intl.NumberFormat(undefined, {
 /** `1.2K`, `34K`, `5.6M`: a large count short enough for a card. */
 export function formatCount(count: number): string {
   return COMPACT_COUNT.format(count);
+}
+
+/** "Codex, Goose and Warp". */
+export function formatNameList(names: readonly string[]): string {
+  return AND_LIST.format(names);
 }

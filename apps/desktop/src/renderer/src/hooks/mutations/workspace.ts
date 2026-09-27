@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
@@ -118,11 +119,9 @@ export function useDeleteLocalSkills(): UseMutationResult<BatchResult, unknown, 
           removedIds.push(...(await api.workspace.deleteLocal(ref.agentKey, ref.relativePath)));
         },
       );
-      toastBatchOutcome(
-        t("agents.toast.deletedMany", { count: result.succeeded }),
-        result.failed,
-        undoAction(queryClient, removedIds),
-      );
+      toastBatchOutcome(t("agents.toast.deletedMany", { count: result.succeeded }), result.failed, {
+        action: undoAction(queryClient, removedIds),
+      });
       return result;
     },
     onError: (error) => toastError(error, "agents.errors.delete"),
@@ -156,7 +155,9 @@ export function useDeployToAgent(): UseMutationResult<BatchResult, unknown, Depl
         (skill) => skill.name,
         (skill) => api.deploy.deploy(skill.id, agentKey),
       );
-      toastBatchOutcome(t("agents.toast.added", { count: result.succeeded }), result.failed);
+      toastBatchOutcome(t("agents.toast.added", { count: result.succeeded }), result.failed, {
+        description: result.succeeded > 0 ? reloadHintFor(queryClient, [agentKey]) : null,
+      });
       if (result.succeeded === 0 && result.failed.length > 0) {
         throw new Error(t("agents.errors.addNone"));
       }

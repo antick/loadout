@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { reloadHintFor } from "@/lib/agent-reload";
 import { keys } from "@/lib/query-keys";
 import { toastApplyResult, toastError } from "@/lib/toast";
 
@@ -106,8 +107,8 @@ export function useApplySkills(): UseMutationResult<ApplyResult, unknown, ApplyS
   return useMutation({
     mutationFn: ({ skillIds, agentKeys, action }: ApplySkillsInput) =>
       api.deploy.apply(skillIds, agentKeys, action),
-    onSuccess: (result, { action, silent }) => {
-      if (!silent) toastApplyResult(result, action);
+    onSuccess: (result, { action, agentKeys, silent }) => {
+      if (!silent) toastApplyResult(result, action, reloadHintFor(queryClient, agentKeys));
     },
     onError: (error) => toastError(error, "errors.apply"),
     onSettled: () => invalidateDeployments(queryClient),

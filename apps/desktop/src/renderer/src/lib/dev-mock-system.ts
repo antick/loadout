@@ -318,6 +318,7 @@ export function createSystemMockHandlers(
         sharesDirWith: [],
         alsoReads: [],
         homeEnv: null,
+        reload: null,
       };
       agents.push(created);
       ctx.emitChanged("agents");

@@ -130,6 +130,12 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   which variable set a folder; a folder chosen there still wins.
 - Reorder agents; the order is used everywhere in the app.
 - Coding agents and personal-assistant agents are grouped separately.
+- When each agent sees skill changes, from its own documentation: while it runs (Claude Code,
+  Codex, Roo Code, Qwen Code, OpenClaw), in a new session (Gemini CLI, GitHub Copilot, Amp, Goose,
+  Kilo Code, OpenHands, Droid, Warp, Pi, Hermes Agent, GitLab Duo) or after a restart (OpenCode,
+  Mistral Vibe), with the reload command where there is one. The agent's page says it, and the
+  toast after adding skills to agents or a project says what to do. Agents whose documentation is
+  silent get no hint rather than a guess.
 - Agents that share one skills folder are recognised and handled safely.
 
 ### Deploying skills

@@ -27,6 +27,25 @@ export interface AgentDefinition {
    * absolute path, `skillsDir` and `detectDir` are read inside that folder instead of home.
    */
   homeEnv?: AgentHomeEnv;
+  /**
+   * When the agent sees added, changed or removed skills, per its own documentation or source
+   * (checked September 2026). Left out when neither says: the app then says nothing.
+   */
+  reload?: AgentReload;
+}
+
+/**
+ * `live`: the running agent notices changes by itself. `new_session`: a new chat or session
+ * sees them. `restart`: the program must be restarted.
+ */
+export type AgentReloadWhen = "live" | "new_session" | "restart";
+
+export interface AgentReload {
+  when: AgentReloadWhen;
+  /** Typed in a running session to load changed skills without waiting. */
+  command?: string;
+  /** Said to the agent in a running session, for agents that reload on request. */
+  ask?: string;
 }
 
 /** Where an agent's folders are when its home folder variable is set. */
@@ -53,6 +72,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     skillsDir: ".claude/skills",
     detectDir: ".claude",
     homeEnv: { variable: "CLAUDE_CONFIG_DIR", skillsDir: "skills" },
+    reload: { when: "live", command: "/reload-skills" },
   },
   {
     key: "omp_agent",
@@ -69,6 +89,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     projectSkillsDir: ".agents/skills",
     extraScanDirs: [".agents/skills"],
     homeEnv: { variable: "CODEX_HOME", skillsDir: "skills" },
+    reload: { when: "live" },
   },
   {
     key: "grok",
@@ -85,6 +106,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     projectSkillsDir: ".opencode/skills",
     extraScanDirs: [".claude/skills", ".agents/skills"],
     projectExtraScanDirs: [".claude/skills", ".agents/skills"],
+    reload: { when: "restart" },
   },
   {
     key: "antigravity",
@@ -102,6 +124,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     projectSkillsDir: ".agents/skills",
     extraScanDirs: [".agents/skills", ".claude/skills"],
     projectExtraScanDirs: [".claude/skills"],
+    reload: { when: "new_session", ask: "Reload my skills" },
   },
   {
     key: "kilo_code",
@@ -110,6 +133,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".kilocode",
     extraScanDirs: [".agents/skills", ".claude/skills"],
     projectExtraScanDirs: [".agents/skills", ".claude/skills"],
+    reload: { when: "new_session", command: "/reload" },
   },
   {
     key: "roo_code",
@@ -118,6 +142,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".roo",
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".agents/skills"],
+    reload: { when: "live" },
   },
   {
     key: "goose",
@@ -127,6 +152,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     projectSkillsDir: ".goose/skills",
     extraScanDirs: [".agents/skills", ".claude/skills", ".config/agents/skills"],
     projectExtraScanDirs: [".agents/skills", ".claude/skills"],
+    reload: { when: "new_session" },
   },
   {
     key: "gemini_cli",
@@ -136,6 +162,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".agents/skills"],
     homeEnv: { variable: "GEMINI_CLI_HOME", skillsDir: ".gemini/skills", detectDir: ".gemini" },
+    reload: { when: "new_session", command: "/skills reload" },
   },
   {
     key: "github_copilot",
@@ -146,6 +173,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".claude/skills", ".agents/skills"],
     homeEnv: { variable: "COPILOT_HOME", skillsDir: "skills" },
+    reload: { when: "new_session", command: "/skills reload" },
   },
   {
     key: "openclaw",
@@ -154,6 +182,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".openclaw",
     category: "assistant",
     homeEnv: { variable: "OPENCLAW_STATE_DIR", skillsDir: "skills" },
+    reload: { when: "live" },
   },
   {
     key: "droid",
@@ -162,6 +191,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".factory",
     extraScanDirs: [".agents/skills", ".agent/skills"],
     projectExtraScanDirs: [".agents/skills", ".agent/skills"],
+    reload: { when: "new_session" },
   },
   {
     key: "windsurf",
@@ -232,6 +262,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
       ".github/skills",
       ".opencode/skills",
     ],
+    reload: { when: "new_session" },
   },
   { key: "augment", displayName: "Augment", skillsDir: ".augment/skills", detectDir: ".augment" },
   { key: "bob", displayName: "IBM Bob", skillsDir: ".bob/skills", detectDir: ".bob" },
@@ -286,6 +317,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     displayName: "Mistral Vibe",
     skillsDir: ".vibe/skills",
     detectDir: ".vibe",
+    reload: { when: "restart", command: "/reload" },
   },
   { key: "mux", displayName: "Mux", skillsDir: ".mux/skills", detectDir: ".mux" },
   { key: "neovate", displayName: "Neovate", skillsDir: ".neovate/skills", detectDir: ".neovate" },
@@ -296,6 +328,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".openhands",
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".agents/skills"],
+    reload: { when: "new_session" },
   },
   {
     key: "pi",
@@ -305,6 +338,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     projectSkillsDir: ".pi/skills",
     extraScanDirs: [".agents/skills"],
     homeEnv: { variable: "PI_CODING_AGENT_DIR", skillsDir: "skills" },
+    reload: { when: "new_session", command: "/reload" },
   },
   { key: "pochi", displayName: "Pochi", skillsDir: ".pochi/skills", detectDir: ".pochi" },
   { key: "qoder", displayName: "Qoder", skillsDir: ".qoder/skills", detectDir: ".qoder" },
@@ -316,6 +350,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".agents/skills"],
     homeEnv: { variable: "QWEN_HOME", skillsDir: "skills" },
+    reload: { when: "live" },
   },
   { key: "trae_cn", displayName: "TRAE CN", skillsDir: ".trae-cn/skills", detectDir: ".trae-cn" },
   {
@@ -334,6 +369,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     recursiveScan: true,
     category: "assistant",
     homeEnv: { variable: "HERMES_HOME", skillsDir: "skills" },
+    reload: { when: "new_session", command: "/reload-skills" },
   },
   {
     key: "qclaw",
@@ -377,6 +413,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".gitlab/duo",
     projectSkillsDir: ".agents/skills",
     extraScanDirs: [".agents/skills"],
+    reload: { when: "new_session" },
   },
 ];
 

@@ -1,4 +1,4 @@
-import type { AgentCategory } from "./agents";
+import type { AgentCategory, AgentReload } from "./agents";
 import type { SkillIssue } from "./skill-checks";
 
 // ── Agents ──
@@ -24,6 +24,8 @@ export interface AgentInfo {
   alsoReads: string[];
   /** The home folder variable that placed `skillsDir`, when one is set and no override wins. */
   homeEnv: { variable: string; value: string } | null;
+  /** When the agent sees skill changes, per its documentation; null when it does not say. */
+  reload: AgentReload | null;
 }
 
 export interface CustomAgentInput {

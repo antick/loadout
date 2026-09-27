@@ -113,6 +113,23 @@
     "wsl": {
       "copies": "Inside WSL ({{distro}}). Skills are copied here, not linked: Linux cannot follow a link back into Windows. Saving a skill refreshes the copies.",
       "hint": "An agent that runs inside WSL? Use its Linux folder, for example \\\\wsl.localhost\\Ubuntu\\home\\you\\.claude\\skills."
+    },
+    "reload": {
+      "live": "{{agent}} picks up new, changed and removed skills while it runs.",
+      "new_session": "{{agent}} sees new, changed and removed skills in a new session.",
+      "restart": "Restart {{agent}} to see new, changed and removed skills.",
+      "command": {
+        "live": "If one does not show up, type {{command}}.",
+        "new_session": "In a running session, type {{command}}.",
+        "restart": "Or type {{command}} in it."
+      },
+      "ask": "In a running session, ask it to “{{ask}}”.",
+      "hint": {
+        "restart": "Restart {{names}} to see the change.",
+        "newSession": "Start a new session in {{names}} to see the change.",
+        "live_one": "{{names}} picks it up while it runs.",
+        "live_other": "{{names}} pick it up while they run."
+      }
     }
   }
 }
