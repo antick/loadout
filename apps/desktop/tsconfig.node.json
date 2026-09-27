@@ -1,5 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "types": ["node", "electron-vite/node"] },
-  "include": ["electron.vite.config.ts", "vitest.config.ts", "src/main", "src/preload", "test"]
+  "include": [
+    "electron.vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "src/main",
+    "src/preload",
+    "test",
+    "e2e"
+  ]
 }

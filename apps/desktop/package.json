@@ -13,6 +13,7 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
     "test": "vitest run --passWithNoTests",
+    "test:ui": "playwright test",
     "package": "electron-builder --config electron-builder.yml",
     "postinstall": "install-electron && node scripts/name-dev-electron.mjs"
   },
@@ -38,6 +39,7 @@
     "@loadout/cli": "workspace:*",
     "@loadout/core": "workspace:*",
     "@loadout/shared": "workspace:*",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "4.3.3",
     "@tanstack/react-query": "5.103.1",
     "@tanstack/react-router": "1.170.38",

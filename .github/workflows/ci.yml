@@ -50,3 +50,13 @@ jobs:
 
       - name: Lint, format, typecheck and test
         run: pnpm check
+
+      # The UI tests click through the renderer's browser preview (in-memory data, no Electron),
+      # so one OS is enough.
+      - name: Install Chromium for the UI tests
+        if: runner.os == 'Linux'
+        run: pnpm --filter @loadout/desktop exec playwright install --with-deps --only-shell chromium
+
+      - name: UI tests
+        if: runner.os == 'Linux'
+        run: pnpm --filter @loadout/desktop test:ui

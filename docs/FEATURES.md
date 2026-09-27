@@ -485,5 +485,11 @@ These are testing gaps, not missing implementations:
   update guard against a real Git remote rather than a local fixture.
 - Icon rail and sidebar on Windows and Linux, where there are no macOS window buttons to clear.
 
-Renderer tests currently cover selected pure logic; automated UI interaction tests are still
-pending.
+Renderer unit tests (vitest) cover selected pure logic. UI interaction tests (Playwright,
+`apps/desktop/e2e/`) click through the renderer's browser preview in headless Chromium, on the
+in-memory preview data, never Electron: deleting a skill and restoring it from Recently removed,
+batch tagging and deletion, applying a preset and its reload hint, the agent page's reload line,
+the Install tabs and Marketplace search with Load more, the Backup page's held-back list and Back
+up anyway, every Settings section, and the command palette. Run them with
+`pnpm --filter @loadout/desktop test:ui` (once: `pnpm --filter @loadout/desktop exec playwright
+install chromium`). CI runs them on Linux.

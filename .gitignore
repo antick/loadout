@@ -2,6 +2,8 @@ node_modules
 dist
 out
 /apps/desktop/release/
+/apps/desktop/test-results/
+/apps/desktop/playwright-report/
 .turbo
 *.tsbuildinfo
 .DS_Store

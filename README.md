@@ -163,6 +163,11 @@ loadout --help
 | `pnpm package` | Build installers into `apps/desktop/release`  |
 | `pnpm cli …`   | Run the CLI from source                       |
 
+`pnpm check` leaves out the UI tests, which click through the renderer's browser preview (its
+in-memory data, no Electron) in headless Chromium with Playwright. Run them with
+`pnpm --filter @loadout/desktop test:ui`, after installing the browser once with
+`pnpm --filter @loadout/desktop exec playwright install chromium`.
+
 ## Website
 
 `apps/landing` is the landing page at [loadout.potion.sh](https://loadout.potion.sh), an Astro
@@ -174,7 +179,7 @@ always matches the app.
 ## Releases
 
 GitHub Actions runs `pnpm check` on Linux and macOS for every push to `main` and every pull
-request (`.github/workflows/ci.yml`).
+request, and the UI tests on Linux (`.github/workflows/ci.yml`).
 
 Installers are published as GitHub releases of this repository. The app's update check reads
 `latest.json` from the newest published release, and the landing page links there.
