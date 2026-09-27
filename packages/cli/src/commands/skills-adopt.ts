@@ -1,6 +1,12 @@
-import { realpathSync, statSync } from "node:fs";
-import { resolve } from "node:path";
-import { type Core, type ResolvedAgent, errorMessage, invalid, notFound } from "@loadout/core";
+import { statSync } from "node:fs";
+import {
+  type Core,
+  type ResolvedAgent,
+  canonicalPath,
+  errorMessage,
+  invalid,
+  notFound,
+} from "@loadout/core";
 import type { LocalSkill } from "@loadout/shared";
 import { flagBoolean } from "../args";
 import { plural } from "../output";
@@ -11,17 +17,9 @@ const REASON_MANAGED = "already managed";
 const REASON_LIBRARY_DIFFERS =
   "the library holds a different version that adopting would overwrite - settle it in the app first";
 
-function canonical(path: string): string {
-  try {
-    return realpathSync(path);
-  } catch {
-    return resolve(path);
-  }
-}
-
 /** The agent whose own skills folder this is. Usable agents win when several share the folder. */
 function owningAgent(core: Core, dir: string): ResolvedAgent {
-  const owners = core.registry.list().filter((agent) => canonical(agent.skillsDir) === dir);
+  const owners = core.registry.list().filter((agent) => canonicalPath(agent.skillsDir) === dir);
   const owner = owners.find((agent) => agent.installed && agent.enabled) ?? owners[0];
   if (!owner) {
     throw invalid(
@@ -61,7 +59,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
     }
   })();
   if (!isDir) throw notFound(`Folder not found: ${input}`);
-  const dir = canonical(input);
+  const dir = canonicalPath(input);
   const agent = owningAgent(core, dir);
 
   // The listing is already limited to that agent's own skills folder, which is `dir`.
