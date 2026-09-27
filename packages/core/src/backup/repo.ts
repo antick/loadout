@@ -2,14 +2,12 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { AppError } from "../errors";
 import { type BackupEnv, REMOTE_NAME } from "./env";
+import { recoverInterrupted } from "./interrupted";
 import { refreshIgnoreFile } from "./size";
 
 /** Small questions and actions on the repository that several backup modules share. */
 
 const GIT_DIR = ".git";
-/** Files git leaves behind while an operation is unfinished. */
-const INTERRUPTED_MARKERS = ["MERGE_HEAD", "index.lock", "rebase-merge", "rebase-apply"] as const;
-
 export function isRepo(env: BackupEnv): boolean {
   return existsSync(join(env.repoDir, GIT_DIR));
 }
@@ -17,18 +15,6 @@ export function isRepo(env: BackupEnv): boolean {
 export function assertRepo(env: BackupEnv): void {
   if (!isRepo(env)) {
     throw new AppError("GIT_NOT_REPO", "Backup is not set up for this library yet.");
-  }
-}
-
-/** A merge or rebase that never finished must be dealt with before we stack more work on it. */
-export function assertNotInterrupted(env: BackupEnv): void {
-  const marker = INTERRUPTED_MARKERS.find((name) => existsSync(join(env.repoDir, GIT_DIR, name)));
-  if (marker) {
-    throw new AppError(
-      "GIT",
-      "An earlier Git operation in the library folder did not finish. Finish or abort it in a terminal, or restore the library from the backup remote, then try again.",
-      { marker },
-    );
   }
 }
 
@@ -98,7 +84,7 @@ export async function commitStaged(env: BackupEnv, message: string): Promise<boo
  */
 export async function commitLibrary(env: BackupEnv, message: string): Promise<boolean> {
   assertRepo(env);
-  assertNotInterrupted(env);
+  await recoverInterrupted(env);
   env.portable.write();
   await refreshIgnoreFile(env);
   return commitStaged(env, message);

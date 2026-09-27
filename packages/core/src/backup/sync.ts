@@ -6,6 +6,7 @@ import {
 import { isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { type BackupEnv, REMOTE_NAME } from "./env";
+import { whileMerging } from "./interrupted";
 import { mergeRemote } from "./merge";
 import {
   aheadBehind,
@@ -51,7 +52,9 @@ export async function fetchRemote(env: BackupEnv): Promise<void> {
 /** Fetch, then merge what arrived. */
 export async function pullRemote(env: BackupEnv): Promise<MergeSummary> {
   await fetchRemote(env);
-  const result = await env.ctx.lock.run("backup merge", () => mergeRemote(env));
+  const result = await env.ctx.lock.run("backup merge", () =>
+    whileMerging(env, () => mergeRemote(env)),
+  );
   return result.summary;
 }
 
@@ -90,7 +93,9 @@ export async function syncLibrary(
     const branch = await requireBranch(env);
     for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
       await fetchRemote(env);
-      const result = await lock.run("backup merge", () => mergeRemote(env));
+      const result = await lock.run("backup merge", () =>
+        whileMerging(env, () => mergeRemote(env)),
+      );
       merge = combine(merge, result.summary);
       committed ||= result.committed;
       changed ||= result.committed || result.changed;
