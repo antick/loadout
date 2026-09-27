@@ -3,6 +3,7 @@ import {
   type Dirent,
   type Stats,
   chmodSync,
+  cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -150,6 +151,16 @@ export function removePathSync(path: string): void {
   rmSync(path, { recursive: true, force: true });
 }
 
+/** Move one entry, by rename when possible and by copy across disks. Keeps links as links. */
+export function moveEntrySync(from: string, to: string): void {
+  try {
+    renameSync(from, to);
+  } catch {
+    cpSync(from, to, { recursive: true, verbatimSymlinks: true });
+    removePathSync(from);
+  }
+}
+
 export interface CopyOptions {
   /** Skip symbolic links entirely (library imports do; deploy copies do not need to). */
   skipSymlinks?: boolean;
@@ -180,11 +191,23 @@ export async function copyDir(
   });
 }
 
+export interface ReplaceDirOptions {
+  /**
+   * Take over the replaced content (moved to a hidden sibling) instead of deleting it. Called
+   * only once the new content is in place; it must move or remove the sibling.
+   */
+  keepReplaced?: (replaced: string) => void;
+}
+
 /**
  * Replace `target` with `source`'s content through a staged sibling, so a failure midway leaves
  * the original in place.
  */
-export async function replaceDirAtomic(source: string, target: string): Promise<void> {
+export async function replaceDirAtomic(
+  source: string,
+  target: string,
+  options: ReplaceDirOptions = {},
+): Promise<void> {
   const parent = dirname(target);
   const name = target.slice(parent.length + 1);
   const staged = join(parent, `.${name}.staged-${randomUUID()}`);
@@ -199,7 +222,9 @@ export async function replaceDirAtomic(source: string, target: string): Promise<
     await removePath(staged);
     throw error;
   }
-  if (hadTarget) await removePath(backup);
+  if (!hadTarget) return;
+  if (options.keepReplaced) options.keepReplaced(backup);
+  else await removePath(backup);
 }
 
 /**

@@ -67,7 +67,13 @@ import type {
 import type { CreateSkillInput } from "./new-skill";
 import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } from "./safety";
 import type { InstructionFile } from "./instructions";
-import type { ClearableArea, RemoveAllDataOptions, StorageReport } from "./storage";
+import type {
+  ClearableArea,
+  RemoveAllDataOptions,
+  RemovedFolder,
+  RestoreRemovedResult,
+  StorageReport,
+} from "./storage";
 import type { SettingKey, SettingValue, Settings } from "./settings";
 
 /**
@@ -240,12 +246,17 @@ export interface WorkspaceApi {
   document(agentKey: string, relativePath: string): Promise<SkillDocument>;
   /** Copy the local skill into the library (new skill, or overwrite its match) and adopt it. */
   upload(agentKey: string, relativePath: string): Promise<Skill>;
-  pull(agentKey: string, relativePath: string): Promise<void>;
-  deleteLocal(agentKey: string, relativePath: string): Promise<void>;
+  /**
+   * Replace the local folder with the library version. Resolves to the Recently removed ids of
+   * what was put aside (empty when the folder held nothing the library lacks), for an undo.
+   */
+  pull(agentKey: string, relativePath: string): Promise<string[]>;
+  /** Delete a local skill. Its folder goes to Recently removed; resolves to that entry's id. */
+  deleteLocal(agentKey: string, relativePath: string): Promise<string[]>;
   /** Folders in the agent's skills folder that the agent ignores, sorted by path. */
   broken(agentKey: string): Promise<BrokenSkillFolder[]>;
   /** Delete one of `broken`. Refused for anything that is not broken right now, or is managed. */
-  deleteBroken(agentKey: string, relativePath: string): Promise<void>;
+  deleteBroken(agentKey: string, relativePath: string): Promise<string[]>;
 }
 
 export interface ProjectsApi {
@@ -278,9 +289,11 @@ export interface ProjectsApi {
     relativePath: string,
     options?: PushToLibraryOptions,
   ): Promise<PushToLibraryResult>;
-  pullFromLibrary(id: string, relativePath: string): Promise<void>;
+  /** Resolves to the Recently removed ids of the copies put aside. */
+  pullFromLibrary(id: string, relativePath: string): Promise<string[]>;
   setSkillEnabled(id: string, relativePath: string, enabled: boolean): Promise<void>;
-  deleteSkill(id: string, relativePath: string, agentKey?: string): Promise<void>;
+  /** Resolves to the Recently removed ids of the copies put aside. */
+  deleteSkill(id: string, relativePath: string, agentKey?: string): Promise<string[]>;
   lastExportAgents(id: string): Promise<string[]>;
   setLastExportAgents(id: string, agentKeys: string[]): Promise<void>;
   reveal(id: string): Promise<void>;
@@ -341,6 +354,13 @@ export interface StorageApi {
   report(): Promise<StorageReport>;
   /** Empty one area. Returns the bytes freed. Never touches a clone that is in use. */
   clear(area: ClearableArea): Promise<number>;
+  /** Skill folders taken out of agent and project folders, newest first. */
+  removed(): Promise<RemovedFolder[]>;
+  /** Put one back where it came from. Whatever sits there now is put aside first. */
+  restoreRemoved(id: string): Promise<RestoreRemovedResult>;
+  /** Delete one for good. */
+  deleteRemoved(id: string): Promise<void>;
+  revealRemoved(id: string): Promise<void>;
 }
 
 /** Implemented by the Electron main process, not by core. */

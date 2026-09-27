@@ -51,12 +51,18 @@ export interface ProjectActions {
     relativePath: string,
     options?: PushToLibraryOptions,
   ): Promise<PushToLibraryResult>;
-  pullFromLibrary(project: ProjectRecord, relativePath: string): Promise<void>;
-  deleteSkill(project: ProjectRecord, relativePath: string, agentKey?: string): Promise<void>;
+  pullFromLibrary(project: ProjectRecord, relativePath: string): Promise<string[]>;
+  deleteSkill(project: ProjectRecord, relativePath: string, agentKey?: string): Promise<string[]>;
 }
 
 const NOT_IN_WORKSPACE = "Skill not found in this workspace";
 const VERSION_GONE = "That version is no longer in the project. Refresh and choose again.";
+/** Between the project and the agent in a Recently removed entry's place. */
+const PLACE_SEPARATOR = " · ";
+
+/** A project copy's place in Recently removed: the project, then the agent folder it sat in. */
+const placeOf = (project: ProjectRecord, agentName: string): string =>
+  `${project.name}${PLACE_SEPARATOR}${agentName}`;
 
 /**
  * Remove folders left empty by a move or a delete, from `start` up to `root`. `rmdir` refuses a
@@ -250,21 +256,30 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
           conflictingVariants: changed.length,
           versions: groups.map((group) => describeVersion(group, match?.contentHash ?? null)),
           realignFailed: 0,
+          removedIds: [],
         };
       } else {
         winner = changed[0];
       }
-      if (!winner?.copies[0]) return { conflictingVariants: 0, versions: [], realignFailed: 0 };
+      if (!winner?.copies[0]) {
+        return { conflictingVariants: 0, versions: [], realignFailed: 0, removedIds: [] };
+      }
 
       const pushed = await pushLocalToLibrary(ctx, deps, winner.copies[0], match);
       let realignFailed = 0;
+      const removedIds: string[] = [];
       if (options.realign !== false) {
         // One at a time: each replace stages a sibling folder, and targets can share a parent.
         for (const group of groups) {
           if (group === winner) continue;
           for (const other of group.copies) {
             try {
-              await replaceLocalFromLibrary(ctx, pushed, other.path);
+              const aside = {
+                removed: deps.removed,
+                place: placeOf(project, other.agentDisplayName),
+              };
+              const kept = await replaceLocalFromLibrary(ctx, pushed, other.path, aside);
+              if (kept) removedIds.push(kept);
             } catch (error) {
               realignFailed += 1;
               ctx.log.warn(`Could not realign ${other.path}: ${errorMessage(error)}`);
@@ -273,7 +288,7 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
         }
       }
       ctx.touched("skills", "projects");
-      return { conflictingVariants: 0, versions: [], realignFailed };
+      return { conflictingVariants: 0, versions: [], realignFailed, removedIds };
     },
 
     pullFromLibrary: async (project, relativePath) => {
@@ -284,11 +299,17 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       if (!shared) throw notFound("This skill is not in the library");
 
       const failures: string[] = [];
+      const removedIds: string[] = [];
       const stale = variants.filter((variant) => variant.syncStatus !== "in_sync");
       for (const variant of stale) {
         const own = variant.librarySkillId ? store.find(variant.librarySkillId) : null;
         try {
-          await replaceLocalFromLibrary(ctx, own ?? shared, variant.path);
+          const aside = {
+            removed: deps.removed,
+            place: placeOf(project, variant.agentDisplayName),
+          };
+          const kept = await replaceLocalFromLibrary(ctx, own ?? shared, variant.path, aside);
+          if (kept) removedIds.push(kept);
         } catch (error) {
           failures.push(errorMessage(error));
         }
@@ -302,6 +323,7 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
           `Could not update ${failures.length} of ${stale.length} copies: ${failures[0]}`,
         );
       }
+      return removedIds;
     },
 
     deleteSkill: async (project, relativePath, agentKey) => {
@@ -310,12 +332,21 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       if (agentKey && !only) throw notFound(`Unknown agent for this workspace: ${agentKey}`);
       const variants = findVariants(only ? [only] : targets, relativePath);
       if (variants.length === 0) throw notFound(NOT_IN_WORKSPACE);
-      for (const variant of variants) {
-        await removePath(variant.path);
-        pruneDisabledSide(variant);
-      }
+      const removedIds: string[] = [];
+      await ctx.lock.run(`delete ${relativePath}`, async () => {
+        for (const variant of variants) {
+          const kept = deps.removed.setAside(variant.path, {
+            place: placeOf(project, variant.target.displayName),
+            reason: "deleted",
+          });
+          if (kept) removedIds.push(kept);
+          else await removePath(variant.path);
+          pruneDisabledSide(variant);
+        }
+      });
       ctx.activity.record("remove", variants[0]?.relativePath ?? relativePath, project.name);
       ctx.touched("projects");
+      return removedIds;
     },
   };
 }

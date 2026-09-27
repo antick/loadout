@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { EXPORT_FILE_EXTENSION, EXPORT_MANY_PREFIX } from "@/lib/constants";
 import { keys } from "@/lib/query-keys";
+import { toastWithUndo } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 /** What replaces a skill's library content: upstream, its source folder, or a new source folder. */
@@ -276,7 +277,7 @@ export interface RemoveFromProjectInput extends SkillProjectInput {
 
 /** Delete a skill's copies from a project folder. */
 export function useRemoveSkillFromProject(): UseMutationResult<
-  void,
+  string[],
   unknown,
   RemoveFromProjectInput
 > {
@@ -284,12 +285,18 @@ export function useRemoveSkillFromProject(): UseMutationResult<
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ project, relativePaths }: RemoveFromProjectInput) => {
+      const removedIds: string[] = [];
       for (const relativePath of relativePaths) {
-        await api.projects.deleteSkill(project.id, relativePath);
+        removedIds.push(...(await api.projects.deleteSkill(project.id, relativePath)));
       }
+      return removedIds;
     },
-    onSuccess: (_result, { skill, project }) =>
-      toastSuccess(t("library.projects.removed", { name: skill.name, project: project.name })),
+    onSuccess: (removedIds, { skill, project }) =>
+      toastWithUndo(
+        queryClient,
+        t("library.projects.removed", { name: skill.name, project: project.name }),
+        removedIds,
+      ),
     onError: (error) => toastError(error, "library.errors.removeFromProject"),
     onSettled: (_result, _error, { project }) => {
       void queryClient.invalidateQueries({ queryKey: keys.projects.skills(project.id) });

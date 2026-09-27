@@ -1,4 +1,4 @@
-import { cpSync, existsSync, readFileSync, readdirSync, renameSync, rmdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, rmdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -9,6 +9,7 @@ import {
   DEV_APP_DATA_DIR_NAME,
   LIBRARY_CONFIG_FILE,
   LIBRARY_DIR_NAME,
+  REMOVED_DIR_NAME,
   type LibraryLocation,
   type LibraryWarning,
 } from "@loadout/shared";
@@ -16,6 +17,7 @@ import { errorMessage } from "./errors";
 import {
   canonicalPath,
   ensureDir,
+  moveEntrySync,
   normalizeAbsolutePath,
   pathsOverlap,
   removePathSync,
@@ -34,6 +36,8 @@ export interface LibraryPaths {
   cacheDir: string;
   /** Earlier versions of files the editor overwrote. Stays on this computer. */
   historyDir: string;
+  /** Skill folders put aside from agent and project folders (Recently removed). This computer only. */
+  removedDir: string;
   logsDir: string;
   binDir: string;
   dbPath: string;
@@ -69,6 +73,7 @@ const METADATA_DIR = `.${APP_SLUG}`;
 const SKILLS_DIR = LIBRARY_SKILLS_DIR_NAME;
 const CACHE_DIR = "cache";
 const HISTORY_DIR = "history";
+const REMOVED_DIR = REMOVED_DIR_NAME;
 const LOGS_DIR = "logs";
 
 /** What the library is made of. Only these move when the library moves. */
@@ -78,6 +83,7 @@ const LIBRARY_ENTRIES: readonly string[] = [
   `${DB_FILE}-wal`,
   `${DB_FILE}-shm`,
   HISTORY_DIR,
+  REMOVED_DIR,
   CACHE_DIR,
   LOGS_DIR,
 ];
@@ -106,6 +112,7 @@ function buildPaths(baseDir: string, defaultBaseDir: string): LibraryPaths {
     metadataDir: join(skillsDir, METADATA_DIR),
     cacheDir: join(baseDir, CACHE_DIR),
     historyDir: join(baseDir, HISTORY_DIR),
+    removedDir: join(baseDir, REMOVED_DIR),
     logsDir: join(baseDir, LOGS_DIR),
     binDir: join(defaultBaseDir, CLI_BIN_DIR_NAME),
     dbPath: join(baseDir, DB_FILE),
@@ -148,18 +155,8 @@ function canReceive(target: string, defaultBaseDir: string): boolean {
   }
 }
 
-/** Move one entry, by rename when possible and by copy across disks. */
-function moveEntry(from: string, to: string): void {
-  try {
-    renameSync(from, to);
-  } catch {
-    cpSync(from, to, { recursive: true });
-    removePathSync(from);
-  }
-}
-
 /**
- * Move the library's own entries (skills, database, history, cache, logs) from one folder to
+ * Move the library's own entries (skills, database, history, removed, cache, logs) from one folder to
  * another; the home folder's files stay. All or nothing: a failure moves back what was moved.
  * Returns false when it could not be done safely; the source is then kept.
  */
@@ -177,14 +174,14 @@ function migrate(source: string, target: string, defaultBaseDir: string, notes: 
   try {
     ensureDir(target);
     for (const name of entries) {
-      moveEntry(join(source, name), join(target, name));
+      moveEntrySync(join(source, name), join(target, name));
       moved.push(name);
     }
   } catch (error) {
     notes.push(`Library move failed: ${errorMessage(error)}`);
     for (const name of moved.toReversed()) {
       try {
-        moveEntry(join(target, name), join(source, name));
+        moveEntrySync(join(target, name), join(source, name));
       } catch (rollback) {
         notes.push(`Could not move ${name} back: ${errorMessage(rollback)}`);
       }
@@ -208,7 +205,7 @@ function adoptLegacyConfig(legacyPath: string, configPath: string, notes: string
   if (existsSync(configPath) || !existsSync(legacyPath)) return;
   try {
     ensureDir(dirname(configPath));
-    moveEntry(legacyPath, configPath);
+    moveEntrySync(legacyPath, configPath);
     notes.push(`Moved the library location file from ${legacyPath} to ${configPath}`);
     try {
       rmdirSync(dirname(legacyPath));

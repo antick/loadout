@@ -233,10 +233,11 @@ describe("global workspace", () => {
   });
 
   it("drops the new row but keeps the library folder when adoption fails", async () => {
-    const { ctx, store, registry, deploy } = world;
+    const { ctx, store, registry, deploy, removed } = world;
     const failing = createWorkspaceService(ctx, {
       store,
       registry,
+      removed,
       install: { installIntoLibrary: (request) => installIntoLibrary(ctx, store, request) },
       deploy: {
         ...deploy,

@@ -25,6 +25,11 @@
           "description": "Earlier versions of files you saved in the editor, the last 20 per file.",
           "clearEffect": "Every earlier version of every file goes. Your skills and their current text stay."
         },
+        "removed": {
+          "title": "Recently removed",
+          "description": "Skill folders taken out of agent and project folders when you replaced or deleted them, kept 30 days.",
+          "clearEffect": "Every folder in Recently removed is deleted for good. Skills in the library, agents and projects stay."
+        },
         "cache": {
           "title": "Download cache",
           "description": "Copies of Git repositories kept to make installs and update checks faster, and the last safety-check reports.",
@@ -93,6 +98,44 @@
       "errors": {
         "clear": "Could not clear it.",
         "removeAll": "Could not remove the data."
+      },
+      "removed": {
+        "title": "Recently removed",
+        "description": "Skill folders {{app}} took out of an agent or a project when you replaced one with the library version or deleted it. Each is kept here for {{days}} days, then deleted.",
+        "emptyTitle": "Nothing here",
+        "emptyBody": "When you replace or delete a skill folder in an agent or a project, the old folder waits here for {{days}} days.",
+        "reason": {
+          "replaced": "Replaced",
+          "deleted": "Deleted"
+        },
+        "keptUntil": "Kept until {{date}}",
+        "parentMissing": "The folder it came from is gone, so it cannot go back by itself. Show it in the file manager to move it by hand.",
+        "restore": "Restore",
+        "deleteForGood": "Delete for good",
+        "clearAll": "Delete all",
+        "confirmRestore": {
+          "title": "Restore “{{name}}”?",
+          "description": "Another version is in its place now. That one moves to Recently removed first, so you can switch back."
+        },
+        "confirmDelete": {
+          "title": "Delete “{{name}}” for good?",
+          "description": "It is deleted from Recently removed and cannot come back."
+        },
+        "confirmClear": {
+          "title_one": "Delete {{count}} folder for good?",
+          "title_other": "Delete {{count}} folders for good?"
+        },
+        "restored": "Restored “{{name}}” to {{place}}",
+        "displacedNote": "The version that was there is in Recently removed.",
+        "deleted": "Deleted “{{name}}” for good",
+        "undone_one": "Put the folder back",
+        "undone_other": "Put {{count}} folders back",
+        "keptNote_one": "The old folder is kept in Settings → Storage → Recently removed for {{days}} days.",
+        "keptNote_other": "The {{count}} old folders are kept in Settings → Storage → Recently removed for {{days}} days.",
+        "errors": {
+          "restore": "Could not put it back.",
+          "delete": "Could not delete it."
+        }
       }
     }
   }

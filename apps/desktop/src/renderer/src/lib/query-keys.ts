@@ -24,6 +24,7 @@ export const keys = {
   storage: {
     root: ["storage"] as const,
     report: ["storage", "report"] as const,
+    removed: ["storage", "removed"] as const,
   },
   instructions: {
     root: ["instructions"] as const,

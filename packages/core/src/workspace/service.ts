@@ -50,6 +50,7 @@ export interface WorkspaceServiceDeps {
   registry: AgentRegistry;
   deploy: Pick<DeployService, "adopt" | "refreshCopies">;
   install: LocalSyncDeps["install"];
+  removed: LocalSyncDeps["removed"];
 }
 
 export interface WorkspaceService {
@@ -121,6 +122,16 @@ export function createWorkspaceService(
       if (hashDir(localPath) === current.contentHash) await removePath(localPath);
       else ctx.log.warn(`Kept ${localPath}: it changed while it was being adopted`);
     });
+  }
+
+  /** Delete on the user's word: a folder with content goes to Recently removed, the rest goes. */
+  async function setAsideOrRemove(path: string, place: string): Promise<string[]> {
+    const kept = await ctx.lock.run(`remove ${basename(path)}`, () =>
+      deps.removed.setAside(path, { place, reason: "deleted" }),
+    );
+    if (kept) return [kept];
+    await removePath(path);
+    return [];
   }
 
   /** A broken folder as the UI shows it. Managed when one of our deployment rows sits there. */
@@ -196,12 +207,16 @@ export function createWorkspaceService(
       if (classifySync(entry, match) === "local_newer") {
         throw invalid("Local skill is newer than the library version");
       }
-      await replaceLocalFromLibrary(ctx, match, entry.path);
+      const kept = await replaceLocalFromLibrary(ctx, match, entry.path, {
+        removed: deps.removed,
+        place: agent.displayName,
+      });
       // A deployment row is judged by its recorded hash, not by reading the folder, so the
       // content is replaced first; redeploying then only brings the row back in line.
       if (isDeployedHere(match, agent, entry.path)) await deploy.adopt(match, agent);
       ctx.activity.record("update", match.name, `${agent.displayName}: restored from the library`);
       ctx.touched("skills");
+      return kept ? [kept] : [];
     },
 
     deleteLocal: async (agentKey, relativePath) => {
@@ -210,9 +225,10 @@ export function createWorkspaceService(
       if (rowsAtPath(store.deployments(), entry.path).length > 0) {
         throw invalid(`Skill is managed by ${APP_NAME}. Remove it from the agent first.`);
       }
-      await removePath(entry.path);
+      const kept = await setAsideOrRemove(entry.path, agent.displayName);
       ctx.activity.record("remove", entry.name, `${agent.displayName}: local skill deleted`);
       ctx.touched("skills");
+      return kept;
     },
 
     broken: async (agentKey) => brokenFolders(registry.get(agentKey)),
@@ -228,9 +244,10 @@ export function createWorkspaceService(
       if (folder.managed) {
         throw invalid(`${APP_NAME} put this folder here. Deploy the skill again to repair it.`);
       }
-      await removePath(folder.path);
+      const kept = await setAsideOrRemove(folder.path, agent.displayName);
       ctx.activity.record("remove", folder.dirName, `${agent.displayName}: broken folder deleted`);
       ctx.touched("skills");
+      return kept;
     },
   };
 

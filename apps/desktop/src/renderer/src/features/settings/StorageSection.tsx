@@ -10,6 +10,7 @@ import { useStorageReport } from "@/hooks/queries/storage";
 import { clearStored, countStored } from "@/lib/interface-state";
 import { toastSuccess } from "@/lib/toast";
 import { LibraryLocationCard } from "./LibraryLocationCard";
+import { RecentlyRemovedPanel } from "./RecentlyRemovedPanel";
 import { RemoveAllDataPanel } from "./RemoveAllDataPanel";
 import { StorageAreaList } from "./StorageAreaList";
 
@@ -59,6 +60,8 @@ export function StorageSection(): ReactNode {
           </div>
         )}
       </Panel>
+
+      <RecentlyRemovedPanel />
 
       <LibraryLocationCard />
 

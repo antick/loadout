@@ -13,6 +13,7 @@ import type { DeployService } from "../deploy";
 import { invalid } from "../errors";
 import type { GitClient } from "../install/git-client";
 import { dirSize, removePathSync, statOrNull } from "../util/fs";
+import type { RemovedStore } from "./removed";
 
 /** SQLite keeps these next to the database while it is open. */
 const DB_JOURNAL_SUFFIXES = ["", "-wal", "-shm"] as const;
@@ -20,6 +21,7 @@ const DB_JOURNAL_SUFFIXES = ["", "-wal", "-shm"] as const;
 export interface StorageServiceDeps {
   deploy: DeployService;
   git: GitClient;
+  removed: RemovedStore;
 }
 
 /** What to delete once the app has exited, so nothing it still writes brings a file back. */
@@ -56,6 +58,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
     skills: () => paths.skillsDir,
     database: () => paths.dbPath,
     history: () => paths.historyDir,
+    removed: () => paths.removedDir,
     cache: () => paths.cacheDir,
     logs: () => paths.logsDir,
     cli: () => paths.binDir,
@@ -101,6 +104,8 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       let freed = 0;
       if (area === "cache") {
         freed = await deps.git.clearCache();
+      } else if (area === "removed") {
+        freed = await deps.removed.clear();
       } else if (area === "history") {
         // Saves record versions under the lock, so none is written halfway through.
         freed = await ctx.lock.run("clear editor history", async () => {
@@ -114,6 +119,11 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       ctx.log.info(`Cleared ${area}: ${freed} bytes`);
       return freed;
     },
+
+    removed: async () => deps.removed.list(),
+    restoreRemoved: async (id) => deps.removed.restore(id),
+    deleteRemoved: async (id) => deps.removed.remove(id),
+    revealRemoved: async (id) => ctx.host.revealPath(deps.removed.contentPath(id)),
   };
 
   return {
@@ -130,6 +140,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
             paths.skillsDir,
             ...dbFiles(),
             paths.historyDir,
+            paths.removedDir,
             paths.cacheDir,
             paths.logsDir,
             paths.lockPath,

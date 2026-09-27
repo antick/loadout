@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
+import { toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 /** One skill folder inside an agent's global skills folder. */
@@ -61,40 +62,43 @@ export function useUploadLocalSkill(): UseMutationResult<Skill, unknown, LocalSk
   });
 }
 
-/** Replace the local folder with the library version. */
-export function usePullLocalSkill(): UseMutationResult<void, unknown, LocalSkillRef> {
+/** Replace the local folder with the library version; its own changes go to Recently removed. */
+export function usePullLocalSkill(): UseMutationResult<string[], unknown, LocalSkillRef> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
       api.workspace.pull(agentKey, relativePath),
-    onSuccess: (_result, { name }) => toastSuccess(t("agents.toast.pulled", { name })),
+    onSuccess: (removedIds, { name }) =>
+      toastWithUndo(queryClient, t("agents.toast.pulled", { name }), removedIds),
     onError: (error) => toastError(error, "agents.errors.pull"),
     onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
-/** Delete a skill folder the app does not manage. There is no library copy to fall back on. */
-export function useDeleteLocalSkill(): UseMutationResult<void, unknown, LocalSkillRef> {
+/** Delete a skill folder the app does not manage. It goes to Recently removed. */
+export function useDeleteLocalSkill(): UseMutationResult<string[], unknown, LocalSkillRef> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
       api.workspace.deleteLocal(agentKey, relativePath),
-    onSuccess: (_result, { name }) => toastSuccess(t("agents.toast.deleted", { name })),
+    onSuccess: (removedIds, { name }) =>
+      toastWithUndo(queryClient, t("agents.toast.deleted", { name }), removedIds),
     onError: (error) => toastError(error, "agents.errors.delete"),
     onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
 /** Delete a folder the agent ignores (no SKILL.md, or a link to nothing). */
-export function useDeleteBrokenFolder(): UseMutationResult<void, unknown, LocalSkillRef> {
+export function useDeleteBrokenFolder(): UseMutationResult<string[], unknown, LocalSkillRef> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
       api.workspace.deleteBroken(agentKey, relativePath),
-    onSuccess: (_result, { name }) => toastSuccess(t("agents.toast.deleted", { name })),
+    onSuccess: (removedIds, { name }) =>
+      toastWithUndo(queryClient, t("agents.toast.deleted", { name }), removedIds),
     onError: (error) => toastError(error, "agents.errors.deleteBroken"),
     onSettled: () => invalidateWorkspace(queryClient),
   });
@@ -105,14 +109,22 @@ export function useDeleteLocalSkills(): UseMutationResult<BatchResult, unknown, 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (refs: LocalSkillRef[]) =>
-      runSequentially(
+    mutationFn: async (refs: LocalSkillRef[]) => {
+      const removedIds: string[] = [];
+      const result = await runSequentially(
         refs,
         (ref) => ref.name,
-        (ref) => api.workspace.deleteLocal(ref.agentKey, ref.relativePath),
-      ),
-    onSuccess: (result) =>
-      toastBatchOutcome(t("agents.toast.deletedMany", { count: result.succeeded }), result.failed),
+        async (ref) => {
+          removedIds.push(...(await api.workspace.deleteLocal(ref.agentKey, ref.relativePath)));
+        },
+      );
+      toastBatchOutcome(
+        t("agents.toast.deletedMany", { count: result.succeeded }),
+        result.failed,
+        undoAction(queryClient, removedIds),
+      );
+      return result;
+    },
     onError: (error) => toastError(error, "agents.errors.delete"),
     onSettled: () => invalidateWorkspace(queryClient),
   });

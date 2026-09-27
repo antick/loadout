@@ -5,11 +5,13 @@ import { AppError } from "../src/errors";
 import { installIntoLibrary } from "../src/install/library";
 import { type PresetsService, createPresetsService } from "../src/presets";
 import { type ProjectsService, createProjectsService } from "../src/projects";
+import { type RemovedStore, createRemovedStore } from "../src/storage";
 import { listContentFiles } from "../src/util/hash";
 import { type WorkspaceService, createWorkspaceService } from "../src/workspace";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 
 export interface WorkspaceWorld extends DeployWorld {
+  removed: RemovedStore;
   presets: PresetsService;
   workspace: WorkspaceService;
   projects: ProjectsService;
@@ -23,11 +25,13 @@ export function createWorkspaceWorld(): WorkspaceWorld {
     installIntoLibrary: (request: Parameters<typeof installIntoLibrary>[2]) =>
       installIntoLibrary(ctx, store, request),
   };
+  const removed = createRemovedStore(ctx, { store });
   return {
     ...world,
+    removed,
     presets: createPresetsService(ctx, { store, registry, deploy }),
-    workspace: createWorkspaceService(ctx, { store, registry, deploy, install }),
-    projects: createProjectsService(ctx, { store, registry, deploy, install }),
+    workspace: createWorkspaceService(ctx, { store, registry, deploy, install, removed }),
+    projects: createProjectsService(ctx, { store, registry, deploy, install, removed }),
   };
 }
 

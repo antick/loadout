@@ -3,6 +3,12 @@ import { toast } from "sonner";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
 
+/** A button on a toast, such as Undo. */
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 /** Conflicting paths as a toast description, capped so the toast stays readable. */
 function describeConflicts(conflicts: readonly TargetConflict[]): string {
   const shown = conflicts.slice(0, TOAST_MAX_CONFLICT_PATHS).map((c) => c.path);

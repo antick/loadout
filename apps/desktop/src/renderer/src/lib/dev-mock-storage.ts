@@ -2,6 +2,10 @@
 import {
   CLEARABLE_AREAS,
   type ClearableArea,
+  REMOVED_KEEP_DAYS,
+  type RemovedFolder,
+  type RemovedReason,
+  type RestoreRemovedResult,
   type StorageArea,
   type StorageEntry,
   type StorageReport,
@@ -14,6 +18,7 @@ const SEED_BYTES: Record<StorageArea, number> = {
   skills: 2.4 * MB,
   database: 0.3 * MB,
   history: 0.1 * MB,
+  removed: 0.05 * MB,
   cache: 48 * MB,
   logs: 0.02 * MB,
   cli: 0.7 * MB,
@@ -23,11 +28,47 @@ const AREA_PATHS: Record<StorageArea, string> = {
   skills: "skills",
   database: "loadout.db",
   history: "history",
+  removed: "removed",
   cache: "cache",
   logs: "logs",
   cli: "bin",
   app: "app",
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const ENTRY_BYTES = 12 * 1024;
+
+interface MockRemoved {
+  entry: RemovedFolder;
+  /** Puts the folder back into the mock agent or project it came from. */
+  putBack: () => void;
+}
+
+const removedEntries: MockRemoved[] = [];
+let removedSeq = 0;
+
+/** A mock action took a folder away: list it in Recently removed. Returns its id. */
+export function recordRemoved(
+  folder: { name: string; originalPath: string; place: string; reason: RemovedReason },
+  putBack: () => void,
+): string {
+  removedSeq += 1;
+  const removedAt = Date.now();
+  const id = `00000000-0000-4000-8000-${String(removedSeq).padStart(12, "0")}`;
+  removedEntries.unshift({
+    entry: {
+      ...folder,
+      id,
+      removedAt,
+      expiresAt: removedAt + REMOVED_KEEP_DAYS * DAY_MS,
+      bytes: ENTRY_BYTES,
+      occupied: folder.reason === "replaced",
+      parentMissing: false,
+    },
+    putBack,
+  });
+  return id;
+}
 
 export function createStorageMockHandlers(home: string): Record<string, Handler> {
   const base = `${home}/.loadout`;
@@ -49,11 +90,30 @@ export function createStorageMockHandlers(home: string): Record<string, Handler>
     };
   };
 
+  const take = (id: string): MockRemoved => {
+    const index = removedEntries.findIndex((item) => item.entry.id === id);
+    const found = removedEntries[index];
+    if (!found) throw new Error("That folder is no longer in Recently removed");
+    removedEntries.splice(index, 1);
+    return found;
+  };
+
   return {
     "storage.report": report,
+    "storage.removed": (): RemovedFolder[] => removedEntries.map((item) => item.entry),
+    "storage.restoreRemoved": (id: string): RestoreRemovedResult => {
+      const found = take(id);
+      found.putBack();
+      return { path: found.entry.originalPath, displacedId: null };
+    },
+    "storage.deleteRemoved": (id: string) => {
+      take(id);
+    },
+    "storage.revealRemoved": () => undefined,
     "storage.clear": (area: ClearableArea) => {
       const freed = Math.round(bytes[area]);
       bytes[area] = 0;
+      if (area === "removed") removedEntries.length = 0;
       return freed;
     },
     "app.clearAppCache": () => {

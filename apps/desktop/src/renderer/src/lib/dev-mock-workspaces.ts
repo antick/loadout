@@ -18,8 +18,24 @@ import type {
   SkillDocument,
   SyncStatus,
 } from "@loadout/shared";
-import { HOME, HOUR, NO_PROJECT_ACTIVITY, NOW } from "@/lib/dev-mock-data";
+import { HOME } from "@/lib/dev-mock-data";
 import { mockDuplicates } from "@/lib/dev-mock-duplicates";
+import { recordRemoved } from "@/lib/dev-mock-storage";
+import {
+  type Copy,
+  copy,
+  dirNameOf,
+  documentFor,
+  mockImportedSkill,
+  mockProject,
+  projectTargets,
+  sameSkill,
+  seedBroken,
+  seedDeployedStatus,
+  seedLastExportAgents,
+  seedProjectCopies,
+  seedUnmanaged,
+} from "@/lib/dev-mock-workspace-seed";
 
 export interface WorkspaceMockContext {
   getSkills(): Skill[];
@@ -43,133 +59,16 @@ const DISABLED_SUFFIX = "-disabled";
 const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, ms));
 
-/** A copy on disk as the mock remembers it; the rest of a `LocalSkill` is derived when listing. */
-interface Copy {
-  relativePath: string;
-  agentKey: string;
-  status: SyncStatus;
-  enabled: boolean;
-  librarySkillId: string | null;
-  description: string | null;
-}
-
-const copy = (
-  relativePath: string,
-  agentKey: string,
-  status: SyncStatus,
-  extra: Partial<Copy> = {},
-): Copy => ({
-  relativePath,
-  agentKey,
-  status,
-  enabled: true,
-  librarySkillId: status === "local_only" ? null : relativePath,
-  description: null,
-  ...extra,
-});
-
-const dirNameOf = (relativePath: string): string => relativePath.split("/").pop() ?? relativePath;
-const sameSkill = (entry: Copy, relativePath: string): boolean =>
-  entry.relativePath.toLowerCase() === relativePath.toLowerCase();
-
-function documentFor(name: string, description: string | null, edited: boolean): string {
-  const extra = edited ? "\n## Local notes\n\nChanged in this folder only.\n" : "";
-  return `---\nname: ${name}\ndescription: ${description ?? ""}\n---\n\n# ${name}\n\n${description ?? ""}\n\n## Steps\n\n1. Read the request.\n2. Do the work in small steps.\n3. Check the result.\n${extra}`;
-}
-
 export function createWorkspaceMockHandlers(
   ctx: WorkspaceMockContext,
 ): Record<string, (...args: never[]) => unknown> {
-  // Sync status of managed deployments that are not simply in sync, keyed `agent:skill`.
-  const deployedStatus = new Map<string, SyncStatus>([
-    ["claude_code:code-review", "library_newer"],
-    ["claude_code:commit-messages", "local_newer"],
-    ["claude_code:api-docs", "diverged"],
-  ]);
+  const deployedStatus = seedDeployedStatus();
   // Folders the app did not put there.
-  let unmanaged: Copy[] = [
-    copy("scratch-notes", "claude_code", "local_only", {
-      description: "Personal notes on how this machine is set up.",
-    }),
-    copy("team/pr-checklist", "claude_code", "local_only", {
-      description: "Checklist the team runs before opening a pull request.",
-    }),
-    copy("react-patterns", "claude_code", "in_sync"),
-    copy("sql-migrations", "cursor", "local_newer"),
-    copy("old-linter-rules", "cursor", "local_only", { description: null }),
-  ];
+  let unmanaged: Copy[] = seedUnmanaged();
   // Folders the agent skips, keyed by agent; paths are filled in from the agent's folder.
-  let broken: Record<string, Omit<BrokenSkillFolder, "path">[]> = {
-    claude_code: [
-      {
-        dirName: "half-deleted",
-        relativePath: "half-deleted",
-        reason: "missing_document",
-        linkTarget: null,
-        files: ["notes.md", "scripts/"],
-        managed: false,
-      },
-      {
-        dirName: "old-checkout",
-        relativePath: "old-checkout",
-        reason: "dangling_link",
-        linkTarget: `${HOME}/code/agent-skills/old-checkout`,
-        files: [],
-        managed: false,
-      },
-      {
-        dirName: "release-notes",
-        relativePath: "release-notes",
-        reason: "missing_document",
-        linkTarget: null,
-        files: ["examples/"],
-        managed: true,
-      },
-      {
-        dirName: "drafts",
-        relativePath: "team/drafts",
-        reason: "missing_document",
-        linkTarget: null,
-        files: [],
-        managed: false,
-      },
-      {
-        dirName: "tmp",
-        relativePath: "tmp",
-        reason: "missing_document",
-        linkTarget: null,
-        files: [],
-        managed: false,
-      },
-    ],
-  };
-  const projectCopies = new Map<string, Copy[]>([
-    [
-      "pr-shop",
-      [
-        copy("code-review", "claude_code", "in_sync"),
-        copy("code-review", "cursor", "library_newer"),
-        copy("react-patterns", "cursor", "local_newer"),
-        copy("test-first", "claude_code", "in_sync"),
-        copy("test-first", "cursor", "in_sync"),
-        copy("test-first", "codex", "in_sync"),
-        copy("api-docs", "claude_code", "in_sync", { enabled: false }),
-        copy("sql-migrations", "claude_code", "diverged"),
-        copy("sql-migrations", "cursor", "local_newer"),
-        copy("shop/checkout-flow", "claude_code", "local_only", {
-          description: "How the checkout steps fit together in this repository.",
-        }),
-      ],
-    ],
-    [
-      "pr-api",
-      [
-        copy("api-docs", "claude_code", "diverged"),
-        copy("commit-messages", "claude_code", "in_sync"),
-      ],
-    ],
-  ]);
-  const lastExportAgents = new Map<string, string[]>([["pr-shop", ["claude_code", "cursor"]]]);
+  let broken: Record<string, Omit<BrokenSkillFolder, "path">[]> = seedBroken();
+  const projectCopies = seedProjectCopies();
+  const lastExportAgents = seedLastExportAgents();
 
   const librarySkill = (id: string | null): Skill | undefined =>
     id === null ? undefined : ctx.getSkills().find((entry) => entry.id === id);
@@ -239,36 +138,7 @@ export function createWorkspaceMockHandlers(
     return found ?? ctx.fail("NOT_FOUND", `Project not found: ${id}`);
   }
 
-  function targetsOf(project: Project): ProjectTarget[] {
-    if (project.type === "linked") {
-      return [
-        {
-          key: project.id,
-          displayName: project.name,
-          agentKeys: [project.id],
-          relativeDir: "",
-          enabled: true,
-          installed: true,
-          isCustom: false,
-        },
-      ];
-    }
-    return ctx.getAgents().flatMap((agent) =>
-      agent.projectSkillsDir
-        ? [
-            {
-              key: agent.key,
-              displayName: agent.displayName,
-              agentKeys: [agent.key],
-              relativeDir: agent.projectSkillsDir,
-              enabled: agent.enabled,
-              installed: agent.installed,
-              isCustom: agent.isCustom,
-            },
-          ]
-        : [],
-    );
-  }
+  const targetsOf = (project: Project): ProjectTarget[] => projectTargets(project, ctx.getAgents());
 
   const agentName = (key: string): string =>
     ctx.getAgents().find((agent) => agent.key === key)?.displayName ?? key;
@@ -289,30 +159,7 @@ export function createWorkspaceMockHandlers(
 
   /** New library skill made from a folder on disk. */
   function importToLibrary(name: string, description: string | null): Skill {
-    const created: Skill = {
-      ...(ctx.getSkills()[0] as Skill),
-      id: name,
-      name,
-      dirName: name,
-      description,
-      sourceType: "local",
-      sourceRef: null,
-      sourceUrl: null,
-      sourceBranch: null,
-      sourceRevision: null,
-      remoteRevision: null,
-      updateStatus: "local_only",
-      libraryPath: `${HOME}/.loadout/skills/${name}`,
-      contentHash: name,
-      createdAt: NOW,
-      updatedAt: NOW - HOUR,
-      deployments: [],
-      presetIds: [],
-      tags: [],
-      hasConflict: false,
-      editedFiles: [],
-      issues: [],
-    };
+    const created = mockImportedSkill(ctx.getSkills()[0] as Skill, name, description);
     ctx.setSkills([...ctx.getSkills(), created]);
     return created;
   }
@@ -321,20 +168,7 @@ export function createWorkspaceMockHandlers(
     if (ctx.getProjects().some((entry) => entry.path === path)) {
       ctx.fail("ALREADY_EXISTS", `This folder is already a workspace: ${path}`);
     }
-    const created: Project = {
-      id: `pr-${Date.now()}-${ctx.getProjects().length}`,
-      name,
-      path,
-      type,
-      supportsToggle: true,
-      sortOrder: ctx.getProjects().length,
-      skillCount: 0,
-      syncHealth: { local_only: 0, in_sync: 0, local_newer: 0, library_newer: 0, diverged: 0 },
-      missing: false,
-      ...NO_PROJECT_ACTIVITY,
-      createdAt: NOW,
-      updatedAt: NOW,
-    };
+    const created = mockProject(name, path, type, ctx.getProjects().length);
     ctx.setProjects([...ctx.getProjects(), created]);
     ctx.emitChanged("projects");
     return created;
@@ -376,12 +210,29 @@ export function createWorkspaceMockHandlers(
         ctx.fail("INVALID_INPUT", "The local skill is newer than the library version.");
       }
       if (found?.librarySkillId) deployedStatus.delete(`${agentKey}:${found.librarySkillId}`);
-      unmanaged = unmanaged.map((entry) =>
-        entry.agentKey === agentKey && entry.relativePath === relativePath
-          ? { ...entry, status: "in_sync" }
-          : entry,
+      const before = unmanaged.find(
+        (entry) => entry.agentKey === agentKey && entry.relativePath === relativePath,
       );
-      ctx.emitChanged("skills");
+      const setStatus = (status: SyncStatus | undefined): void => {
+        unmanaged = unmanaged.map((entry) =>
+          entry === before || (entry.agentKey === agentKey && entry.relativePath === relativePath)
+            ? { ...entry, status: status ?? entry.status }
+            : entry,
+        );
+        ctx.emitChanged("skills");
+      };
+      setStatus("in_sync");
+      if (!found || found.syncStatus === "in_sync") return [];
+      const id = recordRemoved(
+        {
+          name: dirNameOf(relativePath),
+          originalPath: found.path,
+          place: agentName(agentKey),
+          reason: "replaced",
+        },
+        () => setStatus(before?.status),
+      );
+      return [id];
     },
     "workspace.broken": (agentKey: string): BrokenSkillFolder[] => {
       const dir = agentOf(agentKey)?.skillsDir ?? "";
@@ -404,15 +255,45 @@ export function createWorkspaceMockHandlers(
         [agentKey]: (broken[agentKey] ?? []).filter((entry) => entry.relativePath !== relativePath),
       };
       ctx.emitChanged("skills");
+      const dir = agentOf(agentKey)?.skillsDir ?? "";
+      const id = recordRemoved(
+        {
+          name: found.dirName,
+          originalPath: `${dir}/${relativePath}`,
+          place: agentName(agentKey),
+          reason: "deleted",
+        },
+        () => {
+          broken = { ...broken, [agentKey]: [...(broken[agentKey] ?? []), found] };
+          ctx.emitChanged("skills");
+        },
+      );
+      return [id];
     },
     "workspace.deleteLocal": (agentKey: string, relativePath: string) => {
       if (relativePath === "old-linter-rules") {
         ctx.fail("IO", "The folder is read-only, so it could not be deleted.");
       }
-      unmanaged = unmanaged.filter(
-        (entry) => !(entry.agentKey === agentKey && entry.relativePath === relativePath),
+      const found = unmanaged.find(
+        (entry) => entry.agentKey === agentKey && entry.relativePath === relativePath,
       );
+      unmanaged = unmanaged.filter((entry) => entry !== found);
       ctx.emitChanged("skills");
+      if (!found) return [];
+      const dir = agentOf(agentKey)?.skillsDir ?? "";
+      const id = recordRemoved(
+        {
+          name: dirNameOf(relativePath),
+          originalPath: `${dir}/${relativePath}`,
+          place: agentName(agentKey),
+          reason: "deleted",
+        },
+        () => {
+          unmanaged = [...unmanaged, found];
+          ctx.emitChanged("skills");
+        },
+      );
+      return [id];
     },
 
     "projects.add": async (path: string): Promise<Project> => {
@@ -507,7 +388,12 @@ export function createWorkspaceMockHandlers(
       options?: PushToLibraryOptions,
     ): Promise<PushToLibraryResult> => {
       await wait(STEP_MS);
-      const done: PushToLibraryResult = { conflictingVariants: 0, versions: [], realignFailed: 0 };
+      const done: PushToLibraryResult = {
+        conflictingVariants: 0,
+        versions: [],
+        realignFailed: 0,
+        removedIds: [],
+      };
       const variants = copiesOf(id).filter((entry) => sameSkill(entry, relativePath));
       // The preview has no content: every changed copy counts as a version of its own.
       const unsynced = variants.filter((entry) => entry.status !== "in_sync");
@@ -522,6 +408,7 @@ export function createWorkspaceMockHandlers(
         return {
           conflictingVariants: unsynced.length,
           realignFailed: 0,
+          removedIds: [],
           versions: unsynced.map((entry, index) => ({
             id: entry.agentKey,
             agents: [{ agentKey: entry.agentKey, agentName: agentName(entry.agentKey) }],
@@ -547,8 +434,27 @@ export function createWorkspaceMockHandlers(
     },
     "projects.pullFromLibrary": async (id: string, relativePath: string) => {
       await wait(STEP_MS);
+      const project = findProject(id);
+      const stale = copiesOf(id).filter(
+        (entry) =>
+          sameSkill(entry, relativePath) && entry.librarySkillId && entry.status !== "in_sync",
+      );
       patchCopies(id, relativePath, (entry) =>
         entry.librarySkillId ? { ...entry, status: "in_sync" } : entry,
+      );
+      return stale.map((variant) =>
+        recordRemoved(
+          {
+            name: dirNameOf(relativePath),
+            originalPath: `${project.path}/${variant.relativePath}`,
+            place: `${project.name} · ${agentName(variant.agentKey)}`,
+            reason: "replaced",
+          },
+          () =>
+            patchCopies(id, relativePath, (entry) =>
+              entry.agentKey === variant.agentKey ? { ...entry, status: variant.status } : entry,
+            ),
+        ),
       );
     },
     "projects.setSkillEnabled": (id: string, relativePath: string, enabled: boolean) => {
@@ -558,17 +464,30 @@ export function createWorkspaceMockHandlers(
       patchCopies(id, relativePath, (entry) => ({ ...entry, enabled }));
     },
     "projects.deleteSkill": (id: string, relativePath: string, agentKey?: string) => {
+      const project = findProject(id);
+      const gone = copiesOf(id).filter(
+        (entry) =>
+          sameSkill(entry, relativePath) && (agentKey === undefined || entry.agentKey === agentKey),
+      );
       projectCopies.set(
         id,
-        copiesOf(id).filter(
-          (entry) =>
-            !(
-              sameSkill(entry, relativePath) &&
-              (agentKey === undefined || entry.agentKey === agentKey)
-            ),
-        ),
+        copiesOf(id).filter((entry) => !gone.includes(entry)),
       );
       ctx.emitChanged("projects");
+      return gone.map((variant) =>
+        recordRemoved(
+          {
+            name: dirNameOf(variant.relativePath),
+            originalPath: `${project.path}/${variant.relativePath}`,
+            place: `${project.name} · ${agentName(variant.agentKey)}`,
+            reason: "deleted",
+          },
+          () => {
+            projectCopies.set(id, [...copiesOf(id), variant]);
+            ctx.emitChanged("projects");
+          },
+        ),
+      );
     },
     "projects.lastExportAgents": (id: string) => lastExportAgents.get(id) ?? [],
     "projects.setLastExportAgents": (id: string, agentKeys: string[]) => {

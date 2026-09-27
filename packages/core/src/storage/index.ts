@@ -4,3 +4,4 @@ export {
   type StorageServiceDeps,
   createStorageService,
 } from "./service";
+export { type RemovedStore, type SetAsideInfo, createRemovedStore } from "./removed";

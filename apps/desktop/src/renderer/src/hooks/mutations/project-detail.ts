@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { describeFailures, runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
+import { toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 /** One logical skill of a project: every per-agent copy at this relative path. */
@@ -110,17 +111,23 @@ export function useCreateProjectSkill(): UseMutationResult<
 }
 
 /** Delete one copy of a project skill, or every copy when no target is given. */
-export function useDeleteProjectSkill(): UseMutationResult<void, unknown, DeleteProjectSkillInput> {
+export function useDeleteProjectSkill(): UseMutationResult<
+  string[],
+  unknown,
+  DeleteProjectSkillInput
+> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ projectId, relativePath, agentKey }: DeleteProjectSkillInput) =>
       api.projects.deleteSkill(projectId, relativePath, agentKey),
-    onSuccess: (_result, { name, targetName }) =>
-      toastSuccess(
+    onSuccess: (removedIds, { name, targetName }) =>
+      toastWithUndo(
+        queryClient,
         targetName
           ? t("projectPage.toast.removedFrom", { name, target: targetName })
           : t("projectPage.toast.deleted", { name }),
+        removedIds,
       ),
     onError: (error) => toastError(error, "projectPage.errors.delete"),
     onSettled: () => invalidateProject(queryClient),
@@ -155,8 +162,9 @@ export function usePushToLibrary(
       } else if (result.realignFailed > 0) {
         toast.warning(t("projectPage.toast.pushed", { name }), {
           description: t("projectPage.toast.realignFailed", { count: result.realignFailed }),
+          action: undoAction(queryClient, result.removedIds),
         });
-      } else toastSuccess(t("projectPage.toast.pushed", { name }));
+      } else toastWithUndo(queryClient, t("projectPage.toast.pushed", { name }), result.removedIds);
     },
     onError: (error) => toastError(error, "projectPage.errors.push"),
     onSettled: () => invalidateProject(queryClient, true),
@@ -164,15 +172,17 @@ export function usePushToLibrary(
 }
 
 /** Replace every copy of a project skill with the library version. */
-export function usePullFromLibrary(): UseMutationResult<void, unknown, PullFromLibraryInput> {
+export function usePullFromLibrary(): UseMutationResult<string[], unknown, PullFromLibraryInput> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ projectId, relativePath }: PullFromLibraryInput) =>
       api.projects.pullFromLibrary(projectId, relativePath),
-    onSuccess: (_result, { name, restore }) =>
-      toastSuccess(
+    onSuccess: (removedIds, { name, restore }) =>
+      toastWithUndo(
+        queryClient,
         t(restore ? "projectPage.toast.restored" : "projectPage.toast.pulled", { name }),
+        removedIds,
       ),
     onError: (error) => toastError(error, "projectPage.errors.pull"),
     onSettled: () => invalidateProject(queryClient),
@@ -236,6 +246,8 @@ export interface BatchPushResult {
   /** Names pushed, but not every other copy could be brought back in line. */
   realignFailed: string[];
   failed: BatchResult["failed"];
+  /** Other versions the realign replaced, kept in Recently removed. */
+  removedIds: string[];
 }
 
 /**
@@ -278,17 +290,24 @@ export function useDeleteVariants(): UseMutationResult<
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ projectId, jobs }) =>
-      runSequentially(
+    mutationFn: async ({ projectId, jobs }) => {
+      const removedIds: string[] = [];
+      const result = await runSequentially(
         jobs,
         (job) => job.name,
-        (job) => api.projects.deleteSkill(projectId, job.relativePath, job.agentKey),
-      ),
-    onSuccess: (result) =>
+        async (job) => {
+          removedIds.push(
+            ...(await api.projects.deleteSkill(projectId, job.relativePath, job.agentKey)),
+          );
+        },
+      );
       toastBatchOutcome(
         t("projectPage.toast.removedCopies", { count: result.succeeded }),
         result.failed,
-      ),
+        undoAction(queryClient, removedIds),
+      );
+      return result;
+    },
     onError: (error) => toastError(error, "projectPage.errors.delete"),
     onSettled: () => invalidateProject(queryClient),
   });
@@ -303,17 +322,22 @@ export function useDeleteProjectSkills(): UseMutationResult<
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (refs: ProjectSkillRef[]) =>
-      runSequentially(
+    mutationFn: async (refs: ProjectSkillRef[]) => {
+      const removedIds: string[] = [];
+      const result = await runSequentially(
         refs,
         (ref) => ref.name,
-        (ref) => api.projects.deleteSkill(ref.projectId, ref.relativePath),
-      ),
-    onSuccess: (result) =>
+        async (ref) => {
+          removedIds.push(...(await api.projects.deleteSkill(ref.projectId, ref.relativePath)));
+        },
+      );
       toastBatchOutcome(
         t("projectPage.toast.deletedMany", { count: result.succeeded }),
         result.failed,
-      ),
+        undoAction(queryClient, removedIds),
+      );
+      return result;
+    },
     onError: (error) => toastError(error, "projectPage.errors.delete"),
     onSettled: () => invalidateProject(queryClient),
   });
@@ -355,17 +379,22 @@ export function usePullManyFromLibrary(): UseMutationResult<
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (refs: ProjectSkillRef[]) =>
-      runSequentially(
+    mutationFn: async (refs: ProjectSkillRef[]) => {
+      const removedIds: string[] = [];
+      const result = await runSequentially(
         refs,
         (ref) => ref.name,
-        (ref) => api.projects.pullFromLibrary(ref.projectId, ref.relativePath),
-      ),
-    onSuccess: (result) =>
+        async (ref) => {
+          removedIds.push(...(await api.projects.pullFromLibrary(ref.projectId, ref.relativePath)));
+        },
+      );
       toastBatchOutcome(
         t("projectPage.toast.pulledMany", { count: result.succeeded }),
         result.failed,
-      ),
+        undoAction(queryClient, removedIds),
+      );
+      return result;
+    },
     onError: (error) => toastError(error, "projectPage.errors.pull"),
     onSettled: () => invalidateProject(queryClient),
   });
@@ -386,12 +415,14 @@ export function usePushManyToLibrary(): UseMutationResult<
         conflicting: [],
         realignFailed: [],
         failed: [],
+        removedIds: [],
       };
       const run = await runSequentially(
         refs,
         (ref) => ref.name,
         async (ref) => {
           const result = await api.projects.pushToLibrary(ref.projectId, ref.relativePath);
+          outcome.removedIds.push(...result.removedIds);
           if (result.conflictingVariants > 0) outcome.conflicting.push(ref.name);
           else {
             outcome.updated += 1;
@@ -404,7 +435,11 @@ export function usePushManyToLibrary(): UseMutationResult<
     },
     onSuccess: (outcome) => {
       if (outcome.updated > 0) {
-        toastSuccess(t("projectPage.toast.pushedMany", { count: outcome.updated }));
+        toastWithUndo(
+          queryClient,
+          t("projectPage.toast.pushedMany", { count: outcome.updated }),
+          outcome.removedIds,
+        );
       }
       if (outcome.conflicting.length > 0) {
         toast.warning(

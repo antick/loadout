@@ -24,35 +24,35 @@
 
 ## Core layout (`packages/core/src`)
 
-| Path                 | Owns                                                                                            |
-| -------------------- | ----------------------------------------------------------------------------------------------- |
-| `core.ts`            | `createCore(options)`: builds the context, wires every service, returns `CoreApi` + helpers     |
-| `context.ts`         | `CoreContext`, `SecretStore`, `HostBridge`                                                      |
-| `errors.ts`          | `AppError`, helpers, `toErrorShape`                                                             |
-| `paths.ts`           | Library location, move-on-restart, warnings                                                     |
-| `lock.ts`            | Cross-process library lock                                                                      |
-| `log.ts`             | Rotating file logger                                                                            |
-| `activity.ts`        | Activity history                                                                                |
-| `db/`                | SQLite wrapper (`node:sqlite`) and migrations                                                   |
-| `settings/store.ts`  | Typed settings + internal JSON blobs (`INTERNAL_KEYS`)                                          |
-| `util/`              | `fs` (copy, atomic write, containment, links), `hash`, `names`, `exec`, `async`, `git-config`   |
-| `skills/store.ts`    | All SQL for skills, tags, deployments                                                           |
-| `skills/metadata.ts` | Frontmatter + document lookup                                                                   |
-| `skills/portable.ts` | Portable metadata files and database rebuild                                                    |
-| `skills/service.ts`  | `SkillsApi`                                                                                     |
-| `skills/checks.ts`   | Agent Skills format checks per skill, cached by content hash (rules in `shared/skill-checks`)   |
-| `editor/`            | `EditorApi`: files of a skill in the library, an agent folder or a project; history, copies     |
-| `agents/`            | `registry.ts` resolves built-in + custom agents; `service.ts` implements `AgentsApi`            |
-| `deploy/`            | `engine.ts` ownership rules + symlink/copy; `service.ts` implements `DeployApi`                 |
-| `install/`           | Local, archive, Git (source parsing, clone cache, repo scan), cancel registry → `InstallApi`    |
-| `market/`            | Marketplace boards and search → `MarketApi`                                                     |
-| `updates/`           | Check, update, removal approval, source diff, background auto-update → `UpdatesApi`             |
-| `presets/`           | `PresetsApi`                                                                                    |
-| `workspace/`         | Local skill scanning, library matching, sync status, global workspace → `WorkspaceApi`          |
-| `projects/`          | Project and linked workspaces → `ProjectsApi`                                                   |
-| `backup/`            | Git backup, skill-aware merge, snapshots, GitHub connect, auto backup → `BackupApi`             |
-| `system/`            | Diagnostics, log export, crash marker, CLI publishing, agent-control setup → `SystemApi`        |
-| `storage/`           | Sizes of every area, clearing history/cache/logs, the plan for removing all data → `StorageApi` |
+| Path                 | Owns                                                                                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| `core.ts`            | `createCore(options)`: builds the context, wires every service, returns `CoreApi` + helpers          |
+| `context.ts`         | `CoreContext`, `SecretStore`, `HostBridge`                                                           |
+| `errors.ts`          | `AppError`, helpers, `toErrorShape`                                                                  |
+| `paths.ts`           | Library location, move-on-restart, warnings                                                          |
+| `lock.ts`            | Cross-process library lock                                                                           |
+| `log.ts`             | Rotating file logger                                                                                 |
+| `activity.ts`        | Activity history                                                                                     |
+| `db/`                | SQLite wrapper (`node:sqlite`) and migrations                                                        |
+| `settings/store.ts`  | Typed settings + internal JSON blobs (`INTERNAL_KEYS`)                                               |
+| `util/`              | `fs` (copy, atomic write, containment, links), `hash`, `names`, `exec`, `async`, `git-config`        |
+| `skills/store.ts`    | All SQL for skills, tags, deployments                                                                |
+| `skills/metadata.ts` | Frontmatter + document lookup                                                                        |
+| `skills/portable.ts` | Portable metadata files and database rebuild                                                         |
+| `skills/service.ts`  | `SkillsApi`                                                                                          |
+| `skills/checks.ts`   | Agent Skills format checks per skill, cached by content hash (rules in `shared/skill-checks`)        |
+| `editor/`            | `EditorApi`: files of a skill in the library, an agent folder or a project; history, copies          |
+| `agents/`            | `registry.ts` resolves built-in + custom agents; `service.ts` implements `AgentsApi`                 |
+| `deploy/`            | `engine.ts` ownership rules + symlink/copy; `service.ts` implements `DeployApi`                      |
+| `install/`           | Local, archive, Git (source parsing, clone cache, repo scan), cancel registry → `InstallApi`         |
+| `market/`            | Marketplace boards and search → `MarketApi`                                                          |
+| `updates/`           | Check, update, removal approval, source diff, background auto-update → `UpdatesApi`                  |
+| `presets/`           | `PresetsApi`                                                                                         |
+| `workspace/`         | Local skill scanning, library matching, sync status, global workspace → `WorkspaceApi`               |
+| `projects/`          | Project and linked workspaces → `ProjectsApi`                                                        |
+| `backup/`            | Git backup, skill-aware merge, snapshots, GitHub connect, auto backup → `BackupApi`                  |
+| `system/`            | Diagnostics, log export, crash marker, CLI publishing, agent-control setup → `SystemApi`             |
+| `storage/`           | Sizes of every area, clearing history/cache/logs, Recently removed, removing all data → `StorageApi` |
 
 ## Service shape
 
@@ -93,11 +93,12 @@ Settings; then only the library's own entries move and the rest stays home.
   skills/                  one folder per skill, also the backup Git repository
     .loadout/              portable metadata: schema.json, skills/<id>.json, presets/<id>.json
   history/                 earlier versions of files saved in the editor (this computer only)
+  removed/                 Recently removed: skill folders taken out of agent and project folders
   cache/repos/             Git clone cache
   logs/                    rotating logs, crash marker
 ```
 
-A library move (`paths.ts`) moves `skills/`, the database, `history/`, `cache/` and `logs/` as a
+A library move (`paths.ts`) moves `skills/`, the database, `history/`, `removed/`, `cache/` and `logs/` as a
 whole or not at all, and only into an empty folder (the home data folder's own files aside).
 
 `schema.json` holds the metadata format version and the highest app version that has written the

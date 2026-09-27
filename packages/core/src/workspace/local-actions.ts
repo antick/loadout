@@ -8,15 +8,18 @@ import { invalid, notFound } from "../errors";
 import type { InstallIntoLibrary } from "../install/library";
 import { readSkillDocument } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
+import type { RemovedStore } from "../storage/removed";
 import {
   canonicalPath,
   isDirectory,
   isSkillDir,
   lstatOrNull,
+  removePathSync,
   replaceDirAtomic,
   resolveInside,
   toPosix,
 } from "../util/fs";
+import { hashDir } from "../util/hash";
 import { firstFreeName } from "../util/names";
 import {
   type LibraryIndex,
@@ -32,6 +35,14 @@ export interface LocalSyncDeps {
   store: SkillStore;
   deploy: Pick<DeployService, "refreshCopies">;
   install: { installIntoLibrary: InstallIntoLibrary };
+  /** Recently removed: where a folder the user replaces or deletes is kept. */
+  removed: Pick<RemovedStore, "setAside">;
+}
+
+/** Where a replaced folder is kept, and how its place is named there. */
+export interface SetAsidePlace {
+  removed: Pick<RemovedStore, "setAside">;
+  place: string;
 }
 
 /** Who a local skill folder is listed under. */
@@ -137,24 +148,44 @@ export async function pushLocalToLibrary(
 
 /**
  * Replace a local skill folder with the library version. Only call this when the user asked for
- * it. A link is re-made, never written through, so the library cannot be copied onto itself.
+ * it. A link is re-made, never written through, so the library cannot be copied onto itself. A
+ * folder holding anything the library does not is kept in Recently removed; resolves to that
+ * entry's id, or null when nothing was kept.
  */
 export async function replaceLocalFromLibrary(
   ctx: CoreContext,
   skill: Skill,
   localPath: string,
-): Promise<void> {
-  await ctx.lock.run(`restore ${skill.name}`, async () => {
+  aside: SetAsidePlace,
+): Promise<string | null> {
+  return ctx.lock.run(`restore ${skill.name}`, async () => {
     if (!isDirectory(skill.libraryPath)) {
       throw notFound(`The skill folder is missing: ${skill.libraryPath}`);
     }
     const stat = lstatOrNull(localPath);
     if (stat?.isSymbolicLink()) {
       await writeTarget(skill.libraryPath, localPath, "symlink", { kind: "user_confirmed" });
-      return;
+      return null;
     }
     if (stat && !stat.isDirectory()) throw invalid(`Not a skill folder: ${localPath}`);
-    await replaceDirAtomic(skill.libraryPath, localPath);
+    const differs = stat !== null && hashDir(localPath) !== hashDir(skill.libraryPath);
+    let keptId: string | null = null;
+    const keepReplaced = (replaced: string): void => {
+      try {
+        keptId = aside.removed.setAside(replaced, {
+          place: aside.place,
+          reason: "replaced",
+          originalPath: localPath,
+        });
+      } catch (error) {
+        // Never lose it: the hidden sibling stays where it is and the log says where.
+        ctx.log.warn(`Could not keep the replaced ${localPath}; it is at ${replaced}`, error);
+        return;
+      }
+      if (keptId === null) removePathSync(replaced);
+    };
+    await replaceDirAtomic(skill.libraryPath, localPath, differs ? { keepReplaced } : {});
+    return keptId;
   });
 }
 

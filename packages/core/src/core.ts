@@ -15,7 +15,7 @@ import { createPresetsService } from "./presets";
 import { createProjectsService } from "./projects";
 import { createSkillsService } from "./skills/service";
 import type { SkillStore } from "./skills/store";
-import { type StorageService, createStorageService } from "./storage";
+import { type StorageService, createRemovedStore, createStorageService } from "./storage";
 import { createSystemService } from "./system";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
@@ -71,7 +71,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const registry = new AgentRegistry(ctx);
   // Skill folders deleted while the app was closed leave links behind in agent folders.
   pruneBrokenLinks(ctx, { registry, store });
-  const deploy = createDeployService(ctx, { store, registry });
+  const removed = createRemovedStore(ctx, { store });
+  const deploy = createDeployService(ctx, { store, registry, removed });
   const staleCopies = createStaleCopyRefresher(ctx, deploy);
   const agents = createAgentsService(ctx, { registry, deploy });
   const history = createFileHistory(ctx.paths.historyDir);
@@ -100,8 +101,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
   const updates = createUpdatesService(ctx, { store, install, deploy });
   const presets = createPresetsService(ctx, { store, registry, deploy });
-  const workspace = createWorkspaceService(ctx, { store, registry, deploy, install });
-  const projects = createProjectsService(ctx, { store, registry, deploy, install });
+  const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
+  const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });
   const finder = createInstructionFinder({ registry, projects: projects.projects });
   const instructions = createInstructionsService(ctx, { finder });
   const editor = createEditorService(ctx, {
@@ -130,7 +131,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     },
   });
   const system = createSystemService(ctx, { store, install, deploy, registry });
-  const storage = createStorageService(ctx, { deploy, git: install.git });
+  const storage = createStorageService(ctx, { deploy, git: install.git, removed });
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),

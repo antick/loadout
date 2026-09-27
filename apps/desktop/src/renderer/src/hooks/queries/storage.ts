@@ -1,4 +1,4 @@
-import type { StorageReport } from "@loadout/shared";
+import type { RemovedFolder, StorageReport } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -8,6 +8,15 @@ export function useStorageReport(): UseQueryResult<StorageReport> {
   return useQuery({
     queryKey: keys.storage.report,
     queryFn: () => api.storage.report(),
+    staleTime: 0,
+  });
+}
+
+/** Skill folders taken out of agent and project folders, newest first. */
+export function useRemovedFolders(): UseQueryResult<RemovedFolder[]> {
+  return useQuery({
+    queryKey: keys.storage.removed,
+    queryFn: () => api.storage.removed(),
     staleTime: 0,
   });
 }

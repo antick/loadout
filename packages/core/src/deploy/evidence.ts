@@ -1,8 +1,17 @@
 import { basename } from "node:path";
 import type { DeployMode, Skill } from "@loadout/shared";
 import type { DeploymentRecord } from "../skills/store";
-import { targetIdentity } from "../util/fs";
+import { lstatOrNull, targetIdentity } from "../util/fs";
+import { hashDir } from "../util/hash";
 import type { OwnershipPolicy, TargetState } from "./engine";
+
+/** The copy at the row's path differs from the content it was made from. */
+export function copyWasEdited(row: DeploymentRecord): boolean {
+  const stat = lstatOrNull(row.targetPath);
+  // Missing: rewriting loses nothing. A link or file: the engine refuses it on its own.
+  if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) return false;
+  return row.sourceHash === null || hashDir(row.targetPath) !== row.sourceHash;
+}
 
 export function samePath(a: string, b: string): boolean {
   return a === b || targetIdentity(a) === targetIdentity(b);

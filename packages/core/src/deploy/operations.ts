@@ -1,10 +1,12 @@
 import { join } from "node:path";
-import type { DeployMode, Skill, TargetConflict } from "@loadout/shared";
+import type { DeployMode, RemovedReason, Skill, TargetConflict } from "@loadout/shared";
 import type { ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { targetConflict } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
+import type { RemovedStore } from "../storage/removed";
 import { lstatOrNull } from "../util/fs";
+import { hashDir } from "../util/hash";
 import {
   type OwnershipPolicy,
   type TargetState,
@@ -14,7 +16,7 @@ import {
   usableMode,
   writeTarget,
 } from "./engine";
-import { isCurrent, policyFromRows, rowsAtPath, samePath } from "./evidence";
+import { copyWasEdited, isCurrent, policyFromRows, rowsAtPath, samePath } from "./evidence";
 
 export const REASON_OTHER_SKILL = "already holds a different skill's deployment";
 
@@ -57,7 +59,28 @@ function pairFor(skill: Skill, agent: ResolvedAgent, skillsDir = agent.skillsDir
 }
 
 /** The single-pair building blocks. Callers hold the library lock. */
-export function createDeployOperations(ctx: CoreContext, store: SkillStore): DeployOperations {
+export function createDeployOperations(
+  ctx: CoreContext,
+  store: SkillStore,
+  removed?: Pick<RemovedStore, "setAside">,
+): DeployOperations {
+  /**
+   * A copy edited inside the agent's folder is about to be overwritten or deleted: put it in
+   * Recently removed instead. True when it was moved away, so the path is free.
+   */
+  function setAsideEdited(
+    rows: DeploymentRecord[],
+    place: string,
+    reason: RemovedReason,
+    libraryHash: string | null,
+  ): boolean {
+    if (!removed) return false;
+    const edited = rows.find((row) => row.mode === "copy" && copyWasEdited(row));
+    // Already the library's content (a pull put it there): nothing of the user's to keep.
+    if (!edited || hashDir(edited.targetPath) === libraryHash) return false;
+    return removed.setAside(edited.targetPath, { place, reason }) !== null;
+  }
+
   function inspect(pair: DeployPair, forced?: OwnershipPolicy): TargetCheck {
     const { skill, targetPath } = pair;
     const rows = rowsAtPath(store.deployments(), targetPath);
@@ -75,7 +98,7 @@ export function createDeployOperations(ctx: CoreContext, store: SkillStore): Dep
    * The path is ours to remove only when no row of any skill or agent still points at it, and
    * only if it still looks like what `row` recorded. When in doubt the content stays.
    */
-  function releasePath(row: DeploymentRecord): boolean {
+  function releasePath(row: DeploymentRecord, place = row.agentKey): boolean {
     let survivors: DeploymentRecord[];
     try {
       survivors = rowsAtPath(store.deployments(), row.targetPath);
@@ -84,11 +107,13 @@ export function createDeployOperations(ctx: CoreContext, store: SkillStore): Dep
       return false;
     }
     if (survivors.length > 0) return false;
-    const removed = removeTarget(row.targetPath, row.mode);
-    if (!removed && lstatOrNull(row.targetPath)) {
+    const libraryHash = store.find(row.skillId)?.contentHash ?? null;
+    if (setAsideEdited([row], place, "deleted", libraryHash)) return true;
+    const gone = removeTarget(row.targetPath, row.mode);
+    if (!gone && lstatOrNull(row.targetPath)) {
       ctx.log.warn(`Kept ${row.targetPath}: it no longer matches its recorded ${row.mode}`);
     }
-    return removed;
+    return gone;
   }
 
   /** Agents sharing the folder must agree on what is there, or the path stops being provable. */
@@ -110,6 +135,7 @@ export function createDeployOperations(ctx: CoreContext, store: SkillStore): Dep
     if (check.current) {
       used = check.state === "link_to_source" ? "symlink" : "copy";
     } else {
+      setAsideEdited(check.rows, pair.agentName, "replaced", skill.contentHash);
       used = await writeTarget(skill.libraryPath, targetPath, wanted, check.policy);
       if (used !== wanted) ctx.log.warn(`Could not link ${targetPath}; copied the skill instead`);
     }
@@ -120,7 +146,7 @@ export function createDeployOperations(ctx: CoreContext, store: SkillStore): Dep
     if (check.current && recorded) return "unchanged";
     store.upsertDeployment(skill.id, agentKey, targetPath, used, skill.contentHash);
     // The agent's folder moved or the skill was renamed: the old spot is no longer wanted.
-    if (before && !recorded) releasePath(before);
+    if (before && !recorded) releasePath(before, pair.agentName);
     ctx.activity.record("deploy", skill.name, pair.agentName);
     return "written";
   }
@@ -128,9 +154,9 @@ export function createDeployOperations(ctx: CoreContext, store: SkillStore): Dep
   function undeployRow(row: DeploymentRecord, agentName = row.agentKey): boolean {
     const skillName = store.find(row.skillId)?.name ?? row.skillId;
     store.deleteDeployment(row.skillId, row.agentKey);
-    const removed = releasePath(row);
+    const released = releasePath(row, agentName);
     ctx.activity.record("undeploy", skillName, agentName);
-    return removed;
+    return released;
   }
 
   return { pairFor, inspect, deployPair, undeployRow };

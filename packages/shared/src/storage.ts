@@ -7,6 +7,7 @@ export const STORAGE_AREAS = [
   "skills",
   "database",
   "history",
+  "removed",
   "cache",
   "logs",
   "cli",
@@ -15,7 +16,7 @@ export const STORAGE_AREAS = [
 export type StorageArea = (typeof STORAGE_AREAS)[number];
 
 /** Areas that can be emptied from Settings without losing anything that is not rebuilt. */
-export const CLEARABLE_AREAS = ["history", "cache", "logs"] as const;
+export const CLEARABLE_AREAS = ["history", "removed", "cache", "logs"] as const;
 export type ClearableArea = (typeof CLEARABLE_AREAS)[number];
 
 export interface StorageEntry {
@@ -43,4 +44,41 @@ export interface RemoveAllDataOptions {
    * always removed, because they would point at nothing afterwards.
    */
   removeCopies: boolean;
+}
+
+/** Why a skill folder went to Recently removed. */
+export type RemovedReason = "replaced" | "deleted";
+
+/** Library folder that holds Recently removed. Stays on this computer, like editor history. */
+export const REMOVED_DIR_NAME = "removed";
+
+/** Days a removed folder is kept before it is deleted for good. */
+export const REMOVED_KEEP_DAYS = 30;
+
+/**
+ * A skill folder Loadout took out of an agent's or a project's folder, because the user replaced
+ * it with the library version or deleted it. Kept so it can be put back.
+ */
+export interface RemovedFolder {
+  id: string;
+  /** The folder's name where it lived. */
+  name: string;
+  originalPath: string;
+  /** Where it lived, in words: an agent ("Claude Code"), or a project and its agent. */
+  place: string;
+  reason: RemovedReason;
+  removedAt: number;
+  /** When it is deleted for good. */
+  expiresAt: number;
+  bytes: number;
+  /** Something else sits at `originalPath` now; restoring puts that aside first. */
+  occupied: boolean;
+  /** The folder it lived in is gone, so it cannot be put back. */
+  parentMissing: boolean;
+}
+
+export interface RestoreRemovedResult {
+  path: string;
+  /** What stood at the path and was put aside in its place; null when the path was free. */
+  displacedId: string | null;
 }

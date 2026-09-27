@@ -4,15 +4,17 @@ import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
+import type { RemovedStore } from "../storage/removed";
 import { canonicalPath, lstatOrNull, targetIdentity } from "../util/fs";
-import { hashDir } from "../util/hash";
 import { type BatchApply, createBatchApply } from "./batch";
-import { rowsAtPath, samePath } from "./evidence";
+import { copyWasEdited, rowsAtPath, samePath } from "./evidence";
 import { type DeployPair, createDeployOperations } from "./operations";
 
 export interface DeployServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
+  /** Where a copy edited in an agent's folder goes instead of being overwritten or deleted. */
+  removed?: Pick<RemovedStore, "setAside">;
 }
 
 /** Outcome of rewriting deployments we already own. Refusals are reported, never thrown. */
@@ -97,17 +99,9 @@ function sameEntry(a: string, b: string): boolean {
 
 const emptyReport = (): RedeployReport => ({ written: 0, conflicts: [], failed: [], kept: [] });
 
-/** The copy at the row's path differs from the content it was made from. */
-function copyWasEdited(row: DeploymentRecord): boolean {
-  const stat = lstatOrNull(row.targetPath);
-  // Missing: rewriting loses nothing. A link or file: the engine refuses it on its own.
-  if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) return false;
-  return row.sourceHash === null || hashDir(row.targetPath) !== row.sourceHash;
-}
-
 export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): DeployService {
   const { store, registry } = deps;
-  const ops = createDeployOperations(ctx, store);
+  const ops = createDeployOperations(ctx, store, deps.removed);
   const applyPairs = createBatchApply(ctx, { store, registry, ops });
 
   function requireAvailable(agentKey: string): ResolvedAgent {

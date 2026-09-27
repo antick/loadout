@@ -289,14 +289,29 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - The app notices changes made through the CLI, by an agent or by hand, and refreshes itself.
   That covers the library, agents' skills folders and every linked project's skills folders.
 
+### Recently removed
+
+- A skill folder the app takes out of an agent's or a project's folder on your word is kept, not
+  deleted: a copy replaced by the library version (Pull from library, Update project, Restore
+  library version, making other copies match), a local or broken folder you delete, a project copy
+  you delete, and a copy edited inside an agent's folder that is removed or overwritten.
+- The toast after such an action has **Undo**. Settings → Storage → **Recently removed** lists
+  each folder with where it came from, when and its size, with Restore, Show in file manager and
+  Delete for good, plus Delete all.
+- Restoring puts the folder back where it was. Whatever sits there now is put aside in turn,
+  unless it is exactly a library skill or a copy the app made, which is simply replaced. A link
+  deployment in the way is removed with its record. A folder whose parent is gone cannot be
+  restored and says so.
+- Links and empty folders are not kept: there is nothing in them to lose. Entries go after 30 days.
+
 ### Storage
 
 - Everything lives in one folder, `~/.loadout`: the library, the command-line tool and the app's
   own files (window size, encrypted GitHub sign-in, interface preferences, drafts, cache) in
   `~/.loadout/app`. Older versions kept the app's files in the OS app data folder; they are moved
   over once and the old folder is removed.
-- **Settings → Storage** shows each part with its path and size. Editor history, the download
-  cache, logs and the app's cache can be cleared; interface preferences reset and unsaved drafts
+- **Settings → Storage** shows each part with its path and size. Editor history, Recently removed,
+  the download cache, logs and the app's cache can be cleared; interface preferences reset and unsaved drafts
   discarded.
 - The library can be moved (the rest stays in `~/.loadout`). A move only goes into an empty
   folder, moves all or nothing, and can come back to `~/.loadout`.

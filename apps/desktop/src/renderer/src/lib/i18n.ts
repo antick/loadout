@@ -1,4 +1,4 @@
-import { APP_NAME, type LanguageSetting } from "@loadout/shared";
+import { APP_NAME, type LanguageSetting, REMOVED_KEEP_DAYS } from "@loadout/shared";
 import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "@/locales/en.json";
@@ -47,7 +47,10 @@ void i18n.use(initReactI18next).init({
   lng: FALLBACK_LANGUAGE,
   fallbackLng: FALLBACK_LANGUAGE,
   // `{{app}}` is available in every string, so the product name is never typed into copy.
-  interpolation: { escapeValue: false, defaultVariables: { app: APP_NAME } },
+  interpolation: {
+    escapeValue: false,
+    defaultVariables: { app: APP_NAME, removedDays: REMOVED_KEEP_DAYS },
+  },
   returnNull: false,
 });
 
