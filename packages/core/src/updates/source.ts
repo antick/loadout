@@ -78,7 +78,8 @@ export function remoteTargetOf(skill: Skill): RemoteTarget {
   if (skill.sourceType === "marketplace") {
     const [source, locator] = splitMarketRef(skill.sourceRef ?? "");
     return {
-      url: skill.sourceUrl ?? marketSourceToUrl(source),
+      // A stored URL may come from another device's backup: checked like a typed one.
+      url: skill.sourceUrl ? validateGitInput(skill.sourceUrl) : marketSourceToUrl(source),
       branch: skill.sourceBranch,
       subpath: skill.sourceSubpath,
       locator,

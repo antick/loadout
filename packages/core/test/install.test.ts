@@ -152,6 +152,20 @@ describe("install from a folder", () => {
   });
 });
 
+describe("case-only name matches", () => {
+  it("gives one folder one skill on a disk that ignores letter case", async () => {
+    const probe = join(world.root, "CaseProbe");
+    mkdirSync(probe);
+    // A disk that tells letter case apart keeps both folders apart anyway: nothing to test.
+    if (!existsSync(join(world.root, "caseprobe"))) return;
+    const source = makeSkill(sources, "pdf");
+    const first = await install.api.fromPath(source);
+    const second = await install.api.fromPath(source, "PDF");
+    expect(second.libraryPath).toBe(first.libraryPath);
+    expect(world.store.list()).toHaveLength(1);
+  });
+});
+
 describe("install from an archive", () => {
   it("ignores entries that try to leave the unpack folder", async () => {
     const zip = writeZip(join(sources, "evil.zip"), {

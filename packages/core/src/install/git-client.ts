@@ -376,7 +376,8 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
   ): Promise<{ partial: boolean }> {
     const tree = await applyWorkingTree(run, slot, patterns, signal);
     if (tree.failure) {
-      ctx.log.warn(`Checking out every file of ${redactUrl(url)}: ${tree.failure}`);
+      // Git's own message can quote a URL a user rewrite (`insteadOf`) filled with a token.
+      ctx.log.warn(`Checking out every file of ${redactUrl(url)}: ${redactUrl(tree.failure)}`);
     }
     if (tree.reset.code !== 0) {
       throw gitFailure(`Failed to fetch the files of ${redactUrl(url)}`, tree.reset.stderr);

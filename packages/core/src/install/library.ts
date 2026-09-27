@@ -4,7 +4,14 @@ import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
-import { canonicalPath, isDirectory, isInside, lstatOrNull, replaceDirAtomic } from "../util/fs";
+import {
+  canonicalPath,
+  isDirectory,
+  isInside,
+  lstatOrNull,
+  readDirSafe,
+  replaceDirAtomic,
+} from "../util/fs";
 import { hashDir } from "../util/hash";
 import { firstFreeName, sanitizeSkillName } from "../util/names";
 import { redactUrl } from "./git-source";
@@ -70,10 +77,13 @@ export async function installIntoLibrary(
         replaced?.libraryPath ??
         join(
           skillsDir,
-          firstFreeName(name, (candidate) => {
-            const path = join(skillsDir, candidate);
-            return lstatOrNull(path) === null || hashDir(path) === sourceHash;
-          }),
+          onDiskName(
+            skillsDir,
+            firstFreeName(name, (candidate) => {
+              const path = join(skillsDir, candidate);
+              return lstatOrNull(path) === null || hashDir(path) === sourceHash;
+            }),
+          ),
         );
       const owner = replaced ?? store.findByLibraryPath(destination);
       if (owner && request.keepExisting) return { skill: owner, written: false };
@@ -113,6 +123,24 @@ export async function installIntoLibrary(
     ctx.activity.record(kind, name, errorMessage(error), false);
     throw error;
   }
+}
+
+/**
+ * The folder's own name when one exists under another letter case: on a case-insensitive disk
+ * `PDF` is the folder `pdf`, and the database must record the one path that is really there, or
+ * two skills end up owning one folder.
+ */
+function onDiskName(dir: string, name: string): string {
+  const wanted = lstatOrNull(join(dir, name));
+  if (!wanted) return name;
+  const entries = readDirSafe(dir).map((entry) => entry.name);
+  if (entries.includes(name)) return name;
+  const same = entries.find((entry) => {
+    if (entry.toLowerCase() !== name.toLowerCase()) return false;
+    const found = lstatOrNull(join(dir, entry));
+    return found !== null && found.ino === wanted.ino && found.dev === wanted.dev;
+  });
+  return same ?? name;
 }
 
 function describeSource(record: InstallRecord): string {
