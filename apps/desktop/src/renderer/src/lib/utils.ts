@@ -32,3 +32,17 @@ export function moveId(ids: readonly string[], id: string, step: -1 | 1): string
   next.splice(to, 0, id);
   return next;
 }
+
+/**
+ * A stable React key per item from a label that may repeat: `name`, `name#2`, `name#3`. For lists
+ * whose items have no id of their own (untrusted text can repeat a label).
+ */
+export function occurrenceKeys<T>(items: readonly T[], label: (item: T) => string): string[] {
+  const seen = new Map<string, number>();
+  return items.map((item) => {
+    const base = label(item);
+    const count = (seen.get(base) ?? 0) + 1;
+    seen.set(base, count);
+    return count === 1 ? base : `${base}#${count}`;
+  });
+}

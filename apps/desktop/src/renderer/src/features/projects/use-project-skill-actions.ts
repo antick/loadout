@@ -59,8 +59,10 @@ export function useProjectSkillActions(
   );
   const { mutate: pull } = usePullFromLibrary();
   const { mutate: setEnabled } = useSetProjectSkillEnabled();
-  const { mutate: exportSkill } = useExportSkill();
-  const { mutate: deleteSkill } = useDeleteProjectSkill();
+  // `mutateAsync`, not per-call callbacks: TanStack Query only calls those for the latest call of
+  // a mutation, so a quick second toggle would leave the first switch spinning for good.
+  const { mutateAsync: exportSkill } = useExportSkill();
+  const { mutateAsync: deleteSkill } = useDeleteProjectSkill();
   const [pendingTargets, setPendingTargets] = useState<ReadonlySet<string>>(new Set());
   const projectId = project.id;
 
@@ -166,7 +168,11 @@ export function useProjectSkillActions(
             confirmLabel: t("common.delete"),
             destructive: true,
           });
-          if (ok) deleteSkill(ref, { onSuccess: () => onGone?.(group) });
+          if (ok) {
+            void deleteSkill(ref)
+              .then(() => onGone?.(group))
+              .catch(() => undefined);
+          }
         },
       });
       return actions;
@@ -188,7 +194,9 @@ export function useProjectSkillActions(
   const toggleTarget = useCallback(
     async (group: ProjectSkillGroup, target: ProjectTarget): Promise<void> => {
       const pendingId = pendingTargetId(group.id, target.key);
-      const settle = { onSettled: () => markPending(pendingId, false) };
+      // Failures are toasted by the mutation itself; here only the spinner ends.
+      const settle = (work: Promise<unknown>): Promise<unknown> =>
+        work.catch(() => undefined).finally(() => markPending(pendingId, false));
       const variant = variantFor(group, target.key);
 
       if (!variant) {
@@ -203,15 +211,14 @@ export function useProjectSkillActions(
           return;
         }
         markPending(pendingId, true);
-        exportSkill(
-          {
+        void settle(
+          exportSkill({
             projectId,
             skillId: group.librarySkillId,
             name: group.name,
             agentKeys: [target.key],
             targetName: target.displayName,
-          },
-          settle,
+          }),
         );
         return;
       }
@@ -236,20 +243,16 @@ export function useProjectSkillActions(
         if (!ok) return;
       }
       markPending(pendingId, true);
-      deleteSkill(
-        {
+      void settle(
+        deleteSkill({
           projectId,
           relativePath: variant.relativePath,
           name: group.name,
           agentKey: target.key,
           targetName: target.displayName,
-        },
-        {
-          ...settle,
-          onSuccess: () => {
-            if (last) onGone?.(group);
-          },
-        },
+        }).then(() => {
+          if (last) onGone?.(group);
+        }),
       );
     },
     [t, confirm, exportSkill, deleteSkill, markPending, projectId, onGone],

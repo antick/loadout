@@ -51,7 +51,11 @@ export function GithubConnectPanel({
     if (!secret || !nameValid) return;
     // The token leaves this component's memory before the request is even answered.
     setToken("");
-    connect.mutate({ token: secret, repoName: name }, { onSuccess: onConnected });
+    connect.mutate(
+      { token: secret, repoName: name },
+      // `reset` lets go of the input, token included; errors are toasted by the mutation.
+      { onSuccess: onConnected, onSettled: () => connect.reset() },
+    );
   };
 
   return (

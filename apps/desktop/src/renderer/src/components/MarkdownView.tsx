@@ -1,17 +1,35 @@
 import { ImageOff } from "lucide-react";
 import { type ComponentProps, type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown, { type Components } from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+import ReactMarkdown, { type Components, defaultUrlTransform } from "react-markdown";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { HighlightedCode } from "@/components/HighlightedCode";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { parseFrontmatter } from "@/lib/frontmatter";
-import { cn } from "@/lib/utils";
+import { cn, occurrenceKeys } from "@/lib/utils";
 
 const EXTERNAL_LINK_PATTERN = /^https?:\/\//i;
 const FENCE_LANGUAGE_PATTERN = /(?:^|\s)language-(\S+)/;
 const TRAILING_NEWLINE_PATTERN = /\n$/;
+/** A scheme (`https:`, `file:`), or a protocol-relative `//host`: anything not inside the skill. */
+const NOT_LOCAL_SOURCE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|\\\\)/i;
+const PROTOCOL_RELATIVE = /^\/\//;
+const EMBEDDED_IMAGE = /^data:image\//i;
+
+/** The default URL rules, except that an image may be embedded as data. Links never may. */
+function urlTransform(url: string, key: string): string {
+  return key === "src" && EMBEDDED_IMAGE.test(url) ? url : defaultUrlTransform(url);
+}
+
+/** The default safe schema, plus images embedded as data (the default drops them). */
+const SANITIZE_SCHEMA = {
+  ...defaultSchema,
+  protocols: {
+    ...defaultSchema.protocols,
+    src: [...(defaultSchema.protocols?.src ?? []), "data"],
+  },
+};
 
 /** Links never navigate the app window: web links open in the browser, the rest do nothing. */
 function MarkdownLink({ href, children, ...props }: ComponentProps<"a">): ReactNode {
@@ -38,11 +56,14 @@ function MarkdownLink({ href, children, ...props }: ComponentProps<"a">): ReactN
 function MarkdownImage({ src, alt, ...props }: ComponentProps<"img">): ReactNode {
   const { t } = useTranslation();
   const source = typeof src === "string" ? src : "";
-  if (!EXTERNAL_LINK_PATTERN.test(source)) {
+  if (EMBEDDED_IMAGE.test(source) || !NOT_LOCAL_SOURCE.test(source)) {
     return <img alt={alt ?? ""} src={source} className="my-3 max-w-full rounded-md" {...props} />;
   }
+  // `//host/x.png` would be fetched (on Windows a `file://` page could even reach out over SMB).
+  const web = PROTOCOL_RELATIVE.test(source) ? `https:${source}` : source;
+  if (!EXTERNAL_LINK_PATTERN.test(web)) return <span>{alt ?? ""}</span>;
   return (
-    <MarkdownLink href={source} title={source}>
+    <MarkdownLink href={web} title={web}>
       <ImageOff className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
       {alt ? t("markdown.remoteImageNamed", { alt }) : t("markdown.remoteImage")}
     </MarkdownLink>
@@ -150,13 +171,15 @@ export function MarkdownView({
   className,
 }: MarkdownViewProps): ReactNode {
   const { entries, body } = useMemo(() => parseFrontmatter(content), [content]);
+  const entryKeys = useMemo(() => occurrenceKeys(entries, (entry) => entry.key), [entries]);
 
   return (
     <div className={cn("markdown-body text-sm break-words", className)}>
       {showFrontmatter && entries.length > 0 ? (
         <dl className="mb-5 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
-          {entries.map((entry) => (
-            <div key={entry.key} className="contents">
+          {entries.map((entry, index) => (
+            // A hand-written header can repeat a key.
+            <div key={entryKeys[index]} className="contents">
               <dt className="font-mono text-muted-foreground">{entry.key}</dt>
               <dd className="min-w-0">{entry.value}</dd>
             </div>
@@ -165,7 +188,8 @@ export function MarkdownView({
       ) : null}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSanitize]}
+        rehypePlugins={[[rehypeSanitize, SANITIZE_SCHEMA]]}
+        urlTransform={urlTransform}
         components={BASE_COMPONENTS}
       >
         {body}

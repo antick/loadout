@@ -164,6 +164,19 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     text: string,
     wanted: readonly string[] = [],
   ): Promise<GitPreview> {
+    try {
+      return await previewAnySource(key, text, wanted);
+    } finally {
+      // Found, failed or cancelled: the status bar stops showing the download either way.
+      emitProgress(ctx, key, "done");
+    }
+  }
+
+  async function previewAnySource(
+    key: string,
+    text: string,
+    wanted: readonly string[] = [],
+  ): Promise<GitPreview> {
     const link = archiveLink(text);
     if (link) return web.archiveLink(key, link, wanted);
     const file = skillFileLink(text);
@@ -238,6 +251,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       const key = `${source.trim()}/${id}`;
       const handle = cancels.register(key);
       let cleanup: (() => Promise<void>) | null = null;
+      let installedName: string | null = null;
       try {
         emitProgress(ctx, key, "cloning");
         const checkout = await git.checkout(cloneUrl, {
@@ -271,11 +285,12 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
           },
           { ...options, progressKey: key },
         );
-        emitProgress(ctx, key, "done", { name: skill.name });
+        installedName = skill.name;
         return skill;
       } finally {
         await cleanup?.();
         handle.done();
+        emitProgress(ctx, key, "done", installedName ? { name: installedName } : {});
       }
     },
 

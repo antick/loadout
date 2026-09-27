@@ -69,6 +69,17 @@ describe("check", () => {
     expect((await world.updates.api.check(pdf.id, true)).updateStatus).toBe("unknown");
   });
 
+  it("clears the progress line when an update fails", async () => {
+    const pdf = await world.installFromGit("pdf");
+    const broken = world.withGit({
+      lsRemote: async () => {
+        throw new Error("network down");
+      },
+    });
+    await expect(broken.api.update(pdf.id)).rejects.toThrow();
+    expect(world.install.progressFor(updateCancelKey(pdf.id)).at(-1)).toBe("done");
+  });
+
   it("records a failed lookup and keeps the last revision it saw", async () => {
     const pdf = await world.installFromGit("pdf");
     const head = pdf.remoteRevision;

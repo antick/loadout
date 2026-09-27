@@ -114,7 +114,7 @@ describe("git preview and confirm", () => {
       { relPath: "docx", name: "docx", description: "Test skill docx", alreadyInstalled: false },
       { relPath: "pdf", name: "pdf", description: "Test skill pdf", alreadyInstalled: false },
     ]);
-    expect(install.progressFor(remote)).toEqual(["cloning", "scanning"]);
+    expect(install.progressFor(remote)).toEqual(["cloning", "scanning", "done"]);
     expect(leftoverCheckouts(tmp)).toHaveLength(1);
 
     const installed = await install.api.confirmGit(preview.previewId, [
@@ -138,7 +138,7 @@ describe("git preview and confirm", () => {
       "echo pdf",
     );
     expect(existsSync(join(skillsDirOf(world), "My PDF", ".git"))).toBe(false);
-    expect(install.progressFor(remote).slice(2)).toEqual(["installing", "installing", "done"]);
+    expect(install.progressFor(remote).slice(3)).toEqual(["installing", "installing", "done"]);
     expect(leftoverCheckouts(tmp)).toEqual([]);
 
     // The session is spent: the same id can never install twice.
@@ -186,7 +186,12 @@ describe("git preview and confirm", () => {
     for (const url of [remote, "ftp://example.com/x.git", "--upload-pack=x", ""]) {
       await expect(strict.api.previewGit(url)).rejects.toMatchObject({ code: "INVALID_INPUT" });
     }
-    expect(strict.events).toEqual([]);
+    // Nothing started: the only word is the closing "done" that clears the status bar.
+    expect(
+      strict.events.filter(
+        (entry) => (entry.payload as { phase?: string } | undefined)?.phase !== "done",
+      ),
+    ).toEqual([]);
     expect(cacheSlots()).toEqual([]);
   });
 

@@ -296,6 +296,8 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       throw error;
     } finally {
       handle.done();
+      // Whatever happened, the status bar must stop saying "Cloning…" for this skill.
+      ctx.emit("install:progress", { key, phase: "done", name: skill.name });
     }
   }
 

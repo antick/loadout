@@ -128,9 +128,10 @@ export function createPreviewSessions(
           safety?.remember(skill, reportOf.get(dir) ?? null);
           installed.push(skill);
         }
-        emitProgress(ctx, session.key, "done");
         return installed;
       } finally {
+        // Installed or failed halfway, the status bar stops showing the install.
+        emitProgress(ctx, session.key, "done");
         await session.cleanup();
       }
     },

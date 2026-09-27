@@ -200,6 +200,9 @@ export function useGithubConnect(): UseMutationResult<
   return useMutation({
     mutationFn: ({ token, repoName }: GithubTokenInput) =>
       api.backup.githubConnect(token, repoName),
+    // The token is part of this mutation's input: drop the finished mutation from the cache at
+    // once instead of keeping it for minutes.
+    gcTime: 0,
     onError: (error) => toastBackupError(error, t),
     onSettled: () => refresh(queryClient, keys.backup.root),
   });

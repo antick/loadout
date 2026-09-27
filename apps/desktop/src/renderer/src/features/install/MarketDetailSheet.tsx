@@ -39,6 +39,7 @@ import { useOpenExternal } from "@/hooks/mutations/app";
 import { useAgents } from "@/hooks/queries/agents";
 import { useMarketDetail } from "@/hooks/queries/install";
 import { useSkills } from "@/hooks/queries/skills";
+import { occurrenceKeys } from "@/lib/utils";
 
 const AUDIT_TONES: Record<MarketAuditStatus, StatusTone> = {
   pass: "success",
@@ -110,6 +111,7 @@ function AuditsSection({
   loading: boolean;
 }): ReactNode {
   const { t } = useTranslation();
+  const auditKeys = occurrenceKeys(audits ?? [], (audit) => audit.provider);
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -135,8 +137,9 @@ function AuditsSection({
         </p>
       ) : (
         <ul className="-mx-2 flex flex-col">
-          {audits.map((audit) => (
-            <AuditRow key={audit.provider} audit={audit} />
+          {audits.map((audit, index) => (
+            // One auditor can report twice.
+            <AuditRow key={auditKeys[index]} audit={audit} />
           ))}
         </ul>
       )}
