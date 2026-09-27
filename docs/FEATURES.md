@@ -288,7 +288,10 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   changes are checked before they are committed, so removing a match still helps, and the commits
   about to be pushed are read from git, so a key committed earlier and deleted since is caught
   too. A match holds the push back: the Backup page lists each one masked, with its file and line,
-  **Edit** and **Back up anyway**, and automatic backup reports it. The local save on quit skips
+  **Edit** and **Back up anyway**, and automatic backup reports it. When a key is gone from the
+  files but still in backups this computer saved and never pushed, **Clean up history and back
+  up** folds those into one holding only today's files, so the key is never sent. Merge commits
+  are checked too, ignoring whatever the remote already has. The local save on quit skips
   a change that holds a match. Documentation placeholders pass. A backup with no remote is not
   checked, since nothing leaves the computer. From the command line, `git sync` lists the findings
   and `--allow-secrets` backs up anyway.

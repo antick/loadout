@@ -258,3 +258,18 @@ export function useAllowSecretsAndSync(): UseMutationResult<SyncOutcome, unknown
     onSettled: () => invalidateAfterBackup(queryClient),
   });
 }
+
+/** Fold unpushed commits into today's files (a removed key leaves the history), then back up. */
+export function useCleanUpAndSync(): UseMutationResult<SyncOutcome, unknown, void> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: async () => {
+      await api.backup.cleanUpUnpushed();
+      return api.backup.sync();
+    },
+    onSuccess: (outcome) => toastSyncOutcome(outcome, t),
+    onError: (error) => toastBackupError(error, t),
+    onSettled: () => invalidateAfterBackup(queryClient),
+  });
+}

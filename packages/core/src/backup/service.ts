@@ -10,6 +10,7 @@ import { writeDeviceName } from "./device";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME } from "./env";
 import { createGithubService } from "./github";
 import { assertRepo, commitLibrary, currentBranch, isRepo, originUrl } from "./repo";
+import { cleanUpUnpushed } from "./history-cleanup";
 import { allowSecrets, scanForPush, scanUncommittedChanges } from "./secrets";
 import { buildSizeReport, refreshIgnoreFile } from "./size";
 import { DEFAULT_SNAPSHOT_LIMIT, listSnapshots, restoreSnapshot, tagSnapshot } from "./snapshots";
@@ -140,6 +141,8 @@ export function createBackupOperations(
       const branch = await currentBranch(env);
       return branch ? scanForPush(env, branch) : [];
     },
+
+    cleanUpUnpushed: () => cleanUpUnpushed(env),
 
     allowSecrets: async (ids) => {
       allowSecrets(env, ids);

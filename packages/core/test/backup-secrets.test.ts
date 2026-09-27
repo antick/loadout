@@ -1,7 +1,14 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findSecrets } from "../src/backup/secrets";
-import { type Device, createBareRemote, createDevice, isolateGit, rawGit } from "./backup-world";
+import {
+  type Device,
+  createBareRemote,
+  createDevice,
+  isolateGit,
+  joinRemote,
+  rawGit,
+} from "./backup-world";
 import { tempDir, writeFile } from "./helpers";
 
 // Built at run time, so this file itself never holds anything that looks like a real key.
@@ -76,6 +83,14 @@ describe("secret patterns", () => {
   });
 });
 
+/** Rewrite the leaky skill's document without the token. */
+function removeKey(target: Device): void {
+  writeFile(
+    join(target.ctx.paths.skillsDir, "leaky", "SKILL.md"),
+    "---\nname: leaky\ndescription: Test skill leaky\n---\n\nThe token lives in the keychain now.\n",
+  );
+}
+
 describe("backup push check", () => {
   let temp: ReturnType<typeof tempDir>;
   let device: Device | null = null;
@@ -125,7 +140,7 @@ describe("backup push check", () => {
     // Backed up locally while there was no remote: the key is now in the history.
     a.addSkill("leaky", { body: `Use ${GITHUB_TOKEN} to call the API.` });
     expect(await a.api.sync()).toMatchObject({ pushed: false });
-    a.editSkill("leaky", "The token lives in the keychain now.");
+    removeKey(a);
 
     await a.api.setRemote(remote);
     const findings = await a.api.secretFindings();
@@ -135,6 +150,54 @@ describe("backup push check", () => {
 
     await a.api.allowSecrets(findings.map((finding) => finding.id));
     expect(await a.api.sync()).toMatchObject({ pushed: true });
+  });
+
+  it("cleans a removed key out of unpushed history, so the push never carries it", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    a.addSkill("clean");
+    await a.api.init();
+    await a.api.setRemote(remote);
+    await a.api.sync();
+    // A snapshot commits locally without the key check: the key is now in unpushed history.
+    a.addSkill("leaky", { body: `Use ${GITHUB_TOKEN} to call the API.` });
+    await a.api.createSnapshot();
+
+    // Still in the file: cleaning would only commit it again.
+    await expect(a.api.cleanUpUnpushed()).rejects.toMatchObject({ code: "SECRETS_FOUND" });
+
+    removeKey(a);
+    await a.api.cleanUpUnpushed();
+    expect(await a.api.secretFindings()).toEqual([]);
+    expect(await a.api.sync()).toMatchObject({ pushed: true });
+    expect(rawGit(remote, "log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
+    expect(rawGit(remote, "ls-tree", "-r", "--name-only", "main")).toContain("leaky/SKILL.md");
+  });
+
+  it("never flags what another computer already backed up, even when a merge brings it in", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    a.addSkill("clean");
+    await a.api.init();
+    await a.api.setRemote(remote);
+    await a.api.sync();
+
+    const b = await joinRemote(temp.dir, remote, "B");
+    try {
+      b.addSkill("shared-key", { body: `Use ${GITHUB_TOKEN} here.` });
+      const held = await b.api.secretFindings();
+      await b.api.allowSecrets(held.map((finding) => finding.id));
+      expect(await b.api.sync()).toMatchObject({ pushed: true });
+    } finally {
+      b.close();
+    }
+
+    // A changes something of its own, so its sync merges B's work before pushing.
+    a.addSkill("mine");
+    expect(await a.api.sync()).toMatchObject({ pushed: true });
+    expect(await a.api.secretFindings()).toEqual([]);
   });
 
   it("checks nothing without a remote: a local backup never leaves the computer", async () => {

@@ -349,6 +349,11 @@ export interface BackupApi {
   secretFindings(): Promise<SecretFinding[]>;
   /** "Back up anyway": stop holding the backup back for these findings (ids from above). */
   allowSecrets(ids: string[]): Promise<void>;
+  /**
+   * Fold every commit not pushed yet into one holding only today's files, so a key removed from
+   * the files leaves the history the next push sends. Refuses while a key is still in the files.
+   */
+  cleanUpUnpushed(): Promise<void>;
   deviceName(): Promise<string>;
   setDeviceName(name: string): Promise<string>;
   githubConnect(token: string, repoName: string): Promise<GithubConnectResult>;

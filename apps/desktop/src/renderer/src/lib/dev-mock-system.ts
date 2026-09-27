@@ -265,6 +265,9 @@ export function createSystemMockHandlers(
     },
     "backup.secretFindings": (): SecretFinding[] =>
       heldBack.filter((finding) => !allowedSecrets.has(finding.id)),
+    "backup.cleanUpUnpushed": () => {
+      heldBack.splice(0, heldBack.length);
+    },
     "backup.allowSecrets": (ids: string[]) => {
       for (const id of ids) allowedSecrets.add(id);
     },

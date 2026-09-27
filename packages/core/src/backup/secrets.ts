@@ -112,11 +112,36 @@ async function scanCommitted(env: BackupEnv, branch: string): Promise<SecretFind
     "--format=",
     range,
   ]);
+  // Merge commits show no changes in that log: what a merge brings in, compared with our side,
+  // is read separately.
+  const merges = (await required(env, ["log", "--merges", "--format=%H", range]))
+    .split("\n")
+    .filter(Boolean);
+  const mergeRaw: string[] = [];
+  for (const merge of merges) {
+    mergeRaw.push(
+      await required(env, [
+        "diff-tree",
+        "-r",
+        "-z",
+        "--no-renames",
+        "--no-abbrev",
+        "--diff-filter=AMT",
+        `${merge}^1`,
+        merge,
+      ]),
+    );
+  }
+  // Whatever the remote already holds is on it already: pushing it again publishes nothing new,
+  // and a key another computer allowed is never flagged here again.
+  const onRemote = upstream ? await blobsOf(env, upstream) : new Set<string>();
   const blobs = new Map<string, string>();
-  for (const [, , mode, , blob, , file] of raw.matchAll(RAW_RECORD)) {
-    if (!mode || !blob || !file || !FILE_MODES.has(mode)) continue;
-    if (file.startsWith(`${env.metadataName}/`)) continue;
-    blobs.set(`${blob}\0${file}`, blob);
+  for (const text of [raw, ...mergeRaw]) {
+    for (const [, , mode, , blob, , file] of text.matchAll(RAW_RECORD)) {
+      if (!mode || !blob || !file || !FILE_MODES.has(mode) || onRemote.has(blob)) continue;
+      if (file.startsWith(`${env.metadataName}/`)) continue;
+      blobs.set(`${blob}\0${file}`, blob);
+    }
   }
   const findings: SecretFinding[] = [];
   for (const [key, blob] of blobs) {
@@ -130,19 +155,34 @@ async function scanCommitted(env: BackupEnv, branch: string): Promise<SecretFind
   return findings;
 }
 
-/** Files not committed yet: changed tracked files and new files git does not ignore. */
-async function scanUncommitted(env: BackupEnv): Promise<SecretFinding[]> {
-  const head = await resolveCommit(env, "HEAD");
-  const changed = head
-    ? await required(env, [
-        "diff",
-        "-z",
-        "--name-only",
-        "--no-renames",
-        "--diff-filter=AMT",
-        "HEAD",
-      ])
-    : "";
+/** Every file content (blob id) in a commit's tree. */
+async function blobsOf(env: BackupEnv, commit: string): Promise<Set<string>> {
+  const listing = await required(env, ["ls-tree", "-r", "-z", "--full-tree", commit]);
+  const ids = new Set<string>();
+  for (const entry of listing.split("\0")) {
+    const id = entry.split("\t")[0]?.split(" ")[2];
+    if (id) ids.add(id);
+  }
+  return ids;
+}
+
+/** Git's id of the empty tree: the base when the remote has nothing of ours yet. */
+const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+
+/**
+ * Files on disk that differ from `base` (a commit; null for "nothing yet"), plus new files git
+ * does not ignore. With HEAD: what is not committed yet. With the remote's state: everything the
+ * files would add to it.
+ */
+async function scanFilesSince(env: BackupEnv, base: string | null): Promise<SecretFinding[]> {
+  const changed = await required(env, [
+    "diff",
+    "-z",
+    "--name-only",
+    "--no-renames",
+    "--diff-filter=AMT",
+    base ?? EMPTY_TREE,
+  ]);
   const untracked = await required(env, ["ls-files", "-z", "--others", "--exclude-standard"]);
   const files = new Set([...changed.split("\0"), ...untracked.split("\0")].filter(Boolean));
   const findings: SecretFinding[] = [];
@@ -155,6 +195,17 @@ async function scanUncommitted(env: BackupEnv): Promise<SecretFinding[]> {
     if (text !== null) findings.push(...findSecrets(file, path, text));
   }
   return findings;
+}
+
+/** Files not committed yet: changed tracked files and new files git does not ignore. */
+async function scanUncommitted(env: BackupEnv): Promise<SecretFinding[]> {
+  return scanFilesSince(env, await resolveCommit(env, "HEAD"));
+}
+
+/** What today's files would add to the remote, committed or not, minus the allowed findings. */
+export async function scanCurrentFiles(env: BackupEnv, branch: string): Promise<SecretFinding[]> {
+  const upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+  return notAllowed(env, await scanFilesSince(env, upstream));
 }
 
 function notAllowed(env: BackupEnv, findings: SecretFinding[]): SecretFinding[] {

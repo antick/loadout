@@ -9,7 +9,7 @@ import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useRevealPath } from "@/hooks/mutations/app";
-import { useAllowSecretsAndSync } from "@/hooks/mutations/backup-page";
+import { useAllowSecretsAndSync, useCleanUpAndSync } from "@/hooks/mutations/backup-page";
 import { useBackupSecrets } from "@/hooks/queries/backup-page";
 
 export interface HeldBackSecretsProps {
@@ -27,6 +27,7 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
   const confirm = useConfirm();
   const findings = useBackupSecrets(enabled);
   const allow = useAllowSecretsAndSync();
+  const cleanUp = useCleanUpAndSync();
   const reveal = useRevealPath();
   const list = findings.data ?? [];
   if (!enabled || list.length === 0) return null;
@@ -34,6 +35,17 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
   const skillFor = (finding: SecretFinding): Skill | undefined => {
     const dir = finding.file.split("/")[0];
     return skills.find((skill) => skill.dirName === dir);
+  };
+
+  const inHistoryOnly = list.every((finding) => finding.committed);
+
+  const cleanUpHistory = async (): Promise<void> => {
+    const ok = await confirm({
+      title: t("backupPage.secrets.cleanUpTitle"),
+      description: t("backupPage.secrets.cleanUpBody"),
+      confirmLabel: t("backupPage.secrets.cleanUp"),
+    });
+    if (ok) cleanUp.mutate();
   };
 
   const backUpAnyway = async (): Promise<void> => {
@@ -100,14 +112,18 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
       </ul>
       <div className="flex flex-wrap items-center justify-end gap-3">
         <p className="min-w-0 flex-1 text-xs text-muted-foreground">
-          {list.some((finding) => finding.committed)
-            ? t("backupPage.secrets.historyHint")
-            : t("backupPage.secrets.hint")}
+          {inHistoryOnly ? t("backupPage.secrets.historyHint") : t("backupPage.secrets.hint")}
         </p>
+        {inHistoryOnly ? (
+          <Button size="sm" disabled={cleanUp.isPending} onClick={() => void cleanUpHistory()}>
+            {cleanUp.isPending ? <Spinner /> : null}
+            {t("backupPage.secrets.cleanUp")}
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           size="sm"
-          disabled={allow.isPending}
+          disabled={allow.isPending || cleanUp.isPending}
           onClick={() => void backUpAnyway()}
         >
           {allow.isPending ? <Spinner /> : null}
