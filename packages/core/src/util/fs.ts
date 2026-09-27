@@ -160,13 +160,23 @@ export interface MoveOptions {
   onLeftover?: (error: unknown) => void;
 }
 
-/** Move one entry, by rename when possible and by copy across disks. Keeps links as links. */
+/**
+ * Move one entry, by rename when possible and by copy across disks. Keeps links as links. Never
+ * copies into something already at `to`: that rename error is thrown as it is. A copy that fails
+ * halfway is removed again, so the source stays the one whole copy.
+ */
 export function moveEntrySync(from: string, to: string, options: MoveOptions = {}): void {
   try {
     renameSync(from, to);
     return;
-  } catch {
+  } catch (error) {
+    if (lstatOrNull(to)) throw error;
+  }
+  try {
     cpSync(from, to, { recursive: true, verbatimSymlinks: true });
+  } catch (error) {
+    removePathSync(to);
+    throw error;
   }
   try {
     removePathSync(from);
