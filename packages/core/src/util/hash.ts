@@ -120,3 +120,18 @@ export function newestContentMtime(root: string): number | null {
 export function sha256Hex(text: string): string {
   return createHash("sha256").update(text).digest("hex");
 }
+
+/** SHA-256 of every content file, by `/` separated path. */
+export function fileDigests(root: string): Record<string, string> {
+  const digests: Record<string, string> = {};
+  for (const file of listContentFiles(root)) {
+    try {
+      digests[file.relativePath] = createHash("sha256")
+        .update(readFileSync(file.absolutePath))
+        .digest("hex");
+    } catch {
+      // Unreadable now: it counts as changed later, which only ever asks more, never less.
+    }
+  }
+  return digests;
+}

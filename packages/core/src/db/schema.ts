@@ -121,4 +121,10 @@ export const MIGRATIONS: readonly string[] = [
   -- Files edited in the app since the skill last came from its source: a JSON array of paths.
   ALTER TABLE skills ADD COLUMN edited_files TEXT;
   `,
+  `
+  -- What the skill held right after it last came from its source: the content hash, and a JSON
+  -- object of file path to SHA-256. A later difference is an edit, made in the app or not.
+  ALTER TABLE skills ADD COLUMN installed_hash TEXT;
+  ALTER TABLE skills ADD COLUMN installed_files TEXT;
+  `,
 ];

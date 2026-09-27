@@ -105,7 +105,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     removed,
   });
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
-  const updates = createUpdatesService(ctx, { store, install, deploy, safety });
+  const updates = createUpdatesService(ctx, { store, install, deploy, safety, removed });
   const presets = createPresetsService(ctx, { store, registry, deploy });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
   const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });

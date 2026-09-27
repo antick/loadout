@@ -4,6 +4,7 @@ import { MARKETPLACE_NAME, type Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
 import { LIBRARY_LOCATION, MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates";
+import { hashDir } from "../src/util/hash";
 import { makeSkill, writeFile } from "./helpers";
 import { commitAll, leftoverCheckouts, writeZip } from "./install-fixtures";
 import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
@@ -61,6 +62,15 @@ describe("check of local sources", () => {
     expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("up_to_date");
   });
 
+  it("does not take an edit of the library copy for a change of the source", async () => {
+    const skill = await installLocal();
+    // Edited in another editor: the app never saw it.
+    writeFile(join(skill.libraryPath, "scripts", "run.sh"), "echo mine\n");
+    expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("up_to_date");
+    writeFile(join(sourceDir, "notes", "old.md"), "new upstream notes\n");
+    expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("update_available");
+  });
+
   it("reports a vanished source, and a skill that never had one", async () => {
     const skill = await installLocal();
     rmSync(sourceDir, { recursive: true });
@@ -88,6 +98,51 @@ describe("check of local sources", () => {
     const result = await world.updates.api.reimport(skill.id);
     expect(result.contentChanged).toBe(true);
     expect(readFileSync(join(skill.libraryPath, "data.txt"), "utf8")).toBe("v2");
+  });
+});
+
+describe("edits made outside the app", () => {
+  it("asks before replacing them, and keeps the edited version in Recently removed", async () => {
+    const skill = await installLocal();
+    writeFile(join(skill.libraryPath, "scripts", "run.sh"), "echo edited by hand\n");
+    writeFile(join(skill.libraryPath, "extra.md"), "added by an agent\n");
+    writeFile(join(sourceDir, "scripts", "run.sh"), "echo two\n");
+
+    const asked = await world.updates.api.reimport(skill.id);
+    expect(asked.pendingRemovals).toEqual([
+      { location: LIBRARY_LOCATION, path: "extra.md", kind: "edited" },
+      { location: LIBRARY_LOCATION, path: "scripts/run.sh", kind: "edited" },
+    ]);
+    expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe(
+      "echo edited by hand\n",
+    );
+
+    const applied = await world.updates.api.reimport(skill.id, asked.approval);
+    expect(applied.pendingRemovals).toEqual([]);
+    expect(applied.removedIds).toHaveLength(1);
+    expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo two\n");
+    expect(existsSync(join(skill.libraryPath, "extra.md"))).toBe(false);
+
+    // The edited version comes back on Restore, and the row follows the folder.
+    const [entry] = world.removed.list();
+    expect(entry).toMatchObject({
+      id: applied.removedIds[0],
+      place: "Library",
+      reason: "replaced",
+    });
+    await world.removed.restore(applied.removedIds[0] ?? "");
+    expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe(
+      "echo edited by hand\n",
+    );
+    expect(world.store.get(skill.id).contentHash).toBe(hashDir(skill.libraryPath));
+  });
+
+  it("keeps nothing when no edit is replaced", async () => {
+    const skill = await installLocal();
+    writeFile(join(sourceDir, "scripts", "run.sh"), "echo two\n");
+    const applied = await world.updates.api.reimport(skill.id);
+    expect(applied).toMatchObject({ contentChanged: true, pendingRemovals: [], removedIds: [] });
+    expect(world.removed.list()).toEqual([]);
   });
 });
 

@@ -1,6 +1,7 @@
 import {
   ApiError,
   type InstallProgress,
+  REMOVED_KEEP_DAYS,
   type PendingRemoval,
   type Skill,
   type SourceDiff,
@@ -18,7 +19,7 @@ import {
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { useAppEvent } from "@/lib/events";
 import { keys } from "@/lib/query-keys";
-import { toastSuccess } from "@/lib/toast";
+import { toastWithUndo } from "@/lib/removed-undo";
 
 /** An update that stopped because it would delete files; waiting for the user's decision. */
 export interface PendingApproval {
@@ -94,10 +95,14 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
               return;
             }
             setPending(null);
-            toastSuccess(
+            // Replaced edits wait in Recently removed; Undo puts them back.
+            toastWithUndo(
+              queryClient,
               t(result.contentChanged ? "library.refresh.done" : "library.refresh.unchanged", {
                 name: result.skill.name,
               }),
+              result.removedIds,
+              t("library.refresh.editsKept", { days: REMOVED_KEEP_DAYS }),
             );
           },
           onSettled: () => {

@@ -179,6 +179,8 @@ export interface UpdateResult {
   /** Non-empty means nothing was changed. Call again with `approval` to proceed. */
   pendingRemovals: PendingRemoval[];
   approval: string | null;
+  /** The edited library version this update replaced, kept in Recently removed. */
+  removedIds: string[];
 }
 
 export interface BatchUpdateResult {

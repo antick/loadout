@@ -267,6 +267,12 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - Knows when a repository moved but the skill itself did not change.
 - Removal guard: shows the files an update would delete, in the library and in copied
   deployments, and changes nothing until you approve.
+- Edits are protected wherever they were made: in the app, in another editor, by an agent or by
+  hand. The library remembers what each skill held when it last came from its source, so an
+  update lists every changed file as "Your edits" and asks first; automatic updates hold those
+  skills back. When you approve, your edited version is kept in Recently removed (the toast has
+  Undo). A skill from a local folder only shows "Update available" when that folder changed, not
+  after an edit of the library copy.
 - Compare with upstream: per-file diff, and the upstream document next to yours.
 - For local sources: re-import, point at a new source folder, or keep the local copy and stop
   tracking.
@@ -427,7 +433,7 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 | Git subfolder downloads | Installation downloads a shallow copy of the whole repository, even when only one subfolder is needed.                                                                                                                                                                                                                                                                                                                                                                                         |
 | CLI credentials         | The CLI cannot read tokens saved by the desktop app. Use SSH or a Git credential helper for CLI backup authentication.                                                                                                                                                                                                                                                                                                                                                                         |
 | External skill folders  | CLI `--library` selects a complete Loadout library. Operating directly on an arbitrary skill checkout while keeping app state elsewhere is not supported.                                                                                                                                                                                                                                                                                                                                      |
-| Skill editor            | Edits existing files only (no create, rename or delete). Edits made outside the app are not tracked, so an update does not ask before replacing them. A local-folder skill shows "Update available" after an in-app edit. Mixed line endings are saved as the file's majority ending.                                                                                                                                                                                                          |
+| Skill editor            | Edits existing files only (no create, rename or delete). Mixed line endings are saved as the file's majority ending.                                                                                                                                                                                                                                                                                                                                                                           |
 | Agent icons             | Agents use coloured initials; brand logos are not included.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## CLI features

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import {
   REMOVED_KEEP_DAYS,
@@ -75,6 +75,8 @@ export interface RemovedStore {
    * (nothing there, a link, a file, an empty folder); the caller then removes it as before.
    */
   setAside(path: string, info: SetAsideInfo): string | null;
+  /** Like `setAside`, but copies: the folder stays where it is. */
+  keepCopy(path: string, info: SetAsideInfo): string | null;
   list(): RemovedFolder[];
   restore(id: string): Promise<RestoreRemovedResult>;
   remove(id: string): void;
@@ -151,6 +153,10 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
   });
 
   function setAside(path: string, info: SetAsideInfo): string | null {
+    return keep(path, info, "move");
+  }
+
+  function keep(path: string, info: SetAsideInfo, how: "move" | "copy"): string | null {
     const stat = lstatOrNull(path);
     if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) return null;
     if (readDirSafe(path).length === 0) return null;
@@ -171,14 +177,16 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     ensureDir(dir);
     writeJsonAtomic(join(dir, META_FILE), meta);
     try {
-      moveEntrySync(path, join(dir, CONTENT_DIR), moveOptions(path));
+      if (how === "move") moveEntrySync(path, join(dir, CONTENT_DIR), moveOptions(path));
+      else cpSync(path, join(dir, CONTENT_DIR), { recursive: true, verbatimSymlinks: true });
     } catch (error) {
       // Nothing was removed from `path`: a rename moves all or nothing, and a copy that failed
       // never reached the step that removes the original.
       removePathSync(dir);
       throw error;
     }
-    ctx.log.info(`Put ${originalPath} aside in Recently removed (${info.reason})`);
+    const verb = how === "copy" ? "Kept a copy of" : "Put aside";
+    ctx.log.info(`${verb} ${originalPath} in Recently removed (${info.reason})`);
     return id;
   }
 
@@ -242,6 +250,8 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
   return {
     setAside,
 
+    keepCopy: (path, info) => keep(path, info, "copy"),
+
     list: () => {
       prune();
       const now = Date.now();
@@ -286,6 +296,9 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
         const content = join(entryDir(id), CONTENT_DIR);
         moveEntrySync(content, meta.originalPath, moveOptions(content));
         removePathSync(entryDir(id));
+        // A library skill's own folder (its version from before an update): the row follows it.
+        const owner = deps.store.findByLibraryPath(meta.originalPath);
+        if (owner) deps.store.update(owner.id, { contentHash: hashDir(meta.originalPath) });
         ctx.activity.record("restore", meta.name, `${meta.place}: put back from Recently removed`);
         ctx.touched("skills", "projects");
         return { path: meta.originalPath, displacedId };

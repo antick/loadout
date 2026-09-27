@@ -97,11 +97,13 @@ function remoteFinding(skill: Skill, outcome: RemoteOutcome): Finding {
 }
 
 /**
- * Compare a folder, archive or archive link with the library. Reads only, so it runs without the
- * lock.
+ * Compare a folder, archive or archive link with what was installed from it (`installedHash`),
+ * so an edit of the library copy is not taken for a change of the source. Skills installed
+ * before that was recorded compare with the library. Reads only, so it runs without the lock.
  */
 async function localFinding(
   skill: Skill,
+  installedHash: string | null,
   download: Download,
   cache?: DownloadCache,
 ): Promise<Finding> {
@@ -110,7 +112,8 @@ async function localFinding(
     const source = await openLocalSource(skill, download, cache);
     try {
       if (!skill.contentHash) return settled(skill, "local_only");
-      if (hashAsLibraryCopy(source.dir, skill.dirName) === skill.contentHash) {
+      const sourceHash = hashAsLibraryCopy(source.dir, skill.dirName);
+      if (sourceHash === (installedHash ?? skill.contentHash)) {
         return settled(skill, "up_to_date");
       }
       // A checkout that only flipped line endings is not an update worth offering.
@@ -157,7 +160,9 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     shared?: ReadonlyMap<string, RemoteOutcome>,
     downloads?: DownloadCache,
   ): Promise<Finding> {
-    if (!isRemoteSource(skill)) return localFinding(skill, download, downloads);
+    if (!isRemoteSource(skill)) {
+      return localFinding(skill, store.installed(skill.id)?.hash ?? null, download, downloads);
+    }
     const target = targetOrFailure(skill);
     if ("failure" in target) return remoteFinding(skill, target);
     return remoteFinding(skill, shared?.get(remoteKey(target)) ?? (await lookup(target)));

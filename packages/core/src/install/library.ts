@@ -13,7 +13,7 @@ import {
   readDirSafe,
   replaceDirAtomic,
 } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { fileDigests, hashDir } from "../util/hash";
 import { firstFreeName, sanitizeSkillName } from "../util/names";
 import { redactUrl } from "./git-source";
 
@@ -118,6 +118,10 @@ export async function installIntoLibrary(
       const skill = owner
         ? store.update(owner.id, { ...fields, lastCheckedAt: Date.now(), lastCheckError: null })
         : store.insert({ ...fields, libraryPath: destination });
+      // What came from the source: any later difference is an edit an update must ask about.
+      if (fields.contentHash) {
+        store.setInstalled(skill.id, { hash: fields.contentHash, files: fileDigests(destination) });
+      }
       return { skill, written: true };
     });
     if (outcome.written) {

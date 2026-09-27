@@ -41,6 +41,13 @@ export interface DeploymentRecord extends Deployment {
   sourceHash: string | null;
 }
 
+/** A skill's content right after it came from its source. */
+export interface InstalledSnapshot {
+  hash: string;
+  /** `/` separated path → SHA-256 of the file. */
+  files: Record<string, string>;
+}
+
 export interface NewSkill {
   id?: string;
   name: string;
@@ -305,6 +312,39 @@ export class SkillStore {
       this.#db.run("DELETE FROM backup_conflicts WHERE skill_key = ?", id);
       this.#db.run("DELETE FROM skills WHERE id = ?", id);
     });
+  }
+
+  // ── What came from the source ──
+
+  /**
+   * Record what a skill holds right after it came from its source (install, update, re-import):
+   * later differences are edits. Null for skills installed before this was kept.
+   */
+  setInstalled(id: string, snapshot: InstalledSnapshot): void {
+    this.#db.run(
+      "UPDATE skills SET installed_hash = ?, installed_files = ? WHERE id = ?",
+      snapshot.hash,
+      JSON.stringify(snapshot.files),
+      id,
+    );
+  }
+
+  installed(id: string): InstalledSnapshot | null {
+    const row = this.#db.get<{ installed_hash: string | null; installed_files: string | null }>(
+      "SELECT installed_hash, installed_files FROM skills WHERE id = ?",
+      id,
+    );
+    if (!row?.installed_hash || !row.installed_files) return null;
+    try {
+      const files: unknown = JSON.parse(row.installed_files);
+      if (typeof files !== "object" || files === null || Array.isArray(files)) return null;
+      const entries = Object.entries(files).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      );
+      return { hash: row.installed_hash, files: Object.fromEntries(entries) };
+    } catch {
+      return null;
+    }
   }
 
   // ── Tags ──

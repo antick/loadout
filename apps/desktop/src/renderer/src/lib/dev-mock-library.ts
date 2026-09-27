@@ -154,6 +154,7 @@ export function createLibraryMockHandlers(
           contentChanged: true,
           pendingRemovals: removalsFor(skill, round),
           approval: expected,
+          removedIds: [],
         };
       }
       // The first approval of this skill arrives "too late": the list changed in the meantime.
@@ -164,6 +165,7 @@ export function createLibraryMockHandlers(
           contentChanged: true,
           pendingRemovals: removalsFor(skill, 1),
           approval: `mock-approval-${skillId}-1`,
+          removedIds: [],
         };
       }
     }
@@ -175,7 +177,7 @@ export function createLibraryMockHandlers(
       lastCheckError: null,
       updatedAt: contentChanged ? Date.now() : skill.updatedAt,
     });
-    return { skill: updated, contentChanged, pendingRemovals: [], approval: null };
+    return { skill: updated, contentChanged, pendingRemovals: [], approval: null, removedIds: [] };
   }
 
   function check(skillId: string): Skill {

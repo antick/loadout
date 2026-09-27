@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
 import type { GitClient, InstallServiceDeps } from "../src/install";
+import { type RemovedStore, createRemovedStore } from "../src/storage";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { makeSkill } from "./helpers";
@@ -18,6 +19,8 @@ export const MARKET_SOURCE = "acme/skills";
 
 export interface UpdatesWorld extends DeployWorld {
   install: InstallHarness;
+  /** Recently removed, where an update keeps the edited version it replaces. */
+  removed: RemovedStore;
   updates: UpdatesService;
   /** Private temp folder; leftover checkouts show up here. */
   tmp: string;
@@ -52,11 +55,13 @@ export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}
       return install.git.lsRemote(url, options);
     },
   };
+  const removed = createRemovedStore(world.ctx, { store: world.store });
   const serviceWith = (git: GitClient): UpdatesService =>
     createUpdatesService(world.ctx, {
       store: world.store,
       install: { ...install, git },
       deploy: world.deploy,
+      removed,
     });
 
   const remote = initRepo(join(remotes, "acme", "skills.git"));
@@ -69,6 +74,7 @@ export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}
   return {
     ...world,
     install,
+    removed,
     updates: serviceWith(countingGit),
     tmp,
     remote,

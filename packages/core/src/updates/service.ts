@@ -3,6 +3,7 @@ import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import type { InstallService } from "../install";
 import type { SafetyGate } from "../install/safety-gate";
+import type { RemovedStore } from "../storage/removed";
 import type { SkillStore } from "../skills/store";
 import { type AutoUpdater, createAutoUpdater } from "./auto";
 import { createChecker } from "./check";
@@ -16,6 +17,8 @@ export interface UpdatesServiceDeps {
   deploy: Pick<DeployService, "refreshCopies">;
   /** Checks every new version before it replaces the library copy. */
   safety?: SafetyGate;
+  /** Keeps the edited version an approved update replaces. */
+  removed?: Pick<RemovedStore, "keepCopy">;
 }
 
 export interface UpdatesService {
@@ -35,6 +38,7 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     installIntoLibrary: install.installIntoLibrary,
     refreshCopies: deploy.refreshCopies,
     safety: deps.safety,
+    removed: deps.removed,
   });
   const preview = createSourcePreview({ store, git: install.git, download: install.download });
   const auto = createAutoUpdater(ctx, {

@@ -1,7 +1,6 @@
 import type {
   BatchUpdateResult,
   ErrorCode,
-  PendingRemoval,
   SafetyReport,
   Skill,
   UpdateResult,
@@ -26,25 +25,19 @@ import type {
 } from "../install";
 import type { SafetyGate } from "../install/safety-gate";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
+import type { RemovedStore } from "../storage/removed";
+import { LIBRARY_PLACE } from "../storage/removed-library";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import {
   canonicalPath,
   isDirectory,
   isInside,
   isSkillDir,
-  lstatOrNull,
   normalizeAbsolutePath,
-  targetIdentity,
 } from "../util/fs";
 import { type LockMode, runLocked } from "./locking";
-import {
-  LIBRARY_LOCATION,
-  approvalToken,
-  isApproved,
-  listRemovedPaths,
-  listReplacedEdits,
-  sortRemovals,
-} from "./removals";
+import { pendingRemovals } from "./pending";
+import { LIBRARY_LOCATION, approvalToken, isApproved } from "./removals";
 import {
   isRemoteSource,
   openLocalSource,
@@ -63,6 +56,8 @@ export interface UpdaterDeps {
   refreshCopies(skill: Skill): Promise<RedeployReport>;
   /** The same safety check installs get; absent in tests that do not care. */
   safety?: SafetyGate;
+  /** Keeps the edited version an approved update replaces; absent in tests that do not care. */
+  removed?: Pick<RemovedStore, "keepCopy">;
 }
 
 export interface UpdateOptions {
@@ -162,43 +157,6 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     ctx.activity.record("update", name, errorMessage(error), false);
   }
 
-  /**
-   * Everything the replacement would delete: from the library when its content changes, and from
-   * every copy deployment that will be rebuilt. Agents sharing one folder are listed once.
-   */
-  function pendingRemovals(fresh: Skill, sourceDir: string | null): PendingRemoval[] {
-    const removals: PendingRemoval[] = [];
-    if (sourceDir) {
-      // An edited file the new version drops is listed once, as the edit the user would lose.
-      const edits = listReplacedEdits(fresh.libraryPath, sourceDir, fresh.editedFiles);
-      const editSet = new Set(edits);
-      for (const path of edits) removals.push({ location: LIBRARY_LOCATION, path, kind: "edited" });
-      for (const path of listRemovedPaths(fresh.libraryPath, sourceDir)) {
-        if (!editSet.has(path))
-          removals.push({ location: LIBRARY_LOCATION, path, kind: "removed" });
-      }
-    }
-    const rebuiltFrom = sourceDir ?? fresh.libraryPath;
-    const seen = new Set<string>();
-    const copies = store
-      .deployments()
-      .filter((row) => row.skillId === fresh.id && row.mode === "copy")
-      .sort((a, b) => (a.agentKey < b.agentKey ? -1 : 1));
-    for (const row of copies) {
-      // A copy made from the content that stays is not rewritten, so it loses nothing.
-      if (!sourceDir && row.sourceHash === fresh.contentHash) continue;
-      const identity = targetIdentity(row.targetPath);
-      if (seen.has(identity)) continue;
-      seen.add(identity);
-      // Anything but a real folder is refused by the deploy engine and left untouched.
-      if (!lstatOrNull(row.targetPath)?.isDirectory()) continue;
-      for (const path of listRemovedPaths(row.targetPath, rebuiltFrom)) {
-        removals.push({ location: row.agentKey, path, kind: "removed" });
-      }
-    }
-    return sortRemovals(removals);
-  }
-
   async function installOver(
     fresh: Skill,
     sourceDir: string,
@@ -247,17 +205,28 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       const contentChanged = newHash !== fresh.contentHash;
       const changedDir = contentChanged ? plan.sourceDir : null;
 
-      const removals = pendingRemovals(fresh, changedDir);
+      const removals = pendingRemovals(store, fresh, changedDir);
       if (!isApproved(plan.approval, plan.domain, removals)) {
         const patch = plan.declined(fresh);
         const skill = patch
           ? store.update(fresh.id, { ...patch, updatedAt: fresh.updatedAt })
           : fresh;
         const approval = approvalToken(plan.domain, removals);
-        return { skill, contentChanged, pendingRemovals: removals, approval };
+        return { skill, contentChanged, pendingRemovals: removals, approval, removedIds: [] };
       }
 
       const record = plan.record(fresh);
+      // The user agreed to lose edits: their version still waits in Recently removed.
+      const replacesEdits = removals.some(
+        (removal) => removal.location === LIBRARY_LOCATION && removal.kind === "edited",
+      );
+      const kept =
+        changedDir && replacesEdits
+          ? (deps.removed?.keepCopy(fresh.libraryPath, {
+              place: LIBRARY_PLACE,
+              reason: "replaced",
+            }) ?? null)
+          : null;
       let skill: Skill;
       if (changedDir) {
         skill = await installOver(fresh, changedDir, record);
@@ -274,7 +243,13 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       for (const failure of report.failed) {
         ctx.log.warn(`Deployed copy of ${failure.name} not refreshed: ${failure.message}`);
       }
-      return { skill: store.get(skill.id), contentChanged, pendingRemovals: [], approval: null };
+      return {
+        skill: store.get(skill.id),
+        contentChanged,
+        pendingRemovals: [],
+        approval: null,
+        removedIds: kept ? [kept] : [],
+      };
     });
     ctx.touched("skills");
     return result;
