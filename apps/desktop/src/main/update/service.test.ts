@@ -124,6 +124,29 @@ describe("update service", () => {
     expect((await updates.download()).phase).toBe("available");
   });
 
+  it("clears the missing-build block once a later feed has the build", async () => {
+    let body = feed({ files: {} });
+    const fetchImpl = ((input: string) => fakeFetch(body)(input)) as typeof fetch;
+    const { updates } = service({ fetchImpl });
+    expect((await updates.check()).blocker).toBe("no_build");
+    body = feed();
+    expect(await updates.check()).toMatchObject({ phase: "available", blocker: null });
+  });
+
+  it("downloads once when asked twice while still checking", async () => {
+    let packageRequests = 0;
+    const base = fakeFetch(feed());
+    const fetchImpl = ((input: string) => {
+      if (input === PACKAGE_URL) packageRequests += 1;
+      return base(input);
+    }) as typeof fetch;
+    const { updates } = service({ fetchImpl });
+    const [first, second] = await Promise.all([updates.download(), updates.download()]);
+    expect(first.phase).toBe("ready");
+    expect(second.phase).toBe("ready");
+    expect(packageRequests).toBe(1);
+  });
+
   it("downloads, verifies and opens the package in the system installer", async () => {
     const { updates, deps } = service();
     const status = await updates.download();

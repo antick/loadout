@@ -1,21 +1,33 @@
-import { statSync } from "node:fs";
+import { existsSync, lstatSync } from "node:fs";
+import { join } from "node:path";
 import { shell } from "electron";
 
-const MAC_BUNDLE_PATTERN = /\.(app|bundle|framework|plugin|prefpane|kext|appex|xpc)\/?$/i;
+const MAC_BUNDLE_PATTERN =
+  /\.(app|bundle|framework|plugin|prefpane|kext|appex|xpc|pkg|mpkg|workflow|saver|qlgenerator|mdimporter)\/?$/i;
+
+/** A macOS bundle is a folder `openPath` would launch or install, whatever its name says. */
+function isMacBundle(path: string): boolean {
+  return MAC_BUNDLE_PATTERN.test(path) || existsSync(join(path, "Contents"));
+}
 
 /**
  * Show a path in the OS file manager: a folder is opened, a file is shown selected in its folder.
  * `shell.openPath` alone would open a file with its default app (a `.zip` would be unpacked).
+ * A link is shown, never followed: a link named like a skill could point at an app, and opening
+ * it would launch that app.
  */
 export async function revealInFileManager(path: string): Promise<void> {
-  let isFile = false;
+  let showInFolder = false;
   try {
-    isFile = statSync(path).isFile();
+    const stat = lstatSync(path);
+    showInFolder =
+      stat.isSymbolicLink() ||
+      stat.isFile() ||
+      (process.platform === "darwin" && stat.isDirectory() && isMacBundle(path));
   } catch {
     // Gone or unreadable: `openPath` reports it, and the folder fallback below takes over.
   }
-  // On macOS a bundle (`Tool.app`) is a folder that `openPath` would launch, not show.
-  if (isFile || (process.platform === "darwin" && MAC_BUNDLE_PATTERN.test(path))) {
+  if (showInFolder) {
     shell.showItemInFolder(path);
     return;
   }

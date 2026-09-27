@@ -99,13 +99,17 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
   let ready: ReadyUpdate | null = null;
   let abort: AbortController | null = null;
   let lastProgressAt = 0;
+  /** Reasons updating cannot work at all here, whatever the feed says. */
+  const baseBlocker = (): AppUpdateStatus["blocker"] =>
+    deps.feedUrl ? deps.location.blocker : "not_configured";
+
   let state: AppUpdateStatus = {
     phase: "idle",
     currentVersion: deps.currentVersion,
     latestVersion: null,
     releaseUrl: RELEASES_URL,
     method: deps.location.method,
-    blocker: deps.feedUrl ? deps.location.blocker : "not_configured",
+    blocker: baseBlocker(),
     progress: null,
     checkedAt: null,
     error: null,
@@ -194,7 +198,9 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     if (ready?.version === feed.version) {
       return set({ phase: "ready", latestVersion: feed.version, releaseUrl, checkedAt });
     }
-    const blocker = state.blocker ?? (feedFile() ? null : "no_build");
+    // From the fixed reasons, not the last state: a feed that lacked this build must not block
+    // a later one that has it.
+    const blocker = baseBlocker() ?? (feedFile() ? null : "no_build");
     return set({ phase: "available", latestVersion: feed.version, releaseUrl, checkedAt, blocker });
   }
 
@@ -209,7 +215,17 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     return downloaded;
   }
 
-  async function download(): Promise<AppUpdateStatus> {
+  /** A second click while the first is still checking joins it instead of downloading twice. */
+  let downloading: Promise<AppUpdateStatus> | null = null;
+
+  function download(): Promise<AppUpdateStatus> {
+    downloading ??= runDownload().finally(() => {
+      downloading = null;
+    });
+    return downloading;
+  }
+
+  async function runDownload(): Promise<AppUpdateStatus> {
     if (state.phase === "downloading" || state.phase === "ready") return state;
     if (!feed || state.phase !== "available") await check();
     const file = feedFile();

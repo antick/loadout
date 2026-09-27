@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BrowserWindow, app, session, shell } from "electron";
+import { BrowserWindow, app, dialog, session, shell } from "electron";
 import { AppError, type Core, createCore } from "@loadout/core";
 import {
   AGENT_HOME_ENV_VARIABLES,
@@ -121,7 +121,8 @@ function navigateTo(to: string): void {
 function syncTray(): void {
   tray ??= createTrayController({
     resourcesDir,
-    api: () => core?.api ?? null,
+    // A deleted library must not come back through the tray either.
+    api: () => (core && !libraryGone ? core.api : null),
     show: showWindow,
     navigate: navigateTo,
     quit,
@@ -307,10 +308,14 @@ function start(): void {
     api,
     (channel, error) => core?.ctx.log.error(`IPC ${channel} failed`, error),
     // A deleted library must not come back through a late request; only the app itself answers.
-    (namespace) =>
-      libraryGone && namespace !== "app"
-        ? new AppError("UNSUPPORTED", "The library was deleted. Restart or quit.")
-        : null,
+    (namespace) => {
+      if (libraryGone && namespace !== "app") {
+        return new AppError("UNSUPPORTED", "The library was deleted. Restart or quit.");
+      }
+      // The core is closing: a call started now could be cut off halfway by the closed database.
+      if (quitting && namespace !== "app") return new AppError("BUSY", `${APP_NAME} is closing.`);
+      return null;
+    },
     isAppPage,
   );
 
@@ -388,5 +393,15 @@ if (!app.requestSingleInstanceLock()) {
         app.quit();
       });
   });
-  void app.whenReady().then(start);
+  void app.whenReady().then(() => {
+    try {
+      start();
+    } catch (error) {
+      // No window and no core: without this the process would linger, invisible, holding the
+      // single-instance lock (a database from a newer version, a corrupt or locked database).
+      const message = error instanceof Error ? error.message : String(error);
+      dialog.showErrorBox(`${APP_NAME} could not start`, message);
+      app.exit(1);
+    }
+  });
 }
