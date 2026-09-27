@@ -232,9 +232,10 @@ describe("global workspace", () => {
     expect(world.store.list().map((s) => s.name)).toEqual(["web"]);
   });
 
-  it("drops the new row but keeps the library folder when adoption fails", async () => {
+  /** The workspace service with an adopt step that runs `before`, then fails. */
+  function failingAdopt(before: () => void = () => undefined) {
     const { ctx, store, registry, deploy, removed } = world;
-    const failing = createWorkspaceService(ctx, {
+    return createWorkspaceService(ctx, {
       store,
       registry,
       removed,
@@ -242,16 +243,31 @@ describe("global workspace", () => {
       deploy: {
         ...deploy,
         adopt: async () => {
+          before();
           throw new AppError("IO", "disk full");
         },
       },
     });
+  }
+
+  it("leaves no duplicate in the library when adoption fails", async () => {
     const local = makeSkill(claude, "fragile", { body: "only copy" });
-    const error = await rejection(failing.api.upload("claude_code", "fragile"));
+    const error = await rejection(failingAdopt().api.upload("claude_code", "fragile"));
     expect(error.message).toBe("disk full");
-    expect(store.list()).toEqual([]);
-    expect(skillText(join(ctx.paths.skillsDir, "fragile"))).toContain("only copy");
+    expect(world.store.list()).toEqual([]);
+    // The agent's folder is whole, so the library copy was only a duplicate.
+    expect(existsSync(join(world.ctx.paths.skillsDir, "fragile"))).toBe(false);
     expect(skillText(local)).toContain("only copy");
+  });
+
+  it("keeps the uploaded skill when the agent's folder changed before adoption failed", async () => {
+    const local = makeSkill(claude, "fragile", { body: "first" });
+    const failing = failingAdopt(() =>
+      writeFile(join(local, "SKILL.md"), "---\nname: fragile\n---\nchanged\n"),
+    );
+    await rejection(failing.api.upload("claude_code", "fragile"));
+    expect(world.store.list().map((skill) => skill.name)).toEqual(["fragile"]);
+    expect(skillText(join(world.ctx.paths.skillsDir, "fragile"))).toContain("first");
   });
 
   it("refuses to pull over a newer local skill, and pulls a stale one without a row", async () => {

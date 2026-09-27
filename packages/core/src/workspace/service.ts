@@ -21,7 +21,7 @@ import {
   resolveInside,
   toPosix,
 } from "../util/fs";
-import { holdsUncopiedEntries } from "../util/hash";
+import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import { withSharedFolderDuplicates } from "./duplicates";
 import {
@@ -133,6 +133,21 @@ export function createWorkspaceService(
     });
   }
 
+  /**
+   * A new skill whose upload could not finish: while the agent's folder still holds exactly the
+   * same skill, the library copy is only a duplicate and goes with its row. Otherwise both stay,
+   * a normal library skill: the library may hold the only whole copy now.
+   */
+  async function forgetUnadopted(skill: Skill, localPath: string): Promise<void> {
+    await ctx.lock.run(`undo the upload of ${skill.name}`, async () => {
+      const current = store.find(skill.id);
+      if (!current) return;
+      if (hashAsLibraryCopy(localPath, current.dirName) !== hashDir(current.libraryPath)) return;
+      store.delete(current.id);
+      await removePath(current.libraryPath);
+    });
+  }
+
   /** Delete on the user's word: a folder with content goes to Recently removed, the rest goes. */
   async function setAsideOrRemove(path: string, place: string): Promise<string[]> {
     const kept = await ctx.lock.run(`remove ${basename(path)}`, () =>
@@ -201,8 +216,7 @@ export function createWorkspaceService(
         await adoptLocal(skill, agent, entry.path);
       } catch (error) {
         ctx.log.warn(`Could not adopt ${entry.path}: ${errorMessage(error)}`);
-        // The library folder stays: it is the only other copy of what the user just uploaded.
-        if (created) store.delete(skill.id);
+        if (created) await forgetUnadopted(skill, entry.path);
         ctx.touched("skills");
         throw error;
       }
