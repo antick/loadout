@@ -60,7 +60,14 @@ export function createSkillInspector(inspect = inspectSkillFolder): SkillInspect
       const key = skill.contentHash ? `${skill.libraryPath}\0${skill.contentHash}` : null;
       const cached = cache.get(skill.id);
       if (key && cached?.key === key) return cached.issues;
-      const issues = inspect(skill.libraryPath);
+      let issues: SkillIssue[];
+      try {
+        issues = inspect(skill.libraryPath);
+      } catch (error) {
+        // One unreadable skill must never stop the whole library from listing.
+        const reason = error instanceof Error ? error.message : String(error);
+        issues = [skillIssue("frontmatter_invalid", { reason }, 1)];
+      }
       if (key) cache.set(skill.id, { key, issues });
       return issues;
     },

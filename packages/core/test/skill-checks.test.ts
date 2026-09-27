@@ -140,6 +140,39 @@ describe("links in SKILL.md", () => {
   });
 });
 
+const issueCodes = (content: string, folder = "evil") =>
+  checkSkillDocument(content, folder).issues.map((issue) => issue.code);
+
+describe("hostile SKILL.md text", () => {
+  it("reports an alias bomb as broken frontmatter instead of throwing", () => {
+    const bomb = [
+      "---",
+      "a: &a [x, x, x, x, x, x, x, x, x, x]",
+      "b: &b [*a, *a, *a, *a, *a, *a, *a, *a, *a, *a]",
+      "c: &c [*b, *b, *b, *b, *b, *b, *b, *b, *b, *b]",
+      "d: &d [*c, *c, *c, *c, *c, *c, *c, *c, *c, *c]",
+      "name: evil",
+      "---",
+      "",
+    ].join("\n");
+    expect(issueCodes(bomb)).toContain("frontmatter_invalid");
+  });
+
+  it("scans a line of thousands of brackets quickly", () => {
+    const started = Date.now();
+    checkSkillDocument(`---\nname: evil\ndescription: x\n---\n${"[".repeat(80_000)}\n`, "evil");
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it("counts lines without the final newline, and reads a number as a name", () => {
+    const body = Array.from({ length: 496 }, () => "text").join("\n");
+    const numbered = `---\nname: 2024\ndescription: A skill named with a number only.\n---\n${body}\n`;
+    expect(numbered.split("\n").length - 1).toBe(500);
+    expect(issueCodes(numbered, "2024")).not.toContain("document_too_long");
+    expect(issueCodes(numbered, "2024")).not.toContain("name_missing");
+  });
+});
+
 describe("checking library skills", () => {
   let world: TestWorld;
   beforeEach(() => {

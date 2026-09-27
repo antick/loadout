@@ -117,7 +117,13 @@ const FRONTMATTER_PATTERN = /^﻿?\s*---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r
 const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const FENCE_PATTERN = /^(\s*)(`{3,}|~{3,})/;
 const INLINE_CODE_PATTERN = /`[^`]*`/g;
-const LINK_PATTERN = /!?\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+["'(][^)]*)?\)/g;
+/**
+ * Bounded on purpose: with open-ended runs a line of `[` characters took seconds to scan, and
+ * every check of the library paid it again.
+ */
+const LINK_PATTERN = /!?\[[^\]\n]{0,1000}\]\(\s*<?([^)\s>]{1,2048})>?(?:\s+["'(][^)\n]{0,500})?\)/g;
+/** Longer lines are not prose with links in it: they are skipped when looking for links. */
+const MAX_LINK_LINE = 20_000;
 const SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:/i;
 
 /** A frontmatter value as trimmed text, or null when it is absent, empty or not text. */
@@ -169,7 +175,7 @@ function scanLinks(body: string): FoundLink[] {
       else if (marker.charAt(0) === fence) fence = null;
       continue;
     }
-    if (fence !== null) continue;
+    if (fence !== null || line.length > MAX_LINK_LINE) continue;
     for (const match of line.replace(INLINE_CODE_PATTERN, "").matchAll(LINK_PATTERN)) {
       const target = match[1] ?? "";
       if (!target || target.startsWith("#") || target.startsWith("/")) continue;
@@ -189,7 +195,10 @@ function scanLinks(body: string): FoundLink[] {
 
 /** Relative links of a Markdown body, outside code blocks and inline code. */
 export function findReferences(body: string): { references: string[]; outside: string[] } {
-  const links = scanLinks(body);
+  return referencesOf(scanLinks(body));
+}
+
+function referencesOf(links: readonly FoundLink[]): { references: string[]; outside: string[] } {
   const pick = (outside: boolean): string[] => [
     ...new Set(links.filter((link) => link.outside === outside).map((link) => link.path)),
   ];
@@ -216,7 +225,8 @@ export function checkSkillDocument(content: string | null, folderName: string): 
   const bodyStart = match ? match[0].length : 0;
   const bodyLine = lineAt(content, bodyStart);
 
-  const lines = content.split(/\r?\n/).length;
+  // A final newline ends the last line; it does not start another one.
+  const lines = content.replace(/\r?\n$/, "").split(/\r?\n/).length;
   if (lines > SKILL_DOCUMENT_MAX_LINES) {
     issues.push(
       skillIssue(
@@ -227,7 +237,7 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     );
   }
   const links = scanLinks(content.slice(bodyStart));
-  const { references, outside } = findReferences(content.slice(bodyStart));
+  const { references, outside } = referencesOf(links);
   const firstLine = (path: string, isOutside: boolean): number | undefined => {
     const link = links.find((entry) => entry.path === path && entry.outside === isOutside);
     return link ? bodyLine + link.index : undefined;
@@ -249,15 +259,25 @@ export function checkSkillDocument(content: string | null, folderName: string): 
   const source = match[1] ?? "";
   // Where the frontmatter text starts in the document: after the opening `---` line.
   const sourceStart = source ? match[0].indexOf(source) : bodyStart;
-  const document = parseDocument(source, { prettyErrors: false });
-  const error = document.errors[0];
-  if (error || (document.contents !== null && !isMap(document.contents))) {
-    const reason = error ? error.message.split("\n")[0] : "it is not a list of key: value pairs";
-    const line = lineAt(content, sourceStart + (error?.pos[0] ?? 0));
-    issues.unshift(skillIssue("frontmatter_invalid", { reason: reason ?? "" }, line));
+  // Untrusted text: an alias bomb or anything else the parser throws on is a broken frontmatter,
+  // never an exception that would stop every check of the library.
+  let document: ReturnType<typeof parseDocument>;
+  let data: Record<string, unknown>;
+  try {
+    document = parseDocument(source, { prettyErrors: false });
+    const error = document.errors[0];
+    if (error || (document.contents !== null && !isMap(document.contents))) {
+      const reason = error ? error.message.split("\n")[0] : "it is not a list of key: value pairs";
+      const line = lineAt(content, sourceStart + (error?.pos[0] ?? 0));
+      issues.unshift(skillIssue("frontmatter_invalid", { reason: reason ?? "" }, line));
+      return { issues, references, referenceLines };
+    }
+    data = (document.toJS() ?? {}) as Record<string, unknown>;
+  } catch (thrown) {
+    const reason = thrown instanceof Error ? (thrown.message.split("\n")[0] ?? "") : "";
+    issues.unshift(skillIssue("frontmatter_invalid", { reason }, lineAt(content, sourceStart)));
     return { issues, references, referenceLines };
   }
-  const data = (document.toJS() ?? {}) as Record<string, unknown>;
 
   /** Line of a top-level frontmatter key; the opening `---` when the key is absent. */
   const keyLine = (key: string): number => {
@@ -269,7 +289,8 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     return offset === undefined ? 1 : lineAt(content, sourceStart + offset);
   };
 
-  const name = text(data.name);
+  // `name: 2024` is a name YAML reads as a number: judge it by its text, not as missing.
+  const name = text(typeof data.name === "number" ? String(data.name) : data.name);
   const description = text(data.description);
   const head: SkillIssue[] = [];
   if (!name) head.push(skillIssue("name_missing", {}, keyLine("name")));

@@ -66,11 +66,16 @@ export function createCore(options: CoreCreateOptions = {}): Core {
 
   // Pick up anything that changed while the app was closed (manual edits, CLI use, a restore).
   portable.rebuild({ authoritative: false });
-  portable.write();
 
   const registry = new AgentRegistry(ctx);
-  // Skill folders deleted while the app was closed leave links behind in agent folders.
-  pruneBrokenLinks(ctx, { registry, store });
+  // Writing the metadata and pruning links left by deleted skills change the library: only
+  // when nobody else is working in it (an app mid-restore must not see links vanish). When it
+  // is busy this waits for the next start.
+  const tidied = ctx.lock.holdSync("tidy the library on start", () => {
+    portable.write();
+    pruneBrokenLinks(ctx, { registry, store });
+  });
+  if (!tidied) ctx.log.info("The library is busy; start-up tidying waits for the next start");
   const removed = createRemovedStore(ctx, { store });
   const deploy = createDeployService(ctx, { store, registry, removed });
   const staleCopies = createStaleCopyRefresher(ctx, deploy);
@@ -178,7 +183,11 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     libraryChangedOnDisk: () => {
       try {
         portable.rebuild({ authoritative: false });
-        pruneBrokenLinks(ctx, { registry, store });
+        // Mid-restore or mid-merge a skill folder can be missing for a moment: prune only when
+        // nothing is working in the library. The next change looks again.
+        ctx.lock.holdSync("prune links after an outside change", () =>
+          pruneBrokenLinks(ctx, { registry, store }),
+        );
       } catch (error) {
         ctx.log.warn("Could not re-index the library after an outside change", error);
       }

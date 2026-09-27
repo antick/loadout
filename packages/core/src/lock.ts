@@ -137,6 +137,26 @@ export class RepoLock {
     return task;
   }
 
+  /**
+   * Synchronous work at start-up: run `fn` holding the lock if it is free right now, else skip
+   * it. True when it ran. Only for work that is safe to leave to the next start.
+   */
+  holdSync(operation: string, fn: () => void): boolean {
+    if (this.#held.getStore()) {
+      fn();
+      return true;
+    }
+    if (this.#active || !this.#tryAcquire(operation)) return false;
+    this.#active = true;
+    try {
+      this.#held.run(true, fn);
+      return true;
+    } finally {
+      this.#active = false;
+      this.#release();
+    }
+  }
+
   /** Background work: take the lock only if it is free right now. Returns null when it was busy. */
   async tryRun<T>(operation: string, fn: () => Promise<T> | T): Promise<T | null> {
     if (this.#held.getStore()) return fn();
