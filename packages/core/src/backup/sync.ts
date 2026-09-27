@@ -17,6 +17,7 @@ import {
   upstreamRef,
 } from "./repo";
 import { scanForPush, scanUncommittedChanges, secretsFound } from "./secrets";
+import { refreshIgnoreFile } from "./size";
 import { snapshotAtHead, tagSnapshot } from "./snapshots";
 
 /**
@@ -65,6 +66,9 @@ export async function syncLibrary(
   // A key caught before it is committed can still simply be removed; once committed, it would
   // travel with the history even after removal. Without a remote nothing leaves the computer.
   if (await originUrl(env)) {
+    // The ignore list first: a skill back under the size limit stops being ignored now, and must
+    // be checked before the commit takes it in.
+    await lock.run("backup ignore list", () => refreshIgnoreFile(env));
     const uncommitted = await scanUncommittedChanges(env);
     if (uncommitted.length > 0) throw secretsFound(uncommitted);
   }
