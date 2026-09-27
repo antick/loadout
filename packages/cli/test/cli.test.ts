@@ -285,6 +285,20 @@ describe("agents", () => {
       { agent: AGENT, enabled: true, changed: true },
     ]);
 
+    // With skills deployed, disabling takes them away: it asks first.
+    writeSkill(join(root, "src"), "alpha");
+    await cli("skills", "install", "./src/alpha");
+    await cli("skills", "deploy", "alpha", "--agent", AGENT);
+    expect((await cli("agents", "disable", AGENT, "--json")).code).toBe(EXIT_USAGE);
+    const dry = await cli("agents", "disable", AGENT, "--dry-run", "--json");
+    expect(dry.json()).toEqual({ dryRun: true, wouldRemove: { [AGENT]: ["alpha"] } });
+    expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(true);
+    expect((await cli("agents", "disable", AGENT, "--yes", "--json")).json()).toEqual([
+      { agent: AGENT, enabled: false, changed: true },
+    ]);
+    expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(false);
+    await cli("agents", "enable", AGENT);
+
     const typo = await cli("agents", "disable", AGENT, "nope", "--json");
     expect(typo.json()).toMatchObject({ code: "NOT_FOUND" });
     const after = (await cli("agents", "list", "--json")).json<
@@ -328,7 +342,13 @@ describe("presets", () => {
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(true);
     expect(existsSync(join(agentSkillsDir(), "beta"))).toBe(true);
 
-    expect((await cli("presets", "undeploy", "Writing", "--json")).json()).toMatchObject({
+    const refused = await cli("presets", "undeploy", "Writing", "--json");
+    expect(refused.code).toBe(EXIT_USAGE);
+    expect(
+      (await cli("presets", "undeploy", "Writing", "--dry-run", "--json")).json(),
+    ).toMatchObject({ dryRun: true, removed: 2 });
+    expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(true);
+    expect((await cli("presets", "undeploy", "Writing", "--yes", "--json")).json()).toMatchObject({
       removed: 2,
     });
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(false);

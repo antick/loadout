@@ -107,7 +107,8 @@ loadout presets list --json
 loadout presets create "Docs work" --description "Writing and review" --json
 loadout presets add "Docs work" <ref> <ref> --json
 loadout presets deploy "Docs work" --agent claude_code --json   # no --agent = all enabled agents
-loadout presets undeploy "Docs work" --json
+loadout presets undeploy "Docs work" --dry-run --json
+loadout presets undeploy "Docs work" --yes --json
 
 # Take over skills that already sit in an agent's folder
 loadout skills adopt ~/.claude/skills --dry-run --json
@@ -136,16 +137,16 @@ none, the command fails and lists them - pick with `--skill` or confirm `--all` 
 
 ## Destructive commands
 
-`skills remove`, `presets delete`, `removed delete` and `git restore` refuse to run without
-`--yes`.
+`skills remove`, `presets delete`, `presets undeploy`, `removed delete` and `git restore`
+refuse to run without `--yes`. So does `agents disable` when the agent has skills deployed.
 `--json` never implies it.
 
 1. Run the command with `--dry-run` first and read what it would do.
 2. Tell the user what will be removed or replaced, unless they already asked for exactly that.
 3. Run it again with `--yes`.
 
-`agents disable <key>` also removes every skill Loadout deployed to that agent. Say so before
-doing it.
+`agents disable <key>` also removes every skill Loadout deployed to that agent. Run it with
+`--dry-run` to list them, and say so before doing it.
 
 ## Reading failures
 

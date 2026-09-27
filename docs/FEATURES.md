@@ -316,7 +316,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   library, `skills export`, and `removed list | restore <id> | delete <id>` for Recently
   removed),
   `--json` output with stable error codes, `--dry-run` for destructive commands and for
-  `skills deploy` / `skills undeploy`, `--yes` for destructive commands, and
+  `skills deploy` / `skills undeploy`, `--yes` for destructive commands (including
+  `presets undeploy`, and `agents disable` for an agent with skills deployed), and
   `--library` to work on another library.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.

@@ -7,6 +7,7 @@ import {
   DRY_RUN_FLAG,
   YES_FLAG,
   describeApply,
+  describeDryApply,
   emptyApply,
   limitPositionals,
   mergeApply,
@@ -163,8 +164,13 @@ async function undeploy({ core, args }: CommandContext): Promise<CommandResult> 
             ),
           ),
         ];
-  const value =
-    keys.length === 0 ? emptyApply() : await core.api.deploy.apply(preset.skillIds, keys, "remove");
+  if (keys.length === 0) return finish(preset, emptyApply());
+  requireYes(args, `remove the skills of "${preset.name}" from ${keys.join(", ")}`);
+  const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
+  const value = await core.api.deploy.apply(preset.skillIds, keys, "remove", { dryRun });
+  if (dryRun) {
+    return { value: { dryRun, ...value }, text: `${preset.name}: ${describeDryApply(value)}` };
+  }
   return finish(preset, value);
 }
 
@@ -221,9 +227,12 @@ export const presetsGroup: CommandGroup = {
     {
       name: "undeploy",
       summary: "Remove a preset's skills from agents",
-      usage: "<name> [--agent <key>…]",
-      flags: [AGENT_FLAG],
-      notes: ["Without --agent: every agent that currently holds one of its skills."],
+      usage: "<name> [--agent <key>…] [--dry-run] [--yes]",
+      flags: [AGENT_FLAG, DRY_RUN_FLAG, YES_FLAG],
+      notes: [
+        "Without --agent: every agent that currently holds one of its skills.",
+        "Removes skill folders from agents, so it asks for --yes. Preview with --dry-run.",
+      ],
       run: undeploy,
     },
   ],
