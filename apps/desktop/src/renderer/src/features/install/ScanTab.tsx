@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { SCAN_SKELETON_COUNT, SCAN_STAT_COUNT } from "@/features/install/constants";
-import { DiscoveredSkillRow } from "@/features/install/DiscoveredSkillRow";
+import { DiscoveredSkillRow, type SkillVersionPlace } from "@/features/install/DiscoveredSkillRow";
 import { useInstallTask } from "@/features/install/use-install-task";
 import {
   IMPORT_ALL_DISCOVERED_KEY,
@@ -27,6 +27,26 @@ const STATS_GRID_CLASS = "grid grid-cols-2 gap-3 lg:grid-cols-4";
 /** Stable identity of a discovered group across rescans. */
 function groupKey(skill: DiscoveredSkill): string {
   return `${skill.name}::${skill.fingerprint}`;
+}
+
+/**
+ * Groups that share a name but hold different files are versions of one skill: which one each
+ * is (1-based) and how many there are, keyed by `groupKey`. Unique names are left out.
+ */
+function versionsOf(groups: readonly DiscoveredSkill[]): Map<string, SkillVersionPlace> {
+  const byName = new Map<string, DiscoveredSkill[]>();
+  for (const group of groups) {
+    const name = group.name.toLowerCase();
+    byName.set(name, [...(byName.get(name) ?? []), group]);
+  }
+  const versions = new Map<string, SkillVersionPlace>();
+  for (const same of byName.values()) {
+    if (same.length < 2) continue;
+    same.forEach((group, index) => {
+      versions.set(groupKey(group), { index: index + 1, total: same.length });
+    });
+  }
+  return versions;
 }
 
 function ScanSkeleton(): ReactNode {
@@ -67,7 +87,9 @@ export function ScanTab(): ReactNode {
     () => new Map((agents.data ?? []).map((agent) => [agent.key, agent])),
     [agents.data],
   );
-  const groups = scan.data?.skills ?? [];
+  const found = scan.data?.skills;
+  const groups = found ?? [];
+  const versions = useMemo(() => versionsOf(found ?? []), [found]);
   const pending = groups.filter((skill) => !skill.imported);
   const imported = groups.filter((skill) => skill.imported);
   const importingAll = Boolean(task(IMPORT_ALL_DISCOVERED_KEY));
@@ -94,16 +116,24 @@ export function ScanTab(): ReactNode {
     <ul className="divide-y rounded-lg border bg-card">
       {skills.map((skill) => {
         const key = groupKey(skill);
+        const version = versions.get(key) ?? null;
+        // A later version gets a name of its own, so the library never holds two of one name.
+        const suggested =
+          version && version.index > 1 ? `${skill.name}-${version.index}` : skill.name;
+        const importName = names[key] ?? suggested;
         return (
           <DiscoveredSkillRow
             key={key}
             skill={skill}
+            version={version}
             agentsByKey={agentsByKey}
-            importName={names[key] ?? skill.name}
+            importName={importName}
             importing={Boolean(task(discoveredTaskKey(skill)))}
             disabled={importingAll}
             onRename={(name) => setNames((previous) => ({ ...previous, [key]: name }))}
-            onImport={() => void importOne(skill, names[key])}
+            onImport={() =>
+              void importOne(skill, importName === skill.name ? names[key] : importName)
+            }
           />
         );
       })}

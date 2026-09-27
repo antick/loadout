@@ -108,6 +108,10 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   repository, and, when it is already in the library, which agents have it. Details are cached
   for half an hour; a part that cannot be loaded says so and the rest still shows.
 - Scan this machine: find skills already sitting in agent folders and import one or all of them.
+  Identical copies in several agents are one row ("Same in 3 places"). Folders that share a name
+  but hold different files are marked "Version 1 of 2", and every version after the first gets
+  its own library name (`name-2`) unless you rename it, so two library skills never share a name.
+  Content already in the library is never copied twice.
 - Progress for every install, cancel while cloning, timeouts, and a network proxy setting.
 - After an install, deploy to agents straight from the success toast.
 

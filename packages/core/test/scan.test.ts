@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hashDir } from "../src/util/hash";
@@ -181,5 +181,31 @@ describe("importing discovered skills", () => {
       errors: [],
     });
     expect((await install.api.scanLocal()).skills.every((s) => s.imported)).toBe(true);
+  });
+
+  it("gives a second version of a skill its own library name, and never copies one twice", async () => {
+    makeSkill(claude, "forked", { body: "claude edition" });
+    makeSkill(cursor, "forked", { body: "cursor edition" });
+    await install.api.scanLocal();
+
+    expect(await install.api.importAllDiscovered()).toEqual({
+      imported: 2,
+      skipped: 0,
+      errors: [],
+    });
+    const names = world.store.list().map((skill) => skill.name);
+    expect(names.sort()).toEqual(["forked", "forked-2"]);
+    const bodies = world.store
+      .list()
+      .map((skill) => readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8"));
+    expect(bodies.some((body) => body.includes("claude edition"))).toBe(true);
+    expect(bodies.some((body) => body.includes("cursor edition"))).toBe(true);
+
+    // The same content again keeps its name and adds nothing.
+    await install.api.importDiscovered(join(claude, "forked"));
+    expect(world.store.list()).toHaveLength(2);
+    // A name chosen in the list is used as it is.
+    const third = makeSkill(join(world.home, ".codex", "skills"), "forked", { body: "third" });
+    expect((await install.api.importDiscovered(third, "forked-codex")).name).toBe("forked-codex");
   });
 });

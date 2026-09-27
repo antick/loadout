@@ -26,6 +26,7 @@ import {
   targetIdentity,
 } from "../util/fs";
 import { hashDir } from "../util/hash";
+import { firstFreeName } from "../util/names";
 
 export interface ScanServiceDeps {
   store: SkillStore;
@@ -164,6 +165,22 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     return { agentsScanned, skillsFound: paths.size, skills: lastScan };
   }
 
+  /**
+   * The library name for a found skill nobody renamed: its own, unless the library already has a
+   * different skill by that name (another version found elsewhere); then `name-2`, `name-3`, …
+   * so two skills never share a name. Identical content keeps the name and is not copied twice.
+   */
+  function distinctName(source: string): string | undefined {
+    const own = readSkillIdentity(source).name;
+    const sameName = (candidate: string): Skill[] =>
+      store.list().filter((skill) => skill.name.toLowerCase() === candidate.toLowerCase());
+    const others = sameName(own);
+    if (others.length === 0) return undefined;
+    const hash = hashDir(source);
+    if (others.some((skill) => skill.contentHash === hash)) return undefined;
+    return firstFreeName(own, (candidate) => sameName(candidate).length === 0);
+  }
+
   async function importOne(
     path: string,
     name?: string,
@@ -171,6 +188,7 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
   ): Promise<Skill> {
     const source = normalizeAbsolutePath(path, "Skill path");
     if (!isSkillDir(source)) throw invalid(`No SKILL.md found in ${source}`);
+    name ??= distinctName(source);
     // Copy only: the original folder stays where it is and is neither deployed nor adopted.
     return installChecked(
       install,

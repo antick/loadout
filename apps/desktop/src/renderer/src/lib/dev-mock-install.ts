@@ -57,6 +57,13 @@ const DISCOVERED: Omit<DiscoveredSkill, "imported">[] = [
     locations: [{ agentKey: "codex", path: `${HOME}/.codex/skills/db-migrations` }],
   },
   {
+    // Same name, different files: shows how versions are told apart.
+    name: "db-migrations",
+    description: "Cursor's own take on migrations, with a checklist per table.",
+    fingerprint: "fp-migrations-cursor",
+    locations: [{ agentKey: "cursor", path: `${HOME}/.cursor/skills/db-migrations` }],
+  },
+  {
     name: "standup-notes",
     description: null,
     fingerprint: "fp-standup",
