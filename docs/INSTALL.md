@@ -9,6 +9,11 @@ This page says which file to pick and what to click the first time you open it.
 macOS and Windows warn about any app that isn't, even a safe one. You only do this once: after
 that, Loadout updates itself.
 
+**Check a download (optional).** Every file in a release carries a signed record of the GitHub
+build that made it. With the [GitHub CLI](https://cli.github.com) installed, run
+`gh attestation verify <the file you downloaded> --repo antick/loadout`; it says whether the file
+was built from this repository's release workflow.
+
 ## macOS
 
 **1. Pick the file.** Open the Apple menu → **About This Mac**.

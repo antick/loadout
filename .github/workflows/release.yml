@@ -1,9 +1,11 @@
 name: Release builds
 
 # Builds installers for every platform, writes the update feed (latest.json) and collects them
-# in a draft release. Start it by pushing a tag that matches the app version (v0.1.0 for version
-# 0.1.0), or by hand from the Actions tab. Nothing reaches users until the draft is published by
-# hand: the app's update check only sees the newest published release.
+# in a draft release, with a signed build provenance attestation for every file. Only a pushed
+# tag that matches the app version starts it (v0.1.0 for version 0.1.0), so every release is
+# built from the tagged commit. Nothing reaches users until the draft is published by hand: the
+# app's update check only sees the newest published release. Publishing it also publishes the
+# CLI to npm (publish-npm.yml).
 #
 # The builds are not signed with an Apple or Windows certificate: macOS asks to confirm the first
 # launch, Windows SmartScreen warns. docs/INSTALL.md tells users what to click.
@@ -11,7 +13,6 @@ name: Release builds
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -42,7 +43,7 @@ jobs:
         run: |
           version="$(node -p "require('./apps/desktop/package.json').version")"
           tag="v${version}"
-          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "${tag}" ]; then
+          if [ "${GITHUB_REF_TYPE}" != "tag" ] || [ "${GITHUB_REF_NAME}" != "${tag}" ]; then
             echo "::error::Tag ${GITHUB_REF_NAME} does not match the app version ${version} (expected ${tag})."
             exit 1
           fi
@@ -124,6 +125,9 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      # Build provenance: signed with this workflow's identity, stored by GitHub.
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout (feed script and commit history for the notes)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -157,6 +161,11 @@ jobs:
           # The private half of UPDATE_FEED_PUBLIC_KEY; installed apps ignore an unsigned feed.
           UPDATE_FEED_SIGNING_KEY: ${{ secrets.UPDATE_FEED_SIGNING_KEY }}
         run: node apps/desktop/scripts/sign-feed.mjs dist/latest.json
+
+      - name: Attest where every file was built
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
 
       - name: Write the release notes
         env:

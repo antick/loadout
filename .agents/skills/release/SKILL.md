@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release a new version of Loadout. Suggests the next version from the commits since the last tag, waits for the user to confirm it, then bumps, checks, tags and pushes, waits for the installer builds, publishes the GitHub release (the desktop app and its update feed) and publishes the CLI to npm as @antick/loadout. Use only when the user asks to release, ship or publish a new version.
+description: Release a new version of Loadout. Suggests the next version from the commits since the last tag, waits for the user to confirm it, then bumps, checks, tags and pushes, waits for the installer builds, publishes the GitHub release (the desktop app and its update feed), which publishes the CLI to npm as @antick/loadout from GitHub Actions. Use only when the user asks to release, ship or publish a new version.
 disable-model-invocation: true
 argument-hint: "[version, e.g. 0.3.0]"
 ---
@@ -22,13 +22,10 @@ git fetch origin --tags
 git status --short                     # must be empty: commit or stash first, never discard
 git rev-parse --abbrev-ref HEAD        # must be main
 gh auth status                         # GitHub CLI signed in to an account that can push
-pnpm whoami                            # npm account with publish rights on @antick
 ```
 
 - Uncommitted changes: stop and ask the user whether to commit them first. Never stash, reset
   or drop them yourself.
-- `pnpm whoami` fails: the user runs `pnpm login` in their own terminal (it is interactive),
-  then invokes this skill again.
 - `git rev-list --count HEAD..origin/main` above 0: someone pushed; stop and say so.
 
 ## 2. Suggest the version and wait for confirmation
@@ -83,8 +80,9 @@ git tag "v<version>"
 git push origin "v<version>"
 ```
 
-The tag starts the **Release builds** workflow (`.github/workflows/release.yml`). It refuses a tag
-that does not match `apps/desktop/package.json`.
+The tag starts the **Release builds** workflow (`.github/workflows/release.yml`); nothing else
+can start it. It refuses a tag that does not match `apps/desktop/package.json`, and attests
+every file it builds (`gh attestation verify <file> --repo antick/loadout` checks one).
 
 ## 5. Wait for the builds
 
@@ -122,31 +120,26 @@ gh release edit "v<version>" --draft=false --latest
 Installed copies of the app offer the update within six hours; the landing page links to the
 latest release on its own.
 
-## 7. Publish the CLI to npm
+## 7. Watch the CLI reach npm
 
-Build it from the tag itself, in a separate checkout, so nothing committed after the tag (or
-left uncommitted) ends up in the package:
+Publishing the release starts **Publish the CLI to npm** (`.github/workflows/publish-npm.yml`).
+It builds the CLI from the tag and publishes `@antick/loadout` with a provenance statement,
+through npm trusted publishing: no npm login or token on this machine.
 
 ```sh
-git worktree add "/tmp/loadout-v<version>" "v<version>"
-cd "/tmp/loadout-v<version>"
-pnpm install --frozen-lockfile
-pnpm --filter @loadout/cli run pack:npm
-node packages/cli/dist/npm/loadout.mjs --version         # must print <version>
-cd packages/cli/dist/npm && pnpm publish --access public --no-git-checks
+gh run list --workflow publish-npm.yml --limit 1
+gh run watch <run-id> --exit-status               # a few minutes
 ```
 
-npm usually wants a second factor to publish:
+On failure, `gh run view <run-id> --log-failed`. An authentication error (`E401`, `E403`, or
+"OIDC" in the message) means npm does not trust the workflow yet. The user fixes it once:
 
-- "requires additional authentication, but pnpm is not running in an interactive terminal":
-  the agent cannot answer it. Give the user the two commands to run in their own terminal
-  (`cd /tmp/loadout-v<version>/packages/cli/dist/npm` then
-  `pnpm publish --access public --no-git-checks`), wait for them to say it is done, then go on.
-- It asks for a one-time password: ask the user for the code and add `--otp <code>`.
+1. Go to https://www.npmjs.com/package/@antick/loadout/access
+2. Under **Trusted Publisher**, choose **GitHub Actions**
+3. Organization or user `antick`, repository `loadout`, workflow filename `publish-npm.yml`,
+   environment left empty, then **Set up connection**
 
-npm never accepts a version twice; `EPUBLISHCONFLICT` means it is already published, so report
-it and move on. Afterwards remove the checkout from the repository root:
-`git worktree remove "/tmp/loadout-v<version>"`.
+Then rerun it: `gh run rerun <run-id>`. A version already on npm is skipped, not an error.
 
 ## 8. Verify and report
 
