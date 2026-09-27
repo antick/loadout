@@ -12,6 +12,23 @@ extraResources:
   - from: resources
     to: resources
 asar: true
+# Electron's build-time switches. Checked on a macOS build; Windows and Linux use the same ones.
+electronFuses:
+  # The published CLI runs on the app's own runtime through ELECTRON_RUN_AS_NODE: must stay on.
+  runAsNode: true
+  # NODE_EXTRA_CA_CERTS reaches the CLI through this switch: behind a company proxy that
+  # inspects TLS, the CLI needs it. With runAsNode on, turning it off would not stop anything.
+  enableNodeOptionsEnvironmentVariable: true
+  # No debugger can be attached to the installed app with --inspect.
+  enableNodeCliInspectArguments: false
+  # Cookies on disk are encrypted with the OS key store, like Chrome's.
+  enableCookieEncryption: true
+  # The app's code is only read from app.asar, and only when it matches the hash signed into
+  # the app: an edited app.asar does not start.
+  onlyLoadAppFromAsar: true
+  enableEmbeddedAsarIntegrityValidation: true
+  # The window is loaded from file://, which needs its usual access to its own files.
+  grantFileProtocolExtraPrivileges: true
 extraMetadata:
   homepage: https://loadout.potion.sh
 # File names are read by scripts/update-feed.mjs to build the update feed: change both together.
