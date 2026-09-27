@@ -16,6 +16,7 @@ import {
   resolveCommit,
   upstreamRef,
 } from "./repo";
+import { scanForPush, secretsFound } from "./secrets";
 import { snapshotAtHead, tagSnapshot } from "./snapshots";
 
 /**
@@ -87,6 +88,10 @@ export async function syncLibrary(
       const upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
       const { ahead } = await aheadBehind(env, branch);
       if (upstream && ahead === 0) break;
+
+      // Committed here is still private; pushing is what would publish a key.
+      const secrets = await scanForPush(env, branch);
+      if (secrets.length > 0) throw secretsFound(secrets);
 
       await env.hooks.beforePush?.(attempt);
       try {

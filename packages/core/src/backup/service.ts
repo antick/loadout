@@ -9,7 +9,8 @@ import { deleteRemoteToken, sanitizeRemoteUrl } from "./credentials";
 import { writeDeviceName } from "./device";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME } from "./env";
 import { createGithubService } from "./github";
-import { assertRepo, commitLibrary, isRepo, originUrl } from "./repo";
+import { assertRepo, commitLibrary, currentBranch, isRepo, originUrl } from "./repo";
+import { allowSecrets, scanForPush } from "./secrets";
 import { buildSizeReport, refreshIgnoreFile } from "./size";
 import { DEFAULT_SNAPSHOT_LIMIT, listSnapshots, restoreSnapshot, tagSnapshot } from "./snapshots";
 import { readStatus } from "./status";
@@ -132,6 +133,17 @@ export function createBackupOperations(
     resolveConflict: async (skillKey, action) => {
       assertRepo(env);
       return ctx.lock.run("backup resolve conflict", () => resolveConflict(env, skillKey, action));
+    },
+
+    secretFindings: async () => {
+      if (!isRepo(env) || !(await originUrl(env))) return [];
+      const branch = await currentBranch(env);
+      return branch ? scanForPush(env, branch) : [];
+    },
+
+    allowSecrets: async (ids) => {
+      allowSecrets(env, ids);
+      ctx.touched("backup");
     },
 
     sizeReport: () => buildSizeReport(env),

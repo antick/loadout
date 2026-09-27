@@ -240,3 +240,18 @@ export function useRestoreFromRemote(): UseMutationResult<void, unknown, string>
     onSettled: () => invalidateAfterBackup(queryClient),
   });
 }
+
+/** "Back up anyway": allow these findings, then back up right away. */
+export function useAllowSecretsAndSync(): UseMutationResult<SyncOutcome, unknown, string[]> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await api.backup.allowSecrets(ids);
+      return api.backup.sync();
+    },
+    onSuccess: (outcome) => toastSyncOutcome(outcome, t),
+    onError: (error) => toastBackupError(error, t),
+    onSettled: () => invalidateAfterBackup(queryClient),
+  });
+}

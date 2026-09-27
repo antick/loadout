@@ -67,6 +67,7 @@ import type {
 import type { CreateSkillInput } from "./new-skill";
 import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } from "./safety";
 import type { InstructionFile } from "./instructions";
+import type { SecretFinding } from "./secrets";
 import type {
   ClearableArea,
   RemoveAllDataOptions,
@@ -316,6 +317,13 @@ export interface BackupApi {
   conflicts(): Promise<BackupConflict[]>;
   resolveConflict(skillKey: string, action: ConflictResolution): Promise<string>;
   sizeReport(): Promise<SizeReport>;
+  /**
+   * What the next backup would push that looks like a key or token, and was not allowed yet.
+   * Empty without a remote: nothing leaves this computer then.
+   */
+  secretFindings(): Promise<SecretFinding[]>;
+  /** "Back up anyway": stop holding the backup back for these findings (ids from above). */
+  allowSecrets(ids: string[]): Promise<void>;
   deviceName(): Promise<string>;
   setDeviceName(name: string): Promise<string>;
   githubConnect(token: string, repoName: string): Promise<GithubConnectResult>;

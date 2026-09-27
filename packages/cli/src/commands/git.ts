@@ -2,7 +2,14 @@ import { notFound } from "@loadout/core";
 import { DEFAULT_BACKUP_COMMIT_MESSAGE, type MergeSummary } from "@loadout/shared";
 import { flagBoolean, flagInteger, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
-import { DRY_RUN_FLAG, YES_FLAG, limitPositionals, positional, requireYes } from "./support";
+import {
+  ALLOW_SECRETS_FLAG,
+  DRY_RUN_FLAG,
+  YES_FLAG,
+  limitPositionals,
+  positional,
+  requireYes,
+} from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
 const MESSAGE_FLAG = {
@@ -68,6 +75,10 @@ function describeMerge(merge: MergeSummary): string[] {
 
 async function sync({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
+  if (flagBoolean(args, ALLOW_SECRETS_FLAG.name)) {
+    const held = await core.api.backup.secretFindings();
+    await core.api.backup.allowSecrets(held.map((finding) => finding.id));
+  }
   const value = await core.api.backup.sync(flagString(args, MESSAGE_FLAG.name));
   const lines = [
     value.committed ? "Saved local changes." : "No local changes to save.",
@@ -129,8 +140,8 @@ export const gitGroup: CommandGroup = {
     {
       name: "sync",
       summary: "Save, merge what other devices pushed, and push",
-      usage: "[-m <message>]",
-      flags: [MESSAGE_FLAG],
+      usage: "[-m <message>] [--allow-secrets]",
+      flags: [MESSAGE_FLAG, ALLOW_SECRETS_FLAG],
       run: sync,
     },
     {

@@ -246,6 +246,30 @@
       "GITHUB_NOT_CONFIGURED": "Sign in with GitHub is not set up. Use an access token, or add an OAuth client id in Settings.",
       "CREDENTIALS_UNAVAILABLE": "The system keychain is not available, so the access could not be stored safely."
     },
-    "newerApp": "Another computer backs up with {{app}} {{version}}. Update {{app}} here so both keep reading the backup the same way."
+    "newerApp": "Another computer backs up with {{app}} {{version}}. Update {{app}} here so both keep reading the backup the same way.",
+    "secrets": {
+      "title": "Held back from the backup",
+      "description_one": "This looks like a key or token. Backing up would copy it to your backup repository, so the backup waits.",
+      "description_other": "These {{count}} look like keys or tokens. Backing up would copy them to your backup repository, so the backup waits.",
+      "hint": "Remove it from the skill and the backup carries on by itself. Only back up anyway if it is safe to share, such as a placeholder.",
+      "edit": "Edit",
+      "backUpAnyway": "Back up anyway",
+      "confirmTitle_one": "Back up this possible key anyway?",
+      "confirmTitle_other": "Back up these {{count}} possible keys anyway?",
+      "confirmBody_one": "It is copied to your backup repository and stays in its history, even if you remove it later. It will not be held back again.",
+      "confirmBody_other": "They are copied to your backup repository and stay in its history, even if you remove them later. They will not be held back again.",
+      "kind": {
+        "private_key": "Private key",
+        "aws_key": "AWS access key",
+        "github_token": "GitHub token",
+        "anthropic_key": "Anthropic API key",
+        "openai_key": "OpenAI API key",
+        "slack_token": "Slack token",
+        "google_key": "Google API key",
+        "stripe_key": "Stripe live key",
+        "npm_token": "npm token",
+        "huggingface_token": "Hugging Face token"
+      }
+    }
   }
 }

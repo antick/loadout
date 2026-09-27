@@ -1,4 +1,5 @@
 import type { FlaggedSkill } from "./safety";
+import type { SecretFinding } from "./secrets";
 import type { TargetConflict } from "./types";
 
 /** Stable machine-readable error codes, shared by the app, the IPC bridge and the CLI. */
@@ -21,6 +22,8 @@ export const ERROR_CODES = [
   "GIT_NO_UPSTREAM",
   "GIT_NOT_REPO",
   "SYNC_CONFLICT",
+  /** The next backup would push what looks like a key or token; the details list it (`secrets`). */
+  "SECRETS_FOUND",
   "BACKUP_TOO_NEW",
   "GITHUB_TOKEN_INVALID",
   "GITHUB_SCOPE",
@@ -39,6 +42,7 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
 export interface ErrorDetails {
   conflicts?: TargetConflict[];
   flagged?: FlaggedSkill[];
+  secrets?: SecretFinding[];
   [key: string]: unknown;
 }
 

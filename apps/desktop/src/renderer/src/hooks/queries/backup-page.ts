@@ -1,4 +1,10 @@
-import type { BackupConflict, GithubAuthMethod, SizeReport, Snapshot } from "@loadout/shared";
+import type {
+  SecretFinding,
+  BackupConflict,
+  GithubAuthMethod,
+  SizeReport,
+  Snapshot,
+} from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -40,5 +46,14 @@ export function useGithubDeviceAvailable(): UseQueryResult<boolean> {
   return useQuery({
     queryKey: keys.backup.deviceAvailable,
     queryFn: () => api.backup.githubDeviceAvailable(),
+  });
+}
+
+/** What the next backup would hold back as a possible key or token. Only asked with a remote. */
+export function useBackupSecrets(enabled: boolean): UseQueryResult<SecretFinding[]> {
+  return useQuery({
+    queryKey: keys.backup.secrets,
+    queryFn: () => api.backup.secretFindings(),
+    enabled,
   });
 }

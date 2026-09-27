@@ -84,6 +84,7 @@ export const keys = {
     device: ["backup", "device"] as const,
     authMethod: ["backup", "auth-method"] as const,
     deviceAvailable: ["backup", "device-available"] as const,
+    secrets: ["backup", "secrets"] as const,
   },
   settings: {
     root: ["settings"] as const,

@@ -16,3 +16,4 @@ export * from "./safety";
 export * from "./wsl";
 export * from "./skill-search";
 export * from "./health";
+export * from "./secrets";

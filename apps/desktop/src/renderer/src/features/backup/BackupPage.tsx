@@ -21,6 +21,7 @@ import { deriveBackupMode } from "@/lib/backup-mode";
 import { BackupSummary } from "./BackupSummary";
 import { ConflictList } from "./ConflictList";
 import { GIT_DOWNLOAD_URL } from "./constants";
+import { HeldBackSecrets } from "./HeldBackSecrets";
 import { DisconnectCard } from "./DisconnectCard";
 import { GithubConnectPanel } from "./GithubConnectPanel";
 import { RecoveryDialog } from "./RecoveryDialog";
@@ -149,6 +150,8 @@ export function BackupPage(): ReactNode {
         ) : null}
 
         <ConflictList conflicts={conflicts.data ?? []} />
+
+        <HeldBackSecrets enabled={isRepo && Boolean(remoteUrl)} skills={skills.data ?? []} />
 
         {showConnect ? (
           <div ref={connectPanel}>

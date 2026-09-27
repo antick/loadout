@@ -17,6 +17,12 @@ export const ACCEPT_RISK_FLAG: FlagSpec = {
   description: "Install skills the safety check flags. Read the findings first.",
 };
 
+export const ALLOW_SECRETS_FLAG: FlagSpec = {
+  name: "allow-secrets",
+  type: "boolean",
+  description: "Back up what looks like keys or tokens anyway. Read the findings first.",
+};
+
 export const DRY_RUN_FLAG: FlagSpec = {
   name: "dry-run",
   type: "boolean",

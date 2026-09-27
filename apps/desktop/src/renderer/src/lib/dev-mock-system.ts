@@ -28,6 +28,7 @@ import {
   type Skill,
   SNAPSHOT_TAG_PREFIX,
   type Snapshot,
+  type SecretFinding,
   type SyncOutcome,
 } from "@loadout/shared";
 import {
@@ -148,6 +149,18 @@ export function createSystemMockHandlers(
         ]
       : [];
   let deviceName = "Studio Mac";
+  // One skill holds what looks like a token, so the backup page shows the held-back list.
+  const heldBack: SecretFinding[] = [
+    {
+      id: "mock-secret-1",
+      file: "api-docs/reference.md",
+      path: `${HOME}/.loadout/skills/api-docs/reference.md`,
+      line: 14,
+      kind: "github_token",
+      masked: "ghp_…9fQ2",
+    },
+  ];
+  const allowedSecrets = new Set<string>();
   let devicePolls = 0;
   let location: LibraryLocation = SEED_LIBRARY_LOCATION;
   let agentControl = { installed: false, skillId: null as string | null, dismissed: false };
@@ -217,6 +230,13 @@ export function createSystemMockHandlers(
       status = { ...status, ahead: 0, behind: 0 };
     },
     "backup.sync": (): SyncOutcome => {
+      const held = heldBack.filter((finding) => !allowedSecrets.has(finding.id));
+      if (held.length > 0) {
+        ctx.fail(
+          "SECRETS_FOUND",
+          `Backup held back: ${held[0]?.file}, line ${held[0]?.line} looks like a key or token. Remove it, or choose Back up anyway on the Backup page.`,
+        );
+      }
       if (scenario === "rejected") ctx.fail("GIT_REJECTED", "[rejected] non-fast-forward");
       if (scenario === "auth") ctx.fail("GIT_AUTH", "Authentication failed.");
       if (status.upstreamHealth === "unrelated_histories") {
@@ -241,6 +261,11 @@ export function createSystemMockHandlers(
             }
           : null,
       };
+    },
+    "backup.secretFindings": (): SecretFinding[] =>
+      heldBack.filter((finding) => !allowedSecrets.has(finding.id)),
+    "backup.allowSecrets": (ids: string[]) => {
+      for (const id of ids) allowedSecrets.add(id);
     },
     "backup.snapshots": () => snapshots,
     "backup.restore": (tag: string) => {

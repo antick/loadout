@@ -84,6 +84,8 @@ export const INTERNAL_KEYS = {
   backupRemoteUrl: "backup.remoteUrl",
   backupDeviceName: "backup.deviceName",
   backupRestoredFrom: "backup.restoredFrom",
+  /** Findings the user chose to back up anyway (ids), this computer only. */
+  backupAllowedSecrets: "backup.allowedSecrets",
   githubAuthMethod: "backup.githubAuthMethod",
   projectExportAgents: (projectId: string) => `projects.exportAgents:${projectId}`,
   projectActivity: "projects.activity",

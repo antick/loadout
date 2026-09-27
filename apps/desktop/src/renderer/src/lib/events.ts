@@ -51,6 +51,8 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.market.root,
     keys.system.root,
     keys.storage.root,
+    // Editing a skill can add or remove something the backup would hold back.
+    keys.backup.secrets,
     // Reports say whether they are stale by comparing content hashes.
     keys.safety.root,
   ],
