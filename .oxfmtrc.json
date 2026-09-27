@@ -5,6 +5,7 @@
   "semi": true,
   "trailingComma": "all",
   "ignorePatterns": [
+    ".claude/worktrees/**",
     "**/routeTree.gen.ts",
     "**/dist/**",
     "**/out/**",

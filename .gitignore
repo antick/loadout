@@ -12,3 +12,6 @@ out
 coverage
 .astro
 .vercel
+
+# Temporary git worktrees made by coding agents
+/.claude/worktrees/

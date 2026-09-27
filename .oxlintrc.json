@@ -16,7 +16,7 @@
     "eqeqeq": ["error", "smart"],
     "no-await-in-loop": "off"
   },
-  "ignorePatterns": ["**/dist/**", "**/out/**", "**/release/**", "**/routeTree.gen.ts"],
+  "ignorePatterns": [".claude/worktrees/**", "**/dist/**", "**/out/**", "**/release/**", "**/routeTree.gen.ts"],
   "overrides": [
     {
       "files": ["**/components/ui/**", "**/hooks/use-mobile.ts"],
