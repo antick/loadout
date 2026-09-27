@@ -62,6 +62,14 @@ Checked against mock data only, never clicked in the running Electron app:
       the file in Finder / Explorer instead of opening it
 - [ ] Choose or drop a real `.zip` holding several skills on Install → This computer: the picker opens
 - [ ] Git or link tab with a real `.zip` link and with Git uninstalled (the "Git is not installed" note)
+- [ ] Recently removed: delete a local skill and pull over an edited copy on an agent's page, Undo
+      from the toast, Restore and Delete for good in Settings → Storage; once with the library on
+      another disk than the agent folder (the copy-across-disks path)
+- [ ] Open the packaged app from the Dock with `CODEX_HOME` exported only in `~/.zshrc`: Codex's
+      folder switches a few seconds after launch and Settings → Agents names the variable
+- [ ] Backup with a real GitHub remote and a skill holding a token: held back, listed on the
+      Backup page, Edit opens the file, Back up anyway pushes; automatic backup shows the message
+- [ ] Edit a library skill in another editor while an agent has a copy: the copy follows
 
 Core logic behind all of these has tests; this is about the UI wiring.
 
