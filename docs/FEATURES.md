@@ -138,7 +138,11 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   `COPILOT_HOME` (GitHub Copilot), `QWEN_HOME` (Qwen Code), `PI_CODING_AGENT_DIR` (Pi),
   `OPENCLAW_STATE_DIR` (OpenClaw) and `HERMES_HOME` (Hermes Agent). Opened from the Dock or a
   launcher, the app asks your login shell for them once, in the background. Settings → Agents says
-  which variable set a folder; a folder chosen there still wins.
+  which variable set a folder; a folder chosen there still wins. When a variable moves an agent's
+  folder, the skills Loadout installed for it move along, once the app has read the shell. The
+  CLI never does this: a terminal may set a variable for one session only. A profile whose
+  `skills` folder links to the main one (like a second Codex home made by a switcher) is the same
+  folder, and nothing moves.
 - Reorder agents; the order is used everywhere in the app.
 - Coding agents and personal-assistant agents are grouped separately.
 - When each agent sees skill changes, from its own documentation: while it runs (Claude Code,

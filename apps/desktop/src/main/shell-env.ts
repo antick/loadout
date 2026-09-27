@@ -7,10 +7,13 @@ const MARKER = "__LOADOUT_SHELL_ENV__";
 const RESOLVING_FLAG = "LOADOUT_RESOLVING_SHELL_ENV";
 const FALLBACK_SHELL = "/bin/sh";
 
-/** The `names` found in `env -0` output printed after the marker. */
-export function pickShellEnv(output: string, names: readonly string[]): Record<string, string> {
+/** The `names` found in `env -0` output printed after the marker; null without the marker. */
+export function pickShellEnv(
+  output: string,
+  names: readonly string[],
+): Record<string, string> | null {
   const start = output.lastIndexOf(MARKER);
-  if (start === -1) return {};
+  if (start === -1) return null;
   const wanted = new Set(names);
   const found: Record<string, string> = {};
   for (const entry of output.slice(start + MARKER.length).split("\0")) {
@@ -33,19 +36,20 @@ export interface ReadShellEnvOptions {
 /**
  * These variables as the user's login shell sets them. An app opened from the Dock or a desktop
  * launcher does not get what `~/.zshrc` or `~/.profile` export, so the shell is asked once.
- * Resolves to an empty record on Windows (no such split) and on any failure or timeout.
+ * Resolves to an empty record on Windows (no such split), and to null when the shell could not
+ * be read (a failure or a timeout): the caller then knows it has not learned the real values.
  */
 export function readShellEnv(
   names: readonly string[],
   options: ReadShellEnvOptions = {},
-): Promise<Record<string, string>> {
+): Promise<Record<string, string> | null> {
   const platform = options.platform ?? process.platform;
   if (platform === "win32" || names.length === 0) return Promise.resolve({});
   const shell = options.shell ?? process.env.SHELL ?? FALLBACK_SHELL;
   return new Promise((resolve) => {
     let output = "";
     let settled = false;
-    const finish = (found: Record<string, string>): void => {
+    const finish = (found: Record<string, string> | null): void => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -60,17 +64,17 @@ export function readShellEnv(
     });
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
-      finish({});
+      finish(null);
     }, options.timeoutMs ?? SHELL_ENV_TIMEOUT_MS);
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (chunk: string) => {
       output += chunk;
       if (output.length > SHELL_ENV_MAX_BYTES) {
         child.kill("SIGKILL");
-        finish({});
+        finish(null);
       }
     });
-    child.on("error", () => finish({}));
-    child.on("close", (code) => finish(code === 0 ? pickShellEnv(output, names) : {}));
+    child.on("error", () => finish(null));
+    child.on("close", (code) => finish(code === 0 ? pickShellEnv(output, names) : null));
   });
 }

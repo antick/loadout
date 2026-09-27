@@ -353,8 +353,24 @@ function start(): void {
   ];
 
   // Opened from the Dock, the app misses what the shell profile exports (CODEX_HOME, …).
-  void readShellEnv(AGENT_HOME_ENV_VARIABLES).then((found) => {
+  void readShellEnv(AGENT_HOME_ENV_VARIABLES).then((read) => {
+    const found = read ?? {};
     shellEnv = found;
+    // Only now are agents' folders final: a skill follows an agent whose folder moved. Never
+    // before, nor when the shell could not be read, or a Dock launch would move them to the
+    // default folder and back again.
+    if (read === null) {
+      core?.ctx.log.warn("Could not read the shell's variables");
+    } else {
+      void core
+        ?.followAgentFolders()
+        .then((moves) => {
+          if (moves.length > 0) send("data:changed", { scope: ["agents", "skills"] });
+        })
+        .catch((error: unknown) =>
+          core?.ctx.log.warn("Could not follow moved agent folders", error),
+        );
+    }
     const learned = Object.keys(found).filter((name) => process.env[name] === undefined);
     if (learned.length === 0) return;
     core?.ctx.log.info(`Agent folders moved by the shell: ${learned.join(", ")}`);

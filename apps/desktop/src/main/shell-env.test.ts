@@ -32,7 +32,7 @@ describe("shell environment", () => {
       CODEX_HOME: "/Users/me/.codex-work",
       WEIRD: "a=b",
     });
-    expect(pickShellEnv("no marker at all", ["CODEX_HOME"])).toEqual({});
+    expect(pickShellEnv("no marker at all", ["CODEX_HOME"])).toBeNull();
   });
 
   it("asks the login shell and reads what it exports", async () => {
@@ -45,16 +45,16 @@ describe("shell environment", () => {
     });
   });
 
-  it("gives nothing on Windows, a failing shell or a hung one", async () => {
+  it("gives nothing on Windows, and null for a failing shell or a hung one", async () => {
     expect(await readShellEnv(["CODEX_HOME"], { platform: "win32" })).toEqual({});
     const failing = fakeShell("exit 3");
-    expect(await readShellEnv(["CODEX_HOME"], { shell: failing, platform: "linux" })).toEqual({});
+    expect(await readShellEnv(["CODEX_HOME"], { shell: failing, platform: "linux" })).toBeNull();
     // Ignores SIGTERM and waits on stdin, like a stubborn interactive profile.
     const hung = fakeShell("trap '' TERM; read line; sleep 5");
     const started = Date.now();
     expect(
       await readShellEnv(["CODEX_HOME"], { shell: hung, platform: "linux", timeoutMs: 200 }),
-    ).toEqual({});
+    ).toBeNull();
     expect(Date.now() - started).toBeLessThan(2000);
   });
 });

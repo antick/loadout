@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import type { CoreApi, SettingsApi } from "@loadout/shared";
+import { type FolderMove, followMovedAgentFolders } from "./agents/follow-folders";
 import { AgentRegistry } from "./agents/registry";
 import { createAgentsService } from "./agents";
 import { createBackupService } from "./backup";
@@ -52,6 +53,11 @@ export interface Core {
   watchPaths(): string[];
   /** Workspace skills folders: a change there only touches project pages. */
   projectWatchPaths(): string[];
+  /**
+   * Move deployments to where agents' folders are now, after a home variable changed. For the
+   * desktop app only; see `followMovedAgentFolders`.
+   */
+  followAgentFolders(): Promise<FolderMove[]>;
   /** The database and the skills folder are still where they were. */
   libraryPresent(): boolean;
   close(): void;
@@ -222,6 +228,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       ...new Set(registry.list().flatMap((agent) => (agent.installed ? [agent.skillsDir] : []))),
     ],
     projectWatchPaths: () => projects.skillFolders(),
+    followAgentFolders: () => followMovedAgentFolders(ctx, { registry, store, deploy }),
     libraryPresent: () => existsSync(ctx.paths.dbPath) && existsSync(ctx.paths.skillsDir),
     close: () => {
       background.stop();
