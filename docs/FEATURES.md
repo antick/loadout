@@ -318,7 +318,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   `--json` output with stable error codes, `--dry-run` for destructive commands and for
   `skills deploy` / `skills undeploy`, `--yes` for destructive commands (including
   `presets undeploy`, and `agents disable` for an agent with skills deployed), and
-  `--library` to work on another library.
+  `--library` to work on another library. `--library` only opens a library that exists, so a
+  typo never starts an empty one; `repo init <path>` creates a new one.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.
 - Without the app: `pnpm add -g @antick/loadout` (Node.js 22.13 or newer), or the standalone

@@ -415,6 +415,23 @@ describe("repo and --library", () => {
   it("works on another library without touching the saved one", async () => {
     writeSkill(join(root, "src"), "alpha");
     const other = join(root, "other-library");
+    // --library opens libraries that exist; a mistyped path never starts an empty one.
+    const missing = await cli("--library", other, "skills", "list", "--json");
+    expect(missing.code).toBe(EXIT_FAILED);
+    expect(missing.json()).toMatchObject({ code: "NOT_FOUND" });
+    expect(existsSync(other)).toBe(false);
+
+    const created = await cli("repo", "init", other, "--json");
+    expect(created.code, created.stderr).toBe(EXIT_OK);
+    expect(created.json()).toMatchObject({ path: other });
+    expect((await cli("repo", "init", other, "--json")).json()).toMatchObject({
+      code: "ALREADY_EXISTS",
+    });
+    mkdirSync(join(root, "busy"));
+    writeFileSync(join(root, "busy", "file.txt"), "x");
+    expect((await cli("repo", "init", join(root, "busy"), "--json")).code).toBe(EXIT_USAGE);
+    expect((await cli("repo", "init", join(root, "x"), "--library", other)).code).toBe(EXIT_USAGE);
+
     await cli("--library", other, "skills", "install", "./src/alpha");
     expect(existsSync(join(other, "skills", "alpha", "SKILL.md"))).toBe(true);
     expect(

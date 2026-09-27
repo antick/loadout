@@ -296,6 +296,11 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   };
 }
 
+/** A library lives in `baseDir`: its database is there. */
+export function isLibraryDir(baseDir: string): boolean {
+  return existsSync(join(baseDir, DB_FILE));
+}
+
 /** The desktop app is open on this computer (its pid file names a live process). */
 export function isAppRunning(home: string): boolean {
   return [APP_DATA_DIR_NAME, DEV_APP_DATA_DIR_NAME].some((dir) => {

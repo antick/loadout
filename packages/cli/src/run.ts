@@ -1,5 +1,11 @@
-import { type Core, type CoreCreateOptions, toErrorShape } from "@loadout/core";
-import type { ErrorShape } from "@loadout/shared";
+import {
+  type Core,
+  type CoreCreateOptions,
+  isLibraryDir,
+  notFound,
+  toErrorShape,
+} from "@loadout/core";
+import { APP_NAME, type ErrorShape } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString, parseArgs, splitCommandPath } from "./args";
 import { COMMAND_GROUPS, type CommandGroup, type CommandSpec } from "./commands";
 import { resolveUserPath } from "./commands/support";
@@ -75,18 +81,19 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
     }
 
     const library = flagString(args, "library");
-    core = deps.createCore({
-      ...deps.coreOptions,
-      ...(library === undefined
-        ? {}
-        : { baseDir: resolveUserPath(library, deps.cwd, deps.homeDir) }),
-    });
-    const result = await command.run({
-      core,
-      args,
-      cwd: deps.cwd,
-      customLibrary: library !== undefined,
-    });
+    const context = { args, cwd: deps.cwd, customLibrary: library !== undefined };
+    let baseDir =
+      library === undefined ? undefined : resolveUserPath(library, deps.cwd, deps.homeDir);
+    if (command.createsLibraryAt) {
+      baseDir = command.createsLibraryAt(context, deps.homeDir);
+    } else if (baseDir !== undefined && !isLibraryDir(baseDir)) {
+      // A typo in --library must not quietly start an empty library somewhere.
+      throw notFound(
+        `There is no ${APP_NAME} library in ${baseDir}. Check the path, or create one with \`repo init ${library}\`.`,
+      );
+    }
+    core = deps.createCore({ ...deps.coreOptions, ...(baseDir === undefined ? {} : { baseDir }) });
+    const result = await command.run({ core, ...context });
     printResult(io, json, result.value, result.text);
     return result.exitCode ?? EXIT_OK;
   } catch (error) {

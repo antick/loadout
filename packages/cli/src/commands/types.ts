@@ -26,6 +26,11 @@ export interface CommandSpec {
   flags: readonly FlagSpec[];
   /** Extra lines shown under the options in `--help`. */
   notes?: readonly string[];
+  /**
+   * The command makes a new library: run on one opened (and so created) at the folder this
+   * returns, instead of the saved library or `--library`, which only open existing ones.
+   */
+  createsLibraryAt?(context: Omit<CommandContext, "core">, homeDir: string): string;
   run(context: CommandContext): Promise<CommandResult>;
 }
 
