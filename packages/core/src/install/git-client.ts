@@ -38,8 +38,6 @@ export interface CheckoutOptions {
   branch?: string | null;
   /** Pin the working copy to this commit when the remote still serves it. */
   revision?: string | null;
-  /** Folder the caller cares about. Accepted for narrow clones later; today the clone is whole. */
-  subpath?: string | null;
   /**
    * Check out only the skill documents (`SKILL.md`). The caller lists or finds skills from them,
    * then calls `materialize` for the folders it really uses before reading any other file.

@@ -285,7 +285,6 @@ export async function openRemoteSource(
   const checkout = await git.checkout(target.url, {
     branch: target.branch,
     revision,
-    subpath: target.subpath,
     signal,
     // Found by its SKILL.md; then only the skill's own folder is fetched in full.
     manifestsOnly: true,

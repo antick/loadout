@@ -104,7 +104,6 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       const source = await resolveSource(parsed, handle.signal);
       const checkout = await git.checkout(source.cloneUrl, {
         branch: source.branch,
-        subpath: source.subpath,
         // The list needs only each skill's SKILL.md; confirming fetches the chosen folders.
         manifestsOnly: true,
         signal: handle.signal,
