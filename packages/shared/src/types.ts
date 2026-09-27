@@ -26,6 +26,18 @@ export interface AgentInfo {
   homeEnv: { variable: string; value: string } | null;
   /** When the agent sees skill changes, per its documentation; null when it does not say. */
   reload: AgentReload | null;
+  /** Why the agent counts as installed or not, for people wondering about a wrong guess. */
+  detection: AgentDetection;
+}
+
+/**
+ * `folder`: `path` exists (its detect folder). `override`: not found, but a skills folder was
+ * chosen in Settings. `custom`: added by the user. `missing`: `path` was looked for and is not
+ * there.
+ */
+export interface AgentDetection {
+  reason: "folder" | "override" | "custom" | "missing";
+  path: string | null;
 }
 
 export interface CustomAgentInput {

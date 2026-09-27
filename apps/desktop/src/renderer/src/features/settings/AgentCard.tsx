@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Switch } from "@/components/ui/switch";
 import { useRemoveCustomAgent, useSetAgentEnabled } from "@/hooks/mutations/settings-page";
 import { cn } from "@/lib/utils";
+import { AgentDetectionNote } from "./AgentDetectionNote";
 import { AgentPathField } from "./AgentPathField";
 
 export interface AgentCardProps {
@@ -130,6 +131,7 @@ export function AgentCard({
         </div>
       </div>
       <div className="flex flex-col gap-1 pl-10">
+        <AgentDetectionNote detection={agent.detection} className="mb-1" />
         <AgentPathField
           agentKey={agent.key}
           kind="global"

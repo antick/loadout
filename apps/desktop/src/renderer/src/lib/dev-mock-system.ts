@@ -319,6 +319,7 @@ export function createSystemMockHandlers(
         alsoReads: [],
         homeEnv: null,
         reload: null,
+        detection: { reason: "custom", path: null },
       };
       agents.push(created);
       ctx.emitChanged("agents");

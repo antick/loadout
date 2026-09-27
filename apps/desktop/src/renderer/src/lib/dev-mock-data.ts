@@ -39,6 +39,7 @@ function agent(
     alsoReads: [],
     homeEnv: null,
     reload: BUILT_IN_AGENTS.find((entry) => entry.key === key)?.reload ?? null,
+    detection: { reason: "folder", path: `${HOME}/${dir}` },
     ...extra,
   };
 }
@@ -53,7 +54,10 @@ export const SEED_AGENTS: AgentInfo[] = [
     homeEnv: { variable: "CODEX_HOME", value: `${HOME}/.codex-work` },
   }),
   agent("opencode", "OpenCode", ".config/opencode"),
-  agent("amp", "Amp", ".config/amp", { installed: false }),
+  agent("amp", "Amp", ".config/amp", {
+    installed: false,
+    detection: { reason: "missing", path: `${HOME}/.config/amp` },
+  }),
   agent("desk_helper", "Desk Helper", ".deskhelper", { category: "assistant" }),
 ];
 

@@ -117,6 +117,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   Windsurf, Cline, Goose, Amp, Roo Code, Kilo Code, Qwen Code and OpenHands. Installed ones are
   detected automatically.
 - Enable or disable each agent, or all at once. Disabling removes only what the app deployed.
+- Settings → Agents says why each agent counts as installed (the folder that was found, or the
+  skills folder you chose) or where it looked and found nothing, so a wrong guess is easy to fix.
 - Custom agents with their own skills folder and an optional project-relative folder.
 - Agents inside WSL on Windows: point an agent at its Linux folder, such as
   `\\wsl.localhost\Ubuntu\home\you\.claude\skills`. Skills are always copied there, never

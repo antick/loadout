@@ -18,6 +18,7 @@ function agent(key: string, patch: Partial<AgentInfo> = {}): AgentInfo {
     alsoReads: [],
     homeEnv: null,
     reload: null,
+    detection: { reason: "folder", path: `/home/${key}` },
     ...patch,
   };
 }

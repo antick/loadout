@@ -71,6 +71,11 @@
       "notSet": "not set",
       "editPath": "Change path",
       "resetPath": "Reset to default",
+      "detection": {
+        "folder": "Found because {{path}} exists.",
+        "override": "Counted as installed because you chose its skills folder.",
+        "missing": "Not found: there is no {{path}}. If it is installed elsewhere, set its skills folder below."
+      },
       "fromVariable": "Set by {{variable}} in your shell. Change the folder here to use another one.",
       "browse": "Choose folder",
       "pathSaved": "Path saved",

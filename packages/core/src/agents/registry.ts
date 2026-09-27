@@ -4,6 +4,7 @@ import {
   AGENT_PRIORITY_ORDER,
   type AgentCategory,
   type AgentDefinition,
+  type AgentDetection,
   type AgentInfo,
   BUILT_IN_AGENTS,
 } from "@loadout/shared";
@@ -118,10 +119,17 @@ export class AgentRegistry {
     const category: AgentCategory = definition.category ?? "coding";
     const envHome = this.#homeFromEnv(definition);
     const homeEnv = definition.homeEnv;
-    const detected =
+    const detectCandidates =
       envHome && homeEnv
-        ? existsSync(join(envHome.value, homeEnv.detectDir ?? ""))
-        : this.#candidates(definition.detectDir).some((path) => existsSync(path));
+        ? [join(envHome.value, homeEnv.detectDir ?? "")]
+        : this.#candidates(definition.detectDir);
+    const found = detectCandidates.find((path) => existsSync(path)) ?? null;
+    const detected = found !== null;
+    const detection: AgentDetection = found
+      ? { reason: "folder", path: found }
+      : override
+        ? { reason: "override", path: null }
+        : { reason: "missing", path: detectCandidates[0] ?? null };
     const defaultSkillsDir =
       envHome && homeEnv
         ? join(envHome.value, homeEnv.skillsDir)
@@ -144,6 +152,7 @@ export class AgentRegistry {
       alsoReads: extraScanDirs,
       homeEnv: override ? null : envHome,
       reload: definition.reload ?? null,
+      detection,
       extraScanDirs,
       projectExtraScanDirs: (definition.projectExtraScanDirs ?? []).map(relativeDir),
       recursiveScan: definition.recursiveScan ?? false,
@@ -166,6 +175,7 @@ export class AgentRegistry {
       alsoReads: [],
       homeEnv: null,
       reload: null,
+      detection: { reason: "custom", path: null },
       extraScanDirs: [],
       projectExtraScanDirs: [],
       recursiveScan: false,

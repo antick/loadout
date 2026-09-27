@@ -274,6 +274,24 @@ describe("agents service", () => {
     expect((await info(custom.key)).projectSkillsDir).toBeNull();
   });
 
+  it("says why each agent counts as installed or not", async () => {
+    expect((await info("claude_code")).detection).toEqual({
+      reason: "folder",
+      path: join(world.home, ".claude"),
+    });
+    expect((await info("codex")).detection).toEqual({
+      reason: "missing",
+      path: join(world.home, ".codex"),
+    });
+    world.ctx.settings.setRaw(INTERNAL_KEYS.agentPathOverrides, {
+      codex: join(world.root, "codex-skills"),
+    });
+    expect(await info("codex")).toMatchObject({
+      installed: true,
+      detection: { reason: "override", path: null },
+    });
+  });
+
   describe("home folder variables", () => {
     const registryWith = (env: Record<string, string>) =>
       new AgentRegistry({ ...world.ctx, env: () => env });
