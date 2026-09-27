@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import {
   AGENT_PRIORITY_ORDER,
   type AgentCategory,
@@ -98,11 +98,34 @@ export class AgentRegistry {
     return new Set(this.#ctx.settings.getRaw<string[]>(INTERNAL_KEYS.disabledAgents, []));
   }
 
+  /**
+   * The agent's home folder as its variable sets it: an absolute path (or `~/…`), else null. A
+   * relative or empty value is ignored, as the agent itself would resolve it against a folder we
+   * cannot know.
+   */
+  #homeFromEnv(definition: AgentDefinition): { variable: string; value: string } | null {
+    const variable = definition.homeEnv?.variable;
+    const raw = variable ? this.#ctx.env()[variable]?.trim() : undefined;
+    if (!variable || !raw) return null;
+    const home = this.#ctx.homeDir;
+    const value = raw === "~" ? home : raw.startsWith("~/") ? join(home, raw.slice(2)) : raw;
+    return isAbsolute(value) ? { variable, value } : null;
+  }
+
   #resolveBuiltIn(definition: AgentDefinition, disabled: ReadonlySet<string>): ResolvedAgent {
     const override = this.pathOverrides()[definition.key];
     const projectOverride = this.projectPathOverrides()[definition.key];
     const category: AgentCategory = definition.category ?? "coding";
-    const detected = this.#candidates(definition.detectDir).some((path) => existsSync(path));
+    const envHome = this.#homeFromEnv(definition);
+    const homeEnv = definition.homeEnv;
+    const detected =
+      envHome && homeEnv
+        ? existsSync(join(envHome.value, homeEnv.detectDir ?? ""))
+        : this.#candidates(definition.detectDir).some((path) => existsSync(path));
+    const defaultSkillsDir =
+      envHome && homeEnv
+        ? join(envHome.value, homeEnv.skillsDir)
+        : this.#firstExisting(definition.skillsDir);
     const extraScanDirs = (definition.extraScanDirs ?? [])
       .flatMap((relative) => this.#candidates(relative))
       .filter((path, index, all) => existsSync(path) && all.indexOf(path) === index);
@@ -113,12 +136,13 @@ export class AgentRegistry {
       installed: Boolean(override) || detected,
       enabled: !disabled.has(definition.key),
       isCustom: false,
-      skillsDir: override ?? this.#firstExisting(definition.skillsDir),
+      skillsDir: override ?? defaultSkillsDir,
       hasPathOverride: Boolean(override),
       projectSkillsDir: projectOverride ?? definition.projectSkillsDir ?? definition.skillsDir,
       hasProjectPathOverride: Boolean(projectOverride),
       sharesDirWith: [],
       alsoReads: extraScanDirs,
+      homeEnv: override ? null : envHome,
       extraScanDirs,
       projectExtraScanDirs: (definition.projectExtraScanDirs ?? []).map(relativeDir),
       recursiveScan: definition.recursiveScan ?? false,
@@ -139,6 +163,7 @@ export class AgentRegistry {
       hasProjectPathOverride: false,
       sharesDirWith: [],
       alsoReads: [],
+      homeEnv: null,
       extraScanDirs: [],
       projectExtraScanDirs: [],
       recursiveScan: false,

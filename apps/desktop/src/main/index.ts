@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { BrowserWindow, app, session, shell } from "electron";
 import { AppError, type Core, createCore } from "@loadout/core";
 import {
+  AGENT_HOME_ENV_VARIABLES,
   APP_DATA_DIR_NAME,
   APP_ID,
   APP_NAME,
@@ -18,6 +19,7 @@ import { createAppApi } from "./app-api";
 import { type AppDataMove, adoptAppData, removeOldAppData } from "./app-data";
 import { startRemoval } from "./remover";
 import { revealInFileManager } from "./reveal";
+import { readShellEnv } from "./shell-env";
 import {
   APP_ICON_FILE,
   CRASH_DUMPS_DIR,
@@ -45,6 +47,8 @@ let quitting = false;
 /** The library was deleted while running: nothing may write to it any more. */
 let libraryGone = false;
 let updateTimer: NodeJS.Timeout | null = null;
+/** Agents' home folder variables as the login shell sets them; filled in shortly after start. */
+let shellEnv: Record<string, string> = {};
 
 const resourcesDir = app.isPackaged
   ? join(process.resourcesPath, "resources")
@@ -268,6 +272,8 @@ function start(): void {
       send(event, payload);
     },
     echoLogs: !app.isPackaged,
+    // Started from a terminal, the app has the shell's variables already; they win.
+    env: () => ({ ...shellEnv, ...process.env }),
     fetchImpl: appFetch,
     host: {
       appVersion: app.getVersion(),
@@ -325,6 +331,16 @@ function start(): void {
       },
     ),
   ];
+
+  // Opened from the Dock, the app misses what the shell profile exports (CODEX_HOME, …).
+  void readShellEnv(AGENT_HOME_ENV_VARIABLES).then((found) => {
+    shellEnv = found;
+    const learned = Object.keys(found).filter((name) => process.env[name] === undefined);
+    if (learned.length === 0) return;
+    core?.ctx.log.info(`Agent folders moved by the shell: ${learned.join(", ")}`);
+    send("data:changed", { scope: ["agents", "skills", "projects"] });
+    tray?.refresh();
+  });
 
   // After the library started: it adopts the location file the old folder may still hold.
   finishAppDataMove(core.ctx.log);

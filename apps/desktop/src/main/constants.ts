@@ -60,3 +60,7 @@ export const UPDATE_LOG_FILE = "update.log";
 export const ARCHIVE_EXTENSIONS = ["zip", "skill", "tar", "gz", "tgz"];
 /** What "Export as .zip" saves. */
 export const EXPORT_EXTENSION = "zip";
+
+/** Asking the login shell for agents' home folder variables: give up after this long. */
+export const SHELL_ENV_TIMEOUT_MS = 10_000;
+export const SHELL_ENV_MAX_BYTES = 1024 * 1024;

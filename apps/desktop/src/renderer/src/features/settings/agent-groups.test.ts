@@ -16,6 +16,7 @@ function agent(key: string, patch: Partial<AgentInfo> = {}): AgentInfo {
     hasProjectPathOverride: false,
     sharesDirWith: [],
     alsoReads: [],
+    homeEnv: null,
     ...patch,
   };
 }

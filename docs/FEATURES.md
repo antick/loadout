@@ -122,6 +122,12 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   `\\wsl.localhost\Ubuntu\home\you\.claude\skills`. Skills are always copied there, never
   linked, because Linux cannot follow a link back into Windows; saving a skill refreshes the copies.
 - Override the global or project skills folder of any built-in agent, and reset it.
+- Agents whose documentation names a variable for moving their home folder follow it:
+  `CLAUDE_CONFIG_DIR` (Claude Code), `CODEX_HOME` (Codex), `GEMINI_CLI_HOME` (Gemini CLI),
+  `COPILOT_HOME` (GitHub Copilot), `QWEN_HOME` (Qwen Code), `PI_CODING_AGENT_DIR` (Pi),
+  `OPENCLAW_STATE_DIR` (OpenClaw) and `HERMES_HOME` (Hermes Agent). Opened from the Dock or a
+  launcher, the app asks your login shell for them once, in the background. Settings → Agents says
+  which variable set a folder; a folder chosen there still wins.
 - Reorder agents; the order is used everywhere in the app.
 - Coding agents and personal-assistant agents are grouped separately.
 - Agents that share one skills folder are recognised and handled safely.

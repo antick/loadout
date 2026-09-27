@@ -21,6 +21,8 @@ export interface AgentPathFieldProps {
   overridden: boolean;
   /** Saving an empty value is allowed and clears the path (custom agents' project path). */
   clearable: boolean;
+  /** One quiet line under the path saying where it came from, e.g. an environment variable. */
+  note?: string | null;
 }
 
 /** One of an agent's skill folders: shown as a path, editable in place, resettable when changed. */
@@ -31,6 +33,7 @@ export function AgentPathField({
   value,
   overridden,
   clearable,
+  note,
 }: AgentPathFieldProps): ReactNode {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<string | null>(null);
@@ -130,6 +133,9 @@ export function AgentPathField({
           </span>
         </div>
       )}
+      {note && !editing ? (
+        <p className="col-start-2 mt-0.5 text-xs text-muted-foreground">{note}</p>
+      ) : null}
       {kind === "global" ? (
         <WslFolderNote
           path={editing ? draft : (value ?? "")}

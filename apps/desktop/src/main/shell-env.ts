@@ -1,0 +1,58 @@
+import { execFile } from "node:child_process";
+import { SHELL_ENV_MAX_BYTES, SHELL_ENV_TIMEOUT_MS } from "./constants";
+
+/** Printed before the variables, so anything a shell prints on start-up is skipped. */
+const MARKER = "__LOADOUT_SHELL_ENV__";
+/** Set while resolving, so a shell profile can skip slow start-up work. */
+const RESOLVING_FLAG = "LOADOUT_RESOLVING_SHELL_ENV";
+const FALLBACK_SHELL = "/bin/sh";
+
+/** The `names` found in `env -0` output printed after the marker. */
+export function pickShellEnv(output: string, names: readonly string[]): Record<string, string> {
+  const start = output.lastIndexOf(MARKER);
+  if (start === -1) return {};
+  const wanted = new Set(names);
+  const found: Record<string, string> = {};
+  for (const entry of output.slice(start + MARKER.length).split("\0")) {
+    const at = entry.indexOf("=");
+    if (at <= 0) continue;
+    const name = entry.slice(0, at);
+    const value = entry.slice(at + 1);
+    if (wanted.has(name) && value) found[name] = value;
+  }
+  return found;
+}
+
+export interface ReadShellEnvOptions {
+  /** Defaults to `$SHELL`. */
+  shell?: string;
+  timeoutMs?: number;
+  platform?: NodeJS.Platform;
+}
+
+/**
+ * These variables as the user's login shell sets them. An app opened from the Dock or a desktop
+ * launcher does not get what `~/.zshrc` or `~/.profile` export, so the shell is asked once.
+ * Resolves to an empty record on Windows (no such split) and on any failure or timeout.
+ */
+export function readShellEnv(
+  names: readonly string[],
+  options: ReadShellEnvOptions = {},
+): Promise<Record<string, string>> {
+  const platform = options.platform ?? process.platform;
+  if (platform === "win32" || names.length === 0) return Promise.resolve({});
+  const shell = options.shell ?? process.env.SHELL ?? FALLBACK_SHELL;
+  return new Promise((resolve) => {
+    execFile(
+      shell,
+      ["-i", "-l", "-c", `printf '%s' ${MARKER}; command env -0`],
+      {
+        timeout: options.timeoutMs ?? SHELL_ENV_TIMEOUT_MS,
+        maxBuffer: SHELL_ENV_MAX_BYTES,
+        env: { ...process.env, [RESOLVING_FLAG]: "1" },
+        windowsHide: true,
+      },
+      (error, stdout) => resolve(error ? {} : pickShellEnv(stdout, names)),
+    );
+  });
+}

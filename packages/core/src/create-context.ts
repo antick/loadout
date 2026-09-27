@@ -4,6 +4,7 @@ import type { DataScope } from "@loadout/shared";
 import { ActivityLog } from "./activity";
 import {
   type CoreContext,
+  type EnvReader,
   type EventSink,
   type HostBridge,
   type SecretStore,
@@ -30,6 +31,11 @@ export interface CoreOptions {
   logger?: Logger;
   /** Mirror log lines to the console. */
   echoLogs?: boolean;
+  /**
+   * Environment to read agents' home folder variables from. Defaults to this process's, except
+   * with a `homeDir` override (tests), where the machine's own variables must not leak in.
+   */
+  env?: EnvReader;
 }
 
 export interface ContextBundle {
@@ -102,6 +108,7 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
   const ctx: CoreContext = {
     paths: resolved.paths,
     homeDir: home,
+    env: options.env ?? (options.homeDir === undefined ? () => process.env : () => ({})),
     db,
     settings: new SettingsStore(db),
     lock: new RepoLock(resolved.paths.lockPath),

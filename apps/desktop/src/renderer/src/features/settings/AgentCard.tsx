@@ -137,6 +137,11 @@ export function AgentCard({
           value={agent.skillsDir}
           overridden={agent.hasPathOverride && !agent.isCustom}
           clearable={false}
+          note={
+            agent.homeEnv
+              ? t("settings.agents.fromVariable", { variable: agent.homeEnv.variable })
+              : null
+          }
         />
         <AgentPathField
           agentKey={agent.key}

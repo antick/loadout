@@ -22,6 +22,8 @@ export interface AgentInfo {
   sharesDirWith: string[];
   /** Other global folders the agent also loads skills from, absolute, that exist on this machine. */
   alsoReads: string[];
+  /** The home folder variable that placed `skillsDir`, when one is set and no override wins. */
+  homeEnv: { variable: string; value: string } | null;
 }
 
 export interface CustomAgentInput {

@@ -317,6 +317,7 @@ export function createSystemMockHandlers(
         hasProjectPathOverride: false,
         sharesDirWith: [],
         alsoReads: [],
+        homeEnv: null,
       };
       agents.push(created);
       ctx.emitChanged("agents");

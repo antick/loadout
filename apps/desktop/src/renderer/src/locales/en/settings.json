@@ -71,6 +71,7 @@
       "notSet": "not set",
       "editPath": "Change path",
       "resetPath": "Reset to default",
+      "fromVariable": "Set by {{variable}} in your shell. Change the folder here to use another one.",
       "browse": "Choose folder",
       "pathSaved": "Path saved",
       "pathReset": "Path reset to the default",

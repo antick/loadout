@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { AGENT_PRIORITY_ORDER, BUILT_IN_AGENTS } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { normalizeProjectDir } from "../src/agents";
+import { AgentRegistry, normalizeProjectDir } from "../src/agents";
 import { AppError } from "../src/errors";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
@@ -272,6 +272,56 @@ describe("agents service", () => {
     });
     await setProjectSkillsDir(custom.key, "  ");
     expect((await info(custom.key)).projectSkillsDir).toBeNull();
+  });
+
+  describe("home folder variables", () => {
+    const registryWith = (env: Record<string, string>) =>
+      new AgentRegistry({ ...world.ctx, env: () => env });
+
+    it("reads an agent's folders inside the folder its variable names", () => {
+      const codexHome = join(world.root, "codex-work");
+      mkdirSync(codexHome, { recursive: true });
+      const registry = registryWith({
+        CODEX_HOME: codexHome,
+        CLAUDE_CONFIG_DIR: "~/claude-alt",
+        GEMINI_CLI_HOME: join(world.root, "gemini-home"),
+      });
+
+      expect(registry.get("codex")).toMatchObject({
+        installed: true,
+        skillsDir: join(codexHome, "skills"),
+        homeEnv: { variable: "CODEX_HOME", value: codexHome },
+      });
+      // `~/` is the user's home; the folder is not there, so Claude Code is not detected.
+      expect(registry.get("claude_code")).toMatchObject({
+        installed: false,
+        skillsDir: join(world.home, "claude-alt", "skills"),
+      });
+      // Gemini keeps its `.gemini` folder inside the variable's folder.
+      expect(registry.get("gemini_cli").skillsDir).toBe(
+        join(world.root, "gemini-home", ".gemini", "skills"),
+      );
+      // No variable: the usual folder under home, and no variable to report.
+      expect(registry.get("qwen_code")).toMatchObject({
+        skillsDir: join(world.home, ".qwen", "skills"),
+        homeEnv: null,
+      });
+    });
+
+    it("ignores relative or empty values, and a Settings override wins", () => {
+      const registry = registryWith({ CODEX_HOME: "relative/codex", QWEN_HOME: "  " });
+      expect(registry.get("codex").skillsDir).toBe(join(world.home, ".codex", "skills"));
+      expect(registry.get("qwen_code").homeEnv).toBeNull();
+
+      const moved = join(world.root, "chosen");
+      world.ctx.settings.setRaw(INTERNAL_KEYS.agentPathOverrides, { codex: moved });
+      const overridden = registryWith({ CODEX_HOME: join(world.root, "codex-work") }).get("codex");
+      expect(overridden).toMatchObject({ skillsDir: moved, hasPathOverride: true, homeEnv: null });
+    });
+
+    it("never reads this machine's own variables when a test home is given", () => {
+      expect(world.ctx.env()).toEqual({});
+    });
   });
 
   it("normalises project folders", () => {

@@ -42,9 +42,14 @@ export interface HostBridge {
 }
 
 /** Everything a service needs. Built once by `createCore`. */
+/** Environment variables as the user's shell sets them, read on every call. */
+export type EnvReader = () => Readonly<Record<string, string | undefined>>;
+
 export interface CoreContext {
   paths: LibraryPaths;
   homeDir: string;
+  /** Where agents' home folder variables (`CODEX_HOME`, …) are read from. */
+  env: EnvReader;
   db: Database;
   settings: SettingsStore;
   lock: RepoLock;

@@ -36,6 +36,7 @@ function agent(
     hasProjectPathOverride: false,
     sharesDirWith: [],
     alsoReads: [],
+    homeEnv: null,
     ...extra,
   };
 }
@@ -45,7 +46,10 @@ export const SEED_AGENTS: AgentInfo[] = [
   agent("cursor", "Cursor", ".cursor", {
     alsoReads: [`${HOME}/.agents/skills`, `${HOME}/.claude/skills`],
   }),
-  agent("codex", "Codex", ".codex"),
+  // Moved by `CODEX_HOME`, to show where a home folder variable is named.
+  agent("codex", "Codex", ".codex-work", {
+    homeEnv: { variable: "CODEX_HOME", value: `${HOME}/.codex-work` },
+  }),
   agent("opencode", "OpenCode", ".config/opencode"),
   agent("amp", "Amp", ".config/amp", { installed: false }),
   agent("desk_helper", "Desk Helper", ".deskhelper", { category: "assistant" }),

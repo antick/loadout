@@ -22,6 +22,20 @@ export interface AgentDefinition {
   recursiveScan?: boolean;
   /** Defaults to "coding". */
   category?: AgentCategory;
+  /**
+   * An environment variable the agent documents for moving its home folder. When it is set to an
+   * absolute path, `skillsDir` and `detectDir` are read inside that folder instead of home.
+   */
+  homeEnv?: AgentHomeEnv;
+}
+
+/** Where an agent's folders are when its home folder variable is set. */
+export interface AgentHomeEnv {
+  variable: string;
+  /** Skills folder, relative to the variable's folder. */
+  skillsDir: string;
+  /** Folder whose existence means the agent is installed, relative to it. Defaults to the folder itself. */
+  detectDir?: string;
 }
 
 export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
@@ -38,6 +52,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     displayName: "Claude Code",
     skillsDir: ".claude/skills",
     detectDir: ".claude",
+    homeEnv: { variable: "CLAUDE_CONFIG_DIR", skillsDir: "skills" },
   },
   {
     key: "omp_agent",
@@ -53,6 +68,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".codex",
     projectSkillsDir: ".agents/skills",
     extraScanDirs: [".agents/skills"],
+    homeEnv: { variable: "CODEX_HOME", skillsDir: "skills" },
   },
   {
     key: "grok",
@@ -119,6 +135,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".gemini",
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".agents/skills"],
+    homeEnv: { variable: "GEMINI_CLI_HOME", skillsDir: ".gemini/skills", detectDir: ".gemini" },
   },
   {
     key: "github_copilot",
@@ -128,6 +145,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     projectSkillsDir: ".github/skills",
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".claude/skills", ".agents/skills"],
+    homeEnv: { variable: "COPILOT_HOME", skillsDir: "skills" },
   },
   {
     key: "openclaw",
@@ -135,6 +153,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     skillsDir: ".openclaw/skills",
     detectDir: ".openclaw",
     category: "assistant",
+    homeEnv: { variable: "OPENCLAW_STATE_DIR", skillsDir: "skills" },
   },
   {
     key: "droid",
@@ -285,6 +304,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".pi/agent",
     projectSkillsDir: ".pi/skills",
     extraScanDirs: [".agents/skills"],
+    homeEnv: { variable: "PI_CODING_AGENT_DIR", skillsDir: "skills" },
   },
   { key: "pochi", displayName: "Pochi", skillsDir: ".pochi/skills", detectDir: ".pochi" },
   { key: "qoder", displayName: "Qoder", skillsDir: ".qoder/skills", detectDir: ".qoder" },
@@ -295,6 +315,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".qwen",
     extraScanDirs: [".agents/skills"],
     projectExtraScanDirs: [".agents/skills"],
+    homeEnv: { variable: "QWEN_HOME", skillsDir: "skills" },
   },
   { key: "trae_cn", displayName: "TRAE CN", skillsDir: ".trae-cn/skills", detectDir: ".trae-cn" },
   {
@@ -312,6 +333,7 @@ export const BUILT_IN_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".hermes",
     recursiveScan: true,
     category: "assistant",
+    homeEnv: { variable: "HERMES_HOME", skillsDir: "skills" },
   },
   {
     key: "qclaw",
@@ -393,3 +415,8 @@ export const PROJECT_EXPORT_PRIORITY: readonly string[] = [
   "gemini_cli",
   "github_copilot",
 ];
+
+/** Every home folder variable a built-in agent reads, for hosts that must look them up. */
+export const AGENT_HOME_ENV_VARIABLES: readonly string[] = BUILT_IN_AGENTS.flatMap((agent) =>
+  agent.homeEnv ? [agent.homeEnv.variable] : [],
+);
