@@ -151,13 +151,28 @@ export function removePathSync(path: string): void {
   rmSync(path, { recursive: true, force: true });
 }
 
+export interface MoveOptions {
+  /**
+   * Across disks the entry is copied, then the original removed. When that removal fails the
+   * copy is already whole: called with the error instead of throwing, so a caller never throws
+   * away the only complete copy. Without it, the error is thrown as before.
+   */
+  onLeftover?: (error: unknown) => void;
+}
+
 /** Move one entry, by rename when possible and by copy across disks. Keeps links as links. */
-export function moveEntrySync(from: string, to: string): void {
+export function moveEntrySync(from: string, to: string, options: MoveOptions = {}): void {
   try {
     renameSync(from, to);
+    return;
   } catch {
     cpSync(from, to, { recursive: true, verbatimSymlinks: true });
+  }
+  try {
     removePathSync(from);
+  } catch (error) {
+    if (!options.onLeftover) throw error;
+    options.onLeftover(error);
   }
 }
 

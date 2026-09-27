@@ -277,12 +277,15 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   saved first.
 - Automatic backup after changes settle, plus a local save on quit.
 - Skills over 100 MB stay out of the backup, with a warning past 1 GB in total.
-- Before a backup pushes, the files it would send are checked for well-known key and token
-  formats (private keys, AWS, GitHub, Anthropic, OpenAI, Slack, Google, Stripe live, npm and
-  Hugging Face). A match holds the push back: the Backup page lists each one masked, with its file
-  and line, **Edit** and **Back up anyway**, and automatic backup reports it. Documentation
-  placeholders pass. A backup with no remote is not checked, since nothing leaves the computer.
-  From the command line, `git sync` lists the findings and `--allow-secrets` backs up anyway.
+- Before a backup pushes, everything it would send is checked for well-known key and token formats
+  (private keys, AWS, GitHub, Anthropic, OpenAI, Slack, Google, Stripe live, npm and Hugging Face):
+  changes are checked before they are committed, so removing a match still helps, and the commits
+  about to be pushed are read from git, so a key committed earlier and deleted since is caught
+  too. A match holds the push back: the Backup page lists each one masked, with its file and line,
+  **Edit** and **Back up anyway**, and automatic backup reports it. The local save on quit skips
+  a change that holds a match. Documentation placeholders pass. A backup with no remote is not
+  checked, since nothing leaves the computer. From the command line, `git sync` lists the findings
+  and `--allow-secrets` backs up anyway.
 - First run offers to start fresh or restore from a backup.
 - Setup and recovery dialogs, and three ways to disconnect: this machine, revoke the
   authorisation, or delete the remote.

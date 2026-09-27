@@ -49,9 +49,12 @@ describe("shell environment", () => {
     expect(await readShellEnv(["CODEX_HOME"], { platform: "win32" })).toEqual({});
     const failing = fakeShell("exit 3");
     expect(await readShellEnv(["CODEX_HOME"], { shell: failing, platform: "linux" })).toEqual({});
-    const hung = fakeShell("sleep 5");
+    // Ignores SIGTERM and waits on stdin, like a stubborn interactive profile.
+    const hung = fakeShell("trap '' TERM; read line; sleep 5");
+    const started = Date.now();
     expect(
       await readShellEnv(["CODEX_HOME"], { shell: hung, platform: "linux", timeoutMs: 200 }),
     ).toEqual({});
+    expect(Date.now() - started).toBeLessThan(2000);
   });
 });

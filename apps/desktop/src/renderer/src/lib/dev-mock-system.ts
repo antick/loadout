@@ -158,6 +158,7 @@ export function createSystemMockHandlers(
       line: 14,
       kind: "github_token",
       masked: "ghp_…9fQ2",
+      committed: false,
     },
   ];
   const allowedSecrets = new Set<string>();

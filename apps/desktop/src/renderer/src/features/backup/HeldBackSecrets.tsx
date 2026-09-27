@@ -69,6 +69,12 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
                   </span>
                   {" · "}
                   <span className="font-mono">{finding.masked}</span>
+                  {finding.committed ? (
+                    <>
+                      {" · "}
+                      {t("backupPage.secrets.inHistory")}
+                    </>
+                  ) : null}
                 </p>
               </div>
               {skill ? (
@@ -94,7 +100,9 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
       </ul>
       <div className="flex flex-wrap items-center justify-end gap-3">
         <p className="min-w-0 flex-1 text-xs text-muted-foreground">
-          {t("backupPage.secrets.hint")}
+          {list.some((finding) => finding.committed)
+            ? t("backupPage.secrets.historyHint")
+            : t("backupPage.secrets.hint")}
         </p>
         <Button
           variant="outline"

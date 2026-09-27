@@ -26,4 +26,9 @@ export interface SecretFinding {
   kind: SecretKind;
   /** The first and last few characters, the rest hidden. */
   masked: string;
+  /**
+   * Already in a commit this computer has not pushed yet: removing it from the file no longer
+   * keeps it out of the push.
+   */
+  committed: boolean;
 }

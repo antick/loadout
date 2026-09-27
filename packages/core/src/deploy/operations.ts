@@ -62,23 +62,23 @@ function pairFor(skill: Skill, agent: ResolvedAgent, skillsDir = agent.skillsDir
 export function createDeployOperations(
   ctx: CoreContext,
   store: SkillStore,
-  removed?: Pick<RemovedStore, "setAside">,
+  removed?: Pick<RemovedStore, "setAside" | "putBack">,
 ): DeployOperations {
   /**
    * A copy edited inside the agent's folder is about to be overwritten or deleted: put it in
-   * Recently removed instead. True when it was moved away, so the path is free.
+   * Recently removed instead. The entry's id when it was moved away, so the path is free.
    */
   function setAsideEdited(
     rows: DeploymentRecord[],
     place: string,
     reason: RemovedReason,
     libraryHash: string | null,
-  ): boolean {
-    if (!removed) return false;
+  ): string | null {
+    if (!removed) return null;
     const edited = rows.find((row) => row.mode === "copy" && copyWasEdited(row));
     // Already the library's content (a pull put it there): nothing of the user's to keep.
-    if (!edited || hashDir(edited.targetPath) === libraryHash) return false;
-    return removed.setAside(edited.targetPath, { place, reason }) !== null;
+    if (!edited || hashDir(edited.targetPath) === libraryHash) return null;
+    return removed.setAside(edited.targetPath, { place, reason });
   }
 
   function inspect(pair: DeployPair, forced?: OwnershipPolicy): TargetCheck {
@@ -108,7 +108,7 @@ export function createDeployOperations(
     }
     if (survivors.length > 0) return false;
     const libraryHash = store.find(row.skillId)?.contentHash ?? null;
-    if (setAsideEdited([row], place, "deleted", libraryHash)) return true;
+    if (setAsideEdited([row], place, "deleted", libraryHash) !== null) return true;
     const gone = removeTarget(row.targetPath, row.mode);
     if (!gone && lstatOrNull(row.targetPath)) {
       ctx.log.warn(`Kept ${row.targetPath}: it no longer matches its recorded ${row.mode}`);
@@ -135,8 +135,14 @@ export function createDeployOperations(
     if (check.current) {
       used = check.state === "link_to_source" ? "symlink" : "copy";
     } else {
-      setAsideEdited(check.rows, pair.agentName, "replaced", skill.contentHash);
-      used = await writeTarget(skill.libraryPath, targetPath, wanted, check.policy);
+      const keptId = setAsideEdited(check.rows, pair.agentName, "replaced", skill.contentHash);
+      try {
+        used = await writeTarget(skill.libraryPath, targetPath, wanted, check.policy);
+      } catch (error) {
+        // The agent keeps its own copy rather than being left with nothing.
+        if (keptId) removed?.putBack(keptId);
+        throw error;
+      }
       if (used !== wanted) ctx.log.warn(`Could not link ${targetPath}; copied the skill instead`);
     }
     const sameSkillRows = check.rows.filter((row) => row.skillId === skill.id);

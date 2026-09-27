@@ -16,7 +16,7 @@ import {
   resolveCommit,
   upstreamRef,
 } from "./repo";
-import { scanForPush, secretsFound } from "./secrets";
+import { scanForPush, scanUncommittedChanges, secretsFound } from "./secrets";
 import { snapshotAtHead, tagSnapshot } from "./snapshots";
 
 /**
@@ -62,6 +62,13 @@ export async function syncLibrary(
   const { lock, settings } = env.ctx;
   const text = message.trim() || DEFAULT_BACKUP_COMMIT_MESSAGE;
 
+  // A key caught before it is committed can still simply be removed; once committed, it would
+  // travel with the history even after removal. Without a remote nothing leaves the computer.
+  if (await originUrl(env)) {
+    const uncommitted = await scanUncommittedChanges(env);
+    if (uncommitted.length > 0) throw secretsFound(uncommitted);
+  }
+
   let committed = await lock.run("backup commit", () => commitLibrary(env, text));
   let merge: MergeSummary | null = null;
   let changed = committed;
@@ -89,7 +96,7 @@ export async function syncLibrary(
       const { ahead } = await aheadBehind(env, branch);
       if (upstream && ahead === 0) break;
 
-      // Committed here is still private; pushing is what would publish a key.
+      // Everything this push sends, commits made while there was no remote included.
       const secrets = await scanForPush(env, branch);
       if (secrets.length > 0) throw secretsFound(secrets);
 

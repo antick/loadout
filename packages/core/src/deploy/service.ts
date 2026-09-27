@@ -14,7 +14,7 @@ export interface DeployServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
   /** Where a copy edited in an agent's folder goes instead of being overwritten or deleted. */
-  removed?: Pick<RemovedStore, "setAside">;
+  removed?: Pick<RemovedStore, "setAside" | "putBack">;
 }
 
 /** Outcome of rewriting deployments we already own. Refusals are reported, never thrown. */

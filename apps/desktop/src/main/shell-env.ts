@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import { SHELL_ENV_MAX_BYTES, SHELL_ENV_TIMEOUT_MS } from "./constants";
 
 /** Printed before the variables, so anything a shell prints on start-up is skipped. */
@@ -43,16 +43,34 @@ export function readShellEnv(
   if (platform === "win32" || names.length === 0) return Promise.resolve({});
   const shell = options.shell ?? process.env.SHELL ?? FALLBACK_SHELL;
   return new Promise((resolve) => {
-    execFile(
-      shell,
-      ["-i", "-l", "-c", `printf '%s' ${MARKER}; command env -0`],
-      {
-        timeout: options.timeoutMs ?? SHELL_ENV_TIMEOUT_MS,
-        maxBuffer: SHELL_ENV_MAX_BYTES,
-        env: { ...process.env, [RESOLVING_FLAG]: "1" },
-        windowsHide: true,
-      },
-      (error, stdout) => resolve(error ? {} : pickShellEnv(stdout, names)),
-    );
+    let output = "";
+    let settled = false;
+    const finish = (found: Record<string, string>): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(found);
+    };
+    // No stdin: a profile that waits for input must not hang the shell. SIGKILL on timeout,
+    // since an interactive shell ignores the gentler SIGTERM.
+    const child = spawn(shell, ["-i", "-l", "-c", `printf '%s' ${MARKER}; command env -0`], {
+      stdio: ["ignore", "pipe", "ignore"],
+      env: { ...process.env, [RESOLVING_FLAG]: "1" },
+      windowsHide: true,
+    });
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      finish({});
+    }, options.timeoutMs ?? SHELL_ENV_TIMEOUT_MS);
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      output += chunk;
+      if (output.length > SHELL_ENV_MAX_BYTES) {
+        child.kill("SIGKILL");
+        finish({});
+      }
+    });
+    child.on("error", () => finish({}));
+    child.on("close", (code) => finish(code === 0 ? pickShellEnv(output, names) : {}));
   });
 }

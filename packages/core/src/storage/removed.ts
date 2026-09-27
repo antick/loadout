@@ -19,6 +19,7 @@ import {
   moveEntrySync,
   readDirSafe,
   removePathSync,
+  statOrNull,
   writeJsonAtomic,
 } from "../util/fs";
 import { hashDir } from "../util/hash";
@@ -27,6 +28,11 @@ const CONTENT_DIR = "content";
 const META_FILE = "removed.json";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const KEEP_MS = REMOVED_KEEP_DAYS * DAY_MS;
+/**
+ * An entry missing its content or its JSON is either left from a crash or still being written by
+ * another process (a copy across disks can take a while): only clear it once it is this old.
+ */
+const HALF_WRITTEN_GRACE_MS = 60 * 60 * 1000;
 /** Entry folders are named by `randomUUID`; anything else is refused before it becomes a path. */
 const ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -64,6 +70,11 @@ export interface RemovedStore {
   remove(id: string): void;
   /** Delete every entry. Returns the bytes freed. */
   clear(): Promise<number>;
+  /**
+   * Undo a `setAside` whose follow-up failed: the folder goes straight back, when its place is
+   * still free, with no trace in the activity history.
+   */
+  putBack(id: string): void;
   /** The kept folder of an entry, e.g. to show it in the file manager. */
   contentPath(id: string): string;
 }
@@ -105,15 +116,24 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     return meta;
   }
 
-  /** Entries past their time go for good; so do half-written ones from an interrupted move. */
+  /** Entries past their time go for good; so do half-written ones, once surely abandoned. */
   function prune(now = Date.now()): void {
     for (const entry of readDirSafe(root())) {
       if (!entry.isDirectory()) continue;
+      const dir = join(root(), entry.name);
       const meta = ID_PATTERN.test(entry.name) ? readMeta(entry.name) : null;
-      const expired = meta !== null && meta.removedAt + KEEP_MS <= now;
-      if (meta === null || expired) removePathSync(join(root(), entry.name));
+      const stale = meta
+        ? meta.removedAt + KEEP_MS <= now
+        : (statOrNull(dir)?.mtimeMs ?? 0) + HALF_WRITTEN_GRACE_MS <= now;
+      if (stale) removePathSync(dir);
     }
   }
+
+  /** Across disks, a source that cannot be fully removed after copying stays, and is logged. */
+  const moveOptions = (from: string) => ({
+    onLeftover: (error: unknown) =>
+      ctx.log.warn(`Copied ${from}, but could not remove all of the original`, error),
+  });
 
   function setAside(path: string, info: SetAsideInfo): string | null {
     const stat = lstatOrNull(path);
@@ -122,13 +142,6 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     prune();
     const id = randomUUID();
     const dir = join(root(), id);
-    ensureDir(dir);
-    try {
-      moveEntrySync(path, join(dir, CONTENT_DIR));
-    } catch (error) {
-      removePathSync(dir);
-      throw error;
-    }
     const originalPath = info.originalPath ?? path;
     const meta: RemovedMeta = {
       id,
@@ -138,16 +151,26 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
       reason: info.reason,
       removedAt: Date.now(),
     };
+    // Where it came from is written first: a crash mid-move then leaves nothing unexplained.
+    ensureDir(dir);
     writeJsonAtomic(join(dir, META_FILE), meta);
+    try {
+      moveEntrySync(path, join(dir, CONTENT_DIR), moveOptions(path));
+    } catch (error) {
+      // Nothing was removed from `path`: a rename moves all or nothing, and a copy that failed
+      // never reached the step that removes the original.
+      removePathSync(dir);
+      throw error;
+    }
     ctx.log.info(`Put ${originalPath} aside in Recently removed (${info.reason})`);
     return id;
   }
 
   /**
-   * Clear the path for a restore. A link goes, with the deployment rows that recorded it: the
-   * skill is no longer deployed there. A folder that is exactly a library skill, or what one of
-   * our rows copied there, holds nothing of the user's and goes too. Any other folder is put
-   * aside in turn.
+   * Clear the path for a restore (the caller drops the deployment rows there: the restored
+   * folder is the user's own, not a deployment). A link, or a folder that is
+   * exactly a library skill or what one of our rows copied there, holds nothing of the user's
+   * and is removed. Any other folder is put aside in turn.
    */
   function clearWay(meta: RemovedMeta): string | null {
     const path = meta.originalPath;
@@ -156,7 +179,6 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     const rows = rowsAtPath(deps.store.deployments(), path);
     if (stat.isSymbolicLink()) {
       removePathSync(path);
-      for (const row of rows) deps.store.deleteDeployment(row.skillId, row.agentKey);
       return null;
     }
     if (!stat.isDirectory())
@@ -205,12 +227,25 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
           throw notFound(`The folder it came from is gone: ${parent}`);
         }
         const displacedId = clearWay(meta);
-        moveEntrySync(join(entryDir(id), CONTENT_DIR), meta.originalPath);
+        // A row left pointing here would claim the restored folder as a deployment.
+        for (const row of rowsAtPath(deps.store.deployments(), meta.originalPath)) {
+          deps.store.deleteDeployment(row.skillId, row.agentKey);
+        }
+        const content = join(entryDir(id), CONTENT_DIR);
+        moveEntrySync(content, meta.originalPath, moveOptions(content));
         removePathSync(entryDir(id));
         ctx.activity.record("restore", meta.name, `${meta.place}: put back from Recently removed`);
         ctx.touched("skills", "projects");
         return { path: meta.originalPath, displacedId };
       }),
+
+    putBack: (id) => {
+      const meta = requireMeta(id);
+      if (lstatOrNull(meta.originalPath)) return;
+      const content = join(entryDir(id), CONTENT_DIR);
+      moveEntrySync(content, meta.originalPath, moveOptions(content));
+      removePathSync(entryDir(id));
+    },
 
     remove: (id) => {
       requireMeta(id);

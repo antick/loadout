@@ -30,6 +30,29 @@ describe("secret patterns", () => {
     expect(findSecrets("tool/SKILL.md", "/x", `x ${GITHUB_TOKEN}`)[0]?.id).toBe(findings[0]?.id);
   });
 
+  it("catches the less common shapes too", () => {
+    const googleKey = `AIza${"Sy0-_ab".repeat(5)}`;
+    const text = [
+      `key: ${googleKey}`,
+      "-----BEGIN PGP PRIVATE KEY BLOCK-----",
+      `slack: xapp-1-${"A1b2C3".repeat(3)}`,
+      `hook: https://hooks.slack.com/services/T01ABCDEF/B02GHIJKL/${"a1B2".repeat(6)}`,
+    ].join("\n");
+    expect(findSecrets("s/SKILL.md", "/x", text).map((f) => f.kind)).toEqual([
+      "google_key",
+      "private_key",
+      "slack_token",
+      "slack_token",
+    ]);
+    // Two private keys in one file are two findings: allowing one does not allow the other.
+    const keys = findSecrets(
+      "s/key.pem",
+      "/x",
+      "-----BEGIN RSA PRIVATE KEY-----\n\n-----BEGIN RSA PRIVATE KEY-----",
+    );
+    expect(new Set(keys.map((f) => f.id)).size).toBe(2);
+  });
+
   it("passes prose about keys and documentation placeholders", () => {
     const text = [
       "Put your API key in the OPENAI_API_KEY variable.",
@@ -80,6 +103,26 @@ describe("backup push check", () => {
     expect(await a.api.secretFindings()).toEqual([]);
     expect(await a.api.sync()).toMatchObject({ pushed: true });
     expect(rawGit(remote, "ls-tree", "-r", "--name-only", "main")).toContain("leaky/SKILL.md");
+  });
+
+  it("still holds back a key that was committed before and removed since", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    await a.api.init();
+    // Backed up locally while there was no remote: the key is now in the history.
+    a.addSkill("leaky", { body: `Use ${GITHUB_TOKEN} to call the API.` });
+    expect(await a.api.sync()).toMatchObject({ pushed: false });
+    a.editSkill("leaky", "The token lives in the keychain now.");
+
+    await a.api.setRemote(remote);
+    const findings = await a.api.secretFindings();
+    expect(findings).toMatchObject([{ file: "leaky/SKILL.md", committed: true }]);
+    await expect(a.api.sync()).rejects.toMatchObject({ code: "SECRETS_FOUND" });
+    expect(rawGit(remote, "for-each-ref")).toBe("");
+
+    await a.api.allowSecrets(findings.map((finding) => finding.id));
+    expect(await a.api.sync()).toMatchObject({ pushed: true });
   });
 
   it("checks nothing without a remote: a local backup never leaves the computer", async () => {

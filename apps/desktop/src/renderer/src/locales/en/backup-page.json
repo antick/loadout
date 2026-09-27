@@ -252,6 +252,8 @@
       "description_one": "This looks like a key or token. Backing up would copy it to your backup repository, so the backup waits.",
       "description_other": "These {{count}} look like keys or tokens. Backing up would copy them to your backup repository, so the backup waits.",
       "hint": "Remove it from the skill and the backup carries on by itself. Only back up anyway if it is safe to share, such as a placeholder.",
+      "historyHint": "Some are already in this computer's backup history, so removing them now does not keep them out of the push. Back up anyway only if they are safe to share.",
+      "inHistory": "already in history",
       "edit": "Edit",
       "backUpAnyway": "Back up anyway",
       "confirmTitle_one": "Back up this possible key anyway?",

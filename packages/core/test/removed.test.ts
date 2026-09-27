@@ -5,6 +5,7 @@ import {
   readFileSync,
   rmSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -234,5 +235,54 @@ describe("recently removed", () => {
         "replaced",
       ]);
     });
+
+    it("puts the edited copy back when the new one cannot be written", async () => {
+      world.ctx.settings.set("deployMode", "copy");
+      const deploy = deployWithRemoved();
+      const skill = world.addSkill("alpha");
+      await deploy.api.deploy(skill.id, "claude_code");
+      const copy = join(claude, "alpha");
+      writeFile(join(copy, "notes.md"), "mine");
+      writeFile(join(skill.libraryPath, "new.txt"), "fresh");
+      const updated = world.rehash(skill);
+      rmSync(skill.libraryPath, { recursive: true });
+
+      const report = await deploy.refreshCopies(updated);
+      expect(report.failed).toHaveLength(1);
+      expect(readFileSync(join(copy, "notes.md"), "utf8")).toBe("mine");
+      expect(await storage.api.removed()).toEqual([]);
+    });
+
+    it("restores an overwritten copy as the user's own folder, not a deployment", async () => {
+      world.ctx.settings.set("deployMode", "copy");
+      const deploy = deployWithRemoved();
+      const skill = world.addSkill("alpha");
+      await deploy.api.deploy(skill.id, "claude_code");
+      const copy = join(claude, "alpha");
+      writeFile(join(copy, "notes.md"), "mine");
+      writeFile(join(skill.libraryPath, "new.txt"), "fresh");
+      await deploy.refreshCopies(world.rehash(skill));
+      const [entry] = await storage.api.removed();
+
+      const restored = await storage.api.restoreRemoved(entry?.id ?? "");
+      expect(restored.displacedId).toBeNull();
+      expect(readFileSync(join(copy, "notes.md"), "utf8")).toBe("mine");
+      expect(existsSync(join(copy, "new.txt"))).toBe(false);
+      expect(world.store.deployment(skill.id, "claude_code")).toBeNull();
+      // Nothing later treats it as a stale copy to replace.
+      await deploy.refreshCopies(world.store.get(skill.id));
+      expect(readFileSync(join(copy, "notes.md"), "utf8")).toBe("mine");
+    });
+  });
+
+  it("clears a half-written entry only once it is surely abandoned", async () => {
+    const half = join(world.ctx.paths.removedDir, "11111111-1111-4111-8111-111111111111");
+    writeFile(join(half, "content", "SKILL.md"), "partly copied");
+    expect(await storage.api.removed()).toEqual([]);
+    expect(existsSync(half)).toBe(true);
+    const old = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    utimesSync(half, old, old);
+    await storage.api.removed();
+    expect(existsSync(half)).toBe(false);
   });
 });
