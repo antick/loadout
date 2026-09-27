@@ -267,8 +267,10 @@ export class PortableMetadata {
         if (!isSafeLibraryDirName(file.path) || typeof file.id !== "string") continue;
         const libraryPath = join(this.#paths.skillsDir, file.path);
         if (!isSkillDir(libraryPath)) continue;
+        // The row it updated may carry another id (matched by folder): that id is seen too, or
+        // the row would be dropped below with its deployments and presets.
         seenSkillIds.add(file.id);
-        this.#upsertSkill(file, libraryPath);
+        seenSkillIds.add(this.#upsertSkill(file, libraryPath));
       }
 
       for (const skill of this.#skills.list()) {
@@ -284,7 +286,8 @@ export class PortableMetadata {
     });
   }
 
-  #upsertSkill(file: PortableSkill, libraryPath: string): void {
+  /** Returns the id of the row it updated or inserted. */
+  #upsertSkill(file: PortableSkill, libraryPath: string): string {
     const identity = readSkillIdentity(libraryPath);
     const contentHash = hashDir(libraryPath);
     const current = this.#skills.find(file.id) ?? this.#skills.findByLibraryPath(libraryPath);
@@ -305,7 +308,7 @@ export class PortableMetadata {
         updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);
-      return;
+      return current.id;
     }
     const remote = !MACHINE_LOCAL_SOURCES.has(file.source.type);
     this.#skills.insert({
@@ -325,6 +328,7 @@ export class PortableMetadata {
       editedFiles: readEditedFiles(file.editedFiles),
     });
     this.#skills.setTags(file.id, file.tags);
+    return file.id;
   }
 
   #indexUnknownFolders(): void {

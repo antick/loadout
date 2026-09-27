@@ -272,6 +272,8 @@ function start(): void {
       if (event === "updates:auto-ran") tray?.refresh();
       send(event, payload);
     },
+    // Only the app carries out a library move queued in Settings, never a CLI run.
+    migrateLibrary: true,
     echoLogs: !app.isPackaged,
     // Started from a terminal, the app has the shell's variables already; they win.
     env: () => ({ ...shellEnv, ...process.env }),

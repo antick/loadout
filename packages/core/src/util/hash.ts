@@ -18,6 +18,20 @@ export function isIgnoredContentName(name: string): boolean {
   return IGNORED_NAMES.has(name) || name.endsWith(IGNORED_SUFFIX);
 }
 
+/**
+ * True when copying this folder into the library would leave something behind: a `.git` folder
+ * or a link, anywhere inside. Its hash cannot see either, so equal hashes do not make it safe to
+ * delete.
+ */
+export function holdsUncopiedEntries(root: string): boolean {
+  const walk = (dir: string): boolean =>
+    readDirSafe(dir).some((entry) => {
+      if (entry.isSymbolicLink() || entry.name === ".git") return true;
+      return entry.isDirectory() && walk(join(dir, entry.name));
+    });
+  return walk(root);
+}
+
 export interface ContentFile {
   /** Path relative to the skill root, `/` separated. */
   relativePath: string;

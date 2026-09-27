@@ -108,4 +108,36 @@ describe("portable metadata", () => {
       world.cleanup();
     }
   });
+
+  it("keeps a skill whose metadata file carries another id for the same folder", async () => {
+    const { createTestWorld } = await import("./helpers");
+    const world = createTestWorld();
+    try {
+      const libraryPath = makeSkill(world.ctx.paths.skillsDir, "alpha");
+      const skill = world.store.insert({
+        name: "alpha",
+        description: null,
+        sourceType: "local",
+        libraryPath,
+        contentHash: "x",
+        updateStatus: "local_only",
+      });
+      writeFile(
+        join(world.ctx.paths.metadataDir, "skills", "other-id.json"),
+        JSON.stringify({
+          id: "other-id",
+          path: "alpha",
+          tags: ["kept"],
+          source: { type: "local" },
+          createdAt: 1,
+        }),
+      );
+      writeFile(join(world.ctx.paths.metadataDir, "schema.json"), "{}");
+      world.portable.rebuild({ authoritative: true });
+      expect(world.store.list().map((row) => row.id)).toEqual([skill.id]);
+      expect(world.store.get(skill.id).tags).toEqual(["kept"]);
+    } finally {
+      world.cleanup();
+    }
+  });
 });

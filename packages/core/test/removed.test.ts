@@ -13,6 +13,8 @@ import { REMOVED_KEEP_DAYS } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDeployService } from "../src/deploy";
 import { createGitClient } from "../src/install/git-client";
+import { installIntoLibrary } from "../src/install/library";
+import { createWorkspaceService } from "../src/workspace";
 import { type StorageService, createStorageService } from "../src/storage";
 import { makeSkill, writeFile } from "./helpers";
 import {
@@ -99,6 +101,33 @@ describe("recently removed", () => {
     const [displaced] = await storage.api.removed();
     expect(displaced).toMatchObject({ id: second.displacedId, reason: "replaced" });
     expect(displaced?.id).not.toBeUndefined();
+  });
+
+  it("keeps a .git folder and links when a local skill is uploaded and adopted", async () => {
+    const local = makeSkill(claude, "tracked");
+    writeFile(join(local, ".git", "HEAD"), "ref: refs/heads/main\n");
+    symlinkSync(join(local, "SKILL.md"), join(local, "alias.md"));
+    const deploy = createDeployService(world.ctx, {
+      store: world.store,
+      registry: world.registry,
+      removed: world.removed,
+    });
+    const workspace = createWorkspaceService(world.ctx, {
+      store: world.store,
+      registry: world.registry,
+      deploy,
+      install: {
+        installIntoLibrary: (request) => installIntoLibrary(world.ctx, world.store, request),
+      },
+      removed: world.removed,
+    });
+    await workspace.api.upload("claude_code", "tracked");
+
+    const [entry] = await storage.api.removed();
+    expect(entry).toMatchObject({ name: "tracked", reason: "replaced" });
+    const kept = join(world.ctx.paths.removedDir, entry?.id ?? "", "content");
+    expect(readFileSync(join(kept, ".git", "HEAD"), "utf8")).toContain("main");
+    expect(lstatSync(join(kept, "alias.md")).isSymbolicLink()).toBe(true);
   });
 
   it("keeps nothing for links and empty folders", async () => {

@@ -25,6 +25,8 @@ export interface CoreOptions {
   configDir?: string;
   /** Use this library folder instead of the saved location (CLI `--library`, tests). */
   baseDir?: string;
+  /** Carry out a library move queued in Settings. The desktop app sets this; the CLI never does. */
+  migrateLibrary?: boolean;
   secrets?: SecretStore;
   host?: Partial<HostBridge>;
   emit?: EventSink;
@@ -70,6 +72,7 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     homeDir: home,
     configDir: options.configDir,
     baseDir: options.baseDir,
+    migrate: options.migrateLibrary ?? false,
   });
   ensureLibraryDirs(resolved.paths);
 
@@ -87,22 +90,54 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
   let scheduled = false;
   let abandoned = false;
 
+  const lock = new RepoLock(resolved.paths.lockPath);
+
+  const writeMetadata = (): void => {
+    try {
+      portable.write();
+    } catch (error) {
+      log.error("Could not write portable metadata", error);
+    }
+  };
+
+  /** Write any pending metadata now, and tell the UI. Used on close, when nothing else runs. */
   const flush = (): void => {
     scheduled = false;
     if (abandoned) return;
     if (metadataDirty) {
       metadataDirty = false;
-      try {
-        portable.write();
-      } catch (error) {
-        log.error("Could not write portable metadata", error);
-      }
+      writeMetadata();
     }
+    announce();
+  };
+
+  const announce = (): void => {
     if (pendingScopes.size > 0) {
       const scope = [...pendingScopes];
       pendingScopes = new Set();
       emit("data:changed", { scope });
     }
+  };
+
+  /**
+   * The scheduled write takes the library lock: another operation (a backup merge between its
+   * steps) must never see its metadata files rewritten, or pruned, under it.
+   */
+  const flushLater = (): void => {
+    scheduled = false;
+    if (abandoned) return;
+    if (metadataDirty) {
+      metadataDirty = false;
+      void lock
+        .run("write metadata", () => {
+          if (!abandoned) writeMetadata();
+        })
+        .catch((error: unknown) => {
+          metadataDirty = true;
+          log.warn("Metadata not written yet; will retry on the next change", error);
+        });
+    }
+    announce();
   };
 
   const ctx: CoreContext = {
@@ -111,7 +146,7 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     env: options.env ?? (options.homeDir === undefined ? () => process.env : () => ({})),
     db,
     settings: new SettingsStore(db),
-    lock: new RepoLock(resolved.paths.lockPath),
+    lock,
     log,
     activity: new ActivityLog(db),
     secrets: options.secrets ?? noSecretStore,
@@ -123,7 +158,7 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
       if (scope.includes("skills") || scope.includes("presets")) metadataDirty = true;
       if (scheduled) return;
       scheduled = true;
-      setImmediate(flush);
+      setImmediate(flushLater);
     },
   };
 

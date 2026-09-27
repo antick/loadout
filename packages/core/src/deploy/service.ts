@@ -6,6 +6,7 @@ import { errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
 import { canonicalPath, lstatOrNull, targetIdentity } from "../util/fs";
+import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { type BatchApply, createBatchApply } from "./batch";
 import { copyWasEdited, rowsAtPath, samePath } from "./evidence";
 import { type DeployPair, createDeployOperations } from "./operations";
@@ -264,6 +265,17 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         // Whatever other skill was recorded here is about to be replaced on the user's word.
         for (const row of rowsAtPath(store.deployments(), pair.targetPath)) {
           if (row.skillId !== skill.id) store.deleteDeployment(row.skillId, row.agentKey);
+        }
+        // Replaced on the user's word, but never lost: a folder holding anything the library
+        // copy lacks (other content, a `.git` folder, links) goes to Recently removed first.
+        const stat = lstatOrNull(pair.targetPath);
+        if (
+          deps.removed &&
+          stat?.isDirectory() &&
+          !stat.isSymbolicLink() &&
+          (hashDir(pair.targetPath) !== skill.contentHash || holdsUncopiedEntries(pair.targetPath))
+        ) {
+          deps.removed.setAside(pair.targetPath, { place: agent.displayName, reason: "replaced" });
         }
         await ops.deployPair(pair, { kind: "user_confirmed" });
       });

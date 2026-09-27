@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 afterEach(() => temp.cleanup());
 
-const resolve = () => resolveLibrary({ homeDir: home, configDir });
+const resolve = () => resolveLibrary({ homeDir: home, configDir, migrate: true });
 const homeDir = () => join(home, ".loadout");
 
 /** A library with a skill, a database, history and the home folder's own files. */
@@ -50,6 +50,18 @@ describe("library location", () => {
     expect(existsSync(join(homeDir(), "bin", "loadout"))).toBe(true);
     expect(existsSync(join(homeDir(), "app", "window-state.json"))).toBe(true);
     expect(existsSync(join(target, "bin"))).toBe(false);
+  });
+
+  it("leaves a queued move to the app: a CLI run keeps using the library where it is", () => {
+    const target = join(temp.dir, "elsewhere");
+    setLibraryPath(seedDefaultLibrary(), target);
+
+    const cli = resolveLibrary({ homeDir: home, configDir });
+    expect(cli.paths.baseDir).toBe(homeDir());
+    expect(existsSync(join(homeDir(), "skills", "alpha", "SKILL.md"))).toBe(true);
+    expect(existsSync(target)).toBe(false);
+    // The app, starting later, still carries it out.
+    expect(resolve().paths.baseDir).toBe(target);
   });
 
   it("moves back into the home folder although it is not empty", () => {

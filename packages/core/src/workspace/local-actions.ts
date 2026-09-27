@@ -19,7 +19,7 @@ import {
   resolveInside,
   toPosix,
 } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { firstFreeName } from "../util/names";
 import {
   type LibraryIndex,
@@ -168,7 +168,10 @@ export async function replaceLocalFromLibrary(
       return null;
     }
     if (stat && !stat.isDirectory()) throw invalid(`Not a skill folder: ${localPath}`);
-    const differs = stat !== null && hashDir(localPath) !== hashDir(skill.libraryPath);
+    // A `.git` folder or a link inside is not in the library copy even when the hashes agree.
+    const differs =
+      stat !== null &&
+      (hashDir(localPath) !== hashDir(skill.libraryPath) || holdsUncopiedEntries(localPath));
     let keptId: string | null = null;
     const keepReplaced = (replaced: string): void => {
       try {

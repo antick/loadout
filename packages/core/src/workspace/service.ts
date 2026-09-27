@@ -21,7 +21,7 @@ import {
   resolveInside,
   toPosix,
 } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { withSharedFolderDuplicates } from "./duplicates";
 import {
   type LocalSyncDeps,
@@ -119,8 +119,15 @@ export function createWorkspaceService(
     if (inPlace) return;
     await ctx.lock.run(`adopt ${skill.name}`, async () => {
       const current = store.get(skill.id);
-      if (hashDir(localPath) === current.contentHash) await removePath(localPath);
-      else ctx.log.warn(`Kept ${localPath}: it changed while it was being adopted`);
+      if (hashDir(localPath) !== current.contentHash) {
+        ctx.log.warn(`Kept ${localPath}: it changed while it was being adopted`);
+        return;
+      }
+      // Same skill content, but a `.git` folder or links the library copy left out: keep them.
+      const kept = holdsUncopiedEntries(localPath)
+        ? deps.removed.setAside(localPath, { place: agent.displayName, reason: "replaced" })
+        : null;
+      if (!kept) await removePath(localPath);
     });
   }
 

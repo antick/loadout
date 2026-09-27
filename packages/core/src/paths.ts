@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, rmdirSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, readdirSync, renameSync, rmdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -57,6 +57,11 @@ export interface ResolveOptions {
   configDir?: string;
   /** Use this base folder and skip the saved location entirely (CLI `--library`, tests). */
   baseDir?: string;
+  /**
+   * Carry out a library move queued for the next start. Only the desktop app does: a command
+   * run by an agent while the app is open must not move the library out from under it.
+   */
+  migrate?: boolean;
 }
 
 export interface ResolvedLibrary {
@@ -170,16 +175,30 @@ function migrate(source: string, target: string, defaultBaseDir: string, notes: 
     return false;
   }
   const entries = LIBRARY_ENTRIES.filter((name) => existsSync(join(source, name)));
-  const moved: string[] = [];
+  // Renamed entries are gone from the source; copied ones (across disks) are still whole there
+  // until every entry has arrived, so a failure can always go back to the untouched source.
+  const renamed: string[] = [];
+  const copied: string[] = [];
+  let current: string | null = null;
   try {
     ensureDir(target);
     for (const name of entries) {
-      moveEntrySync(join(source, name), join(target, name));
-      moved.push(name);
+      current = name;
+      try {
+        renameSync(join(source, name), join(target, name));
+        renamed.push(name);
+      } catch {
+        cpSync(join(source, name), join(target, name), { recursive: true, verbatimSymlinks: true });
+        copied.push(name);
+      }
     }
   } catch (error) {
     notes.push(`Library move failed: ${errorMessage(error)}`);
-    for (const name of moved.toReversed()) {
+    // A copy that failed halfway, and the whole copies: the source still has them.
+    for (const name of [...copied, ...(current && !renamed.includes(current) ? [current] : [])]) {
+      removePathSync(join(target, name));
+    }
+    for (const name of renamed.toReversed()) {
       try {
         moveEntrySync(join(target, name), join(source, name));
       } catch (rollback) {
@@ -187,6 +206,14 @@ function migrate(source: string, target: string, defaultBaseDir: string, notes: 
       }
     }
     return false;
+  }
+  // Everything arrived. A source copy that cannot be removed is only a leftover now.
+  for (const name of copied) {
+    try {
+      removePathSync(join(source, name));
+    } catch (error) {
+      notes.push(`Moved ${name}, but could not remove all of the old copy: ${errorMessage(error)}`);
+    }
   }
   // A custom location that is now empty is ours to tidy up; the home folder always stays.
   if (canonicalPath(source) !== canonicalPath(defaultBaseDir)) {
@@ -246,6 +273,10 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   if (pending) {
     let keepMarker = false;
     const same = canonicalPath(pending) === canonicalPath(baseDir);
+    if (existsSync(pending) && !same && !options.migrate) {
+      // Not moved yet: the data is still where it was.
+      return { paths: buildPaths(pending, defaultBaseDir), warnings, notes };
+    }
     if (existsSync(pending) && !same && !migrate(pending, baseDir, defaultBaseDir, notes)) {
       warnings.push("migration_incomplete");
       baseDir = pending;

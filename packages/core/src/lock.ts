@@ -1,12 +1,16 @@
-import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from "node:fs";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { closeSync, openSync, readFileSync, statSync, unlinkSync, writeSync } from "node:fs";
 import { hostname } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "./errors";
 
 const WAIT_MS = 20_000;
 const POLL_MS = 50;
-/** A lock older than this whose process is gone is treated as abandoned. */
-const STALE_MS = 10 * 60_000;
+/**
+ * A lock file that cannot be read (a crash between creating and writing it) is treated as
+ * abandoned once it is this old. A readable one is abandoned only when its process is gone.
+ */
+const UNREADABLE_STALE_MS = 60_000;
 
 interface LockInfo {
   pid: number;
@@ -26,11 +30,17 @@ function processAlive(pid: number): boolean {
 
 /**
  * Cross-process lock shared by the app and the CLI so they never write the library at once.
- * Re-entrant inside one process. Never hold it across a network call.
+ * Re-entrant for nested calls of the operation that holds it (tracked per async call chain), so
+ * an unrelated call in the same process waits like any other. Never hold it across a network call.
  */
 export class RepoLock {
   readonly #path: string;
-  #depth = 0;
+  /** Set inside the call chain that holds the lock. */
+  readonly #held = new AsyncLocalStorage<true>();
+  /** Some call chain of this process holds the lock right now. */
+  #active = false;
+  /** `startedAt` written into the file we created, to release only our own lock. */
+  #ownStartedAt: number | null = null;
   #queue: Promise<unknown> = Promise.resolve();
 
   constructor(path: string) {
@@ -45,6 +55,17 @@ export class RepoLock {
     }
   }
 
+  #abandoned(holder: LockInfo | null): boolean {
+    if (holder === null) {
+      try {
+        return Date.now() - statSync(this.#path).mtimeMs > UNREADABLE_STALE_MS;
+      } catch {
+        return false;
+      }
+    }
+    return holder.host === hostname() && holder.pid !== process.pid && !processAlive(holder.pid);
+  }
+
   #tryAcquire(operation: string): boolean {
     try {
       const fd = openSync(this.#path, "wx");
@@ -56,15 +77,11 @@ export class RepoLock {
       };
       writeSync(fd, JSON.stringify(info));
       closeSync(fd);
+      this.#ownStartedAt = info.startedAt;
       return true;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-      const holder = this.#readHolder();
-      const abandoned =
-        holder !== null &&
-        holder.host === hostname() &&
-        (!processAlive(holder.pid) || Date.now() - holder.startedAt > STALE_MS);
-      if (abandoned) {
+      if (this.#abandoned(this.#readHolder())) {
         try {
           unlinkSync(this.#path);
         } catch {
@@ -75,7 +92,13 @@ export class RepoLock {
     }
   }
 
+  /** Remove the file only while it is still ours: never another process's fresh lock. */
   #release(): void {
+    const holder = this.#readHolder();
+    const ours =
+      holder !== null && holder.pid === process.pid && holder.startedAt === this.#ownStartedAt;
+    this.#ownStartedAt = null;
+    if (!ours) return;
     try {
       unlinkSync(this.#path);
     } catch {
@@ -83,9 +106,19 @@ export class RepoLock {
     }
   }
 
+  async #holding<T>(fn: () => Promise<T> | T): Promise<T> {
+    this.#active = true;
+    try {
+      return await this.#held.run(true, fn);
+    } finally {
+      this.#active = false;
+      this.#release();
+    }
+  }
+
   /** Run `fn` holding the lock, waiting up to 20 s for another process to finish. */
   async run<T>(operation: string, fn: () => Promise<T> | T): Promise<T> {
-    if (this.#depth > 0) return fn();
+    if (this.#held.getStore()) return fn();
     const task = this.#queue.then(async () => {
       const deadline = Date.now() + WAIT_MS;
       while (!this.#tryAcquire(operation)) {
@@ -98,13 +131,7 @@ export class RepoLock {
         }
         await sleep(POLL_MS);
       }
-      this.#depth += 1;
-      try {
-        return await fn();
-      } finally {
-        this.#depth -= 1;
-        this.#release();
-      }
+      return this.#holding(fn);
     });
     this.#queue = task.catch(() => undefined);
     return task;
@@ -112,14 +139,8 @@ export class RepoLock {
 
   /** Background work: take the lock only if it is free right now. Returns null when it was busy. */
   async tryRun<T>(operation: string, fn: () => Promise<T> | T): Promise<T | null> {
-    if (this.#depth > 0) return fn();
-    if (!this.#tryAcquire(operation)) return null;
-    this.#depth += 1;
-    try {
-      return await fn();
-    } finally {
-      this.#depth -= 1;
-      this.#release();
-    }
+    if (this.#held.getStore()) return fn();
+    if (this.#active || !this.#tryAcquire(operation)) return null;
+    return this.#holding(fn);
   }
 }
