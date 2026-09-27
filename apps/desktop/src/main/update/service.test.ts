@@ -158,6 +158,18 @@ describe("update service", () => {
     expect(deps.quit).not.toHaveBeenCalled();
   });
 
+  it("checks the download again before installing, and refuses one changed on disk", async () => {
+    const { updates, deps } = service();
+    expect((await updates.download()).phase).toBe("ready");
+    const saved = join(root, "updates", "1.1.0", "loadout_1.1.0_amd64.deb");
+    writeFileSync(saved, "swapped after the check");
+
+    await expect(updates.install()).rejects.toThrow("changed since it was checked");
+    expect(deps.openPath).not.toHaveBeenCalled();
+    expect(updates.status().phase).toBe("available");
+    expect(existsSync(saved)).toBe(false);
+  });
+
   it("refuses a download that does not match the checksum", async () => {
     const { updates } = service({
       fetchImpl: fakeFetch(feed(), 200, Buffer.from("tampered bytes!!!")),

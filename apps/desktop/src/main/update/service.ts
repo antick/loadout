@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   APP_ID,
   type AppUpdateStatus,
@@ -16,7 +16,7 @@ import {
   UPDATE_READY_FILE,
   UPDATE_TIMEOUT_MS,
 } from "../constants";
-import { downloadVerified } from "./download";
+import { downloadVerified, sha256Of } from "./download";
 import {
   type UpdateFeed,
   type UpdateFeedFile,
@@ -57,7 +57,13 @@ interface ReadyUpdate {
   /** What gets installed: the unpacked app, the AppImage, the installer or the package. */
   path: string;
   releaseUrl: string;
+  /** The file as downloaded; checked again against the signed feed right before installing. */
+  archive?: string;
 }
+
+/** The signed feed the download was checked against, kept next to it for the second check. */
+const FEED_COPY_FILE = "feed.json";
+const REVERIFY_FAILED = "The downloaded update changed since it was checked. Download it again.";
 
 interface PendingInstall {
   from: string;
@@ -102,6 +108,9 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
   /** Reasons updating cannot work at all here, whatever the feed says. */
   const baseBlocker = (): AppUpdateStatus["blocker"] =>
     deps.feedUrl ? deps.location.blocker : "not_configured";
+
+  /** The raw signed feed of the last check, kept with a download for its second check. */
+  let feedCopy: { bytes: Uint8Array; signature: string } | null = null;
 
   let state: AppUpdateStatus = {
     phase: "idle",
@@ -157,7 +166,11 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
   }
 
   /** Refuse a feed whose signature is missing or not from the release key. */
-  async function requireSignature(feedUrl: string, feedBytes: Uint8Array, publicKey: string) {
+  async function requireSignature(
+    feedUrl: string,
+    feedBytes: Uint8Array,
+    publicKey: string,
+  ): Promise<string> {
     const response = await deps.fetchImpl(`${feedUrl}${UPDATE_FEED_SIGNATURE_SUFFIX}`, {
       signal: AbortSignal.timeout(UPDATE_TIMEOUT_MS),
       cache: "no-store",
@@ -166,6 +179,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     if (!isFeedSignedBy(feedBytes, signature, publicKey)) {
       throw new Error("The update feed is not signed by Loadout's release key, so it was ignored.");
     }
+    return signature;
   }
 
   async function check(): Promise<AppUpdateStatus> {
@@ -185,8 +199,11 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       }
       if (!response.ok) throw new Error(`The update check failed (${response.status})`);
       const bytes = new Uint8Array(await response.arrayBuffer());
-      if (deps.feedPublicKey) await requireSignature(deps.feedUrl, bytes, deps.feedPublicKey);
+      const signature = deps.feedPublicKey
+        ? await requireSignature(deps.feedUrl, bytes, deps.feedPublicKey)
+        : "";
       feed = parseUpdateFeed(JSON.parse(new TextDecoder().decode(bytes)), deps.feedUrl);
+      feedCopy = { bytes, signature };
     } catch (error) {
       return set({ phase: before === "ready" ? "ready" : "error", error: message(error) });
     }
@@ -250,7 +267,14 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
         },
       });
       const path = await prepare(downloaded, dir, version);
-      ready = { version, path, releaseUrl: state.releaseUrl };
+      if (feedCopy) {
+        await writeFile(join(dir, FEED_COPY_FILE), feedCopy.bytes);
+        await writeFile(
+          join(dir, `${FEED_COPY_FILE}${UPDATE_FEED_SIGNATURE_SUFFIX}`),
+          feedCopy.signature,
+        );
+      }
+      ready = { version, path, releaseUrl: state.releaseUrl, archive: downloaded };
       await writeFile(readyFile, JSON.stringify(ready));
       deps.log.info(`Update ${version} downloaded and checked`);
       return set({ phase: "ready", progress: null });
@@ -269,8 +293,41 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     return state;
   }
 
+  /**
+   * Check the download again, right before it runs: against the signed feed kept next to it, and
+   * rebuilt from that checked file. A download that sat on disk for days is never trusted as is.
+   */
+  async function reverify(saved: ReadyUpdate): Promise<string> {
+    if (!saved.archive || !target) throw new Error(REVERIFY_FAILED);
+    const dir = dirname(saved.archive);
+    const bytes = new Uint8Array(await readFile(join(dir, FEED_COPY_FILE)));
+    if (deps.feedPublicKey) {
+      const signaturePath = join(dir, `${FEED_COPY_FILE}${UPDATE_FEED_SIGNATURE_SUFFIX}`);
+      const signature = await readFile(signaturePath, "utf8");
+      if (!isFeedSignedBy(bytes, signature, deps.feedPublicKey)) throw new Error(REVERIFY_FAILED);
+    }
+    const copy = parseUpdateFeed(JSON.parse(new TextDecoder().decode(bytes)), deps.feedUrl ?? "");
+    const file = copy.files[target];
+    const matches =
+      copy.version === saved.version && file && (await sha256Of(saved.archive)) === file.sha256;
+    if (!matches) throw new Error(REVERIFY_FAILED);
+    return prepare(saved.archive, dir, saved.version);
+  }
+
+  /** Forget a download that failed its second check, so the next click downloads it afresh. */
+  async function discardReady(saved: ReadyUpdate, error: unknown): Promise<never> {
+    ready = null;
+    if (saved.archive) await rm(dirname(saved.archive), { recursive: true, force: true });
+    await rm(readyFile, { force: true });
+    set({ phase: "available", error: message(error) });
+    throw error;
+  }
+
   async function install(): Promise<void> {
     if (!ready || state.phase !== "ready") throw new Error("No update is ready to install");
+    const saved = ready;
+    const path = await reverify(saved).catch((error: unknown) => discardReady(saved, error));
+    ready = { ...saved, path };
     if (deps.location.method === "package") {
       const failure = await deps.openPath(ready.path);
       if (failure) throw new Error(failure);
