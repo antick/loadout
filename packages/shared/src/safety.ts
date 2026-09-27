@@ -73,6 +73,17 @@ export interface FlaggedSkill {
   report: SafetyReport;
 }
 
+/**
+ * A skill the safety check could not finish on: the scanner crashed, timed out or gave an answer
+ * it could not read. Treated like a flagged skill: it waits for the user's "install anyway",
+ * because a skill can break the scanner on purpose to slip past it.
+ */
+export interface UncheckedSkill {
+  name: string;
+  /** What went wrong, for people. */
+  reason: string;
+}
+
 export interface SafetyScanSummary {
   scanned: number;
   unsafe: number;

@@ -190,7 +190,7 @@ describe("the safety check on install", () => {
     expect((await safety.api.list())[0]).toMatchObject({ skillId: skill.id, verdict: "safe" });
   });
 
-  it("skips the check when switched off, when the scanner is missing, or when it fails", async () => {
+  it("skips the check when switched off or when the scanner is missing", async () => {
     world.ctx.settings.set("safetyScanOnInstall", false);
     await install.api.fromPath(makeSkill(sources, "off", { body: EVIL }));
     expect(scanned).toEqual([]);
@@ -199,15 +199,25 @@ describe("the safety check on install", () => {
     setup(null);
     await install.api.fromPath(makeSkill(sources, "missing", { body: EVIL }));
     expect(scanned).toEqual([]);
-
-    setup();
-    await install.api.fromPath(makeSkill(sources, "broken", { body: BROKEN }));
     expect(
       world.store
         .list()
         .map((s) => s.name)
         .sort(),
-    ).toEqual(["broken", "missing", "off"]);
+    ).toEqual(["missing", "off"]);
+  });
+
+  it("stops a skill the check could not finish on, and installs it when accepted", async () => {
+    setup();
+    const broken = makeSkill(sources, "broken", { body: BROKEN });
+    const error = await rejection(install.api.fromPath(broken));
+    expect(error.code).toBe("UNSAFE");
+    expect(error.details?.unchecked).toMatchObject([{ name: "broken" }]);
+    expect(error.details?.flagged).toEqual([]);
+    expect(world.store.list()).toEqual([]);
+
+    await install.api.fromPath(broken, undefined, { acceptRisk: true });
+    expect(world.store.list().map((s) => s.name)).toEqual(["broken"]);
   });
 
   it("checks every ticked skill of a preview first, and keeps the preview for a second try", async () => {

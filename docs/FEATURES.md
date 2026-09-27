@@ -176,7 +176,7 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   anything is written. A flagged skill (risk score over 50, or a high or critical finding) is not
   installed: a dialog lists its findings (severity, category, file and line, the text that matched,
   why) with **Don't install** focused and **Install anyway** beside it. Batch imports skip
-  flagged skills and list them as failures. A scanner that fails or times out never blocks.
+  flagged skills and list them as failures. A check that crashes, times out or cannot be read counts as flagged too (a skill can break the scanner on purpose): the same dialog says the check could not finish, with the same two choices.
   Switch the check off in Settings.
 - Reports are kept per skill in the library cache. Flagged and "review" skills carry a chip in the
   library; the skill panel has a **Safety** tab with the full report and **Check again**. A report

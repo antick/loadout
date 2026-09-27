@@ -1,4 +1,4 @@
-import type { FlaggedSkill } from "./safety";
+import type { FlaggedSkill, UncheckedSkill } from "./safety";
 import type { SecretFinding } from "./secrets";
 import type { TargetConflict } from "./types";
 
@@ -9,7 +9,10 @@ export const ERROR_CODES = [
   "ALREADY_EXISTS",
   "TARGET_CONFLICT",
   "CHANGED_ON_DISK",
-  /** The safety scanner flagged a skill; the details list it (`flagged`). */
+  /**
+   * The safety scanner flagged a skill, or could not finish checking it; the details list them
+   * (`flagged`, `unchecked`).
+   */
   "UNSAFE",
   "CANCELLED",
   "NETWORK",
@@ -42,6 +45,8 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
 export interface ErrorDetails {
   conflicts?: TargetConflict[];
   flagged?: FlaggedSkill[];
+  /** Skills the safety check could not finish on; they wait for the same "anyway" as flagged ones. */
+  unchecked?: UncheckedSkill[];
   secrets?: SecretFinding[];
   [key: string]: unknown;
 }

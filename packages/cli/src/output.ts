@@ -79,6 +79,9 @@ export function printError(io: CliIo, json: boolean, error: ErrorShape): void {
   for (const secret of error.details?.secrets ?? []) {
     lines.push(`  ${secret.file}:${secret.line} ${secret.kind} ${secret.masked}`);
   }
+  for (const { name, reason } of error.details?.unchecked ?? []) {
+    lines.push(`  ${name}: the safety check could not finish (${reason})`);
+  }
   if (error.code === "UNSAFE") lines.push("Add --accept-risk to install it anyway.");
   if (error.code === "SECRETS_FOUND") lines.push("Add --allow-secrets to back it up anyway.");
   io.stderr(`${lines.join("\n")}\n`);

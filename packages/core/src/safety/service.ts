@@ -1,5 +1,6 @@
 import {
   type FlaggedSkill,
+  type UncheckedSkill,
   SAFETY_SCAN_LIBRARY_KEY,
   type SafetyApi,
   type SafetyRecord,
@@ -49,7 +50,15 @@ const SCAN_WORKERS = 3;
 /** How long the found program and its version are trusted before looking again. */
 const PROGRAM_TTL_MS = 60_000;
 
-function flaggedMessage(flagged: readonly FlaggedSkill[]): string {
+function flaggedMessage(
+  flagged: readonly FlaggedSkill[],
+  unchecked: readonly UncheckedSkill[],
+): string {
+  if (flagged.length === 0) {
+    const [only] = unchecked;
+    const subject = only && unchecked.length === 1 ? only.name : `${unchecked.length} skills`;
+    return `The safety check could not finish on ${subject}. Install anyway only if you trust the source.`;
+  }
   const [only] = flagged;
   const subject = only && flagged.length === 1 ? only.name : `${flagged.length} skills`;
   return `The safety check flagged ${subject}. Read the findings, then install anyway only if you trust the source.`;
@@ -174,6 +183,7 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     }
     const found = await currentProgram();
     if (!found) return candidates.map(() => null);
+    const unchecked: UncheckedSkill[] = [];
     let done = 0;
     const results = await mapLimit(candidates, SCAN_WORKERS, async (candidate) => {
       if (options.progressKey) {
@@ -188,7 +198,9 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
       try {
         return await scan(found.path, candidate.dir);
       } catch (error) {
-        ctx.log.warn(`Safety check skipped for ${candidate.name}: ${errorMessage(error)}`);
+        // Not a pass: a skill can make the scanner crash or hang on purpose.
+        ctx.log.warn(`Safety check could not finish for ${candidate.name}: ${errorMessage(error)}`);
+        unchecked.push({ name: candidate.name, reason: errorMessage(error) });
         return null;
       } finally {
         done += 1;
@@ -198,8 +210,8 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
       const report = results[index];
       return report?.verdict === "unsafe" ? [{ name: candidate.name, report }] : [];
     });
-    if (flagged.length > 0 && !options.acceptRisk) {
-      throw new AppError("UNSAFE", flaggedMessage(flagged), { flagged });
+    if ((flagged.length > 0 || unchecked.length > 0) && !options.acceptRisk) {
+      throw new AppError("UNSAFE", flaggedMessage(flagged, unchecked), { flagged, unchecked });
     }
     return results;
   }

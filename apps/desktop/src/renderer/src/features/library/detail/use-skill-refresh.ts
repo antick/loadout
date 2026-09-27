@@ -67,7 +67,7 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
           onError: (error) => {
             if (!(error instanceof ApiError) || error.code !== "UNSAFE") return;
             // The new version was flagged: show the findings, update only on a clear yes.
-            void askToInstallFlagged(error.details?.flagged ?? [], "update").then((yes) => {
+            void askToInstallFlagged(error.details, "update").then((yes) => {
               if (yes) runRefresh(request, approval, true);
               else toast.info(t("safety.prompt.notUpdated"));
             });

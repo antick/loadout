@@ -236,12 +236,11 @@ async function runOrAskAboutRisk<T>(
   try {
     return await options.run();
   } catch (error) {
-    const flagged = error instanceof ApiError ? (error.details?.flagged ?? []) : [];
     if (!options.runAcceptingRisk || !(error instanceof ApiError) || error.code !== "UNSAFE") {
       throw error;
     }
     toast.dismiss(toastId);
-    if (!(await askToInstallFlagged(flagged))) {
+    if (!(await askToInstallFlagged(error.details))) {
       toast.info(i18n.t("safety.prompt.notInstalled"), { id: toastId });
       return DECLINED;
     }

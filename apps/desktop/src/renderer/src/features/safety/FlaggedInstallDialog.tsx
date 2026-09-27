@@ -21,7 +21,9 @@ export function FlaggedInstallDialog(): ReactNode {
   const { t } = useTranslation();
   const prompt = useSyncExternalStore(subscribeFlaggedPrompt, getFlaggedPrompt);
   const flagged = prompt?.flagged ?? [];
+  const unchecked = prompt?.unchecked ?? [];
   const [only] = flagged;
+  const [onlyUnchecked] = unchecked;
   const safeChoice = useRef<HTMLButtonElement>(null);
   const update = prompt?.action === "update";
 
@@ -41,15 +43,27 @@ export function FlaggedInstallDialog(): ReactNode {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldAlert className="size-5 shrink-0 text-danger" />
-            {only && flagged.length === 1
-              ? t("safety.prompt.titleOne", { name: only.name })
-              : t("safety.prompt.titleMany", { count: flagged.length })}
+            {flagged.length === 0 && onlyUnchecked
+              ? unchecked.length === 1
+                ? t("safety.prompt.uncheckedTitleOne", { name: onlyUnchecked.name })
+                : t("safety.prompt.uncheckedTitleMany", { count: unchecked.length })
+              : only && flagged.length === 1
+                ? t("safety.prompt.titleOne", { name: only.name })
+                : t("safety.prompt.titleMany", { count: flagged.length })}
           </DialogTitle>
           <DialogDescription>
             {t(update ? "safety.prompt.updateDescription" : "safety.prompt.description")}
           </DialogDescription>
         </DialogHeader>
         <div className="-mx-6 flex max-h-[55vh] flex-col gap-4 overflow-y-auto border-y px-6 py-4">
+          {unchecked.map((entry) => (
+            <section key={`unchecked:${entry.name}`} className="flex flex-col gap-1">
+              <h3 className="font-mono text-sm font-medium">{entry.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t("safety.prompt.uncheckedReason", { reason: entry.reason })}
+              </p>
+            </section>
+          ))}
           {flagged.map((entry) => (
             <section key={entry.name} className="flex flex-col gap-2">
               {flagged.length > 1 ? (

@@ -1,4 +1,4 @@
-import type { FlaggedSkill } from "@loadout/shared";
+import type { ErrorDetails, FlaggedSkill, UncheckedSkill } from "@loadout/shared";
 
 /**
  * The question "install these flagged skills anyway?". Installs run outside React (see
@@ -10,6 +10,8 @@ export type FlaggedAction = "install" | "update";
 
 export interface FlaggedPrompt {
   flagged: readonly FlaggedSkill[];
+  /** Skills the check could not finish on. */
+  unchecked: readonly UncheckedSkill[];
   action: FlaggedAction;
   answer(install: boolean): void;
 }
@@ -33,13 +35,16 @@ export function getFlaggedPrompt(): FlaggedPrompt | null {
 
 /** Ask, and resolve with the answer. A newer question answers an open one with "no". */
 export function askToInstallFlagged(
-  flagged: readonly FlaggedSkill[],
+  details: ErrorDetails | undefined,
   action: FlaggedAction = "install",
 ): Promise<boolean> {
+  const flagged = details?.flagged ?? [];
+  const unchecked = details?.unchecked ?? [];
   current?.answer(false);
   return new Promise((resolve) => {
     const prompt: FlaggedPrompt = {
       flagged,
+      unchecked,
       action,
       answer: (install) => {
         if (current === prompt) publish(null);
