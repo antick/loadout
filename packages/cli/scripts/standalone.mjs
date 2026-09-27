@@ -98,6 +98,8 @@ async function publishedSha256(fileName) {
   return sum;
 }
 
+const sha256 = (data) => createHash("sha256").update(data).digest("hex");
+
 /**
  * The official Node binary for a target. The download is cached, but checked against nodejs.org's
  * published sum every time and unpacked afresh: a cached file is never trusted as it is.
@@ -112,7 +114,6 @@ async function nodeBinary(target) {
   const archive = join(NODE_CACHE_DIR, archiveName);
   // The binary goes into every release: it must be byte for byte the one nodejs.org lists.
   const expected = await publishedSha256(archiveName);
-  const sha256 = (data) => createHash("sha256").update(data).digest("hex");
 
   mkdirSync(NODE_CACHE_DIR, { recursive: true });
   if (!existsSync(archive) || sha256(readFileSync(archive)) !== expected) {
