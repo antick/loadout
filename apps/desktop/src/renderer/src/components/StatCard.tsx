@@ -37,10 +37,11 @@ export function StatCard({
         className,
       )}
     >
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <p className="type-display mt-1 text-3xl tabular-nums">{value}</p>
-        {hint ? <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p> : null}
+        {/* Wraps rather than cuts off: in a narrow column the hint is the only explanation. */}
+        {hint ? <p className="mt-1 text-xs text-pretty text-muted-foreground">{hint}</p> : null}
       </div>
       {Icon ? (
         <span
