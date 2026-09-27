@@ -34,12 +34,14 @@ import { EditorSidebar } from "@/features/editor/EditorSidebar";
 import { EditorSplit } from "@/features/editor/EditorSplit";
 import { hasDiskChange, isDirty } from "@/features/editor/editor-session";
 import { EditorStatusBar, type SaveState } from "@/features/editor/EditorStatusBar";
+import { FileNameDialog } from "@/features/editor/FileNameDialog";
 import { LeaveEditorDialog } from "@/features/editor/LeaveEditorDialog";
 import { checkDraft, isSkillDocument } from "@/features/editor/live-checks";
 import { useEditorSession } from "@/features/editor/use-editor-session";
+import { useFileActions } from "@/features/editor/use-file-actions";
 import { useLeaveGuard } from "@/features/editor/use-leave-guard";
 import { useSaveReport } from "@/features/editor/use-save-report";
-import { useEditorFile, useEditorFiles } from "@/hooks/queries/editor";
+import { useEditorFile, useEditorFiles, useEditorFolders } from "@/hooks/queries/editor";
 import { isDialogOpen, useHotkey } from "@/hooks/use-hotkey";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { api } from "@/lib/api";
@@ -68,6 +70,9 @@ interface Conflict {
   disk: string | null;
 }
 
+const NO_FILES: readonly SkillFileEntry[] = [];
+const NO_FOLDERS: readonly string[] = [];
+
 function pickPath(files: readonly SkillFileEntry[], requested: string | null): string | null {
   const editable = files.filter((file) => file.locked === null);
   const asked = requested ? editable.find((file) => file.path === requested) : undefined;
@@ -90,6 +95,7 @@ export function EditorWorkspace({
   const navigate = useNavigate();
   const { location } = target;
   const files = useEditorFiles(location);
+  const folders = useEditorFolders(location);
   const activePath = files.data ? pickPath(files.data, requestedPath) : null;
   const file = useEditorFile(location, activePath);
   const session = useEditorSession(location);
@@ -146,6 +152,16 @@ export function EditorWorkspace({
     for (const path of storedDrafts) if (!session.sessions[path]) paths.add(path);
     return paths;
   }, [session.dirtyPaths, session.sessions, storedDrafts]);
+
+  const fileActions = useFileActions({
+    location,
+    enabled: location.kind === "library",
+    files: files.data ?? NO_FILES,
+    folders: folders.data ?? NO_FOLDERS,
+    unsaved,
+    activePath,
+    onOpenFile,
+  });
 
   async function save(path: string, overwrite = false): Promise<boolean> {
     const mine = session.sessions[path]?.draft ?? "";
@@ -294,9 +310,11 @@ export function EditorWorkspace({
               backLink={doneLink}
               backLabel={crumbs.at(-1)?.label ?? t("nav.library")}
               files={files.data}
+              folders={folders.data ?? NO_FOLDERS}
               activePath={activePath}
               unsaved={unsaved}
               showEdited={librarySkill !== null && hasTrackedSource(librarySkill)}
+              fileActions={fileActions.actions}
               onSelect={onOpenFile}
             />,
             takeover.slot,
@@ -387,6 +405,7 @@ export function EditorWorkspace({
         onUseDisk={() => void resolveConflict("disk")}
         onCancel={() => setConflict(null)}
       />
+      <FileNameDialog {...fileActions.dialog} />
       <LeaveEditorDialog
         open={leave.blocked}
         paths={session.dirtyPaths}

@@ -1,4 +1,5 @@
 import { type Stats, readFileSync } from "node:fs";
+import { dirname } from "node:path";
 import type { SaveSkillFileInput, SkillFile, SkillFileEntry } from "@loadout/shared";
 import { AppError, invalid, notFound, unsupported } from "../errors";
 import { readSkillDocument } from "../skills/metadata";
@@ -77,11 +78,18 @@ export function locate(folder: EditableFolder, path: unknown): LocatedFile {
   if (stat.isSymbolicLink() || !stat.isFile()) {
     throw unsupported(`Only regular files can be edited: ${relative}`);
   }
-  // A linked folder on the way could lead somewhere else entirely.
-  if (!isInside(canonicalPath(folder.dir), canonicalPath(absolute))) {
-    throw invalid(`${relative} is outside the skill folder`);
-  }
+  if (!staysInside(folder.dir, absolute)) throw invalid(`${relative} is outside the skill folder`);
   return { relative, absolute, stat };
+}
+
+/**
+ * Whether `absolute` really lies in `dir`, judged from its nearest part that exists: a linked
+ * folder on the way could lead somewhere else entirely.
+ */
+export function staysInside(dir: string, absolute: string): boolean {
+  let existing = absolute;
+  while (!lstatOrNull(existing) && dirname(existing) !== existing) existing = dirname(existing);
+  return isInside(canonicalPath(dir), canonicalPath(existing));
 }
 
 /** Why a file cannot be opened, judged from its size and bytes. */
@@ -140,10 +148,15 @@ export function listFolderFiles(
   ];
 }
 
+/** The skill's main document, `/` separated and relative to its folder; null when it has none. */
+export function mainDocumentOf(dir: string): string | null {
+  const found = readSkillDocument(dir);
+  return found ? toPosix(found.filename) : null;
+}
+
 /** Every content file of the folder, main document first. */
 export function listFiles(dir: string, edited: ReadonlySet<string> = new Set()): SkillFileEntry[] {
-  const found = readSkillDocument(dir);
-  const main = found ? toPosix(found.filename) : null;
+  const main = mainDocumentOf(dir);
   const entries = listContentFiles(dir).map((file): SkillFileEntry => ({
     path: file.relativePath,
     size: file.size,

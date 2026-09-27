@@ -18,6 +18,7 @@ export const keys = {
     root: ["editor"] as const,
     target: (location: string) => ["editor", "target", location] as const,
     files: (location: string) => ["editor", "files", location] as const,
+    folders: (location: string) => ["editor", "folders", location] as const,
     file: (location: string, path: string) => ["editor", "file", location, path] as const,
     versions: (location: string, path: string) => ["editor", "versions", location, path] as const,
   },

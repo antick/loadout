@@ -8,6 +8,7 @@ import { useIsMac } from "@/components/layout/WindowDragRegion";
 import { SidebarContent, SidebarSeparator } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditorFileList } from "@/features/editor/EditorFileList";
+import type { FileActions } from "@/features/editor/EditorFileMenu";
 import { ACTIVITY_BAR_WIDTH_PX, MAC_WINDOW_CONTROLS_WIDTH_PX } from "@/lib/constants";
 
 export interface EditorSidebarProps {
@@ -16,9 +17,12 @@ export interface EditorSidebarProps {
   backLink: LinkProps;
   backLabel: string;
   files: readonly SkillFileEntry[] | undefined;
+  folders: readonly string[];
   activePath: string | null;
   unsaved: ReadonlySet<string>;
   showEdited: boolean;
+  /** New file, new folder, rename and delete; null where files cannot be changed. */
+  fileActions: FileActions | null;
   onSelect(path: string): void;
 }
 
@@ -31,9 +35,11 @@ export function EditorSidebar({
   backLink,
   backLabel,
   files,
+  folders,
   activePath,
   unsaved,
   showEdited,
+  fileActions,
   onSelect,
 }: EditorSidebarProps): ReactNode {
   const { t } = useTranslation();
@@ -74,9 +80,11 @@ export function EditorSidebar({
         {files ? (
           <EditorFileList
             files={files}
+            folders={folders}
             activePath={activePath}
             unsaved={unsaved}
             showEdited={showEdited}
+            actions={fileActions}
             onSelect={onSelect}
           />
         ) : (

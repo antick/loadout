@@ -26,6 +26,14 @@ export function useEditorFiles(location: SkillLocation): UseQueryResult<SkillFil
   });
 }
 
+/** Every folder of the skill, empty ones included, by path. */
+export function useEditorFolders(location: SkillLocation): UseQueryResult<string[]> {
+  return useQuery({
+    queryKey: keys.editor.folders(locationKey(location)),
+    queryFn: () => api.editor.folders(location),
+  });
+}
+
 /**
  * One file opened for editing. Always refetched when skills, agents or projects change, so an
  * edit made on disk shows up; the editor decides whether that replaces the text on screen.

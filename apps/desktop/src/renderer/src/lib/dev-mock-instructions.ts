@@ -169,5 +169,6 @@ export function withInstructionMocks(
       },
     ),
     "editor.fileVersions": route("editor.fileVersions", () => []),
+    "editor.folders": route("editor.folders", () => []),
   };
 }

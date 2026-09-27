@@ -23,6 +23,45 @@
         "too_large": "Too large to edit here ({{size}})."
       }
     },
+    "manage": {
+      "newFile": "New file",
+      "newFolder": "New folder",
+      "rename": "Rename…",
+      "delete": "Delete",
+      "blocked": "Has unsaved changes. Save or discard them first.",
+      "created": "Created {{path}}",
+      "renamed": "Renamed {{from}} to {{to}}",
+      "deleted": "Deleted {{path}}",
+      "copiesKept_one": "The copy in {{agents}} has changes of its own, so it was not updated.",
+      "copiesKept_other": "The copies in {{agents}} have changes of their own, so they were not updated.",
+      "dialog": {
+        "fileTitle": "New file",
+        "folderTitle": "New folder",
+        "renameTitle": "Rename {{name}}",
+        "description": "A path inside the skill's folder.",
+        "label": "Path",
+        "hint": "Use / to put it in a folder. Missing folders are created.",
+        "create": "Create",
+        "rename": "Rename",
+        "problem": {
+          "invalid": "Names cannot be empty, end with a dot or space, contain < > : \" | ? * or be .git.",
+          "taken": "Something with this name already exists."
+        }
+      },
+      "confirm": {
+        "fileTitle": "Delete {{name}}?",
+        "folderTitle": "Delete the folder {{name}}?",
+        "fileDescription": "It stays in the earlier versions on this computer. To bring it back, create a file with the same name and pick it from Earlier versions.",
+        "folderDescription_zero": "The folder is empty.",
+        "folderDescription_one": "Its file stays in the earlier versions on this computer. To bring it back, create a file with the same name and pick it from Earlier versions.",
+        "folderDescription_other": "Its {{count}} files stay in the earlier versions on this computer. To bring one back, create a file with the same name and pick it from Earlier versions."
+      },
+      "errors": {
+        "create": "Could not create it.",
+        "rename": "Could not rename it.",
+        "delete": "Could not delete it."
+      }
+    },
     "status": {
       "files": "Show or hide the files in the sidebar",
       "wrap": "Wrap long lines",

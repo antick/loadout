@@ -42,19 +42,22 @@ import type {
   SizeReport,
   Skill,
   SkillDocument,
-  SkillLocation,
-  EditTarget,
-  SkillFile,
-  SkillFileEntry,
-  SkillFileVersion,
-  SaveSkillFileInput,
-  SaveSkillFileResult,
   Snapshot,
   SourceDiff,
   SourceDocument,
   SyncOutcome,
   UpdateResult,
 } from "./types";
+import type {
+  EditTarget,
+  SaveSkillFileInput,
+  SaveSkillFileResult,
+  SkillFile,
+  SkillFileChangeResult,
+  SkillFileEntry,
+  SkillFileVersion,
+  SkillLocation,
+} from "./types-editor";
 import type {
   BatchImportResult,
   GitPreview,
@@ -136,6 +139,20 @@ export interface EditorApi {
   /** Earlier versions of one file, newest first. */
   fileVersions(location: SkillLocation, path: string): Promise<SkillFileVersion[]>;
   readFileVersion(location: SkillLocation, path: string, versionId: string): Promise<string>;
+  /** Every folder of the skill, empty ones included, by path. `/` separated. */
+  folders(location: SkillLocation): Promise<string[]>;
+  /**
+   * Create an empty file, and the folders on its way. This and the three below change library
+   * skills only (other places refuse with UNSUPPORTED); each records the edit and refreshes copy
+   * deployments like a save. A taken name is refused (ALREADY_EXISTS), and so is renaming or
+   * deleting the main document, which a skill cannot be without.
+   */
+  createFile(location: SkillLocation, path: string): Promise<SkillFileChangeResult>;
+  createFolder(location: SkillLocation, path: string): Promise<SkillFileChangeResult>;
+  /** Rename or move a file or folder inside the skill. */
+  renameFile(location: SkillLocation, from: string, to: string): Promise<SkillFileChangeResult>;
+  /** Delete a file or folder. Every file goes to the earlier versions first. */
+  deleteFile(location: SkillLocation, path: string): Promise<SkillFileChangeResult>;
 }
 
 /** Instruction files (`CLAUDE.md`, `AGENTS.md`, …) of the available agents. Edited via `editor`. */

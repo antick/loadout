@@ -81,3 +81,15 @@ export function firstFreeName(name: string, isFree: (candidate: string) => boole
   while (!isFree(`${name}-${n}`)) n += 1;
   return `${name}-${n}`;
 }
+
+/**
+ * One file or folder name that every system the library syncs to can hold: no reserved or
+ * control characters, no trailing dot or space, no device name like `con`.
+ */
+export function isPortableName(name: string): boolean {
+  if (!name || name === "." || name === "..") return false;
+  if (replaceControlChars(name) !== name) return false;
+  if (new RegExp(FORBIDDEN_CHARS.source).test(name)) return false;
+  if (/[.\s]$/.test(name)) return false;
+  return !WINDOWS_DEVICE_NAMES.test(name.split(".")[0] ?? name);
+}

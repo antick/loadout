@@ -65,6 +65,12 @@ For the feature checklist, see [PLAN.md](PLAN.md).
 - A save never overwrites a change made on disk meanwhile: you see the difference and choose.
 - Unsaved text survives closing the window or quitting; leaving the editor asks first.
 - Every save keeps the version it replaced, on this computer; restore any of the last 20.
+- Library skills: **New file** and **New folder** above the file list, and a right-click menu on
+  every file and folder to add, rename (or move, by typing another folder) and delete. The main
+  document cannot be renamed or deleted, and a file with unsaved changes stays put until it is
+  saved. A deleted file is kept in its earlier versions: create a file with the same name and
+  pick it from Earlier versions. Each change is marked as an edit and refreshes copied
+  deployments like a save.
 - Copied deployments are refreshed on save, except a copy an agent changed itself.
 - Skills with a source are marked Edited, and an update lists your edits and asks before
   replacing them. Batch and automatic updates hold those skills back.
@@ -437,7 +443,7 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 | Git subfolder downloads | Installation downloads a shallow copy of the whole repository, even when only one subfolder is needed.                                                                                                                                                                                                                                                                                                                                                                                         |
 | CLI credentials         | The CLI cannot read tokens saved by the desktop app. Use SSH or a Git credential helper for CLI backup authentication.                                                                                                                                                                                                                                                                                                                                                                         |
 | External skill folders  | CLI `--library` selects a complete Loadout library. Operating directly on an arbitrary skill checkout while keeping app state elsewhere is not supported.                                                                                                                                                                                                                                                                                                                                      |
-| Skill editor            | Edits existing files only (no create, rename or delete). Mixed line endings are saved as the file's majority ending.                                                                                                                                                                                                                                                                                                                                                                           |
+| Skill editor            | Mixed line endings are saved as the file's majority ending.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Agent icons             | Agents use coloured initials; brand logos are not included.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## CLI features

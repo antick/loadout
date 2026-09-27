@@ -3,18 +3,35 @@ import type {
   EditorApi,
   SaveSkillFileResult,
   Skill,
+  SkillFileChangeResult,
   SkillLocation,
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
+import { unsupported } from "../errors";
 import type { InstructionFinder } from "../instructions/finder";
 import type { ProjectStore } from "../projects/store";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import { hashDir } from "../util/hash";
-import { applyToCopy, listFolderFiles, readFileAt, segmentsOf, writeFileAt } from "./files";
+import {
+  type EditableFolder,
+  applyToCopy,
+  listFolderFiles,
+  readFileAt,
+  segmentsOf,
+  writeFileAt,
+} from "./files";
 import type { FileHistory } from "./history";
 import { type ResolvedLocation, createLocationResolver } from "./locations";
+import {
+  type FolderChange,
+  createFileIn,
+  createFolderIn,
+  deleteIn,
+  listFolders,
+  renameIn,
+} from "./manage";
 
 /** Outcome of rewriting a library skill's copy deployments after an edit. */
 export interface CopyRefresh {
@@ -32,6 +49,14 @@ export interface EditorServiceDeps {
   /** After a library edit: rewrite copy deployments, leaving copies edited in place. */
   refreshCopies(skill: Skill): Promise<CopyRefresh>;
 }
+
+const LIBRARY_ONLY = "Files can be added, renamed or deleted only in library skills";
+/** How the activity history words a file change. */
+const CHANGE_DETAIL = {
+  create: (change: FolderChange) => `Created ${change.path}`,
+  rename: (change: FolderChange, from: string) => `Renamed ${from} to ${change.path}`,
+  delete: (change: FolderChange) => `Deleted ${change.path}`,
+};
 
 /** What an edit outside the library changes: an agent's folder or a project. */
 function scopeOf(location: SkillLocation): DataScope {
@@ -53,10 +78,10 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
   const { store, history } = deps;
   const resolve = createLocationResolver(ctx, deps);
 
-  /** Library bookkeeping after a written save: name, description, hash, edit marks, copies. */
-  async function afterLibrarySave(
+  /** Library bookkeeping after a change: name, description, hash, edit marks, copies. */
+  async function afterLibraryChange(
     skill: Skill,
-    path: string,
+    paths: readonly string[],
   ): Promise<{
     skill: Skill;
     copies: CopyRefresh;
@@ -66,10 +91,33 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
       name: identity.name,
       description: identity.description,
       contentHash: hashDir(skill.libraryPath),
-      editedFiles: [...skill.editedFiles, path],
+      editedFiles: [...skill.editedFiles, ...paths],
     });
     const copies = await deps.refreshCopies(updated);
     return { skill: store.get(skill.id), copies };
+  }
+
+  /**
+   * Create, rename or delete in a library skill under the lock, then record it like a save:
+   * edit marks, hash, copies, activity.
+   */
+  async function changeFiles(
+    location: SkillLocation,
+    apply: (folder: EditableFolder) => FolderChange,
+    detail: (change: FolderChange) => string,
+  ): Promise<SkillFileChangeResult> {
+    const first = resolve(location);
+    if (!first.librarySkill) throw unsupported(LIBRARY_ONLY);
+    const result = await ctx.lock.run(`edit ${first.folder.label}`, async () => {
+      const resolved = resolve(location);
+      if (!resolved.librarySkill) throw unsupported(LIBRARY_ONLY);
+      const change = apply(resolved.folder);
+      const { skill, copies } = await afterLibraryChange(resolved.librarySkill, change.files);
+      ctx.activity.record("edit", skill.name, detail(change));
+      return { skill, path: change.path, copiesRefreshed: copies.written, copiesKept: copies.kept };
+    });
+    ctx.touched("skills");
+    return result;
   }
 
   function carryToCopies(resolved: ResolvedLocation, path: string, before: Buffer, after: Buffer) {
@@ -108,10 +156,9 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
         };
         if (!outcome.written) return base;
         if (resolved.librarySkill) {
-          const { skill, copies } = await afterLibrarySave(
-            resolved.librarySkill,
+          const { skill, copies } = await afterLibraryChange(resolved.librarySkill, [
             outcome.file.path,
-          );
+          ]);
           ctx.activity.record("edit", skill.name, outcome.file.path);
           return { ...base, skill, copiesRefreshed: copies.written, copiesKept: copies.kept };
         }
@@ -135,6 +182,27 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
 
     readFileVersion: async (location, path, versionId) =>
       history.read(resolve(location).folder.historyKey, segmentsOf(path).join("/"), versionId),
+
+    folders: async (location) => {
+      const { folder } = resolve(location);
+      return folder.only === undefined ? listFolders(folder.dir) : [];
+    },
+
+    createFile: (location, path) =>
+      changeFiles(location, (folder) => createFileIn(folder, path), CHANGE_DETAIL.create),
+
+    createFolder: (location, path) =>
+      changeFiles(location, (folder) => createFolderIn(folder, path), CHANGE_DETAIL.create),
+
+    renameFile: (location, from, to) =>
+      changeFiles(
+        location,
+        (folder) => renameIn(folder, from, to),
+        (change) => CHANGE_DETAIL.rename(change, segmentsOf(from).join("/")),
+      ),
+
+    deleteFile: (location, path) =>
+      changeFiles(location, (folder) => deleteIn(folder, path, history), CHANGE_DETAIL.delete),
   };
 
   return { api };
