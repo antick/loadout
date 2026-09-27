@@ -1,4 +1,5 @@
 import {
+  ApiError,
   type BatchResult,
   type CreateSkillInput,
   type BatchUpdateResult,
@@ -34,6 +35,8 @@ export interface RefreshSkillInput {
   request: SkillRefreshRequest;
   /** Token from a previous answer that listed files to be removed. */
   approval?: string | null;
+  /** The user read the safety findings of the new version and said to go ahead. */
+  acceptRisk?: boolean;
 }
 
 /** Key the backend reports progress under, and the key that cancels a running update. */
@@ -141,12 +144,20 @@ export function useUpdateSkills(): UseMutationResult<BatchUpdateResult, unknown,
 export function useRefreshSkill(): UseMutationResult<UpdateResult, unknown, RefreshSkillInput> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ skillId, request, approval }: RefreshSkillInput) => {
-      if (request.kind === "update") return api.updates.update(skillId, approval ?? null);
-      if (request.kind === "reimport") return api.updates.reimport(skillId, approval ?? null);
-      return api.updates.relink(skillId, request.sourcePath, approval ?? null);
+    mutationFn: ({ skillId, request, approval, acceptRisk }: RefreshSkillInput) => {
+      const options = { acceptRisk };
+      if (request.kind === "update") return api.updates.update(skillId, approval ?? null, options);
+      if (request.kind === "reimport") {
+        return api.updates.reimport(skillId, approval ?? null, options);
+      }
+      return api.updates.relink(skillId, request.sourcePath, approval ?? null, options);
     },
-    onError: (error) => toastError(error, "library.errors.update"),
+    // A flagged new version is the caller's to ask about, not an error to toast.
+    onError: (error) => {
+      if (!(error instanceof ApiError && error.code === "UNSAFE")) {
+        toastError(error, "library.errors.update");
+      }
+    },
     onSettled: () => invalidateSkills(queryClient),
   });
 }

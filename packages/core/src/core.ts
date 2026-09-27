@@ -104,7 +104,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     rename: { deploy, projectSkillFolders: () => projects.skillFolders() },
   });
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
-  const updates = createUpdatesService(ctx, { store, install, deploy });
+  const updates = createUpdatesService(ctx, { store, install, deploy, safety });
   const presets = createPresetsService(ctx, { store, registry, deploy });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
   const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });

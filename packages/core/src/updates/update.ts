@@ -1,4 +1,10 @@
-import type { BatchUpdateResult, PendingRemoval, Skill, UpdateResult } from "@loadout/shared";
+import type {
+  BatchUpdateResult,
+  PendingRemoval,
+  SafetyReport,
+  Skill,
+  UpdateResult,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { RedeployReport } from "../deploy";
 import { cancelled, errorMessage, invalid, isAppError, notFound, unsupported } from "../errors";
@@ -9,6 +15,7 @@ import type {
   InstallIntoLibrary,
   InstallRecord,
 } from "../install";
+import type { SafetyGate } from "../install/safety-gate";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import {
   canonicalPath,
@@ -45,16 +52,29 @@ export interface UpdaterDeps {
   cancels: CancelRegistry;
   installIntoLibrary: InstallIntoLibrary;
   refreshCopies(skill: Skill): Promise<RedeployReport>;
+  /** The same safety check installs get; absent in tests that do not care. */
+  safety?: SafetyGate;
 }
 
 export interface UpdateOptions {
   lockMode?: LockMode;
+  /** Apply a new version the safety check flagged. Only ever on the user's word. */
+  acceptRisk?: boolean;
 }
 
 export interface Updater {
   update(skillId: string, approval?: string | null, options?: UpdateOptions): Promise<UpdateResult>;
-  reimport(skillId: string, approval?: string | null): Promise<UpdateResult>;
-  relink(skillId: string, sourcePath: string, approval?: string | null): Promise<UpdateResult>;
+  reimport(
+    skillId: string,
+    approval?: string | null,
+    options?: UpdateOptions,
+  ): Promise<UpdateResult>;
+  relink(
+    skillId: string,
+    sourcePath: string,
+    approval?: string | null,
+    options?: UpdateOptions,
+  ): Promise<UpdateResult>;
   detach(skillId: string): Promise<Skill>;
   updateMany(skillIds: string[]): Promise<BatchUpdateResult>;
 }
@@ -69,6 +89,9 @@ const SOURCE_MOVED = "This skill's source changed while it was being updated. Tr
 const INSIDE_LIBRARY = "That folder is already inside the skill library";
 const NO_CHANGES_DETAIL = "No file changes";
 const DETACHED_DETAIL = "Detached from its source";
+/** Where a flagged update is explained: it stays "update available" and nothing changed. */
+export const FLAGGED_UPDATE =
+  "Held back: the safety check flagged the new version. Update it on its own to read the findings.";
 
 /** Key for `install.cancel(...)` that stops a running update of this skill. */
 export function updateCancelKey(skillId: string): string {
@@ -84,6 +107,7 @@ interface Replacement {
   domain: string;
   approval: string | null | undefined;
   lockMode: LockMode;
+  acceptRisk?: boolean;
   /** Throw when the row no longer describes the source the new content was taken from. */
   verify(fresh: Skill): void;
   /** Source fields of the row once the replacement is in. */
@@ -178,7 +202,23 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     }
   }
 
+  /**
+   * The safety check of the new version, before the library lock and before anything is
+   * written, like an install. Throws UNSAFE when it is flagged and the user did not accept that.
+   */
+  async function checkNewVersion(plan: Replacement): Promise<SafetyReport | null> {
+    const current = store.get(plan.skillId);
+    if (!deps.safety || !plan.sourceDir) return null;
+    if (hashDir(plan.sourceDir) === current.contentHash) return null;
+    const [report] = await deps.safety.check([{ name: current.name, dir: plan.sourceDir }], {
+      acceptRisk: plan.acceptRisk,
+      progressKey: updateCancelKey(plan.skillId),
+    });
+    return report ?? null;
+  }
+
   async function replace(plan: Replacement): Promise<UpdateResult> {
+    const safetyReport = await checkNewVersion(plan);
     const name = store.get(plan.skillId).name;
     const result = await runLocked(ctx, plan.lockMode, `update ${name}`, async () => {
       const fresh = store.get(plan.skillId);
@@ -203,6 +243,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       let skill: Skill;
       if (changedDir) {
         skill = await installOver(fresh, changedDir, record);
+        deps.safety?.remember(skill, safetyReport);
       } else {
         skill = store.update(fresh.id, { ...patchFromRecord(record), updatedAt: fresh.updatedAt });
         ctx.activity.record("update", fresh.name, NO_CHANGES_DETAIL);
@@ -226,6 +267,17 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     if (isAppError(error, "CANCELLED") || isAppError(error, "BUSY")) return;
     const skill = store.find(skillId);
     if (!skill) return;
+    if (isAppError(error, "UNSAFE")) {
+      // Nothing is wrong with the source: a new version is there, and it waits for the user.
+      store.update(skillId, {
+        updateStatus: "update_available",
+        lastCheckError: FLAGGED_UPDATE,
+        lastCheckedAt: Date.now(),
+        updatedAt: skill.updatedAt,
+      });
+      ctx.touched("skills");
+      return;
+    }
     store.update(skillId, {
       updateStatus: "error",
       lastCheckError: errorMessage(error),
@@ -266,6 +318,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           domain: revision,
           approval,
           lockMode: options.lockMode ?? "wait",
+          acceptRisk: options.acceptRisk,
           verify: (fresh) => {
             const still = isRemoteSource(fresh) && remoteKey(remoteTargetOf(fresh));
             if (still !== remoteKey(target)) throw invalid(SOURCE_MOVED);
@@ -301,7 +354,11 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     }
   }
 
-  async function reimport(skillId: string, approval?: string | null): Promise<UpdateResult> {
+  async function reimport(
+    skillId: string,
+    approval?: string | null,
+    options: UpdateOptions = {},
+  ): Promise<UpdateResult> {
     const skill = store.get(skillId);
     requireLocal(skill);
     try {
@@ -314,6 +371,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           domain: REIMPORT_DOMAIN,
           approval,
           lockMode: "wait",
+          acceptRisk: options.acceptRisk,
           verify: (fresh) => {
             if (fresh.sourceRef !== skill.sourceRef) throw invalid(SOURCE_MOVED);
           },
@@ -349,6 +407,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     skillId: string,
     sourcePath: string,
     approval?: string | null,
+    options: UpdateOptions = {},
   ): Promise<UpdateResult> {
     const skill = store.get(skillId);
     requireLocal(skill);
@@ -363,6 +422,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         domain: path,
         approval,
         lockMode: "wait",
+        acceptRisk: options.acceptRisk,
         verify: requireLocal,
         record: () => ({ sourceType: "local", sourceRef: path, updateStatus: "local_only" }),
         declined: () => null,
@@ -405,7 +465,9 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         else if (outcome.contentChanged) result.updated += 1;
         else result.unchanged += 1;
       } catch (error) {
-        result.failed.push({ name: skill?.name ?? skillId, message: errorMessage(error) });
+        // A batch never asks about findings: a flagged skill waits for its own update.
+        const message = isAppError(error, "UNSAFE") ? FLAGGED_UPDATE : errorMessage(error);
+        result.failed.push({ name: skill?.name ?? skillId, message });
       }
     }
     return result;

@@ -2,6 +2,7 @@ import type { UpdatesApi } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import type { InstallService } from "../install";
+import type { SafetyGate } from "../install/safety-gate";
 import type { SkillStore } from "../skills/store";
 import { type AutoUpdater, createAutoUpdater } from "./auto";
 import { createChecker } from "./check";
@@ -13,6 +14,8 @@ export interface UpdatesServiceDeps {
   /** Same git client, cancel registry and way into the library the installer uses. */
   install: Pick<InstallService, "git" | "download" | "cancels" | "installIntoLibrary">;
   deploy: Pick<DeployService, "refreshCopies">;
+  /** Checks every new version before it replaces the library copy. */
+  safety?: SafetyGate;
 }
 
 export interface UpdatesService {
@@ -31,6 +34,7 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     cancels: install.cancels,
     installIntoLibrary: install.installIntoLibrary,
     refreshCopies: deploy.refreshCopies,
+    safety: deps.safety,
   });
   const preview = createSourcePreview({ store, git: install.git, download: install.download });
   const auto = createAutoUpdater(ctx, {
@@ -42,10 +46,13 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
   const api: UpdatesApi = {
     check: (skillId, force) => checker.check(skillId, { force }),
     checkAll: checker.checkAll,
-    update: (skillId, approval) => updater.update(skillId, approval),
+    update: (skillId, approval, options) =>
+      updater.update(skillId, approval, { acceptRisk: options?.acceptRisk }),
     updateMany: updater.updateMany,
-    reimport: updater.reimport,
-    relink: updater.relink,
+    reimport: (skillId, approval, options) =>
+      updater.reimport(skillId, approval, { acceptRisk: options?.acceptRisk }),
+    relink: (skillId, sourcePath, approval, options) =>
+      updater.relink(skillId, sourcePath, approval, { acceptRisk: options?.acceptRisk }),
     detach: updater.detach,
     sourceDocument: preview.sourceDocument,
     sourceDiff: preview.sourceDiff,

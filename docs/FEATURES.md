@@ -186,7 +186,11 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - CLI: `skills scan <ref>… | --all [--force]`; installs fail with `UNSAFE` and the findings, and
   `--accept-risk` installs anyway. The bundled agent skill tells agents never to accept on their
   own.
-- Not covered yet: skill updates are not checked.
+- **Before every update too**, on the new version, before anything is written. A flagged update
+  shows the same findings with **Don't update** focused and **Update anyway** beside it; the
+  version you have stays as it is. Automatic and batch updates never ask: a flagged skill stays
+  "Update available" with a note to update it on its own. CLI: `skills update <ref>` fails with
+  `UNSAFE`, and `--accept-risk` (one skill only, never with `--all`) updates anyway.
 
 ### Agent workspaces
 

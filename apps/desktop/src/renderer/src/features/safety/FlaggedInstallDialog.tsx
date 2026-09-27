@@ -23,6 +23,7 @@ export function FlaggedInstallDialog(): ReactNode {
   const flagged = prompt?.flagged ?? [];
   const [only] = flagged;
   const safeChoice = useRef<HTMLButtonElement>(null);
+  const update = prompt?.action === "update";
 
   return (
     <Dialog
@@ -44,7 +45,9 @@ export function FlaggedInstallDialog(): ReactNode {
               ? t("safety.prompt.titleOne", { name: only.name })
               : t("safety.prompt.titleMany", { count: flagged.length })}
           </DialogTitle>
-          <DialogDescription>{t("safety.prompt.description")}</DialogDescription>
+          <DialogDescription>
+            {t(update ? "safety.prompt.updateDescription" : "safety.prompt.description")}
+          </DialogDescription>
         </DialogHeader>
         <div className="-mx-6 flex max-h-[55vh] flex-col gap-4 overflow-y-auto border-y px-6 py-4">
           {flagged.map((entry) => (
@@ -62,10 +65,10 @@ export function FlaggedInstallDialog(): ReactNode {
             className="text-danger hover:text-danger"
             onClick={() => prompt?.answer(true)}
           >
-            {t("safety.prompt.installAnyway")}
+            {t(update ? "safety.prompt.updateAnyway" : "safety.prompt.installAnyway")}
           </Button>
           <Button ref={safeChoice} onClick={() => prompt?.answer(false)}>
-            {t("safety.prompt.dontInstall")}
+            {t(update ? "safety.prompt.dontUpdate" : "safety.prompt.dontInstall")}
           </Button>
         </DialogFooter>
       </DialogContent>

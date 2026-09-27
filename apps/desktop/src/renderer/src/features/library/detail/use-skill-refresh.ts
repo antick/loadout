@@ -1,4 +1,5 @@
-import type { InstallProgress, PendingRemoval, Skill } from "@loadout/shared";
+import { ApiError, type InstallProgress, type PendingRemoval, type Skill } from "@loadout/shared";
+import { toast } from "sonner";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,6 +8,7 @@ import {
   useCancelInstall,
   useRefreshSkill,
 } from "@/hooks/mutations/library";
+import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { useAppEvent } from "@/lib/events";
 import { toastSuccess } from "@/lib/toast";
 
@@ -15,6 +17,8 @@ export interface PendingApproval {
   request: SkillRefreshRequest;
   removals: PendingRemoval[];
   approval: string | null;
+  /** Carried over when the user already accepted the safety findings of this version. */
+  acceptRisk: boolean;
 }
 
 export interface SkillRefresh {
@@ -50,14 +54,32 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
   });
 
   const run = useCallback(
-    (request: SkillRefreshRequest, approval: string | null) => {
+    // Named, so asking about a flagged version can run it again.
+    function runRefresh(
+      request: SkillRefreshRequest,
+      approval: string | null,
+      acceptRisk = false,
+    ): void {
       setRunningKind(request.kind);
       mutate(
-        { skillId: skill.id, request, approval },
+        { skillId: skill.id, request, approval, acceptRisk },
         {
+          onError: (error) => {
+            if (!(error instanceof ApiError) || error.code !== "UNSAFE") return;
+            // The new version was flagged: show the findings, update only on a clear yes.
+            void askToInstallFlagged(error.details?.flagged ?? [], "update").then((yes) => {
+              if (yes) runRefresh(request, approval, true);
+              else toast.info(t("safety.prompt.notUpdated"));
+            });
+          },
           onSuccess: (result) => {
             if (result.pendingRemovals.length > 0) {
-              setPending({ request, removals: result.pendingRemovals, approval: result.approval });
+              setPending({
+                request,
+                removals: result.pendingRemovals,
+                approval: result.approval,
+                acceptRisk,
+              });
               return;
             }
             setPending(null);
@@ -88,7 +110,7 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
       if (!pending) return;
       // Close the dialog so progress and Cancel are reachable; a stale token brings it back.
       setPending(null);
-      run(pending.request, pending.approval);
+      run(pending.request, pending.approval, pending.acceptRisk);
     },
     decline: () => setPending(null),
   };

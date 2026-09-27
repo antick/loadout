@@ -2,7 +2,7 @@ import { errorMessage, isRemoteSource } from "@loadout/core";
 import type { BatchUpdateResult, Skill, UpdateResult } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { fields, plural, when } from "../output";
-import { limitPositionals } from "./support";
+import { ACCEPT_RISK_FLAG, limitPositionals } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const ALL_FLAG = {
@@ -86,10 +86,11 @@ const updateView = (result: UpdateResult) => ({
 async function updateOne(context: CommandContext, skillId: string): Promise<UpdateResult> {
   const { core, args } = context;
   const remote = isRemoteSource(core.store.get(skillId));
+  const options = { acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name) };
   const refresh = (approval?: string | null): Promise<UpdateResult> =>
     remote
-      ? core.api.updates.update(skillId, approval)
-      : core.api.updates.reimport(skillId, approval);
+      ? core.api.updates.update(skillId, approval, options)
+      : core.api.updates.reimport(skillId, approval, options);
   const first = await refresh();
   if (first.pendingRemovals.length === 0 || !flagBoolean(args, APPROVE_FLAG.name)) return first;
   return refresh(first.approval);
@@ -117,6 +118,10 @@ async function updateEachApproved(
 async function update(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const one = target(context);
+  // Accepting findings is a choice about one skill whose findings were read, never a batch.
+  if (!one && flagBoolean(args, ACCEPT_RISK_FLAG.name)) {
+    throw new UsageError(`--${ACCEPT_RISK_FLAG.name} works on one skill at a time, not --all.`);
+  }
   if (one) {
     const value = updateView(await updateOne(context, one.id));
     const lines = value.applied
@@ -158,8 +163,8 @@ export const checkCommand: CommandSpec = {
 export const updateCommand: CommandSpec = {
   name: "update",
   summary: "Bring skills up to date with their source",
-  usage: "[<ref> | --all] [--approve-removals]",
-  flags: [ALL_FLAG, APPROVE_FLAG],
+  usage: "[<ref> | --all] [--approve-removals] [--accept-risk]",
+  flags: [ALL_FLAG, APPROVE_FLAG, ACCEPT_RISK_FLAG],
   notes: [
     "An update that would delete files or replace edits made in the app is held back and listed; that is a safety stop, not an error.",
   ],

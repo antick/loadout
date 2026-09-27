@@ -212,10 +212,27 @@ export interface MarketApi {
 export interface UpdatesApi {
   check(skillId: string, force?: boolean): Promise<Skill>;
   checkAll(force?: boolean): Promise<BatchResult>;
-  update(skillId: string, approval?: string | null): Promise<UpdateResult>;
+  /**
+   * The new version goes through the safety check first: flagged, it throws UNSAFE with the
+   * findings and nothing changes, unless `options.acceptRisk` (the user said update anyway).
+   */
+  update(
+    skillId: string,
+    approval?: string | null,
+    options?: InstallOptions,
+  ): Promise<UpdateResult>;
   updateMany(skillIds: string[]): Promise<BatchUpdateResult>;
-  reimport(skillId: string, approval?: string | null): Promise<UpdateResult>;
-  relink(skillId: string, sourcePath: string, approval?: string | null): Promise<UpdateResult>;
+  reimport(
+    skillId: string,
+    approval?: string | null,
+    options?: InstallOptions,
+  ): Promise<UpdateResult>;
+  relink(
+    skillId: string,
+    sourcePath: string,
+    approval?: string | null,
+    options?: InstallOptions,
+  ): Promise<UpdateResult>;
   detach(skillId: string): Promise<Skill>;
   sourceDocument(skillId: string): Promise<SourceDocument>;
   sourceDiff(skillId: string): Promise<SourceDiff>;

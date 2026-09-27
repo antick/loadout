@@ -5,8 +5,12 @@ import type { FlaggedSkill } from "@loadout/shared";
  * `install-tasks.ts`), so the question lives here and `FlaggedInstallDialog` shows it.
  */
 
+/** What the flagged skills were about to go through: a first install, or a new version. */
+export type FlaggedAction = "install" | "update";
+
 export interface FlaggedPrompt {
   flagged: readonly FlaggedSkill[];
+  action: FlaggedAction;
   answer(install: boolean): void;
 }
 
@@ -28,11 +32,15 @@ export function getFlaggedPrompt(): FlaggedPrompt | null {
 }
 
 /** Ask, and resolve with the answer. A newer question answers an open one with "no". */
-export function askToInstallFlagged(flagged: readonly FlaggedSkill[]): Promise<boolean> {
+export function askToInstallFlagged(
+  flagged: readonly FlaggedSkill[],
+  action: FlaggedAction = "install",
+): Promise<boolean> {
   current?.answer(false);
   return new Promise((resolve) => {
     const prompt: FlaggedPrompt = {
       flagged,
+      action,
       answer: (install) => {
         if (current === prompt) publish(null);
         resolve(install);
