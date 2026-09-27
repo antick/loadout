@@ -190,7 +190,12 @@ export function writeFileAt(
   const decoded = decodeText(current);
   // Replacing a file that became binary is only ever done on purpose.
   if (!decoded && !input.overwrite) throw changedOnDisk(file.relative, currentHash);
-  const next = encodeText(input.content, decoded?.eol ?? "lf", decoded?.bom ?? hasBom(current));
+  const next = encodeText(
+    input.content,
+    decoded?.eol ?? "lf",
+    decoded?.bom ?? hasBom(current),
+    decoded?.raw,
+  );
   if (next.length > MAX_EDITABLE_BYTES) throw invalid(`${file.relative} is too large to save`);
 
   if (next.equals(current)) {

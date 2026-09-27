@@ -74,7 +74,8 @@ For the feature checklist, see [PLAN.md](PLAN.md).
 - Copied deployments are refreshed on save, except a copy an agent changed itself.
 - Skills with a source are marked Edited, and an update lists your edits and asks before
   replacing them. Batch and automatic updates hold those skills back.
-- Line endings, a byte-order mark and the executable bit of a file are kept.
+- Line endings, a byte-order mark and the executable bit of a file are kept. In a file that mixes
+  CRLF and LF, lines you did not touch keep their own ending; new lines get the most common one.
 
 ### Install
 
@@ -443,7 +444,6 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 | Git subfolder downloads | Installation downloads a shallow copy of the whole repository, even when only one subfolder is needed.                                                                                                                                                                                                                                                                                                                                                                                         |
 | CLI credentials         | The CLI cannot read tokens saved by the desktop app. Use SSH or a Git credential helper for CLI backup authentication.                                                                                                                                                                                                                                                                                                                                                                         |
 | External skill folders  | CLI `--library` selects a complete Loadout library. Operating directly on an arbitrary skill checkout while keeping app state elsewhere is not supported.                                                                                                                                                                                                                                                                                                                                      |
-| Skill editor            | Mixed line endings are saved as the file's majority ending.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Agent icons             | Agents use coloured initials; brand logos are not included.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## CLI features
