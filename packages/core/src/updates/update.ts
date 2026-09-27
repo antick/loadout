@@ -1,5 +1,6 @@
 import type {
   BatchUpdateResult,
+  ErrorCode,
   PendingRemoval,
   SafetyReport,
   Skill,
@@ -7,7 +8,15 @@ import type {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { RedeployReport } from "../deploy";
-import { cancelled, errorMessage, invalid, isAppError, notFound, unsupported } from "../errors";
+import {
+  AppError,
+  cancelled,
+  errorMessage,
+  invalid,
+  isAppError,
+  notFound,
+  unsupported,
+} from "../errors";
 import type {
   CancelRegistry,
   Download,
@@ -60,6 +69,11 @@ export interface UpdateOptions {
   lockMode?: LockMode;
   /** Apply a new version the safety check flagged. Only ever on the user's word. */
   acceptRisk?: boolean;
+  /**
+   * The upstream revision the user compared against. When upstream has moved on since, nothing
+   * is installed: the user never saw what the newer revision changes.
+   */
+  expectedRevision?: string | null;
 }
 
 export interface Updater {
@@ -90,6 +104,8 @@ const INSIDE_LIBRARY = "That folder is already inside the skill library";
 const NO_CHANGES_DETAIL = "No file changes";
 const DETACHED_DETAIL = "Detached from its source";
 /** Where a flagged update is explained: it stays "update available" and nothing changed. */
+const MOVED_SINCE_COMPARED =
+  "The source changed again since you compared it. Look at Compare again, then update.";
 export const FLAGGED_UPDATE =
   "Held back: the safety check flagged the new version. Update it on its own to read the findings.";
 
@@ -263,8 +279,10 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   }
 
   function markFailed(skillId: string, error: unknown): void {
-    // Neither says anything about the source: the user stopped it, or the library was busy.
-    if (isAppError(error, "CANCELLED") || isAppError(error, "BUSY")) return;
+    // None says anything is wrong with the source: the user stopped it, the library was busy,
+    // or upstream simply moved on since the user compared.
+    const quiet: readonly ErrorCode[] = ["CANCELLED", "BUSY", "CHANGED_ON_DISK"];
+    if (quiet.some((code) => isAppError(error, code))) return;
     const skill = store.find(skillId);
     if (!skill) return;
     if (isAppError(error, "UNSAFE")) {
@@ -304,6 +322,9 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       ctx.emit("install:progress", { key, phase: "cloning", name: skill.name });
       const target = remoteTargetOf(skill);
       const revision = await resolveRemoteRevision(git, target, handle.signal);
+      if (options.expectedRevision && revision !== options.expectedRevision) {
+        throw new AppError("CHANGED_ON_DISK", MOVED_SINCE_COMPARED);
+      }
       // Same commit as installed: nothing to download, only the row to settle.
       const source =
         revision === skill.sourceRevision

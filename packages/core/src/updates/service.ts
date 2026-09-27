@@ -47,7 +47,10 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     check: (skillId, force) => checker.check(skillId, { force }),
     checkAll: checker.checkAll,
     update: (skillId, approval, options) =>
-      updater.update(skillId, approval, { acceptRisk: options?.acceptRisk }),
+      updater.update(skillId, approval, {
+        acceptRisk: options?.acceptRisk,
+        expectedRevision: options?.expectedRevision,
+      }),
     updateMany: updater.updateMany,
     reimport: (skillId, approval, options) =>
       updater.reimport(skillId, approval, { acceptRisk: options?.acceptRisk }),

@@ -69,6 +69,23 @@ describe("check", () => {
     expect((await world.updates.api.check(pdf.id, true)).updateStatus).toBe("unknown");
   });
 
+  it("installs only the revision the user compared, never a newer one", async () => {
+    const pdf = await world.installFromGit("pdf");
+    const compared = changePdfUpstream("echo v2\n");
+    changePdfUpstream("echo v3, never looked at\n");
+
+    const error = await rejection(
+      world.updates.api.update(pdf.id, null, { expectedRevision: compared }),
+    );
+    expect(error.code).toBe("CHANGED_ON_DISK");
+    expect(world.store.get(pdf.id).sourceRevision).toBe(pdf.sourceRevision);
+    expect(world.store.get(pdf.id).updateStatus).not.toBe("error");
+
+    const head = (await world.updates.api.sourceDiff(pdf.id)).revision;
+    const result = await world.updates.api.update(pdf.id, null, { expectedRevision: head });
+    expect(result.skill.sourceRevision).toBe(head);
+  });
+
   it("clears the progress line when an update fails", async () => {
     const pdf = await world.installFromGit("pdf");
     const broken = world.withGit({

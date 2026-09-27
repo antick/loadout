@@ -37,6 +37,8 @@ export interface RefreshSkillInput {
   approval?: string | null;
   /** The user read the safety findings of the new version and said to go ahead. */
   acceptRisk?: boolean;
+  /** The upstream revision Compare showed; a newer one is refused instead of installed. */
+  expectedRevision?: string | null;
 }
 
 /** Key the backend reports progress under, and the key that cancels a running update. */
@@ -144,20 +146,35 @@ export function useUpdateSkills(): UseMutationResult<BatchUpdateResult, unknown,
 export function useRefreshSkill(): UseMutationResult<UpdateResult, unknown, RefreshSkillInput> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ skillId, request, approval, acceptRisk }: RefreshSkillInput) => {
+    mutationFn: ({
+      skillId,
+      request,
+      approval,
+      acceptRisk,
+      expectedRevision,
+    }: RefreshSkillInput) => {
       const options = { acceptRisk };
-      if (request.kind === "update") return api.updates.update(skillId, approval ?? null, options);
+      if (request.kind === "update") {
+        return api.updates.update(skillId, approval ?? null, { ...options, expectedRevision });
+      }
       if (request.kind === "reimport") {
         return api.updates.reimport(skillId, approval ?? null, options);
       }
       return api.updates.relink(skillId, request.sourcePath, approval ?? null, options);
     },
     // A flagged new version is the caller's to ask about, not an error to toast.
-    onError: (error) => {
+    onError: (error, { skillId }) => {
       if (!(error instanceof ApiError && error.code === "UNSAFE")) {
         toastError(error, "library.errors.update");
       }
+      // Upstream moved on since Compare: show the new comparison.
+      if (error instanceof ApiError && error.code === "CHANGED_ON_DISK") {
+        void queryClient.invalidateQueries({ queryKey: keys.updates.sourceDiff(skillId) });
+      }
     },
+    // What Compare showed is history now: the next update must not be held to it.
+    onSuccess: (_result, { skillId }) =>
+      queryClient.removeQueries({ queryKey: keys.updates.sourceDiff(skillId) }),
     onSettled: () => invalidateSkills(queryClient),
   });
 }

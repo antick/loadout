@@ -209,6 +209,14 @@ export interface MarketApi {
   detail(source: string, skillId: string): Promise<MarketSkillDetail>;
 }
 
+export interface UpdateRequestOptions extends InstallOptions {
+  /**
+   * The upstream revision the user compared against. When upstream moved on since, nothing is
+   * installed (CHANGED_ON_DISK): the user never saw what the newer revision changes.
+   */
+  expectedRevision?: string | null;
+}
+
 export interface UpdatesApi {
   check(skillId: string, force?: boolean): Promise<Skill>;
   checkAll(force?: boolean): Promise<BatchResult>;
@@ -219,7 +227,7 @@ export interface UpdatesApi {
   update(
     skillId: string,
     approval?: string | null,
-    options?: InstallOptions,
+    options?: UpdateRequestOptions,
   ): Promise<UpdateResult>;
   updateMany(skillIds: string[]): Promise<BatchUpdateResult>;
   reimport(

@@ -1,4 +1,11 @@
-import { ApiError, type InstallProgress, type PendingRemoval, type Skill } from "@loadout/shared";
+import {
+  ApiError,
+  type InstallProgress,
+  type PendingRemoval,
+  type Skill,
+  type SourceDiff,
+} from "@loadout/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,6 +17,7 @@ import {
 } from "@/hooks/mutations/library";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { useAppEvent } from "@/lib/events";
+import { keys } from "@/lib/query-keys";
 import { toastSuccess } from "@/lib/toast";
 
 /** An update that stopped because it would delete files; waiting for the user's decision. */
@@ -42,6 +50,7 @@ export interface SkillRefresh {
 export function useSkillRefresh(skill: Skill): SkillRefresh {
   const { t } = useTranslation();
   const refresh = useRefreshSkill();
+  const queryClient = useQueryClient();
   const cancelInstall = useCancelInstall();
   const [pending, setPending] = useState<PendingApproval | null>(null);
   const [progress, setProgress] = useState<InstallProgress | null>(null);
@@ -61,8 +70,10 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
       acceptRisk = false,
     ): void {
       setRunningKind(request.kind);
+      // When Compare was opened, install exactly the version it showed, nothing newer.
+      const compared = queryClient.getQueryData<SourceDiff>(keys.updates.sourceDiff(skill.id));
       mutate(
-        { skillId: skill.id, request, approval, acceptRisk },
+        { skillId: skill.id, request, approval, acceptRisk, expectedRevision: compared?.revision },
         {
           onError: (error) => {
             if (!(error instanceof ApiError) || error.code !== "UNSAFE") return;
@@ -96,7 +107,7 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
         },
       );
     },
-    [mutate, skill.id, t],
+    [mutate, queryClient, skill.id, t],
   );
 
   return {
