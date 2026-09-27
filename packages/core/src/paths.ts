@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import {
   LIBRARY_SKILLS_DIR_NAME,
   APP_DATA_DIR_NAME,
+  APP_RUNNING_FILE,
   APP_SLUG,
   CLI_BIN_DIR_NAME,
   DEV_APP_DATA_DIR_NAME,
@@ -14,6 +15,7 @@ import {
   type LibraryWarning,
 } from "@loadout/shared";
 import { errorMessage } from "./errors";
+import { processAlive } from "./lock";
 import {
   canonicalPath,
   ensureDir,
@@ -58,8 +60,8 @@ export interface ResolveOptions {
   /** Use this base folder and skip the saved location entirely (CLI `--library`, tests). */
   baseDir?: string;
   /**
-   * Carry out a library move queued for the next start. Only the desktop app does: a command
-   * run by an agent while the app is open must not move the library out from under it.
+   * Carry out a library move queued for the next start. Never while the desktop app is open in
+   * another process: the library would move out from under it.
    */
   migrate?: boolean;
 }
@@ -292,6 +294,18 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
     warnings: [...new Set(warnings)],
     notes,
   };
+}
+
+/** The desktop app is open on this computer (its pid file names a live process). */
+export function isAppRunning(home: string): boolean {
+  return [APP_DATA_DIR_NAME, DEV_APP_DATA_DIR_NAME].some((dir) => {
+    try {
+      const pid = Number(readFileSync(join(home, LIBRARY_DIR_NAME, dir, APP_RUNNING_FILE), "utf8"));
+      return Number.isInteger(pid) && pid > 0 && pid !== process.pid && processAlive(pid);
+    } catch {
+      return false;
+    }
+  });
 }
 
 export function ensureLibraryDirs(paths: LibraryPaths): void {

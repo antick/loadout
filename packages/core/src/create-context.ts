@@ -13,7 +13,7 @@ import {
 import { Database } from "./db/database";
 import { RepoLock } from "./lock";
 import { type Logger, createFileLogger } from "./log";
-import { ensureLibraryDirs, resolveLibrary } from "./paths";
+import { ensureLibraryDirs, isAppRunning, resolveLibrary } from "./paths";
 import { SettingsStore } from "./settings/store";
 import { createSkillInspector } from "./skills/checks";
 import { PortableMetadata } from "./skills/portable";
@@ -25,7 +25,10 @@ export interface CoreOptions {
   configDir?: string;
   /** Use this library folder instead of the saved location (CLI `--library`, tests). */
   baseDir?: string;
-  /** Carry out a library move queued in Settings. The desktop app sets this; the CLI never does. */
+  /**
+   * Carry out a library move queued in Settings. Defaults to "only when the desktop app is not
+   * open", so a CLI run never moves the library out from under the running app.
+   */
   migrateLibrary?: boolean;
   secrets?: SecretStore;
   host?: Partial<HostBridge>;
@@ -72,7 +75,7 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     homeDir: home,
     configDir: options.configDir,
     baseDir: options.baseDir,
-    migrate: options.migrateLibrary ?? false,
+    migrate: options.migrateLibrary ?? !isAppRunning(home),
   });
   ensureLibraryDirs(resolved.paths);
 

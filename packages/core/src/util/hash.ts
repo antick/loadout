@@ -24,12 +24,10 @@ export function isIgnoredContentName(name: string): boolean {
  * delete.
  */
 export function holdsUncopiedEntries(root: string): boolean {
-  const walk = (dir: string): boolean =>
-    readDirSafe(dir).some((entry) => {
-      if (entry.isSymbolicLink() || entry.name === ".git") return true;
-      return entry.isDirectory() && walk(join(dir, entry.name));
-    });
-  return walk(root);
+  return readDirSafe(root).some((entry) => {
+    if (entry.isSymbolicLink() || entry.name === ".git") return true;
+    return entry.isDirectory() && holdsUncopiedEntries(join(root, entry.name));
+  });
 }
 
 export interface ContentFile {

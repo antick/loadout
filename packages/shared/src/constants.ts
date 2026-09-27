@@ -10,6 +10,8 @@ export const LIBRARY_DIR_NAME = `.${APP_SLUG}`;
  */
 export const APP_DATA_DIR_NAME = "app";
 export const DEV_APP_DATA_DIR_NAME = "app-dev";
+/** In the app data folder while the desktop app runs: its process id. */
+export const APP_RUNNING_FILE = "running.pid";
 /** Where the library lives when it is not in the home data folder. Kept in the home folder. */
 export const LIBRARY_CONFIG_FILE = "library.json";
 /** Published command-line tool, in the home data folder. */

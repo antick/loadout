@@ -112,7 +112,7 @@ describe("recently removed", () => {
       registry: world.registry,
       removed: world.removed,
     });
-    const workspace = createWorkspaceService(world.ctx, {
+    const uploader = createWorkspaceService(world.ctx, {
       store: world.store,
       registry: world.registry,
       deploy,
@@ -121,7 +121,7 @@ describe("recently removed", () => {
       },
       removed: world.removed,
     });
-    await workspace.api.upload("claude_code", "tracked");
+    await uploader.api.upload("claude_code", "tracked");
 
     const [entry] = await storage.api.removed();
     expect(entry).toMatchObject({ name: "tracked", reason: "replaced" });

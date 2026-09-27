@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type LibraryPaths, resolveLibrary, setLibraryPath } from "../src/paths";
+import { type LibraryPaths, isAppRunning, resolveLibrary, setLibraryPath } from "../src/paths";
 import { tempDir, writeFile } from "./helpers";
 
 let temp: { dir: string; cleanup: () => void };
@@ -52,11 +52,20 @@ describe("library location", () => {
     expect(existsSync(join(target, "bin"))).toBe(false);
   });
 
-  it("leaves a queued move to the app: a CLI run keeps using the library where it is", () => {
+  it("knows the app is open from its pid file, and only while that process lives", () => {
+    const pidFile = join(homeDir(), "app", "running.pid");
+    expect(isAppRunning(home)).toBe(false);
+    writeFile(pidFile, String(process.ppid));
+    expect(isAppRunning(home)).toBe(true);
+    writeFile(pidFile, String(2 ** 22 + 7));
+    expect(isAppRunning(home)).toBe(false);
+  });
+
+  it("keeps using the library where it is when not allowed to move it", () => {
     const target = join(temp.dir, "elsewhere");
     setLibraryPath(seedDefaultLibrary(), target);
 
-    const cli = resolveLibrary({ homeDir: home, configDir });
+    const cli = resolveLibrary({ homeDir: home, configDir, migrate: false });
     expect(cli.paths.baseDir).toBe(homeDir());
     expect(existsSync(join(homeDir(), "skills", "alpha", "SKILL.md"))).toBe(true);
     expect(existsSync(target)).toBe(false);

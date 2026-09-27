@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { BrowserWindow, app, dialog, session, shell } from "electron";
@@ -6,6 +6,7 @@ import { AppError, type Core, createCore } from "@loadout/core";
 import {
   AGENT_HOME_ENV_VARIABLES,
   APP_DATA_DIR_NAME,
+  APP_RUNNING_FILE,
   APP_ID,
   APP_NAME,
   DEV_APP_DATA_DIR_NAME,
@@ -349,6 +350,13 @@ function start(): void {
     tray?.refresh();
   });
 
+  // Tells a CLI run that the app is open, so it never moves the library out from under it.
+  try {
+    writeFileSync(join(appDataDir, APP_RUNNING_FILE), String(process.pid));
+  } catch (error) {
+    core.ctx.log.warn("Could not record that the app is running", error);
+  }
+
   // After the library started: it adopts the location file the old folder may still hold.
   finishAppDataMove(core.ctx.log);
   core.background.start();
@@ -373,6 +381,7 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.on("before-quit", (event) => {
     quitting = true;
+    rmSync(join(appDataDir, APP_RUNNING_FILE), { force: true });
     if (updateTimer) clearTimeout(updateTimer);
     if (!core) return;
     const closing = core;
