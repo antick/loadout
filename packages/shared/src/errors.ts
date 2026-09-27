@@ -35,6 +35,8 @@ export const ERROR_CODES = [
   "GITHUB_NOT_CONFIGURED",
   "CREDENTIALS_UNAVAILABLE",
   "BUSY",
+  /** The saved library is in a folder that is not there, e.g. on a disk that is not connected. */
+  "LIBRARY_UNAVAILABLE",
   "UNSUPPORTED",
   "IO",
   "INTERNAL",

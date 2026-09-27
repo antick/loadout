@@ -1,7 +1,14 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type LibraryPaths, isAppRunning, resolveLibrary, setLibraryPath } from "../src/paths";
+import { createContext } from "../src/create-context";
+import {
+  type LibraryPaths,
+  isAppRunning,
+  pointLibraryAt,
+  resolveLibrary,
+  setLibraryPath,
+} from "../src/paths";
 import { tempDir, writeFile } from "./helpers";
 
 let temp: { dir: string; cleanup: () => void };
@@ -18,6 +25,7 @@ afterEach(() => temp.cleanup());
 
 const resolve = () => resolveLibrary({ homeDir: home, configDir, migrate: true });
 const homeDir = () => join(home, ".loadout");
+const rmdirTree = (path: string): void => rmSync(path, { recursive: true, force: true });
 
 /** A library with a skill, a database, history and the home folder's own files. */
 function seedDefaultLibrary(): LibraryPaths {
@@ -50,6 +58,65 @@ describe("library location", () => {
     expect(existsSync(join(homeDir(), "bin", "loadout"))).toBe(true);
     expect(existsSync(join(homeDir(), "app", "window-state.json"))).toBe(true);
     expect(existsSync(join(target, "bin"))).toBe(false);
+  });
+
+  it("never starts an empty library when the moved one is not there", () => {
+    const target = join(temp.dir, "external", "loadout");
+    setLibraryPath(seedDefaultLibrary(), target);
+    expect(resolve().paths.baseDir).toBe(target);
+    // The disk goes away.
+    const unplugged = join(temp.dir, "unplugged");
+    renameSync(join(temp.dir, "external"), unplugged);
+
+    const missing = resolve();
+    expect(missing).toMatchObject({ unavailable: true, paths: { baseDir: target } });
+    let thrown: unknown = null;
+    try {
+      createContext({ homeDir: home, configDir, migrateLibrary: true });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toMatchObject({ code: "LIBRARY_UNAVAILABLE", details: { path: target } });
+    expect(existsSync(target)).toBe(false);
+
+    // An empty mount point is not the library either.
+    mkdirSync(target, { recursive: true });
+    expect(resolve().unavailable).toBe(true);
+
+    // Back again: it opens as before.
+    rmdirTree(join(temp.dir, "external"));
+    renameSync(unplugged, join(temp.dir, "external"));
+    expect(resolve()).toMatchObject({ unavailable: false, paths: { baseDir: target } });
+  });
+
+  it("points at a library found elsewhere, or the default, without moving anything", () => {
+    const target = join(temp.dir, "external", "loadout");
+    setLibraryPath(seedDefaultLibrary(), target);
+    resolve();
+    const remounted = join(temp.dir, "remounted");
+    renameSync(join(temp.dir, "external"), remounted);
+    expect(resolve().unavailable).toBe(true);
+
+    pointLibraryAt(home, join(remounted, "loadout"));
+    expect(resolve()).toMatchObject({
+      unavailable: false,
+      paths: { baseDir: join(remounted, "loadout") },
+    });
+    pointLibraryAt(home, null);
+    expect(resolve()).toMatchObject({ unavailable: false, paths: { baseDir: homeDir() } });
+    expect(existsSync(join(remounted, "loadout", "skills", "alpha", "SKILL.md"))).toBe(true);
+  });
+
+  it("keeps a move waiting while the library it moves from is not there", () => {
+    const from = join(temp.dir, "external", "loadout");
+    setLibraryPath(seedDefaultLibrary(), from);
+    resolve();
+    setLibraryPath(resolve().paths, null);
+    renameSync(join(temp.dir, "external"), join(temp.dir, "unplugged"));
+
+    expect(resolve()).toMatchObject({ unavailable: true, paths: { baseDir: from } });
+    const config = JSON.parse(readFileSync(join(homeDir(), "library.json"), "utf8"));
+    expect(config.pendingMigrationFrom).toBe(from);
   });
 
   it("knows the app is open from its pid file, and only while that process lives", () => {

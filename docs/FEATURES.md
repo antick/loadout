@@ -362,6 +362,10 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   discarded.
 - The library can be moved (the rest stays in `~/.loadout`). A move only goes into an empty
   folder, moves all or nothing, and can come back to `~/.loadout`.
+- A moved library that is not there at start (its disk is not connected) is never replaced by an
+  empty one. The app asks: **Try again**, **Choose where it is now** (a folder that holds the
+  library), **Use the default folder**, or **Quit**. The CLI stops with `LIBRARY_UNAVAILABLE`.
+  Nothing is created, and no links in agent folders are touched.
 - **Remove all data** takes Loadout's links out of agent folders (copies too, if asked), deletes
   the data folder and a moved library, deletes the keychain key on macOS, and quits. Project folders
   and the backup repository are left alone.

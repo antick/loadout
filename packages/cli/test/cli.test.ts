@@ -412,6 +412,19 @@ describe("repo and --library", () => {
     expect((await cli("repo", "set", "--json")).code).toBe(EXIT_USAGE);
   });
 
+  it("fails, and creates nothing, while the saved library's disk is not connected", async () => {
+    const away = join(root, "external", "loadout");
+    mkdirSync(join(home, LIBRARY_DIR_NAME), { recursive: true });
+    writeFileSync(
+      join(home, LIBRARY_DIR_NAME, "library.json"),
+      JSON.stringify({ libraryPath: away, pendingMigrationFrom: null }),
+    );
+    const run = await cli("skills", "list", "--json");
+    expect(run.code).toBe(EXIT_FAILED);
+    expect(run.json()).toMatchObject({ code: "LIBRARY_UNAVAILABLE", details: { path: away } });
+    expect(existsSync(away)).toBe(false);
+  });
+
   it("works on another library without touching the saved one", async () => {
     writeSkill(join(root, "src"), "alpha");
     const other = join(root, "other-library");

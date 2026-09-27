@@ -31,6 +31,8 @@ import {
   UPDATE_RECHECK_MS,
 } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
+import { openCoreOrAsk } from "./library-unavailable";
+import { nativeUnavailablePrompts } from "./library-unavailable-dialogs";
 import { createSecretStore } from "./secrets";
 import { type TrayController, createTrayController } from "./tray-controller";
 import { appFetch } from "./net-fetch";
@@ -258,39 +260,49 @@ function start(): void {
     answer(false),
   );
   session.defaultSession.setPermissionCheckHandler(() => false);
-  core = createCore({
-    secrets: createSecretStore(join(app.getPath("userData"), SECRETS_FILE)),
-    emit: (event, payload) => {
-      if (event === "data:changed") {
-        for (const watcher of watchers) watcher.mute();
-        const { scope } = payload as { scope: string[] };
-        if (scope.includes("settings")) {
-          syncTray();
-          syncProxy();
-        }
-        if (scope.some((entry) => TRAY_SCOPES.has(entry))) tray?.refresh();
-      }
-      if (event === "updates:auto-ran") tray?.refresh();
-      send(event, payload);
-    },
-    // Only the app carries out a library move queued in Settings, never a CLI run.
-    migrateLibrary: true,
-    echoLogs: !app.isPackaged,
-    // Started from a terminal, the app has the shell's variables already; they win.
-    env: () => ({ ...shellEnv, ...process.env }),
-    fetchImpl: appFetch,
-    host: {
-      appVersion: app.getVersion(),
-      revealPath: revealInFileManager,
-      bundledSkillDir: existsSync(join(resourcesDir, "skills"))
-        ? join(resourcesDir, "skills")
-        : null,
-      bundledCliPath: existsSync(bundledCliPath) ? bundledCliPath : null,
-      nodeRunner: { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" } },
-      downloadsDir: app.getPath("downloads"),
-      appDataDir,
-    },
-  });
+  // A library on a disk that is not connected is never replaced by an empty one: ask instead.
+  const opened = openCoreOrAsk(
+    () =>
+      createCore({
+        secrets: createSecretStore(join(app.getPath("userData"), SECRETS_FILE)),
+        emit: (event, payload) => {
+          if (event === "data:changed") {
+            for (const watcher of watchers) watcher.mute();
+            const { scope } = payload as { scope: string[] };
+            if (scope.includes("settings")) {
+              syncTray();
+              syncProxy();
+            }
+            if (scope.some((entry) => TRAY_SCOPES.has(entry))) tray?.refresh();
+          }
+          if (event === "updates:auto-ran") tray?.refresh();
+          send(event, payload);
+        },
+        // Only the app carries out a library move queued in Settings, never a CLI run.
+        migrateLibrary: true,
+        echoLogs: !app.isPackaged,
+        // Started from a terminal, the app has the shell's variables already; they win.
+        env: () => ({ ...shellEnv, ...process.env }),
+        fetchImpl: appFetch,
+        host: {
+          appVersion: app.getVersion(),
+          revealPath: revealInFileManager,
+          bundledSkillDir: existsSync(join(resourcesDir, "skills"))
+            ? join(resourcesDir, "skills")
+            : null,
+          bundledCliPath: existsSync(bundledCliPath) ? bundledCliPath : null,
+          nodeRunner: { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" } },
+          downloadsDir: app.getPath("downloads"),
+          appDataDir,
+        },
+      }),
+    nativeUnavailablePrompts(),
+  );
+  if (!opened) {
+    app.exit(0);
+    return;
+  }
+  core = opened;
 
   const api: LoadoutApi = {
     ...core.api,

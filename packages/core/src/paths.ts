@@ -71,6 +71,11 @@ export interface ResolvedLibrary {
   warnings: LibraryWarning[];
   /** Details for the log, flushed once logging is up. */
   notes: string[];
+  /**
+   * The saved library is in a folder that is not there (a disk that is not connected). Nothing
+   * may be opened or created in its place; `paths` point at where it should be.
+   */
+  unavailable: boolean;
 }
 
 const DB_FILE = `${APP_SLUG}.db`;
@@ -255,7 +260,12 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   const notes: string[] = [];
 
   if (options.baseDir) {
-    return { paths: buildPaths(options.baseDir, defaultBaseDir), warnings, notes };
+    return {
+      paths: buildPaths(options.baseDir, defaultBaseDir),
+      warnings,
+      notes,
+      unavailable: false,
+    };
   }
 
   const legacyDir = options.configDir ?? osConfigDir(home);
@@ -272,12 +282,22 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   }
 
   const pending = config.pendingMigrationFrom;
+  // The data waiting to move is on a missing disk: keep the marker, open nothing.
+  if (pending && !existsSync(pending) && !holdsLibrary(baseDir)) {
+    notes.push(`The library to move from ${pending} is not available`);
+    return { paths: buildPaths(pending, defaultBaseDir), warnings, notes, unavailable: true };
+  }
+  // A library moved to another folder must be found there: never start an empty one instead.
+  if (!pending && config.libraryPath && !holdsLibrary(baseDir)) {
+    notes.push(`The library at ${baseDir} is not available`);
+    return { paths: buildPaths(baseDir, defaultBaseDir), warnings, notes, unavailable: true };
+  }
   if (pending) {
     let keepMarker = false;
     const same = canonicalPath(pending) === canonicalPath(baseDir);
     if (existsSync(pending) && !same && !options.migrate) {
       // Not moved yet: the data is still where it was.
-      return { paths: buildPaths(pending, defaultBaseDir), warnings, notes };
+      return { paths: buildPaths(pending, defaultBaseDir), warnings, notes, unavailable: false };
     }
     if (existsSync(pending) && !same && !migrate(pending, baseDir, defaultBaseDir, notes)) {
       warnings.push("migration_incomplete");
@@ -293,7 +313,27 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
     paths: buildPaths(baseDir, defaultBaseDir),
     warnings: [...new Set(warnings)],
     notes,
+    unavailable: false,
   };
+}
+
+/** A library lives in `baseDir`: its database, or at least its skills folder, is there. */
+function holdsLibrary(baseDir: string): boolean {
+  return isLibraryDir(baseDir) || existsSync(join(baseDir, SKILLS_DIR));
+}
+
+/**
+ * Point the saved location at `path` (null: the default folder) without moving anything: for a
+ * library that is already there, or when the old one cannot be reached.
+ */
+export function pointLibraryAt(homeDir: string, path: string | null): void {
+  const next = path === null ? null : normalizeAbsolutePath(path, "Library path");
+  const configPath = join(homeDir, LIBRARY_DIR_NAME, LIBRARY_CONFIG_FILE);
+  ensureDir(dirname(configPath));
+  writeJsonAtomic(configPath, {
+    libraryPath: next,
+    pendingMigrationFrom: null,
+  } satisfies LocationConfig);
 }
 
 /** A library lives in `baseDir`: its database is there. */

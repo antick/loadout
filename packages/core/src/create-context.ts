@@ -11,6 +11,7 @@ import {
   noSecretStore,
 } from "./context";
 import { Database } from "./db/database";
+import { AppError } from "./errors";
 import { RepoLock } from "./lock";
 import { type Logger, createFileLogger } from "./log";
 import { ensureLibraryDirs, isAppRunning, resolveLibrary } from "./paths";
@@ -77,6 +78,13 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     baseDir: options.baseDir,
     migrate: options.migrateLibrary ?? !isAppRunning(home),
   });
+  if (resolved.unavailable) {
+    throw new AppError(
+      "LIBRARY_UNAVAILABLE",
+      `The library at ${resolved.paths.baseDir} is not available. If it is on another disk, connect that disk and try again.`,
+      { path: resolved.paths.baseDir },
+    );
+  }
   ensureLibraryDirs(resolved.paths);
 
   const log = options.logger ?? createFileLogger(resolved.paths.logsDir, options.echoLogs);
