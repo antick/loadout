@@ -51,12 +51,10 @@ export function AgentWorkspaceHeader({
             {t("agents.sharedFolder", { agents: sharedWith.join(", ") })}
           </p>
         ) : null}
-        {reload ? (
-          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-            <RefreshCw className="mt-0.5 size-3 shrink-0" />
-            <span className="min-w-0 break-words">{reload}</span>
-          </p>
-        ) : null}
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <RefreshCw className="mt-0.5 size-3 shrink-0" />
+          <span className="min-w-0 break-words">{reload}</span>
+        </p>
         {alsoReads.length > 0 ? (
           <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
             <FolderSearch className="mt-0.5 size-3 shrink-0" />

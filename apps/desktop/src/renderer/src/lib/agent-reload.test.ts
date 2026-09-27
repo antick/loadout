@@ -5,7 +5,7 @@ import { describeReload, reloadHint } from "./agent-reload";
 const agent = (displayName: string, reload: AgentInfo["reload"]) => ({ displayName, reload });
 
 describe("agent reload wording", () => {
-  it("describes one agent from what its documentation says, and nothing when it is silent", () => {
+  it("describes one agent from what its documentation says, and neutrally when it is silent", () => {
     expect(describeReload(agent("Claude Code", { when: "live", command: "/reload-skills" }))).toBe(
       "Claude Code picks up new, changed and removed skills while it runs. If one does not show up, type /reload-skills.",
     );
@@ -15,7 +15,9 @@ describe("agent reload wording", () => {
     expect(describeReload(agent("OpenCode", { when: "restart" }))).toBe(
       "Restart OpenCode to see new, changed and removed skills.",
     );
-    expect(describeReload(agent("Cursor", null))).toBeNull();
+    expect(describeReload(agent("Cursor", null))).toBe(
+      "Its documentation does not say when Cursor sees skill changes. If one does not show up, start a new session or restart it.",
+    );
   });
 
   it("groups several agents by what they need, and stays quiet about the live ones", () => {
@@ -28,11 +30,14 @@ describe("agent reload wording", () => {
         agent("Cursor", null),
       ]),
     ).toBe(
-      "Restart OpenCode to see the change. Start a new session in Goose and Warp to see the change.",
+      "Restart OpenCode to see the change. Start a new session in Goose and Warp to see the change. If Cursor does not show the change, start a new session or restart it.",
     );
     expect(reloadHint([agent("Claude Code", { when: "live" })])).toBe(
       "Claude Code picks it up while it runs.",
     );
-    expect(reloadHint([agent("Cursor", null)])).toBeNull();
+    expect(reloadHint([agent("Cursor", null), agent("Zed", null)])).toBe(
+      "If Cursor and Zed do not show the change, start a new session or restart them.",
+    );
+    expect(reloadHint([])).toBeNull();
   });
 });

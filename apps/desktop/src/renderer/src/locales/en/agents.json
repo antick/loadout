@@ -124,11 +124,14 @@
         "restart": "Or type {{command}} in it."
       },
       "ask": "In a running session, ask it to “{{ask}}”.",
+      "unknown": "Its documentation does not say when {{agent}} sees skill changes. If one does not show up, start a new session or restart it.",
       "hint": {
         "restart": "Restart {{names}} to see the change.",
         "newSession": "Start a new session in {{names}} to see the change.",
         "live_one": "{{names}} picks it up while it runs.",
-        "live_other": "{{names}} pick it up while they run."
+        "live_other": "{{names}} pick it up while they run.",
+        "unknown_one": "If {{names}} does not show the change, start a new session or restart it.",
+        "unknown_other": "If {{names}} do not show the change, start a new session or restart them."
       }
     }
   }

@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { invalidateDeployments } from "@/hooks/mutations/deploy";
+import { reloadHintForAvailable } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 import { toastApplyResult, toastError, toastSuccess } from "@/lib/toast";
@@ -157,7 +158,7 @@ export function useApplyPreset(): UseMutationResult<ApplyResult, unknown, Preset
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (preset: Preset) => api.presets.applyToDefault(preset.id),
-    onSuccess: (result) => toastApplyResult(result, "add"),
+    onSuccess: (result) => toastApplyResult(result, "add", reloadHintForAvailable(queryClient)),
     onError: (error) => toastError(error, "presetPage.errors.apply"),
     onSettled: () => invalidateDeployments(queryClient),
   });
