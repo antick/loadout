@@ -18,7 +18,7 @@ import {
   type SkillVersions,
   planMerge,
 } from "./merge-plan";
-import { type CommitSnapshot, readCommit } from "./merge-read";
+import { type CommitSnapshot, isPlainEntryName, readCommit } from "./merge-read";
 import { commitLibrary, requireBranch, resolveCommit, upstreamRef } from "./repo";
 
 /**
@@ -151,6 +151,8 @@ async function materialise(
     }
 
     for (const entry of plan.residual) {
+      // Read from another device's commit: only ever a direct child of the repository.
+      if (!isPlainEntryName(entry.name)) continue;
       await removePath(join(env.repoDir, entry.name));
       if (entry.action === "checkout") {
         await env.git.run(["checkout", theirs.commit, "--", entry.name], {

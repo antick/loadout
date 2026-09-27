@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SecretFinding, SecretKind } from "@loadout/shared";
+import type { SecretFinding } from "@loadout/shared";
 import { AppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { statOrNull } from "../util/fs";
+import { SECRET_PATTERNS as PATTERNS } from "../util/secret-patterns";
 import type { BackupEnv } from "./env";
 import { resolveCommit, upstreamRef } from "./repo";
 
@@ -26,35 +27,24 @@ const FILE_MODES: ReadonlySet<string> = new Set(["100644", "100755"]);
 /** One `--raw -z` record: modes, blob ids, status, then the path. */
 const RAW_RECORD = /:(\d{6}) (\d{6}) ([0-9a-f]+) ([0-9a-f]+) ([A-Z])\d*\0([^\0]+)\0/g;
 
-const PATTERNS: readonly { kind: SecretKind; regex: RegExp }[] = [
-  { kind: "private_key", regex: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY(?: BLOCK)?-----/g },
-  { kind: "aws_key", regex: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
-  { kind: "github_token", regex: /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})/g },
-  { kind: "anthropic_key", regex: /\bsk-ant-[A-Za-z0-9_-]{20,}/g },
-  { kind: "openai_key", regex: /\bsk-(?!ant-)(?:proj-|svcacct-)?[A-Za-z0-9_-]{32,}/g },
-  {
-    kind: "slack_token",
-    regex:
-      /\b(?:xox[abposr]-|xapp-)[A-Za-z0-9-]{10,}|hooks\.slack\.com\/services\/[A-Za-z0-9/]{20,}/g,
-  },
-  { kind: "google_key", regex: /\bAIza[0-9A-Za-z_-]{35}(?![0-9A-Za-z_-])/g },
-  { kind: "stripe_key", regex: /\b[rs]k_live_[0-9A-Za-z]{24,}/g },
-  { kind: "npm_token", regex: /\bnpm_[A-Za-z0-9]{36}\b/g },
-  { kind: "huggingface_token", regex: /\bhf_[A-Za-z0-9]{34,}\b/g },
-];
-
 function mask(match: string): string {
   if (match.length <= MASK_KEEP * 2) return "•".repeat(match.length);
   return `${match.slice(0, MASK_KEEP)}…${match.slice(-MASK_KEEP)}`;
 }
 
-/**
- * Stable for the same text in the same file. A private key's match is only its header, so its
- * line joins in: allowing one key must not let every later key in that file through.
- */
-function findingId(file: string, kind: SecretKind, match: string, line: number): string {
-  const where = kind === "private_key" ? `${file}:${line}` : file;
-  return createHash("sha256").update(`${where}\0${match}`).digest("hex").slice(0, ID_LENGTH);
+/** Stable for the same text in the same file. */
+function findingId(file: string, match: string): string {
+  return createHash("sha256").update(`${file}\0${match}`).digest("hex").slice(0, ID_LENGTH);
+}
+
+/** Lines a private key block may span; its `END` line closes it. */
+const MAX_KEY_BLOCK_LINES = 200;
+
+/** The whole key block from its `BEGIN` line, so allowing one key never allows another. */
+function keyBlock(lines: readonly string[], start: number): string {
+  const end = lines.findIndex((line, index) => index >= start && line.includes("-----END "));
+  const last = end === -1 ? Math.min(lines.length, start + MAX_KEY_BLOCK_LINES) : end + 1;
+  return lines.slice(start, last).join("\n");
 }
 
 /** Every match in one file's text, one per distinct secret per line. */
@@ -65,7 +55,8 @@ export function findSecrets(
   committed = false,
 ): SecretFinding[] {
   const findings: SecretFinding[] = [];
-  text.split(/\r?\n/).forEach((line, index) => {
+  const lines = text.split(/\r?\n/);
+  lines.forEach((line, index) => {
     const seen = new Set<string>();
     for (const { kind, regex } of PATTERNS) {
       for (const match of line.matchAll(regex)) {
@@ -73,7 +64,7 @@ export function findSecrets(
         if (seen.has(value) || PLACEHOLDER.test(value)) continue;
         seen.add(value);
         findings.push({
-          id: findingId(file, kind, value, index + 1),
+          id: findingId(file, kind === "private_key" ? keyBlock(lines, index) : value),
           file,
           path,
           line: index + 1,

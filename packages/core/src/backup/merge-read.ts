@@ -25,6 +25,16 @@ export interface CommitSnapshot {
   unreadable: Set<string>;
 }
 
+/**
+ * A top-level name from another device's commit that is safe to write as a child of the repo:
+ * not `.`/`..`, not git's own folder in any letter case (Windows also ignores trailing dots and
+ * spaces, so `.git.` is `.git`), and no separators.
+ */
+export function isPlainEntryName(name: string): boolean {
+  const normalized = name.toLowerCase().replace(/[. ]+$/, "");
+  return normalized !== "" && normalized !== ".git" && !/[\\/\0]/.test(name);
+}
+
 async function topLevelEntries(env: BackupEnv, commit: string): Promise<Map<string, string>> {
   const output = (await env.git.run(["ls-tree", "-z", commit])).stdout;
   const entries = new Map<string, string>();
@@ -32,7 +42,8 @@ async function topLevelEntries(env: BackupEnv, commit: string): Promise<Map<stri
     const tab = record.indexOf("\t");
     if (tab === -1) continue;
     const hash = record.slice(0, tab).split(" ")[2];
-    if (hash) entries.set(record.slice(tab + 1), hash);
+    const name = record.slice(tab + 1);
+    if (hash && isPlainEntryName(name)) entries.set(name, hash);
   }
   return entries;
 }

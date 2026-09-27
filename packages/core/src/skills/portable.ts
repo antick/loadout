@@ -161,7 +161,9 @@ export class PortableMetadata {
     // not hide from the others that a newer version is in use.
     const schemaPath = join(this.#paths.metadataDir, SCHEMA_FILE);
     const recorded = readSchemaFile(schemaPath)?.appVersion ?? null;
-    writeJsonAtomic(schemaPath, {
+    // Only when it changes: rewriting it on every backup woke the folder watcher, which asked for
+    // another backup, which rewrote it again.
+    this.#writeIfChanged(schemaPath, {
       schemaVersion: BACKUP_SCHEMA_VERSION,
       createdBy: APP_NAME,
       appVersion:

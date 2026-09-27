@@ -26,6 +26,11 @@ const FIXED_CONFIG = [
   // hook. The library folder takes in third-party skills, so its .git is not trusted blindly.
   "core.fsmonitor=false",
   "core.hooksPath=/dev/null",
+  // A backup remote is not trusted either: refuse objects that name `..`, `.git` or a path that
+  // only looks harmless on a case-folding (macOS) or NTFS (Windows) disk.
+  "transfer.fsckObjects=true",
+  "core.protectHFS=true",
+  "core.protectNTFS=true",
 ] as const;
 const SSH_NOISE = /^(warning: permanently added|\*\* |debug\d:)/i;
 

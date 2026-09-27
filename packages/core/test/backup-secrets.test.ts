@@ -51,6 +51,18 @@ describe("secret patterns", () => {
       "-----BEGIN RSA PRIVATE KEY-----\n\n-----BEGIN RSA PRIVATE KEY-----",
     );
     expect(new Set(keys.map((f) => f.id)).size).toBe(2);
+    // Another key pasted at the same spot is a new finding, not one already allowed.
+    const before = findSecrets(
+      "s/key.pem",
+      "/x",
+      "-----BEGIN RSA PRIVATE KEY-----\nAAA\n-----END RSA PRIVATE KEY-----",
+    );
+    const after = findSecrets(
+      "s/key.pem",
+      "/x",
+      "-----BEGIN RSA PRIVATE KEY-----\nBBB\n-----END RSA PRIVATE KEY-----",
+    );
+    expect(before[0]?.id).not.toBe(after[0]?.id);
   });
 
   it("passes prose about keys and documentation placeholders", () => {

@@ -10,6 +10,12 @@ import { AppError, invalid } from "../errors";
  */
 
 const TOKEN_KEY_PREFIX = "backup.git.token:";
+const USER_KEY_PREFIX = "backup.git.user:";
+/**
+ * A name alone before `@` is a token only when it looks like one: `https://pankaj@bitbucket.org/…`
+ * is a user name (copied from the host's clone button), and sending it as a token fails every sync.
+ */
+const LONE_TOKEN_PATTERN = /^(?:gh[pousr]_|github_pat_|glpat-|glptt-)|^[A-Za-z0-9_-]{32,}$/;
 const GITHUB_HOST = "github.com";
 /** User name sent with a token. Git hosts accept any non-empty name next to a personal token. */
 const TOKEN_USER = "x-access-token";
@@ -32,10 +38,16 @@ export interface ParsedRemote {
   cleanUrl: string;
   /** Token that was embedded in the URL, if any. */
   token: string | null;
+  /** User name given with that token (`user:token@`); null to send the generic one. */
+  user: string | null;
 }
 
 export function tokenKey(host: string): string {
   return `${TOKEN_KEY_PREFIX}${host.toLowerCase()}`;
+}
+
+function userKey(host: string): string {
+  return `${USER_KEY_PREFIX}${host.toLowerCase()}`;
 }
 
 export const GITHUB_TOKEN_KEY = tokenKey(GITHUB_HOST);
@@ -64,19 +76,20 @@ export function parseRemoteUrl(input: string): ParsedRemote {
     } catch {
       throw invalid("The remote address is not a valid URL.");
     }
-    const token = parsed.password
-      ? decode(parsed.password)
-      : parsed.username
-        ? decode(parsed.username)
-        : null;
-    parsed.username = "";
+    const name = parsed.username ? decode(parsed.username) : null;
+    const loneToken = !parsed.password && name !== null && LONE_TOKEN_PATTERN.test(name);
+    const token = parsed.password ? decode(parsed.password) : loneToken ? name : null;
+    const user = parsed.password ? name : null;
     parsed.password = "";
+    // A plain user name stays in the address: it is not secret, and git needs it to log in.
+    if (token) parsed.username = "";
     return {
       kind: "http",
       host: parsed.host.toLowerCase(),
       secure: parsed.protocol === "https:",
       cleanUrl: parsed.toString(),
       token,
+      user,
     };
   }
 
@@ -87,16 +100,23 @@ export function parseRemoteUrl(input: string): ParsedRemote {
     } catch {
       throw invalid("The remote address is not a valid URL.");
     }
-    return { kind: "ssh", host, secure: false, cleanUrl: url, token: null };
+    return { kind: "ssh", host, secure: false, cleanUrl: url, token: null, user: null };
   }
 
   const scp = SCP_LIKE_PATTERN.exec(url);
   if (scp?.[1]) {
-    return { kind: "ssh", host: scp[1].toLowerCase(), secure: false, cleanUrl: url, token: null };
+    return {
+      kind: "ssh",
+      host: scp[1].toLowerCase(),
+      secure: false,
+      cleanUrl: url,
+      token: null,
+      user: null,
+    };
   }
 
   if (FILE_PATTERN.test(url) || isAbsolute(url)) {
-    return { kind: "local", host: null, secure: false, cleanUrl: url, token: null };
+    return { kind: "local", host: null, secure: false, cleanUrl: url, token: null, user: null };
   }
 
   if (SHORTHAND_PATTERN.test(url)) {
@@ -107,6 +127,7 @@ export function parseRemoteUrl(input: string): ParsedRemote {
       secure: true,
       cleanUrl: `https://${GITHUB_HOST}/${repo}`,
       token: null,
+      user: null,
     };
   }
 
@@ -129,6 +150,8 @@ export async function sanitizeRemoteUrl(secrets: SecretStore, url: string): Prom
       );
     }
     await secrets.set(tokenKey(parsed.host), parsed.token);
+    if (parsed.user) await secrets.set(userKey(parsed.host), parsed.user);
+    else await secrets.delete(userKey(parsed.host));
   }
   return parsed.cleanUrl;
 }
@@ -136,7 +159,10 @@ export async function sanitizeRemoteUrl(secrets: SecretStore, url: string): Prom
 export async function deleteRemoteToken(secrets: SecretStore, url: string): Promise<void> {
   try {
     const parsed = parseRemoteUrl(url);
-    if (parsed.host) await secrets.delete(tokenKey(parsed.host));
+    if (parsed.host) {
+      await secrets.delete(tokenKey(parsed.host));
+      await secrets.delete(userKey(parsed.host));
+    }
   } catch {
     // Nothing usable was stored for an address we cannot even parse.
   }
@@ -159,13 +185,15 @@ export async function authEnvironment(
   }
   if (parsed.kind !== "http" || !parsed.secure || !parsed.host) return {};
   let token: string | null = null;
+  let user: string | null = null;
   try {
     token = await secrets.get(tokenKey(parsed.host));
+    user = await secrets.get(userKey(parsed.host));
   } catch {
     return {};
   }
   if (!token) return {};
-  const basic = Buffer.from(`${TOKEN_USER}:${token}`).toString("base64");
+  const basic = Buffer.from(`${user || TOKEN_USER}:${token}`).toString("base64");
   return {
     GIT_CONFIG_COUNT: "1",
     // Scoped to the host so a redirect or another remote never receives the header.

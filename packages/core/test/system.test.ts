@@ -76,6 +76,22 @@ describe("sanitizer", () => {
     expect(clean).toContain("Bearer <token>");
     expect(clean).toContain("the token successfully refreshed");
   });
+
+  it("hides the key shapes the backup check knows, key blocks and tokens in links", () => {
+    const aws = `AKIA${"Q".repeat(16)}`;
+    const text = [
+      `aws ${aws}`,
+      "-----BEGIN OPENSSH PRIVATE KEY-----",
+      "b3BlbnNzaC1rZXktdjEAAAA",
+      "-----END OPENSSH PRIVATE KEY-----",
+      "https://api.example.com/v1?user=me&token=abc123def456",
+    ].join("\n");
+    const clean = sanitizeText(text, "/fake/home");
+    expect(clean).not.toContain(aws);
+    expect(clean).not.toContain("b3BlbnNzaC1rZXktdjEAAAA");
+    expect(clean).not.toContain("abc123def456");
+    expect(clean).toContain("user=me");
+  });
 });
 
 describe("logs", () => {

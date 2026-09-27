@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   authEnvironment,
+  sanitizeRemoteUrl,
   maskUrlCredentials,
   parseRemoteUrl,
   tokenKey,
@@ -286,8 +287,18 @@ describe("remote URLs", () => {
       secure: true,
       cleanUrl: "https://host.example:8443/a/b.git",
       token: "p@ss",
+      user: "user",
     });
-    expect(parseRemoteUrl("https://ghp_token@github.com/o/r.git").token).toBe("ghp_token");
+    expect(parseRemoteUrl("https://ghp_token@github.com/o/r.git")).toMatchObject({
+      token: "ghp_token",
+      user: null,
+      cleanUrl: "https://github.com/o/r.git",
+    });
+    // A plain user name (a host's clone button) is not a token, and stays in the address.
+    expect(parseRemoteUrl("https://pankaj@bitbucket.org/team/repo.git")).toMatchObject({
+      token: null,
+      cleanUrl: "https://pankaj@bitbucket.org/team/repo.git",
+    });
     expect(parseRemoteUrl("http://plain.example/r.git")).toMatchObject({
       secure: false,
       token: null,
@@ -330,6 +341,20 @@ describe("git credentials", () => {
     expect(await authEnvironment(secrets, "git@git.example.com:me/skills.git")).toEqual({});
     expect(await authEnvironment(memorySecrets(false), "https://git.example.com/x.git")).toEqual(
       {},
+    );
+  });
+
+  it("sends the user name that came with the token, and forgets it with a new token", async () => {
+    const secrets = memorySecrets();
+    const url = "https://bitbucket.org/team/repo.git";
+    const header = async () => (await authEnvironment(secrets, url)).GIT_CONFIG_VALUE_0 ?? "";
+    await sanitizeRemoteUrl(secrets, "https://pankaj:app-pass@bitbucket.org/team/repo.git");
+    expect(await header()).toBe(
+      `Authorization: Basic ${Buffer.from("pankaj:app-pass").toString("base64")}`,
+    );
+    await sanitizeRemoteUrl(secrets, `https://${"t".repeat(40)}@bitbucket.org/team/repo.git`);
+    expect(await header()).toContain(
+      Buffer.from(`x-access-token:${"t".repeat(40)}`).toString("base64"),
     );
   });
 
