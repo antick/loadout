@@ -82,7 +82,9 @@ For the feature checklist, see [PLAN.md](PLAN.md).
   Checking downloads the skill again; one the site stopped listing shows as missing at source.
 - A download link that moves to another site (not `github.com` to `codeload.github.com`, which is
   one site) says so in the preview, and Import stays off until you tick that you trust the site.
-  The CLI asks for `--yes`.
+  The CLI asks for `--yes`. Each subdomain of a shared host (`alice.github.io`, `x.vercel.app`)
+  counts as its own site. Updates never ask: a link that now leads to another site, or to plain
+  http, is refused before that site is contacted, and the skill says to install it again.
 - Import every skill inside a folder in one go, with live progress.
 - From Git: `https`, `ssh`, `git@`, `owner/repo`, `owner/repo/path/in/repo`, `github:` and
   `gitlab:` prefixes, GitHub and GitLab tree URLs that carry a branch and a subfolder, a GitHub

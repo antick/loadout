@@ -31,6 +31,8 @@ function pack(proseBody = ""): Buffer {
 let world: UpdatesWorld;
 /** What the fake web serves, by URL; change it to publish a new version. */
 let served: Map<string, Buffer>;
+/** Links that answer with a redirect, by URL. */
+let redirects: Map<string, string>;
 let requests: string[];
 
 beforeEach(() => {
@@ -39,9 +41,12 @@ beforeEach(() => {
     [SINGLE_LINK, zip({ "SKILL.md": skillMd("helper") })],
   ]);
   requests = [];
+  redirects = new Map();
   const fetchImpl = (async (input: string | URL) => {
     const url = String(input);
     requests.push(url);
+    const moved = redirects.get(url);
+    if (moved) return new Response(null, { status: 302, headers: { Location: moved } });
     const body = served.get(url);
     return body ? new Response(body, { status: 200 }) : new Response("", { status: 404 });
   }) as typeof fetch;
@@ -134,6 +139,29 @@ describe("archive links", () => {
       updateStatus: "up_to_date",
     });
     expect(readFileSync(join(prose.libraryPath, "SKILL.md"), "utf8")).toContain("A new paragraph.");
+  });
+
+  it("never follows a link to another site, or to http, when updating", async () => {
+    const preview = await world.install.api.previewGit(SINGLE_LINK);
+    const [helper] = await world.install.api.confirmGit(preview.previewId, [
+      { relPath: preview.skills[0]?.relPath ?? "", name: "" },
+    ]);
+    const elsewhere = "https://mirror.example.org/helper.skill";
+    served.set(elsewhere, zip({ "SKILL.md": skillMd("helper", "Swapped.") }));
+    redirects.set(SINGLE_LINK, elsewhere);
+    requests.length = 0;
+
+    await expect(world.updates.api.reimport(helper?.id ?? "")).rejects.toThrow(
+      "now leads to mirror.example.org",
+    );
+    // The other site was never contacted.
+    expect(requests).not.toContain(elsewhere);
+
+    redirects.set(SINGLE_LINK, "http://downloads.example.com/helper.skill");
+    await expect(world.updates.api.reimport(helper?.id ?? "")).rejects.toThrow("unencrypted http");
+    expect(readFileSync(join(helper?.libraryPath ?? "", "SKILL.md"), "utf8")).not.toContain(
+      "Swapped",
+    );
   });
 
   it("marks a linked skill's source as missing when the link stops working", async () => {

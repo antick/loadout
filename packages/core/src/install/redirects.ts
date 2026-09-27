@@ -21,6 +21,30 @@ const SAME_OWNER: Readonly<Record<string, string>> = {
   "githubusercontent.com": "github.com",
 };
 const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+/**
+ * Hosting domains where every subdomain belongs to someone else (`alice.github.io` and
+ * `bob.github.io` are two people): the site is the full subdomain there.
+ */
+const SHARED_HOSTING: ReadonlySet<string> = new Set([
+  "github.io",
+  "gitlab.io",
+  "vercel.app",
+  "netlify.app",
+  "pages.dev",
+  "workers.dev",
+  "web.app",
+  "firebaseapp.com",
+  "herokuapp.com",
+  "onrender.com",
+  "fly.dev",
+  "azurewebsites.net",
+  "cloudfront.net",
+  "amazonaws.com",
+  "blob.core.windows.net",
+  "surge.sh",
+  "glitch.me",
+  "replit.app",
+]);
 
 /** The registrable part of a host name, e.g. `downloads.example.co.uk` → `example.co.uk`. */
 export function siteOf(host: string): string {
@@ -30,6 +54,12 @@ export function siteOf(host: string): string {
   const country = labels.at(-1)?.length === COUNTRY_TLD_LENGTH;
   const keep = country && COUNTRY_SECOND_LEVELS.has(labels.at(-2) ?? "") ? 3 : 2;
   const site = labels.slice(-keep).join(".");
+  const shared = [...SHARED_HOSTING].find(
+    (suffix) => name === suffix || name.endsWith(`.${suffix}`),
+  );
+  if (shared && name !== shared) {
+    return labels.slice(-(shared.split(".").length + 1)).join(".");
+  }
   return SAME_OWNER[site] ?? site;
 }
 

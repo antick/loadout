@@ -90,6 +90,12 @@ describe("recognising web sources", () => {
     expect(siteOf("codeload.github.com")).toBe("github.com");
     expect(siteOf("objects.githubusercontent.com")).toBe("github.com");
     expect(siteOf("downloads.example.co.uk")).toBe("example.co.uk");
+    // Shared hosting: each subdomain is someone else's site.
+    expect(siteOf("alice.github.io")).toBe("alice.github.io");
+    expect(siteOf("cdn.alice.github.io")).toBe("alice.github.io");
+    expect(crossSiteHost("https://alice.github.io/a.zip", "https://bob.github.io/a.zip")).toBe(
+      "bob.github.io",
+    );
     expect(
       crossSiteHost("https://github.com/a/b.zip", "https://codeload.github.com/a/b"),
     ).toBeNull();

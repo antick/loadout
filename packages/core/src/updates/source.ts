@@ -8,6 +8,7 @@ import {
   type GitClient,
   archiveLinkName,
   archiveSkillDir,
+  crossSiteHost,
   extractArchive,
   fetchWellKnownSkill,
   isArchivePath,
@@ -139,6 +140,27 @@ const noCleanup = async (): Promise<void> => undefined;
  */
 export type DownloadCache = Map<string, Promise<Buffer>>;
 
+/**
+ * At install the user saw where a link's download came from, and agreed to any other site. An
+ * update asks no one, so it stays on that ground: a link that now leads to another site, or to
+ * plain http, is refused before anything is fetched from there.
+ */
+function guardedRedirect(link: string): (to: string) => void {
+  return (to) => {
+    const other = crossSiteHost(link, to);
+    if (other) {
+      throw invalid(
+        `${redactUrl(link)} now leads to ${other}. Install it again from Install to trust that site.`,
+      );
+    }
+    if (to.toLowerCase().startsWith("http:")) {
+      throw invalid(
+        `${redactUrl(link)} now leads to an unencrypted http address, so it was not updated.`,
+      );
+    }
+  };
+}
+
 /** Download `link` once per round of checks. */
 function cachedDownload(
   download: Download,
@@ -148,7 +170,7 @@ function cachedDownload(
 ): Promise<Buffer> {
   let pending = cache?.get(link);
   if (!pending) {
-    pending = download(link, { subject });
+    pending = download(link, { subject, onRedirect: guardedRedirect(link) });
     cache?.set(link, pending);
   }
   return pending;
