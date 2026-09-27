@@ -25,6 +25,7 @@ import type {
   InstallRecord,
 } from "../install";
 import type { SafetyGate } from "../install/safety-gate";
+import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import {
   canonicalPath,
@@ -35,7 +36,6 @@ import {
   normalizeAbsolutePath,
   targetIdentity,
 } from "../util/fs";
-import { hashDir } from "../util/hash";
 import { type LockMode, runLocked } from "./locking";
 import {
   LIBRARY_LOCATION,
@@ -225,7 +225,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   async function checkNewVersion(plan: Replacement): Promise<SafetyReport | null> {
     const current = store.get(plan.skillId);
     if (!deps.safety || !plan.sourceDir) return null;
-    if (hashDir(plan.sourceDir) === current.contentHash) return null;
+    if (hashAsLibraryCopy(plan.sourceDir, current.dirName) === current.contentHash) return null;
     const [report] = await deps.safety.check([{ name: current.name, dir: plan.sourceDir }], {
       acceptRisk: plan.acceptRisk,
       progressKey: updateCancelKey(plan.skillId),
@@ -239,7 +239,9 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     const result = await runLocked(ctx, plan.lockMode, `update ${name}`, async () => {
       const fresh = store.get(plan.skillId);
       plan.verify(fresh);
-      const newHash = plan.sourceDir ? hashDir(plan.sourceDir) : fresh.contentHash;
+      const newHash = plan.sourceDir
+        ? hashAsLibraryCopy(plan.sourceDir, fresh.dirName)
+        : fresh.contentHash;
       if (plan.sourceDir && newHash === null) throw invalid("The source has no files to install");
       // Against the stored hash: a commit elsewhere in a big repository changes nothing here.
       const contentChanged = newHash !== fresh.contentHash;

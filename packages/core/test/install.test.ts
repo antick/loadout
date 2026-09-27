@@ -34,6 +34,8 @@ afterEach(() => {
   world.cleanup();
 });
 
+const document = (dir: string): string => readFileSync(join(dir, "SKILL.md"), "utf8");
+
 describe("install from a folder", () => {
   it("copies the skill and records where it came from", async () => {
     const source = makeSkill(sources, "alpha", { files: { "scripts/run.sh": "echo hi" } });
@@ -103,8 +105,14 @@ describe("install from a folder", () => {
 
     expect(second.id).not.toBe(first.id);
     expect(second.dirName).toBe("alpha-2");
-    expect(second.name).toBe("alpha");
+    // Its SKILL.md says so too, so agents never see two skills called alpha.
+    expect(second.name).toBe("alpha-2");
+    expect(document(second.libraryPath)).toContain("name: alpha-2");
+    expect(document(other)).toContain("name: alpha\n");
     expect(third.dirName).toBe("alpha-3");
+    expect(world.store.list()).toHaveLength(3);
+    // Installing the same folder again is a reinstall of alpha-2, not a fourth skill.
+    expect((await install.api.fromPath(other)).id).toBe(second.id);
     expect(world.store.list()).toHaveLength(3);
   });
 

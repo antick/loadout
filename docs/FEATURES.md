@@ -114,6 +114,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   Identical copies in several agents are one row ("Same in 3 places"). Folders that share a name
   but hold different files are marked "Version 1 of 2", and every version after the first gets
   its own library name (`name-2`) unless you rename it, so two library skills never share a name.
+  The `name:` in the library copy's SKILL.md is set to match; the original folder is not touched.
+  Importing or updating it again keeps that name.
   Content already in the library is never copied twice.
 - Progress for every install, cancel while cloning, timeouts, and a network proxy setting.
 - After an install, deploy to agents straight from the success toast.

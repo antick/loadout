@@ -204,6 +204,14 @@ describe("importing discovered skills", () => {
     // The same content again keeps its name and adds nothing.
     await install.api.importDiscovered(join(claude, "forked"));
     expect(world.store.list()).toHaveLength(2);
+    // The numbered copy says its own name in SKILL.md; importing its source again reuses it.
+    const numbered = world.store.list().find((skill) => skill.name === "forked-2");
+    expect(readFileSync(join(numbered?.libraryPath ?? "", "SKILL.md"), "utf8")).toContain(
+      "name: forked-2",
+    );
+    const again = numbered?.sourceRef ?? "";
+    expect((await install.api.importDiscovered(again)).id).toBe(numbered?.id);
+    expect(world.store.list()).toHaveLength(2);
     // A name chosen in the list is used as it is.
     const third = makeSkill(join(world.home, ".codex", "skills"), "forked", { body: "third" });
     expect((await install.api.importDiscovered(third, "forked-codex")).name).toBe("forked-codex");

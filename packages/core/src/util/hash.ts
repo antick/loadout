@@ -80,6 +80,8 @@ function isProbablyText(bytes: Buffer): boolean {
 export interface HashOptions {
   /** Treat CRLF and LF as equal in text files. Used only as a tie-breaker. */
   ignoreLineEndings?: boolean;
+  /** Hash these files (by `/` separated relative path) as if they held this text instead. */
+  overrides?: ReadonlyMap<string, string>;
 }
 
 /**
@@ -92,8 +94,9 @@ export function hashDir(root: string, options: HashOptions = {}): string | null 
   const hash = createHash("sha256");
   for (const file of files) {
     let bytes: Buffer;
+    const override = options.overrides?.get(file.relativePath);
     try {
-      bytes = readFileSync(file.absolutePath);
+      bytes = override === undefined ? readFileSync(file.absolutePath) : Buffer.from(override);
     } catch {
       bytes = Buffer.alloc(0);
     }

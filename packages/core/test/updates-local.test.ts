@@ -45,6 +45,22 @@ describe("check of local sources", () => {
     expect(world.lookups()).toBe(0);
   });
 
+  it("sees a numbered copy as up to date, and updates it keeping its own name", async () => {
+    world.addSkill("helper");
+    const skill = await installLocal();
+    expect(skill).toMatchObject({ name: "helper-2", dirName: "helper-2" });
+    expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("up_to_date");
+
+    writeFile(join(sourceDir, "scripts", "run.sh"), "echo two\n");
+    expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("update_available");
+    const result = await world.updates.api.reimport(skill.id);
+    expect(result).toMatchObject({ contentChanged: true, pendingRemovals: [] });
+    expect(result.skill).toMatchObject({ name: "helper-2", dirName: "helper-2" });
+    expect(readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8")).toContain("name: helper-2");
+    expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo two\n");
+    expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("up_to_date");
+  });
+
   it("reports a vanished source, and a skill that never had one", async () => {
     const skill = await installLocal();
     rmSync(sourceDir, { recursive: true });

@@ -15,6 +15,7 @@ import type { InstallIntoLibrary } from "../install/library";
 import { type SafetyGate, batchFailureMessage, installChecked } from "../install/safety-gate";
 import { findSkillDirs } from "../install/repo-scan";
 import { readSkillIdentity } from "../skills/metadata";
+import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
 import {
   canonicalPath,
@@ -168,7 +169,8 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
   /**
    * The library name for a found skill nobody renamed: its own, unless the library already has a
    * different skill by that name (another version found elsewhere); then `name-2`, `name-3`, …
-   * so two skills never share a name. Identical content keeps the name and is not copied twice.
+   * so two skills never share a name (the numbered copy's SKILL.md says so too). Identical
+   * content keeps the name and is not copied twice.
    */
   function distinctName(source: string): string | undefined {
     const own = readSkillIdentity(source).name;
@@ -178,7 +180,12 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     if (others.length === 0) return undefined;
     const hash = hashDir(source);
     if (others.some((skill) => skill.contentHash === hash)) return undefined;
-    return firstFreeName(own, (candidate) => sameName(candidate).length === 0);
+    // A numbered name already holding this very skill (imported before) is the one to use again.
+    return firstFreeName(own, (candidate) =>
+      sameName(candidate).every(
+        (skill) => hashAsLibraryCopy(source, skill.dirName) === skill.contentHash,
+      ),
+    );
   }
 
   async function importOne(

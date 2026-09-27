@@ -21,7 +21,8 @@ import {
   resolveInside,
   toPosix,
 } from "../util/fs";
-import { hashDir, holdsUncopiedEntries } from "../util/hash";
+import { holdsUncopiedEntries } from "../util/hash";
+import { hashAsLibraryCopy } from "../skills/numbered-name";
 import { withSharedFolderDuplicates } from "./duplicates";
 import {
   type LocalSyncDeps,
@@ -119,7 +120,8 @@ export function createWorkspaceService(
     if (inPlace) return;
     await ctx.lock.run(`adopt ${skill.name}`, async () => {
       const current = store.get(skill.id);
-      if (hashDir(localPath) !== current.contentHash) {
+      // The library copy of a `<name>-N` skill differs only by the name in its SKILL.md.
+      if (hashAsLibraryCopy(localPath, current.dirName) !== current.contentHash) {
         ctx.log.warn(`Kept ${localPath}: it changed while it was being adopted`);
         return;
       }

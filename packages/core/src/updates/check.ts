@@ -2,6 +2,7 @@ import type { BatchResult, Skill, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, isAppError } from "../errors";
 import type { Download, GitClient } from "../install";
+import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
 import { hashDir } from "../util/hash";
@@ -109,9 +110,11 @@ async function localFinding(
     const source = await openLocalSource(skill, download, cache);
     try {
       if (!skill.contentHash) return settled(skill, "local_only");
-      if (hashDir(source.dir) === skill.contentHash) return settled(skill, "up_to_date");
+      if (hashAsLibraryCopy(source.dir, skill.dirName) === skill.contentHash) {
+        return settled(skill, "up_to_date");
+      }
       // A checkout that only flipped line endings is not an update worth offering.
-      const sourceText = hashDir(source.dir, EOL_INSENSITIVE);
+      const sourceText = hashAsLibraryCopy(source.dir, skill.dirName, EOL_INSENSITIVE);
       const same =
         sourceText !== null && sourceText === hashDir(skill.libraryPath, EOL_INSENSITIVE);
       return settled(skill, same ? "up_to_date" : "update_available");

@@ -1,8 +1,9 @@
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import type { ActivityKind, Skill, SourceType, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
+import { fixNumberedName, hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
 import {
   canonicalPath,
@@ -50,8 +51,9 @@ export type InstallIntoLibrary = (request: InstallRequest) => Promise<Skill>;
 
 /**
  * The one place a skill is written into the library.
- * Destination: `<skills>/<name>`; taken by different content → `<name>-2`, `-3`, …; a folder
- * holding the very same content is reused, which makes installing twice a reinstall.
+ * Destination: `<skills>/<name>`; taken by different content → `<name>-2`, `-3`, …, with the name
+ * in its SKILL.md set to match; a folder holding the very same content is reused, which makes
+ * installing twice a reinstall.
  */
 export async function installIntoLibrary(
   ctx: CoreContext,
@@ -81,7 +83,9 @@ export async function installIntoLibrary(
             skillsDir,
             firstFreeName(name, (candidate) => {
               const path = join(skillsDir, candidate);
-              return lstatOrNull(path) === null || hashDir(path) === sourceHash;
+              if (lstatOrNull(path) === null) return true;
+              const held = hashDir(path);
+              return held === sourceHash || held === hashAsLibraryCopy(sourceDir, candidate);
             }),
           ),
         );
@@ -90,12 +94,14 @@ export async function installIntoLibrary(
 
       // Same content already in place: leave the folder alone so deployed links never flicker.
       // Copy from the real folder: a source that is itself a link would be copied as a link.
-      if (hashDir(destination) !== sourceHash) {
+      const dirName = basename(destination);
+      if (hashDir(destination) !== hashAsLibraryCopy(sourceDir, dirName)) {
         await replaceDirAtomic(canonicalPath(sourceDir), destination);
       }
+      const fixedName = fixNumberedName(destination, dirName);
 
       const fields = {
-        name,
+        name: fixedName ?? name,
         description: identity.description,
         sourceType: record.sourceType,
         sourceRef: record.sourceRef,
