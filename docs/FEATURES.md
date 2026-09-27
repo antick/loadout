@@ -4,7 +4,7 @@ Loadout manages AI agent skills in one library and makes them available to your 
 and projects. A skill is a folder containing a `SKILL.md` file.
 
 For setup and usage, see the [README](../README.md#run-locally).
-For planned work and detailed status, see [PLAN.md](PLAN.md) and [TODO.md](../TODO.md).
+For the feature checklist, see [PLAN.md](PLAN.md).
 
 ## Features in detail
 
@@ -406,7 +406,7 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 | Git subfolder downloads | Installation downloads a shallow copy of the whole repository, even when only one subfolder is needed.                                                                                                                                                                                                             |
 | CLI credentials         | The CLI cannot read tokens saved by the desktop app. Use SSH or a Git credential helper for CLI backup authentication.                                                                                                                                                                                             |
 | External skill folders  | CLI `--library` selects a complete Loadout library. Operating directly on an arbitrary skill checkout while keeping app state elsewhere is not supported.                                                                                                                                                          |
-| Skill editor            | Edits existing files only (no create, rename or delete). Edits made outside the app are not tracked, so an update does not ask before replacing them. A local-folder skill shows "Update available" after an in-app edit. Mixed line endings are saved as the file's majority ending. See TODO item 13.            |
+| Skill editor            | Edits existing files only (no create, rename or delete). Edits made outside the app are not tracked, so an update does not ask before replacing them. A local-folder skill shows "Update available" after an in-app edit. Mixed line endings are saved as the file's majority ending.                              |
 | Agent icons             | Agents use coloured initials; brand logos are not included.                                                                                                                                                                                                                                                        |
 
 ## CLI features
@@ -454,5 +454,4 @@ These are testing gaps, not missing implementations:
 - Icon rail and sidebar on Windows and Linux, where there are no macOS window buttons to clear.
 
 Renderer tests currently cover selected pure logic; automated UI interaction tests are still
-pending. See [TODO.md](../TODO.md) for the detailed verification checklist and additional
-maintenance issues, such as interrupted-merge recovery.
+pending.
