@@ -24,6 +24,15 @@ export interface RedeployReport {
   kept: string[];
 }
 
+/** Outcome of `refreshStaleCopies`, across every skill it touched. */
+export interface StaleCopiesReport {
+  written: number;
+  conflicts: TargetConflict[];
+  failed: BatchFailure[];
+  /** Copies left alone because they were edited inside the agent's folder. */
+  kept: { skill: string; agent: string }[];
+}
+
 export interface RefreshOptions {
   /**
    * Leave a copy alone when its content no longer matches what was deployed, i.e. someone edited
@@ -47,6 +56,11 @@ export interface DeployService {
   removeAllForAgent(agentKey: string): Promise<number>;
   /** Re-copy every copy-mode deployment after the library content of `skill` changed. */
   refreshCopies(skill: Skill, options?: RefreshOptions): Promise<RedeployReport>;
+  /**
+   * Re-copy every copy made from an older version of its library skill, e.g. after the library
+   * was edited outside the app. A copy edited inside an agent's folder is kept, never replaced.
+   */
+  refreshStaleCopies(): Promise<StaleCopiesReport>;
   /**
    * Replace whatever is at the agent's target with a managed deployment. Only call this when
    * the user asked for it: nothing at the target is preserved.
@@ -144,6 +158,38 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
     }
   }
 
+  /** See `DeployService.refreshCopies`. */
+  async function refreshCopies(
+    skill: Skill,
+    options: RefreshOptions = {},
+  ): Promise<RedeployReport> {
+    const report = emptyReport();
+    await ctx.lock.run(`refresh copies of ${skill.name}`, async () => {
+      const copies = store
+        .deployments()
+        .filter((row) => row.skillId === skill.id && row.mode === "copy");
+      for (const listed of copies) {
+        // Agents sharing a folder: refreshing one realigns the others' rows, so read it again.
+        const row = store.deployment(listed.skillId, listed.agentKey) ?? listed;
+        const stale = row.sourceHash !== skill.contentHash;
+        if (options.keepModified && stale && copyWasEdited(row)) {
+          report.kept.push(row.agentKey);
+          continue;
+        }
+        // The row's own path, not the agent's present folder: we refresh what we recorded.
+        const pair = {
+          skill,
+          agentKey: row.agentKey,
+          agentName: agentName(row.agentKey),
+          targetPath: row.targetPath,
+        };
+        await attempt(pair, report);
+      }
+    });
+    if (report.written > 0) ctx.touched("skills");
+    return report;
+  }
+
   const api: DeployApi = {
     deploy: async (skillId, agentKey) => {
       const skill = store.get(skillId);
@@ -188,32 +234,33 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         store.deploymentsForAgent(agentKey),
       ),
 
-    refreshCopies: async (skill, options = {}) => {
-      const report = emptyReport();
-      await ctx.lock.run(`refresh copies of ${skill.name}`, async () => {
-        const copies = store
+    refreshCopies,
+
+    refreshStaleCopies: async () => {
+      const total: StaleCopiesReport = { written: 0, conflicts: [], failed: [], kept: [] };
+      const staleIds = new Set(
+        store
           .deployments()
-          .filter((row) => row.skillId === skill.id && row.mode === "copy");
-        for (const listed of copies) {
-          // Agents sharing a folder: refreshing one realigns the others' rows, so read it again.
-          const row = store.deployment(listed.skillId, listed.agentKey) ?? listed;
-          const stale = row.sourceHash !== skill.contentHash;
-          if (options.keepModified && stale && copyWasEdited(row)) {
-            report.kept.push(row.agentKey);
-            continue;
-          }
-          // The row's own path, not the agent's present folder: we refresh what we recorded.
-          const pair = {
-            skill,
-            agentKey: row.agentKey,
-            agentName: agentName(row.agentKey),
-            targetPath: row.targetPath,
-          };
-          await attempt(pair, report);
+          .filter((row) => row.mode === "copy")
+          .filter((row) => {
+            const hash = store.find(row.skillId)?.contentHash ?? null;
+            return hash !== null && row.sourceHash !== hash;
+          })
+          .map((row) => row.skillId),
+      );
+      for (const id of staleIds) {
+        // Read the skill again: an earlier refresh or an outside change may have moved it on.
+        const skill = store.find(id);
+        if (!skill) continue;
+        const report = await refreshCopies(skill, { keepModified: true });
+        total.written += report.written;
+        total.conflicts.push(...report.conflicts);
+        total.failed.push(...report.failed);
+        for (const agentKey of report.kept) {
+          total.kept.push({ skill: skill.name, agent: agentName(agentKey) });
         }
-      });
-      if (report.written > 0) ctx.touched("skills");
-      return report;
+      }
+      return total;
     },
 
     adopt: async (skill, agent) => {

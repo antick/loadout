@@ -133,6 +133,9 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 - The app never overwrites or deletes a folder it did not put there. A conflict is reported with
   the exact path instead.
 - A shared folder is only cleaned up when no other agent still uses that copy.
+- Copies follow the library. When a skill changes outside the app (another editor, an agent, the
+  CLI, or while the app was closed), its copies are refreshed; a copy edited inside the agent's
+  folder is left alone and shows as changed on the agent's page.
 
 ### Instruction files
 

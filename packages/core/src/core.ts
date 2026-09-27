@@ -5,7 +5,7 @@ import { createAgentsService } from "./agents";
 import { createBackupService } from "./backup";
 import type { CoreContext } from "./context";
 import { type CoreOptions, createContext } from "./create-context";
-import { createDeployService, pruneBrokenLinks } from "./deploy";
+import { createDeployService, createStaleCopyRefresher, pruneBrokenLinks } from "./deploy";
 import { createEditorService, createFileHistory } from "./editor";
 import { createSafetyService } from "./safety";
 import { createInstallService } from "./install";
@@ -72,6 +72,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   // Skill folders deleted while the app was closed leave links behind in agent folders.
   pruneBrokenLinks(ctx, { registry, store });
   const deploy = createDeployService(ctx, { store, registry });
+  const staleCopies = createStaleCopyRefresher(ctx, deploy);
   const agents = createAgentsService(ctx, { registry, deploy });
   const history = createFileHistory(ctx.paths.historyDir);
   const safety = createSafetyService(ctx, {
@@ -161,6 +162,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
 
   const background: CoreBackground = {
     start: () => {
+      // Library edits made while the app was closed left the copies behind.
+      staleCopies.request();
       updates.auto.start();
       backup.auto.start();
       void system
@@ -178,6 +181,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       } catch (error) {
         ctx.log.warn("Could not re-index the library after an outside change", error);
       }
+      staleCopies.request();
       backup.auto.notifyChanged();
     },
     beforeQuit: async () => {
