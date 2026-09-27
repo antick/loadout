@@ -240,6 +240,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   Projects sidebar under **Pinned**. With more than six projects, **Frequent** lists the three
   opened most in the last 30 days (a visit counts once). Both are kept on this computer only.
 - Linked workspaces: manage any folder as a skills root, with its own disabled folder.
+  A folder inside or around the library or an agent's own skills folder is refused, and so is a
+  project that would contain one (such as the home folder).
 - Nested skill folders, and one row per skill across every agent folder in the project.
 - Enable and disable project skills.
 - A switched-on project skill that the same installed agent also loads from elsewhere is marked

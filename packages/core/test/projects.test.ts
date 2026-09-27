@@ -307,6 +307,26 @@ describe("projects", () => {
       expect(await api().list()).toEqual([]);
     });
 
+    it("refuses folders the app already manages: the library and agents' own folders", async () => {
+      const agentFolder = join(world.home, ".claude", "skills");
+      mkdirSync(agentFolder, { recursive: true });
+      const onAgent = await rejection(api().addLinked("X", agentFolder));
+      expect(onAgent.message).toContain("overlaps the skills folder of Claude Code");
+      const aboveAgent = await rejection(api().addLinked("X", join(world.home, ".claude")));
+      expect(aboveAgent.code).toBe("INVALID_INPUT");
+      const inLibrary = await rejection(api().addLinked("X", world.ctx.paths.skillsDir));
+      expect(inLibrary.message).toContain("overlaps the Loadout library");
+      const disabledOnAgent = await rejection(api().addLinked("X", skillsRoot, agentFolder));
+      expect(disabledOnAgent.message).toContain("The disabled skills folder");
+
+      // The home folder as a project would make ~/.claude/skills a project folder.
+      expect((await rejection(api().add(world.home))).message).toContain("overlaps");
+      expect((await rejection(api().add(world.ctx.paths.baseDir))).message).toContain(
+        "overlaps the Loadout library",
+      );
+      expect(await api().list()).toEqual([]);
+    });
+
     it("cannot disable skills when no disabled folder could be made", async () => {
       // A file sits where the sibling folder would go.
       writeFile(join(world.root, "vault", "skills-disabled"), "not a folder");

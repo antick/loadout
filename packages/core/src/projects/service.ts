@@ -16,6 +16,7 @@ import { readLocalDocument } from "../workspace/local-actions";
 import { type LibraryIndex, indexLibrary } from "../workspace/local-scan";
 import { type ProjectActionsDeps, createProjectActions } from "./actions";
 import { osConfigDir } from "../paths";
+import { refuseLinkedOverlap, refuseProjectOverlap } from "./overlap";
 import { findProjects, listProjectSkills, summarize } from "./scan";
 import { ProjectActivity } from "./activity";
 import { suggestProjects } from "./suggest";
@@ -125,6 +126,7 @@ export function createProjectsService(
     add: async (path) => {
       const root = requireFolder(path, "Project path");
       refuseDuplicate(root);
+      refuseProjectOverlap(ctx, registry, root);
       // Every project starts with the default agent's folders, so there is somewhere to export to.
       const skillsDir = defaultProjectSkillsDir(registry);
       if (skillsDir) {
@@ -151,6 +153,7 @@ export function createProjectsService(
       if (disabledRoot && pathsOverlap(canonicalPath(root), canonicalPath(disabledRoot))) {
         throw invalid("The skills folder and the disabled skills folder must not overlap");
       }
+      refuseLinkedOverlap(ctx, registry, root, disabledRoot);
       const record = projects.insert({
         name: label,
         path: root,
