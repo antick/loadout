@@ -8,7 +8,8 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { WslFolderNote } from "@/components/WslFolderNote";
-import { useAddCustomAgent, usePickFolder } from "@/hooks/mutations/settings-page";
+import { usePickFolder } from "@/hooks/mutations/app";
+import { useAddCustomAgent } from "@/hooks/mutations/settings-page";
 import { errorMessage } from "@/lib/toast";
 
 /** Add an agent the app does not know: a name, its skills folder, optionally a project folder. */

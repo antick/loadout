@@ -143,14 +143,6 @@ export function useSetAgentPath(): UseMutationResult<void, unknown, SetAgentPath
   });
 }
 
-/** Ask the OS for a folder. Resolves to null when the dialog was cancelled. */
-export function usePickFolder(): UseMutationResult<string | null, unknown, string | undefined> {
-  return useMutation({
-    mutationFn: (title?: string) => api.app.pickFolder(title),
-    onError: (error) => toastError(error),
-  });
-}
-
 /** Move the library (null = back to the default folder). Takes effect after a restart. */
 export function useSetLibraryPath(): UseMutationResult<LibraryLocation, unknown, string | null> {
   const queryClient = useQueryClient();

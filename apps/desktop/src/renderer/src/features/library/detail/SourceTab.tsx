@@ -19,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { SkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useCheckSkillUpdate, useDetachSkill, usePickFolder } from "@/hooks/mutations/library";
+import { usePickFolder } from "@/hooks/mutations/app";
+import { useCheckSkillUpdate, useDetachSkill } from "@/hooks/mutations/library";
 
 /** Characters of a revision shown; the full value stays in the tooltip. */
 const REVISION_DISPLAY_LENGTH = 10;

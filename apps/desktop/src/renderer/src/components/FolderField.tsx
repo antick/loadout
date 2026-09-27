@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { usePickFolder } from "@/hooks/mutations/library";
+import { usePickFolder } from "@/hooks/mutations/app";
 
 export interface FolderFieldProps {
   id: string;

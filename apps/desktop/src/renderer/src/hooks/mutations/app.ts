@@ -14,6 +14,14 @@ export function useCopyText(): UseMutationResult<void, unknown, string> {
   });
 }
 
+/** The native folder picker; resolves to null when the user cancels. */
+export function usePickFolder(): UseMutationResult<string | null, unknown, string | undefined> {
+  return useMutation({
+    mutationFn: (title?: string) => api.app.pickFolder(title),
+    onError: (error) => toastError(error),
+  });
+}
+
 /** Show a path in the OS file manager. */
 export function useRevealPath(): UseMutationResult<void, unknown, string> {
   return useMutation({

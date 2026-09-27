@@ -257,14 +257,6 @@ export function useExportSkills(): UseMutationResult<
   });
 }
 
-/** Native folder picker. Resolves to null when the user cancels. */
-export function usePickFolder(): UseMutationResult<string | null, unknown, string | undefined> {
-  return useMutation({
-    mutationFn: (title?: string) => api.app.pickFolder(title),
-    onError: (error) => toastError(error),
-  });
-}
-
 export interface SkillProjectInput {
   skill: Skill;
   project: Project;

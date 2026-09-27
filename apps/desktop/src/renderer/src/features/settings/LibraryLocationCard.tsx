@@ -7,8 +7,8 @@ import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePickFolder } from "@/hooks/mutations/app";
 import {
-  usePickFolder,
   useRestartApp,
   useRevealLibrary,
   useSetLibraryPath,

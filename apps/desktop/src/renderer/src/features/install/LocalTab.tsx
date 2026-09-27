@@ -23,7 +23,7 @@ import {
   usePickArchive,
   usePreviewArchive,
 } from "@/hooks/mutations/install";
-import { usePickFolder } from "@/hooks/mutations/library";
+import { usePickFolder } from "@/hooks/mutations/app";
 
 type SourceKind = "folder" | "archive";
 
