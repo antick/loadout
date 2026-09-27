@@ -5,7 +5,7 @@ export type ThemeSetting = "light" | "dark" | "system";
 export const PALETTES = ["flight", "blueprint", "risograph", "iris"] as const;
 export type PaletteSetting = (typeof PALETTES)[number];
 export type TextSizeSetting = "small" | "default" | "large" | "xlarge";
-export type LanguageSetting = "en" | "zh" | "hi";
+export type LanguageSetting = "en" | "hi";
 /** "ask" shows the close-or-minimise prompt. */
 export type CloseActionSetting = "ask" | "hide" | "quit";
 export type AutoUpdateInterval = "off" | "1h" | "6h" | "24h";

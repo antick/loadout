@@ -88,15 +88,7 @@ Core logic behind all of these has tests; this is about the UI wiring.
 
 ## Build
 
-### 7. More languages
-
-- **State:** every string goes through i18next; only English ships. The language setting already
-  exists (`en | zh | hi`).
-- **To do:** add `apps/desktop/src/renderer/src/locales/<code>.json` plus the per-feature files in
-  `locales/<code>/`, register the language in `LANGUAGES` and load its bundles in `lib/i18n.ts`
-  (today only `locales/en/*.json` is globbed).
-
-### 8. CLI and saved tokens
+### 7. CLI and saved tokens
 
 - **State:** tokens are encrypted with the OS keychain through Electron `safeStorage`, which the CLI
   cannot read. `loadout git sync` to an HTTPS + token remote only works from the app. SSH remotes
@@ -105,7 +97,7 @@ Core logic behind all of these has tests; this is about the UI wiring.
   OS keychain CLI (`security`, `secret-tool`) instead of `safeStorage`.
 - **Code:** `apps/desktop/src/main/secrets.ts`, `packages/core/src/backup/credentials.ts`
 
-### 9. Recover an interrupted backup merge
+### 8. Recover an interrupted backup merge
 
 - **State:** a leftover `MERGE_HEAD` or `index.lock` stops sync with a clear error; the user fixes it
   with "Use the remote backup".
@@ -113,7 +105,7 @@ Core logic behind all of these has tests; this is about the UI wiring.
   stale lock owned by a dead process, and retry.
 - **Code:** `packages/core/src/backup/repo.ts`, `merge.ts`
 
-### 10. Portable metadata written outside the lock
+### 9. Portable metadata written outside the lock
 
 - **State:** `ctx.touched()` flushes `portable.write()` on the next tick without the library lock. A
   UI change landing in the few milliseconds a merge spends writing metadata could drop an incoming
@@ -122,7 +114,7 @@ Core logic behind all of these has tests; this is about the UI wiring.
   holds the lock and flush when it ends.
 - **Code:** `packages/core/src/create-context.ts`
 
-### 11. Sparse Git clones (done)
+### 10. Sparse Git clones (done)
 
 - **State:** clones are partial (`--filter=blob:limit=256k`): files over 256 KB arrive only when
   needed. Previews, marketplace installs and updates check out only the `SKILL.md` files, then
@@ -132,20 +124,20 @@ Core logic behind all of these has tests; this is about the UI wiring.
   Never timed on a slow corporate proxy.
 - **Code:** `packages/core/src/install/git-client.ts`, `git-sparse.ts`
 
-### 12. Agent logos
+### 11. Agent logos
 
 - **State:** agents show monogram badges with a deterministic tint. No brand logos ship.
 - **To do (optional):** an icon map keyed by agent key with a monogram fallback; check each logo's
   licence first.
 - **Code:** `apps/desktop/src/renderer/src/components/AgentAvatar.tsx`
 
-### 13. UI interaction tests
+### 12. UI interaction tests
 
 - **State:** renderer tests cover pure logic only (filters, grouping, backup mode, agent groups).
 - **To do:** Playwright against the built Electron app with a temp `HOME`, replaying the manual pass
   in item 4. The throwaway CDP scripts used for the manual pass were not kept.
 
-### 14. Skill editor follow-ups
+### 13. Skill editor follow-ups
 
 The editor (`/library/$skillId/edit`) shipped without these. Each one is a separate piece of work.
 
