@@ -102,6 +102,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     install: install.installIntoLibrary,
     // Projects are wired further down; they are only asked for once a rename runs.
     rename: { deploy, projectSkillFolders: () => projects.skillFolders() },
+    removed,
   });
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
   const updates = createUpdatesService(ctx, { store, install, deploy, safety });

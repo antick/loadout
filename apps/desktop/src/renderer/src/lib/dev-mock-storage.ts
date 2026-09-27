@@ -49,7 +49,13 @@ let removedSeq = 0;
 
 /** A mock action took a folder away: list it in Recently removed. Returns its id. */
 export function recordRemoved(
-  folder: { name: string; originalPath: string; place: string; reason: RemovedReason },
+  folder: {
+    name: string;
+    originalPath: string;
+    place: string;
+    reason: RemovedReason;
+    library?: boolean;
+  },
   putBack: () => void,
 ): string {
   removedSeq += 1;
@@ -58,11 +64,12 @@ export function recordRemoved(
   removedEntries.unshift({
     entry: {
       ...folder,
+      library: folder.library ?? false,
       id,
       removedAt,
       expiresAt: removedAt + REMOVED_KEEP_DAYS * DAY_MS,
       bytes: ENTRY_BYTES,
-      occupied: folder.reason === "replaced",
+      occupied: folder.reason === "replaced" && !folder.library,
       parentMissing: false,
     },
     putBack,

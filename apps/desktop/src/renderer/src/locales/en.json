@@ -90,7 +90,9 @@
     "removed_one": "Removed {{count}} skill",
     "removed_other": "Removed {{count}} skills",
     "removedWithFailures_one": "{{summary}}, {{count}} failed",
-    "removedWithFailures_other": "{{summary}}, {{count}} failed"
+    "removedWithFailures_other": "{{summary}}, {{count}} failed",
+    "removedKept_one": "You can put it back from Settings → Storage → Recently removed for {{days}} days.",
+    "removedKept_other": "You can put them back from Settings → Storage → Recently removed for {{days}} days."
   },
   "deploy": {
     "appliedAdd_one": "Added {{count}} deployment, skipped {{skipped}}",

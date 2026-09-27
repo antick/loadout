@@ -1,9 +1,10 @@
-import type { BatchResult, RenameResult } from "@loadout/shared";
+import { REMOVED_KEEP_DAYS, type RemoveSkillsResult, type RenameResult } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
+import { toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 export interface SetSkillTagsInput {
@@ -74,15 +75,19 @@ export function useDeleteTag(): UseMutationResult<void, unknown, string> {
 }
 
 /** Remove skills from the library (and every agent they were deployed to). Toasts the counts. */
-export function useRemoveSkills(): UseMutationResult<BatchResult, unknown, string[]> {
+export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown, string[]> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (skillIds: string[]) => api.skills.removeMany(skillIds),
     onSuccess: (result) => {
       const summary = t("skills.removed", { count: result.succeeded });
+      const kept = t("skills.removedKept", {
+        count: result.removedIds.length,
+        days: REMOVED_KEEP_DAYS,
+      });
       if (result.failed.length === 0) {
-        toastSuccess(summary);
+        toastWithUndo(queryClient, summary, result.removedIds, kept);
         return;
       }
       toast.warning(t("skills.removedWithFailures", { summary, count: result.failed.length }), {
@@ -90,6 +95,7 @@ export function useRemoveSkills(): UseMutationResult<BatchResult, unknown, strin
           .map((failure) => `${failure.name}: ${failure.message}`)
           .join("\n"),
         descriptionClassName: "text-xs whitespace-pre-line",
+        action: undoAction(queryClient, result.removedIds),
       });
     },
     onError: (error) => toastError(error, "errors.removeSkills"),

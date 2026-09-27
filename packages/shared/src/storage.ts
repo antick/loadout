@@ -75,6 +75,11 @@ export interface RemovedFolder {
   occupied: boolean;
   /** The folder it lived in is gone, so it cannot be put back. */
   parentMissing: boolean;
+  /**
+   * A skill deleted from the library. It goes back as the same skill, tags and presets included,
+   * and never displaces what is at `originalPath` now: an occupied path blocks the restore.
+   */
+  library: boolean;
 }
 
 export interface RestoreRemovedResult {

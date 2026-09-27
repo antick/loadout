@@ -62,7 +62,8 @@
       "description_other": "Their files are deleted from the library and they are taken out of every preset.",
       "deployedCopies_one": "{{count}} copy installed for an agent is removed too.",
       "deployedCopies_other": "{{count}} copies installed for agents are removed too.",
-      "irreversible": "This cannot be undone.",
+      "keptFor_one": "You can put it back from Settings → Storage → Recently removed for {{days}} days.",
+      "keptFor_other": "You can put them back from Settings → Storage → Recently removed for {{days}} days.",
       "confirm_one": "Delete skill",
       "confirm_other": "Delete {{count}} skills"
     },

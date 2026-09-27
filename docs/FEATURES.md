@@ -42,7 +42,8 @@ For the feature checklist, see [PLAN.md](PLAN.md).
   those edits first). Copies inside projects keep their old name. Tags, presets, safety reports
   and edit history stay with the skill. `loadout skills rename <ref> <new-name> [--dry-run]`
   does the same.
-- Deleting a skill removes its library copy, preset links and every copy the app deployed.
+- Deleting a skill removes its library copy, preset links and every copy the app deployed. The
+  library copy waits in Recently removed; the toast has **Undo**.
 - The database is rebuilt from the skill files if it is ever lost.
 
 ### Editor
@@ -338,6 +339,9 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   unless it is exactly a library skill or a copy the app made, which is simply replaced. A link
   deployment in the way is removed with its record. A folder whose parent is gone cannot be
   restored and says so.
+- A skill deleted from the library is kept too. Restoring brings back the same skill with its
+  source, tags and presets; it is not deployed again. If another skill took its folder name since,
+  Restore is blocked and says so: rename or delete that one first.
 - Links and empty folders are not kept: there is nothing in them to lose. Entries go after 30 days.
 
 ### Storage

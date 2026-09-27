@@ -30,8 +30,8 @@ import { useRemovedFolders } from "@/hooks/queries/storage";
 const SKELETON_ROWS = 2;
 
 /**
- * Skill folders the app took out of agent and project folders (replaced by the library version,
- * or deleted), each with a way back.
+ * Skills deleted from the library, and skill folders the app took out of agent and project
+ * folders (replaced by the library version, or deleted), each with a way back.
  */
 export function RecentlyRemovedPanel(): ReactNode {
   const { t } = useTranslation();
@@ -101,6 +101,8 @@ export function RecentlyRemovedPanel(): ReactNode {
       <ul className="flex flex-col divide-y">
         {entries.map((entry) => {
           const restoring = restore.isPending && restore.variables?.id === entry.id;
+          // A library skill never displaces the one that took its folder name.
+          const libraryTaken = entry.library && entry.occupied;
           return (
             <li key={entry.id} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -124,6 +126,16 @@ export function RecentlyRemovedPanel(): ReactNode {
                   {formatBytes(entry.bytes)}
                 </p>
                 <PathText path={entry.originalPath} reveal={false} />
+                {entry.library && !libraryTaken ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("settings.storage.removed.libraryNote")}
+                  </p>
+                ) : null}
+                {libraryTaken ? (
+                  <p className="text-xs text-warning">
+                    {t("settings.storage.removed.libraryTaken")}
+                  </p>
+                ) : null}
                 {entry.parentMissing ? (
                   <p className="text-xs text-warning">
                     {t("settings.storage.removed.parentMissing")}
@@ -134,7 +146,7 @@ export function RecentlyRemovedPanel(): ReactNode {
                 <Button
                   variant="outline"
                   size="xs"
-                  disabled={entry.parentMissing || restoring}
+                  disabled={entry.parentMissing || libraryTaken || restoring}
                   onClick={() => void askRestore(entry)}
                 >
                   {restoring ? <Spinner className="size-3" /> : <RotateCcw />}

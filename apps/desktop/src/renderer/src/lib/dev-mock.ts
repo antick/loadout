@@ -14,6 +14,7 @@ import {
   type ErrorDetails,
   type Preset,
   type PresetInput,
+  type RemoveSkillsResult,
   type Settings,
   type Skill,
 } from "@loadout/shared";
@@ -33,7 +34,7 @@ import { createEditorMockHandlers } from "@/lib/dev-mock-editor";
 import { createInstallMockHandlers } from "@/lib/dev-mock-install";
 import { withInstructionMocks } from "@/lib/dev-mock-instructions";
 import { withSafetyMocks } from "@/lib/dev-mock-safety";
-import { createStorageMockHandlers } from "@/lib/dev-mock-storage";
+import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
 import { createSystemMockHandlers } from "@/lib/dev-mock-system";
@@ -174,10 +175,26 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     }));
     emitChanged("skills");
   },
-  "skills.removeMany": (skillIds: string[]) => {
+  "skills.removeMany": (skillIds: string[]): RemoveSkillsResult => {
+    const gone = skills.filter((entry) => skillIds.includes(entry.id));
     skills = skills.filter((entry) => !skillIds.includes(entry.id));
     emitChanged("skills", "presets");
-    return { succeeded: skillIds.length, failed: [] };
+    const removedIds = gone.map((skill) =>
+      recordRemoved(
+        {
+          name: skill.dirName,
+          originalPath: skill.libraryPath,
+          place: "Library",
+          reason: "deleted",
+          library: true,
+        },
+        () => {
+          skills = [...skills, skill];
+          emitChanged("skills", "presets");
+        },
+      ),
+    );
+    return { succeeded: gone.length, failed: [], removedIds };
   },
 
   "deploy.deploy": (skillId: string, agentKey: string) => {

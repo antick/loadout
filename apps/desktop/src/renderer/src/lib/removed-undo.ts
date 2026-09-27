@@ -41,12 +41,13 @@ export function undoAction(
 
 /**
  * Toast an action that replaced or deleted folders. When it kept them in Recently removed, the
- * toast says so and offers Undo.
+ * toast says so (`note`, else the words for replaced agent folders) and offers Undo.
  */
 export function toastWithUndo(
   queryClient: QueryClient,
   message: string,
   removedIds: readonly string[],
+  note?: string,
 ): void {
   const action = undoAction(queryClient, removedIds);
   if (!action) {
@@ -54,10 +55,12 @@ export function toastWithUndo(
     return;
   }
   toast.success(message, {
-    description: i18n.t("settings.storage.removed.keptNote", {
-      count: removedIds.length,
-      days: REMOVED_KEEP_DAYS,
-    }),
+    description:
+      note ??
+      i18n.t("settings.storage.removed.keptNote", {
+        count: removedIds.length,
+        days: REMOVED_KEEP_DAYS,
+      }),
     action,
   });
 }

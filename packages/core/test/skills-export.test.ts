@@ -4,6 +4,7 @@ import { unzipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createFileHistory } from "../src/editor";
 import { type SkillsService, createSkillsService } from "../src/skills/service";
+import { createRemovedStore } from "../src/storage";
 import { makeSkill, writeFile } from "./helpers";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -19,6 +20,7 @@ beforeEach(() => {
     history: createFileHistory(world.ctx.paths.historyDir),
     install: world.install.installIntoLibrary,
     rename: { deploy: world.deploy, projectSkillFolders: () => [] },
+    removed: createRemovedStore(world.ctx, { store: world.store }),
   });
   out = join(world.root, "out");
 });

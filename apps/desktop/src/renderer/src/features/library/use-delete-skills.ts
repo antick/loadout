@@ -1,11 +1,12 @@
-import type { Skill } from "@loadout/shared";
+import { REMOVED_KEEP_DAYS, type Skill } from "@loadout/shared";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useRemoveSkills } from "@/hooks/mutations/skills";
 
 /**
- * Ask, then delete library skills. The confirm spells out everything that goes with them.
+ * Ask, then delete library skills. The confirm spells out everything that goes with them, and
+ * that they wait in Recently removed.
  * Resolves to true when the delete was started.
  */
 export function useDeleteSkills(): (skills: readonly Skill[]) => Promise<boolean> {
@@ -26,7 +27,7 @@ export function useDeleteSkills(): (skills: readonly Skill[]) => Promise<boolean
         description: [
           t("library.delete.description", { count: skills.length }),
           deployed > 0 ? t("library.delete.deployedCopies", { count: deployed }) : null,
-          t("library.delete.irreversible"),
+          t("library.delete.keptFor", { count: skills.length, days: REMOVED_KEEP_DAYS }),
         ]
           .filter(Boolean)
           .join(" "),

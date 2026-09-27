@@ -1,9 +1,11 @@
-import type { BatchResult, Skill, SkillDocument, SkillsApi } from "@loadout/shared";
+import type { RemoveSkillsResult, Skill, SkillDocument, SkillsApi } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { listTopLevel, removePath } from "../util/fs";
 import type { FileHistory } from "../editor/history";
 import type { InstallIntoLibrary } from "../install/library";
+import type { RemovedStore } from "../storage/removed";
+import { LIBRARY_PLACE, libraryRecordOf } from "../storage/removed-library";
 import { createSkill } from "./create";
 import { type RenameDeps, renameSkill } from "./rename";
 import { exportTarget, writeSkillsArchive } from "./export";
@@ -20,6 +22,8 @@ export interface SkillsServiceDeps {
   install: InstallIntoLibrary;
   /** A rename moves the skill's deployments and project links along with it. */
   rename: Omit<RenameDeps, "store">;
+  /** A deleted skill is kept here for a while, so it can be put back. */
+  removed: RemovedStore;
 }
 
 export interface SkillsService {
@@ -31,12 +35,24 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
   const { store } = deps;
   const { history } = deps;
 
-  async function removeOne(skillId: string): Promise<void> {
+  /** Delete a skill; returns its Recently removed entry, or null when nothing was kept. */
+  async function removeOne(skillId: string): Promise<string | null> {
     const skill = store.get(skillId);
-    await ctx.lock.run(`remove ${skill.name}`, async () => {
+    const removedId = await ctx.lock.run(`remove ${skill.name}`, async () => {
       await deps.removeDeployments(skill);
-      await removePath(skill.libraryPath);
-      store.delete(skill.id);
+      const kept = deps.removed.setAside(skill.libraryPath, {
+        place: LIBRARY_PLACE,
+        reason: "deleted",
+        library: libraryRecordOf(skill),
+      });
+      if (kept === null) await removePath(skill.libraryPath);
+      try {
+        store.delete(skill.id);
+      } catch (error) {
+        if (kept !== null) deps.removed.putBack(kept);
+        throw error;
+      }
+      return kept;
     });
     try {
       history.removeSkill(skill.id);
@@ -44,6 +60,7 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       ctx.log.warn(`Could not forget the edit history of ${skill.name}`, error);
     }
     ctx.activity.record("remove", skill.name);
+    return removedId;
   }
 
   const api: SkillsApi = {
@@ -69,12 +86,13 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       ctx.touched("skills", "presets");
     },
 
-    removeMany: async (skillIds): Promise<BatchResult> => {
-      const result: BatchResult = { succeeded: 0, failed: [] };
+    removeMany: async (skillIds): Promise<RemoveSkillsResult> => {
+      const result: RemoveSkillsResult = { succeeded: 0, failed: [], removedIds: [] };
       for (const skillId of skillIds) {
         const name = store.find(skillId)?.name ?? skillId;
         try {
-          await removeOne(skillId);
+          const removedId = await removeOne(skillId);
+          if (removedId !== null) result.removedIds.push(removedId);
           result.succeeded += 1;
         } catch (error) {
           result.failed.push({ name, message: errorMessage(error) });

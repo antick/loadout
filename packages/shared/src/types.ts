@@ -199,6 +199,11 @@ export interface BatchResult {
   failed: BatchFailure[];
 }
 
+/** Skills deleted from the library, each kept in Recently removed under one of `removedIds`. */
+export interface RemoveSkillsResult extends BatchResult {
+  removedIds: string[];
+}
+
 // ── Editing ──
 
 export type SkillFileLock = "binary" | "too_large";

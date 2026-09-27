@@ -37,6 +37,7 @@ import type {
   PushToLibraryOptions,
   PushToLibraryResult,
   RenameOptions,
+  RemoveSkillsResult,
   RenameResult,
   SizeReport,
   Skill,
@@ -103,7 +104,7 @@ export interface SkillsApi {
   create(input: CreateSkillInput): Promise<Skill>;
   document(skillId: string): Promise<SkillDocument>;
   remove(skillId: string): Promise<void>;
-  removeMany(skillIds: string[]): Promise<BatchResult>;
+  removeMany(skillIds: string[]): Promise<RemoveSkillsResult>;
   allTags(): Promise<string[]>;
   setTags(skillId: string, tags: string[]): Promise<void>;
   /**

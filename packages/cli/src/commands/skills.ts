@@ -1,6 +1,6 @@
 import { lstatSync } from "node:fs";
 import { errorMessage, targetConflict } from "@loadout/core";
-import { SOURCE_TYPES, type Skill, matchesSkillQuery } from "@loadout/shared";
+import { REMOVED_KEEP_DAYS, SOURCE_TYPES, type Skill, matchesSkillQuery } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
@@ -203,9 +203,19 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
   const skills = resolveSkills(core, refs);
   const result = await core.api.skills.removeMany(skills.map((skill) => skill.id));
   const lines = [`Removed ${plural(result.succeeded, "skill")}.`];
+  if (result.removedIds.length > 0) {
+    lines.push(
+      `Kept in Recently removed for ${REMOVED_KEEP_DAYS} days (Settings → Storage in the app).`,
+    );
+  }
   for (const failure of result.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
   return {
-    value: { dryRun: false, removed: result.succeeded, failed: result.failed },
+    value: {
+      dryRun: false,
+      removed: result.succeeded,
+      removedIds: result.removedIds,
+      failed: result.failed,
+    },
     text: lines.join("\n"),
     exitCode: result.failed.length > 0 ? 1 : 0,
   };

@@ -7,6 +7,7 @@ import { AgentRegistry } from "../src/agents/registry";
 import { createDeployService } from "../src/deploy";
 import { createFileHistory } from "../src/editor";
 import { type SkillsService, createSkillsService } from "../src/skills/service";
+import { createRemovedStore } from "../src/storage";
 import { type TestWorld, createTestWorld, makeSkill } from "./helpers";
 import {
   type InstallHarness,
@@ -38,6 +39,7 @@ beforeEach(() => {
       }),
       projectSkillFolders: () => [],
     },
+    removed: createRemovedStore(world.ctx, { store: world.store }),
   });
 });
 

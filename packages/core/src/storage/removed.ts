@@ -23,6 +23,12 @@ import {
   writeJsonAtomic,
 } from "../util/fs";
 import { hashDir } from "../util/hash";
+import {
+  type LibraryRecord,
+  isLibraryRecord,
+  libraryPathOf,
+  restoreLibraryRow,
+} from "./removed-library";
 
 const CONTENT_DIR = "content";
 const META_FILE = "removed.json";
@@ -44,6 +50,8 @@ interface RemovedMeta {
   place: string;
   reason: RemovedReason;
   removedAt: number;
+  /** Set when a library skill was deleted: what a restore needs to bring the skill back. */
+  library?: LibraryRecord;
 }
 
 export interface SetAsideInfo {
@@ -52,6 +60,8 @@ export interface SetAsideInfo {
   reason: RemovedReason;
   /** Where it lived when `path` is a temporary spot it was already moved to. Defaults to `path`. */
   originalPath?: string;
+  /** The library skill this folder was, when it is deleted from the library. */
+  library?: LibraryRecord;
 }
 
 /**
@@ -88,7 +98,8 @@ function isMeta(value: unknown): value is RemovedMeta {
     typeof meta.originalPath === "string" &&
     typeof meta.place === "string" &&
     (meta.reason === "replaced" || meta.reason === "deleted") &&
-    typeof meta.removedAt === "number"
+    typeof meta.removedAt === "number" &&
+    (meta.library === undefined || isLibraryRecord(meta.library))
   );
 }
 
@@ -108,6 +119,10 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
       return null;
     }
   }
+
+  /** Where the entry goes back to: a library skill returns to the library as it is now. */
+  const targetOf = (meta: RemovedMeta): string =>
+    meta.library ? libraryPathOf(ctx, meta.library) : meta.originalPath;
 
   function requireMeta(id: string): RemovedMeta {
     entryDir(id);
@@ -150,6 +165,7 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
       place: info.place,
       reason: info.reason,
       removedAt: Date.now(),
+      ...(info.library ? { library: info.library } : {}),
     };
     // Where it came from is written first: a crash mid-move then leaves nothing unexplained.
     ensureDir(dir);
@@ -195,6 +211,34 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     return displaced;
   }
 
+  /**
+   * A deleted library skill goes back as the same skill: its folder, and its row with its tags
+   * and presets. A skill that took its folder name since is never put aside for it: the user
+   * chooses which one to keep.
+   */
+  function restoreToLibrary(meta: RemovedMeta, record: LibraryRecord): RestoreRemovedResult {
+    const target = libraryPathOf(ctx, record);
+    if (lstatOrNull(target)) {
+      throw exists(
+        `A skill folder named ${record.dirName} is in the library now. Rename or delete that skill, then restore this one.`,
+      );
+    }
+    ensureDir(ctx.paths.skillsDir);
+    const content = join(entryDir(meta.id), CONTENT_DIR);
+    moveEntrySync(content, target, moveOptions(content));
+    try {
+      restoreLibraryRow(ctx, deps.store, record, target);
+    } catch (error) {
+      // A folder without its row would show up as a stray folder: it goes back to the entry.
+      moveEntrySync(target, content, moveOptions(target));
+      throw error;
+    }
+    removePathSync(entryDir(meta.id));
+    ctx.activity.record("restore", record.name, "Library: put back from Recently removed");
+    ctx.touched("skills", "presets");
+    return { path: target, displacedId: null };
+  }
+
   return {
     setAside,
 
@@ -205,13 +249,20 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
         .flatMap((entry) => {
           const meta = entry.isDirectory() ? readMeta(entry.name) : null;
           if (!meta) return [];
+          const target = targetOf(meta);
           return [
             {
-              ...meta,
+              id: meta.id,
+              name: meta.name,
+              originalPath: target,
+              place: meta.place,
+              reason: meta.reason,
+              removedAt: meta.removedAt,
               expiresAt: meta.removedAt + KEEP_MS,
               bytes: dirSize(join(root(), meta.id, CONTENT_DIR)),
-              occupied: lstatOrNull(meta.originalPath) !== null,
-              parentMissing: !isDirectory(dirname(meta.originalPath)),
+              occupied: lstatOrNull(target) !== null,
+              parentMissing: !isDirectory(dirname(target)),
+              library: meta.library !== undefined,
             } satisfies RemovedFolder,
           ];
         })
@@ -222,6 +273,7 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     restore: (id) =>
       ctx.lock.run("restore a removed folder", () => {
         const meta = requireMeta(id);
+        if (meta.library) return restoreToLibrary(meta, meta.library);
         const parent = dirname(meta.originalPath);
         if (!isDirectory(parent)) {
           throw notFound(`The folder it came from is gone: ${parent}`);
@@ -241,9 +293,10 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
 
     putBack: (id) => {
       const meta = requireMeta(id);
-      if (lstatOrNull(meta.originalPath)) return;
+      const target = targetOf(meta);
+      if (lstatOrNull(target)) return;
       const content = join(entryDir(id), CONTENT_DIR);
-      moveEntrySync(content, meta.originalPath, moveOptions(content));
+      moveEntrySync(content, target, moveOptions(content));
       removePathSync(entryDir(id));
     },
 
