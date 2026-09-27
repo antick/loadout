@@ -50,78 +50,78 @@ from earlier JSON output when two skills could share a name. Agent keys come fro
 
 ## Cheat sheet
 
-Examples write `sb` for the literal path you found above.
+Examples write `loadout` for the literal path you found above.
 
 ```sh
 # Look around
-sb agents list --installed --json          # agent keys, enabled state, skills folders
-sb skills list --json                      # everything in the library
-sb skills list --tag writing --source git --json
-sb skills list --query pdf --json          # text in the name, description, tags or source
-sb skills show <ref> --json
-sb skills status <ref> --json              # which agents have it, and is it really on disk
-sb repo show --json                        # library location and counts
-sb doctor --json                           # everything that needs a look; exit 1 on errors
+loadout agents list --installed --json          # agent keys, enabled state, skills folders
+loadout skills list --json                      # everything in the library
+loadout skills list --tag writing --source git --json
+loadout skills list --query pdf --json          # text in the name, description, tags or source
+loadout skills show <ref> --json
+loadout skills status <ref> --json              # which agents have it, and is it really on disk
+loadout repo show --json                        # library location and counts
+loadout doctor --json                           # everything that needs a look; exit 1 on errors
 
 # Install (library only)
-sb skills install ./path/to/skill-folder --json
-sb skills install ./downloads/skill.zip --name my-skill --json
-sb skills install https://github.com/owner/repo --skill pdf-tools --json
-sb skills install owner/repo --all --json          # every skill in the repository
-sb skills install owner/repo@skill-name --json     # one marketplace skill
+loadout skills install ./path/to/skill-folder --json
+loadout skills install ./downloads/skill.zip --name my-skill --json
+loadout skills install https://github.com/owner/repo --skill pdf-tools --json
+loadout skills install owner/repo --all --json          # every skill in the repository
+loadout skills install owner/repo@skill-name --json     # one marketplace skill
 
 # Start a new skill from scratch (name: lowercase letters, numbers, hyphens)
-sb skills create my-skill --description "What it does and when to use it" --json
+loadout skills create my-skill --description "What it does and when to use it" --json
 
 # Deploy / undeploy (repeat --agent for several agents)
-sb skills deploy <ref> --agent claude_code --agent cursor --json
-sb skills undeploy <ref> --agent cursor --json
-sb skills deploy <ref> --agent cursor --dry-run --json   # what would change; writes nothing
+loadout skills deploy <ref> --agent claude_code --agent cursor --json
+loadout skills undeploy <ref> --agent cursor --json
+loadout skills deploy <ref> --agent cursor --dry-run --json   # what would change; writes nothing
 
 # How copies (or the source) differ from the library, file by file
-sb skills diff <ref> --json
-sb skills diff <ref> --upstream --json
+loadout skills diff <ref> --json
+loadout skills diff <ref> --upstream --json
 
 # Updates: check first, then update
-sb skills check --all --json
-sb skills update <ref> --json
-sb skills update --all --json
+loadout skills check --all --json
+loadout skills update <ref> --json
+loadout skills update --all --json
 
 # Safety check with SkillSpector, when the user has it installed
-sb skills scan <ref> --json
-sb skills scan --all --json
+loadout skills scan <ref> --json
+loadout skills scan --all --json
 
 # Format checks (Agent Skills rules); exit code 1 when a skill has an error
-sb skills validate <ref> --json
-sb skills validate --all --json
+loadout skills validate <ref> --json
+loadout skills validate --all --json
 
 # Rename (folder, name in SKILL.md, deployments and project links follow); preview first
-sb skills rename <ref> <new-name> --dry-run --json
-sb skills rename <ref> <new-name> --json
+loadout skills rename <ref> <new-name> --dry-run --json
+loadout skills rename <ref> <new-name> --json
 
 # Tags
-sb skills tag <ref> --add writing --remove draft --json
+loadout skills tag <ref> --add writing --remove draft --json
 
 # Presets
-sb presets list --json
-sb presets create "Docs work" --description "Writing and review" --json
-sb presets add "Docs work" <ref> <ref> --json
-sb presets deploy "Docs work" --agent claude_code --json   # no --agent = all enabled agents
-sb presets undeploy "Docs work" --json
+loadout presets list --json
+loadout presets create "Docs work" --description "Writing and review" --json
+loadout presets add "Docs work" <ref> <ref> --json
+loadout presets deploy "Docs work" --agent claude_code --json   # no --agent = all enabled agents
+loadout presets undeploy "Docs work" --json
 
 # Take over skills that already sit in an agent's folder
-sb skills adopt ~/.claude/skills --dry-run --json
-sb skills adopt ~/.claude/skills --json
+loadout skills adopt ~/.claude/skills --dry-run --json
+loadout skills adopt ~/.claude/skills --json
 
 # Remove from the library (also undeploys everywhere)
-sb skills remove <ref> --dry-run --json
-sb skills remove <ref> --yes --json
+loadout skills remove <ref> --dry-run --json
+loadout skills remove <ref> --yes --json
 
 # Backup
-sb git status --json
-sb git sync -m "add pdf tools" --json
-sb git versions --json
-sb git restore <tag> --dry-run --json
+loadout git status --json
+loadout git sync -m "add pdf tools" --json
+loadout git versions --json
+loadout git restore <tag> --dry-run --json
 ```
 
 A folder source must start with `./`, `../`, `/` or `~/`. A bare `owner/repo` always means a
@@ -153,8 +153,9 @@ A failure prints one JSON object on **stderr** and exits non-zero:
 }
 ```
 
-Exit code 2 means the command line was wrong (`INVALID_INPUT`): fix the arguments, check
-`--help`. Exit code 1 means the operation failed. Batch commands can exit 1 while still printing
+Exit code 2 means the command line itself was wrong: fix the arguments, check `--help`. Exit
+code 1 means the operation failed, including refusals such as an agent that is not installed
+(those also report `INVALID_INPUT`). Batch commands can exit 1 while still printing
 a result on stdout - read its `failed` list.
 
 | Code                                                                            | Meaning                                                                                                             | What to do                                                                                                                                                                                                           |
@@ -169,6 +170,12 @@ a result on stdout - read its `failed` list.
 | `NETWORK`, `TIMEOUT`                                                            | Could not reach the source                                                                                          | Retry once, then report.                                                                                                                                                                                             |
 | `GIT_MISSING`                                                                   | git is not installed                                                                                                | Tell the user; git sources and backup need it.                                                                                                                                                                       |
 | `GIT_AUTH`, `GIT_REJECTED`, `GIT_UNRELATED`, `GIT_NO_UPSTREAM`, `SYNC_CONFLICT` | Backup needs a decision                                                                                             | Report the message. These are fixed in the app's Backup page, not from here.                                                                                                                                         |
+| `GIT_NOT_REPO`                                                                  | Backup is not set up for this library                                                                               | Tell the user; `git init` (or the app's Backup page) sets it up.                                                                                                                                                     |
+| `BACKUP_TOO_NEW`                                                                | The backup was written by a newer version of the app                                                                | Tell the user to update the app first. Do not work around it.                                                                                                                                                        |
+| `GIT`                                                                           | Git failed (clone, fetch, a missing branch)                                                                         | Report the message. Check the source address with the user.                                                                                                                                                          |
+| `UNSUPPORTED`                                                                   | The feature is not available here (e.g. `skills scan` without SkillSpector installed)                               | Report it. Do not install tools on your own.                                                                                                                                                                         |
+| `CREDENTIALS_UNAVAILABLE`                                                       | A token cannot be stored safely on this computer                                                                    | Suggest an SSH remote or the user's own Git credential helper. Never put the token anywhere else.                                                                                                                    |
+| `CHANGED_ON_DISK`                                                               | The file changed on disk since it was read                                                                          | Read it again and redo the change.                                                                                                                                                                                   |
 | `IO`, `INTERNAL`                                                                | Unexpected                                                                                                          | Report the message verbatim. Do not work around it by editing files.                                                                                                                                                 |
 
 ## Updates that would delete files or replace edits

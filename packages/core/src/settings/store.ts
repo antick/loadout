@@ -1,10 +1,12 @@
 import {
   DEFAULT_SETTINGS,
   PROXY_URL_PATTERN,
+  SETTING_CHOICES,
   SETTING_KEYS,
   type SettingKey,
   type SettingValue,
   type Settings,
+  isValidSetting,
 } from "@loadout/shared";
 import type { Database } from "../db/database";
 import { invalid } from "../errors";
@@ -46,12 +48,20 @@ export class SettingsStore {
   get<K extends SettingKey>(key: K): SettingValue<K> {
     const fallback = DEFAULT_SETTINGS[key];
     const value = this.getRaw<SettingValue<K>>(key, fallback);
-    return typeof value === typeof fallback ? value : fallback;
+    return isValidSetting(key, value) ? value : fallback;
   }
 
   set<K extends SettingKey>(key: K, value: SettingValue<K>): void {
     if (!SETTING_KEYS.includes(key)) throw invalid(`Unknown setting: ${key}`);
     if (typeof value !== typeof DEFAULT_SETTINGS[key]) throw invalid(`Wrong value type for ${key}`);
+    if (!isValidSetting(key, value)) {
+      const choices = SETTING_CHOICES[key];
+      throw invalid(
+        choices
+          ? `${key} must be one of: ${choices.map((choice) => choice || '""').join(", ")}`
+          : `${key} must be a number of 0 or more`,
+      );
+    }
     if (key === "proxyUrl") {
       const url = String(value).trim();
       if (url && !PROXY_URL_PATTERN.test(url)) {

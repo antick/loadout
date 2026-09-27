@@ -20,20 +20,19 @@ import {
   readdirSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { build } from "esbuild";
 
 const TARGETS = ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64", "win-x64"];
 const NODE_DIST_URL = "https://nodejs.org/dist";
-const POSTJECT = "postject@1.0.0-alpha.6";
 const SEA_FUSE = "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2";
 const SEA_RESOURCE = "NODE_SEA_BLOB";
 const MACHO_SEGMENT = "NODE_SEA";
 const NODE_TARGET = "node22";
 const BUILD_DIR = "dist/sea";
 const OUT_DIR = "dist/standalone";
-const NODE_CACHE_DIR = join(tmpdir(), "loadout-node-binaries");
+// Inside the checkout, not the shared temp folder another user of the machine could write to.
+const NODE_CACHE_DIR = join("node_modules", ".cache", "loadout-node-binaries");
 const SUMS_FILE = "SHA256SUMS";
 
 const nodeVersion = process.versions.node;
@@ -99,27 +98,32 @@ async function publishedSha256(fileName) {
   return sum;
 }
 
-/** The official Node binary for a target, downloaded once into a temp cache. */
+/**
+ * The official Node binary for a target. The download is cached, but checked against nodejs.org's
+ * published sum every time and unpacked afresh: a cached file is never trusted as it is.
+ */
 async function nodeBinary(target) {
   if (target === hostTarget) return process.execPath;
   const windows = target.startsWith("win");
   const name = `node-v${nodeVersion}-${target}`;
+  const archiveName = `${name}.${windows ? "zip" : "tar.xz"}`;
   const inner = windows ? `${name}/node.exe` : `${name}/bin/node`;
   const binary = join(NODE_CACHE_DIR, inner);
-  if (existsSync(binary)) return binary;
+  const archive = join(NODE_CACHE_DIR, archiveName);
+  // The binary goes into every release: it must be byte for byte the one nodejs.org lists.
+  const expected = await publishedSha256(archiveName);
+  const sha256 = (data) => createHash("sha256").update(data).digest("hex");
 
   mkdirSync(NODE_CACHE_DIR, { recursive: true });
-  const archive = join(NODE_CACHE_DIR, `${name}.${windows ? "zip" : "tar.xz"}`);
-  const url = `${NODE_DIST_URL}/v${nodeVersion}/${name}.${windows ? "zip" : "tar.xz"}`;
-  console.log(`Downloading ${url}`);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Download failed (${response.status}): ${url}`);
-  const data = Buffer.from(await response.arrayBuffer());
-  // The binary goes into every release: it must be byte for byte the one nodejs.org lists.
-  const expected = await publishedSha256(`${name}.${windows ? "zip" : "tar.xz"}`);
-  const actual = createHash("sha256").update(data).digest("hex");
-  if (actual !== expected) throw new Error(`Checksum mismatch for ${url}`);
-  writeFileSync(archive, data);
+  if (!existsSync(archive) || sha256(readFileSync(archive)) !== expected) {
+    const url = `${NODE_DIST_URL}/v${nodeVersion}/${archiveName}`;
+    console.log(`Downloading ${url}`);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Download failed (${response.status}): ${url}`);
+    const data = Buffer.from(await response.arrayBuffer());
+    if (sha256(data) !== expected) throw new Error(`Checksum mismatch for ${url}`);
+    writeFileSync(archive, data);
+  }
   if (windows && process.platform !== "win32") {
     run("unzip", ["-q", "-o", archive, inner, "-d", NODE_CACHE_DIR]);
   } else {
@@ -139,9 +143,10 @@ async function buildTarget(target, blob) {
   copyFileSync(await nodeBinary(target), out);
   chmodSync(out, 0o755);
   if (mac) run("codesign", ["--remove-signature", out]);
+  // From the lockfile, not fetched fresh: it writes code into every published binary.
   run("pnpm", [
-    "dlx",
-    POSTJECT,
+    "exec",
+    "postject",
     out,
     SEA_RESOURCE,
     blob,

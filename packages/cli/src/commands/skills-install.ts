@@ -21,6 +21,8 @@ const PATH_START = /^(?:~|\.{1,2}(?:[\\/]|$)|[\\/]|[A-Za-z]:[\\/])/;
 const REPO = String.raw`[A-Za-z0-9_][\w.-]*\/[A-Za-z0-9_][\w.-]*`;
 const SHORTHAND = new RegExp(`^${REPO}$`);
 const MARKET_SKILL = new RegExp(`^(${REPO})[@/]([^\\s@/]+)$`);
+/** A first segment with a dot in it is a host name (`github.com/…`), not a GitHub owner. */
+const HOST_FIRST = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s]+$/i;
 
 /**
  * Decide what a source is from its spelling alone. Looking at the disk instead would make
@@ -33,6 +35,8 @@ export function classifySource(input: string): InstallSource {
   if (PATH_START.test(text) || ARCHIVE_SUFFIXES.some((suffix) => lower.endsWith(suffix))) {
     return { kind: "path", path: text };
   }
+  // `github.com/owner/repo` is a web address without its scheme, never an `owner/repo@skill`.
+  if (HOST_FIRST.test(text)) return { kind: "git", url: `https://${text}` };
   if (lower.endsWith(".git") || SHORTHAND.test(text)) return { kind: "git", url: text };
   const market = MARKET_SKILL.exec(text);
   if (market?.[1] && market[2]) return { kind: "market", source: market[1], skillId: market[2] };

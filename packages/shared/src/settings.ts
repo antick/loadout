@@ -84,3 +84,29 @@ export const AUTO_UPDATE_INTERVAL_MS: Record<AutoUpdateInterval, number> = {
 };
 
 export const PROXY_URL_PATTERN = /^(https?|socks5):\/\//i;
+
+/**
+ * The values a text setting may take. A value outside its list (typed by hand in the CLI, or
+ * from an older or newer version) is refused on save and read back as the default.
+ */
+export const SETTING_CHOICES: Partial<Record<SettingKey, readonly string[]>> = {
+  deployMode: ["symlink", "copy"],
+  theme: ["light", "dark", "system"],
+  palette: PALETTES,
+  textSize: ["small", "default", "large", "xlarge"],
+  language: ["en", "hi"],
+  closeAction: ["ask", "hide", "quit"],
+  autoUpdateInterval: ["off", "1h", "6h", "24h"],
+  backupFirstRunPrompt: ["", "fresh", "restored"],
+  agentControlPrompt: ["", "dismissed", "installed"],
+};
+
+/** Whether `value` is one the setting `key` accepts: its type, its choices, no negative number. */
+export function isValidSetting(key: SettingKey, value: unknown): boolean {
+  const fallback = DEFAULT_SETTINGS[key];
+  if (typeof value !== typeof fallback) return false;
+  const choices = SETTING_CHOICES[key];
+  if (choices && !choices.includes(value as string)) return false;
+  if (typeof value === "number") return Number.isFinite(value) && value >= 0;
+  return true;
+}

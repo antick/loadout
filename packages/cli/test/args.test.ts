@@ -85,6 +85,10 @@ describe("argument parser", () => {
 describe("install sources", () => {
   it("classifies by spelling alone", () => {
     expect(classifySource("./folder")).toEqual({ kind: "path", path: "./folder" });
+    expect(classifySource("github.com/anthropics/skills")).toEqual({
+      kind: "git",
+      url: "https://github.com/anthropics/skills",
+    });
     expect(classifySource("~/skills/x").kind).toBe("path");
     expect(classifySource("/abs/x").kind).toBe("path");
     expect(classifySource("C:\\skills\\x").kind).toBe("path");
