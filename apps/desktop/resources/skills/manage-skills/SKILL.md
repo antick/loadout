@@ -104,6 +104,19 @@ loadout skills rename <ref> <new-name> --json
 # Tags
 loadout skills tag <ref> --add writing --remove draft --json
 
+# Subagents, slash commands and rules ("items"): one Markdown file each, converted per agent
+loadout items list --kind subagent --json
+loadout items find agents --json                     # items already in agents' own folders
+loadout items import agents --all --json              # copy them into the library
+loadout items import owner/repo --item command/commit --json
+loadout items create rule/style --json
+loadout items show subagent/reviewer --agent opencode --json   # the converted file, and what it left out
+loadout items deploy subagent/reviewer --agent claude_code --agent opencode --json
+loadout items deploy rule/style --agent cursor --project ./my-app --json   # into a project
+loadout items undeploy subagent/reviewer --agent opencode --json
+loadout items remove subagent/reviewer --yes --json
+loadout items convert ./reviewer.md --kind subagent --to opencode   # no library needed
+
 # Presets
 loadout presets list --json
 loadout presets create "Docs work" --description "Writing and review" --json

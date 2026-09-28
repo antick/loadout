@@ -59,6 +59,7 @@ itself.
 - **Deploying:** give a skill to any agent in one click, by symlink or copy, without ever touching a folder Loadout didn't create.
 - **Instruction files:** edit `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and the rest, globally and per project.
 - **Agent workspaces:** see everything in an agent's skills folder, compare it with the library, and adopt skills installed elsewhere.
+- **Subagents, commands and rules:** keep them in the library too, and deploy them to each agent in its own format, globally or into a project.
 - **Presets:** named groups of skills you turn on for an agent or a project in one click.
 - **Projects:** manage the skills inside each project, per agent, and keep them in step with the library.
 - **Skill updates:** check sources on a schedule, see what an update would change, then update one skill or all of them.

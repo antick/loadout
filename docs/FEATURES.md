@@ -85,6 +85,17 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Lists folders the agent skips, and why.
 - Claude Code: skills its plugins bring, read only; one also in its folder is flagged Loaded twice.
 
+## Subagents, commands and rules
+
+- Kept in the library beside skills, one Markdown file each, and backed up and synced with it.
+- Deployed to each agent's own folder or into a linked project, converted to that agent's format.
+- Agents: Claude Code, OpenCode, Cursor, Codex, Gemini CLI, GitHub Copilot, Qwen Code, Factory Droid, Kiro, Cline, as their docs allow.
+- A preview shows the file each agent gets, and says what the conversion left out.
+- Deployed files follow library edits; a file edited in the agent's folder is left alone.
+- Never replaces a file Loadout did not write unless you say so; the old one is kept as `.loadout-old`.
+- Import from agents' folders, a folder, or a Git repository, read into the library's format.
+- `loadout items` for all of it; `loadout items convert` converts one file without a library.
+
 ## Presets
 
 - Named groups of skills with per-agent switches; apply to agents in one click.
@@ -155,5 +166,6 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - GitHub device sign-in needs an OAuth client id; tokens and Git URLs work.
 - Builds are not signed with an Apple or Windows certificate.
 - The CLI can't read tokens saved by the app; use SSH or a credential helper.
-- Agents that read a folder of rule files (Cline, Roo Code, Kiro) are not covered by instruction files.
+- Roo Code's folder of rule files is not covered; Cline and Kiro rule folders are, as Rules.
 - Windows and Linux are untested.
+- Subagents, commands and rules: deleting one does not go to Recently removed; they cannot be renamed or updated from their source; when two computers change the same one before syncing, this computer's version wins (the other is in the backup's history).
