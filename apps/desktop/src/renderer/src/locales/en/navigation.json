@@ -23,6 +23,7 @@
     },
     "library": {
       "all": "All skills",
+      "sources": "Sources",
       "install": "Install skills",
       "views": "Views",
       "view": {

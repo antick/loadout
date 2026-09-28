@@ -60,7 +60,9 @@ export interface LibraryPageProps {
   onOpenSkill: (skillId: string | null) => void;
   /** A status filter asked for from outside the page (the tray); applied once, then cleared. */
   requestedStatus: StatusFilter | null;
-  onStatusApplied: () => void;
+  /** Search text asked for from outside (the Sources page); applied once, then cleared. */
+  requestedQuery: string | null;
+  onRequestApplied: () => void;
 }
 
 /** Every skill in the library: search, filter, deploy per agent, batch actions, detail panel. */
@@ -68,7 +70,8 @@ export function LibraryPage({
   openSkillId,
   onOpenSkill,
   requestedStatus,
-  onStatusApplied,
+  requestedQuery,
+  onRequestApplied,
 }: LibraryPageProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -83,15 +86,24 @@ export function LibraryPage({
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
   const [rest, setRest] = useState(EMPTY_FILTERS);
 
-  // A status asked for from outside replaces the filters once; the request is then cleared.
-  const [seenRequest, setSeenRequest] = useState<StatusFilter | null>(null);
-  if (requestedStatus !== seenRequest) {
-    setSeenRequest(requestedStatus);
-    if (requestedStatus) setRest({ ...EMPTY_FILTERS, status: requestedStatus });
+  // A status or search asked for from outside replaces the filters once; the request is then
+  // cleared.
+  const request =
+    requestedStatus || requestedQuery ? `${requestedStatus}\0${requestedQuery}` : null;
+  const [seenRequest, setSeenRequest] = useState<string | null>(null);
+  if (request !== seenRequest) {
+    setSeenRequest(request);
+    if (request) {
+      setRest({
+        ...EMPTY_FILTERS,
+        status: requestedStatus ?? EMPTY_FILTERS.status,
+        query: requestedQuery ?? EMPTY_FILTERS.query,
+      });
+    }
   }
   useEffect(() => {
-    if (requestedStatus) onStatusApplied();
-  }, [requestedStatus, onStatusApplied]);
+    if (request) onRequestApplied();
+  }, [request, onRequestApplied]);
 
   const filters = useMemo<LibraryFilters>(() => ({ ...rest, sort }), [rest, sort]);
   const all = skills.data;

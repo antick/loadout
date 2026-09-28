@@ -1,6 +1,13 @@
-import type { Skill } from "@loadout/shared";
+import { type Skill, groupSkillSources } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { CircleDashed, CircleFadingArrowUp, Download, Library, TriangleAlert } from "lucide-react";
+import {
+  CircleDashed,
+  CircleFadingArrowUp,
+  Download,
+  GitFork,
+  Library,
+  TriangleAlert,
+} from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem";
@@ -50,6 +57,7 @@ export function LibraryPanel(): ReactNode {
   const { t } = useTranslation();
   const skills = useSkills();
   const all = skills.data ?? [];
+  const sourceCount = useMemo(() => groupSkillSources(skills.data ?? []).length, [skills.data]);
   const recent = useMemo(
     () =>
       [...(skills.data ?? [])]
@@ -69,6 +77,14 @@ export function LibraryPanel(): ReactNode {
                 label={t("sidebar.library.all")}
                 icon={<Library />}
                 badge={skills.data?.length}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarNavItem
+                link={{ to: "/sources" }}
+                label={t("sidebar.library.sources")}
+                icon={<GitFork />}
+                badge={skills.data ? sourceCount : undefined}
               />
             </SidebarMenuItem>
             <SidebarMenuItem>

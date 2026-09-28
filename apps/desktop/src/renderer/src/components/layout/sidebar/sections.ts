@@ -45,6 +45,7 @@ const SECTION_ROOTS: Record<string, SidebarSection> = {
   "": "home",
   library: "library",
   install: "library",
+  sources: "library",
   agents: "agents",
   presets: "presets",
   projects: "projects",

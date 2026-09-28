@@ -14,6 +14,7 @@ import { Route as BackupRouteImport } from './routes/backup'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SourcesRouteImport } from './routes/sources'
 import { Route as AgentsIndexRouteImport } from './routes/agents/index'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
 import { Route as InstructionsEditRouteImport } from './routes/instructions.edit'
@@ -48,6 +49,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SourcesRoute = SourcesRouteImport.update({
+  id: '/sources',
+  path: '/sources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsIndexRoute = AgentsIndexRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/install': typeof InstallRoute
   '/library': typeof LibraryRoute
   '/settings': typeof SettingsRoute
+  '/sources': typeof SourcesRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/instructions/edit': typeof InstructionsEditRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/library': typeof LibraryRoute
   '/settings': typeof SettingsRoute
+  '/sources': typeof SourcesRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/instructions/edit': typeof InstructionsEditRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/install': typeof InstallRoute
   '/library': typeof LibraryRoute
   '/settings': typeof SettingsRoute
+  '/sources': typeof SourcesRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/instructions/edit': typeof InstructionsEditRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/library'
     | '/settings'
+    | '/sources'
     | '/agents/$agentKey'
     | '/instructions/edit'
     | '/presets/$presetId'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/library'
     | '/settings'
+    | '/sources'
     | '/agents/$agentKey'
     | '/instructions/edit'
     | '/presets/$presetId'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/library'
     | '/settings'
+    | '/sources'
     | '/agents/$agentKey'
     | '/instructions/edit'
     | '/presets/$presetId'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   InstallRoute: typeof InstallRoute
   LibraryRoute: typeof LibraryRoute
   SettingsRoute: typeof SettingsRoute
+  SourcesRoute: typeof SourcesRoute
   AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
   InstructionsEditRoute: typeof InstructionsEditRoute
   PresetsPresetIdRoute: typeof PresetsPresetIdRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sources': {
+      id: '/sources'
+      path: '/sources'
+      fullPath: '/sources'
+      preLoaderRoute: typeof SourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents/': {
@@ -341,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   InstallRoute: InstallRoute,
   LibraryRoute: LibraryRoute,
   SettingsRoute: SettingsRoute,
+  SourcesRoute: SourcesRoute,
   AgentsAgentKeyRoute: AgentsAgentKeyRoute,
   InstructionsEditRoute: InstructionsEditRoute,
   PresetsPresetIdRoute: PresetsPresetIdRoute,

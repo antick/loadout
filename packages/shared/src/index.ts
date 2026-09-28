@@ -22,3 +22,4 @@ export * from "./secrets";
 export * from "./manual-only";
 export * from "./install-plan";
 export * from "./preview-rows";
+export * from "./sources";

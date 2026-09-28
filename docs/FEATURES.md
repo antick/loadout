@@ -26,6 +26,14 @@ For the feature checklist, see [PLAN.md](PLAN.md).
   are not in the skill) are listed in the
   skill's panel. The editor runs the same checks on unsaved text, and each problem names its
   line; click it to jump there. `loadout skills validate` prints the line too.
+- **Sources** (Library sidebar): one card per place skills came from, a Git repository (installed
+  directly or through the marketplace, one card per branch), an archive or a download link, with
+  its skills, updates waiting, problems and when it was last checked. **Find new skills** fetches
+  the source again and opens the import list, where what you already have shows "In library" and
+  starts unticked; when nothing is new a toast says so. Also **Update**, **Check**, **Show in
+  library** (the library filtered to that source), copy its address, and remove all its skills
+  (they wait in Recently removed). Skills made in the app or imported from a single folder have no
+  source and are counted underneath. `loadout sources list` prints the same list.
 - **Manual only** badge on skills whose frontmatter sets `disable-model-invocation: true`: agents
   that read the field run them only when you call them by name. Shown on cards, rows, the skill
   panel and the import list; `loadout skills list` marks them `[manual]`.

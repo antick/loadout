@@ -64,3 +64,22 @@ test("select two skills, tag them, then delete them", async ({ page }) => {
   await expect(content.getByRole("heading", { name: "release-notes", level: 3 })).toHaveCount(0);
   await expect(content.getByRole("heading", { name: "code-review", level: 3 })).toBeVisible();
 });
+
+test("the Sources page groups skills by where they came from and opens them in the library", async ({
+  page,
+}) => {
+  await openApp(page, "/library");
+  await activityBar(page).getByRole("button", { name: "Library" }).click();
+  await page.getByRole("link", { name: /^Sources/ }).click();
+  const content = main(page);
+  const source = content.getByRole("article", { name: "example.com/acme/skills" });
+  await expect(source).toBeVisible();
+  await expect(source.getByText("2 skills")).toBeVisible();
+  await expect(source.getByRole("button", { name: "Update 1" })).toBeVisible();
+
+  await source.getByRole("button", { name: "More for example.com/acme/skills" }).click();
+  await page.getByRole("menuitem", { name: "Show in library" }).click();
+  await expect(content.getByRole("heading", { name: "code-review", level: 3 })).toBeVisible();
+  await expect(content.getByRole("heading", { name: "sql-migrations", level: 3 })).toBeVisible();
+  await expect(content.getByRole("heading", { name: "api-docs", level: 3 })).toHaveCount(0);
+});

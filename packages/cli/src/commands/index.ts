@@ -6,12 +6,14 @@ import { presetsGroup } from "./presets";
 import { removedGroup } from "./removed";
 import { repoGroup } from "./repo";
 import { skillsGroup } from "./skills";
+import { sourcesGroup } from "./sources";
 import type { CommandGroup } from "./types";
 
 export const COMMAND_GROUPS: readonly CommandGroup[] = [
   repoGroup,
   agentsGroup,
   skillsGroup,
+  sourcesGroup,
   presetsGroup,
   removedGroup,
   gitGroup,

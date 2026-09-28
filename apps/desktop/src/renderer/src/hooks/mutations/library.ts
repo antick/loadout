@@ -108,6 +108,40 @@ export function useCheckSkillUpdate(): UseMutationResult<Skill, unknown, string>
   });
 }
 
+/** Look upstream for several skills, such as everything from one source, with one toast. */
+export function useCheckSkills(): UseMutationResult<
+  Skill[],
+  unknown,
+  { skillIds: readonly string[]; label: string }
+> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: async ({ skillIds }) => {
+      const checked: Skill[] = [];
+      for (const skillId of skillIds) checked.push(await api.updates.check(skillId, true));
+      return checked;
+    },
+    onSuccess: (checked, { label }) => {
+      const updates = checked.filter((skill) => skill.updateStatus === "update_available");
+      const failed = checked.filter((skill) => skill.updateStatus === "error");
+      const summary = t("sources.checkedToast", { source: label, count: updates.length });
+      if (failed.length === 0) {
+        toastSuccess(summary);
+        return;
+      }
+      toast.warning(summary, {
+        description: describeFailures(
+          failed.map((skill) => ({ name: skill.name, message: skill.lastCheckError ?? "" })),
+        ),
+        descriptionClassName: FAILURE_LIST_CLASS,
+      });
+    },
+    onError: (error) => toastError(error, "library.errors.check"),
+    onSettled: () => invalidateSkills(queryClient),
+  });
+}
+
 /** Update several skills. Skills whose update would delete files are held back, never forced. */
 export function useUpdateSkills(): UseMutationResult<BatchUpdateResult, unknown, string[]> {
   const queryClient = useQueryClient();

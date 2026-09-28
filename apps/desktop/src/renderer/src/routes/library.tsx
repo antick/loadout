@@ -8,6 +8,8 @@ export interface LibrarySearch {
   skill?: string;
   /** Status filter to switch to once, e.g. from the tray's "updates available" item. */
   status?: StatusFilter;
+  /** Search text to switch to once, e.g. a source's address from the Sources page. */
+  q?: string;
 }
 
 function isStatusFilter(value: unknown): value is StatusFilter {
@@ -15,10 +17,14 @@ function isStatusFilter(value: unknown): value is StatusFilter {
 }
 
 function LibraryRoute(): ReactNode {
-  const { skill, status } = Route.useSearch();
+  const { skill, status, q } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const clearStatus = useCallback(
-    () => void navigate({ search: (prev) => ({ ...prev, status: undefined }), replace: true }),
+  const clearRequest = useCallback(
+    () =>
+      void navigate({
+        search: (prev) => ({ ...prev, status: undefined, q: undefined }),
+        replace: true,
+      }),
     [navigate],
   );
   return (
@@ -28,7 +34,8 @@ function LibraryRoute(): ReactNode {
         void navigate({ search: (prev) => ({ ...prev, skill: skillId ?? undefined }) })
       }
       requestedStatus={status ?? null}
-      onStatusApplied={clearStatus}
+      requestedQuery={q ?? null}
+      onRequestApplied={clearRequest}
     />
   );
 }
@@ -37,6 +44,7 @@ export const Route = createFileRoute("/library")({
   validateSearch: (search: Record<string, unknown>): LibrarySearch => ({
     skill: typeof search.skill === "string" && search.skill ? search.skill : undefined,
     status: isStatusFilter(search.status) ? search.status : undefined,
+    q: typeof search.q === "string" && search.q ? search.q : undefined,
   }),
   component: LibraryRoute,
 });
