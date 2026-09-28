@@ -1,14 +1,14 @@
-import type {
-  ConfirmOptions,
-  GitPreview,
-  InstallSelection,
-  RepoSkillPreview,
+import {
+  type ConfirmOptions,
+  type GitPreview,
+  type InstallOutcome,
+  type InstallSelection,
+  planInstallNames,
 } from "@loadout/shared";
-import { Bot, GitBranch, GitCommitHorizontal, RefreshCw, SearchX, ShieldAlert } from "lucide-react";
+import { Bot, GitBranch, GitCommitHorizontal, SearchX, ShieldAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
-import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -19,10 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { PreviewSkillList } from "@/features/install/PreviewSkillList";
+import { initialSelection } from "@/features/install/preview-list";
 import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
 import { useAgents } from "@/hooks/queries/agents";
-import { cn } from "@/lib/utils";
 
 /** Characters of a commit id shown in the header. */
 const REVISION_SHORT_LENGTH = 7;
@@ -33,56 +33,6 @@ export interface GitPreviewDialogProps {
   /** Closed without importing: the caller discards the checkout. */
   onDismiss: (preview: GitPreview) => void;
   onConfirm: (preview: GitPreview, items: InstallSelection[], options: ConfirmOptions) => void;
-}
-
-interface PreviewRowProps {
-  skill: RepoSkillPreview;
-  checked: boolean;
-  name: string;
-  onToggle: () => void;
-  onRename: (name: string) => void;
-}
-
-function PreviewRow({ skill, checked, name, onToggle, onRename }: PreviewRowProps): ReactNode {
-  const { t } = useTranslation();
-  return (
-    <li
-      data-checked={checked}
-      className="flex gap-3 rounded-md border bg-card p-3 transition-colors duration-150 data-[checked=true]:border-primary/40 data-[checked=true]:bg-primary/5"
-    >
-      <Checkbox
-        checked={checked}
-        aria-label={t("selection.selectItem", { name: skill.name })}
-        className="mt-1.5"
-        onCheckedChange={onToggle}
-      />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <Input
-          value={name}
-          disabled={!checked}
-          aria-label={t("install.git.nameFor", { name: skill.name })}
-          placeholder={skill.name}
-          className="h-7 px-2 text-sm font-medium"
-          onChange={(event) => onRename(event.target.value)}
-        />
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate font-mono text-xs text-muted-foreground" title={skill.relPath}>
-            {skill.relPath}
-          </p>
-          {skill.manualOnly ? <ManualOnlyBadge /> : null}
-        </div>
-        <p className={cn("line-clamp-2 text-xs text-muted-foreground", !checked && "opacity-70")}>
-          {skill.description ?? t("skills.noDescription")}
-        </p>
-        {skill.alreadyInstalled ? (
-          <p className="flex items-center gap-1.5 text-xs text-info">
-            <RefreshCw className="size-3 shrink-0" />
-            {t("install.git.alreadyInstalled")}
-          </p>
-        ) : null}
-      </div>
-    </li>
-  );
 }
 
 /** What a pasted `skills add … -a` command asked for, and which of its agents are unknown here. */
@@ -134,30 +84,37 @@ function PreviewForm({
   const [trusted, setTrusted] = useState(false);
   const needsTrust = preview.redirectedTo !== null && !trusted;
   const KindIcon = SOURCE_KIND_ICONS[preview.kind];
-  const [checked, setChecked] = useState<ReadonlySet<string>>(
-    () => new Set(preview.selected ?? preview.skills.map((skill) => skill.relPath)),
-  );
   const [names, setNames] = useState<Record<string, string>>({});
-
-  const allChecked = checked.size === preview.skills.length;
-
-  const toggle = (relPath: string): void => {
-    setChecked((previous) => {
-      const next = new Set(previous);
-      if (!next.delete(relPath)) next.add(relPath);
-      return next;
-    });
-  };
+  // A cleared name falls back to the source's own name.
+  const nameOf = (relPath: string, fallback: string): string =>
+    (names[relPath] ?? fallback).trim() || fallback;
+  const [checked, setChecked] = useState<ReadonlySet<string>>(() =>
+    initialSelection(
+      preview,
+      planInstallNames(
+        preview.skills.map((skill) => skill.name),
+        preview.library,
+      ),
+    ),
+  );
+  // Worked out again on every tick and rename: an unticked row takes no name from the rows after it.
+  const planned = planInstallNames(
+    preview.skills.map((skill) => nameOf(skill.relPath, skill.name)),
+    preview.library,
+    preview.skills.map((skill) => checked.has(skill.relPath)),
+  );
+  const outcomes = new Map<string, InstallOutcome>(
+    preview.skills.flatMap((skill, index) => {
+      const outcome = planned[index];
+      return outcome ? [[skill.relPath, outcome] as const] : [];
+    }),
+  );
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     const items = preview.skills
       .filter((skill) => checked.has(skill.relPath))
-      // A cleared name falls back to the repository's own name.
-      .map((skill) => ({
-        relPath: skill.relPath,
-        name: (names[skill.relPath] ?? skill.name).trim() || skill.name,
-      }));
+      .map((skill) => ({ relPath: skill.relPath, name: nameOf(skill.relPath, skill.name) }));
     if (items.length > 0 && !needsTrust) {
       onConfirm(items, { acceptRedirect: preview.redirectedTo !== null && trusted });
     }
@@ -215,32 +172,14 @@ function PreviewForm({
         </InlineNotice>
       ) : null}
 
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">{t("install.git.previewHint")}</p>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            setChecked(allChecked ? new Set() : new Set(preview.skills.map((s) => s.relPath)))
-          }
-        >
-          {t(allChecked ? "selection.selectNone" : "selection.selectAll")}
-        </Button>
-      </div>
-
-      <ul className="-mr-2 flex max-h-[50vh] flex-col gap-2 overflow-y-auto pr-2">
-        {preview.skills.map((skill) => (
-          <PreviewRow
-            key={skill.relPath}
-            skill={skill}
-            checked={checked.has(skill.relPath)}
-            name={names[skill.relPath] ?? skill.name}
-            onToggle={() => toggle(skill.relPath)}
-            onRename={(name) => setNames((previous) => ({ ...previous, [skill.relPath]: name }))}
-          />
-        ))}
-      </ul>
+      <PreviewSkillList
+        skills={preview.skills}
+        checked={checked}
+        names={names}
+        outcomes={outcomes}
+        onCheckedChange={setChecked}
+        onRename={(relPath, name) => setNames((previous) => ({ ...previous, [relPath]: name }))}
+      />
 
       <DialogFooter>
         <Button type="button" variant="ghost" onClick={onDismiss}>

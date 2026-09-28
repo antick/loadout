@@ -37,6 +37,26 @@ function installedOne(t: Translate, skill: Skill): InstallTaskSuccess {
   return { message: t("install.toast.installed", { name: skill.name }), skills: [skill] };
 }
 
+/**
+ * Say which skills landed under another name than the one asked for: the name was taken by the
+ * time the import ran. `skills` come back in the order of `items`.
+ */
+function withRenames(
+  t: Translate,
+  summary: InstallTaskSuccess,
+  items: readonly InstallSelection[],
+  skills: readonly Skill[],
+): InstallTaskSuccess {
+  const renamed = skills.flatMap((skill, index) => {
+    const asked = items[index]?.name.trim();
+    return asked && asked !== skill.name
+      ? [t("install.toast.renamedOne", { asked, name: skill.name })]
+      : [];
+  });
+  if (renamed.length === 0) return summary;
+  return { ...summary, description: t("install.toast.renamed", { list: renamed.join(", ") }) };
+}
+
 function batchSummary(t: Translate, result: BatchImportResult): InstallTaskSuccess {
   const details = [
     ...(result.skipped > 0 ? [t("install.batch.skipped", { count: result.skipped })] : []),
@@ -163,13 +183,14 @@ export function useConfirmGit(): (
           api.install.confirmGit(preview.previewId, items, { ...options, acceptRisk: true }),
         success: (skills) => {
           const [only] = skills;
-          const summary =
+          const base =
             only && skills.length === 1
               ? installedOne(t, only)
               : {
                   message: t("install.toast.installedCount", { count: skills.length }),
                   skills,
                 };
+          const summary = withRenames(t, base, items, skills);
           const deployTo = preview.allAgents ? "all" : preview.agents;
           return deployTo.length > 0 ? { ...summary, deployTo } : summary;
         },

@@ -28,6 +28,27 @@ test("search the Marketplace and load more results", async ({ page }) => {
   await expect(panel.getByRole("button", { name: "Load more" })).toHaveCount(0);
 });
 
+test("the import list says what each name will do and ticks a whole folder", async ({ page }) => {
+  await openApp(page, "/install");
+  const content = main(page);
+  await content.getByRole("tab", { name: "Git or link" }).click();
+  await content.getByLabel("Repository, site or link").fill("acme/skills");
+  await content.getByRole("button", { name: "Preview" }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("heading", { name: "5 skills found" })).toBeVisible();
+  // `code-review` came from this source before; `release-notes` belongs to another skill.
+  await expect(dialog.getByText(/Already imported from this source/)).toBeVisible();
+  await expect(dialog.getByText(/release-notes is taken by a skill/)).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Import selected (3)" })).toBeVisible();
+
+  // Ticking the folder takes its skill; renaming it frees the name.
+  await dialog.getByRole("checkbox", { name: "Select every skill in docs" }).click();
+  await dialog.getByLabel("Library name for release-notes").fill("acme-release-notes");
+  await expect(dialog.getByText(/release-notes is taken by a skill/)).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Import selected (4)" })).toBeVisible();
+});
+
 test("the Backup page lists what is held back and backs it up anyway", async ({ page }) => {
   await openApp(page, "/backup");
   const content = main(page);

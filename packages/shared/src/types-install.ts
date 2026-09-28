@@ -1,5 +1,6 @@
 /** Install and marketplace types. Split from `types.ts` to keep both files small. */
 
+import type { LibraryNameEntry } from "./install-plan";
 import type { InstallOptions } from "./safety";
 import type { BatchFailure } from "./types";
 
@@ -33,6 +34,8 @@ export interface GitPreview {
   selected: string[] | null;
   /** Skills the typed text asked for by name that the source does not hold. */
   missing: string[];
+  /** Folders in the library when the preview opened, to say what each name will do. */
+  library: LibraryNameEntry[];
   /**
    * Host of another site a download link was sent on to. Installing needs the user to accept it
    * (`acceptRedirect`), because the link no longer says where the files come from.

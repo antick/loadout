@@ -13,7 +13,7 @@ import { unpackArchiveFile } from "./archive";
 import { archiveLink, skillFileLink } from "./archive-link";
 import type { CancelRegistry } from "./cancel";
 import type { Download } from "./download";
-import { createFetchedPreviews, previewRows, subpathOf } from "./fetched-preview";
+import { createFetchedPreviews, previewLibrary, previewRows, subpathOf } from "./fetched-preview";
 import type { GitClient } from "./git-client";
 import {
   type GitSource,
@@ -133,18 +133,17 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         cleanup: checkout.cleanup,
       });
       cleanup = null;
+      const fromThisRepo = (s: Skill): boolean =>
+        s.sourceUrl !== null && normalizeRepoUrl(s.sourceUrl) === repoIdentity;
       return {
         previewId,
         kind: "repository",
         repoUrl: source.cloneUrl,
         branch: source.branch,
         revision: checkout.revision,
-        skills: previewRows(
-          store,
-          found,
-          (s) => s.sourceUrl !== null && normalizeRepoUrl(s.sourceUrl) === repoIdentity,
-        ),
+        skills: previewRows(store, found, fromThisRepo),
         ...matchRequested(found, source.skill ? [source.skill, ...wanted] : wanted),
+        library: previewLibrary(ctx, store, fromThisRepo),
         redirectedTo: null,
         ...NO_REQUESTED_AGENTS,
       };

@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { planInstallNames } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createGitClient, gitFailure } from "../src/install/git-client";
 import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
@@ -164,6 +165,20 @@ describe("git preview and confirm", () => {
       ["docx", true],
       ["pdf", false],
     ]);
+    // Every folder in the library, with the source that owns it, so the list can say what
+    // each name will do.
+    expect(again.library.map((entry) => [entry.dirName, entry.sameSource, entry.source])).toEqual(
+      expect.arrayContaining([
+        ["My PDF", true, remote],
+        ["docx", true, remote],
+      ]),
+    );
+    expect(
+      planInstallNames(
+        again.skills.map((s) => s.name),
+        again.library,
+      ).map((outcome) => outcome.kind),
+    ).toEqual(["installed", "new"]);
     await install.api.cancelPreview(again.previewId);
     expect(leftoverCheckouts(tmp)).toEqual([]);
   });

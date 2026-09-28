@@ -1,6 +1,7 @@
 import { relative } from "node:path";
 import {
   type GitPreview,
+  type LibraryNameEntry,
   NO_REQUESTED_AGENTS,
   type RepoSkillPreview,
   type Skill,
@@ -8,8 +9,9 @@ import {
 import type { CoreContext } from "../context";
 import { cancelled } from "../errors";
 import type { SkillStore } from "../skills/store";
-import { toPosix } from "../util/fs";
+import { readDirSafe, toPosix } from "../util/fs";
 import { listArchiveSkills } from "./archive";
+import { redactUrl } from "./git-source";
 import type { CancelRegistry } from "./cancel";
 import type { InstallRecord } from "./library";
 import { type PreviewSessions, emitProgress } from "./preview-sessions";
@@ -65,6 +67,37 @@ export function previewRows(
   }));
 }
 
+/** Where a library skill came from, as shown next to a name it holds. Never with credentials. */
+function shownSource(skill: Skill): string | null {
+  if (skill.sourceType === "marketplace") return skill.sourceRef;
+  const ref = skill.sourceUrl ?? skill.sourceRef;
+  return ref ? redactUrl(ref) : null;
+}
+
+/**
+ * Every name in the library folder right now, with the skill that owns it. Hidden entries are
+ * left out: a skill name never starts with a dot.
+ */
+export function previewLibrary(
+  ctx: CoreContext,
+  store: SkillStore,
+  sameSource: (skill: Skill) => boolean,
+): LibraryNameEntry[] {
+  const byDir = new Map(store.list().map((skill) => [skill.dirName, skill]));
+  return readDirSafe(ctx.paths.skillsDir)
+    .filter((entry) => !entry.name.startsWith("."))
+    .map((entry) => {
+      const skill = byDir.get(entry.name) ?? null;
+      return {
+        dirName: entry.name,
+        skillId: skill?.id ?? null,
+        skillName: skill?.name ?? null,
+        source: skill ? shownSource(skill) : null,
+        sameSource: skill ? sameSource(skill) : false,
+      };
+    });
+}
+
 /** Fetch something, list the skills in it and keep it open until the user confirms or cancels. */
 export function createFetchedPreviews(
   ctx: CoreContext,
@@ -98,6 +131,7 @@ export function createFetchedPreviews(
         revision: null,
         skills: previewRows(store, found, options.installed),
         ...matchRequested(found, options.wanted ?? []),
+        library: previewLibrary(ctx, store, options.installed),
         redirectedTo,
         ...NO_REQUESTED_AGENTS,
       };

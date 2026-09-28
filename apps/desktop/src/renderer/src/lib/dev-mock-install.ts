@@ -10,6 +10,7 @@
  */
 import {
   type CreateSkillInput,
+  type LibraryNameEntry,
   NO_REQUESTED_AGENTS,
   type BatchImportResult,
   type ConfirmOptions,
@@ -96,6 +97,11 @@ const REPO_SKILLS = [
     name: "terraform-review",
     description: "Check a Terraform plan for risky changes before it is applied.",
   },
+  {
+    relPath: "docs/release-notes",
+    name: "release-notes",
+    description: "Draft release notes from the merged pull requests of a milestone.",
+  },
 ] as const;
 
 /** `owner/repo@skill` or `…#main@skill` → the skill to tick, as the real parser reads it. */
@@ -146,6 +152,21 @@ function mockCommand(
   return { ...result, allAgents };
 }
 
+/** Folders and skills per folder of the mock "big" repository, to try search and collapsed groups. */
+const BIG_REPO_FOLDERS = ["frontend", "backend", "data", "ops"] as const;
+const BIG_REPO_SKILLS_PER_FOLDER = 9;
+
+/** A repository with many skills in several folders. */
+function bigRepoSkills(): { relPath: string; name: string; description: string }[] {
+  return BIG_REPO_FOLDERS.flatMap((folder) =>
+    Array.from({ length: BIG_REPO_SKILLS_PER_FOLDER }, (_, index) => ({
+      relPath: `skills/${folder}/${folder}-tool-${index + 1}`,
+      name: `${folder}-tool-${index + 1}`,
+      description: `Helper ${index + 1} for ${folder} work.`,
+    })),
+  );
+}
+
 const SITE_SKILLS = [
   { relPath: "orders", name: "orders", description: "Look up and refund orders." },
   { relPath: "catalog", name: "catalog", description: "Search the product catalog." },
@@ -176,6 +197,17 @@ export function createInstallMockHandlers(
     string,
     { key: string; kind: GitPreview["kind"]; local: boolean; redirectedTo?: string | null }
   >();
+
+  /** The library's folders as a preview of `source` sees them. */
+  function mockLibrary(source: string): LibraryNameEntry[] {
+    return ctx.getSkills().map((skill) => ({
+      dirName: skill.dirName,
+      skillId: skill.id,
+      skillName: skill.name,
+      source: skill.sourceUrl ?? skill.sourceRef,
+      sameSource: Boolean(skill.sourceUrl?.includes(source) || skill.sourceRef === source),
+    }));
+  }
 
   /** Skills a mock archive holds: several for a "bundle", else one named after the file. */
   function archiveSkills(source: string): GitPreview["skills"] {
@@ -383,6 +415,7 @@ export function createInstallMockHandlers(
         await wait(STEP_MS * 3);
         checkCancelled(typed);
         const names = new Set(ctx.getSkills().map((entry) => entry.name));
+        const library = mockLibrary(repoUrl);
         const previewId = `preview-${Date.now()}`;
         const redirectedTo = repoUrl.includes("moved") ? MOVED_TO_HOST : null;
         previewUrls.set(previewId, { key: typed, kind, local: false, redirectedTo });
@@ -396,13 +429,15 @@ export function createInstallMockHandlers(
             revision: null,
             skills,
             ...requested(skills, named[0] ?? null),
+            library,
             redirectedTo,
             ...agents,
           };
         }
+        const listed = repoUrl.includes("big") ? bigRepoSkills() : REPO_SKILLS;
         const skills = repoUrl.includes("empty")
           ? []
-          : REPO_SKILLS.map((entry) => ({
+          : listed.map((entry) => ({
               manualOnly: entry.name === "log-triage",
               ...entry,
               alreadyInstalled: names.has(entry.name),
@@ -415,6 +450,7 @@ export function createInstallMockHandlers(
           revision: "4f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39",
           skills,
           ...requested(skills, named[0] ?? namedSkill(repoUrl)),
+          library,
           redirectedTo: null,
           ...agents,
         };
@@ -432,6 +468,7 @@ export function createInstallMockHandlers(
         skills: archiveSkills(archivePath),
         selected: null,
         missing: [],
+        library: mockLibrary(archivePath),
         redirectedTo: null,
         ...NO_REQUESTED_AGENTS,
       };

@@ -108,6 +108,16 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   names Loadout does not know are listed, not guessed. Nothing deploys until you confirm.
 - Git preview: the repository is cloned first, then you tick the skills you want and can rename
   each before it lands in the library.
+- Each skill in the preview says what importing it does, worked out from the library's names as
+  you tick and rename: **New**, **In library** (already imported from this source: kept as is if
+  unchanged, else added next to it as `name-2`), **Name in use** (names the source of the skill
+  that has it, and the `name-2` it gets instead) or **Same name twice** within the import. When
+  some names are free, the ones in use start unticked. A summary above the list counts each kind,
+  and the toast after importing names any skill that landed under another name.
+- Skills in several folders are grouped by folder, each with a checkbox for the whole folder
+  (partly ticked when some are) and a count. Sources with 8 or more skills get a filter field;
+  Select all / none and the folder checkboxes act on what the filter shows. Above 30 skills the
+  folders start collapsed. Escape in the filter clears it before it closes the dialog.
 - No Git installed: public GitHub and GitLab repositories still install, update and preview. The
   app reads the branches over HTTPS and downloads the host's archive of the exact commit. Private
   repositories and other hosts need Git, and the Git tab says so.

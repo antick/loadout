@@ -48,6 +48,8 @@
       "installed": "Installed {{name}}",
       "installedCount_one": "Installed {{count}} skill",
       "installedCount_other": "Installed {{count}} skills",
+      "renamed": "The name was in use, so it was added as: {{list}}",
+      "renamedOne": "{{asked}} → {{name}}",
       "imported_one": "Imported {{count}} skill",
       "imported_other": "Imported {{count}} skills",
       "view": "View",
@@ -163,7 +165,25 @@
       "missing_one": "{{names}} is not in here. Pick from what is, or check the spelling.",
       "missing_other": "These are not in here: {{names}}. Pick from what is, or check the spelling.",
       "nameFor": "Library name for {{name}}",
-      "alreadyInstalled": "Already in the library. Importing it again updates that copy.",
+      "outcome": {
+        "new": "New",
+        "installed": "In library",
+        "taken": "Name in use",
+        "repeated": "Same name twice"
+      },
+      "outcomeHint": {
+        "installed": "Already imported from this source. Unchanged, the library copy stays as it is; changed, this is added next to it as {{installAs}}.",
+        "takenFrom": "{{name}} is taken by a skill from {{source}}. This one is added as {{installAs}}, or rename it.",
+        "takenLocal": "{{name}} is taken by a skill you made or imported. This one is added as {{installAs}}, or rename it.",
+        "takenFolder": "A folder called {{name}} is already in the library. This one is added as {{installAs}}, or rename it.",
+        "repeated": "Another ticked skill here is also called {{name}}. This one is added as {{installAs}}, or rename it."
+      },
+      "outcomeSummaryHint": "The note under a skill says what importing it does.",
+      "topFolder": "Top level",
+      "selectFolder": "Select every skill in {{folder}}",
+      "folderCount": "{{ticked}} of {{count}}",
+      "searchPlaceholder": "Filter these skills",
+      "noMatches": "No skill here matches \"{{query}}\".",
       "importSelected_one": "Import selected ({{count}})",
       "importSelected_other": "Import selected ({{count}})",
       "empty": {

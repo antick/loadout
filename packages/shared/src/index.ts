@@ -20,3 +20,4 @@ export * from "./skill-search";
 export * from "./health";
 export * from "./secrets";
 export * from "./manual-only";
+export * from "./install-plan";
