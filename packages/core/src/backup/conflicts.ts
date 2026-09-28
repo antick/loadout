@@ -146,22 +146,52 @@ export async function resolveConflict(
   skillKey: string,
   action: ConflictResolution,
 ): Promise<string> {
-  const conflict = findConflict(env.ctx.db, skillKey);
-  if (!conflict) throw notFound("That conflict was already resolved.");
+  return resolveConflicts(env, [skillKey], action);
+}
+
+/**
+ * Apply one choice to several conflicts at once, behind one safety snapshot. All or nothing: when
+ * one skill fails, every one is put back as it was. Conflicts resolved meanwhile are skipped.
+ * Must run inside the library lock. Nothing is pushed until the next sync.
+ */
+export async function resolveConflicts(
+  env: BackupEnv,
+  skillKeys: readonly string[],
+  action: ConflictResolution,
+): Promise<string> {
   if (!(action in RESOLVE_MESSAGE)) {
     throw new AppError("INVALID_INPUT", `Unknown conflict choice: ${String(action)}`);
+  }
+  if (!Array.isArray(skillKeys) || skillKeys.some((key) => typeof key !== "string")) {
+    throw new AppError("INVALID_INPUT", "Expected a list of skill ids.");
+  }
+  const conflicts = [...new Set(skillKeys)]
+    .map((skillKey) => findConflict(env.ctx.db, skillKey))
+    .filter((conflict): conflict is BackupConflict => conflict !== null);
+  if (conflicts.length === 0) {
+    throw notFound(
+      skillKeys.length > 1
+        ? "Those conflicts were already resolved."
+        : "That conflict was already resolved.",
+    );
   }
 
   await commitLibrary(env, BEFORE_RESOLVE_MESSAGE);
   const safety = await tagSnapshot(env);
   const work: ChoiceWork = { created: [], replaced: [], cleanups: [] };
+  const message =
+    conflicts.length > 1
+      ? `${RESOLVE_MESSAGE[action]} (${conflicts.length} skills)`
+      : RESOLVE_MESSAGE[action];
   try {
     try {
-      if (action === "use_remote") await useRemote(env, conflict, work);
-      if (action === "keep_both") await keepBoth(env, conflict, work);
-      await commitStaged(env, RESOLVE_MESSAGE[action]);
+      for (const conflict of conflicts) {
+        if (action === "use_remote") await useRemote(env, conflict, work);
+        if (action === "keep_both") await keepBoth(env, conflict, work);
+      }
+      await commitStaged(env, message);
     } catch (error) {
-      // Take out what was moved in, put our folder back, then let git restore the safety point.
+      // Take out what was moved in, put our folders back, then let git restore the safety point.
       for (const path of work.created) await removePath(path);
       for (const { aside } of work.replaced) putBackFolder(aside);
       await env.git.probe(["reset", "--hard", `refs/tags/${safety}`]);
@@ -175,8 +205,10 @@ export async function resolveConflict(
   } finally {
     for (const cleanup of work.cleanups) await cleanup();
   }
-  deleteConflict(env.ctx.db, skillKey);
-  env.ctx.activity.record("backup", conflict.skillName, RESOLVE_MESSAGE[action]);
+  for (const conflict of conflicts) {
+    deleteConflict(env.ctx.db, conflict.skillKey);
+    env.ctx.activity.record("backup", conflict.skillName, RESOLVE_MESSAGE[action]);
+  }
   await env.reconcile(true);
   return safety;
 }

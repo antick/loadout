@@ -160,6 +160,35 @@ export function useResolveBackupConflict(): UseMutationResult<
   });
 }
 
+export interface ResolveConflictsInput {
+  conflicts: readonly BackupConflict[];
+  action: ConflictResolution;
+}
+
+/** One choice for several conflicts, behind one safety snapshot. Toasts that snapshot. */
+export function useResolveBackupConflicts(): UseMutationResult<
+  string,
+  unknown,
+  ResolveConflictsInput
+> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ conflicts, action }: ResolveConflictsInput) =>
+      api.backup.resolveConflicts(
+        conflicts.map((conflict) => conflict.skillKey),
+        action,
+      ),
+    onSuccess: (safetyTag, { conflicts, action }) =>
+      toastSuccess(
+        t(`backupPage.conflicts.resolvedAll.${action}`, { count: conflicts.length }),
+        t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
+      ),
+    onError: (error) => toastBackupError(error, t),
+    onSettled: () => invalidateAfterBackup(queryClient),
+  });
+}
+
 /** Rename this machine for future backups. */
 export function useSetDeviceName(): UseMutationResult<string, unknown, string> {
   const queryClient = useQueryClient();

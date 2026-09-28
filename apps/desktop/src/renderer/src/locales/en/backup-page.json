@@ -81,6 +81,10 @@
         "use_remote": "Use remote",
         "keep_both": "Keep both"
       },
+      "all": {
+        "keep_local": "Keep all mine",
+        "use_remote": "Use all remote"
+      },
       "hint": {
         "keep_local": "Keep the version on this machine and drop the other one",
         "use_remote": "Replace the version on this machine with the one from the other device",
@@ -91,8 +95,17 @@
         "use_remote": "“{{name}}” now uses the remote version",
         "keep_both": "Kept both versions of “{{name}}”"
       },
+      "resolvedAll": {
+        "keep_local_one": "Kept your version of {{count}} skill",
+        "keep_local_other": "Kept your version of {{count}} skills",
+        "use_remote_one": "{{count}} skill now uses the remote version",
+        "use_remote_other": "{{count}} skills now use the remote version"
+      },
       "useRemoteTitle": "Replace “{{name}}” with the remote version?",
-      "useRemoteBody": "The version on this machine is replaced. A safety snapshot is taken first, so you can go back from the history."
+      "useRemoteBody": "The version on this machine is replaced. A safety snapshot is taken first, so you can go back from the history.",
+      "useAllRemoteTitle_one": "Replace {{count}} skill with the remote version?",
+      "useAllRemoteTitle_other": "Replace {{count}} skills with the remote versions?",
+      "useAllRemoteBody": "The versions on this machine are replaced. One safety snapshot is taken first, so you can go back from the history."
     },
     "github": {
       "title": "Connect with GitHub",

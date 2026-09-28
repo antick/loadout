@@ -46,6 +46,11 @@ export interface BackupApi {
   restore(tag: string): Promise<string>;
   conflicts(): Promise<BackupConflict[]>;
   resolveConflict(skillKey: string, action: ConflictResolution): Promise<string>;
+  /**
+   * One choice for several conflicts, behind one safety snapshot (returned). All or nothing;
+   * conflicts already resolved are skipped.
+   */
+  resolveConflicts(skillKeys: string[], action: ConflictResolution): Promise<string>;
   sizeReport(): Promise<SizeReport>;
   /** What stays out of the backup: the app's defaults and the user's own patterns. */
   ignoreRules(): Promise<BackupIgnoreRules>;

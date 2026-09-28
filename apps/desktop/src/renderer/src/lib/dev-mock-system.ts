@@ -161,6 +161,13 @@ export function createSystemMockHandlers(
             theirsPath: "release-notes",
             detectedAt: NOW - 2 * HOUR,
           },
+          {
+            skillKey: "sql-helper",
+            skillName: "sql-helper",
+            theirsCommit: "a81c07de55aa",
+            theirsPath: "sql-helper",
+            detectedAt: NOW - 3 * HOUR,
+          },
         ]
       : [];
   let deviceName = "Studio Mac";
@@ -305,6 +312,10 @@ export function createSystemMockHandlers(
     "backup.resolveConflict": (skillKey: string) => {
       conflicts = conflicts.filter((conflict) => conflict.skillKey !== skillKey);
       return takeSnapshot("resolve conflict");
+    },
+    "backup.resolveConflicts": (skillKeys: string[]) => {
+      conflicts = conflicts.filter((conflict) => !skillKeys.includes(conflict.skillKey));
+      return takeSnapshot("resolve conflicts");
     },
     "backup.sizeReport": () => ({
       totalBytes: 212 * MB,

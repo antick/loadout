@@ -5,17 +5,20 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
-import { useResolveBackupConflict } from "@/hooks/mutations/backup-page";
+import { useResolveBackupConflict, useResolveBackupConflicts } from "@/hooks/mutations/backup-page";
 import { ConflictDiffDialog } from "./ConflictDiffDialog";
 import { SHORT_COMMIT_LENGTH } from "./constants";
 
 const ACTIONS: readonly ConflictResolution[] = ["keep_local", "use_remote", "keep_both"];
+/** Offered for the whole list once there is more than one conflict. */
+const BULK_ACTIONS = ["keep_local", "use_remote"] as const satisfies readonly ConflictResolution[];
 
 /** Skills that changed on two devices. Each one waits here until the user picks a version. */
 export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict[] }): ReactNode {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const resolve = useResolveBackupConflict();
+  const resolveAll = useResolveBackupConflicts();
   const [comparing, setComparing] = useState<BackupConflict | null>(null);
   if (conflicts.length === 0) return null;
 
@@ -33,15 +36,45 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
     resolve.mutate({ conflict, action });
   };
 
+  const chooseAll = async (action: ConflictResolution): Promise<void> => {
+    if (action === "use_remote") {
+      const confirmed = await confirm({
+        title: t("backupPage.conflicts.useAllRemoteTitle", { count: conflicts.length }),
+        description: t("backupPage.conflicts.useAllRemoteBody"),
+        confirmLabel: t("backupPage.conflicts.all.use_remote"),
+        destructive: true,
+      });
+      if (!confirmed) return;
+    }
+    resolveAll.mutate({ conflicts, action });
+  };
+  const busy = resolve.isPending || resolveAll.isPending;
+
   return (
     <PageSection
       title={t("backupPage.conflicts.title")}
       description={t("backupPage.conflicts.description", { count: conflicts.length })}
+      actions={
+        conflicts.length > 1
+          ? BULK_ACTIONS.map((action) => (
+              <Button
+                key={action}
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => void chooseAll(action)}
+              >
+                {t(`backupPage.conflicts.all.${action}`)}
+              </Button>
+            ))
+          : null
+      }
     >
       <ul className="flex flex-col divide-y rounded-lg border border-warning/40 bg-card">
         {conflicts.map((conflict) => {
           const pending =
-            resolve.isPending && resolve.variables?.conflict.skillKey === conflict.skillKey;
+            resolveAll.isPending ||
+            (resolve.isPending && resolve.variables?.conflict.skillKey === conflict.skillKey);
           return (
             <li key={conflict.skillKey} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <TriangleAlert className="size-4 shrink-0 text-warning" />
