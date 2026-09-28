@@ -1,6 +1,7 @@
-import type { Skill, SourceDiff, SourceDocument } from "@loadout/shared";
+import type { Skill, SourceDiff, SourceDiffOptions, SourceDocument } from "@loadout/shared";
 import type { Download, GitClient } from "../install";
 import { readSkillDocument } from "../skills/metadata";
+import { libraryCopyOverrides } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
 import { diffTrees } from "./diff";
 import {
@@ -21,7 +22,7 @@ export interface SourcePreviewDeps {
 
 export interface SourcePreview {
   sourceDocument(skillId: string): Promise<SourceDocument>;
-  sourceDiff(skillId: string): Promise<SourceDiff>;
+  sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
 }
 
 /** Look at a skill's upstream without changing anything in the library. */
@@ -57,12 +58,16 @@ export function createSourcePreview(deps: SourcePreviewDeps): SourcePreview {
         };
       }),
 
-    sourceDiff: (skillId) =>
+    sourceDiff: (skillId, options = {}) =>
       withSource(skillId, (skill, source) => ({
         skillId: skill.id,
         sourceLabel: sourceLabel(skill),
         revision: source.revision,
-        entries: diffTrees(skill.libraryPath, source.dir),
+        entries: diffTrees(
+          skill.libraryPath,
+          source.dir,
+          options.asLibraryCopy ? libraryCopyOverrides(source.dir, skill.dirName) : undefined,
+        ),
       })),
   };
 }

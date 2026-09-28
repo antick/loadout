@@ -42,6 +42,7 @@ import type {
   SkillDocument,
   Snapshot,
   SourceDiff,
+  SourceDiffOptions,
   SourceDocument,
   SyncOutcome,
   UpdateResult,
@@ -254,7 +255,7 @@ export interface UpdatesApi {
   ): Promise<UpdateResult>;
   detach(skillId: string): Promise<Skill>;
   sourceDocument(skillId: string): Promise<SourceDocument>;
-  sourceDiff(skillId: string): Promise<SourceDiff>;
+  sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
 }
 
 export interface PresetsApi {

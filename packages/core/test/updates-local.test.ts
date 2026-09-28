@@ -323,6 +323,21 @@ describe("source preview", () => {
     expect(document.content).toContain("# Helper v2");
   });
 
+  it("compares a numbered copy as the library keeps it when asked", async () => {
+    world.addSkill("helper");
+    const skill = await installLocal();
+    expect(skill.dirName).toBe("helper-2");
+    // Plain: the name line the library rewrote shows as a difference.
+    const plain = await world.updates.api.sourceDiff(skill.id);
+    expect(plain.entries.map((entry) => entry.path)).toEqual(["SKILL.md"]);
+    // As a library copy: nothing an update would change.
+    const asCopy = await world.updates.api.sourceDiff(skill.id, { asLibraryCopy: true });
+    expect(asCopy.entries).toEqual([]);
+    writeFile(join(sourceDir, "scripts", "run.sh"), "echo two\n");
+    const changed = await world.updates.api.sourceDiff(skill.id, { asLibraryCopy: true });
+    expect(changed.entries.map((entry) => entry.path)).toEqual(["scripts/run.sh"]);
+  });
+
   it("reads git and marketplace sources from a checkout that is always removed", async () => {
     const pdf = await world.installFromGit("pdf");
     const docx = await world.install.api.fromMarket(MARKET_SOURCE, "docx");

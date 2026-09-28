@@ -16,3 +16,6 @@ export { isRemoteSource } from "./updates";
 export { diffTrees } from "./updates/diff";
 export { checkHealth } from "./health/doctor";
 export { canonicalPath } from "./util/fs";
+export { previewLibrary } from "./install/fetched-preview";
+export { redactUrl } from "./install/git-source";
+export { readSkillIdentity } from "./skills/metadata";

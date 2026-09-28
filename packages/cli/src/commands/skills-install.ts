@@ -3,7 +3,15 @@ import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loa
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
 import {
+  type InstallPlan,
+  planFolder,
+  planMarket,
+  planPreview,
+  planText,
+} from "./skills-install-plan";
+import {
   ACCEPT_RISK_FLAG,
+  DRY_RUN_FLAG,
   YES_FLAG,
   limitPositionals,
   positional,
@@ -126,22 +134,36 @@ interface Installed {
   asked: string[];
 }
 
+/** The chosen skills of a preview with the names they are installed under. */
+async function chooseItems(
+  context: CommandContext,
+  preview: GitPreview,
+): Promise<InstallSelection[]> {
+  const name = flagString(context.args, NAME_FLAG.name);
+  const chosen = await chooseSkills(context, preview);
+  if (name !== undefined && chosen.length !== 1) {
+    throw new UsageError("--name only works when exactly one skill is installed.");
+  }
+  return chosen.map((skill) => ({ relPath: skill.relPath, name: name ?? skill.name }));
+}
+
+/** What a preview would install, without installing it; the preview is always thrown away. */
+async function planFromPreview(context: CommandContext, preview: GitPreview): Promise<InstallPlan> {
+  try {
+    return planPreview(preview, await chooseItems(context, preview));
+  } finally {
+    await context.core.api.install.cancelPreview(preview.previewId).catch(() => undefined);
+  }
+}
+
 /** Install the chosen skills of a preview; the preview is cleaned up whatever happens. */
 async function installFromPreview(
   context: CommandContext,
   preview: GitPreview,
 ): Promise<Installed> {
   const { core, args } = context;
-  const name = flagString(args, NAME_FLAG.name);
   try {
-    const chosen = await chooseSkills(context, preview);
-    if (name !== undefined && chosen.length !== 1) {
-      throw new UsageError("--name only works when exactly one skill is installed.");
-    }
-    const items: InstallSelection[] = chosen.map((skill) => ({
-      relPath: skill.relPath,
-      name: name ?? skill.name,
-    }));
+    const items = await chooseItems(context, preview);
     const acceptRedirect = flagBoolean(args, YES_FLAG.name);
     if (preview.redirectedTo && !acceptRedirect) {
       throw new UsageError(
@@ -176,10 +198,32 @@ async function installFromPath(context: CommandContext, path: string): Promise<I
   return { skills: [await core.api.install.fromPath(path, name, { acceptRisk })], asked: [] };
 }
 
+/** `--dry-run`: fetch and list what would be added, under which names; install nothing. */
+async function plan(context: CommandContext, source: InstallSource): Promise<InstallPlan> {
+  const { core, args, cwd } = context;
+  const name = flagString(args, NAME_FLAG.name);
+  if (source.kind === "market") {
+    if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
+    return planMarket(core, source.source, source.skillId);
+  }
+  if (source.kind === "git") {
+    return planFromPreview(context, await core.api.install.previewGit(source.url));
+  }
+  const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
+  if (!ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
+    return planFolder(core, path, name);
+  }
+  return planFromPreview(context, await core.api.install.previewArchive(path));
+}
+
 async function run(context: CommandContext): Promise<CommandResult> {
   const { core, args, cwd } = context;
   limitPositionals(args, 1);
   const source = classifySource(positional(args, 0, "what to install"));
+  if (flagBoolean(args, DRY_RUN_FLAG.name)) {
+    const value = await plan(context, source);
+    return { value, text: planText(value) };
+  }
   const name = flagString(args, NAME_FLAG.name);
   let result: Installed;
   if (source.kind === "path") {
@@ -211,11 +255,12 @@ async function run(context: CommandContext): Promise<CommandResult> {
 export const installCommand: CommandSpec = {
   name: "install",
   summary: "Add a skill to the library (does not deploy it)",
-  usage: "<source> [--name <name>] [--skill <id>…] [--all] [--yes] [--accept-risk]",
-  flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG, YES_FLAG, ACCEPT_RISK_FLAG],
+  usage: "<source> [--name <name>] [--skill <id>…] [--all] [--yes] [--accept-risk] [--dry-run]",
+  flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG, YES_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
     "In a terminal, a source with several skills opens a picker to tick them; --skill or --all",
     "skip it, and scripts or --json never see it.",
+    "--dry-run fetches the source and lists what would be added and under which names.",
     "Sources: ./folder, ./archive.zip (.skill, .tar, .tar.gz, .tgz), a git URL, owner/repo,",
     "owner/repo@skill, a link to an archive or a SKILL.md, or a site that publishes skills",
     "(https://example.com, read from /.well-known/agent-skills/index.json).",

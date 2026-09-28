@@ -2,7 +2,8 @@ import { errorMessage, isRemoteSource } from "@loadout/core";
 import type { BatchUpdateResult, Skill, UpdateResult } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { fields, plural, when } from "../output";
-import { ACCEPT_RISK_FLAG, limitPositionals } from "./support";
+import { type UpdatePlan, hasUpdateSource, planUpdate, updatePlanText } from "./skills-update-plan";
+import { ACCEPT_RISK_FLAG, DRY_RUN_FLAG, limitPositionals } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const ALL_FLAG = {
@@ -115,9 +116,23 @@ async function updateEachApproved(
   return result;
 }
 
+/** `--dry-run`: compare with the source, list what would change and what would be held back. */
+async function planUpdates(context: CommandContext, one: Skill | null): Promise<CommandResult> {
+  const { core } = context;
+  const skills = one ? [one] : (await core.api.skills.list()).filter(hasUpdateSource);
+  const value: UpdatePlan = { dryRun: true, skills: [] };
+  for (const skill of skills) value.skills.push(await planUpdate(core, skill));
+  return {
+    value,
+    text: updatePlanText(value),
+    exitCode: value.skills.some((row) => row.error) ? 1 : 0,
+  };
+}
+
 async function update(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const one = target(context);
+  if (flagBoolean(args, DRY_RUN_FLAG.name)) return planUpdates(context, one);
   // Accepting findings is a choice about one skill whose findings were read, never a batch.
   if (!one && flagBoolean(args, ACCEPT_RISK_FLAG.name)) {
     throw new UsageError(`--${ACCEPT_RISK_FLAG.name} works on one skill at a time, not --all.`);
@@ -163,9 +178,10 @@ export const checkCommand: CommandSpec = {
 export const updateCommand: CommandSpec = {
   name: "update",
   summary: "Bring skills up to date with their source",
-  usage: "[<ref> | --all] [--approve-removals] [--accept-risk]",
-  flags: [ALL_FLAG, APPROVE_FLAG, ACCEPT_RISK_FLAG],
+  usage: "[<ref> | --all] [--approve-removals] [--accept-risk] [--dry-run]",
+  flags: [ALL_FLAG, APPROVE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
+    "--dry-run compares with the source and lists the files that would change, and whether the update would be held back; the library is not touched.",
     "An update that would delete files or replace edits made in the app is held back and listed; that is a safety stop, not an error.",
   ],
   run: update,

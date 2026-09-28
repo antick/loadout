@@ -25,10 +25,11 @@ function decodeText(bytes: Buffer): string | null {
   }
 }
 
-function readSide(file: ContentFile): Side {
-  let bytes: Buffer | null = null;
+/** `override`: the text the file is taken to hold instead of what is on disk. */
+function readSide(file: ContentFile, override?: string): Side {
+  let bytes: Buffer | null = override === undefined ? null : Buffer.from(override);
   try {
-    bytes = readFileSync(file.absolutePath);
+    bytes ??= readFileSync(file.absolutePath);
   } catch {
     // Shown as binary: we cannot say anything about its text.
   }
@@ -65,8 +66,13 @@ function oneSided(path: string, side: Side, status: "added" | "removed"): FileDi
  * Compare two skill folders over exactly the files the content hash covers, sorted by path.
  * Identical files are left out; a file whose bytes match but whose executable bit differs is
  * reported as `permission_only`. Text bodies are included only for `text` entries.
+ * `afterOverrides` replaces the text of files on the after side, by relative path.
  */
-export function diffTrees(beforeDir: string, afterDir: string): FileDiffEntry[] {
+export function diffTrees(
+  beforeDir: string,
+  afterDir: string,
+  afterOverrides?: ReadonlyMap<string, string>,
+): FileDiffEntry[] {
   const before = new Map(listContentFiles(beforeDir).map((file) => [file.relativePath, file]));
   const after = new Map(listContentFiles(afterDir).map((file) => [file.relativePath, file]));
   const paths = [...new Set([...before.keys(), ...after.keys()])].sort((a, b) => (a < b ? -1 : 1));
@@ -75,12 +81,15 @@ export function diffTrees(beforeDir: string, afterDir: string): FileDiffEntry[] 
   for (const path of paths) {
     const beforeFile = before.get(path);
     const afterFile = after.get(path);
-    if (!beforeFile && afterFile) entries.push(oneSided(path, readSide(afterFile), "added"));
+    const override = afterOverrides?.get(path);
+    if (!beforeFile && afterFile) {
+      entries.push(oneSided(path, readSide(afterFile, override), "added"));
+    }
     if (beforeFile && !afterFile) entries.push(oneSided(path, readSide(beforeFile), "removed"));
     if (!beforeFile || !afterFile) continue;
 
     const left = readSide(beforeFile);
-    const right = readSide(afterFile);
+    const right = readSide(afterFile, override);
     const identical = sameBytes(left, right);
     if (identical && left.executable === right.executable) continue;
     const kind: FileDiffKind = identical ? "permission_only" : modifiedKind(left, right);

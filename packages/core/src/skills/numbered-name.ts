@@ -42,6 +42,18 @@ export function hashAsLibraryCopy(
 }
 
 /**
+ * The files `sourceDir` would hold once copied into the library as `dirName`: its document with
+ * the name fixed, by relative path. Undefined when nothing changes.
+ */
+export function libraryCopyOverrides(
+  sourceDir: string,
+  dirName: string,
+): Map<string, string> | undefined {
+  const fix = nameFix(sourceDir, dirName);
+  return fix ? new Map([[fix.filename, fix.content]]) : undefined;
+}
+
+/**
  * Fix the name in a library folder just written as `<its name>-N`. Returns the name it now
  * carries, or null when nothing needed changing.
  */

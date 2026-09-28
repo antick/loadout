@@ -158,6 +158,14 @@ export interface SourceDiff {
   entries: FileDiffEntry[];
 }
 
+export interface SourceDiffOptions {
+  /**
+   * Compare with the source as an update would copy it in: a skill kept as `<name>-N` gets its
+   * name fixed on the source side too, so that rename alone is not a difference.
+   */
+  asLibraryCopy?: boolean;
+}
+
 export interface SourceDocument {
   filename: string;
   content: string;

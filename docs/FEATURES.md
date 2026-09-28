@@ -349,7 +349,11 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   library, `skills export`, and `removed list | restore <id> | delete <id>` for Recently
   removed),
   `--json` output with stable error codes, `--dry-run` for destructive commands and for
-  `skills deploy` / `skills undeploy`, `--yes` for destructive commands (including
+  `skills deploy` / `skills undeploy`, `skills install` (fetches the source and lists each skill
+  with the name it would get: new, in library, or name in use and its numbered name) and
+  `skills update` (lists the files each update would add, change or delete, and whether it
+  would be held back for deleting files or replacing edits; `--all` covers every skill with a
+  source), `--yes` for destructive commands (including
   `presets undeploy`, and `agents disable` for an agent with skills deployed), and
   `--library` to work on another library. `--library` only opens a library that exists, so a
   typo never starts an empty one; `repo init <path>` creates a new one.

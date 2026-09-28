@@ -1,4 +1,4 @@
-import type { InstallOutcome } from "@loadout/shared";
+import { outcomeLabel } from "../install-outcome";
 import { plural } from "../output";
 import { type PickerLine, type PickerState, folderState, outcomesOf, visibleLines } from "./state";
 
@@ -57,22 +57,6 @@ function fit(text: string, width: number): string {
 function box(state: boolean | "indeterminate"): string {
   if (state === "indeterminate") return "[-]";
   return state ? "[x]" : "[ ]";
-}
-
-/** A short label for a name that is not free; empty for a new one. */
-export function outcomeLabel(outcome: InstallOutcome): string {
-  switch (outcome.kind) {
-    case "installed":
-      return `in library (if changed: ${outcome.installAs})`;
-    case "taken":
-      return outcome.owner?.source
-        ? `name in use → ${outcome.installAs} (taken by ${outcome.owner.source})`
-        : `name in use → ${outcome.installAs}`;
-    case "repeated":
-      return `same name twice → ${outcome.installAs}`;
-    default:
-      return "";
-  }
 }
 
 function skillLine(
