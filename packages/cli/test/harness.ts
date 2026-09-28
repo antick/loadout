@@ -29,7 +29,12 @@ export interface Sandbox {
 }
 
 export function createSandbox(
-  options: { safetyScannerPath?: string | null; picker?: SkillPicker } = {},
+  options: {
+    safetyScannerPath?: string | null;
+    picker?: SkillPicker;
+    /** Stands in for the network (the marketplace); the real one when absent. */
+    fetchImpl?: typeof fetch;
+  } = {},
 ): Sandbox {
   const root = mkdtempSync(join(tmpdir(), "cli-test-"));
   const home = join(root, "home");
@@ -49,6 +54,7 @@ export function createSandbox(
         configDir: join(root, "config"),
         logger: silentLogger,
         safetyScannerPath: options.safetyScannerPath ?? null,
+        ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
       },
       ...(options.picker ? { picker: options.picker } : {}),
     });

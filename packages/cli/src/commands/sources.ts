@@ -8,6 +8,7 @@ import {
 import { flagList } from "../args";
 import { plural, table, when } from "../output";
 import { limitPositionals, positional } from "./support";
+import { originCommands } from "./sources-origin";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
 const PATH_FLAG = {
@@ -151,5 +152,6 @@ export const sourcesGroup: CommandGroup = {
       flags: [PATH_FLAG],
       run: dismiss,
     },
+    ...originCommands,
   ],
 };
