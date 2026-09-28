@@ -13,7 +13,8 @@ import {
   Settings,
   SunMoon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { matchesSkillQuery } from "@loadout/shared";
+import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useScanLibrary } from "@/hooks/mutations/safety";
@@ -58,20 +59,40 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
   const agents = useAvailableAgents();
   const settingsLabel = useShortcutLabel("settings");
   const quickOpenLabel = useShortcutLabel("quickOpen");
+  const [search, setSearch] = useState("");
+
+  // The whole library is searched with the library's own matcher, then the first matches shown;
+  // taking the first skills before searching would hide every skill past them.
+  const skillMatches = useMemo(
+    () =>
+      (skills.data ?? [])
+        .filter((skill) => matchesSkillQuery(skill, search))
+        .slice(0, COMMAND_PALETTE_MAX_SKILLS),
+    [skills.data, search],
+  );
+
+  const changeOpen = (next: boolean): void => {
+    if (!next) setSearch("");
+    onOpenChange(next);
+  };
 
   const run = (action: () => void): void => {
-    onOpenChange(false);
+    changeOpen(false);
     action();
   };
 
   return (
     <CommandDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={changeOpen}
       title={t("palette.title")}
       description={t("palette.description")}
     >
-      <CommandInput placeholder={t("palette.placeholder")} />
+      <CommandInput
+        placeholder={t("palette.placeholder")}
+        value={search}
+        onValueChange={setSearch}
+      />
       <CommandList>
         <CommandEmpty>{t("palette.empty")}</CommandEmpty>
 
@@ -133,12 +154,14 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
           </CommandItem>
         </CommandGroup>
 
-        {(skills.data?.length ?? 0) > 0 ? (
+        {skillMatches.length > 0 ? (
           <CommandGroup heading={t("palette.skills")}>
-            {skills.data?.slice(0, COMMAND_PALETTE_MAX_SKILLS).map((skill) => (
+            {skillMatches.map((skill) => (
               <CommandItem
                 key={skill.id}
                 value={`skill ${skill.name} ${skill.tags.join(" ")} ${skill.id}`}
+                // Already matched above; the search as a keyword keeps the palette from hiding it.
+                keywords={[search]}
                 onSelect={() =>
                   run(() => void navigate({ to: "/library", search: { skill: skill.id } }))
                 }
