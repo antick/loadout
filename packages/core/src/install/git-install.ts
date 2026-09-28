@@ -24,6 +24,8 @@ import {
   resolveTreeRef,
 } from "./git-source";
 import type { InstallIntoLibrary } from "./library";
+import { repositorySourceKey } from "@loadout/shared";
+import type { SourceNewsStore } from "../sources/news-store";
 import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, installChecked } from "./safety-gate";
 import { createPreviewSessions, emitProgress } from "./preview-sessions";
@@ -41,6 +43,8 @@ export interface GitInstallerDeps {
   install: InstallIntoLibrary;
   safety?: SafetyGate;
   replace?: ReplaceDeps;
+  /** Remembers which skills of a repository an import listed, so they are not news later. */
+  sourceNews?: Pick<SourceNewsStore, "markSeen">;
   /** Tests only: let a local folder stand in for a remote repository. */
   allowLocalGitSources?: boolean;
   /** How long an unconfirmed preview keeps its checkout (tests shorten it). */
@@ -137,6 +141,13 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         }),
         materialize: checkout.materialize,
         cleanup: checkout.cleanup,
+        confirmed: () =>
+          deps.sourceNews?.markSeen(
+            repositorySourceKey(source.cloneUrl, source.branch),
+            found.map((skill) => subpathOf(checkout.dir, skill.dir) ?? ""),
+            // Only a list of the whole repository can stand for everything it holds.
+            source.subpath ? null : checkout.revision,
+          ),
       });
       cleanup = null;
       const fromThisRepo = (s: Skill): boolean =>

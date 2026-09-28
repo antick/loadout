@@ -23,6 +23,8 @@ describe("auto-updater schedule", () => {
   let events: unknown[];
   /** What the stub update does for a skill id. */
   let updateOutcome: (skillId: string) => Partial<UpdateResult>;
+  let sourcesAdded: string[] = [];
+  let sourceRounds = 0;
 
   function fakeSkill(name: string, patch: Partial<Skill> = {}): Skill {
     const libraryPath = makeSkill(world.ctx.paths.skillsDir, name);
@@ -60,6 +62,10 @@ describe("auto-updater schedule", () => {
         ...updateOutcome(skillId),
       };
     },
+    checkSources: async () => {
+      sourceRounds += 1;
+      return { news: [], added: sourcesAdded, failed: [] };
+    },
   };
 
   beforeEach(() => {
@@ -68,6 +74,8 @@ describe("auto-updater schedule", () => {
     skills = [];
     calls = [];
     events = [];
+    sourcesAdded = [];
+    sourceRounds = 0;
     updateOutcome = () => ({});
     world.ctx.emit = (event, payload) => {
       if (event === "updates:auto-ran") events.push(payload);
@@ -155,8 +163,10 @@ describe("auto-updater schedule", () => {
     const summary = await pending;
 
     // held + local stay available; explodes fails; busy and untracked are left for later.
-    expect(summary).toMatchObject({ updated: 1, available: 2, failed: 1 });
+    expect(summary).toMatchObject({ updated: 1, available: 2, failed: 1, added: 0 });
     expect(events).toEqual([summary]);
+    // Repositories are looked at once a round.
+    expect(sourceRounds).toBe(1);
     expect(calls).not.toContain(`check:${idOf("untracked")}:true:try`);
     expect(calls).not.toContain(`update:${idOf("local")}:null:try`);
     expect(calls).toContain(`update:${idOf("applied")}:null:try`);

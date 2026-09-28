@@ -19,6 +19,7 @@ import type { SkillStore } from "./skills/store";
 import { type StorageService, createRemovedStore, createStorageService } from "./storage";
 import { createSkillsFileService } from "./skills-file/service";
 import { createSystemService } from "./system";
+import { createSourceNewsStore } from "./sources";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
 
@@ -96,12 +97,14 @@ export function createCore(options: CoreCreateOptions = {}): Core {
         : () =>
             options.safetyScannerPath ? { path: options.safetyScannerPath, version: null } : null,
   });
+  const sourceNews = createSourceNewsStore(ctx);
   const install = createInstallService(ctx, {
     store,
     registry,
     fetchImpl: options.fetchImpl,
     safety,
     replace: { removed, refreshCopies: deploy.refreshCopies },
+    sourceNews,
   });
   const skills = createSkillsService(ctx, {
     store,
@@ -113,7 +116,14 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     removed,
   });
   const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
-  const updates = createUpdatesService(ctx, { store, install, deploy, safety, removed });
+  const updates = createUpdatesService(ctx, {
+    store,
+    install,
+    deploy,
+    safety,
+    removed,
+    sourceNews,
+  });
   const presets = createPresetsService(ctx, { store, registry, deploy });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
   const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });

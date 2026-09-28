@@ -12,6 +12,8 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Format checks against the Agent Skills rules, with line numbers; errors mark the skill "Needs fixing".
 - **Manual only** badge for skills with `disable-model-invocation: true`.
 - **Sources** page: one card per repository, archive or link; find new skills, update, check, remove.
+- A check notices skills a repository gained since you last looked; skipped or dismissed ones stay quiet.
+- Optional: add those new skills by themselves (still safety-checked; a name in use waits for you).
 - Batch deploy, tag, add to preset, export, update and delete.
 - Export skills as one `.zip` that installs anywhere.
 - New skill from a name and description; opens in the editor.

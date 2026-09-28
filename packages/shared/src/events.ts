@@ -6,7 +6,14 @@ export interface AppEvents {
   /** Skills, deployments, presets, projects or agents changed on disk or through the CLI. */
   "data:changed": { scope: DataScope[] };
   "install:progress": InstallProgress;
-  "updates:auto-ran": { ranAt: number; updated: number; available: number; failed: number };
+  /** `added`: new skills of repositories added by themselves (the auto-add setting). */
+  "updates:auto-ran": {
+    ranAt: number;
+    updated: number;
+    available: number;
+    failed: number;
+    added: number;
+  };
   "backup:auto-completed": AutoBackupEvent;
   /** The window close button was pressed and the user has not chosen a default yet. */
   "window:close-requested": Record<string, never>;

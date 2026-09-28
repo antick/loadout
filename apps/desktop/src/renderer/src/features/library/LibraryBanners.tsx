@@ -11,6 +11,7 @@ interface AutoRun {
   updated: number;
   available: number;
   failed: number;
+  added: number;
 }
 
 export interface LibraryBannersProps {
@@ -60,11 +61,12 @@ export function LibraryBanners({
             </Button>
           }
         >
-          {t("library.banners.autoRan", {
+          {t(autoRun.added > 0 ? "library.banners.autoRanAdded" : "library.banners.autoRan", {
             when: formatRelative(autoRun.ranAt),
             updated: autoRun.updated,
             available: autoRun.available,
             failed: autoRun.failed,
+            added: autoRun.added,
           })}
         </InlineNotice>
       ) : null}

@@ -51,6 +51,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Git preview: pick skills found in the repo, rename, confirm
 - [x] Preview labels what each name will do (new, in library, name in use, same name twice), groups skills by folder, filters big sources
 - [x] Sources page: one card per repository, archive or link; find new skills, update, check, show in library, remove
+- [x] New skills in repositories: noticed on check, skipped or dismissed ones remembered, optional auto-add
 - [x] Batch import every skill under a folder
 - [x] Scan agent folders for skills already on this machine and import them
 - [x] Marketplace: hot / trending / all-time boards, keyword search, one-click install

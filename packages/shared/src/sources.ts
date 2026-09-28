@@ -32,6 +32,31 @@ export interface SkillSource {
   browse: { kind: "git" | "archive"; target: string };
 }
 
+/** A skill a repository holds now that was not there when it was last looked at. */
+export interface NewSourceSkill {
+  /** Folder in the repository, `/` separated; empty for a skill at the top. */
+  path: string;
+  name: string;
+  description: string | null;
+}
+
+/** What a repository gained since the skills in it were last seen or skipped. */
+export interface SourceNews {
+  /** `SkillSource.key` of the repository. */
+  sourceKey: string;
+  skills: NewSourceSkill[];
+  /** When the repository was last looked at (epoch ms). */
+  checkedAt: number;
+}
+
+/** What `updates.checkSources` found, and what it added when adding new skills is switched on. */
+export interface SourceCheckResult {
+  news: SourceNews[];
+  /** Names of skills added to the library by themselves (the auto-add setting). */
+  added: string[];
+  failed: { name: string; message: string }[];
+}
+
 const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 const GIT_SUFFIX = /\.git$/i;
 const CREDENTIALS = /\b([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/gi;
@@ -77,6 +102,11 @@ function lastSegment(path: string): string {
 const isArchivePath = (ref: string): boolean =>
   ARCHIVE_SUFFIXES.some((suffix) => ref.toLowerCase().endsWith(suffix));
 
+/** `SkillSource.key` of a repository at a branch: one spelling of the URL, `#branch` when set. */
+export function repositorySourceKey(url: string, branch: string | null): string {
+  return `${normalizeSourceUrl(url)}${branch ? `#${branch}` : ""}`;
+}
+
 /** Where one skill came from, as a source; null when it has none worth grouping. */
 function sourceOf(
   skill: Skill,
@@ -85,7 +115,7 @@ function sourceOf(
     const branch = skill.sourceType === "git" ? skill.sourceBranch : null;
     const url = skill.sourceUrl;
     return {
-      key: `${normalizeSourceUrl(url)}${branch ? `#${branch}` : ""}`,
+      key: repositorySourceKey(url, branch),
       kind: "repository",
       label: repositoryLabel(url),
       location: redact(url),

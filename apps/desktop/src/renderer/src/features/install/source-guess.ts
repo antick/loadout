@@ -26,7 +26,8 @@ const SKILL_FILE_LINK = /^https?:\/\/[^?#\s]+\/skill\.md(?:[?#]\S*)?$/i;
 /** Hosts whose links are repositories or pages of one, never a published file or a site. */
 const REPOSITORY_HOST = /^https?:\/\/(?:www\.)?(?:github\.com|gitlab\.com|huggingface\.co)\//i;
 const WEB_ADDRESS = /^https?:\/\//i;
-const GIT_SUFFIX = /\.git\/?$/i;
+/** `….git`, also with a `#branch` after it. */
+const GIT_SUFFIX = /\.git\/?(?:#\S*)?$/i;
 
 /** `npx skills add <source> …` and the other runners; the backend reads it for real. */
 const SKILLS_COMMAND =

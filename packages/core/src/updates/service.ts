@@ -5,6 +5,7 @@ import type { InstallService } from "../install";
 import type { SafetyGate } from "../install/safety-gate";
 import type { RemovedStore } from "../storage/removed";
 import type { SkillStore } from "../skills/store";
+import { type SourceNewsStore, createSourceChecker, createSourceNewsStore } from "../sources";
 import { type AutoUpdater, createAutoUpdater } from "./auto";
 import { createChecker } from "./check";
 import { createSourcePreview } from "./preview";
@@ -19,6 +20,8 @@ export interface UpdatesServiceDeps {
   safety?: SafetyGate;
   /** Keeps the edited version an approved update replaces. */
   removed?: Pick<RemovedStore, "keepCopy">;
+  /** Shared with the installer, which marks what an import listed; a fresh one when absent. */
+  sourceNews?: SourceNewsStore;
 }
 
 export interface UpdatesService {
@@ -41,10 +44,19 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     removed: deps.removed,
   });
   const preview = createSourcePreview({ store, git: install.git, download: install.download });
+  const sourceNews = deps.sourceNews ?? createSourceNewsStore(ctx);
+  const sources = createSourceChecker(ctx, {
+    store,
+    git: install.git,
+    install: install.installIntoLibrary,
+    news: sourceNews,
+    safety: deps.safety,
+  });
   const auto = createAutoUpdater(ctx, {
     skills: () => store.list(),
     check: checker.check,
     update: updater.update,
+    checkSources: () => sources.check(),
   });
 
   const api: UpdatesApi = {
@@ -63,6 +75,9 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     detach: updater.detach,
     sourceDocument: preview.sourceDocument,
     sourceDiff: preview.sourceDiff,
+    sourceNews: async () => sources.news(),
+    checkSources: (sourceKeys) => sources.check(sourceKeys),
+    dismissSourceNews: async (sourceKey, paths) => sourceNews.dismiss(sourceKey, paths),
   };
 
   return { api, auto };

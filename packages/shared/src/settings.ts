@@ -24,6 +24,8 @@ export interface Settings {
   proxyUrl: string;
   autoUpdateInterval: AutoUpdateInterval;
   autoUpdateApply: boolean;
+  /** Add skills a repository gains to the library by themselves when a check finds them. */
+  autoAddNewSkills: boolean;
   /** Epoch ms of the last background update round, 0 when never run. */
   autoUpdateLastRunAt: number;
   updateCheckTtlMinutes: number;
@@ -55,6 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
   proxyUrl: "",
   autoUpdateInterval: "off",
   autoUpdateApply: false,
+  autoAddNewSkills: false,
   autoUpdateLastRunAt: 0,
   updateCheckTtlMinutes: 60,
   backupAutoEnabled: true,

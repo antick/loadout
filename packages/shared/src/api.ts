@@ -81,6 +81,7 @@ import type {
 } from "./storage";
 import type { AppApi } from "./api-app";
 import type { SettingKey, SettingValue, Settings } from "./settings";
+import type { SourceCheckResult, SourceNews } from "./sources";
 
 /**
  * The full surface the renderer (and the CLI) can call. Each namespace is implemented by a core
@@ -263,6 +264,12 @@ export interface UpdatesApi {
   detach(skillId: string): Promise<Skill>;
   sourceDocument(skillId: string): Promise<SourceDocument>;
   sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
+  /** New skills repositories gained, as the last look found them. No network. */
+  sourceNews(): Promise<SourceNews[]>;
+  /** Look at these repositories (all when omitted) for new skills; may add them (setting). */
+  checkSources(sourceKeys?: string[]): Promise<SourceCheckResult>;
+  /** Stop showing these new skills of a repository (all of them when `paths` is omitted). */
+  dismissSourceNews(sourceKey: string, paths?: string[]): Promise<void>;
 }
 
 export interface PresetsApi {

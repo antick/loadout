@@ -20,6 +20,8 @@ import { SourceCard } from "@/features/sources/SourceCard";
 import { useBrowseSource } from "@/features/sources/use-browse-source";
 import { useCopyText } from "@/hooks/mutations/app";
 import { useCheckSkills, useUpdateSkills } from "@/hooks/mutations/library";
+import { useCheckSources, useDismissSourceNews } from "@/hooks/mutations/sources";
+import { useSourceNews } from "@/hooks/queries/sources";
 import { useSkills } from "@/hooks/queries/skills";
 
 /** Cards of sources, one column when narrow, two when there is room. */
@@ -38,6 +40,13 @@ export function SourcesPage(): ReactNode {
   const update = useUpdateSkills();
   const copy = useCopyText();
   const deleteSkills = useDeleteSkills();
+  const news = useSourceNews();
+  const checkSources = useCheckSources();
+  const dismissNews = useDismissSourceNews();
+  const newByKey = useMemo(
+    () => new Map((news.data ?? []).map((entry) => [entry.sourceKey, entry.skills])),
+    [news.data],
+  );
 
   const all = skills.data;
   const sources = useMemo(() => groupSkillSources(all ?? []), [all]);
@@ -51,8 +60,10 @@ export function SourcesPage(): ReactNode {
   const allLabel = t("sources.allSources");
   const checkingAll = check.isPending && check.variables?.label === allLabel;
 
-  const checkEverything = (): void =>
+  const checkEverything = (): void => {
     check.mutate({ skillIds: sources.flatMap((source) => source.skillIds), label: allLabel });
+    checkSources.mutate(undefined);
+  };
 
   return (
     <div className="flex min-h-full flex-col gap-6 px-6 py-5">
@@ -101,7 +112,10 @@ export function SourcesPage(): ReactNode {
                 browsing={browse.busyKey === source.key}
                 checking={check.isPending && check.variables?.label === source.label}
                 onBrowse={() => void browse.browse(source)}
-                onCheck={() => check.mutate({ skillIds: source.skillIds, label: source.label })}
+                onCheck={() => {
+                  check.mutate({ skillIds: source.skillIds, label: source.label });
+                  if (source.kind === "repository") checkSources.mutate([source.key]);
+                }}
                 onUpdate={() =>
                   update.mutate(
                     own.filter((s) => s.updateStatus === "update_available").map((s) => s.id),
@@ -112,6 +126,14 @@ export function SourcesPage(): ReactNode {
                 }
                 onCopyLocation={() => copy.mutate(source.location)}
                 onRemove={() => void deleteSkills(own)}
+                newSkills={newByKey.get(source.key) ?? []}
+                onAddNew={() =>
+                  void browse.browse(
+                    source,
+                    (newByKey.get(source.key) ?? []).map((skill) => skill.name),
+                  )
+                }
+                onDismissNew={() => dismissNews.mutate({ sourceKey: source.key })}
               />
             );
           })}

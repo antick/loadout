@@ -83,3 +83,26 @@ test("the Sources page groups skills by where they came from and opens them in t
   await expect(content.getByRole("heading", { name: "sql-migrations", level: 3 })).toBeVisible();
   await expect(content.getByRole("heading", { name: "api-docs", level: 3 })).toHaveCount(0);
 });
+
+test("a source card shows new skills, opens them ticked, and forgets them on request", async ({
+  page,
+}) => {
+  await openApp(page, "/library");
+  await activityBar(page).getByRole("button", { name: "Library" }).click();
+  await page.getByRole("link", { name: /^Sources/ }).click();
+  const source = main(page).getByRole("article", { name: "example.com/acme/skills" });
+  await expect(source.getByText("2 new skills")).toBeVisible();
+  await expect(
+    source.getByText("New since you last looked: log-triage, terraform-review."),
+  ).toBeVisible();
+
+  await source.getByRole("button", { name: "Add them…" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: "Import selected (2)" })).toBeVisible();
+  await expect(dialog.getByRole("checkbox", { name: "Select log-triage" })).toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: "Select api-design" })).not.toBeChecked();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+
+  await source.getByRole("button", { name: "Not interested" }).click();
+  await expect(source.getByText("2 new skills")).toHaveCount(0);
+});

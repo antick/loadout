@@ -2,6 +2,7 @@ import {
   AUTO_UPDATE_INTERVAL_MS,
   type AppEvents,
   type Skill,
+  type SourceCheckResult,
   type UpdateResult,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
@@ -30,6 +31,8 @@ export interface AutoUpdateTarget {
   skills(): Skill[];
   check(skillId: string, options: CheckOptions): Promise<Skill>;
   update(skillId: string, approval: null, options: UpdateOptions): Promise<UpdateResult>;
+  /** Look for skills repositories gained; adds them when that setting is on. */
+  checkSources(): Promise<SourceCheckResult>;
 }
 
 export interface AutoUpdater {
@@ -93,7 +96,13 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
 
   async function round(): Promise<AutoRunSummary> {
     abortRound = false;
-    const summary: AutoRunSummary = { ranAt: Date.now(), updated: 0, available: 0, failed: 0 };
+    const summary: AutoRunSummary = {
+      ranAt: Date.now(),
+      updated: 0,
+      available: 0,
+      failed: 0,
+      added: 0,
+    };
     const apply = ctx.settings.get("autoUpdateApply");
     for (const skill of target.skills().filter(isTracked)) {
       await pause(AUTO_SKILL_PAUSE_MS);
@@ -101,6 +110,16 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
       if (abortRound) return summary;
       const outcome = await visit(skill, apply);
       if (outcome !== "none") summary[outcome] += 1;
+    }
+    try {
+      // A repository that cannot be reached already failed its skills' checks above.
+      const sources = await target.checkSources();
+      summary.added = sources.added.length;
+      for (const failure of sources.failed) {
+        ctx.log.warn(`Looking for new skills in ${failure.name} failed: ${failure.message}`);
+      }
+    } catch (error) {
+      ctx.log.warn("Looking for new skills in sources failed", error);
     }
     summary.ranAt = Date.now();
     ctx.settings.set("autoUpdateLastRunAt", summary.ranAt);

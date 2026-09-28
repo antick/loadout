@@ -18,8 +18,10 @@ import type {
   PresetAgentToggle,
   PresetDeployStatus,
   Skill,
+  SourceCheckResult,
   SourceDiff,
   SourceDocument,
+  SourceNews,
   UpdateResult,
 } from "@loadout/shared";
 import { HOME } from "@/lib/dev-mock-data";
@@ -48,6 +50,19 @@ const GUARDED_SKILL = "code-review";
 const STALE_TOKEN_SKILL = "sql-migrations";
 const FAILING_CHECK_SKILL = "release-notes";
 const OFFLINE_SOURCE_SKILL = "commit-messages";
+/** The seed repository (`example.com/acme/skills` at `main`) gained two skills. */
+const MOCK_NEWS: SourceNews = {
+  sourceKey: "example.com/acme/skills#main",
+  skills: [
+    { path: "skills/log-triage", name: "log-triage", description: null },
+    {
+      path: "experimental/terraform-review",
+      name: "terraform-review",
+      description: "Check a Terraform plan for risky changes before it is applied.",
+    },
+  ],
+  checkedAt: Date.now(),
+};
 
 const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -80,6 +95,14 @@ export function createLibraryMockHandlers(
   const cancelled = new Set<string>();
   const approvalRounds = new Map<string, number>();
   const toggleOff = new Set<string>();
+  let news: SourceNews[] = [MOCK_NEWS];
+  const currentNews = (): SourceNews[] => {
+    const names = new Set(ctx.getSkills().map((skill) => skill.name));
+    return news.flatMap((entry) => {
+      const skills = entry.skills.filter((skill) => !names.has(skill.name));
+      return skills.length > 0 ? [{ ...entry, skills }] : [];
+    });
+  };
   // Give two local skills a source folder so Re-import, Relink, Detach and Compare have something.
   ctx.setSkills(
     ctx.getSkills().map((skill) => {
@@ -91,7 +114,7 @@ export function createLibraryMockHandlers(
   );
 
   window.setTimeout(
-    () => ctx.emitAutoRan({ ranAt: Date.now(), updated: 1, available: 1, failed: 0 }),
+    () => ctx.emitAutoRan({ ranAt: Date.now(), updated: 1, available: 1, failed: 0, added: 0 }),
     AUTO_RAN_DELAY_MS,
   );
 
@@ -229,6 +252,18 @@ export function createLibraryMockHandlers(
   }
 
   return {
+    "updates.sourceNews": async () => currentNews(),
+    "updates.checkSources": async (): Promise<SourceCheckResult> => {
+      await wait(STEP_MS * 2);
+      return { news: currentNews(), added: [], failed: [] };
+    },
+    "updates.dismissSourceNews": async (sourceKey: string, paths?: string[]) => {
+      news = news.flatMap((entry) => {
+        if (entry.sourceKey !== sourceKey) return [entry];
+        const skills = paths ? entry.skills.filter((skill) => !paths.includes(skill.path)) : [];
+        return skills.length > 0 ? [{ ...entry, skills }] : [];
+      });
+    },
     "updates.check": async (skillId: string) => {
       await wait(STEP_MS);
       return check(skillId);

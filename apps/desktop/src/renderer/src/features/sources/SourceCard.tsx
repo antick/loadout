@@ -1,5 +1,6 @@
 import {
   MARKETPLACE_NAME,
+  type NewSourceSkill,
   type Skill,
   type SkillSource,
   type SkillSourceKind,
@@ -17,6 +18,7 @@ import {
   MoreHorizontal,
   PackageSearch,
   RefreshCw,
+  Sparkles,
   Trash2,
   TriangleAlert,
 } from "lucide-react";
@@ -54,6 +56,11 @@ export interface SourceCardProps {
   onShowInLibrary: () => void;
   onCopyLocation: () => void;
   onRemove: () => void;
+  /** Skills the repository gained since they were last seen; empty when none. */
+  newSkills: readonly NewSourceSkill[];
+  /** Open the import list with the new skills ticked. */
+  onAddNew: () => void;
+  onDismissNew: () => void;
 }
 
 /** One source: what came from it, whether it has news, and what can be done with all of it. */
@@ -68,6 +75,9 @@ export function SourceCard({
   onShowInLibrary,
   onCopyLocation,
   onRemove,
+  newSkills,
+  onAddNew,
+  onDismissNew,
 }: SourceCardProps): ReactNode {
   const { t } = useTranslation();
   const KindIcon = KIND_ICONS[source.kind];
@@ -138,6 +148,13 @@ export function SourceCard({
             label={t("sources.updates", { count: source.updatesAvailable })}
           />
         ) : null}
+        {newSkills.length > 0 ? (
+          <StatusBadge
+            tone="success"
+            icon={<Sparkles />}
+            label={t("sources.news.badge", { count: newSkills.length })}
+          />
+        ) : null}
         {source.problems > 0 ? (
           <StatusBadge
             tone="danger"
@@ -173,6 +190,26 @@ export function SourceCard({
           </li>
         ) : null}
       </ul>
+
+      {newSkills.length > 0 ? (
+        <div className="flex flex-col gap-2 rounded-md border border-success/30 bg-success/5 p-3">
+          <p className="text-xs">
+            {t("sources.news.names", {
+              count: newSkills.length,
+              names: newSkills.map((skill) => skill.name).join(", "),
+            })}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={onAddNew} disabled={browsing}>
+              {browsing ? <Spinner /> : <Sparkles />}
+              {t("sources.news.add", { count: newSkills.length })}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onDismissNew}>
+              {t("sources.news.dismiss")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={onBrowse} disabled={browsing}>

@@ -17,6 +17,7 @@ export function UpdatesSection(): ReactNode {
   const setSetting = useSetSetting();
   const intervalId = useId();
   const applyId = useId();
+  const addNewId = useId();
   const ttlId = useId();
   if (!settings) return null;
   const off = settings.autoUpdateInterval === "off";
@@ -59,6 +60,17 @@ export function UpdatesSection(): ReactNode {
             checked={settings.autoUpdateApply && !off}
             disabled={off}
             onCheckedChange={(value) => setSetting.mutate({ key: "autoUpdateApply", value })}
+          />
+        </SettingRow>
+        <SettingRow
+          label={t("settings.updates.addNew")}
+          description={t("settings.updates.addNewHint")}
+          htmlFor={addNewId}
+        >
+          <Switch
+            id={addNewId}
+            checked={settings.autoAddNewSkills}
+            onCheckedChange={(value) => setSetting.mutate({ key: "autoAddNewSkills", value })}
           />
         </SettingRow>
         <SettingRow

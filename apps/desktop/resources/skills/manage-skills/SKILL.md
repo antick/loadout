@@ -115,6 +115,8 @@ loadout presets undeploy "Docs work" --yes --json
 loadout skills install owner/repo --all --dry-run --json   # names each skill would get
 loadout skills update --all --dry-run --json               # files each update would change
 loadout sources list --json                                # repositories, archives and links in use
+loadout sources check --json                               # skills repositories gained since last look
+loadout sources dismiss owner/repo                         # stop showing a repository's new skills
 
 # A project's skills.toml: the skills a repository uses, pinned in skills-lock.json
 loadout project apply --dir <project> --dry-run --json     # what would be written

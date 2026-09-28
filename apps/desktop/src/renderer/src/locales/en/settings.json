@@ -213,6 +213,8 @@
       "neverChecked": "Not checked automatically yet",
       "apply": "Install updates automatically",
       "applyHint": "Updates that would delete files are never installed without asking.",
+      "addNew": "Add new skills from sources",
+      "addNewHint": "When a check finds a skill a repository gained, add it to the library. It still goes through the safety check; a name already in use waits for you.",
       "ttl": "Trust a check for",
       "ttlHint": "A skill checked more recently than this is not asked again. Check now on a skill always asks.",
       "ttlOptions": {

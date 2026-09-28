@@ -40,7 +40,8 @@
       "updatesAvailable_one": "{{count}} skill has a newer version at its source.",
       "updatesAvailable_other": "{{count}} skills have a newer version at their source.",
       "view": "View",
-      "autoRan": "Background update check ran {{when}}: {{updated}} updated, {{available}} waiting, {{failed}} failed."
+      "autoRan": "Background update check ran {{when}}: {{updated}} updated, {{available}} waiting, {{failed}} failed.",
+      "autoRanAdded": "Background update check ran {{when}}: {{updated}} updated, {{available}} waiting, {{failed}} failed, {{added}} new skills added."
     },
     "empty": {
       "title": "The library is empty",

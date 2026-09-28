@@ -32,6 +32,19 @@
     "nothingNew_one": "Nothing new in {{source}}: its only skill is already in your library.",
     "nothingNew_other": "Nothing new in {{source}}: all {{count}} of its skills are already in your library.",
     "checkedToast_one": "Checked {{source}}: {{count}} update available",
-    "checkedToast_other": "Checked {{source}}: {{count}} updates available"
+    "checkedToast_other": "Checked {{source}}: {{count}} updates available",
+    "news": {
+      "badge_one": "{{count}} new skill",
+      "badge_other": "{{count}} new skills",
+      "names_one": "New since you last looked: {{names}}.",
+      "names_other": "New since you last looked: {{names}}.",
+      "add_one": "Add it…",
+      "add_other": "Add them…",
+      "dismiss": "Not interested",
+      "foundToast_one": "{{count}} new skill found in your sources",
+      "foundToast_other": "{{count}} new skills found in your sources",
+      "addedToast_one": "Added {{count}} new skill from your sources",
+      "addedToast_other": "Added {{count}} new skills from your sources"
+    }
   }
 }

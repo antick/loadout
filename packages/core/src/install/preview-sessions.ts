@@ -32,6 +32,8 @@ export interface PreviewSession {
   cleanup(): Promise<void>;
   /** Host of another site the download moved to; confirming needs `acceptRedirect`. */
   redirectedTo?: string | null;
+  /** Called once the chosen skills are in: the rest of the list was seen and skipped. */
+  confirmed?(): void;
 }
 
 export interface PreviewSessions {
@@ -139,6 +141,7 @@ export function createPreviewSessions(
           safety?.remember(skill, reportOf.get(dir) ?? null);
           installed.push(skill);
         }
+        session.confirmed?.();
         return installed;
       } finally {
         // Installed or failed halfway, the status bar stops showing the install.
