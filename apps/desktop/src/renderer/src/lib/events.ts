@@ -58,6 +58,8 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   ],
   agents: [
     keys.agents.root,
+    // Which agents are installed decides where items can go.
+    keys.items.root,
     keys.workspace.root,
     keys.projects.root,
     keys.editor.root,
@@ -67,6 +69,7 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   // Project copies that are replaced or deleted land in Recently removed (storage).
   projects: [keys.projects.root, keys.editor.root, keys.instructions.root, keys.storage.root],
   backup: [keys.backup.root],
+  items: [keys.items.root, keys.projects.root],
   settings: [keys.settings.root, keys.system.root, keys.safety.root],
   safety: [keys.safety.root, keys.system.root],
 };

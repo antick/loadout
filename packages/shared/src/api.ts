@@ -62,6 +62,7 @@ import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } fr
 import type { InstructionFile } from "./instructions";
 import type { BackupApi } from "./api-backup";
 import type { SkillsFileApi } from "./api-skills-file";
+import type { ItemsApi } from "./api-items";
 import type {
   AgentFolderSummary,
   ClearableArea,
@@ -422,6 +423,7 @@ export interface LoadoutApi {
   system: SystemApi;
   storage: StorageApi;
   skillsFile: SkillsFileApi;
+  items: ItemsApi;
   app: AppApi;
 }
 
@@ -452,6 +454,7 @@ const CORE_NAMESPACE_KEYS: Record<keyof CoreApi, true> = {
   system: true,
   storage: true,
   skillsFile: true,
+  items: true,
 };
 
 export const CORE_NAMESPACES = Object.keys(CORE_NAMESPACE_KEYS) as (keyof CoreApi)[];

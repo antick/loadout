@@ -22,6 +22,7 @@ import { createSystemService } from "./system";
 import { createSourceNewsStore } from "./sources";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
+import { createItemsService } from "./items";
 
 export interface CoreCreateOptions extends CoreOptions {
   /** Proxy-aware fetch supplied by the host. Defaults to the global `fetch`. */
@@ -130,6 +131,24 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const presets = createPresetsService(ctx, { store, registry, deploy });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
   const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });
+  const items = createItemsService(ctx, {
+    registry,
+    projects: projects.projects,
+    git: install.git,
+  });
+  /** Items changed by a sync or by hand: their deployed files follow, unless edited there. */
+  const refreshItems = (): void => {
+    try {
+      let written = 0;
+      // Writes agent folders and records: only while nothing else works in the library.
+      ctx.lock.holdSync("refresh deployed items", () => {
+        written = items.refreshAll();
+      });
+      if (written > 0) ctx.touched("items");
+    } catch (error) {
+      ctx.log.warn("Could not refresh deployed subagents, commands and rules", error);
+    }
+  };
   const finder = createInstructionFinder({ registry, projects: projects.projects });
   const instructions = createInstructionsService(ctx, { finder });
   const editor = createEditorService(ctx, {
@@ -156,6 +175,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     fetchImpl: options.fetchImpl,
     afterContentChange: async () => {
       for (const skill of store.list()) await deploy.refreshCopies(skill);
+      refreshItems();
     },
   });
   const system = createSystemService(ctx, { store, install, deploy, registry });
@@ -189,6 +209,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     system: system.api,
     storage: storage.api,
     skillsFile: skillsFile.api,
+    items: items.api,
   };
 
   const background: CoreBackground = {
@@ -217,6 +238,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
         ctx.log.warn("Could not re-index the library after an outside change", error);
       }
       staleCopies.request();
+      refreshItems();
       backup.auto.notifyChanged();
     },
     beforeQuit: async () => {
@@ -231,7 +253,9 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const touched = ctx.touched;
   ctx.touched = (...scope) => {
     touched(...scope);
-    if (scope.includes("skills") || scope.includes("presets")) backup.auto.notifyChanged();
+    if (scope.includes("skills") || scope.includes("presets") || scope.includes("items")) {
+      backup.auto.notifyChanged();
+    }
   };
 
   return {

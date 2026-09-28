@@ -131,4 +131,21 @@ export const MIGRATIONS: readonly string[] = [
   -- The user said they wrote the skill themselves, so no source is looked for: 1, else 0.
   ALTER TABLE skills ADD COLUMN authored INTEGER NOT NULL DEFAULT 0;
   `,
+  `
+  -- Subagents, commands and rules written into an agent's folder (project_id '' = the agent's
+  -- global folder). written_hash: SHA-256 of the file as written, so an edit made there is seen
+  -- and never overwritten; source_hash: the library item it was converted from.
+  CREATE TABLE item_deployments (
+    kind TEXT NOT NULL,
+    name TEXT NOT NULL,
+    agent_key TEXT NOT NULL,
+    project_id TEXT NOT NULL DEFAULT '',
+    target_path TEXT NOT NULL,
+    written_hash TEXT NOT NULL,
+    source_hash TEXT NOT NULL,
+    synced_at INTEGER NOT NULL,
+    PRIMARY KEY (kind, name, agent_key, project_id)
+  );
+  CREATE INDEX idx_item_deployments_path ON item_deployments(target_path);
+  `,
 ];

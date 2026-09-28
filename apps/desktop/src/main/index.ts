@@ -340,7 +340,9 @@ function start(): void {
       () => {
         if (!checkLibrary()) return;
         core?.background.libraryChangedOnDisk();
-        send("data:changed", { scope: ["skills", "agents", "presets", "projects", "backup"] });
+        send("data:changed", {
+          scope: ["skills", "agents", "presets", "projects", "backup", "items"],
+        });
         tray?.refresh();
       },
     ),

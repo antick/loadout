@@ -28,6 +28,14 @@ export const keys = {
     removed: ["storage", "removed"] as const,
     agentFolders: ["storage", "agent-folders"] as const,
   },
+  items: {
+    root: ["items"] as const,
+    list: (kind: string) => ["items", "list", kind] as const,
+    detail: (kind: string, name: string) => ["items", "detail", kind, name] as const,
+    places: (kind: string) => ["items", "places", kind] as const,
+    preview: (kind: string, name: string, agentKey: string, projectId: string) =>
+      ["items", "preview", kind, name, agentKey, projectId] as const,
+  },
   skillsFile: {
     root: ["skills-file"] as const,
     find: (dir: string) => ["skills-file", "find", dir] as const,
