@@ -1,5 +1,6 @@
 ---
 import { AGENT_COUNT } from "../lib/agents";
+import { DASHBOARD_FIGURE } from "../lib/site";
 
 /** Numbered callouts on Figure 1, placed in percent of the screenshot, with their legend. */
 const callouts = [
@@ -36,10 +37,10 @@ const callouts = [
     <span class="figure-no">Fig. 1 The dashboard</span>
     <div class="shot">
       <img
-        src="/figures/dashboard.jpg"
-        width="1600"
-        height="1042"
-        alt="The Loadout dashboard: library size, deploy coverage, connected agents, install buttons and recent activity."
+        src={DASHBOARD_FIGURE.src}
+        width={DASHBOARD_FIGURE.width}
+        height={DASHBOARD_FIGURE.height}
+        alt={DASHBOARD_FIGURE.alt}
       />
       {
         callouts.map((callout, index) => (

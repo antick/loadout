@@ -22,3 +22,11 @@ export const INSTALL_GUIDE = INSTALL_GUIDE_URL;
 export const APP_VERSION = desktop.version;
 /** The library folder, as users see it. */
 export const LIBRARY_DIR = "~/.loadout/skills";
+
+/** Figure 1 on the page, also the picture shown when a link to the page is shared. */
+export const DASHBOARD_FIGURE = {
+  src: "/figures/dashboard.jpg",
+  width: 1600,
+  height: 1042,
+  alt: "The Loadout dashboard: library size, deploy coverage, connected agents, install buttons and recent activity.",
+};
