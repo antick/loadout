@@ -1,4 +1,4 @@
-import { type BackupStatus, formatRelative } from "@loadout/shared";
+import { type BackupStage, type BackupStatus, formatRelative } from "@loadout/shared";
 import {
   CircleAlert,
   CircleCheck,
@@ -21,6 +21,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type { BackupMode, BackupModeKind } from "@/lib/backup-mode";
 import { DEVICE_NAME_MAX_LENGTH } from "./constants";
+import { BackupStageText } from "./BackupStageText";
 
 export interface StatusCardProps {
   mode: BackupMode;
@@ -29,6 +30,8 @@ export interface StatusCardProps {
   /** Friendly text of the last failure, shown in `failed` mode. */
   errorText: string | null;
   busy: boolean;
+  /** What a running sync (manual or automatic) is doing; null when none runs. */
+  stage: BackupStage | null;
   onPrimary: () => void;
   /** Offered when a GitHub remote refused the stored credentials. */
   onReconnect?: () => void;
@@ -69,6 +72,7 @@ export function StatusCard({
   deviceName,
   errorText,
   busy,
+  stage,
   onPrimary,
   onReconnect,
   onRenameDevice,
@@ -117,6 +121,7 @@ export function StatusCard({
               ? errorText
               : t(`backupPage.status.body.${key}`, { count })}
           </p>
+          <BackupStageText stage={stage} className="mt-1.5" />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {onReconnect ? (
@@ -125,8 +130,8 @@ export function StatusCard({
               {t("backupPage.status.reconnect")}
             </Button>
           ) : null}
-          <Button size="sm" disabled={busy} onClick={onPrimary}>
-            {busy ? <Spinner /> : null}
+          <Button size="sm" disabled={busy || stage !== null} onClick={onPrimary}>
+            {busy || stage !== null ? <Spinner /> : null}
             {t(`backupPage.status.action.${key}`)}
           </Button>
         </div>

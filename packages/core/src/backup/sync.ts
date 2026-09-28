@@ -9,6 +9,7 @@ import { INTERNAL_KEYS } from "../settings/store";
 import { type BackupEnv, REMOTE_NAME } from "./env";
 import { whileMerging } from "./interrupted";
 import { mergeRemote } from "./merge";
+import { reportStage, withStages } from "./progress";
 import {
   aheadBehind,
   assertRepo,
@@ -60,10 +61,18 @@ export async function pullRemote(env: BackupEnv): Promise<MergeSummary> {
   return result.summary;
 }
 
-export async function syncLibrary(
+export function syncLibrary(
   env: BackupEnv,
   message: string = DEFAULT_BACKUP_COMMIT_MESSAGE,
   review?: SyncReviewAnswer,
+): Promise<SyncOutcome> {
+  return withStages(env, () => runSync(env, message, review));
+}
+
+async function runSync(
+  env: BackupEnv,
+  message: string,
+  review: SyncReviewAnswer | undefined,
 ): Promise<SyncOutcome> {
   assertRepo(env);
   const { lock, settings } = env.ctx;
@@ -71,6 +80,7 @@ export async function syncLibrary(
 
   // A key caught before it is committed can still simply be removed; once committed, it would
   // travel with the history even after removal. Without a remote nothing leaves the computer.
+  reportStage(env, "preparing");
   if (await originUrl(env)) {
     // The ignore list first: a skill back under the size limit stops being ignored now, and must
     // be checked before the commit takes it in.
@@ -79,13 +89,17 @@ export async function syncLibrary(
     if (uncommitted.length > 0) throw secretsFound(uncommitted);
   }
 
+  reportStage(env, "saving");
   let committed = await lock.run("backup commit", () => commitLibrary(env, text));
   let merge: MergeSummary | null = null;
   let changed = committed;
   let snapshot: string | null = null;
   let pushed = false;
 
-  const takeSnapshot = (): Promise<string> => lock.run("backup snapshot", () => tagSnapshot(env));
+  const takeSnapshot = (): Promise<string> => {
+    reportStage(env, "snapshot");
+    return lock.run("backup snapshot", () => tagSnapshot(env));
+  };
   // A state that was committed earlier (for example by setting up the backup) but never
   // snapshotted still deserves a restore point the first time the user backs up.
   const needsSnapshot = async (): Promise<boolean> => changed || !(await snapshotAtHead(env));
@@ -95,7 +109,9 @@ export async function syncLibrary(
   } else {
     const branch = await requireBranch(env);
     for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
+      reportStage(env, "downloading");
       await fetchRemote(env);
+      reportStage(env, "merging");
       const result = await lock.run("backup merge", () =>
         whileMerging(env, () => mergeRemote(env, review)),
       );
@@ -113,6 +129,7 @@ export async function syncLibrary(
       if (secrets.length > 0) throw secretsFound(secrets);
 
       await env.hooks.beforePush?.(attempt);
+      reportStage(env, "uploading");
       try {
         await env.git.run(["push", "--follow-tags", "-u", REMOTE_NAME, branch], { network: true });
         pushed = true;

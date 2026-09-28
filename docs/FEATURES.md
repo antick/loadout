@@ -101,6 +101,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - One-button sync with per-skill merging; conflicts never block.
 - When another device changed something, sync shows what comes in and goes out first, with each skill's files; you choose whether deletions happen here.
 - Compare a conflict file by file before choosing a version.
+- Shows what a running sync is doing: saving, downloading, merging, uploading.
 - A skill deleted on another device is kept in Recently removed; restoring it brings it back everywhere.
 - A sync that would delete many skills here stops and waits for you to review it.
 - Snapshots you can restore; automatic backup after changes.

@@ -378,6 +378,7 @@ Object.assign(
     agents,
     getSettings: () => settings,
     emitChanged,
+    emitStage: (stage) => listeners.forEach((listener) => listener("backup:progress", { stage })),
     fail: (code, message) => {
       throw new MockError(code, message);
     },

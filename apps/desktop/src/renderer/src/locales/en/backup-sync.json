@@ -53,6 +53,15 @@
       "notPerSkill_one": "The skill-aware merge is off in Settings, so this {{count}} backup is merged by Git line by line and cannot be listed skill by skill.",
       "notPerSkill_other": "The skill-aware merge is off in Settings, so these {{count}} backups are merged by Git line by line and cannot be listed skill by skill.",
       "sync": "Sync"
+    },
+    "stage": {
+      "preparing": "Checking for keys and tokens…",
+      "saving": "Saving changes on this computer…",
+      "downloading": "Downloading from the remote…",
+      "comparing": "Comparing with this computer…",
+      "merging": "Merging skill by skill…",
+      "snapshot": "Taking a snapshot…",
+      "uploading": "Uploading to the remote…"
     }
   }
 }

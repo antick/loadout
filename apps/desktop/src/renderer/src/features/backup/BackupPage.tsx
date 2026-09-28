@@ -32,6 +32,7 @@ import { SetupDialog } from "./SetupDialog";
 import { SnapshotHistory } from "./SnapshotHistory";
 import { StatusCard } from "./StatusCard";
 import { useSyncFlow } from "./sync-flow";
+import { useBackupStage } from "./use-backup-stage";
 import { useFinishConnect } from "./use-finish-connect";
 
 /** Back the library up to a Git remote, review what needs attention, and go back in time. */
@@ -42,6 +43,7 @@ export function BackupPage(): ReactNode {
   const deviceName = useBackupDeviceName();
   const skills = useSkills();
   const sync = useSyncFlow();
+  const stage = useBackupStage();
   const fetchRemote = useFetchBackup();
   const renameDevice = useSetDeviceName();
   const openExternal = useOpenExternal();
@@ -140,6 +142,7 @@ export function BackupPage(): ReactNode {
           deviceName={deviceName.data}
           errorText={lastError ? backupErrorText(lastError, t) : null}
           busy={sync.busy || connect.isPending}
+          stage={stage}
           onPrimary={primary}
           onReconnect={canReconnect ? () => setReconnecting(true) : undefined}
           onRenameDevice={(name) => renameDevice.mutate(name)}

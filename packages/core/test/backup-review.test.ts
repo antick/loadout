@@ -13,6 +13,13 @@ const state = (device: Device): string[] => [
   device.git("for-each-ref"),
 ];
 
+/** Stages reported since the last call, oldest first. */
+const stages = (device: Device): (string | null)[] =>
+  device.events
+    .splice(0)
+    .filter((entry) => entry.event === "backup:progress")
+    .map((entry) => (entry.payload as { stage: string | null }).stage);
+
 /** The sync review: what a sync would do, worked out without changing anything. */
 describe("backup sync review", () => {
   let temp: ReturnType<typeof tempDir>;
@@ -159,5 +166,31 @@ describe("backup sync review", () => {
     expect(preview.incoming).toEqual([]);
     await b.api.removeRemote();
     expect(await b.api.preview()).toMatchObject({ remoteCommit: null, incoming: [], outgoing: [] });
+  });
+
+  it("reports each stage of a review and a sync, and the end even after a failure", async () => {
+    a.editSkill("alpha", "from A");
+    await a.api.sync();
+    b.editSkill("beta", "from B");
+    b.events.splice(0);
+
+    await b.api.preview();
+    expect(stages(b)).toEqual(["downloading", "comparing", null]);
+
+    await b.api.sync();
+    expect(stages(b)).toEqual([
+      "preparing",
+      "saving",
+      "downloading",
+      "merging",
+      "snapshot",
+      "uploading",
+      null,
+    ]);
+
+    await b.api.removeRemote();
+    await b.api.setRemote(join(temp.dir, "missing.git"));
+    await expect(b.api.sync()).rejects.toBeDefined();
+    expect(stages(b).at(-1)).toBeNull();
   });
 });

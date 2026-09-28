@@ -15,6 +15,7 @@ import {
   BACKUP_REPO_WARN_BYTES,
   BACKUP_SKILL_LIMIT_BYTES,
   type BackupConflict,
+  type BackupStage,
   type BackupStatus,
   CLI_BINARY_NAME,
   type CustomAgentInput,
@@ -48,6 +49,8 @@ export interface SystemMockContext {
   agents: AgentInfo[];
   getSettings(): Settings;
   emitChanged(...scope: DataScope[]): void;
+  /** Where the pretend sync is, as core reports it. */
+  emitStage(stage: BackupStage | null): void;
   /** Throw the bridge's error type so the code reaches the renderer. */
   fail(code: ErrorCode, message: string): never;
 }
@@ -59,6 +62,14 @@ const GIT_VERSION = params.get("git") === "missing" ? null : "2.50.1";
 const DEVICE_POLLS_BEFORE_CONNECT = 2;
 const GITHUB_REMOTE = "https://github.com/dev/loadout-backup.git";
 const MB = 1024 * 1024;
+const SYNC_STAGES: readonly BackupStage[] = [
+  "preparing",
+  "saving",
+  "downloading",
+  "merging",
+  "uploading",
+];
+const STAGE_MS = 300;
 
 function initialStatus(): BackupStatus {
   const base: BackupStatus = { ...SEED_BACKUP_STATUS, remoteUrl: GITHUB_REMOTE, behind: 1 };
@@ -232,7 +243,13 @@ export function createSystemMockHandlers(
       status = { ...status, upstreamHealth: "healthy", hasChanges: false, changedSkillCount: 0 };
       status = { ...status, ahead: 0, behind: 0 };
     },
-    "backup.sync": (): SyncOutcome => {
+    "backup.sync": async (): Promise<SyncOutcome> => {
+      // Long enough to see each stage go by, short enough for the UI tests.
+      for (const stage of SYNC_STAGES) {
+        ctx.emitStage(stage);
+        await new Promise((resolve) => setTimeout(resolve, STAGE_MS));
+      }
+      ctx.emitStage(null);
       const held = heldBack.filter((finding) => !allowedSecrets.has(finding.id));
       if (held.length > 0) {
         ctx.fail(

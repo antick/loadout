@@ -16,6 +16,7 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR, isSafeSkillPath } from "./env";
 import { createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
 import { manyDeletes, planSides, readSides } from "./merge-input";
+import { reportStage, withStages } from "./progress";
 import { type SkillPlan, type SkillVersions, sameSkill } from "./merge-plan";
 import { assertRepo, originUrl, requireBranch, resolveCommit, upstreamRef } from "./repo";
 import { refreshIgnoreFile } from "./size";
@@ -120,10 +121,16 @@ function classify(versions: SkillVersions, plan: SkillPlan): Classified {
   return result;
 }
 
-export async function previewSync(env: BackupEnv): Promise<SyncPreview> {
+export function previewSync(env: BackupEnv): Promise<SyncPreview> {
+  return withStages(env, () => buildPreview(env));
+}
+
+async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
   assertRepo(env);
   if (!(await originUrl(env))) return emptyPreview();
+  reportStage(env, "downloading");
   await fetchRemote(env);
+  reportStage(env, "comparing");
   return env.ctx.lock.run("backup review", async () => {
     const branch = await requireBranch(env);
     const theirs = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);

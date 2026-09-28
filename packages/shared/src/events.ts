@@ -1,4 +1,5 @@
 import type { AppUpdateStatus, AutoBackupEvent } from "./types";
+import type { BackupProgress } from "./types-backup";
 import type { InstallProgress } from "./types-install";
 
 /** Main → renderer notifications. Payload type per event name. */
@@ -15,6 +16,8 @@ export interface AppEvents {
     added: number;
   };
   "backup:auto-completed": AutoBackupEvent;
+  /** A sync or its review moved to another stage, manual or automatic. */
+  "backup:progress": BackupProgress;
   /** The window close button was pressed and the user has not chosen a default yet. */
   "window:close-requested": Record<string, never>;
   /** Tray or menu asked the UI to go somewhere. */
@@ -42,6 +45,7 @@ export const APP_EVENT_NAMES = [
   "install:progress",
   "updates:auto-ran",
   "backup:auto-completed",
+  "backup:progress",
   "window:close-requested",
   "app:navigate",
   "library:missing",

@@ -6,6 +6,7 @@ import { usePreviewSync, useReviewedSync } from "@/hooks/mutations/backup-sync";
 import { backupErrorText, needsReview, toastBackupError } from "@/lib/backup-errors";
 import { type SyncFlow, type SyncFlowCallbacks, SyncFlowContext } from "./sync-flow";
 import { SyncReviewDialog } from "./SyncReviewDialog";
+import { useBackupStage } from "./use-backup-stage";
 
 /** Only changes coming in, or a merge that cannot be listed, are worth a look first. */
 function worthReviewing(preview: SyncPreview): boolean {
@@ -19,6 +20,7 @@ export function SyncFlowProvider({ children }: { children: ReactNode }): ReactNo
   const { t } = useTranslation();
   const preview = usePreviewSync();
   const sync = useReviewedSync();
+  const stage = useBackupStage();
   const [review, setReview] = useState<SyncPreview | null>(null);
   // The caller of the flow in progress, told how it ended.
   const callbacks = useRef<SyncFlowCallbacks>({});
@@ -88,6 +90,7 @@ export function SyncFlowProvider({ children }: { children: ReactNode }): ReactNo
       <SyncReviewDialog
         preview={review}
         syncing={sync.isPending || preview.isPending}
+        stage={stage}
         onCancel={() => setReview(null)}
         onSync={send}
       />

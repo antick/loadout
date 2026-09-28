@@ -75,3 +75,16 @@ test("own patterns are saved, and one that drops whole skills is refused", async
   await expect(field).toHaveValue("outputs/\n*.zip");
   if (SCREENSHOTS) await card.screenshot({ path: `${SCREENSHOTS}/ignore-card.png` });
 });
+
+test("a sync with nothing coming in runs straight away and shows its stages", async ({ page }) => {
+  await page.goto("/?backup=uptodate#/backup");
+  await expect(activityBar(page)).toBeVisible();
+  const content = main(page);
+  await content.getByRole("button", { name: "Back up again" }).click();
+
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // One line names the stage while it runs (checking, saving, downloading, merging, uploading).
+  const stage = content.getByText(/^(Checking|Saving|Downloading|Merging|Uploading) .*…$/);
+  await expect(stage).toBeVisible();
+  await expect(stage).toHaveCount(0);
+});

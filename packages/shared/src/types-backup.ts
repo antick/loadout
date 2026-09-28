@@ -63,3 +63,21 @@ export interface SyncSkillDiff {
   name: string;
   entries: FileDiffEntry[];
 }
+
+/**
+ * Where a sync, or the review before it, is right now. `preparing`: refreshing the ignore list and
+ * checking for keys; `comparing`: working out the review.
+ */
+export type BackupStage =
+  | "preparing"
+  | "saving"
+  | "downloading"
+  | "comparing"
+  | "merging"
+  | "snapshot"
+  | "uploading";
+
+/** `stage` is null once the sync or review finished, whether it worked or not. */
+export interface BackupProgress {
+  stage: BackupStage | null;
+}

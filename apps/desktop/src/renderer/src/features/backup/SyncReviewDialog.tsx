@@ -1,4 +1,5 @@
 import {
+  type BackupStage,
   REMOVED_KEEP_DAYS,
   type SyncPreview,
   type SyncPreviewItem,
@@ -18,12 +19,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { BackupStageText } from "./BackupStageText";
 import { type DeleteChoice, SyncReviewRow } from "./SyncReviewRow";
 
 export interface SyncReviewDialogProps {
   /** Null keeps the dialog closed. */
   preview: SyncPreview | null;
   syncing: boolean;
+  /** What the sync is doing once it runs. */
+  stage: BackupStage | null;
   onCancel(): void;
   onSync(answer: SyncReviewAnswer): void;
 }
@@ -163,6 +167,7 @@ function ReviewBody({
 export function SyncReviewDialog({
   preview,
   syncing,
+  stage,
   onCancel,
   onSync,
 }: SyncReviewDialogProps): ReactNode {
@@ -195,7 +200,8 @@ export function SyncReviewDialog({
             />
           ) : null}
         </div>
-        <DialogFooter>
+        <DialogFooter className="items-center">
+          <BackupStageText stage={syncing ? stage : null} className="mr-auto" />
           <Button variant="ghost" disabled={syncing} onClick={onCancel}>
             {t("common.cancel")}
           </Button>
