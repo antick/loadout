@@ -3,6 +3,7 @@ import {
   type GitPreview,
   type InstallOutcome,
   type InstallSelection,
+  initialSelection,
   planInstallNames,
 } from "@loadout/shared";
 import { Bot, GitBranch, GitCommitHorizontal, SearchX, ShieldAlert } from "lucide-react";
@@ -20,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PreviewSkillList } from "@/features/install/PreviewSkillList";
-import { initialSelection } from "@/features/install/preview-list";
 import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
 import { useAgents } from "@/hooks/queries/agents";
 

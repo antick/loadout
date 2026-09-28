@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCore, silentLogger } from "@loadout/core";
 import { LIBRARY_DIR_NAME } from "@loadout/shared";
+import type { SkillPicker } from "../src/picker/state";
 import { EXIT_OK, runCli } from "../src/run";
 
 export const VERSION = "9.9.9-test";
@@ -27,7 +28,9 @@ export interface Sandbox {
   cleanup(): void;
 }
 
-export function createSandbox(options: { safetyScannerPath?: string | null } = {}): Sandbox {
+export function createSandbox(
+  options: { safetyScannerPath?: string | null; picker?: SkillPicker } = {},
+): Sandbox {
   const root = mkdtempSync(join(tmpdir(), "cli-test-"));
   const home = join(root, "home");
   mkdirSync(join(home, AGENT_DIR), { recursive: true });
@@ -47,6 +50,7 @@ export function createSandbox(options: { safetyScannerPath?: string | null } = {
         logger: silentLogger,
         safetyScannerPath: options.safetyScannerPath ?? null,
       },
+      ...(options.picker ? { picker: options.picker } : {}),
     });
     return {
       code,

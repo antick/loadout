@@ -353,6 +353,12 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   `presets undeploy`, and `agents disable` for an agent with skills deployed), and
   `--library` to work on another library. `--library` only opens a library that exists, so a
   typo never starts an empty one; `repo init <path>` creates a new one.
+- `loadout skills install` on a source with several skills opens a keyboard picker in a terminal:
+  the same labels as the app (new, in library, name in use and the numbered name it gets, manual
+  only), skills grouped by folder with a checkbox per folder, `/` to filter, `a` for all or none,
+  Enter to install, Esc to cancel. Names already in use start unticked. `--skill`, `--all`,
+  `--json`, a pipe or a script never see it, so automation behaves exactly as before. After
+  installing, the CLI names any skill that got a numbered name.
 - Tab completion for Bash and Zsh: add `eval "$(loadout completion bash)"` to `~/.bashrc`, or
   `eval "$(loadout completion zsh)"` to `~/.zshrc` after `compinit`. It completes groups,
   commands and options, and the names of skills, agents, presets and tags from the library

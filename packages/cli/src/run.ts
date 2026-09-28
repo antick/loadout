@@ -10,6 +10,7 @@ import { APP_NAME, type ErrorShape } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString, parseArgs, splitCommandPath } from "./args";
 import { COMMAND_GROUPS, type CommandGroup, type CommandSpec } from "./commands";
 import { resolveUserPath } from "./commands/support";
+import type { SkillPicker } from "./picker/state";
 import { GLOBAL_FLAGS, commandHelp, groupHelp, rootHelp } from "./help";
 import { type CliIo, printError, printResult } from "./output";
 
@@ -21,6 +22,8 @@ export interface CliDeps {
   homeDir: string;
   /** Extra options for every core this run opens (tests pin `homeDir` and `configDir`). */
   coreOptions?: CoreCreateOptions;
+  /** Keyboard picker; given only when both ends are an interactive terminal. */
+  picker?: SkillPicker;
 }
 
 export const EXIT_OK = 0;
@@ -93,7 +96,12 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
     }
 
     const library = flagString(args, "library");
-    const context = { args, cwd: deps.cwd, customLibrary: library !== undefined };
+    const context = {
+      args,
+      cwd: deps.cwd,
+      customLibrary: library !== undefined,
+      ...(json || !deps.picker ? {} : { picker: deps.picker }),
+    };
     let baseDir =
       library === undefined ? undefined : resolveUserPath(library, deps.cwd, deps.homeDir);
     if ("runWithoutLibrary" in command) {

@@ -2,17 +2,15 @@ import {
   type InstallOutcome,
   type LibraryNameEntry,
   type RepoSkillPreview,
-  planInstallNames,
-} from "@loadout/shared";
-import { describe, expect, it } from "vitest";
-import {
   filterPreviewRows,
   folderOf,
   groupPreviewRows,
   groupState,
   initialSelection,
+  planInstallNames,
   showsGroups,
-} from "./preview-list";
+} from "@loadout/shared";
+import { describe, expect, it } from "vitest";
 
 function row(relPath: string, extra: Partial<RepoSkillPreview> = {}): RepoSkillPreview {
   const name = relPath.split("/").at(-1) ?? relPath;

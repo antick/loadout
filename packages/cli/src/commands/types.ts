@@ -1,5 +1,6 @@
 import type { Core } from "@loadout/core";
 import type { FlagSpec, ParsedArgs } from "../args";
+import type { SkillPicker } from "../picker/state";
 
 /** What a command hands back: the machine-readable value and the text a person reads. */
 export interface CommandResult {
@@ -16,6 +17,11 @@ export interface CommandContext {
   cwd: string;
   /** True when `--library` points the run at another library. */
   customLibrary: boolean;
+  /**
+   * Lets a person tick skills with the keyboard. Only there in an interactive terminal and
+   * without `--json`, so scripts always get the same, non-interactive behaviour.
+   */
+  picker?: SkillPicker;
 }
 
 /** What a command that runs without opening the library gets. */

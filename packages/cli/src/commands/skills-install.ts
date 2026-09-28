@@ -1,4 +1,4 @@
-import { notFound } from "@loadout/core";
+import { cancelled, notFound } from "@loadout/core";
 import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
@@ -95,17 +95,46 @@ const ALL_FLAG = {
   description: "Take every skill the repository or archive holds.",
 } as const;
 
+/**
+ * The skills to install: named with `--skill`, all with `--all`, the only one, or (in a terminal a
+ * person types in) ticked in the picker. Without a terminal an unclear choice stays an error.
+ */
+async function chooseSkills(
+  context: CommandContext,
+  preview: GitPreview,
+): Promise<RepoSkillPreview[]> {
+  const { args, picker } = context;
+  const wanted = flagList(args, SKILL_FLAG.name);
+  const all = flagBoolean(args, ALL_FLAG.name);
+  if (!picker || wanted.length > 0 || all || preview.skills.length < 2) {
+    return selectSkills(preview.skills, wanted, all, preview.kind);
+  }
+  const keys = await picker({
+    source: preview.repoUrl,
+    skills: preview.skills,
+    library: preview.library,
+    selected: preview.selected,
+  });
+  if (!keys) throw cancelled("Cancelled. Nothing was installed.");
+  return preview.skills.filter((skill) => keys.includes(skill.relPath));
+}
+
+/** What landed in the library, and the name each was asked to get (when one was). */
+interface Installed {
+  skills: Skill[];
+  /** Same order as `skills`; empty when the source named the skill itself. */
+  asked: string[];
+}
+
 /** Install the chosen skills of a preview; the preview is cleaned up whatever happens. */
-async function installFromPreview(context: CommandContext, preview: GitPreview): Promise<Skill[]> {
+async function installFromPreview(
+  context: CommandContext,
+  preview: GitPreview,
+): Promise<Installed> {
   const { core, args } = context;
   const name = flagString(args, NAME_FLAG.name);
   try {
-    const chosen = selectSkills(
-      preview.skills,
-      flagList(args, SKILL_FLAG.name),
-      flagBoolean(args, ALL_FLAG.name),
-      preview.kind,
-    );
+    const chosen = await chooseSkills(context, preview);
     if (name !== undefined && chosen.length !== 1) {
       throw new UsageError("--name only works when exactly one skill is installed.");
     }
@@ -119,10 +148,11 @@ async function installFromPreview(context: CommandContext, preview: GitPreview):
         `The download moved to ${preview.redirectedTo}, another site than the link names. Add --yes to install from it anyway.`,
       );
     }
-    return await core.api.install.confirmGit(preview.previewId, items, {
+    const skills = await core.api.install.confirmGit(preview.previewId, items, {
       acceptRedirect,
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });
+    return { skills, asked: items.map((item) => item.name) };
   } catch (error) {
     // The temporary clone is ours to clean up when nothing got installed from it.
     await core.api.install.cancelPreview(preview.previewId).catch(() => undefined);
@@ -134,7 +164,7 @@ async function installFromPreview(context: CommandContext, preview: GitPreview):
  * A folder or an archive file. An archive holding several skills is picked from like a
  * repository; anything else installs as one skill, exactly as before.
  */
-async function installFromPath(context: CommandContext, path: string): Promise<Skill[]> {
+async function installFromPath(context: CommandContext, path: string): Promise<Installed> {
   const { core, args } = context;
   const name = flagString(args, NAME_FLAG.name);
   if (ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
@@ -143,7 +173,7 @@ async function installFromPath(context: CommandContext, path: string): Promise<S
     await core.api.install.cancelPreview(preview.previewId);
   }
   const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
-  return [await core.api.install.fromPath(path, name, { acceptRisk })];
+  return { skills: [await core.api.install.fromPath(path, name, { acceptRisk })], asked: [] };
 }
 
 async function run(context: CommandContext): Promise<CommandResult> {
@@ -151,20 +181,29 @@ async function run(context: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
   const source = classifySource(positional(args, 0, "what to install"));
   const name = flagString(args, NAME_FLAG.name);
-  let installed: Skill[];
+  let result: Installed;
   if (source.kind === "path") {
-    installed = await installFromPath(context, resolveUserPath(source.path, cwd, core.ctx.homeDir));
+    result = await installFromPath(context, resolveUserPath(source.path, cwd, core.ctx.homeDir));
   } else if (source.kind === "market") {
     if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
-    installed = [
-      await core.api.install.fromMarket(source.source, source.skillId, {
-        acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
-      }),
-    ];
+    const skill = await core.api.install.fromMarket(source.source, source.skillId, {
+      acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
+    });
+    result = { skills: [skill], asked: [] };
   } else {
-    installed = await installFromPreview(context, await core.api.install.previewGit(source.url));
+    result = await installFromPreview(context, await core.api.install.previewGit(source.url));
   }
+  const installed = result.skills;
   const lines = installed.map((skill) => `Installed ${skill.name} (${skill.id}) into the library.`);
+  const renamed = installed.filter((skill, index) => {
+    const asked = result.asked[index];
+    return asked !== undefined && asked !== skill.name;
+  });
+  if (renamed.length > 0) {
+    lines.push(
+      `The name was in use, so these got a numbered name instead: ${renamed.map((s) => s.name).join(", ")}.`,
+    );
+  }
   lines.push("Installing does not deploy. Next: skills deploy <ref> --agent <key>");
   return { value: { installed }, text: lines.join("\n") };
 }
@@ -175,6 +214,8 @@ export const installCommand: CommandSpec = {
   usage: "<source> [--name <name>] [--skill <id>…] [--all] [--yes] [--accept-risk]",
   flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG, YES_FLAG, ACCEPT_RISK_FLAG],
   notes: [
+    "In a terminal, a source with several skills opens a picker to tick them; --skill or --all",
+    "skip it, and scripts or --json never see it.",
     "Sources: ./folder, ./archive.zip (.skill, .tar, .tar.gz, .tgz), a git URL, owner/repo,",
     "owner/repo@skill, a link to an archive or a SKILL.md, or a site that publishes skills",
     "(https://example.com, read from /.well-known/agent-skills/index.json).",

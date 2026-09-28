@@ -1,4 +1,15 @@
-import type { InstallOutcome, InstallOutcomeKind, RepoSkillPreview } from "@loadout/shared";
+import {
+  type InstallOutcome,
+  type InstallOutcomeKind,
+  PREVIEW_COLLAPSE_MIN_SKILLS,
+  PREVIEW_SEARCH_MIN_SKILLS,
+  type PreviewGroup,
+  type RepoSkillPreview,
+  filterPreviewRows,
+  groupPreviewRows,
+  groupState,
+  showsGroups,
+} from "@loadout/shared";
 import { ChevronRight, Folder } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,15 +17,6 @@ import { SearchInput } from "@/components/SearchInput";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OutcomeBadge, PreviewRow } from "@/features/install/PreviewRow";
-import {
-  PREVIEW_COLLAPSE_MIN_SKILLS,
-  PREVIEW_SEARCH_MIN_SKILLS,
-  type PreviewGroup,
-  filterPreviewRows,
-  groupPreviewRows,
-  groupState,
-  showsGroups,
-} from "@/features/install/preview-list";
 import { cn } from "@/lib/utils";
 
 const OUTCOME_ORDER: readonly InstallOutcomeKind[] = ["new", "installed", "taken", "repeated"];

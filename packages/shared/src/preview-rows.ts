@@ -1,4 +1,10 @@
-import type { GitPreview, InstallOutcome, RepoSkillPreview } from "@loadout/shared";
+/**
+ * The skills of an import preview as a list to choose from: grouped by folder, filtered, and
+ * which start ticked. Shared by the app's import dialog and the command line's picker.
+ */
+
+import type { InstallOutcome } from "./install-plan";
+import type { GitPreview, RepoSkillPreview } from "./types-install";
 
 /** Skills under one folder of the source, e.g. every skill in `skills/`. */
 export interface PreviewGroup {
