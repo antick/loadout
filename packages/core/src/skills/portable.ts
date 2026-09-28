@@ -37,6 +37,8 @@ export interface PortableSkill {
   createdAt: number;
   /** Files edited in the app since the skill came from its source. Left out when none. */
   editedFiles?: string[];
+  /** The user wrote it, so no source is looked for. Left out when not. */
+  authored?: true;
 }
 
 export interface PortablePreset {
@@ -187,6 +189,7 @@ export class PortableMetadata {
         },
         createdAt: skill.createdAt,
         editedFiles: skill.editedFiles.length > 0 ? [...skill.editedFiles].sort() : undefined,
+        authored: skill.authored ? true : undefined,
       };
       skillFiles.add(`${skill.id}.json`);
       this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), file);
@@ -305,6 +308,7 @@ export class PortableMetadata {
         sourceRef: file.source.ref ?? current.sourceRef,
         sourceRevision: file.source.revision ?? current.sourceRevision,
         editedFiles: readEditedFiles(file.editedFiles),
+        authored: file.authored === true,
         updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);
@@ -326,6 +330,7 @@ export class PortableMetadata {
       updateStatus: remote ? "unknown" : "local_only",
       createdAt: file.createdAt,
       editedFiles: readEditedFiles(file.editedFiles),
+      authored: file.authored === true,
     });
     this.#skills.setTags(file.id, file.tags);
     return file.id;

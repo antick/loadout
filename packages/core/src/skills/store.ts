@@ -24,6 +24,7 @@ interface SkillRow {
   created_at: number;
   updated_at: number;
   edited_files: string | null;
+  authored: number;
 }
 
 interface DeploymentRow {
@@ -65,6 +66,7 @@ export interface NewSkill {
   createdAt?: number;
   updatedAt?: number;
   editedFiles?: string[];
+  authored?: boolean;
 }
 
 export type SkillPatch = Partial<
@@ -86,6 +88,7 @@ export type SkillPatch = Partial<
     | "lastCheckError"
     | "updatedAt"
     | "editedFiles"
+    | "authored"
   >
 >;
 
@@ -106,6 +109,7 @@ const PATCH_COLUMNS: Record<keyof SkillPatch, string> = {
   lastCheckError: "last_check_error",
   updatedAt: "updated_at",
   editedFiles: "edited_files",
+  authored: "authored",
 };
 
 /** Stored as a JSON array; an empty list is stored as NULL. */
@@ -219,6 +223,7 @@ export class SkillStore {
       editedFiles: decodeEditedFiles(row.edited_files),
       issues: facts.issues,
       manualOnly: facts.manualOnly,
+      authored: row.authored === 1,
     };
   }
 
@@ -284,8 +289,8 @@ export class SkillStore {
     this.#db.run(
       `INSERT INTO skills(id, name, description, source_type, source_ref, source_url, source_subpath,
         source_branch, source_revision, remote_revision, library_path, content_hash, update_status,
-        last_checked_at, created_at, updated_at, edited_files)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        last_checked_at, created_at, updated_at, edited_files, authored)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.description,
@@ -303,6 +308,7 @@ export class SkillStore {
       input.createdAt ?? now,
       input.updatedAt ?? now,
       encodeEditedFiles(input.editedFiles),
+      input.authored ? 1 : 0,
     );
     return this.get(id);
   }
@@ -313,11 +319,11 @@ export class SkillStore {
       unknown,
     ][];
     const assignments = entries.map(([key]) => `${PATCH_COLUMNS[key]} = ?`).join(", ");
-    const values = entries.map(([key, value]) =>
-      key === "editedFiles"
-        ? encodeEditedFiles(value as string[] | null)
-        : ((value ?? null) as string | number | null),
-    );
+    const values = entries.map(([key, value]) => {
+      if (key === "editedFiles") return encodeEditedFiles(value as string[] | null);
+      if (typeof value === "boolean") return value ? 1 : 0;
+      return (value ?? null) as string | number | null;
+    });
     this.#db.run(`UPDATE skills SET ${assignments} WHERE id = ?`, ...values, id);
     return this.get(id);
   }

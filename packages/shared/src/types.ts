@@ -119,6 +119,11 @@ export interface Skill {
    * it when a person calls it by name.
    */
   manualOnly: boolean;
+  /**
+   * The user said they wrote it: no source is looked for. Only ever set on skills without one
+   * (see `canLinkSource`).
+   */
+  authored: boolean;
 }
 
 /** A `.zip` written by `skills.exportArchive`. */

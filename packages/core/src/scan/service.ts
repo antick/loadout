@@ -34,6 +34,8 @@ export interface ScanServiceDeps {
   registry: AgentRegistry;
   install: InstallIntoLibrary;
   safety?: SafetyGate;
+  /** Told about every import, with the folder it came from (to look for its source). */
+  onImported?: (skill: Skill, sourcePath: string) => void;
 }
 
 export interface ScanService {
@@ -197,7 +199,7 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     if (!isSkillDir(source)) throw invalid(`No SKILL.md found in ${source}`);
     name ??= distinctName(source);
     // Copy only: the original folder stays where it is and is neither deployed nor adopted.
-    return installChecked(
+    const skill = await installChecked(
       install,
       deps.safety,
       {
@@ -209,6 +211,8 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
       },
       { ...options, progressKey: path },
     );
+    deps.onImported?.(skill, source);
+    return skill;
   }
 
   return {

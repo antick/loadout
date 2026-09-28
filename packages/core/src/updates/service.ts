@@ -1,9 +1,10 @@
-import type { UpdatesApi } from "@loadout/shared";
+import type { MarketListing, UpdatesApi } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import type { InstallService } from "../install";
 import type { SafetyGate } from "../install/safety-gate";
 import type { RemovedStore } from "../storage/removed";
+import { type OriginFinder, createOriginFinder } from "../origin";
 import type { SkillStore } from "../skills/store";
 import { type SourceNewsStore, createSourceChecker, createSourceNewsStore } from "../sources";
 import { type AutoUpdater, createAutoUpdater } from "./auto";
@@ -22,12 +23,16 @@ export interface UpdatesServiceDeps {
   removed?: Pick<RemovedStore, "keepCopy">;
   /** Shared with the installer, which marks what an import listed; a fresh one when absent. */
   sourceNews?: SourceNewsStore;
+  /** Marketplace search, one of the places a skill's lost source is looked for. */
+  searchMarket?: (query: string, limit?: number) => Promise<MarketListing>;
 }
 
 export interface UpdatesService {
   api: UpdatesApi;
   /** Background rounds; the host starts and stops them. */
   auto: AutoUpdater;
+  /** Finds and links the source of skills without one. */
+  origin: OriginFinder;
 }
 
 export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps): UpdatesService {
@@ -51,6 +56,11 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     install: install.installIntoLibrary,
     news: sourceNews,
     safety: deps.safety,
+  });
+  const origin = createOriginFinder(ctx, {
+    store,
+    git: install.git,
+    searchMarket: deps.searchMarket,
   });
   const auto = createAutoUpdater(ctx, {
     skills: () => store.list(),
@@ -78,7 +88,10 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     sourceNews: async () => sources.news(),
     checkSources: (sourceKeys) => sources.check(sourceKeys),
     dismissSourceNews: async (sourceKey, paths) => sourceNews.dismiss(sourceKey, paths),
+    findSource: origin.find,
+    lookUpSource: origin.lookUp,
+    attachSource: origin.attach,
   };
 
-  return { api, auto };
+  return { api, auto, origin };
 }

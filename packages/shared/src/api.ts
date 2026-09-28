@@ -71,6 +71,7 @@ import type {
 import type { AppApi } from "./api-app";
 import type { SettingKey, SettingValue, Settings } from "./settings";
 import type { SourceCheckResult, SourceNews } from "./sources";
+import type { SourceCandidate, SourceChoice, SourceSearch } from "./origin";
 
 /**
  * The full surface the renderer (and the CLI) can call. Each namespace is implemented by a core
@@ -117,6 +118,11 @@ export interface SkillsApi {
    * installed again anywhere. Replaces a file already at that path.
    */
   exportArchive(skillIds: string[], destPath: string): Promise<ExportResult>;
+  /**
+   * Mark a skill without a source as the user's own work, or take that back. An own skill is
+   * left out when sources are searched. INVALID_INPUT for a skill that has a source.
+   */
+  setAuthored(skillId: string, authored: boolean): Promise<Skill>;
 }
 
 /** The in-app editor: any skill folder, in the library, an agent's folder or a project. */
@@ -259,6 +265,19 @@ export interface UpdatesApi {
   checkSources(sourceKeys?: string[]): Promise<SourceCheckResult>;
   /** Stop showing these new skills of a repository (all of them when `paths` is omitted). */
   dismissSourceNews(sourceKey: string, paths?: string[]): Promise<void>;
+  /**
+   * Look for where a skill without a source came from: the Git checkout it was imported from,
+   * repositories its `SKILL.md` links to, and the marketplace. Each candidate is compared with
+   * the library copy. Changes nothing.
+   */
+  findSource(skillId: string): Promise<SourceSearch>;
+  /** Compare a skill with a repository the user named. Changes nothing. */
+  lookUpSource(skillId: string, input: string): Promise<SourceCandidate>;
+  /**
+   * Make the skill follow a repository from now on. Its files stay as they are. When they differ
+   * from the latest version, the skill shows an update, and updating asks before replacing them.
+   */
+  attachSource(skillId: string, choice: SourceChoice): Promise<Skill>;
 }
 
 export interface PresetsApi {

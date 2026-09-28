@@ -78,7 +78,20 @@ function settled(skill: Skill, updateStatus: UpdateStatus, problem: string | nul
   return { guard: guardOf(skill), patch: () => ({ updateStatus, lastCheckError: problem }) };
 }
 
-function remoteFinding(skill: Skill, outcome: RemoteOutcome): Finding {
+/**
+ * Without an installed revision the commit is unknown. A skill linked to a source it differs
+ * from (its "as installed" snapshot is that source, not the library copy) has an update to
+ * offer; otherwise nobody can say.
+ */
+function statusWithoutRevision(fresh: Skill, installedHash: string | null): UpdateStatus {
+  return installedHash && installedHash !== fresh.contentHash ? "update_available" : "unknown";
+}
+
+function remoteFinding(
+  skill: Skill,
+  outcome: RemoteOutcome,
+  installedHash: string | null = null,
+): Finding {
   // A failed lookup keeps the last revision we saw: "error" says we do not know any better.
   if ("failure" in outcome) return settled(skill, "error", outcome.failure);
   const { revision } = outcome;
@@ -88,7 +101,7 @@ function remoteFinding(skill: Skill, outcome: RemoteOutcome): Finding {
       remoteRevision: revision,
       lastCheckError: null,
       updateStatus: !fresh.sourceRevision
-        ? "unknown"
+        ? statusWithoutRevision(fresh, installedHash)
         : fresh.sourceRevision === revision
           ? "up_to_date"
           : "update_available",
@@ -165,7 +178,8 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     }
     const target = targetOrFailure(skill);
     if ("failure" in target) return remoteFinding(skill, target);
-    return remoteFinding(skill, shared?.get(remoteKey(target)) ?? (await lookup(target)));
+    const outcome = shared?.get(remoteKey(target)) ?? (await lookup(target));
+    return remoteFinding(skill, outcome, store.installed(skill.id)?.hash ?? null);
   }
 
   async function apply(skill: Skill, finding: Finding, lockMode: LockMode): Promise<Skill> {

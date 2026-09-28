@@ -1,4 +1,10 @@
-import type { RemoveSkillsResult, Skill, SkillDocument, SkillsApi } from "@loadout/shared";
+import {
+  type RemoveSkillsResult,
+  type Skill,
+  type SkillDocument,
+  type SkillsApi,
+  canLinkSource,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import { listTopLevel, removePath } from "../util/fs";
@@ -11,6 +17,8 @@ import { type RenameDeps, renameSkill } from "./rename";
 import { exportTarget, writeSkillsArchive } from "./export";
 import { readSkillDocument } from "./metadata";
 import type { SkillStore } from "./store";
+
+const HAS_SOURCE = "This skill already follows a source, so it cannot be marked as your own.";
 
 export interface SkillsServiceDeps {
   store: SkillStore;
@@ -137,6 +145,17 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       const subject = only && skills.length === 1 ? only.name : `${skills.length} skills`;
       ctx.activity.record("export", subject, path);
       return result;
+    },
+
+    setAuthored: async (skillId, authored) => {
+      const skill = await ctx.lock.run(`mark ${store.get(skillId).name}`, () => {
+        const fresh = store.get(skillId);
+        if (authored && !canLinkSource(fresh)) throw invalid(HAS_SOURCE);
+        // Marking is not an edit of the skill: its "last changed" time stays.
+        return store.update(skillId, { authored, updatedAt: fresh.updatedAt });
+      });
+      ctx.touched("skills");
+      return skill;
     },
   };
 

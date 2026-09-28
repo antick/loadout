@@ -127,4 +127,8 @@ export const MIGRATIONS: readonly string[] = [
   ALTER TABLE skills ADD COLUMN installed_hash TEXT;
   ALTER TABLE skills ADD COLUMN installed_files TEXT;
   `,
+  `
+  -- The user said they wrote the skill themselves, so no source is looked for: 1, else 0.
+  ALTER TABLE skills ADD COLUMN authored INTEGER NOT NULL DEFAULT 0;
+  `,
 ];

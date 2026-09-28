@@ -105,6 +105,7 @@ function skill(
     editedFiles: [],
     issues: [],
     manualOnly: false,
+    authored: false,
     ...extra,
   };
 }

@@ -87,7 +87,7 @@ export function normalizeSourceUrl(url: string): string {
 }
 
 /** `owner/repo` for GitHub, `host/owner/repo` elsewhere. */
-function repositoryLabel(url: string): string {
+export function repositoryLabel(url: string): string {
   const normalized = normalizeSourceUrl(url);
   const [host, ...rest] = normalized.split("/");
   const path = rest.join("/");

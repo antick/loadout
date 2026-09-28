@@ -43,6 +43,8 @@ export interface InstallServiceDeps {
   replace?: ReplaceDeps;
   /** Which skills of each repository were already offered. */
   sourceNews?: Pick<SourceNewsStore, "markSeen">;
+  /** Called after a skill found in an agent's folder is imported, with the folder it came from. */
+  onImported?: (skill: Skill, sourcePath: string) => void;
 }
 
 export interface InstallService {
@@ -81,7 +83,13 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     previewTtlMs: deps.previewTtlMs,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
-  const scan = createScanService(ctx, { store, registry, install, safety: deps.safety });
+  const scan = createScanService(ctx, {
+    store,
+    registry,
+    install,
+    safety: deps.safety,
+    onImported: deps.onImported,
+  });
 
   async function fromPath(
     sourcePath: string,

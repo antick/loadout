@@ -105,6 +105,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     safety,
     replace: { removed, refreshCopies: deploy.refreshCopies },
     sourceNews,
+    // Updates are wired further down; an import only happens once everything is built.
+    onImported: (skill, sourcePath) => void updates.origin.linkIfExact(skill.id, sourcePath),
   });
   const skills = createSkillsService(ctx, {
     store,
@@ -123,6 +125,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     safety,
     removed,
     sourceNews,
+    searchMarket: market.api.search,
   });
   const presets = createPresetsService(ctx, { store, registry, deploy });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
