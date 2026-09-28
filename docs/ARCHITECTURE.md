@@ -47,6 +47,7 @@
 | `install/`           | Local, archive, Git (source parsing, clone cache, repo scan), cancel registry → `InstallApi`         |
 | `market/`            | Marketplace boards and search → `MarketApi`                                                          |
 | `sources/`           | Skills repositories gained since last seen: per-repository state, check, auto-add                    |
+| `origin/`            | Finding and linking the source of skills without one: local evidence, marketplace, compare           |
 | `updates/`           | Check, update, removal approval, source diff, background auto-update → `UpdatesApi`                  |
 | `presets/`           | `PresetsApi`                                                                                         |
 | `workspace/`         | Local skill scanning, library matching, sync status, global workspace → `WorkspaceApi`               |
