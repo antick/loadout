@@ -1,7 +1,7 @@
-import { hasSkillErrors, type Skill } from "@loadout/shared";
+import { SKILL_MARKER_FILES, canFixFrontmatter, hasSkillErrors, type Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { File, FileText, Folder, PencilLine } from "lucide-react";
-import type { ReactNode } from "react";
+import { File, FileText, Folder, PencilLine, WandSparkles } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";
 import { MarkdownView } from "@/components/MarkdownView";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
 import { cn } from "@/lib/utils";
+import { FixFrontmatterDialog } from "./FixFrontmatterDialog";
 
 const CHIP_CLASS =
   "inline-flex h-6 items-center rounded-md border bg-muted/40 font-mono text-xs data-[main=true]:border-primary/40 data-[main=true]:text-foreground";
@@ -25,6 +26,7 @@ function looksLikeFolder(name: string): boolean {
 export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
   const { t } = useTranslation();
   const document = useSkillDocument(skill.id);
+  const [fixing, setFixing] = useState(false);
 
   if (document.isPending) {
     return (
@@ -41,18 +43,28 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
   }
 
   const { filename, content, files, path } = document.data;
+  const markerFile = SKILL_MARKER_FILES.some((marker) => marker === filename);
+  const fixable = markerFile && canFixFrontmatter(skill.issues);
   return (
     <div className="flex flex-col gap-6">
       {skill.issues.length > 0 ? (
         <PageSection
           title={t("checks.title")}
           actions={
-            <Button asChild variant="outline" size="xs">
-              <Link to="/library/$skillId/edit" params={{ skillId: skill.id }}>
-                <PencilLine />
-                {t("checks.fix")}
-              </Link>
-            </Button>
+            <div className="flex items-center gap-1.5">
+              {fixable ? (
+                <Button variant="outline" size="xs" onClick={() => setFixing(true)}>
+                  <WandSparkles />
+                  {t("checks.fixFrontmatter.button")}
+                </Button>
+              ) : null}
+              <Button asChild variant="outline" size="xs">
+                <Link to="/library/$skillId/edit" params={{ skillId: skill.id }}>
+                  <PencilLine />
+                  {t("checks.fix")}
+                </Link>
+              </Button>
+            </div>
           }
         >
           <div
@@ -65,6 +77,14 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
           >
             <SkillIssueList issues={skill.issues} />
           </div>
+          {fixable ? (
+            <FixFrontmatterDialog
+              skill={skill}
+              path={filename}
+              open={fixing}
+              onOpenChange={setFixing}
+            />
+          ) : null}
         </PageSection>
       ) : null}
       <PageSection

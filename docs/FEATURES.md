@@ -10,6 +10,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Tags: add, remove, rename, delete, edit for many skills at once.
 - Skill panel: rendered `SKILL.md`, files, source, per-agent switches, presets, projects.
 - Format checks against the Agent Skills rules, with line numbers; errors mark the skill "Needs fixing".
+- **Fix frontmatter**: adds a missing name and description, shown as a diff before saving.
 - **Manual only** badge for skills with `disable-model-invocation: true`.
 - **Sources** page: one card per repository, archive or link; find new skills, update, check, remove.
 - A check notices skills a repository gained since you last looked; skipped or dismissed ones stay quiet.

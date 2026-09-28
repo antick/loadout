@@ -2,6 +2,17 @@
   "checks": {
     "title": "Checks",
     "fix": "Fix in editor",
+    "fixFrontmatter": {
+      "button": "Fix frontmatter",
+      "title": "Fix the frontmatter of {{name}}",
+      "description": "Adds what {{path}} is missing. Nothing else in the file changes. Check the text below, then save.",
+      "addsName": "Adds the name “{{name}}”, the folder name.",
+      "addsDescription": "Adds a description from the first paragraph. Edit it afterwards if it doesn't say when to use the skill.",
+      "nothing": "Nothing to add: the frontmatter already has a name and a description, or its YAML needs fixing by hand in the editor.",
+      "apply": "Save the fix",
+      "done": "Fixed the frontmatter of {{name}}",
+      "failed": "Couldn't save the fix"
+    },
     "allGood": "No problems found.",
     "errors_one": "{{count}} error",
     "errors_other": "{{count}} errors",
