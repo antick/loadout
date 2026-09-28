@@ -45,7 +45,7 @@ test("many deletions get a warning and a keep-all", async ({ page }) => {
 
 test("a conflict can be compared file by file before choosing", async ({ page }) => {
   await openApp(page, "/backup");
-  await main(page).getByRole("button", { name: "Compare" }).click();
+  await main(page).getByRole("button", { name: "Compare" }).first().click();
 
   const dialog = page.getByRole("dialog", { name: "Compare “release-notes”" });
   await expect(dialog.getByText("SKILL.md")).toBeVisible();
@@ -53,6 +53,70 @@ test("a conflict can be compared file by file before choosing", async ({ page })
   if (SCREENSHOTS) await page.screenshot({ path: `${SCREENSHOTS}/conflict-compare.png` });
   await dialog.getByRole("button", { name: "Close" }).first().click();
   await expect(dialog).toHaveCount(0);
+});
+
+test("several conflicts take one choice for all, after a confirmation", async ({ page }) => {
+  await openApp(page, "/backup");
+  const content = main(page);
+  await expect(content.getByText("sql-helper")).toBeVisible();
+  await content.getByRole("button", { name: "Use all remote" }).click();
+
+  const ask = page.getByRole("alertdialog", { name: "Replace 2 skills with the remote versions?" });
+  await ask.getByRole("button", { name: "Use all remote" }).click();
+  await expect(page.getByText("2 skills now use the remote version")).toBeVisible();
+  await expect(content.getByRole("heading", { name: "Needs attention" })).toHaveCount(0);
+});
+
+test("a long review can be searched and filtered; keep-all answers for the rows shown", async ({
+  page,
+}) => {
+  await page.goto("/?review=many#/backup");
+  await expect(activityBar(page)).toBeVisible();
+  await main(page).getByRole("button", { name: "Sync now" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Review the sync" });
+  await dialog.getByRole("combobox", { name: "Kind of change" }).click();
+  await page.getByRole("option", { name: /^Deleted/ }).click();
+  await expect(dialog.getByText("commit-helper")).toHaveCount(0);
+
+  await dialog.getByRole("searchbox", { name: "Search skills or devices" }).fill("er");
+  await expect(dialog.getByRole("radiogroup")).toHaveCount(2);
+  await dialog.getByRole("button", { name: "Keep all" }).click();
+  if (SCREENSHOTS) await page.screenshot({ path: `${SCREENSHOTS}/sync-review-filter.png` });
+
+  await dialog.getByRole("searchbox", { name: "Search skills or devices" }).fill("nothing-like-it");
+  await expect(
+    dialog.getByText("No skill in this sync fits the search and the filter."),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Clear filters" }).click();
+  await expect(dialog.getByText("commit-helper")).toBeVisible();
+  const answer = (name: string) =>
+    dialog.getByRole("radiogroup", { name: `What to do with ${name}` });
+  await expect(answer("sql-helper").getByRole("radio", { name: "Keep" })).toBeChecked();
+  await expect(answer("test-writer").getByRole("radio", { name: "Keep" })).toBeChecked();
+  await expect(answer("pdf-tools").getByRole("radio", { name: "Delete here" })).toBeChecked();
+});
+
+test("the review says when the library changed meanwhile, and Recheck refreshes it", async ({
+  page,
+}) => {
+  await page.goto("/?review=stale#/backup");
+  await expect(activityBar(page)).toBeVisible();
+  await main(page).getByRole("button", { name: "Sync now" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Review the sync" });
+  const notice = dialog.getByText(/changed since this review/);
+  await expect(dialog.getByRole("heading", { name: "Coming in" })).toBeVisible();
+  await expect(notice).toHaveCount(0);
+
+  // Anything that changes the library; the preview bridge answers it like the app would.
+  await page.evaluate('window.loadout.invoke("skills.renameTag", ["no-such-tag", "other"])');
+  await expect(notice).toBeVisible();
+  if (SCREENSHOTS) await page.screenshot({ path: `${SCREENSHOTS}/sync-review-stale.png` });
+
+  await dialog.getByRole("button", { name: "Recheck" }).click();
+  await expect(notice).toHaveCount(0);
+  await expect(dialog.getByRole("heading", { name: "Coming in" })).toBeVisible();
 });
 
 test("own patterns are saved, and one that drops whole skills is refused", async ({ page }) => {
