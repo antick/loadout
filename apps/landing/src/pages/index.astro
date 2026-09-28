@@ -1,41 +1,70 @@
 ---
 import { APP_NAME } from "@loadout/shared";
 import Agents from "../components/Agents.astro";
+import Brand from "../components/Brand.astro";
 import Header from "../components/Header.astro";
 import Hero from "../components/Hero.astro";
 import Install from "../components/Install.astro";
-import Manual from "../components/Manual.astro";
+import Features from "../components/Features.astro";
 import Safety from "../components/Safety.astro";
 import Base from "../layouts/Base.astro";
 import { AGENT_COUNT } from "../lib/agents";
-import { ALL_RELEASES_URL, GITHUB_URL, PARENT_NAME, PARENT_URL } from "../lib/site";
+import { ALL_RELEASES_URL, GITHUB_URL, INSTALL_GUIDE, PARENT_NAME, PARENT_URL } from "../lib/site";
 ---
 
-<Base
-  title={`${APP_NAME}: one skill library for every coding agent`}
-  description={`A desktop app that keeps your AI agent skills in one library and links them into Claude Code, Codex, Cursor and ${AGENT_COUNT - 3} other agents.`}
->
+<Base title={`${APP_NAME}: one skill library for every coding agent`}
+  description={`Keep your AI skills in one place and use them across ${AGENT_COUNT} agents, including Claude Code, Codex and Cursor. Free and open source for macOS, Windows and Linux.`}>
+  <a class="skip-link" href="#main">Skip to content</a>
   <Header />
-  <main>
+  <main id="main" tabindex="-1">
     <Hero />
-    <Manual />
     <Agents />
+    <Features />
     <Safety />
     <Install />
   </main>
-  <footer class="wrap">
-    <p>
-      {APP_NAME} is a <a href={PARENT_URL}>{PARENT_NAME}</a> project. It is open source under the GPL-3.0:{" "}
-      <a href={GITHUB_URL}>source on GitHub</a>, <a href={ALL_RELEASES_URL}>releases</a>.
-    </p>
+  <footer class="wrap footer">
+    <Brand />
+    <p>A <a href={PARENT_URL}>{PARENT_NAME}</a> project</p>
+    <nav aria-label="Footer navigation">
+      <a href={GITHUB_URL}>GitHub</a>
+      <a href={ALL_RELEASES_URL}>Releases</a>
+      <a href={INSTALL_GUIDE}>Install guide</a>
+    </nav>
   </footer>
 </Base>
 
 <style>
-  footer {
-    padding-block: 1.5rem 3rem;
-    border-top: 2px solid var(--rule-strong);
-    color: var(--slate);
-    font-size: 0.9375rem;
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    padding-block: 2.5rem;
+  }
+  .footer p,
+  nav {
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+  nav a,
+  .footer p a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    text-decoration: none;
+  }
+  @media (max-width: 40rem) {
+    .footer {
+      flex-direction: column;
+      align-items: start;
+      gap: 0.5rem;
+    }
   }
 </style>

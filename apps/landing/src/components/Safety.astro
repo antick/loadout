@@ -1,76 +1,62 @@
 ---
-interface Guarantee {
-  title: string;
-  body: string;
-}
-
-// The same promises the app's help makes, in fewer words.
-const guarantees: Guarantee[] = [
-  {
-    title: "Agent folders",
-    body: "Loadout never overwrites or deletes anything in an agent's folder that it did not put there. If something is in the way, it tells you the exact path and stops.",
-  },
-  {
-    title: "Your edits",
-    body: "A save never overwrites a change made on disk after you opened the file: you see both and choose. Updates hold back skills you edited until you say otherwise.",
-  },
-  {
-    title: "Deleting files",
-    body: "An update that would delete files lists them and waits for your approval. Automatic updates never delete anything.",
-  },
-  {
-    title: "Your data",
-    body: "Everything lives in ~/.loadout on your computer. The backup goes only to a Git remote you choose, and a GitHub token is kept in the system keychain.",
-  },
-];
+import { GUARANTEES } from "../lib/content";
+import Icon from "./Icon.astro";
 ---
 
-<section class="wrap section" id="safety" aria-labelledby="safety-title">
-  <span class="chapter-label">Safety</span>
-  <h2 id="safety-title">It only touches what it put there</h2>
-  <ul>
-    {
-      guarantees.map((item) => (
-        <li>
-          <h3>{item.title}</h3>
-          <p>{item.body}</p>
-        </li>
-      ))
-    }
-  </ul>
+<section class="wrap section safety" id="safety" aria-labelledby="safety-title">
+  <h2 id="safety-title">Your skills stay yours.</h2>
+  <ul>{GUARANTEES.map((item) => <li>
+    <Icon name={item.icon} />
+    <div><h3>{item.title}</h3><p>{item.body}</p></div>
+  </li>)}</ul>
 </section>
 
 <style>
+  .safety {
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+  }
+  h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.045em;
+  }
   ul {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.25rem;
-    margin: 2.5rem 0 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+    margin: 1.75rem 0 0;
     padding: 0;
     list-style: none;
   }
-
   li {
-    padding: 1.25rem 1.5rem 1.375rem;
-    border: 1.5px solid var(--rule-strong);
-    border-left-width: 6px;
-    border-left-color: var(--signal);
-    border-radius: 4px;
-    background: var(--panel);
+    display: flex;
+    gap: 1rem;
   }
-
+  li + li {
+    padding-left: 2rem;
+    border-left: 1px solid var(--rule);
+  }
+  li :global(svg) {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
   h3 {
-    font-size: 1.1875rem;
+    font-size: 0.9375rem;
   }
-
   p {
     margin-top: 0.5rem;
-    color: var(--slate);
+    color: var(--muted);
+    font-size: 0.875rem;
   }
-
   @media (max-width: 48rem) {
     ul {
       grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    li + li {
+      padding: 1.5rem 0 0;
+      border-left: 0;
+      border-top: 1px solid var(--rule);
     }
   }
 </style>

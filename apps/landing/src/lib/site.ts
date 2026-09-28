@@ -20,13 +20,12 @@ export const INSTALL_GUIDE = INSTALL_GUIDE_URL;
 
 /** The app version the page describes: the desktop app's own version. */
 export const APP_VERSION = desktop.version;
-/** The library folder, as users see it. */
-export const LIBRARY_DIR = "~/.loadout/skills";
-
-/** Figure 1 on the page, also the picture shown when a link to the page is shared. */
-export const DASHBOARD_FIGURE = {
-  src: "/figures/dashboard.jpg",
+/** The product preview, also used when a link to the page is shared. */
+export const LIBRARY_FIGURE = {
+  src: "/figures/library.jpg",
   width: 1600,
   height: 1042,
-  alt: "The Loadout dashboard: library size, deploy coverage, connected agents, install buttons and recent activity.",
+  alt: "Loadout's skill library, with search, tags, and skill cards showing which agents use each skill.",
 };
+
+export const THEME_COLOR = "#fafaf7";

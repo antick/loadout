@@ -1,0 +1,98 @@
+---
+import { FEATURED_AGENTS } from "../lib/agents";
+import { FEATURES, PREVIEW_PRESETS, PREVIEW_SKILLS } from "../lib/content";
+import Icon from "./Icon.astro";
+
+interface Props { kind: (typeof FEATURES)[number]["key"]; }
+const { kind } = Astro.props;
+const PREVIEW_AGENT_COUNT = 3;
+---
+
+<div class:list={["preview", kind]} aria-hidden="true">
+  {kind === "collect" && <div class="skill-list">
+    {PREVIEW_SKILLS.map((skill) => <div class="mini-row"><Icon name="folder" /><span>{skill}</span><span class="file-mark">↗</span></div>)}
+  </div>}
+  {kind === "share" && <>
+    <img src="/brand.svg" width="42" height="42" alt="" />
+    <div class="connections"></div>
+    <div class="agent-list">{FEATURED_AGENTS.slice(0, PREVIEW_AGENT_COUNT).map((agent) => <div><span class="agent-dot"></span>{agent.displayName}</div>)}</div>
+  </>}
+  {kind === "presets" && <div class="preset-list">
+    <span class="mini-label">Your presets</span>
+    {PREVIEW_PRESETS.map((preset) => <div class="mini-row"><Icon name="layers" /><span>{preset}</span><Icon name="check" /></div>)}
+  </div>}
+</div>
+
+<style>
+  .preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 10rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.6875rem;
+  }
+  .skill-list,
+  .preset-list {
+    width: 100%;
+  }
+  .mini-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem;
+    border: 1px solid var(--rule);
+    border-radius: 0.5rem;
+    background: var(--panel);
+  }
+  .mini-row + .mini-row {
+    margin-top: 0.5rem;
+  }
+  .mini-row :global(svg) {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--muted);
+  }
+  .mini-row span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mini-row > :last-child {
+    margin-left: auto;
+  }
+  .file-mark {
+    color: var(--muted);
+  }
+  .mini-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+  }
+  .share {
+    gap: 0.5rem;
+  }
+  .connections {
+    width: 1.5rem;
+    height: 5rem;
+    border-block: 1px solid var(--frame);
+    border-left: 1px solid var(--frame);
+    border-radius: 1rem 0 0 1rem;
+  }
+  .agent-list {
+    display: grid;
+    gap: 1rem;
+  }
+  .agent-list > div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+  }
+  .agent-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+</style>

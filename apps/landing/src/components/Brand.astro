@@ -1,0 +1,23 @@
+---
+import { APP_NAME } from "@loadout/shared";
+---
+
+<a class="brand" href="/" aria-label={`${APP_NAME} home`}>
+  <img src="/brand.svg" alt="" width="36" height="36" />
+  <span>{APP_NAME}</span>
+</a>
+
+<style>
+  .brand {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+    color: var(--ink);
+    font-size: 1.375rem;
+    font-weight: 750;
+    letter-spacing: -0.055em;
+    text-decoration: none;
+  }
+</style>

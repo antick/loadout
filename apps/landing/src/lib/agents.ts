@@ -15,10 +15,5 @@ export function agentsInOrder(): AgentDefinition[] {
   );
 }
 
-export function codingAgents(): AgentDefinition[] {
-  return agentsInOrder().filter((agent) => (agent.category ?? "coding") === "coding");
-}
-
-export function assistantAgents(): AgentDefinition[] {
-  return agentsInOrder().filter((agent) => agent.category === "assistant");
-}
+const FEATURED_AGENT_COUNT = 5;
+export const FEATURED_AGENTS = agentsInOrder().slice(0, FEATURED_AGENT_COUNT);

@@ -1,0 +1,15 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  href?: string;
+  compact?: boolean;
+}
+
+const { href = "#install", compact = false } = Astro.props;
+---
+
+<a class:list={["button", { "button-dark": compact }]} href={href}>
+  {!compact && <Icon name="download" />}
+  {compact ? "Download" : "Download Loadout"}
+</a>

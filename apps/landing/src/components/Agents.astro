@@ -1,78 +1,92 @@
 ---
-import { AGENT_COUNT, assistantAgents, codingAgents } from "../lib/agents";
-
-const groups = [
-  { title: "Coding agents", agents: codingAgents() },
-  { title: "Assistants", agents: assistantAgents() },
-].filter((group) => group.agents.length > 0);
+import { AGENT_COUNT, agentsInOrder, FEATURED_AGENTS } from "../lib/agents";
 ---
 
-<section class="wrap section" id="agents" aria-labelledby="agents-title">
-  <span class="chapter-label">Compatible equipment</span>
-  <h2 id="agents-title">Works with {AGENT_COUNT} agents</h2>
-  <p class="lede">
-    Loadout finds the agents installed on your computer and knows where each one looks for skills.
-    Anything missing? Add it as a custom agent with its own folder.
-  </p>
-  {
-    groups.map((group) => (
-      <div class="group">
-        <h3>{group.title}</h3>
-        <ul>
-          {group.agents.map((agent) => (
-            <li>
-              <span class="name">{agent.displayName}</span>
-              <code class="path">~/{agent.skillsDir}</code>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ))
-  }
+<section class="wrap agents" id="agents" aria-labelledby="agents-title">
+  <h2 id="agents-title">One library. {AGENT_COUNT} agents.</h2>
+  <ul class="featured" aria-label="Featured supported agents">
+    {FEATURED_AGENTS.map((agent) => <li>{agent.displayName}</li>)}
+  </ul>
+  <details>
+    <summary>+{AGENT_COUNT - FEATURED_AGENTS.length} more <span class="visually-hidden">: view all supported agents</span></summary>
+    <div class="directory">
+      <p>Loadout finds your installed agents automatically. You can also add a custom agent.</p>
+      <ul class="all-agents">
+        {agentsInOrder().map((agent) => <li>{agent.displayName}</li>)}
+      </ul>
+    </div>
+  </details>
 </section>
 
 <style>
-  .lede {
-    margin-top: 1rem;
+  .agents {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 0.75rem;
+    margin-top: 3rem;
   }
-
-  .group {
-    margin-top: 2.5rem;
+  h2 {
+    grid-column: 1 / -1;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    text-align: center;
   }
-
-  .group h3 {
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--rule-strong);
-    font-size: 1.125rem;
-  }
-
   ul {
-    columns: 3 16rem;
-    column-gap: 2.5rem;
+    list-style: none;
     margin: 0;
     padding: 0;
-    list-style: none;
   }
-
-  li {
+  .featured {
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-block: 0.5rem;
-    border-bottom: 1px solid var(--rule);
-    break-inside: avoid;
-    font-size: 0.9375rem;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
   }
-
-  .name {
-    font-weight: 500;
+  .featured li {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
-
-  .path {
-    overflow: hidden;
-    color: var(--slate);
-    font-size: 0.8125rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  summary {
+    width: fit-content;
+    margin-inline: auto;
+    font-size: 0.875rem;
+    font-weight: 400;
+  }
+  .directory {
+    margin-top: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .directory p {
+    color: var(--muted);
+  }
+  .all-agents {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem 1.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+  }
+  @media (max-width: 48rem) {
+    .featured {
+      justify-content: center;
+    }
+    .all-agents {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 23rem) {
+    .all-agents {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
