@@ -10,6 +10,8 @@ export interface RepoSkillPreview {
   relPath: string;
   name: string;
   description: string | null;
+  /** The frontmatter sets `disable-model-invocation: true`: agents run it only on request. */
+  manualOnly: boolean;
   /** A library skill with this name already exists; installing updates it. */
   alreadyInstalled: boolean;
 }

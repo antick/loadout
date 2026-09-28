@@ -111,12 +111,14 @@ describe("install sources", () => {
       relPath: "skills/alpha",
       name: "Alpha",
       description: null,
+      manualOnly: false,
       alreadyInstalled: false,
     };
     const two = {
       relPath: "skills/beta",
       name: "Beta",
       description: null,
+      manualOnly: false,
       alreadyInstalled: false,
     };
     expect(selectSkills([one], [], false)).toEqual([one]);

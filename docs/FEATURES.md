@@ -26,6 +26,9 @@ For the feature checklist, see [PLAN.md](PLAN.md).
   are not in the skill) are listed in the
   skill's panel. The editor runs the same checks on unsaved text, and each problem names its
   line; click it to jump there. `loadout skills validate` prints the line too.
+- **Manual only** badge on skills whose frontmatter sets `disable-model-invocation: true`: agents
+  that read the field run them only when you call them by name. Shown on cards, rows, the skill
+  panel and the import list; `loadout skills list` marks them `[manual]`.
 - Batch mode: deploy to agents, add to a preset, tag, export, update or delete many skills at once.
 - Export: one skill or a selection as a single `.zip`, from the skill's panel, its right-click menu
   or batch mode. Each skill is a folder inside, so the file installs again anywhere, including in

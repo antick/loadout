@@ -7,6 +7,7 @@ import {
   skillIssue,
 } from "@loadout/shared";
 import { canonicalPath, isInside, lstatOrNull } from "../util/fs";
+import { readFrontmatter } from "./metadata";
 
 /** What the checks need to know about a library skill. */
 export interface InspectedSkill {
@@ -15,9 +16,16 @@ export interface InspectedSkill {
   contentHash: string | null;
 }
 
+/** What reading a skill's folder tells about it beyond its database row. */
+export interface SkillFacts {
+  issues: SkillIssue[];
+  /** The frontmatter sets `disable-model-invocation: true`. */
+  manualOnly: boolean;
+}
+
 /** Checks of skills, remembered per content hash so listing the library stays cheap. */
 export interface SkillInspector {
-  issuesOf(skill: InspectedSkill): SkillIssue[];
+  factsOf(skill: InspectedSkill): SkillFacts;
 }
 
 function readDocument(dir: string): string | null {
@@ -52,24 +60,29 @@ export function inspectSkillFolder(dir: string): SkillIssue[] {
   );
 }
 
-export function createSkillInspector(inspect = inspectSkillFolder): SkillInspector {
-  const cache = new Map<string, { key: string; issues: SkillIssue[] }>();
+/** Every check of one skill folder plus the frontmatter flags shown next to it. */
+export function inspectSkillFacts(dir: string): SkillFacts {
+  return { issues: inspectSkillFolder(dir), manualOnly: readFrontmatter(dir).manualOnly };
+}
+
+export function createSkillInspector(inspect = inspectSkillFacts): SkillInspector {
+  const cache = new Map<string, { key: string; facts: SkillFacts }>();
   return {
-    issuesOf: (skill) => {
+    factsOf: (skill) => {
       // Without a hash nothing tells us the folder is unchanged, so look again.
       const key = skill.contentHash ? `${skill.libraryPath}\0${skill.contentHash}` : null;
       const cached = cache.get(skill.id);
-      if (key && cached?.key === key) return cached.issues;
-      let issues: SkillIssue[];
+      if (key && cached?.key === key) return cached.facts;
+      let facts: SkillFacts;
       try {
-        issues = inspect(skill.libraryPath);
+        facts = inspect(skill.libraryPath);
       } catch (error) {
         // One unreadable skill must never stop the whole library from listing.
         const reason = error instanceof Error ? error.message : String(error);
-        issues = [skillIssue("frontmatter_invalid", { reason }, 1)];
+        facts = { issues: [skillIssue("frontmatter_invalid", { reason }, 1)], manualOnly: false };
       }
-      if (key) cache.set(skill.id, { key, issues });
-      return issues;
+      if (key) cache.set(skill.id, { key, facts });
+      return facts;
     },
   };
 }

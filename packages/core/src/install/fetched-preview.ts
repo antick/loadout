@@ -60,6 +60,7 @@ export function previewRows(
     relPath: skill.relPath,
     name: skill.name,
     description: skill.description,
+    manualOnly: skill.manualOnly,
     alreadyInstalled: store.findByName(skill.name).some(installed),
   }));
 }

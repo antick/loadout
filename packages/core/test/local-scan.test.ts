@@ -57,6 +57,7 @@ function librarySkill(dirName: string, overrides: Partial<Skill> = {}): Skill {
     hasConflict: false,
     editedFiles: [],
     issues: [],
+    manualOnly: false,
     ...overrides,
   };
 }

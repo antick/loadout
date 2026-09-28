@@ -136,7 +136,7 @@ function toDeployment(row: DeploymentRow): DeploymentRecord {
   };
 }
 
-const NO_CHECKS: SkillInspector = { issuesOf: () => [] };
+const NO_CHECKS: SkillInspector = { factsOf: () => ({ issues: [], manualOnly: false }) };
 
 /**
  * All reads and writes of skills, tags and deployments. No filesystem work happens here: the
@@ -175,7 +175,25 @@ export class SkillStore {
         .all<{ skill_key: string }>("SELECT skill_key FROM backup_conflicts")
         .map((r) => r.skill_key),
     );
-    return rows.map((row) => ({
+    return rows.map((row) => this.#toSkill(row, { deployments, tags, presets, conflicts }));
+  }
+
+  #toSkill(
+    row: SkillRow,
+    related: {
+      deployments: Map<string, Deployment[]>;
+      tags: Map<string, string[]>;
+      presets: Map<string, string[]>;
+      conflicts: Set<string>;
+    },
+  ): Skill {
+    const { deployments, tags, presets, conflicts } = related;
+    const facts = this.#inspector.factsOf({
+      id: row.id,
+      libraryPath: row.library_path,
+      contentHash: row.content_hash,
+    });
+    return {
       id: row.id,
       name: row.name,
       dirName: basename(row.library_path),
@@ -199,12 +217,9 @@ export class SkillStore {
       tags: tags.get(row.id) ?? [],
       hasConflict: conflicts.has(row.id),
       editedFiles: decodeEditedFiles(row.edited_files),
-      issues: this.#inspector.issuesOf({
-        id: row.id,
-        libraryPath: row.library_path,
-        contentHash: row.content_hash,
-      }),
-    }));
+      issues: facts.issues,
+      manualOnly: facts.manualOnly,
+    };
   }
 
   list(): Skill[] {

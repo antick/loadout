@@ -18,6 +18,8 @@ export interface FoundSkill {
   relPath: string;
   name: string;
   description: string | null;
+  /** The frontmatter sets `disable-model-invocation: true`. */
+  manualOnly: boolean;
 }
 
 export interface FindOptions {
@@ -123,6 +125,7 @@ export function listRepoSkills(scanRoot: string, options: FindOptions = {}): Fou
       relPath: toPosix(relative(scanRoot, dir)) || basename(scanRoot),
       name: identity.name,
       description: identity.description,
+      manualOnly: identity.manualOnly,
     };
   });
 }

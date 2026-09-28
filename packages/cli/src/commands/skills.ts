@@ -61,6 +61,13 @@ const REMOVE_FLAG = {
 
 const agentsOf = (skill: Skill): string => skill.deployments.map((d) => d.agentKey).join(", ");
 
+/** Next to a skill's name when agents only run it on request. */
+export const MANUAL_ONLY_MARK = "[manual]";
+const MANUAL_ONLY_TEXT = "manual only: agents run it when you call it (disable-model-invocation)";
+
+const nameCell = (skill: Skill): string =>
+  skill.manualOnly ? `${skill.name} ${MANUAL_ONLY_MARK}` : skill.name;
+
 /** "ok", "2 errors", "1 warning": the format checks in one cell. */
 function checksOf(skill: Skill): string {
   const errors = skill.issues.filter((issue) => issue.severity === "error").length;
@@ -86,7 +93,7 @@ async function list({ core, args }: CommandContext): Promise<CommandResult> {
   const text = table(
     ["name", "source", "updates", "checks", "deployed to", "tags"],
     value.map((s) => [
-      s.name,
+      nameCell(s),
       s.sourceType,
       s.updateStatus,
       checksOf(s),
@@ -105,6 +112,7 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
     ["Name", value.name],
     ["Id", value.id],
     ["Description", value.description],
+    ["Invocation", value.manualOnly ? MANUAL_ONLY_TEXT : null],
     ["Folder", value.libraryPath],
     ["Source", value.sourceType],
     ["From", value.sourceUrl ?? value.sourceRef],

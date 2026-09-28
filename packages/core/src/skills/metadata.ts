@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { SKILL_DOCUMENT_FILES, SKILL_MARKER_FILES } from "@loadout/shared";
+import { SKILL_DOCUMENT_FILES, SKILL_MARKER_FILES, isManualOnly } from "@loadout/shared";
 import { parse, parseDocument, stringify } from "yaml";
 import { isInside, canonicalPath, readDirSafe, statOrNull } from "../util/fs";
 import { inferSkillName } from "../util/names";
@@ -8,13 +8,15 @@ import { inferSkillName } from "../util/names";
 export interface SkillFrontmatter {
   name: string | null;
   description: string | null;
+  /** `disable-model-invocation: true`: agents should only run it when a person asks. */
+  manualOnly: boolean;
 }
 
 const FENCE = "---";
 const DOCUMENT_SEARCH_DEPTH = 4;
-const EMPTY: SkillFrontmatter = { name: null, description: null };
+const EMPTY: SkillFrontmatter = { name: null, description: null, manualOnly: false };
 
-/** Read `name` and `description` from YAML frontmatter. Any problem yields nulls, never throws. */
+/** Read `name`, `description` and the manual-only flag from YAML frontmatter. Never throws. */
 export function parseFrontmatter(text: string): SkillFrontmatter {
   const trimmed = text.trim();
   if (!trimmed.startsWith(FENCE)) return EMPTY;
@@ -28,6 +30,7 @@ export function parseFrontmatter(text: string): SkillFrontmatter {
       name: typeof record.name === "string" ? record.name.trim() || null : null,
       description:
         typeof record.description === "string" ? record.description.trim() || null : null,
+      manualOnly: isManualOnly(record),
     };
   } catch {
     return EMPTY;
@@ -48,11 +51,16 @@ export function readFrontmatter(skillDir: string): SkillFrontmatter {
 export interface SkillIdentity {
   name: string;
   description: string | null;
+  manualOnly: boolean;
 }
 
 export function readSkillIdentity(skillDir: string): SkillIdentity {
   const frontmatter = readFrontmatter(skillDir);
-  return { name: inferSkillName(frontmatter.name, skillDir), description: frontmatter.description };
+  return {
+    name: inferSkillName(frontmatter.name, skillDir),
+    description: frontmatter.description,
+    manualOnly: frontmatter.manualOnly,
+  };
 }
 
 function findDocument(dir: string, depth: number): string | null {

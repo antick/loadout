@@ -8,6 +8,7 @@ import { Bot, GitBranch, GitCommitHorizontal, RefreshCw, SearchX, ShieldAlert } 
 import { type FormEvent, type ReactNode, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
+import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -64,9 +65,12 @@ function PreviewRow({ skill, checked, name, onToggle, onRename }: PreviewRowProp
           className="h-7 px-2 text-sm font-medium"
           onChange={(event) => onRename(event.target.value)}
         />
-        <p className="truncate font-mono text-xs text-muted-foreground" title={skill.relPath}>
-          {skill.relPath}
-        </p>
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate font-mono text-xs text-muted-foreground" title={skill.relPath}>
+            {skill.relPath}
+          </p>
+          {skill.manualOnly ? <ManualOnlyBadge /> : null}
+        </div>
         <p className={cn("line-clamp-2 text-xs text-muted-foreground", !checked && "opacity-70")}>
           {skill.description ?? t("skills.noDescription")}
         </p>

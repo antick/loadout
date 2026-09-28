@@ -104,6 +104,7 @@ function skill(
     hasConflict: false,
     editedFiles: [],
     issues: [],
+    manualOnly: false,
     ...extra,
   };
 }
@@ -130,7 +131,7 @@ export const SEED_SKILLS: Skill[] = [
   skill(
     "commit-messages",
     "Write conventional commit messages from staged changes.",
-    { tags: ["git"] },
+    { tags: ["git"], manualOnly: true },
     ["claude_code"],
   ),
   skill(

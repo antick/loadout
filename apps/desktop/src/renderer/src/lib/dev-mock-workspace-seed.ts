@@ -210,6 +210,7 @@ export function mockImportedSkill(
     hasConflict: false,
     editedFiles: [],
     issues: [],
+    manualOnly: false,
   };
 }
 

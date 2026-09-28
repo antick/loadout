@@ -87,6 +87,8 @@
   "skills": {
     "noDescription": "No description",
     "conflict": "Backup conflict",
+    "manualOnly": "Manual only",
+    "manualOnlyHint": "This skill sets disable-model-invocation, so agents that read it run the skill only when you call it by name. Agents that ignore the setting may still use it on their own.",
     "removed_one": "Removed {{count}} skill",
     "removed_other": "Removed {{count}} skills",
     "removedWithFailures_one": "{{summary}}, {{count}} failed",

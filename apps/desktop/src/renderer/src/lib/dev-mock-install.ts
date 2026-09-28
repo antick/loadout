@@ -185,8 +185,16 @@ export function createInstallMockHandlers(
           relPath: relPath.split("/").at(-1) ?? relPath,
           name,
           description,
+          manualOnly: false,
         }))
-      : [{ relPath: baseName(source), name: baseName(source), description: "From an archive." }];
+      : [
+          {
+            relPath: baseName(source),
+            name: baseName(source),
+            description: "From an archive.",
+            manualOnly: false,
+          },
+        ];
     return skills.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
   }
 
@@ -198,11 +206,21 @@ export function createInstallMockHandlers(
   ): GitPreview["skills"] {
     if (kind === "archive") return archiveSkills(url);
     if (kind === "site") {
-      return SITE_SKILLS.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
+      return SITE_SKILLS.map((entry) => ({
+        ...entry,
+        manualOnly: false,
+        alreadyInstalled: names.has(entry.name),
+      }));
     }
     const folder = url.split("/").at(-2) ?? "skill";
     return [
-      { relPath: folder, name: folder, description: "From a link.", alreadyInstalled: false },
+      {
+        relPath: folder,
+        name: folder,
+        description: "From a link.",
+        manualOnly: false,
+        alreadyInstalled: false,
+      },
     ];
   }
 
@@ -235,6 +253,7 @@ export function createInstallMockHandlers(
       hasConflict: false,
       editedFiles: [],
       issues: [],
+      manualOnly: false,
       ...extra,
     };
     ctx.addSkill(created);
@@ -383,7 +402,11 @@ export function createInstallMockHandlers(
         }
         const skills = repoUrl.includes("empty")
           ? []
-          : REPO_SKILLS.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
+          : REPO_SKILLS.map((entry) => ({
+              manualOnly: entry.name === "log-triage",
+              ...entry,
+              alreadyInstalled: names.has(entry.name),
+            }));
         return {
           previewId,
           kind,

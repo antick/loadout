@@ -114,6 +114,11 @@ export interface Skill {
   editedFiles: string[];
   /** Problems with the skill's format, errors first. Empty when the skill is fine. */
   issues: SkillIssue[];
+  /**
+   * Its frontmatter sets `disable-model-invocation: true`: agents that honour the field only run
+   * it when a person calls it by name.
+   */
+  manualOnly: boolean;
 }
 
 /** A `.zip` written by `skills.exportArchive`. */

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { FileWarning, PencilLine, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,7 +16,8 @@ import { cn } from "@/lib/utils";
 /**
  * Attention badges of a library skill: update state, a SKILL.md that breaks the format (a link to
  * the editor), and an unresolved backup conflict (a link to the Backup page). Detail views also
- * count format warnings and say when a skill with an upstream was edited in the app.
+ * count format warnings and say when a skill with an upstream was edited in the app. A skill
+ * agents only run on request is marked everywhere, since it behaves differently once deployed.
  */
 export function SkillIndicators({
   skill,
@@ -33,6 +35,7 @@ export function SkillIndicators({
       <UpdateStatusBadge status={skill.updateStatus} compact={compact} showAll={showAll} />
       <CheckBadges skill={skill} compact={compact} showAll={showAll} />
       <SafetyBadge skill={skill} compact={compact} showAll={showAll} />
+      {skill.manualOnly ? <ManualOnlyBadge compact={compact} /> : null}
       {skill.hasConflict ? (
         <Link
           to="/backup"

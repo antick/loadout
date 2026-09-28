@@ -111,8 +111,20 @@ describe("git preview and confirm", () => {
 
     expect(preview).toMatchObject({ repoUrl: remote, branch: null, revision: head });
     expect(preview.skills).toEqual([
-      { relPath: "docx", name: "docx", description: "Test skill docx", alreadyInstalled: false },
-      { relPath: "pdf", name: "pdf", description: "Test skill pdf", alreadyInstalled: false },
+      {
+        relPath: "docx",
+        name: "docx",
+        description: "Test skill docx",
+        manualOnly: false,
+        alreadyInstalled: false,
+      },
+      {
+        relPath: "pdf",
+        name: "pdf",
+        description: "Test skill pdf",
+        manualOnly: false,
+        alreadyInstalled: false,
+      },
     ]);
     expect(install.progressFor(remote)).toEqual(["cloning", "scanning", "done"]);
     expect(leftoverCheckouts(tmp)).toHaveLength(1);

@@ -217,17 +217,27 @@ describe("checking library skills", () => {
     expect(world.store.get(skill.id).issues).toEqual([]);
   });
 
+  it("marks a skill agents only run on request", () => {
+    const manual = addSkill(
+      "deploy",
+      doc(`name: deploy\ndescription: ${DESCRIPTION}\ndisable-model-invocation: true`),
+    );
+    const automatic = addSkill("pdf", doc(`name: pdf\ndescription: ${DESCRIPTION}`));
+    expect(world.store.get(manual.id).manualOnly).toBe(true);
+    expect(world.store.get(automatic.id).manualOnly).toBe(false);
+  });
+
   it("reuses the result while the content hash stays the same", () => {
     let runs = 0;
     const inspector = createSkillInspector(() => {
       runs += 1;
-      return [];
+      return { issues: [], manualOnly: false };
     });
     const skill = { id: "a", libraryPath: "/x", contentHash: "h1" };
-    inspector.issuesOf(skill);
-    inspector.issuesOf(skill);
+    inspector.factsOf(skill);
+    inspector.factsOf(skill);
     expect(runs).toBe(1);
-    inspector.issuesOf({ ...skill, contentHash: "h2" });
+    inspector.factsOf({ ...skill, contentHash: "h2" });
     expect(runs).toBe(2);
   });
 });

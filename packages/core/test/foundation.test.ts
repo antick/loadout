@@ -29,14 +29,27 @@ describe("names", () => {
   });
 });
 
+const readManualOnly = (value: string): boolean =>
+  parseFrontmatter(`---\nname: a\ndisable-model-invocation: ${value}\n---\n`).manualOnly;
+
 describe("frontmatter", () => {
   it("reads name and description", () => {
+    const empty = { name: null, description: null, manualOnly: false };
     expect(parseFrontmatter("---\nname: a\ndescription: b c\n---\nbody")).toEqual({
       name: "a",
       description: "b c",
+      manualOnly: false,
     });
-    expect(parseFrontmatter("no frontmatter")).toEqual({ name: null, description: null });
-    expect(parseFrontmatter("---\nname: [oops\n---")).toEqual({ name: null, description: null });
+    expect(parseFrontmatter("no frontmatter")).toEqual(empty);
+    expect(parseFrontmatter("---\nname: [oops\n---")).toEqual(empty);
+  });
+
+  it("reads disable-model-invocation as manual only", () => {
+    expect(readManualOnly("true")).toBe(true);
+    expect(readManualOnly('"TRUE"')).toBe(true);
+    expect(readManualOnly("false")).toBe(false);
+    expect(readManualOnly("yes")).toBe(false);
+    expect(parseFrontmatter("---\nname: a\n---\n").manualOnly).toBe(false);
   });
 });
 
