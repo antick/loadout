@@ -1,26 +1,20 @@
 import { existsSync, readFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import type { MergeSummary, MergedSkill } from "@loadout/shared";
+import type { MergeSummary, MergedSkill, SyncReviewAnswer } from "@loadout/shared";
 import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
 import { LIBRARY_PLACE, type LibraryRecord, libraryRecordOf } from "../storage/removed-library";
 import { ensureDir, removePath, writeFileAtomic } from "../util/fs";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
-import { countConflicts, listConflicts, recordConflict } from "./conflict-store";
+import { countConflicts, recordConflict } from "./conflict-store";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
 import { type SetAsideFolder, carryIgnored, putBackFolder, setAsideFolder } from "./ignored";
-import {
-  type MergePlan,
-  type PresetVersions,
-  type ResidualVersions,
-  type SkillPlan,
-  type SkillVersions,
-  planMerge,
-} from "./merge-plan";
-import { type CommitSnapshot, isPlainEntryName, readCommit } from "./merge-read";
+import { assertDeletesReviewed, planChanged, planSides, readSides } from "./merge-input";
+import type { MergePlan, PresetVersions, SkillPlan, SkillVersions } from "./merge-plan";
+import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
 import { commitLibrary, requireBranch, resolveCommit, upstreamRef } from "./repo";
 
 /**
@@ -52,20 +46,6 @@ const UP_TO_DATE: MergeSummary = {
   newConflicts: [],
   pendingTotal: 0,
 };
-
-function collect<T>(
-  sides: { base: Map<string, T>; ours: Map<string, T>; theirs: Map<string, T> },
-  skip: (key: string) => boolean = () => false,
-): Map<string, { base?: T; ours?: T; theirs?: T }> {
-  const merged = new Map<string, { base?: T; ours?: T; theirs?: T }>();
-  for (const side of ["base", "ours", "theirs"] as const) {
-    for (const [key, value] of sides[side]) {
-      if (skip(key)) continue;
-      merged.set(key, { ...merged.get(key), [side]: value });
-    }
-  }
-  return merged;
-}
 
 function skillName(env: BackupEnv, path: string): string {
   return readSkillIdentity(join(env.repoDir, path)).name;
@@ -273,7 +253,7 @@ async function changedSkills(env: BackupEnv, from: string, range: string): Promi
  * Merge `origin/<branch>` as last fetched. Must run inside the library lock; does no network.
  * Pending local changes are committed first so the merge always starts from a clean folder.
  */
-export async function mergeRemote(env: BackupEnv): Promise<MergeResult> {
+export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Promise<MergeResult> {
   const committed = await commitLibrary(env, BEFORE_MERGE_MESSAGE);
   const branch = await requireBranch(env);
   const ours = await resolveCommit(env, "HEAD");
@@ -294,16 +274,12 @@ export async function mergeRemote(env: BackupEnv): Promise<MergeResult> {
   const range = `${base}..${theirs}`;
   const message = `${MERGE_MESSAGE_PREFIX}${await remoteDevices(env, range)}`;
 
-  const [baseSide, ourSide, theirSide] = await Promise.all([
-    readCommit(env, base),
-    readCommit(env, ours),
-    readCommit(env, theirs),
-  ]);
-  // A side without our metadata folder (a repository filled by hand, or by something else) would
-  // read as "every skill was deleted". Git's own line merge is the only safe answer there.
-  const describable = [ourSide, theirSide].every((side) => side.entries.has(env.metadataName));
+  const sides = await readSides(env, base, ours, theirs);
+  const theirSide = sides.theirs;
 
-  if (!env.ctx.settings.get("skillAwareMerge") || !describable) {
+  // Without our metadata on both sides every skill would read as deleted: git's line merge then.
+  if (!env.ctx.settings.get("skillAwareMerge") || !sides.describable) {
+    if (review && review.remoteCommit !== theirs) throw planChanged();
     await plainMerge(env, theirs, message);
     const summary: MergeSummary = {
       ...UP_TO_DATE,
@@ -316,38 +292,9 @@ export async function mergeRemote(env: BackupEnv): Promise<MergeResult> {
     return { summary, committed, changed: true };
   }
 
-  const skills: Map<string, SkillVersions> = collect({
-    base: baseSide.skills,
-    ours: ourSide.skills,
-    theirs: theirSide.skills,
-  });
-  const presets: Map<string, PresetVersions> = collect({
-    base: baseSide.presets,
-    ours: ourSide.presets,
-    theirs: theirSide.presets,
-  });
-  const claimed = new Set<string>([env.metadataName]);
-  for (const versions of skills.values()) {
-    for (const side of [versions.base, versions.ours, versions.theirs]) {
-      if (side) claimed.add(side.path);
-    }
-  }
-  // A skill whose metadata is broken on either side is left exactly as it is here. Its folders
-  // stay claimed above, so the whole-entry merge below keeps its hands off them too.
-  for (const id of [...ourSide.unreadable, ...theirSide.unreadable]) {
-    skills.delete(id);
-    env.ctx.log.warn(`Backup merge skipped a skill with unreadable metadata: ${id}`);
-  }
-  const residual: Map<string, ResidualVersions> = collect(
-    { base: baseSide.entries, ours: ourSide.entries, theirs: theirSide.entries },
-    (name) => claimed.has(name),
-  );
-  const plan = planMerge({
-    skills,
-    presets,
-    residual,
-    pendingConflicts: new Set(listConflicts(env.ctx.db).map((row) => row.skillKey)),
-  });
+  const planned = planSides(env, sides, new Set(review?.keep ?? []));
+  const { skills, presets, plan } = planned;
+  assertDeletesReviewed(planned, (id) => env.store.find(id)?.name ?? id, theirs, review);
   const conflicts = plan.skills.filter((item) => item.outcome === "conflict");
 
   // Nothing of ours to protect: let git move the branch. It refuses when an untracked folder is

@@ -71,6 +71,13 @@ export const SNAPSHOT_TAG_PREFIX = "lo-v-";
 
 export const BACKUP_SKILL_LIMIT_BYTES = 100 * 1024 * 1024;
 export const BACKUP_REPO_WARN_BYTES = 1024 * 1024 * 1024;
+/**
+ * A sync that would delete more skills here than this, because another device deleted them,
+ * stops and asks first. So does one deleting at least `BACKUP_DELETE_GUARD_MIN` that are more
+ * than half of the skills here.
+ */
+export const BACKUP_DELETE_GUARD_COUNT = 5;
+export const BACKUP_DELETE_GUARD_MIN = 3;
 /** The user's own "leave out of the backup" patterns: at most this many lines, this long each. */
 export const BACKUP_IGNORE_MAX_LINES = 200;
 export const BACKUP_IGNORE_MAX_LINE_LENGTH = 300;

@@ -8,3 +8,11 @@ export interface BackupIgnoreRules {
   defaults: string[];
   custom: string[];
 }
+
+/** The user's answer to a sync review, sent with the sync it approves. */
+export interface SyncReviewAnswer {
+  /** The remote commit the review was made against. A sync against another one stops. */
+  remoteCommit: string;
+  /** Skills another device deleted that stay here instead, and go back to the remote. */
+  keep: string[];
+}

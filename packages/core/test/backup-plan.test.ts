@@ -130,6 +130,14 @@ describe("merge plan: one skill", () => {
     expect(plan).toMatchObject({ outcome: "unchanged", path: "mine" });
   });
 
+  it("keeps a skill the remote deleted when the user said so", () => {
+    expect(planSkill("s1", { base, ours: base }, false, true)).toMatchObject({
+      outcome: "kept_local",
+      content: "ours",
+      path: base.path,
+    });
+  });
+
   it("treats delete against edit as keeping the edit", () => {
     expect(planSkill("s1", { base, ours: base })).toMatchObject({
       outcome: "deleted",

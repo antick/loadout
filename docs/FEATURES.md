@@ -100,6 +100,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - The library is a Git repository; back up to GitHub or any Git remote.
 - One-button sync with per-skill merging; conflicts never block.
 - A skill deleted on another device is kept in Recently removed; restoring it brings it back everywhere.
+- A sync that would delete many skills here stops and waits for you to review it.
 - Snapshots you can restore; automatic backup after changes.
 - Blocks pushing anything that looks like a key or token.
 - `node_modules/`, `.env`, logs and your own patterns stay out of the backup, and stay put when a sync updates the skill.

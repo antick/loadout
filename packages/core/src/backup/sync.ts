@@ -2,6 +2,7 @@ import {
   DEFAULT_BACKUP_COMMIT_MESSAGE,
   type MergeSummary,
   type SyncOutcome,
+  type SyncReviewAnswer,
 } from "@loadout/shared";
 import { isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
@@ -62,6 +63,7 @@ export async function pullRemote(env: BackupEnv): Promise<MergeSummary> {
 export async function syncLibrary(
   env: BackupEnv,
   message: string = DEFAULT_BACKUP_COMMIT_MESSAGE,
+  review?: SyncReviewAnswer,
 ): Promise<SyncOutcome> {
   assertRepo(env);
   const { lock, settings } = env.ctx;
@@ -95,7 +97,7 @@ export async function syncLibrary(
     for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
       await fetchRemote(env);
       const result = await lock.run("backup merge", () =>
-        whileMerging(env, () => mergeRemote(env)),
+        whileMerging(env, () => mergeRemote(env, review)),
       );
       merge = combine(merge, result.summary);
       committed ||= result.committed;

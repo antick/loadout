@@ -84,6 +84,8 @@ export interface MergeInput {
   residual: ReadonlyMap<string, ResidualVersions>;
   /** Skills still waiting for the user's choice from an earlier merge. */
   pendingConflicts: ReadonlySet<string>;
+  /** Skills the remote deleted that the user chose to keep: they stay, and go back to the remote. */
+  keepDeleted?: ReadonlySet<string>;
 }
 
 export interface MergePlan {
@@ -143,13 +145,20 @@ function gone(id: string, outcome: SkillOutcome): SkillPlan {
 }
 
 /** Decide one skill. Folder-name clashes between skills are settled later, in `planMerge`. */
-export function planSkill(id: string, versions: SkillVersions, pending = false): SkillPlan {
+export function planSkill(
+  id: string,
+  versions: SkillVersions,
+  pending = false,
+  keepDeleted = false,
+): SkillPlan {
   const { base, ours, theirs } = versions;
   if (!ours && !theirs) return gone(id, "unchanged");
   if (ours && !theirs) {
     if (!base) return keep(id, ours, "unchanged");
-    // Deleted on the remote. Our edits are worth more than their delete.
-    return sameSkill(base, ours) ? gone(id, "deleted") : keep(id, ours, "kept_local");
+    // Deleted on the remote. Our edits, or the user's word, are worth more than their delete.
+    return sameSkill(base, ours) && !keepDeleted
+      ? gone(id, "deleted")
+      : keep(id, ours, "kept_local");
   }
   if (!ours && theirs) {
     if (!base) return take(id, theirs);
@@ -239,7 +248,12 @@ function settlePaths(plans: SkillPlan[], skills: ReadonlyMap<string, SkillVersio
 export function planMerge(input: MergeInput): MergePlan {
   const ids = [...input.skills.keys()].sort();
   const skills = ids.map((id) =>
-    planSkill(id, input.skills.get(id) ?? {}, input.pendingConflicts.has(id)),
+    planSkill(
+      id,
+      input.skills.get(id) ?? {},
+      input.pendingConflicts.has(id),
+      input.keepDeleted?.has(id) ?? false,
+    ),
   );
   settlePaths(skills, input.skills);
 

@@ -27,6 +27,10 @@ export const ERROR_CODES = [
   "SYNC_CONFLICT",
   /** The next backup would push what looks like a key or token; the details list it (`secrets`). */
   "SECRETS_FOUND",
+  /** A sync would delete many skills here that nobody reviewed; details: `count`, `skills`. */
+  "SYNC_MANY_DELETES",
+  /** The remote moved on since the sync review was made. */
+  "SYNC_PLAN_CHANGED",
   "BACKUP_TOO_NEW",
   "GITHUB_TOKEN_INVALID",
   "GITHUB_SCOPE",

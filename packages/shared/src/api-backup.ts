@@ -1,5 +1,5 @@
 import type { SecretFinding } from "./secrets";
-import type { BackupIgnoreRules } from "./types-backup";
+import type { BackupIgnoreRules, SyncReviewAnswer } from "./types-backup";
 import type {
   BackupConflict,
   BackupStatus,
@@ -23,7 +23,11 @@ export interface BackupApi {
   removeRemote(): Promise<void>;
   clone(url: string): Promise<void>;
   reclone(url: string): Promise<void>;
-  sync(message?: string): Promise<SyncOutcome>;
+  /**
+   * Commit, merge and push. `review`: the answer to a review of this sync; without one, a sync
+   * that would delete many skills here stops with `SYNC_MANY_DELETES`.
+   */
+  sync(message?: string, review?: SyncReviewAnswer): Promise<SyncOutcome>;
   pull(): Promise<MergeSummary>;
   snapshots(limit?: number): Promise<Snapshot[]>;
   createSnapshot(): Promise<string>;
