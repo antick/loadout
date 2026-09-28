@@ -122,13 +122,6 @@ export const MORE_AGENTS: readonly AgentDefinition[] = [
     reload: { when: "new_session" },
   },
   {
-    key: "lingma",
-    displayName: "Lingma",
-    skillsDir: ".lingma/skills",
-    detectDir: ".lingma",
-    reload: { when: "restart" },
-  },
-  {
     key: "minimax_code",
     displayName: "MiniMax Code",
     skillsDir: ".minimax/skills",

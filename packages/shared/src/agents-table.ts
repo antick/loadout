@@ -75,11 +75,10 @@ export const FIRST_AGENTS: readonly AgentDefinition[] = [
   {
     key: "kilo_code",
     displayName: "Kilo Code",
-    // Newer Kilo also reads `.kilo/skills`; deploys stay in `.kilocode`, which it still reads.
-    skillsDir: ".kilocode/skills",
-    detectDir: ".kilocode",
-    extraScanDirs: [".kilo/skills", ".agents/skills", ".claude/skills"],
-    projectExtraScanDirs: [".kilo/skills", ".agents/skills", ".claude/skills"],
+    skillsDir: ".kilo/skills",
+    detectDir: ".kilo",
+    extraScanDirs: [".agents/skills", ".claude/skills"],
+    projectExtraScanDirs: [".agents/skills", ".claude/skills"],
     reload: { when: "new_session", command: "/reload" },
   },
   {

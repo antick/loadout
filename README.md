@@ -57,7 +57,7 @@ itself.
 - **Library:** one folder for every skill, with search, tags, filters, batch actions and checks against the Agent Skills format.
 - **Editor:** edit any file of a skill with a live preview, the last 20 versions kept, and no silent overwrite of changes made on disk.
 - **Install:** from a folder, an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`), a download link, a Git repository (Git itself is optional) or the skills.sh marketplace.
-- **Agents:** 70 agents built in and found automatically, plus custom agents, custom folders and agents inside WSL.
+- **Agents:** 69 agents built in and found automatically, plus custom agents, custom folders and agents inside WSL.
 - **Deploying:** give a skill to any agent in one click, by symlink or copy, without ever touching a folder Loadout didn't create.
 - **Instruction files:** edit `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and the rest, globally and per project.
 - **Agent workspaces:** see everything in an agent's skills folder, compare it with the library, and adopt skills installed elsewhere.
