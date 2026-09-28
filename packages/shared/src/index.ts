@@ -30,3 +30,4 @@ export * from "./types-skills-file";
 export * from "./api-skills-file";
 export * from "./update-feed";
 export * from "./frontmatter-fix";
+export * from "./items";

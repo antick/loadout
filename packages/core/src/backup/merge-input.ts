@@ -2,6 +2,7 @@ import {
   BACKUP_DELETE_GUARD_COUNT,
   BACKUP_DELETE_GUARD_MIN,
   CLI_BINARY_NAME,
+  ITEMS_DIR_NAME,
   type SyncReviewAnswer,
 } from "@loadout/shared";
 import { AppError } from "../errors";
@@ -96,10 +97,18 @@ export function planSides(
     skills.delete(id);
     env.ctx.log.warn(`Backup merge skipped a skill with unreadable metadata: ${id}`);
   }
+  // The items folder is merged file by file below, never as one entry.
+  claimed.add(ITEMS_DIR_NAME);
   const residual: Map<string, ResidualVersions> = collect(
     { base: sides.base.entries, ours: sides.ours.entries, theirs: sides.theirs.entries },
     (name) => claimed.has(name),
   );
+  const items: Map<string, ResidualVersions> = collect({
+    base: sides.base.items,
+    ours: sides.ours.items,
+    theirs: sides.theirs.items,
+  });
+  for (const [path, versions] of items) residual.set(path, versions);
   const plan = planMerge({
     skills,
     presets,

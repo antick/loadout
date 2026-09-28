@@ -1,11 +1,16 @@
-import { existsSync, readFileSync, renameSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
-import { formatTimestampCompact } from "@loadout/shared";
+import {
+  ITEMS_DIR_NAME,
+  ITEM_FILE_EXTENSION,
+  formatTimestampCompact,
+  parseItemPath,
+} from "@loadout/shared";
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { PortableSkill } from "../skills/portable";
-import { copyDir, isSkillDir, readDirSafe, removePath } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { copyDir, ensureDir, isSkillDir, readDirSafe, removePath } from "../util/fs";
+import { hashDir, hashFile } from "../util/hash";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
 import { sanitizeRemoteUrl } from "./credentials";
@@ -86,6 +91,10 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
       await copyDir(local, incoming);
       continue;
     }
+    if (entry.name === ITEMS_DIR_NAME && entry.isDirectory()) {
+      carryLocalItems(local, incoming);
+      continue;
+    }
     if (!entry.isDirectory() || !isSkillDir(local)) {
       // A plain file both sides have (`.gitignore`): the backup's wins, ours is regenerated.
       if (entry.isDirectory()) carried.complete = false;
@@ -115,6 +124,35 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
     }
   }
   return carried;
+}
+
+/**
+ * Items (subagents, commands, rules) only this device has go into the clone. One both have with
+ * other content keeps the backup's under the name, and ours beside it as `<name>-local`.
+ */
+function carryLocalItems(localDir: string, cloneDir: string): void {
+  for (const kindDir of readDirSafe(localDir)) {
+    if (!kindDir.isDirectory()) continue;
+    for (const file of readDirSafe(join(localDir, kindDir.name))) {
+      const relative = `${ITEMS_DIR_NAME}/${kindDir.name}/${file.name}`;
+      if (!file.isFile() || !parseItemPath(relative)) continue;
+      const from = join(localDir, kindDir.name, file.name);
+      const targetDir = join(cloneDir, kindDir.name);
+      const to = join(targetDir, file.name);
+      ensureDir(targetDir);
+      if (!existsSync(to)) {
+        copyFileSync(from, to);
+        continue;
+      }
+      if (hashFile(from) === hashFile(to)) continue;
+      const stem = file.name.slice(0, -ITEM_FILE_EXTENSION.length);
+      const name = firstFreeName(
+        `${stem}${LOCAL_COPY_SUFFIX}`,
+        (candidate) => !existsSync(join(targetDir, `${candidate}${ITEM_FILE_EXTENSION}`)),
+      );
+      copyFileSync(from, join(targetDir, `${name}${ITEM_FILE_EXTENSION}`));
+    }
+  }
 }
 
 async function cloneInto(env: BackupEnv, url: string, cloneDir: string): Promise<void> {

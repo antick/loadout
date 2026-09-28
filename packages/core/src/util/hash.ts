@@ -117,6 +117,11 @@ export function newestContentMtime(root: string): number | null {
   return Math.max(...files.map((f) => f.mtimeMs));
 }
 
+/** SHA-256 of one file's bytes, hex. */
+export function hashFile(path: string): string {
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
 export function sha256Hex(text: string): string {
   return createHash("sha256").update(text).digest("hex");
 }

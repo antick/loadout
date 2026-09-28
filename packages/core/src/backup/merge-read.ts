@@ -1,3 +1,4 @@
+import { ITEMS_DIR_NAME, parseItemPath } from "@loadout/shared";
 import { AppError } from "../errors";
 import type { PortablePreset, PortableSkill } from "../skills/portable";
 import {
@@ -21,6 +22,11 @@ export interface CommitSnapshot {
   presets: Map<string, PresetVersion>;
   /** Top-level entries of the commit: name → git object id. */
   entries: Map<string, string>;
+  /**
+   * Item files (subagents, commands, rules): path → git object id. Merged one file at a time,
+   * so an item changed here and another changed elsewhere both survive.
+   */
+  items: Map<string, string>;
   /** Skill ids whose metadata file exists but cannot be trusted (broken, misnamed, unsafe path). */
   unreadable: Set<string>;
 }
@@ -33,6 +39,21 @@ export interface CommitSnapshot {
 export function isPlainEntryName(name: string): boolean {
   const normalized = name.toLowerCase().replace(/[. ]+$/, "");
   return normalized !== "" && normalized !== ".git" && !/[\\/\0]/.test(name);
+}
+
+/** Every well-formed item file of a commit; anything else in the items folder is left out. */
+async function itemEntries(env: BackupEnv, commit: string): Promise<Map<string, string>> {
+  const output = (await env.git.run(["ls-tree", "-r", "-z", commit, "--", `${ITEMS_DIR_NAME}/`]))
+    .stdout;
+  const items = new Map<string, string>();
+  for (const record of output.split("\0")) {
+    const tab = record.indexOf("\t");
+    if (tab === -1) continue;
+    const [, type, hash] = record.slice(0, tab).split(" ");
+    const path = record.slice(tab + 1);
+    if (type === "blob" && hash && parseItemPath(path)) items.set(path, hash);
+  }
+  return items;
 }
 
 async function topLevelEntries(env: BackupEnv, commit: string): Promise<Map<string, string>> {
@@ -90,7 +111,10 @@ function parseJson<T>(text: string): T | null {
 }
 
 export async function readCommit(env: BackupEnv, commit: string): Promise<CommitSnapshot> {
-  const entries = await topLevelEntries(env, commit);
+  const [entries, items] = await Promise.all([
+    topLevelEntries(env, commit),
+    itemEntries(env, commit),
+  ]);
   const listing = await env.git.run([
     "ls-tree",
     "-r",
@@ -131,5 +155,5 @@ export async function readCommit(env: BackupEnv, commit: string): Promise<Commit
       presets.set(id, { raw, updatedAt: Number(preset.updatedAt) || 0 });
     }
   }
-  return { commit, skills, presets, entries, unreadable };
+  return { commit, skills, presets, entries, items, unreadable };
 }
