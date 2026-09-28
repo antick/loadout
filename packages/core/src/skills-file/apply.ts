@@ -3,6 +3,7 @@ import { basename, join } from "node:path";
 import {
   APP_NAME,
   type LockedFolder,
+  type SkillsFileEntry,
   SKILLS_FILE_NAME,
   type SkillsFileInfo,
   type SkillsFileResult,
@@ -11,7 +12,8 @@ import {
 import type { RemovedStore } from "../storage/removed";
 import { removePath, replaceDirAtomic, statOrNull, writeFileAtomic } from "../util/fs";
 import { LOCK_VERSION, writeLock } from "./format";
-import { type PreparedPlan, type WantedFolder, safeLockFolder } from "./plan";
+import { type PreparedPlan, type WantedFolder, actionFor, removalFor } from "./plan";
+import { isPlainFolder, lockFolderPath } from "./safety";
 
 const GITIGNORE = ".gitignore";
 const BLOCK_START = `# >>> ${APP_NAME}: skills written from ${SKILLS_FILE_NAME}`;
@@ -28,8 +30,9 @@ export function updateGitignore(root: string, folders: readonly string[]): void 
   const lines = text.split(/\r?\n/);
   const start = lines.indexOf(BLOCK_START);
   const end = start === -1 ? -1 : lines.indexOf(BLOCK_END, start);
-  const kept =
-    start === -1 || end === -1 ? lines : [...lines.slice(0, start), ...lines.slice(end + 1)];
+  // A block whose end line was deleted by hand: what belongs to it is unclear, so leave the file.
+  if (start !== -1 && end === -1) return;
+  const kept = start === -1 ? lines : [...lines.slice(0, start), ...lines.slice(end + 1)];
   while (kept.length > 0 && kept.at(-1) === "") kept.pop();
   const block =
     folders.length > 0 ? [BLOCK_START, ...folders.map((folder) => `/${folder}/`), BLOCK_END] : [];
@@ -67,43 +70,39 @@ export async function applyPlan(
     deps.removed.setAside(path, { place, reason });
   };
 
-  for (const entry of prepared.plan.entries) {
-    const item = wantedByFolder.get(entry.folder);
-    const locked = oldLock.get(entry.folder);
-    const record = (from: WantedFolder): void => {
-      folders.push({
-        folder: from.folder,
-        url: from.url,
-        skillPath: from.skill.relPath,
-        hash: from.hash,
-      });
-    };
-    if (item && (entry.action === "same" || entry.action === "add" || entry.action === "update")) {
-      if (entry.action !== "same") {
-        await replaceDirAtomic(item.skill.dir, item.path);
+  const keep = (folder: string, locked: LockedFolder | undefined): void => {
+    kept.push(folder);
+    if (locked) folders.push(locked);
+  };
+  const entries: SkillsFileEntry[] = [];
+
+  for (const planned of prepared.plan.entries) {
+    const item = wantedByFolder.get(planned.folder);
+    const locked = oldLock.get(planned.folder);
+    // Judged again now that the lock is held: the folder may have changed since the plan.
+    const path = item?.path ?? lockFolderPath(prepared.rules, planned.folder);
+    if (!path) continue;
+    const action = item ? actionFor(item, locked) : locked ? removalFor(path, locked) : null;
+    if (!action) continue;
+    entries.push({ ...planned, action });
+    const handEdited = action === "edited" || action === "keep_edited";
+    // A link, a file or a folder holding `.git` is never replaced or removed, forced or not.
+    if (handEdited && (!force || !isPlainFolder(path))) {
+      keep(planned.folder, locked);
+      continue;
+    }
+    if (item) {
+      if (action !== "same") {
+        if (action === "edited") setAside(path, "replaced");
+        await replaceDirAtomic(item.skill.dir, path);
         written += 1;
       }
-      record(item);
-      continue;
-    }
-    if (item && entry.action === "edited") {
-      if (!force) {
-        kept.push(entry.folder);
-        if (locked) folders.push(locked);
-        continue;
-      }
-      setAside(item.path, "replaced");
-      await replaceDirAtomic(item.skill.dir, item.path);
-      written += 1;
-      record(item);
-      continue;
-    }
-    // A folder the file no longer asks for.
-    const path = safeLockFolder(root, entry.folder);
-    if (!path) continue;
-    if (entry.action === "keep_edited" && !force) {
-      kept.push(entry.folder);
-      if (locked) folders.push(locked);
+      folders.push({
+        folder: item.folder,
+        url: item.url,
+        skillPath: item.skill.relPath,
+        hash: item.hash,
+      });
       continue;
     }
     setAside(path, "deleted");
@@ -132,5 +131,5 @@ export async function applyPlan(
   if (spec.gitignore || info.lock) {
     updateGitignore(root, spec.gitignore ? folders.map((entry) => entry.folder) : []);
   }
-  return { plan: prepared.plan, written, removed, kept };
+  return { plan: { ...prepared.plan, entries }, written, removed, kept };
 }

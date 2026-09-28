@@ -11,7 +11,7 @@ import {
 import type { AgentRegistry } from "../agents/registry";
 import { normalizeProjectDir } from "../agents/service";
 import type { CoreContext } from "../context";
-import { exists, notFound } from "../errors";
+import { exists, invalid, notFound } from "../errors";
 import type { GitClient } from "../install/git-client";
 import { findSkillDirs } from "../install/repo-scan";
 import { readSkillIdentity } from "../skills/metadata";
@@ -21,6 +21,7 @@ import { writeFileAtomic } from "../util/fs";
 import { applyPlan } from "./apply";
 import { findSkillsFile, loadSkillsFile, stringifySkillsFile } from "./format";
 import { preparePlan } from "./plan";
+import { realPathOf } from "./safety";
 
 export interface SkillsFileDeps {
   git: GitClient;
@@ -31,11 +32,11 @@ export interface SkillsFileDeps {
   allowLocalGitSources?: boolean;
 }
 
-/** The skills file for `dir`, or NOT_FOUND saying where it looked. */
-function load(dir: string): SkillsFileInfo {
+/** The path of the skills file for `dir`, or NOT_FOUND saying where it looked. */
+function locate(dir: string): string {
   const path = findSkillsFile(dir);
   if (!path) throw notFound(`No ${SKILLS_FILE_NAME} in ${dir} or any folder above it.`);
-  return loadSkillsFile(path);
+  return path;
 }
 
 /** Skill folders directly inside a project's agent folder. */
@@ -46,7 +47,18 @@ export function createSkillsFileService(
   ctx: CoreContext,
   deps: SkillsFileDeps,
 ): { api: SkillsFileApi } {
-  const planDeps = { git: deps.git, registry: deps.registry };
+  const planDeps = { git: deps.git, registry: deps.registry, libraryDir: ctx.paths.skillsDir };
+
+  /** The skills file for `dir`; one in the home folder would name the agents' global folders. */
+  const load = (dir: string): SkillsFileInfo => {
+    const info = loadSkillsFile(locate(dir));
+    if (realPathOf(info.root) === realPathOf(ctx.homeDir)) {
+      throw invalid(
+        `${info.path} is in your home folder, where its folders would be your agents' own. Move it into a project.`,
+      );
+    }
+    return info;
+  };
 
   /**
    * What a skills file for `dir` would say today: every skill in its agents' folders that the

@@ -1,10 +1,20 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { SKILLS_FILE_NAME, SKILLS_LOCK_NAME, type SkillsLock } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AgentRegistry } from "../src/agents";
 import { createGitClient } from "../src/install/git-client";
-import { parseSkillsFile } from "../src/skills-file/format";
+import { applyPlan } from "../src/skills-file/apply";
+import { loadSkillsFile, parseSkillsFile } from "../src/skills-file/format";
+import { preparePlan } from "../src/skills-file/plan";
 import { createSkillsFileService } from "../src/skills-file/service";
 import { createRemovedStore } from "../src/storage";
 import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
@@ -189,6 +199,92 @@ describe("apply", () => {
     expect(readFileSync(join(outside, "SKILL.md"), "utf8")).toBe("keep\n");
   });
 
+  it("never touches lock entries outside an agent's skills folder, even forced", async () => {
+    writeFile(join(project, ".git", "HEAD"), "ref: refs/heads/main\n");
+    writeFile(join(project, "src", "keep", "SKILL.md"), "keep\n");
+    writeFileSync(
+      join(project, SKILLS_LOCK_NAME),
+      JSON.stringify({
+        version: 1,
+        sources: [],
+        folders: [
+          { folder: ".git/HEAD", url: "acme/skills", skillPath: "x", hash: "h" },
+          { folder: "src/keep", url: "acme/skills", skillPath: "x", hash: "h" },
+          { folder: ".claude/skills/../../src", url: "acme/skills", skillPath: "x", hash: "h" },
+        ],
+      }),
+    );
+    const result = await api.unapply(project, { force: true });
+    expect(result.plan.entries).toEqual([]);
+    expect(read(".git", "HEAD")).toBe("ref: refs/heads/main\n");
+    expect(read("src", "keep", "SKILL.md")).toBe("keep\n");
+  });
+
+  it("refuses a project skills folder that leads outside the project", async () => {
+    const elsewhere = join(world.root, "elsewhere");
+    mkdirSync(elsewhere);
+    symlinkSync(elsewhere, join(project, ".claude"));
+    await expect(api.apply(project)).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    expect(existsSync(join(elsewhere, "skills"))).toBe(false);
+    expect(existsSync(join(project, ".agents"))).toBe(false);
+  });
+
+  it("keeps a folder edited after the plan was made, before it was applied", async () => {
+    await api.apply(project);
+    writeFile(join(remote, "skills", "pdf", "scripts", "run.sh"), "echo two\n");
+    commitAll(remote, "newer");
+    const info = loadSkillsFile(join(project, SKILLS_FILE_NAME));
+    const registry = new AgentRegistry(world.ctx);
+    const prepared = await preparePlan(
+      info,
+      { git: createGitClient(world.ctx), registry, libraryDir: world.ctx.paths.skillsDir },
+      { update: true, prune: false },
+    );
+    expect(prepared.plan.entries.map((entry) => entry.action)).toEqual(["update", "update"]);
+    writeFile(join(project, ".claude", "skills", "pdf", "late.md"), "mine\n");
+    const removed = createRemovedStore(world.ctx, { store: world.store });
+    const result = await applyPlan(info, prepared, { removed }, false);
+    await prepared.cleanup();
+    expect(result.kept).toEqual([".claude/skills/pdf"]);
+    expect(read(".claude", "skills", "pdf", "late.md")).toBe("mine\n");
+  });
+
+  it("refuses a skills.toml in the home folder", async () => {
+    writeFileSync(join(world.home, SKILLS_FILE_NAME), TOML);
+    await expect(api.apply(join(world.home, "somewhere"))).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("home folder"),
+    });
+    expect(existsSync(join(world.home, ".claude", "skills", "pdf"))).toBe(false);
+  });
+
+  it("never replaces a link, or a folder holding .git, even forced", async () => {
+    await api.apply(project);
+    writeFile(join(project, ".claude", "skills", "pdf", ".git", "HEAD"), "x\n");
+    const target = join(world.root, "target");
+    mkdirSync(target);
+    rmSync(join(project, ".agents", "skills", "pdf"), { recursive: true });
+    symlinkSync(target, join(project, ".agents", "skills", "pdf"));
+    writeFile(join(remote, "skills", "pdf", "scripts", "run.sh"), "echo two\n");
+    commitAll(remote, "newer");
+
+    const result = await api.apply(project, { update: true, force: true });
+    expect(result.kept.sort()).toEqual([".agents/skills/pdf", ".claude/skills/pdf"]);
+    expect(read(".claude", "skills", "pdf", ".git", "HEAD")).toBe("x\n");
+    expect(lstatSync(join(project, ".agents", "skills", "pdf")).isSymbolicLink()).toBe(true);
+    const gone = await api.unapply(project, { force: true });
+    expect(gone.removed).toBe(0);
+    expect(read(".claude", "skills", "pdf", ".git", "HEAD")).toBe("x\n");
+  });
+
+  it("refuses two skills of one source that would share a folder", async () => {
+    makeSkill(join(remote, "skills", "extra"), "pdf", { description: "Another pdf" });
+    commitAll(remote, "twin");
+    writeFileSync(join(project, SKILLS_FILE_NAME), TOML.replace(`skills = ["pdf"]\n`, ""));
+    await expect(api.apply(project)).rejects.toThrow(/two skills called pdf/);
+    expect(existsSync(join(project, ".claude"))).toBe(false);
+  });
+
   it("finds the file from a folder inside the project", async () => {
     expect((await api.find(join(project, "src")))?.root).toBe(project);
     expect(await api.find(world.root)).toBeNull();
@@ -204,6 +300,14 @@ describe("apply", () => {
     writeFileSync(join(project, SKILLS_FILE_NAME), TOML);
     await api.apply(project);
     expect(read(".gitignore")).toBe("node_modules/\n");
+  });
+
+  it("leaves .gitignore alone when the end of its block was deleted by hand", async () => {
+    const broken = "# >>> Loadout: skills written from skills.toml\n/x/\nmine/\n";
+    writeFileSync(join(project, ".gitignore"), broken);
+    writeFileSync(join(project, SKILLS_FILE_NAME), `gitignore = true\n${TOML}`);
+    await api.apply(project);
+    expect(read(".gitignore")).toBe(broken);
   });
 });
 

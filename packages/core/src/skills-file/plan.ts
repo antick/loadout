@@ -1,4 +1,4 @@
-import { join, posix } from "node:path";
+import { join } from "node:path";
 import type {
   LockedFolder,
   SkillsFileAction,
@@ -12,10 +12,17 @@ import { normalizeProjectDir } from "../agents/service";
 import { invalid } from "../errors";
 import type { GitClient } from "../install/git-client";
 import type { FoundSkill } from "../install/repo-scan";
-import { isInside, lstatOrNull } from "../util/fs";
+import { lstatOrNull } from "../util/fs";
 import { hashDir } from "../util/hash";
 import { sanitizeSkillName } from "../util/names";
 import { type FetchedSource, chooseSkills, fetchSource } from "./fetch";
+import {
+  type FolderRules,
+  checkProjectDir,
+  folderRules,
+  isPlainFolder,
+  lockFolderPath,
+} from "./safety";
 
 /** A folder the file asks for, with what it should hold. */
 export interface WantedFolder {
@@ -31,6 +38,7 @@ export interface WantedFolder {
 export interface PreparedPlan {
   plan: SkillsFilePlan;
   wanted: WantedFolder[];
+  rules: FolderRules;
   cleanup(): Promise<void>;
 }
 
@@ -63,27 +71,32 @@ function agentFolders(
   return { folders, unknown };
 }
 
-/** A lock folder is a relative path inside the project, never climbing out: it is untrusted. */
-export function safeLockFolder(root: string, folder: string): string | null {
-  const clean = folder.split(/[\\/]+/).filter((part) => part && part !== ".");
-  if (clean.length < 2 || clean.includes("..") || posix.isAbsolute(folder)) return null;
-  const path = join(root, ...clean);
-  return isInside(root, path) && path !== root ? path : null;
-}
-
-/** What is at `path` now: nothing, a real folder with this hash, or something else (null hash). */
+/** What is at `path` now: nothing, a plain folder with this hash, or something else (null hash). */
 function current(path: string): { exists: boolean; hash: string | null } {
-  const stat = lstatOrNull(path);
-  if (!stat) return { exists: false, hash: null };
-  return { exists: true, hash: stat.isDirectory() ? hashDir(path) : null };
+  if (!lstatOrNull(path)) return { exists: false, hash: null };
+  return { exists: true, hash: isPlainFolder(path) ? hashDir(path) : null };
 }
 
-function actionFor(wanted: WantedFolder, locked: LockedFolder | undefined): SkillsFileAction {
+/**
+ * What applying does to a wanted folder, judged by what is on disk right now. A link, a file or
+ * a folder holding `.git` is never Loadout's to replace: it counts as changed by hand.
+ */
+export function actionFor(
+  wanted: WantedFolder,
+  locked: LockedFolder | undefined,
+): SkillsFileAction {
   const now = current(wanted.path);
   if (!now.exists) return "add";
-  if (now.hash === wanted.hash) return "same";
+  if (now.hash !== null && now.hash === wanted.hash) return "same";
   if (locked && now.hash !== null && now.hash === locked.hash) return "update";
   return "edited";
+}
+
+/** What pruning does to a folder the lock lists; null when there is nothing there any more. */
+export function removalFor(path: string, locked: LockedFolder): SkillsFileAction | null {
+  const now = current(path);
+  if (!now.exists) return null;
+  return now.hash !== null && now.hash === locked.hash ? "remove" : "keep_edited";
 }
 
 /**
@@ -92,11 +105,14 @@ function actionFor(wanted: WantedFolder, locked: LockedFolder | undefined): Skil
  */
 export async function preparePlan(
   info: SkillsFileInfo,
-  deps: { git: GitClient; registry: AgentRegistry },
+  deps: { git: GitClient; registry: AgentRegistry; libraryDir: string },
   options: PrepareOptions,
 ): Promise<PreparedPlan> {
   const { root, spec, lock } = info;
+  const rules = folderRules(root, deps.registry, deps.libraryDir);
   const { folders, unknown } = agentFolders(info, deps.registry);
+  // Checked before anything is fetched: a folder leading elsewhere stops the whole run.
+  if (!options.nothing) for (const dir of folders.keys()) checkProjectDir(rules, dir);
   const fetched: FetchedSource[] = [];
   const cleanup = async (): Promise<void> => {
     for (const source of fetched) await source.cleanup();
@@ -128,8 +144,12 @@ export async function preparePlan(
         for (const [dir, agents] of folders) {
           const folder = `${dir}/${name}`;
           const owner = byFolder.get(folder);
-          if (owner !== undefined && owner !== source.url) {
-            throw invalid(`${name} is in both ${owner} and ${source.url}; list it from one only.`);
+          if (owner !== undefined) {
+            throw invalid(
+              owner === source.url
+                ? `${source.url} holds two skills called ${name}; list the one you want by folder.`
+                : `${name} is in both ${owner} and ${source.url}; list it from one only.`,
+            );
           }
           byFolder.set(folder, source.url);
           wanted.push({
@@ -156,21 +176,20 @@ export async function preparePlan(
       const agentsByDir = new Map(folders);
       for (const entry of lock?.folders ?? []) {
         if (byFolder.has(entry.folder)) continue;
-        const path = safeLockFolder(root, entry.folder);
-        if (!path) continue;
-        const now = current(path);
-        if (!now.exists) continue;
+        const path = lockFolderPath(rules, entry.folder);
+        const action = path ? removalFor(path, entry) : null;
+        if (!action) continue;
         const dir = entry.folder.slice(0, entry.folder.lastIndexOf("/"));
         entries.push({
           folder: entry.folder,
           skill: entry.folder.slice(entry.folder.lastIndexOf("/") + 1),
           url: entry.url,
           agents: agentsByDir.get(dir) ?? [],
-          action: now.hash === entry.hash ? "remove" : "keep_edited",
+          action,
         });
       }
     }
-    return { plan: { root, sources, entries, unknownAgents: unknown }, wanted, cleanup };
+    return { plan: { root, sources, entries, unknownAgents: unknown }, wanted, rules, cleanup };
   } catch (error) {
     await cleanup();
     throw error;

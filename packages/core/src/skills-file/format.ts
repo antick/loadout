@@ -105,13 +105,17 @@ export function stringifySkillsFile(spec: SkillsFileSpec): string {
   return `${HEADER}${stringify(data)}\n`;
 }
 
+/** A commit id as Git writes it: the lock is untrusted, and this goes to `git fetch`. */
+const REVISION = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
+
 function isLockedSource(value: unknown): value is LockedSource {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
   return (
     typeof record.url === "string" &&
     (record.ref === null || typeof record.ref === "string") &&
-    typeof record.revision === "string"
+    typeof record.revision === "string" &&
+    REVISION.test(record.revision)
   );
 }
 
