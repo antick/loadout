@@ -73,6 +73,7 @@ loadout skills install owner/repo --skill pdf --replace --json  # replace the li
 
 # Start a new skill from scratch (name: lowercase letters, numbers, hyphens)
 loadout skills create my-skill --description "What it does and when to use it" --json
+loadout skills create my-skill --description "…" --template workflow --json   # outline, detailed, workflow or blank
 
 # Deploy / undeploy (repeat --agent for several agents)
 loadout skills deploy <ref> --agent claude_code --agent cursor --json
