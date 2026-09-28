@@ -36,6 +36,16 @@
       "addTitle": "Add skills to {{agent}}",
       "addDescription": "Pick library skills to install in this agent's global skills folder."
     },
+    "plugins": {
+      "title": "From plugins",
+      "description": "{{agent}}'s plugins bring these skills. Its plugin manager owns them, so they are shown here only; turn plugins on or off with /plugin in {{agent}}.",
+      "off": "Plugin off",
+      "twice": "Also in this folder",
+      "twiceHint": "A skill with this name is also in {{agent}}'s skills folder, so {{agent}} loads it twice.",
+      "showAll_one": "Show {{count}} more",
+      "showAll_other": "Show {{count}} more",
+      "showFewer": "Show fewer"
+    },
     "broken": {
       "title_one": "{{count}} folder here is not a skill",
       "title_other": "{{count}} folders here are not skills",

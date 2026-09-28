@@ -31,6 +31,8 @@ export interface ResolvedAgent extends AgentInfo {
   /** Other project-relative folders the agent reads, `/` separated. Discovery only. */
   projectExtraScanDirs: string[];
   recursiveScan: boolean;
+  /** The agent's plugin manager folder on this machine; null for agents without plugins. */
+  pluginsDir: string | null;
 }
 
 const CONFIG_PREFIX = ".config/";
@@ -156,6 +158,7 @@ export class AgentRegistry {
       extraScanDirs,
       projectExtraScanDirs: (definition.projectExtraScanDirs ?? []).map(relativeDir),
       recursiveScan: definition.recursiveScan ?? false,
+      pluginsDir: found && definition.pluginsDir ? join(found, definition.pluginsDir) : null,
     };
   }
 
@@ -179,6 +182,7 @@ export class AgentRegistry {
       extraScanDirs: [],
       projectExtraScanDirs: [],
       recursiveScan: false,
+      pluginsDir: null,
     };
   }
 

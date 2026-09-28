@@ -98,3 +98,5 @@ export const TAG_FILTER_UNTAGGED = "__untagged__";
 
 /** Skills whose source is looked for at once in "Find sources": each may clone a repository. */
 export const SOURCE_SEARCH_CONCURRENCY = 3;
+/** Plugin skills on an agent page before "Show more". */
+export const PLUGIN_SKILLS_SHOWN = 6;

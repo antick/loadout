@@ -19,7 +19,7 @@ import type {
   SyncStatus,
 } from "@loadout/shared";
 import { HOME } from "@/lib/dev-mock-data";
-import { mockDuplicates } from "@/lib/dev-mock-duplicates";
+import { mockDuplicates, mockPluginSkills } from "@/lib/dev-mock-duplicates";
 import { recordRemoved } from "@/lib/dev-mock-storage";
 import {
   type Copy,
@@ -176,6 +176,7 @@ export function createWorkspaceMockHandlers(
 
   return {
     "workspace.list": (agentKey: string) => listAgentFolder(agentKey),
+    "workspace.plugins": (agentKey: string) => mockPluginSkills(agentKey),
     "workspace.counts": (agentKeys: string[]) =>
       Object.fromEntries(agentKeys.map((key) => [key, listAgentFolder(key).length])),
     "workspace.document": (agentKey: string, relativePath: string): SkillDocument => {

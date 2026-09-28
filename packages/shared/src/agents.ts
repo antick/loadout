@@ -35,6 +35,11 @@ export interface AgentDefinition {
    * (checked September 2026). Left out when neither says: the app then says nothing.
    */
   reload?: AgentReload;
+  /**
+   * Folder of the agent's plugin manager, relative to the folder `detectDir` found (or its home
+   * folder variable). Plugins bring skills of their own, which the agent loads next to these.
+   */
+  pluginsDir?: string;
 }
 
 /**

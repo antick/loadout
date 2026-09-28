@@ -26,6 +26,7 @@ import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useSkills } from "@/hooks/queries/skills";
 import {
   useBrokenFolders,
+  usePluginSkills,
   useWorkspaceDocument,
   useWorkspaceSkills,
 } from "@/hooks/queries/workspace";
@@ -37,6 +38,7 @@ import { AgentPresetBar } from "./AgentPresetBar";
 import { AgentSelectionActions } from "./AgentSelectionActions";
 import { AgentWorkspaceHeader } from "./AgentWorkspaceHeader";
 import { BrokenFoldersNotice } from "./BrokenFoldersNotice";
+import { PluginSkillsSection } from "./PluginSkillsSection";
 import { useAgentSkillActions } from "./use-agent-skill-actions";
 
 const VIEW_MODE_SCOPE = "agent-workspace";
@@ -48,6 +50,7 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const library = useSkills();
   const workspace = useWorkspaceSkills(agentKey);
   const broken = useBrokenFolders(agentKey);
+  const plugins = usePluginSkills(agentKey);
   const refresh = useRefreshWorkspace();
   const deployToAgent = useDeployToAgent();
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
@@ -234,6 +237,8 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
           }}
         />
       )}
+
+      <PluginSkillsSection agentName={agentName} plugins={plugins.data} local={workspace.data} />
 
       <LocalSkillDetailSheet
         item={openView}

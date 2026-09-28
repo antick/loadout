@@ -311,12 +311,33 @@ export interface SkillDuplicate {
   /**
    * `shared_folder`: a folder the agent reads besides its own, such as `~/.agents/skills`.
    * `global`: the agent's global skills folder, for a skill that is also in a project.
+   * `plugin`: a switched-on plugin of the agent brings a skill of the same name.
    */
-  where: "shared_folder" | "global";
+  where: "shared_folder" | "global" | "plugin";
   agentKey: string;
   agentDisplayName: string;
   /** The other copy's folder. */
   path: string;
+  /** For `plugin`: the plugin's name. */
+  plugin?: string;
+}
+
+/**
+ * A skill that comes with one of an agent's plugins (Claude Code's plugin manager). The agent
+ * loads it next to the skills in its folder; the plugin manager owns it, so it is shown only.
+ */
+export interface PluginSkill {
+  name: string;
+  description: string | null;
+  /** The skill's folder inside the plugin manager's cache. */
+  path: string;
+  /** The plugin's name, e.g. `frontend-design`. */
+  plugin: string;
+  /** The marketplace it was installed from, e.g. `claude-plugins-official`; null when unknown. */
+  marketplace: string | null;
+  version: string | null;
+  /** The plugin is switched on, so the agent loads its skills. */
+  enabled: boolean;
 }
 
 export interface LocalSkill {

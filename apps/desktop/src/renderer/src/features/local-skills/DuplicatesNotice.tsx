@@ -27,6 +27,7 @@ export function describeDuplicate(
   return t(`localSkills.duplicates.${duplicate.where}`, {
     agent: duplicate.agentDisplayName,
     folder: compactHome(parentOf(duplicate.path), homeDir),
+    plugin: duplicate.plugin,
   });
 }
 

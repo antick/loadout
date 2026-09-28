@@ -14,6 +14,7 @@ import type {
   DiagnosticInfo,
   LibraryLocation,
   LocalSkill,
+  PluginSkill,
   LogExcerpt,
   LogExport,
   Preset,
@@ -317,6 +318,11 @@ export interface WorkspaceApi {
   broken(agentKey: string): Promise<BrokenSkillFolder[]>;
   /** Delete one of `broken`. Refused for anything that is not broken right now, or is managed. */
   deleteBroken(agentKey: string, relativePath: string): Promise<string[]>;
+  /**
+   * Skills the agent's plugins bring (user-wide plugins only), sorted by plugin then name.
+   * Empty for agents without plugins. Read only: the agent's plugin manager owns them.
+   */
+  plugins(agentKey: string): Promise<PluginSkill[]>;
 }
 
 export interface ProjectsApi {

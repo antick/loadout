@@ -64,6 +64,7 @@ export const keys = {
     root: ["workspace"] as const,
     list: (agentKey: string) => ["workspace", "list", agentKey] as const,
     broken: (agentKey: string) => ["workspace", "broken", agentKey] as const,
+    plugins: (agentKey: string) => ["workspace", "plugins", agentKey] as const,
     counts: ["workspace", "counts"] as const,
     document: (agentKey: string, relativePath: string) =>
       ["workspace", "document", agentKey, relativePath] as const,

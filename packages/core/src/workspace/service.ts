@@ -24,6 +24,7 @@ import {
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import { withSharedFolderDuplicates } from "./duplicates";
+import { listPluginSkills, withPluginDuplicates } from "./plugins";
 import {
   type LocalSyncDeps,
   pushLocalToLibrary,
@@ -187,8 +188,13 @@ export function createWorkspaceService(
           isManaged: (skill) => store.deployment(skill.id, agent.key) !== null,
         }),
       );
-      return sortByAttention(withSharedFolderDuplicates(agent, skills));
+      const plugins = listPluginSkills(agent);
+      return sortByAttention(
+        withPluginDuplicates(agent, withSharedFolderDuplicates(agent, skills), plugins),
+      );
     },
+
+    plugins: async (agentKey) => listPluginSkills(registry.get(agentKey)),
 
     counts: async (agentKeys) => {
       const counts: Record<string, number> = {};

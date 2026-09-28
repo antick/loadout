@@ -4,7 +4,8 @@
     "duplicates": {
       "badge": "Loaded twice",
       "shared_folder": "{{agent}} also reads {{folder}}, which has its own copy of this skill. The agent may load it twice.",
-      "global": "{{agent}} also has this skill installed globally. In this project it may load it twice."
+      "global": "{{agent}} also has this skill installed globally. In this project it may load it twice.",
+      "plugin": "{{agent}}'s {{plugin}} plugin brings a skill of the same name, so {{agent}} loads it twice."
     },
     "partlyDisabled": "Partly disabled",
     "fileCount_one": "{{count}} file",

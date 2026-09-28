@@ -1,4 +1,4 @@
-import type { BrokenSkillFolder, LocalSkill, SkillDocument } from "@loadout/shared";
+import type { BrokenSkillFolder, LocalSkill, PluginSkill, SkillDocument } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -21,6 +21,17 @@ export function useBrokenFolders(
   return useQuery({
     queryKey: keys.workspace.broken(agentKey ?? ""),
     queryFn: () => api.workspace.broken(agentKey ?? ""),
+    enabled: Boolean(agentKey),
+  });
+}
+
+/** Skills the agent's plugins bring; empty for agents without plugins. */
+export function usePluginSkills(
+  agentKey: string | null | undefined,
+): UseQueryResult<PluginSkill[]> {
+  return useQuery({
+    queryKey: keys.workspace.plugins(agentKey ?? ""),
+    queryFn: () => api.workspace.plugins(agentKey ?? ""),
     enabled: Boolean(agentKey),
   });
 }

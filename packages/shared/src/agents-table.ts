@@ -17,6 +17,7 @@ export const FIRST_AGENTS: readonly AgentDefinition[] = [
     detectDir: ".claude",
     homeEnv: { variable: "CLAUDE_CONFIG_DIR", skillsDir: "skills" },
     reload: { when: "live", command: "/reload-skills" },
+    pluginsDir: "plugins",
   },
   {
     key: "omp_agent",
