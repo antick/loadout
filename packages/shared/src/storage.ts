@@ -62,8 +62,11 @@ export interface AgentFolderSummary {
   copiedFolders: number;
 }
 
-/** Why a skill folder went to Recently removed. */
-export type RemovedReason = "replaced" | "deleted";
+/**
+ * Why a skill folder went to Recently removed. `deleted_elsewhere`: a library skill another
+ * device deleted, taken out here by a backup sync.
+ */
+export type RemovedReason = "replaced" | "deleted" | "deleted_elsewhere";
 
 /** Library folder that holds Recently removed. Stays on this computer, like editor history. */
 export const REMOVED_DIR_NAME = "removed";

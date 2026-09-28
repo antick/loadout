@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { MergeSummary, MergedSkill } from "@loadout/shared";
 import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
+import { LIBRARY_PLACE, type LibraryRecord, libraryRecordOf } from "../storage/removed-library";
 import { ensureDir, removePath, writeFileAtomic } from "../util/fs";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
@@ -47,6 +48,7 @@ const UP_TO_DATE: MergeSummary = {
   fastForward: false,
   updated: [],
   keptLocal: [],
+  removed: [],
   newConflicts: [],
   pendingTotal: 0,
 };
@@ -95,6 +97,20 @@ function freeFolder(env: BackupEnv, wanted: string, planned: Set<string>): strin
   );
 }
 
+/** A skill the merge took out: into Recently removed, with its tags and presets when known. */
+function keepDeparted(env: BackupEnv, aside: SetAsideFolder, record?: LibraryRecord): void {
+  try {
+    env.removed.setAside(aside.to, {
+      place: LIBRARY_PLACE,
+      reason: "deleted_elsewhere",
+      originalPath: aside.from,
+      ...(record ? { library: record } : {}),
+    });
+  } catch (error) {
+    env.ctx.log.warn(`Could not keep ${aside.from} in Recently removed`, error);
+  }
+}
+
 /** Put the planned library on disk and commit it as a merge of `theirs`. */
 async function materialise(
   env: BackupEnv,
@@ -103,6 +119,8 @@ async function materialise(
   presets: Map<string, PresetVersions>,
   theirs: CommitSnapshot,
   message: string,
+  /** Library records of the skills this merge takes out, for Recently removed. */
+  departing: ReadonlyMap<string, LibraryRecord>,
 ): Promise<void> {
   const stage: Stage = createStage(env);
   const created: string[] = [];
@@ -124,10 +142,13 @@ async function materialise(
 
   try {
     await placeAndCommit();
-    // Committed: the left-out files of replaced folders move into their successors.
+    // Committed: the left-out files of replaced folders move into their successors, and skills
+    // another device deleted go to Recently removed.
     for (const item of plan.skills) {
       const aside = asides.get(item.id);
-      if (!aside || item.content !== "theirs" || !item.path) continue;
+      if (!aside) continue;
+      if (item.content === "none") keepDeparted(env, aside, departing.get(item.id));
+      if (item.content !== "theirs" || !item.path) continue;
       const failed = carryIgnored(aside, join(env.repoDir, item.path));
       if (failed.length > 0) {
         env.ctx.log.warn(`Backup merge could not keep local files of ${item.path}`, failed);
@@ -343,7 +364,23 @@ export async function mergeRemote(env: BackupEnv): Promise<MergeResult> {
   if (base === ours && conflicts.length === 0 && trustworthy && !reshapesOurs) {
     fastForward = (await env.git.probe(["merge", "--ff-only", theirs])).code === 0;
   }
-  if (!fastForward) await materialise(env, plan, skills, presets, theirSide, message);
+  // Read before the merge: afterwards the folders are gone and the rebuild drops the rows.
+  const departing = new Map<string, LibraryRecord>();
+  const removed: MergedSkill[] = [];
+  for (const item of plan.skills) {
+    const mine = skills.get(item.id)?.ours;
+    if (item.outcome !== "deleted" || !mine) continue;
+    const row = env.store.find(item.id);
+    if (row) departing.set(item.id, libraryRecordOf(row));
+    const paths = [`${env.metadataName}/${SKILL_METADATA_SUBDIR}/${item.id}.json`, mine.path];
+    removed.push({
+      name: row?.name ?? mine.path,
+      fromDevice: await lastAuthor(env, range, paths),
+    });
+  }
+  if (!fastForward) {
+    await materialise(env, plan, skills, presets, theirSide, message, departing);
+  }
 
   const newConflicts: string[] = [];
   for (const item of conflicts) {
@@ -380,6 +417,7 @@ export async function mergeRemote(env: BackupEnv): Promise<MergeResult> {
       fastForward,
       updated,
       keptLocal,
+      removed,
       newConflicts,
       pendingTotal: countConflicts(env.ctx.db),
     },

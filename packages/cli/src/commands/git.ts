@@ -65,6 +65,10 @@ function describeMerge(merge: MergeSummary): string[] {
   const lines = [
     `${plural(merge.updated.length, "skill")} updated from other devices, ${merge.keptLocal.length} kept as they are here.`,
   ];
+  if (merge.removed.length > 0) {
+    const names = merge.removed.map((skill) => `${skill.name} (${skill.fromDevice})`).join(", ");
+    lines.push(`Deleted on other devices, kept in Recently removed: ${names}`);
+  }
   if (merge.newConflicts.length > 0) {
     lines.push(
       `Changed on two devices, waiting for a choice in the app: ${merge.newConflicts.join(", ")}`,

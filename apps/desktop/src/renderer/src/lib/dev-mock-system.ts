@@ -259,6 +259,7 @@ export function createSystemMockHandlers(
               fastForward: false,
               updated: [{ name: "commit-helper", fromDevice: "Work Laptop" }],
               keptLocal: [],
+              removed: [],
               newConflicts: [],
               pendingTotal: conflicts.length,
             }

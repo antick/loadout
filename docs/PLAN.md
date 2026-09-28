@@ -129,6 +129,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] One-button sync: commit → merge → snapshot → push, retry on concurrent push
 - [x] Skill-aware merge: per skill, renames combine with edits
 - [x] Conflicts never block: keep mine / use remote / keep both, safety snapshot first
+- [x] Skills deleted on another device go to Recently removed, named in the sync toast and CLI
 - [x] Snapshot history with device name, restore any snapshot
 - [x] Automatic backup after changes settle and on quit; toggle
 - [x] Size report: 100 MB per-skill exclusion, 1 GB warning

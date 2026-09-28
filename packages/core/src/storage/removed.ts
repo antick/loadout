@@ -99,7 +99,9 @@ function isMeta(value: unknown): value is RemovedMeta {
     typeof meta.name === "string" &&
     typeof meta.originalPath === "string" &&
     typeof meta.place === "string" &&
-    (meta.reason === "replaced" || meta.reason === "deleted") &&
+    (meta.reason === "replaced" ||
+      meta.reason === "deleted" ||
+      meta.reason === "deleted_elsewhere") &&
     typeof meta.removedAt === "number" &&
     (meta.library === undefined || isLibraryRecord(meta.library))
   );

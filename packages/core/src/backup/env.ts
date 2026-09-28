@@ -4,6 +4,7 @@ import type { CoreContext } from "../context";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { PortableMetadata, PortableSkill } from "../skills/portable";
 import type { SkillStore } from "../skills/store";
+import type { RemovedStore } from "../storage/removed";
 import { readDirSafe } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { readDeviceName } from "./device";
@@ -27,6 +28,8 @@ export function isSafeSkillPath(path: unknown): path is string {
 export interface BackupDeps {
   store: SkillStore;
   portable: PortableMetadata;
+  /** Skills another device deleted are kept here, so they can be put back. */
+  removed: RemovedStore;
   /** Core refreshes copy-mode deployments here after skill content was replaced. */
   afterContentChange: () => Promise<void> | void;
   fetchImpl?: typeof fetch;
@@ -44,6 +47,7 @@ export interface BackupEnv {
   ctx: CoreContext;
   store: SkillStore;
   portable: PortableMetadata;
+  removed: RemovedStore;
   git: Git;
   /** Root of the repository: the skills folder. */
   repoDir: string;
@@ -115,6 +119,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
     ctx,
     store: deps.store,
     portable: deps.portable,
+    removed: deps.removed,
     repoDir,
     siblingDir: dirname(repoDir),
     metadataName: ctx.paths.metadataDir.slice(repoDir.length + 1),

@@ -37,6 +37,7 @@ function combine(earlier: MergeSummary | null, later: MergeSummary): MergeSummar
     fastForward: earlier.fastForward && later.fastForward,
     updated: [...earlier.updated, ...later.updated],
     keptLocal: [...new Set([...earlier.keptLocal, ...later.keptLocal])],
+    removed: [...earlier.removed, ...later.removed],
     newConflicts: [...new Set([...earlier.newConflicts, ...later.newConflicts])],
     pendingTotal: later.pendingTotal,
   };

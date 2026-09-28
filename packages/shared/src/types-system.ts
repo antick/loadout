@@ -46,6 +46,8 @@ export interface MergeSummary {
   fastForward: boolean;
   updated: MergedSkill[];
   keptLocal: string[];
+  /** Deleted on another device and taken out here; each waits in Recently removed. */
+  removed: MergedSkill[];
   newConflicts: string[];
   pendingTotal: number;
 }

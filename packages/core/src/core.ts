@@ -149,6 +149,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const backup = createBackupService(ctx, {
     store,
     portable,
+    removed,
     fetchImpl: options.fetchImpl,
     afterContentChange: async () => {
       for (const skill of store.list()) await deploy.refreshCopies(skill);

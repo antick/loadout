@@ -120,7 +120,8 @@
         "emptyBody": "When you delete a skill, or replace or delete a skill folder in an agent or a project, it waits here for {{days}} days.",
         "reason": {
           "replaced": "Replaced",
-          "deleted": "Deleted"
+          "deleted": "Deleted",
+          "deleted_elsewhere": "Deleted on another device"
         },
         "keptUntil": "Kept until {{date}}",
         "libraryNote": "Goes back to the library with its tags and presets. Deploy it to agents again afterwards.",

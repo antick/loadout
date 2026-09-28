@@ -10,6 +10,8 @@
       "save": "Save",
       "discard": "Discard",
       "saved": "Patterns saved"
-    }
+    },
+    "removed_one": "Deleted on {{device}}: {{names}}. It is in Recently removed if you want it back.",
+    "removed_other": "Deleted on another device: {{names}}. They are in Recently removed if you want them back."
   }
 }

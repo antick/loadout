@@ -109,7 +109,7 @@ export function RecentlyRemovedPanel(): ReactNode {
                 <p className="flex min-w-0 items-center gap-2 text-sm font-medium">
                   <span className="truncate">{entry.name}</span>
                   <StatusBadge
-                    tone={entry.reason === "deleted" ? "neutral" : "info"}
+                    tone={entry.reason === "replaced" ? "info" : "neutral"}
                     label={t(`settings.storage.removed.reason.${entry.reason}`)}
                   />
                 </p>

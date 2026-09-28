@@ -8,6 +8,7 @@ import type { SecretStore } from "../src/context";
 import { type ContextBundle, createContext } from "../src/create-context";
 import { silentLogger } from "../src/log";
 import { INTERNAL_KEYS } from "../src/settings/store";
+import { type RemovedStore, createRemovedStore } from "../src/storage/removed";
 import { removePathSync } from "../src/util/fs";
 import { hashDir } from "../src/util/hash";
 import { makeSkill, writeFile } from "./helpers";
@@ -63,6 +64,8 @@ export interface Device extends ContextBundle {
   service: BackupService;
   api: BackupApi;
   secrets: MemorySecrets;
+  /** Recently removed on this device. */
+  removed: RemovedStore;
   events: RecordedEvent[];
   /** How often core was asked to refresh deployed copies. */
   contentChanges: { count: number };
@@ -102,9 +105,11 @@ export function createDevice(root: string, name: string, options: DeviceOptions 
   const { ctx, store } = bundle;
   ctx.settings.setRaw(INTERNAL_KEYS.backupDeviceName, `Device ${name}`);
   const contentChanges = { count: 0 };
+  const removed = createRemovedStore(ctx, { store });
   const service = createBackupService(ctx, {
     store,
     portable: bundle.portable,
+    removed,
     fetchImpl: options.fetchImpl,
     hooks: options.hooks,
     afterContentChange: () => {
@@ -122,6 +127,7 @@ export function createDevice(root: string, name: string, options: DeviceOptions 
     service,
     api: service.api,
     secrets,
+    removed,
     events,
     contentChanges,
     skill,
