@@ -1,4 +1,9 @@
 import { stringify } from "yaml";
+import {
+  DEFAULT_NEW_SKILL_TEMPLATE,
+  type NewSkillTemplate,
+  newSkillTemplateBody,
+} from "./new-skill-templates";
 import { SKILL_DESCRIPTION_MAX, SKILL_NAME_MAX } from "./skill-checks";
 
 /**
@@ -9,6 +14,8 @@ import { SKILL_DESCRIPTION_MAX, SKILL_NAME_MAX } from "./skill-checks";
 export interface CreateSkillInput {
   name: string;
   description: string;
+  /** Outline the document starts from; the default outline when left out. */
+  template?: NewSkillTemplate;
 }
 
 /** File a new skill is written to. */
@@ -51,26 +58,20 @@ function headingFor(name: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** The first `SKILL.md` of a new skill: frontmatter, then a short outline to write over. */
+/** The first `SKILL.md` of a new skill: frontmatter, then the chosen outline to write over. */
 export function newSkillDocument(input: CreateSkillInput): string {
   const frontmatter = stringify(
     { name: input.name, description: input.description },
     { lineWidth: 0 },
   );
+  const body = newSkillTemplateBody(input.template ?? DEFAULT_NEW_SKILL_TEMPLATE);
   return [
     "---",
     frontmatter.trimEnd(),
     "---",
     "",
     `# ${headingFor(input.name)}`,
-    "",
-    "## When to use",
-    "",
-    "Describe the requests or situations where an agent should use this skill.",
-    "",
-    "## Instructions",
-    "",
-    "Write the steps the agent should follow, in order.",
+    ...(body.length > 0 ? ["", ...body] : []),
     "",
   ].join("\n");
 }

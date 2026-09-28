@@ -199,7 +199,8 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
     },
 
     createSkill: async (project, input, agentKeys) => {
-      const { name, description } = checkNewSkill(input);
+      const checked = checkNewSkill(input);
+      const { name } = checked;
       const targets = exportTargets(project, agentKeys);
       const [first] = targets;
       if (!first) throw invalid("No enabled installed agents selected for this project");
@@ -214,7 +215,7 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
           throw exists(`${target.displayName} already has a skill named ${name} in this project`);
         }
       }
-      const document = newSkillDocument({ name, description });
+      const document = newSkillDocument(checked);
       await ctx.lock.run(`create ${name}`, async () => {
         const written: string[] = [];
         try {

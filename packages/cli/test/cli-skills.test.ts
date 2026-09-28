@@ -40,6 +40,24 @@ describe("skills create", () => {
     expect(bad.json()).toMatchObject({ ok: false, code: "INVALID_INPUT" });
     expect((await cli("skills", "create", "notes", "--json")).code).toBe(EXIT_USAGE);
   });
+
+  it("starts from the template asked for", async () => {
+    const run = await cli(
+      "skills",
+      "create",
+      "ship-it",
+      "--description",
+      "Ship a release.",
+      "--template",
+      "detailed",
+      "--json",
+    );
+    expect(run.code).toBe(EXIT_OK);
+    const skill = run.json() as { libraryPath: string };
+    expect(readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8")).toContain("## Examples");
+    const unknown = await cli("skills", "create", "x", "--description", "x", "--template", "nope");
+    expect(unknown.code).toBe(EXIT_USAGE);
+  });
 });
 
 /** Prints a flagged report for a skill whose SKILL.md says EVIL, a clean one otherwise. */

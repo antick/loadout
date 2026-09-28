@@ -1,6 +1,10 @@
 import {
+  DEFAULT_NEW_SKILL_TEMPLATE,
   LIBRARY_SKILLS_DIR_NAME,
   NEW_SKILL_DOCUMENT,
+  NEW_SKILL_TEMPLATES,
+  type NewSkillTemplate,
+  isNewSkillTemplate,
   SKILL_DESCRIPTION_MAX,
   SKILL_NAME_MAX,
   type Skill,
@@ -11,6 +15,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { OptionSelect } from "@/components/OptionSelect";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +33,8 @@ import { useCreateSkill } from "@/hooks/mutations/library";
 import { useCreateProjectSkill } from "@/hooks/mutations/project-detail";
 import { useAppInfo, useLibraryLocation } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
+import { usePersistedState } from "@/hooks/use-persisted-state";
+import { STORAGE_KEYS } from "@/lib/constants";
 import { compactHome, joinPath } from "@/lib/paths";
 import { toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -62,6 +69,13 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   const { data: info } = useAppInfo();
   const nameId = useId();
   const descriptionId = useId();
+  const templateId = useId();
+  // The outline chosen last time is the one people want again.
+  const [storedTemplate, setTemplate] = usePersistedState<NewSkillTemplate>(
+    STORAGE_KEYS.newSkillTemplate,
+    DEFAULT_NEW_SKILL_TEMPLATE,
+  );
+  const template = isNewSkillTemplate(storedTemplate) ? storedTemplate : DEFAULT_NEW_SKILL_TEMPLATE;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   // Problems show once the field was left or the form was sent, not while the first word is typed.
@@ -114,7 +128,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
     event.preventDefault();
     setSubmitted(true);
     if (!valid || pending) return;
-    const skill = { name: trimmedName, description: trimmedDescription };
+    const skill = { name: trimmedName, description: trimmedDescription, template };
     if (project) {
       createInProject.mutate(
         { projectId: project.id, skill, agentKeys: place.agentKeys },
@@ -218,6 +232,18 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
           ) : (
             <FieldDescription>{t("library.create.descriptionHint")}</FieldDescription>
           )}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={templateId}>{t("library.create.template.label")}</FieldLabel>
+          <OptionSelect
+            id={templateId}
+            value={template}
+            options={NEW_SKILL_TEMPLATES}
+            labelOf={(option) => t(`library.create.template.names.${option}`)}
+            onChange={setTemplate}
+            className="w-full"
+          />
+          <FieldDescription>{t(`library.create.template.hints.${template}`)}</FieldDescription>
         </Field>
       </FieldGroup>
       <DialogFooter>

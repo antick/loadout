@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   editorView: "editor.view",
   editorWrap: "editor.wrap",
   editorSplit: "editor.split",
+  newSkillTemplate: "new-skill.template",
 } as const;
 
 /** localStorage prefix of unsaved editor drafts: `<prefix><skillId>:<path>`. */

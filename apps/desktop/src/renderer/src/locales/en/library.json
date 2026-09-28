@@ -255,6 +255,21 @@
       "descriptionPlaceholder": "Reviews a diff for bugs and risky changes. Use when asked to review code or a pull request.",
       "descriptionHint": "Say what it does and when to use it. Agents read this to decide whether to load the skill.",
       "descriptionTooLong": "Keep the description to {{max}} characters or fewer.",
+      "template": {
+        "label": "Start from",
+        "names": {
+          "outline": "Short outline",
+          "detailed": "Detailed",
+          "workflow": "Step-by-step workflow",
+          "blank": "Blank"
+        },
+        "hints": {
+          "outline": "When to use, then the instructions.",
+          "detailed": "Instructions, examples, edge cases and a place for reference files.",
+          "workflow": "A checklist the agent ticks off, one section per step.",
+          "blank": "Only the name, description and a heading."
+        }
+      },
       "counter": "{{count}} / {{max}}",
       "submit": "Create and edit",
       "created": "Created {{name}}",

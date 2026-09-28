@@ -7,6 +7,7 @@ import {
   SKILL_DESCRIPTION_MAX,
   SKILL_NAME_MAX,
   type Skill,
+  isNewSkillTemplate,
   newSkillDescriptionProblem,
   newSkillDocument,
   newSkillNameProblem,
@@ -38,14 +39,18 @@ export function checkSkillName(name: string): void {
   if (problem) throw invalid(NAME_MESSAGES[problem]);
 }
 
-/** The name and description trimmed, or an error saying what is wrong with them. */
+/** The name and description trimmed, or an error saying what is wrong with the input. */
 export function checkNewSkill(input: CreateSkillInput): CreateSkillInput {
   const name = input.name.trim();
   const description = input.description.trim();
   checkSkillName(name);
   const descriptionProblem = newSkillDescriptionProblem(description);
   if (descriptionProblem) throw invalid(DESCRIPTION_MESSAGES[descriptionProblem]);
-  return { name, description };
+  const { template } = input;
+  if (template !== undefined && !isNewSkillTemplate(template)) {
+    throw invalid(`There is no skill template called ${String(template)}.`);
+  }
+  return { name, description, template };
 }
 
 /**
@@ -72,7 +77,8 @@ export async function createSkill(
   install: InstallIntoLibrary,
   input: CreateSkillInput,
 ): Promise<Skill> {
-  const { name, description } = checkNewSkill(input);
+  const checked = checkNewSkill(input);
+  const { name } = checked;
   if (isSkillNameTaken(ctx, store, name)) {
     throw exists(`The library already has a skill or folder named ${name}.`);
   }
@@ -81,7 +87,7 @@ export async function createSkill(
   try {
     const draft = join(parent, name);
     await mkdir(draft);
-    await writeFile(join(draft, NEW_SKILL_DOCUMENT), newSkillDocument({ name, description }));
+    await writeFile(join(draft, NEW_SKILL_DOCUMENT), newSkillDocument(checked));
     return await install({
       sourceDir: draft,
       name,

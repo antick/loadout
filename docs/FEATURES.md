@@ -23,7 +23,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Mark a skill as yours: it gets a **Mine** badge and no source is looked for.
 - Batch deploy, tag, add to preset, export, update and delete.
 - Export skills as one `.zip` that installs anywhere.
-- New skill from a name and description; opens in the editor.
+- New skill from a name, a description and a starting outline (short, detailed, workflow or blank); opens in the editor.
 - Rename a skill; deployments and project links follow. Shows a dry run as you type.
 - Delete goes to Recently removed, with Undo.
 - The database rebuilds itself from the skill files.

@@ -1,7 +1,14 @@
 import { mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parseDocument } from "yaml";
-import { checkSkillDocument, newSkillNameProblem, toSkillNameInput } from "@loadout/shared";
+import {
+  NEW_SKILL_TEMPLATES,
+  type NewSkillTemplate,
+  checkSkillDocument,
+  newSkillDocument,
+  newSkillNameProblem,
+  toSkillNameInput,
+} from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AgentRegistry } from "../src/agents/registry";
 import { createDeployService } from "../src/deploy";
@@ -103,6 +110,49 @@ describe("create a skill", () => {
       code: "ALREADY_EXISTS",
     });
     expect(world.store.list()).toHaveLength(1);
+  });
+});
+
+/** The `##` headings a new skill's document starts with. */
+function headings(template: NewSkillTemplate): string[] {
+  return newSkillDocument({ name: "code-review", description: "Review code.", template })
+    .split("\n")
+    .filter((line) => line.startsWith("## "));
+}
+
+describe("new skill templates", () => {
+  it("starts every template as a valid skill with its own outline", () => {
+    for (const template of NEW_SKILL_TEMPLATES) {
+      const description = "Review a diff for bugs. Use when asked to review code.";
+      const document = newSkillDocument({ name: "code-review", description, template });
+      expect(checkSkillDocument(document, "code-review").issues).toEqual([]);
+      expect(document.endsWith("\n")).toBe(true);
+      expect(document.endsWith("\n\n")).toBe(false);
+    }
+    expect(headings("outline")).toEqual(["## When to use", "## Instructions"]);
+    expect(headings("detailed")).toContain("## Examples");
+    expect(headings("workflow")).toContain("## Checklist");
+    expect(headings("blank")).toEqual([]);
+    // Leaving the template out keeps the outline every skill started with before.
+    expect(newSkillDocument({ name: "a", description: "x" })).toBe(
+      newSkillDocument({ name: "a", description: "x", template: "outline" }),
+    );
+  });
+
+  it("writes the chosen template and refuses an unknown one", async () => {
+    const skill = await skills.api.create({
+      name: "release",
+      description: "Ship a release.",
+      template: "workflow",
+    });
+    expect(readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8")).toContain("## Checklist");
+    await expect(
+      skills.api.create({
+        name: "other",
+        description: "x",
+        template: "fancy" as NewSkillTemplate,
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
   });
 });
 
