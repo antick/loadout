@@ -64,7 +64,11 @@ export function groupHelp(group: CommandGroup): string {
     `${CLI_BINARY_NAME} ${group.name} - ${group.summary}`,
     "",
     "Commands:",
-    ...columns(group.commands.map((c) => [`${c.name} ${c.usage}`.trim(), c.summary] as const)),
+    ...columns(
+      group.commands
+        .filter((c) => !c.hidden)
+        .map((c) => [`${c.name} ${c.usage}`.trim(), c.summary] as const),
+    ),
     "",
     `Run \`${CLI_BINARY_NAME} ${group.name} <command> --help\` for details.`,
   ].join("\n");

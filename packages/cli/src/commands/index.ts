@@ -1,4 +1,5 @@
 import { agentsGroup } from "./agents";
+import { completionGroup } from "./completion";
 import { doctorGroup } from "./doctor";
 import { gitGroup } from "./git";
 import { presetsGroup } from "./presets";
@@ -15,6 +16,13 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
   removedGroup,
   gitGroup,
   doctorGroup,
+  completionGroup,
 ];
 
-export type { CommandContext, CommandGroup, CommandResult, CommandSpec } from "./types";
+export type {
+  CommandContext,
+  CommandGroup,
+  CommandResult,
+  CommandSpec,
+  FreeCommandContext,
+} from "./types";

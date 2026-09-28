@@ -3,6 +3,7 @@ import {
   type CoreCreateOptions,
   isLibraryDir,
   notFound,
+  resolveLibrary,
   toErrorShape,
 } from "@loadout/core";
 import { APP_NAME, type ErrorShape } from "@loadout/shared";
@@ -48,6 +49,17 @@ function helpFor(group: CommandGroup | undefined, command: CommandSpec | undefin
   return command ? commandHelp(group, command) : groupHelp(group);
 }
 
+/** The library at `baseDir`, or the saved one, when it already exists. Never creates one. */
+function openExistingLibrary(deps: CliDeps, baseDir: string | undefined): Core | null {
+  const { paths, unavailable } = resolveLibrary({
+    homeDir: deps.coreOptions?.homeDir ?? deps.homeDir,
+    configDir: deps.coreOptions?.configDir,
+    baseDir,
+  });
+  if (unavailable || !isLibraryDir(paths.baseDir)) return null;
+  return deps.createCore({ ...deps.coreOptions, baseDir: paths.baseDir });
+}
+
 /** Run one invocation. Never throws and never exits the process: the caller owns both. */
 export async function runCli(argv: readonly string[], deps: CliDeps): Promise<number> {
   const { io } = deps;
@@ -84,6 +96,15 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
     const context = { args, cwd: deps.cwd, customLibrary: library !== undefined };
     let baseDir =
       library === undefined ? undefined : resolveUserPath(library, deps.cwd, deps.homeDir);
+    if ("runWithoutLibrary" in command) {
+      const openExisting = (): Core | null => {
+        core ??= openExistingLibrary(deps, baseDir);
+        return core;
+      };
+      const result = await command.runWithoutLibrary({ ...context, openExisting });
+      printResult(io, json, result.value, result.text);
+      return result.exitCode ?? EXIT_OK;
+    }
     if (command.createsLibraryAt) {
       baseDir = command.createsLibraryAt(context, deps.homeDir);
     } else if (baseDir !== undefined && !isLibraryDir(baseDir)) {

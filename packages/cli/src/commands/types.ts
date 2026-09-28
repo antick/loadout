@@ -18,7 +18,16 @@ export interface CommandContext {
   customLibrary: boolean;
 }
 
-export interface CommandSpec {
+/** What a command that runs without opening the library gets. */
+export interface FreeCommandContext extends Omit<CommandContext, "core"> {
+  /**
+   * The saved library, or the one `--library` names, opened only when it already exists: null
+   * otherwise. Never creates one. Closed by the caller.
+   */
+  openExisting(): Core | null;
+}
+
+interface CommandBase {
   name: string;
   summary: string;
   /** Arguments after the command name, e.g. `<ref> --agent <key>…`. */
@@ -31,8 +40,21 @@ export interface CommandSpec {
    * returns, instead of the saved library or `--library`, which only open existing ones.
    */
   createsLibraryAt?(context: Omit<CommandContext, "core">, homeDir: string): string;
+  /** Left out of help: plumbing for scripts, such as the words shell completion asks for. */
+  hidden?: boolean;
+}
+
+/** Most commands: run on the opened library. */
+export interface LibraryCommandSpec extends CommandBase {
   run(context: CommandContext): Promise<CommandResult>;
 }
+
+/** Runs before (or without) a library, such as printing a shell completion script. */
+export interface FreeCommandSpec extends CommandBase {
+  runWithoutLibrary(context: FreeCommandContext): Promise<CommandResult>;
+}
+
+export type CommandSpec = LibraryCommandSpec | FreeCommandSpec;
 
 export interface CommandGroup {
   name: string;

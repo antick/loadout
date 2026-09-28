@@ -353,6 +353,11 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   `presets undeploy`, and `agents disable` for an agent with skills deployed), and
   `--library` to work on another library. `--library` only opens a library that exists, so a
   typo never starts an empty one; `repo init <path>` creates a new one.
+- Tab completion for Bash and Zsh: add `eval "$(loadout completion bash)"` to `~/.bashrc`, or
+  `eval "$(loadout completion zsh)"` to `~/.zshrc` after `compinit`. It completes groups,
+  commands and options, and the names of skills, agents, presets and tags from the library
+  (the one `--library` names, when given), plus `--source` values and file paths. Printing the
+  script opens no library, so it works before one exists. Works with the Bash 3.2 macOS ships.
 - The app publishes the CLI to `~/.loadout/bin/loadout` on start. It runs on the app's own
   runtime, so no Node install is needed.
 - Without the app: `pnpm add -g @antick/loadout` (Node.js 22.13 or newer), or the standalone
@@ -461,7 +466,8 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
 
 ## CLI features
 
-The CLI supports the `repo`, `agents`, `skills`, `presets`, `removed` and `git` command groups and `doctor`,
+The CLI supports the `repo`, `agents`, `skills`, `presets`, `removed` and `git` command groups, `doctor`
+and `completion`,
 JSON output, a custom library location and dry runs for selected commands. It can install,
 list, inspect, validate, deploy, remove, update and adopt skills; put back or purge what is in
 Recently removed; manage preset membership and deployment;
