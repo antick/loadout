@@ -1,0 +1,15 @@
+{
+  "backupSync": {
+    "ignore": {
+      "title": "Left out of the backup",
+      "description": "Files matching these patterns stay on each computer and are kept when a sync updates the skill.",
+      "defaults": "Always left out",
+      "custom": "Your patterns",
+      "placeholder": "outputs/\n*.zip",
+      "hint": "One pattern per line, written like a .gitignore. They apply on all your devices. Files already backed up stay in the backup.",
+      "save": "Save",
+      "discard": "Discard",
+      "saved": "Patterns saved"
+    }
+  }
+}

@@ -95,6 +95,7 @@ export const keys = {
     authMethod: ["backup", "auth-method"] as const,
     deviceAvailable: ["backup", "device-available"] as const,
     secrets: ["backup", "secrets"] as const,
+    ignore: ["backup", "ignore"] as const,
   },
   settings: {
     root: ["settings"] as const,

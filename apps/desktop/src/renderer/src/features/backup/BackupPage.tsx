@@ -22,6 +22,7 @@ import { BackupSummary } from "./BackupSummary";
 import { ConflictList } from "./ConflictList";
 import { GIT_DOWNLOAD_URL } from "./constants";
 import { HeldBackSecrets } from "./HeldBackSecrets";
+import { IgnoreRulesCard } from "./IgnoreRulesCard";
 import { DisconnectCard } from "./DisconnectCard";
 import { GithubConnectPanel } from "./GithubConnectPanel";
 import { RecoveryDialog } from "./RecoveryDialog";
@@ -185,6 +186,7 @@ export function BackupPage(): ReactNode {
 
       <aside className="flex min-w-0 flex-col gap-3">
         <BackupContents />
+        <IgnoreRulesCard enabled={isRepo && gitReady} />
         <AutoBackupCard />
         {remoteUrl ? (
           <DisconnectCard

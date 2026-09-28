@@ -10,6 +10,7 @@ import { countConflicts, listConflicts, recordConflict } from "./conflict-store"
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
+import { type SetAsideFolder, carryIgnored, putBackFolder, setAsideFolder } from "./ignored";
 import {
   type MergePlan,
   type PresetVersions,
@@ -105,6 +106,8 @@ async function materialise(
 ): Promise<void> {
   const stage: Stage = createStage(env);
   const created: string[] = [];
+  // Folders of ours that the merge replaces or drops, set aside with their left-out files.
+  const asides = new Map<string, SetAsideFolder>();
   const planned = new Set(plan.skills.flatMap((item) => (item.path ? [item.path] : [])));
   const place = (item: SkillPlan, from: string): void => {
     if (!item.path || !existsSync(from)) return;
@@ -120,6 +123,34 @@ async function materialise(
   };
 
   try {
+    await placeAndCommit();
+    // Committed: the left-out files of replaced folders move into their successors.
+    for (const item of plan.skills) {
+      const aside = asides.get(item.id);
+      if (!aside || item.content !== "theirs" || !item.path) continue;
+      const failed = carryIgnored(aside, join(env.repoDir, item.path));
+      if (failed.length > 0) {
+        env.ctx.log.warn(`Backup merge could not keep local files of ${item.path}`, failed);
+      }
+    }
+  } finally {
+    await stage.cleanup();
+  }
+
+  async function placeAndCommit(): Promise<void> {
+    try {
+      await writeMerge();
+    } catch (error) {
+      // Back to our last commit: take out what was moved in, put back what was set aside, then
+      // let git restore the rest.
+      for (const path of created) await removePath(path);
+      for (const aside of asides.values()) putBackFolder(aside);
+      await env.git.probe(["reset", "--hard", "HEAD"]);
+      throw error;
+    }
+  }
+
+  async function writeMerge(): Promise<void> {
     // Everything that can fail slowly (reading git objects) happens before the library is touched.
     const incoming = plan.skills.filter(
       (item) => item.content === "theirs" && skills.get(item.id)?.theirs?.treeHash,
@@ -136,8 +167,10 @@ async function materialise(
     for (const item of plan.skills) {
       const ours = skills.get(item.id)?.ours;
       if (!ours) continue;
-      if (item.content !== "ours") await removePath(join(env.repoDir, ours.path));
-      else if (item.path !== ours.path) movers.push(item);
+      if (item.content !== "ours") {
+        const aside = await setAsideFolder(env, stage, ours.path, item.id);
+        if (aside) asides.set(item.id, aside);
+      } else if (item.path !== ours.path) movers.push(item);
     }
     // Two steps, so that skills swapping folder names do not trip over each other.
     ensureDir(stage.pathOf(MOVES_DIR));
@@ -178,13 +211,6 @@ async function materialise(
 
     await env.git.run(["add", "-A"]);
     await env.git.run(["commit", "-q", "-m", message]);
-  } catch (error) {
-    // Back to our last commit: take out what was moved in, then let git restore the rest.
-    for (const path of created) await removePath(path);
-    await env.git.probe(["reset", "--hard", "HEAD"]);
-    throw error;
-  } finally {
-    await stage.cleanup();
   }
 }
 
@@ -308,7 +334,13 @@ export async function mergeRemote(env: BackupEnv): Promise<MergeResult> {
   // metadata also goes the long way round, which only ever writes files the plan vouches for.
   let fastForward = false;
   const trustworthy = theirSide.unreadable.size === 0;
-  if (base === ours && conflicts.length === 0 && trustworthy) {
+  // Git leaves files kept out of the backup behind in a folder it deletes or renames. The full
+  // merge sets such folders aside instead and moves those files along.
+  const reshapesOurs = plan.skills.some((item) => {
+    const mine = skills.get(item.id)?.ours;
+    return mine !== undefined && (item.content === "none" || item.path !== mine.path);
+  });
+  if (base === ours && conflicts.length === 0 && trustworthy && !reshapesOurs) {
     fastForward = (await env.git.probe(["merge", "--ff-only", theirs])).code === 0;
   }
   if (!fastForward) await materialise(env, plan, skills, presets, theirSide, message);

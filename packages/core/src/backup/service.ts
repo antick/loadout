@@ -11,6 +11,7 @@ import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME } from "./env";
 import { createGithubService } from "./github";
 import { assertRepo, commitLibrary, currentBranch, isRepo, originUrl } from "./repo";
 import { cleanUpUnpushed } from "./history-cleanup";
+import { readIgnoreRules, writeIgnoreRules } from "./ignore-rules";
 import { allowSecrets, scanForPush, scanUncommittedChanges } from "./secrets";
 import { buildSizeReport, refreshIgnoreFile } from "./size";
 import { DEFAULT_SNAPSHOT_LIMIT, listSnapshots, restoreSnapshot, tagSnapshot } from "./snapshots";
@@ -150,6 +151,14 @@ export function createBackupOperations(
     },
 
     sizeReport: () => buildSizeReport(env),
+
+    ignoreRules: async () => readIgnoreRules(env),
+
+    setIgnoreRules: async (custom) => {
+      const rules = await ctx.lock.run("backup ignore rules", () => writeIgnoreRules(env, custom));
+      ctx.touched("backup");
+      return rules;
+    },
 
     deviceName: async () => env.deviceName(),
 

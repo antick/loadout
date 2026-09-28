@@ -132,6 +132,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Snapshot history with device name, restore any snapshot
 - [x] Automatic backup after changes settle and on quit; toggle
 - [x] Size report: 100 MB per-skill exclusion, 1 GB warning
+- [x] Left out of the backup: default patterns (dependencies, `.env`, logs) plus the user's own; left-out files survive merges and "use remote"
 - [x] First-run "start fresh or restore" prompt
 - [x] Setup and recovery dialogs; disconnect, revoke, delete-remote guidance
 

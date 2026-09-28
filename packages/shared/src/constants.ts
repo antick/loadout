@@ -71,6 +71,9 @@ export const SNAPSHOT_TAG_PREFIX = "lo-v-";
 
 export const BACKUP_SKILL_LIMIT_BYTES = 100 * 1024 * 1024;
 export const BACKUP_REPO_WARN_BYTES = 1024 * 1024 * 1024;
+/** The user's own "leave out of the backup" patterns: at most this many lines, this long each. */
+export const BACKUP_IGNORE_MAX_LINES = 200;
+export const BACKUP_IGNORE_MAX_LINE_LENGTH = 300;
 
 export const SYNC_STATUS_SEVERITY = {
   in_sync: 1,

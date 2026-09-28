@@ -8,7 +8,8 @@ import { removePath, writeJsonAtomic } from "../util/fs";
 import { firstFreeName } from "../util/names";
 import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
-import { createStage, extractPaths } from "./extract";
+import { type Stage, createStage, extractPaths } from "./extract";
+import { type SetAsideFolder, carryIgnored, putBackFolder, setAsideFolder } from "./ignored";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 import { tagSnapshot } from "./snapshots";
 
@@ -24,6 +25,17 @@ const RESOLVE_MESSAGE: Record<ConflictResolution, string> = {
   keep_both: "resolve conflict: keep both",
 };
 const REMOTE_COPY_SUFFIX = "-remote";
+const LOCAL_ASIDE_KEY = "local";
+
+/** What a choice changed on disk, so a failure can be undone and the rest finished after it. */
+interface ChoiceWork {
+  /** Folders and files moved into the library. */
+  created: string[];
+  /** Our folders that were replaced; put back on failure, their left-out files carried after. */
+  replaced: { aside: SetAsideFolder; target: string }[];
+  /** Scratch folders to remove at the very end. */
+  cleanups: (() => Promise<void>)[];
+}
 
 function metadataFile(env: BackupEnv, skillId: string): string {
   return join(env.ctx.paths.metadataDir, SKILL_METADATA_SUBDIR, `${skillId}.json`);
@@ -48,7 +60,7 @@ async function remoteMetadata(
 async function stageRemoteVersion(
   env: BackupEnv,
   conflict: BackupConflict,
-): Promise<{ folder: string; cleanup: () => Promise<void> }> {
+): Promise<{ folder: string; stage: Stage; cleanup: () => Promise<void> }> {
   const path = conflict.theirsPath;
   if (!path || !(await resolveCommit(env, conflict.theirsCommit))) {
     throw notFound(
@@ -61,7 +73,7 @@ async function stageRemoteVersion(
     if (!existsSync(stage.pathOf(path))) {
       throw notFound(`The other device's version of "${conflict.skillName}" has no files.`);
     }
-    return { folder: stage.pathOf(path), cleanup: stage.cleanup };
+    return { folder: stage.pathOf(path), stage, cleanup: stage.cleanup };
   } catch (error) {
     await stage.cleanup();
     throw error;
@@ -71,39 +83,34 @@ async function stageRemoteVersion(
 async function useRemote(
   env: BackupEnv,
   conflict: BackupConflict,
-  created: string[],
+  work: ChoiceWork,
 ): Promise<void> {
   const local = env.store.find(conflict.skillKey);
   const meta = await remoteMetadata(env, conflict);
   const staged = await stageRemoteVersion(env, conflict);
-  try {
-    const isFree = (name: string): boolean => !existsSync(join(env.repoDir, name));
-    // The skill keeps the folder it has here; if it was deleted meanwhile it gets its remote name.
-    const folder = local
-      ? basename(local.libraryPath)
-      : firstFreeName(conflict.theirsPath ?? conflict.skillName, isFree);
-    const target = join(env.repoDir, folder);
-    await removePath(target);
-    created.push(target);
-    renameSync(staged.folder, target);
-    const next: PortableSkill = {
-      id: conflict.skillKey,
-      path: folder,
-      tags: meta?.tags ?? local?.tags ?? [],
-      source: meta?.source ?? { type: local?.sourceType ?? "import" },
-      createdAt: meta?.createdAt ?? local?.createdAt ?? Date.now(),
-    };
-    writeJsonAtomic(metadataFile(env, conflict.skillKey), next);
-  } finally {
-    await staged.cleanup();
-  }
+  work.cleanups.push(staged.cleanup);
+  const isFree = (name: string): boolean => !existsSync(join(env.repoDir, name));
+  // The skill keeps the folder it has here; if it was deleted meanwhile it gets its remote name.
+  const folder = local
+    ? basename(local.libraryPath)
+    : firstFreeName(conflict.theirsPath ?? conflict.skillName, isFree);
+  const target = join(env.repoDir, folder);
+  const aside = await setAsideFolder(env, staged.stage, folder, LOCAL_ASIDE_KEY);
+  if (aside) work.replaced.push({ aside, target });
+  work.created.push(target);
+  renameSync(staged.folder, target);
+  const next: PortableSkill = {
+    id: conflict.skillKey,
+    path: folder,
+    tags: meta?.tags ?? local?.tags ?? [],
+    source: meta?.source ?? { type: local?.sourceType ?? "import" },
+    createdAt: meta?.createdAt ?? local?.createdAt ?? Date.now(),
+  };
+  writeJsonAtomic(metadataFile(env, conflict.skillKey), next);
 }
 
-async function keepBoth(
-  env: BackupEnv,
-  conflict: BackupConflict,
-  created: string[],
-): Promise<void> {
+async function keepBoth(env: BackupEnv, conflict: BackupConflict, work: ChoiceWork): Promise<void> {
+  const { created } = work;
   const local = env.store.find(conflict.skillKey);
   const meta = await remoteMetadata(env, conflict);
   const staged = await stageRemoteVersion(env, conflict);
@@ -147,16 +154,26 @@ export async function resolveConflict(
 
   await commitLibrary(env, BEFORE_RESOLVE_MESSAGE);
   const safety = await tagSnapshot(env);
-  const created: string[] = [];
+  const work: ChoiceWork = { created: [], replaced: [], cleanups: [] };
   try {
-    if (action === "use_remote") await useRemote(env, conflict, created);
-    if (action === "keep_both") await keepBoth(env, conflict, created);
-    await commitStaged(env, RESOLVE_MESSAGE[action]);
-  } catch (error) {
-    // Take out what was moved in, then let git put the safety point back.
-    for (const path of created) await removePath(path);
-    await env.git.probe(["reset", "--hard", `refs/tags/${safety}`]);
-    throw error;
+    try {
+      if (action === "use_remote") await useRemote(env, conflict, work);
+      if (action === "keep_both") await keepBoth(env, conflict, work);
+      await commitStaged(env, RESOLVE_MESSAGE[action]);
+    } catch (error) {
+      // Take out what was moved in, put our folder back, then let git restore the safety point.
+      for (const path of work.created) await removePath(path);
+      for (const { aside } of work.replaced) putBackFolder(aside);
+      await env.git.probe(["reset", "--hard", `refs/tags/${safety}`]);
+      throw error;
+    }
+    // Files kept out of the backup exist only here: they stay with the skill.
+    for (const { aside, target } of work.replaced) {
+      const failed = carryIgnored(aside, target);
+      if (failed.length > 0) env.ctx.log.warn(`Could not keep local files of ${target}`, failed);
+    }
+  } finally {
+    for (const cleanup of work.cleanups) await cleanup();
   }
   deleteConflict(env.ctx.db, skillKey);
   env.ctx.activity.record("backup", conflict.skillName, RESOLVE_MESSAGE[action]);

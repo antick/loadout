@@ -16,20 +16,29 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
  * every other device. The block is rebuilt before each commit, so a skill that shrank comes back.
  */
 
-const IGNORE_FILE = ".gitignore";
+export const IGNORE_FILE = ".gitignore";
 const GIT_DIR = ".git";
 /**
  * `writeFileAtomic` writes `<file>.tmp.<uuid>` and renames it. Git must never pick one up: it can
  * vanish between git listing it and reading it, which fails the whole commit.
  */
 const ATOMIC_TEMP_PATTERN = "*.tmp.????????-????-????-????-????????????";
-const BASE_IGNORE_LINES = [
+/**
+ * Left out of every backup, shown to the user as the defaults. Only names that are never skill
+ * content: tool output, installed dependencies and local secrets. Files left out stay on this
+ * device through merges (see `ignored.ts`).
+ */
+export const DEFAULT_IGNORE_LINES: readonly string[] = [
   ".DS_Store",
   "Thumbs.db",
   "__pycache__/",
   "*.pyc",
-  ATOMIC_TEMP_PATTERN,
-] as const;
+  "node_modules/",
+  ".venv/",
+  ".env",
+  "*.log",
+];
+export const BASE_IGNORE_LINES: readonly string[] = [...DEFAULT_IGNORE_LINES, ATOMIC_TEMP_PATTERN];
 const BLOCK_START = `# ${APP_SLUG}: skills over the backup size limit (managed, do not edit)`;
 const BLOCK_END = `# ${APP_SLUG}: end of managed block`;
 const IGNORE_SPECIAL_CHARS = /[\\*?[\]#! ]/g;
@@ -67,7 +76,7 @@ async function trackedTopLevel(env: BackupEnv): Promise<Set<string>> {
   return new Set(result.stdout.split("\0").filter(Boolean));
 }
 
-async function findOversized(
+export async function findOversized(
   env: BackupEnv,
 ): Promise<{ oversized: OversizedSkill[]; totalBytes: number }> {
   const { skills, totalBytes } = measureSkills(env);
@@ -80,7 +89,7 @@ async function findOversized(
   return { oversized, totalBytes };
 }
 
-function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
+export function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
   if (excluded.length === 0) return [];
   const lines = [BLOCK_START];
   for (const skill of excluded) {
@@ -94,7 +103,7 @@ function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
 }
 
 /** Everything in the file that is the user's own: not our block, not blank padding at the end. */
-function userLines(current: string): string[] {
+export function userLines(current: string): string[] {
   const kept: string[] = [];
   let insideBlock = false;
   for (const line of current.split(/\r?\n/)) {

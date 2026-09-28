@@ -101,6 +101,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - One-button sync with per-skill merging; conflicts never block.
 - Snapshots you can restore; automatic backup after changes.
 - Blocks pushing anything that looks like a key or token.
+- `node_modules/`, `.env`, logs and your own patterns stay out of the backup, and stay put when a sync updates the skill.
 
 ## Command line
 

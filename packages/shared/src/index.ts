@@ -12,6 +12,7 @@ export * from "./storage";
 export * from "./types";
 export * from "./types-editor";
 export * from "./types-install";
+export * from "./types-backup";
 export * from "./version";
 export * from "./skill-checks";
 export * from "./new-skill";

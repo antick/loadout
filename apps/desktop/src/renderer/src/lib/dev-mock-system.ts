@@ -31,6 +31,7 @@ import {
   type SecretFinding,
   type SyncOutcome,
 } from "@loadout/shared";
+import { createBackupSyncMockHandlers } from "@/lib/dev-mock-backup-sync";
 import {
   HOME,
   HOUR,
@@ -201,6 +202,7 @@ export function createSystemMockHandlers(
   };
 
   return {
+    ...createBackupSyncMockHandlers(ctx),
     "backup.status": () => status,
     "backup.fetch": () => undefined,
     "backup.init": () => {
