@@ -25,8 +25,10 @@ export interface LibraryNameEntry {
  * - `taken`: another skill (or a stray folder) has the name; this one is added as `installAs`,
  *   unless its content is identical to what holds the name (the library then keeps that one).
  * - `repeated`: an earlier row of the same import claims the name; added as `installAs`.
+ * - `replaces`: the user chose to put this one in place of the library skill holding the name. It
+ *   keeps that skill's folder, tags, presets and agents; the old version goes to Recently removed.
  */
-export type InstallOutcomeKind = "new" | "installed" | "taken" | "repeated";
+export type InstallOutcomeKind = "new" | "installed" | "taken" | "repeated" | "replaces";
 
 export interface InstallOutcome {
   kind: InstallOutcomeKind;
@@ -50,15 +52,25 @@ export function nextFreeName(name: string, taken: ReadonlySet<string>): string {
   return `${name}${NUMBER_SEPARATOR}${n}`;
 }
 
+/** A library skill (not a stray folder) holds the name, so the import may replace it. */
+export function canReplace(outcome: InstallOutcome): boolean {
+  if (outcome.kind === "replaces") return true;
+  return (
+    (outcome.kind === "taken" || outcome.kind === "installed") && Boolean(outcome.owner?.skillId)
+  );
+}
+
 /**
  * Outcomes for the rows of one import, in order: each row also sees the names the rows before it
  * claimed. `names` holds the name each row is imported under; `claims[i]` false leaves row `i` out
- * of the import (an unticked row), so it takes no name from the rows after it.
+ * of the import (an unticked row), so it takes no name from the rows after it. `replaces[i]` asks
+ * row `i` to replace the library skill holding its name, where one does.
  */
 export function planInstallNames(
   names: readonly string[],
   library: readonly LibraryNameEntry[],
   claims?: readonly boolean[],
+  replaces?: readonly boolean[],
 ): InstallOutcome[] {
   const byKey = new Map(library.map((entry) => [nameKey(entry.dirName), entry]));
   const taken = new Set(byKey.keys());
@@ -70,6 +82,8 @@ export function planInstallNames(
     let outcome: InstallOutcome;
     if (claimed.has(key)) {
       outcome = { kind: "repeated", installAs: nextFreeName(name, taken), owner: null };
+    } else if (owner?.skillId && replaces?.[index]) {
+      outcome = { kind: "replaces", installAs: owner.dirName, owner };
     } else if (owner) {
       outcome = {
         kind: owner.sameSource ? "installed" : "taken",

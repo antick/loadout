@@ -86,7 +86,7 @@ function skillLine(
     row.description && room >= MIN_DESCRIPTION ? `  ${fit(row.description, room)}` : "";
   const plain = fit(`${head}${labelText}${description}`, width);
   // Style only the parts that survived the cut.
-  const tone = outcome.kind === "installed" ? s.info : s.warn;
+  const tone = outcome.kind === "installed" || outcome.kind === "replaces" ? s.info : s.warn;
   const headShown = plain.slice(0, head.length);
   const rest = plain.slice(head.length);
   const labelShown = rest.slice(0, labelText.length);
@@ -109,7 +109,8 @@ function folderLine(
 function summary(state: PickerState): string {
   const ticked = state.checked.size;
   const inUse = [...outcomesOf(state)].filter(
-    ([key, outcome]) => state.checked.has(key) && outcome.kind !== "new",
+    ([key, outcome]) =>
+      state.checked.has(key) && outcome.kind !== "new" && outcome.kind !== "replaces",
   ).length;
   const parts = [`${ticked} of ${state.request.skills.length} ticked`];
   if (inUse > 0) parts.push(`${plural(inUse, "name")} in use`);

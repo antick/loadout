@@ -57,6 +57,9 @@ function lastSegment(relPath: string): string {
   return relPath.split("/").findLast(Boolean) ?? relPath;
 }
 
+const REPLACE_FOLDER =
+  "--replace works for repositories, links and archives. For a folder, delete the library skill first or pick another --name.";
+
 /** Match `--skill` values against what the repository or archive really holds; never guess. */
 export function selectSkills(
   available: readonly RepoSkillPreview[],
@@ -97,6 +100,11 @@ const SKILL_FLAG = {
   value: "id",
   description: "Skill to take from a repository or archive. Repeat for several.",
 } as const;
+const REPLACE_FLAG = {
+  name: "replace",
+  type: "boolean",
+  description: "When a library skill has the name, replace it instead of adding <name>-2.",
+} as const;
 const ALL_FLAG = {
   name: "all",
   type: "boolean",
@@ -122,6 +130,7 @@ async function chooseSkills(
     skills: preview.skills,
     library: preview.library,
     selected: preview.selected,
+    replace: flagBoolean(args, REPLACE_FLAG.name),
   });
   if (!keys) throw cancelled("Cancelled. Nothing was installed.");
   return preview.skills.filter((skill) => keys.includes(skill.relPath));
@@ -132,6 +141,8 @@ interface Installed {
   skills: Skill[];
   /** Same order as `skills`; empty when the source named the skill itself. */
   asked: string[];
+  /** Names of library skills `--replace` put new versions in place of. */
+  replaced: string[];
 }
 
 /** The chosen skills of a preview with the names they are installed under. */
@@ -144,7 +155,8 @@ async function chooseItems(
   if (name !== undefined && chosen.length !== 1) {
     throw new UsageError("--name only works when exactly one skill is installed.");
   }
-  return chosen.map((skill) => ({ relPath: skill.relPath, name: name ?? skill.name }));
+  const replace = flagBoolean(context.args, REPLACE_FLAG.name);
+  return chosen.map((skill) => ({ relPath: skill.relPath, name: name ?? skill.name, replace }));
 }
 
 /** What a preview would install, without installing it; the preview is always thrown away. */
@@ -174,7 +186,11 @@ async function installFromPreview(
       acceptRedirect,
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });
-    return { skills, asked: items.map((item) => item.name) };
+    const held = new Set(preview.library.flatMap((entry) => entry.skillId ?? []));
+    const replaced = skills
+      .filter((skill, index) => items[index]?.replace && held.has(skill.id))
+      .map((skill) => skill.name);
+    return { skills, asked: items.map((item) => item.name), replaced };
   } catch (error) {
     // The temporary clone is ours to clean up when nothing got installed from it.
     await core.api.install.cancelPreview(preview.previewId).catch(() => undefined);
@@ -189,13 +205,21 @@ async function installFromPreview(
 async function installFromPath(context: CommandContext, path: string): Promise<Installed> {
   const { core, args } = context;
   const name = flagString(args, NAME_FLAG.name);
+  const replace = flagBoolean(args, REPLACE_FLAG.name);
   if (ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
     const preview = await core.api.install.previewArchive(path);
-    if (preview.skills.length > 1) return installFromPreview(context, preview);
+    // Replacing goes through the preview, which knows which library skill holds the name.
+    if (preview.skills.length > 1 || replace) return installFromPreview(context, preview);
     await core.api.install.cancelPreview(preview.previewId);
+  } else if (replace) {
+    throw new UsageError(REPLACE_FOLDER);
   }
   const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
-  return { skills: [await core.api.install.fromPath(path, name, { acceptRisk })], asked: [] };
+  return {
+    skills: [await core.api.install.fromPath(path, name, { acceptRisk })],
+    asked: [],
+    replaced: [],
+  };
 }
 
 /** `--dry-run`: fetch and list what would be added, under which names; install nothing. */
@@ -211,6 +235,7 @@ async function plan(context: CommandContext, source: InstallSource): Promise<Ins
   }
   const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
   if (!ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
+    if (flagBoolean(args, REPLACE_FLAG.name)) throw new UsageError(REPLACE_FOLDER);
     return planFolder(core, path, name);
   }
   return planFromPreview(context, await core.api.install.previewArchive(path));
@@ -233,7 +258,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
     const skill = await core.api.install.fromMarket(source.source, source.skillId, {
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });
-    result = { skills: [skill], asked: [] };
+    result = { skills: [skill], asked: [], replaced: [] };
   } else {
     result = await installFromPreview(context, await core.api.install.previewGit(source.url));
   }
@@ -241,8 +266,13 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const lines = installed.map((skill) => `Installed ${skill.name} (${skill.id}) into the library.`);
   const renamed = installed.filter((skill, index) => {
     const asked = result.asked[index];
-    return asked !== undefined && asked !== skill.name;
+    return asked !== undefined && asked !== skill.name && !result.replaced.includes(skill.name);
   });
+  if (result.replaced.length > 0) {
+    lines.push(
+      `Replaced in place: ${result.replaced.join(", ")}. A version that differed is in Recently removed.`,
+    );
+  }
   if (renamed.length > 0) {
     lines.push(
       `The name was in use, so these got a numbered name instead: ${renamed.map((s) => s.name).join(", ")}.`,
@@ -255,8 +285,9 @@ async function run(context: CommandContext): Promise<CommandResult> {
 export const installCommand: CommandSpec = {
   name: "install",
   summary: "Add a skill to the library (does not deploy it)",
-  usage: "<source> [--name <name>] [--skill <id>…] [--all] [--yes] [--accept-risk] [--dry-run]",
-  flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG, YES_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
+  usage:
+    "<source> [--name <name>] [--skill <id>…] [--all] [--replace] [--yes] [--accept-risk] [--dry-run]",
+  flags: [NAME_FLAG, SKILL_FLAG, ALL_FLAG, REPLACE_FLAG, YES_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
     "In a terminal, a source with several skills opens a picker to tick them; --skill or --all",
     "skip it, and scripts or --json never see it.",
@@ -265,6 +296,8 @@ export const installCommand: CommandSpec = {
     "owner/repo@skill, a link to an archive or a SKILL.md, or a site that publishes skills",
     "(https://example.com, read from /.well-known/agent-skills/index.json).",
     "--yes also accepts a download that moved to another site than the link names.",
+    "--replace puts a skill in place of the library skill holding its name, keeping its tags,",
+    "presets and agents; the old version goes to Recently removed.",
     "With SkillSpector installed, skills are safety-checked first; a flagged one fails with",
     "UNSAFE and its findings. --accept-risk installs it anyway.",
     "A folder must start with ./, ../, / or ~/ - a bare owner/repo always means GitHub.",

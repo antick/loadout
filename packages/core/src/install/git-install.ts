@@ -24,6 +24,7 @@ import {
   resolveTreeRef,
 } from "./git-source";
 import type { InstallIntoLibrary } from "./library";
+import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, installChecked } from "./safety-gate";
 import { createPreviewSessions, emitProgress } from "./preview-sessions";
 import { listRepoSkills, resolveSkillDir } from "./repo-scan";
@@ -39,6 +40,7 @@ export interface GitInstallerDeps {
   cancels: CancelRegistry;
   install: InstallIntoLibrary;
   safety?: SafetyGate;
+  replace?: ReplaceDeps;
   /** Tests only: let a local folder stand in for a remote repository. */
   allowLocalGitSources?: boolean;
   /** How long an unconfirmed preview keeps its checkout (tests shorten it). */
@@ -67,7 +69,11 @@ const PERCENT_TOTAL = 100;
 
 export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): GitInstaller {
   const { store, git, download, cancels, install } = deps;
-  const sessions = createPreviewSessions(ctx, install, deps.previewTtlMs, deps.safety);
+  const sessions = createPreviewSessions(
+    ctx,
+    { install, store, safety: deps.safety, replace: deps.replace },
+    deps.previewTtlMs,
+  );
   const previewFetched = createFetchedPreviews(ctx, { store, cancels, sessions });
   const web = createWebPreviews(ctx, { download, cancels, previewFetched });
 

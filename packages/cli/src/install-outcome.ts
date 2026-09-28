@@ -14,6 +14,8 @@ export function outcomeLabel(outcome: InstallOutcome): string {
         : `name in use → ${outcome.installAs}`;
     case "repeated":
       return `same name twice → ${outcome.installAs}`;
+    case "replaces":
+      return `replaces ${outcome.installAs} (old version to Recently removed)`;
     default:
       return "";
   }

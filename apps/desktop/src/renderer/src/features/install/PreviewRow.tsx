@@ -1,5 +1,10 @@
-import type { InstallOutcome, InstallOutcomeKind, RepoSkillPreview } from "@loadout/shared";
-import { CircleAlert, CirclePlus, RefreshCw } from "lucide-react";
+import {
+  type InstallOutcome,
+  type InstallOutcomeKind,
+  type RepoSkillPreview,
+  canReplace,
+} from "@loadout/shared";
+import { CircleAlert, CirclePlus, RefreshCw, Replace } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
@@ -13,6 +18,7 @@ const OUTCOME_TONES: Record<InstallOutcomeKind, StatusTone> = {
   installed: "info",
   taken: "warning",
   repeated: "warning",
+  replaces: "info",
 };
 
 const OUTCOME_ICONS: Record<InstallOutcomeKind, ReactNode> = {
@@ -20,6 +26,7 @@ const OUTCOME_ICONS: Record<InstallOutcomeKind, ReactNode> = {
   installed: <RefreshCw />,
   taken: <CircleAlert />,
   repeated: <CircleAlert />,
+  replaces: <Replace />,
 };
 
 /** The chip naming what importing a row does: new, already here, or a name in use. */
@@ -40,7 +47,9 @@ function OutcomeHint({ name, outcome }: { name: string; outcome: InstallOutcome 
   if (outcome.kind === "new") return null;
   const { installAs, owner } = outcome;
   let text: string;
-  if (outcome.kind === "installed") {
+  if (outcome.kind === "replaces") {
+    text = t("install.git.outcomeHint.replaces", { name: installAs });
+  } else if (outcome.kind === "installed") {
     text = t("install.git.outcomeHint.installed", { installAs });
   } else if (outcome.kind === "repeated") {
     text = t("install.git.outcomeHint.repeated", { name, installAs });
@@ -55,7 +64,7 @@ function OutcomeHint({ name, outcome }: { name: string; outcome: InstallOutcome 
     <p
       className={cn(
         "text-xs break-words",
-        outcome.kind === "installed" ? "text-info" : "text-warning",
+        OUTCOME_TONES[outcome.kind] === "info" ? "text-info" : "text-warning",
       )}
     >
       {text}
@@ -72,6 +81,9 @@ export interface PreviewRowProps {
   showNew: boolean;
   onToggle: () => void;
   onRename: (name: string) => void;
+  /** Put this skill in place of the library skill holding its name. */
+  replacing: boolean;
+  onReplaceChange: (replace: boolean) => void;
 }
 
 /** A skill found in the source: tick it, rename it, and see what importing it will do. */
@@ -83,6 +95,8 @@ export function PreviewRow({
   showNew,
   onToggle,
   onRename,
+  replacing,
+  onReplaceChange,
 }: PreviewRowProps): ReactNode {
   const { t } = useTranslation();
   const shownName = name.trim() || skill.name;
@@ -117,6 +131,15 @@ export function PreviewRow({
           {skill.description ?? t("skills.noDescription")}
         </p>
         <OutcomeHint name={shownName} outcome={outcome} />
+        {checked && canReplace(outcome) ? (
+          <label className="flex w-fit cursor-pointer items-center gap-2 text-xs font-medium">
+            <Checkbox
+              checked={replacing}
+              onCheckedChange={(value) => onReplaceChange(value === true)}
+            />
+            {t("install.git.replaceOwner", { name: outcome.owner?.dirName ?? shownName })}
+          </label>
+        ) : null}
       </div>
     </li>
   );

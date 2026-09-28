@@ -101,6 +101,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     registry,
     fetchImpl: options.fetchImpl,
     safety,
+    replace: { removed, refreshCopies: deploy.refreshCopies },
   });
   const skills = createSkillsService(ctx, {
     store,

@@ -18,6 +18,8 @@ export interface PickRequest {
   library: readonly LibraryNameEntry[];
   /** What the typed text named; null ticks the free names, as the app does. */
   selected: readonly string[] | null;
+  /** `--replace`: a name held by a library skill replaces it instead of getting a number. */
+  replace?: boolean;
 }
 
 /** A chosen list of preview keys, or null when the person cancelled. */
@@ -61,6 +63,8 @@ export function createPickerState(request: PickRequest): PickerState {
   const outcomes = planInstallNames(
     request.skills.map((row) => row.name),
     request.library,
+    undefined,
+    request.skills.map(() => request.replace === true),
   );
   return {
     request,
@@ -77,11 +81,12 @@ export function createPickerState(request: PickRequest): PickerState {
 
 /** Outcomes of every skill with the current ticks: an unticked skill claims no name. */
 export function outcomesOf(state: PickerState): Map<string, InstallOutcome> {
-  const { skills, library } = state.request;
+  const { skills, library, replace } = state.request;
   const planned = planInstallNames(
     skills.map((row) => row.name),
     library,
     skills.map((row) => state.checked.has(row.relPath)),
+    skills.map(() => replace === true),
   );
   return new Map(
     skills.flatMap((row, index) => {

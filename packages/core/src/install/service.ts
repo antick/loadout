@@ -21,6 +21,7 @@ import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
 import { createHttpGit } from "./http-git";
 import { type InstallIntoLibrary, type InstallRecord, installIntoLibrary } from "./library";
+import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
 
 export interface InstallServiceDeps {
@@ -37,6 +38,8 @@ export interface InstallServiceDeps {
   fetchImpl?: typeof fetch;
   /** Safety checks before installs; absent in tests that do not need them. */
   safety?: SafetyGate;
+  /** Recently removed and deployed copies, for an import that replaces a library skill. */
+  replace?: ReplaceDeps;
 }
 
 export interface InstallService {
@@ -69,6 +72,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     cancels,
     install,
     safety: deps.safety,
+    replace: deps.replace,
     allowLocalGitSources: deps.allowLocalGitSources,
     previewTtlMs: deps.previewTtlMs,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),

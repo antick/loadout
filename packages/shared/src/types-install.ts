@@ -59,6 +59,11 @@ export const NO_REQUESTED_AGENTS: Pick<GitPreview, "agents" | "unknownAgents" | 
 export interface InstallSelection {
   relPath: string;
   name: string;
+  /**
+   * When a library skill already holds the name, put this one in its place instead of adding it
+   * as `<name>-2`. The replaced version goes to Recently removed. Ignored for a free name.
+   */
+  replace?: boolean;
 }
 
 export interface ConfirmOptions extends InstallOptions {

@@ -19,7 +19,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { OutcomeBadge, PreviewRow } from "@/features/install/PreviewRow";
 import { cn } from "@/lib/utils";
 
-const OUTCOME_ORDER: readonly InstallOutcomeKind[] = ["new", "installed", "taken", "repeated"];
+const OUTCOME_ORDER: readonly InstallOutcomeKind[] = [
+  "new",
+  "installed",
+  "replaces",
+  "taken",
+  "repeated",
+];
 
 export interface PreviewSkillListProps {
   skills: readonly RepoSkillPreview[];
@@ -29,6 +35,9 @@ export interface PreviewSkillListProps {
   outcomes: ReadonlyMap<string, InstallOutcome>;
   onCheckedChange: (next: Set<string>) => void;
   onRename: (relPath: string, name: string) => void;
+  /** Row paths set to replace the library skill holding their name. */
+  replacing: ReadonlySet<string>;
+  onReplaceChange: (relPath: string, replace: boolean) => void;
 }
 
 /** "3 new · 1 in the library": how the names of the source fit the library, at a glance. */
@@ -113,6 +122,8 @@ export function PreviewSkillList({
   outcomes,
   onCheckedChange,
   onRename,
+  replacing,
+  onReplaceChange,
 }: PreviewSkillListProps): ReactNode {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -159,6 +170,8 @@ export function PreviewSkillList({
         showNew={anyNotNew}
         onToggle={() => setTicks([skill], !checked.has(skill.relPath))}
         onRename={(name) => onRename(skill.relPath, name)}
+        replacing={replacing.has(skill.relPath)}
+        onReplaceChange={(replace) => onReplaceChange(skill.relPath, replace)}
       />
     );
   };

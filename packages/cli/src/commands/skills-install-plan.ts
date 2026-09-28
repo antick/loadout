@@ -37,6 +37,8 @@ export function planPreview(preview: GitPreview, items: readonly InstallSelectio
   const outcomes = planInstallNames(
     items.map((item) => item.name),
     preview.library,
+    undefined,
+    items.map((item) => item.replace === true),
   );
   return {
     dryRun: true,

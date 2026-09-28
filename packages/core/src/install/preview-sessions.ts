@@ -8,7 +8,9 @@ import type {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { invalid } from "../errors";
+import type { SkillStore } from "../skills/store";
 import type { InstallIntoLibrary, InstallRecord } from "./library";
+import { type ReplaceDeps, installReplacing, skillHoldingName } from "./replace";
 import type { SafetyGate } from "./safety-gate";
 
 /**
@@ -53,12 +55,20 @@ export function emitProgress(
   ctx.emit("install:progress", { key, phase, ...extra });
 }
 
+export interface PreviewSessionDeps {
+  install: InstallIntoLibrary;
+  store: SkillStore;
+  safety?: SafetyGate;
+  /** How a ticked "replace" puts a skill in place of the library skill holding its name. */
+  replace?: ReplaceDeps;
+}
+
 export function createPreviewSessions(
   ctx: CoreContext,
-  install: InstallIntoLibrary,
+  deps: PreviewSessionDeps,
   ttlMs: number = PREVIEW_TTL_MS,
-  safety?: SafetyGate,
 ): PreviewSessions {
+  const { install, store, safety } = deps;
   const sessions = new Map<string, PreviewSession & { createdAt: number }>();
 
   /** Previews nobody confirmed or cancelled would otherwise keep their temp folder forever. */
@@ -120,11 +130,12 @@ export function createPreviewSessions(
             total: chosen.length,
             name,
           });
-          const skill = await install({
-            sourceDir: dir,
-            name: item.name,
-            record: session.record(dir),
-          });
+          const request = { sourceDir: dir, name: item.name, record: session.record(dir) };
+          // Looked up now, not at preview time: an earlier row may have just taken the name.
+          const owner = item.replace ? skillHoldingName(store, name) : null;
+          const skill = owner
+            ? await installReplacing(ctx, install, deps.replace ?? {}, owner, request)
+            : await install(request);
           safety?.remember(skill, reportOf.get(dir) ?? null);
           installed.push(skill);
         }

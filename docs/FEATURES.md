@@ -36,6 +36,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - From Git: URLs, `owner/repo`, tree links, `#branch`, `owner/repo@skill`, and pasted `npx skills add …` commands.
 - Works without Git for public GitHub and GitLab repositories.
 - The import list says what each skill will do: New, In library, Name in use (and its new name), Same name twice.
+- A name in use can instead replace the library skill, keeping its tags, presets and agents; the old version goes to Recently removed.
 - Skills grouped by folder with a tick-all per folder; a filter for sources with 8 or more skills.
 - A download that moves to another site needs your OK first.
 - Marketplace (skills.sh): boards, search, audits and `SKILL.md` before installing; works offline from cache.

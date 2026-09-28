@@ -97,11 +97,13 @@ function PreviewForm({
       ),
     ),
   );
+  const [replacing, setReplacing] = useState<ReadonlySet<string>>(new Set());
   // Worked out again on every tick and rename: an unticked row takes no name from the rows after it.
   const planned = planInstallNames(
     preview.skills.map((skill) => nameOf(skill.relPath, skill.name)),
     preview.library,
     preview.skills.map((skill) => checked.has(skill.relPath)),
+    preview.skills.map((skill) => replacing.has(skill.relPath)),
   );
   const outcomes = new Map<string, InstallOutcome>(
     preview.skills.flatMap((skill, index) => {
@@ -114,7 +116,12 @@ function PreviewForm({
     event.preventDefault();
     const items = preview.skills
       .filter((skill) => checked.has(skill.relPath))
-      .map((skill) => ({ relPath: skill.relPath, name: nameOf(skill.relPath, skill.name) }));
+      .map((skill) => ({
+        relPath: skill.relPath,
+        name: nameOf(skill.relPath, skill.name),
+        // Only rows the plan says replace: a rename may have freed the name since it was ticked.
+        replace: outcomes.get(skill.relPath)?.kind === "replaces",
+      }));
     if (items.length > 0 && !needsTrust) {
       onConfirm(items, { acceptRedirect: preview.redirectedTo !== null && trusted });
     }
@@ -179,6 +186,15 @@ function PreviewForm({
         outcomes={outcomes}
         onCheckedChange={setChecked}
         onRename={(relPath, name) => setNames((previous) => ({ ...previous, [relPath]: name }))}
+        replacing={replacing}
+        onReplaceChange={(relPath, replace) =>
+          setReplacing((previous) => {
+            const next = new Set(previous);
+            if (replace) next.add(relPath);
+            else next.delete(relPath);
+            return next;
+          })
+        }
       />
 
       <DialogFooter>

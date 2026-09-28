@@ -49,6 +49,26 @@ test("the import list says what each name will do and ticks a whole folder", asy
   await expect(dialog.getByRole("button", { name: "Import selected (4)" })).toBeVisible();
 });
 
+test("a name in use can replace the library skill instead", async ({ page }) => {
+  await openApp(page, "/install");
+  const content = main(page);
+  await content.getByRole("tab", { name: "Git or link" }).click();
+  await content.getByLabel("Repository, site or link").fill("acme/skills");
+  await content.getByRole("button", { name: "Preview" }).click();
+
+  const dialog = page.getByRole("dialog");
+  const replace = dialog.getByRole("checkbox", { name: "Replace release-notes in the library" });
+  // Offered only once the row is ticked.
+  await expect(replace).toHaveCount(0);
+  await dialog.getByRole("checkbox", { name: "Select release-notes" }).click();
+  await replace.click();
+  await expect(dialog.getByText(/Takes the place of release-notes in the library/)).toBeVisible();
+  await expect(dialog.getByText(/release-notes is taken by a skill/)).toHaveCount(0);
+
+  await replace.click();
+  await expect(dialog.getByText(/release-notes is taken by a skill/)).toBeVisible();
+});
+
 test("the Backup page lists what is held back and backs it up anyway", async ({ page }) => {
   await openApp(page, "/backup");
   const content = main(page);
