@@ -15,6 +15,7 @@ const BANNER = [
 await build({
   entryPoints: ["src/bin.ts"],
   bundle: true,
+  minify: true,
   platform: "node",
   target: NODE_TARGET,
   format: "esm",

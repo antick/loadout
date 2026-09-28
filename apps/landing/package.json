@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --ignore-lock",
     "build": "astro build",
     "preview": "astro preview",
     "test": "astro build && node --test test/landing.test.mjs"

@@ -5,7 +5,7 @@
   "description": "One desktop app to manage AI agent skills across every coding tool.",
   "license": "GPL-3.0-only",
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --continue=dependencies-successful",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
