@@ -1,10 +1,11 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseUpdateFeed } from "@loadout/shared";
 import { afterEach, describe, expect, it } from "vitest";
 // The release workflow's feed builder: what it writes must be what the app accepts.
 import { buildFeed, targetForFile } from "../../../scripts/update-feed.mjs";
-import { parseUpdateFeed, updateTargetFor } from "./feed";
+import { updateTargetFor } from "./feed";
 
 const FEED_URL = "https://github.com/owner/releases/releases/latest/download/latest.json";
 const SHA = "a".repeat(64);

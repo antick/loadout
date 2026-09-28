@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import { rename, rm, stat } from "node:fs/promises";
 import { once } from "node:events";
+import type { UpdateFeedFile } from "@loadout/shared";
 import { UPDATE_DOWNLOAD_ATTEMPTS, UPDATE_STALL_MS } from "../constants";
-import type { UpdateFeedFile } from "./feed";
 
 export interface DownloadOptions {
   fetchImpl: typeof fetch;

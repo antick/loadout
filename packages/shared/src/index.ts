@@ -27,3 +27,4 @@ export * from "./preview-rows";
 export * from "./sources";
 export * from "./types-skills-file";
 export * from "./api-skills-file";
+export * from "./update-feed";

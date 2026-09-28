@@ -6,7 +6,10 @@ import {
   type AppUpdateStatus,
   RELEASES_URL,
   UPDATE_FEED_SIGNATURE_SUFFIX,
+  type UpdateFeed,
+  type UpdateFeedFile,
   isNewerVersion,
+  parseUpdateFeed,
 } from "@loadout/shared";
 import {
   UPDATE_EXIT_WAIT_SECONDS,
@@ -17,13 +20,7 @@ import {
   UPDATE_TIMEOUT_MS,
 } from "../constants";
 import { downloadVerified, sha256Of } from "./download";
-import {
-  type UpdateFeed,
-  type UpdateFeedFile,
-  isFeedSignedBy,
-  parseUpdateFeed,
-  updateTargetFor,
-} from "./feed";
+import { isFeedSignedBy, updateTargetFor } from "./feed";
 import { prepareAppImage, prepareMacBundle, startSwap, startWindowsInstaller } from "./install";
 import type { AppLocation } from "./locate";
 
