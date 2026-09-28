@@ -134,7 +134,8 @@ describe("picker screen", () => {
       skills: [row("skills/x", { description: "\u001b]52;c;aGk=\u0007\nsecond line" })],
     });
     const lines = renderPicker(hostile, 90, 20, PLAIN_STYLES);
-    expect(lines.join("\n")).not.toMatch(/[\u0000-\u0009\u000b-\u001f]/);
+    const codes = [...lines.join("")].map((ch) => ch.codePointAt(0) ?? 0);
+    expect(codes.filter((code) => code < 0x20 || (code >= 0x7f && code <= 0x9f))).toEqual([]);
     expect(lines.some((line) => line.includes("]52;c;aGk=  second line"))).toBe(true);
   });
 

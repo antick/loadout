@@ -51,12 +51,14 @@ const MIN_DESCRIPTION = 12;
  * Control characters (escape sequences, newlines) in text a repository supplies could move the
  * cursor, rewrite the screen or reach the clipboard: shown as spaces instead.
  */
-const CONTROL = /[\u0000-\u001f\u007f-\u009f]/g;
+const isControl = (code: number): boolean => code <= 0x1f || (code >= 0x7f && code <= 0x9f);
+const printable = (text: string): string =>
+  [...text].map((ch) => (isControl(ch.codePointAt(0) ?? 0) ? " " : ch)).join("");
 
 /** Cut to `width` visible characters. Only plain text is measured, so cut before styling. */
 function fit(raw: string, width: number): string {
   if (width <= 0) return "";
-  const text = raw.replace(CONTROL, " ");
+  const text = printable(raw);
   const chars = [...text];
   return chars.length <= width ? text : `${chars.slice(0, Math.max(0, width - 1)).join("")}…`;
 }
