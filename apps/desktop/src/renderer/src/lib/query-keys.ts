@@ -26,6 +26,7 @@ export const keys = {
     root: ["storage"] as const,
     report: ["storage", "report"] as const,
     removed: ["storage", "removed"] as const,
+    agentFolders: ["storage", "agent-folders"] as const,
   },
   instructions: {
     root: ["instructions"] as const,

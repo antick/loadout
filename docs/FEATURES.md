@@ -413,9 +413,12 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   empty one. The app asks: **Try again**, **Choose where it is now** (a folder that holds the
   library), **Use the default folder**, or **Quit**. The CLI stops with `LIBRARY_UNAVAILABLE`.
   Nothing is created, and no links in agent folders are touched.
-- **Remove all data** takes Loadout's links out of agent folders (copies too, if asked), deletes
-  the data folder and a moved library, deletes the keychain key on macOS, and quits. Project folders
-  and the backup repository are left alone.
+- **Remove all data** first asks what happens to the skills in agents' folders, with counts and
+  size: **Keep them all** (the default: every link into the library becomes an ordinary folder,
+  copy first, link swapped out after, so agents keep every skill; if any cannot be kept, nothing is
+  removed), **Keep only the copies** (links go, since they would point at nothing), or **Remove
+  everything Loadout added**. Then it deletes the data folder and a moved library, deletes the
+  keychain key on macOS, and quits. Project folders and the backup repository are left alone.
 - Deleted outside the app: links left pointing at deleted skills are removed on the next start. If
   the data folder goes while the app runs, it stops writing and offers to restart fresh or quit.
 

@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createGitClient } from "../src/install/git-client";
@@ -13,6 +13,7 @@ beforeEach(() => {
   world = createDeployWorld();
   storage = createStorageService(world.ctx, {
     deploy: world.deploy,
+    store: world.store,
     git: createGitClient(world.ctx),
     removed: createRemovedStore(world.ctx, { store: world.store }),
   });
@@ -93,6 +94,43 @@ describe("prepareRemoval", () => {
 
     await storage.prepareRemoval({ removeCopies: true });
     expect(existsSync(copy)).toBe(false);
+  });
+
+  it("keeps every linked skill as a real folder when asked, before anything goes", async () => {
+    // Cline and Warp share one folder: one link, one copy.
+    world.installAgents(".claude", ".codex", ".cline", ".warp");
+    const alpha = world.addSkill("alpha", { "notes.md": "keep me\n" });
+    await world.deploy.api.deploy(alpha.id, "claude_code");
+    await world.deploy.api.deploy(alpha.id, "cline");
+    await world.deploy.api.deploy(alpha.id, "warp");
+    world.ctx.settings.set("deployMode", "copy");
+    await world.deploy.api.deploy(alpha.id, "codex");
+    expect(await storage.api.agentFolders()).toMatchObject({ linkedFolders: 2, copiedFolders: 1 });
+    expect((await storage.api.agentFolders()).linkedBytes).toBeGreaterThan(0);
+
+    const plan = await storage.prepareRemoval({ removeCopies: false, keepLinkedSkills: true });
+    expect(plan.undeployed).toBe(0);
+    for (const folder of [".claude/skills", ".agents/skills", ".codex/skills"]) {
+      const path = join(world.home, folder, "alpha");
+      expect(lstatSync(path).isSymbolicLink(), folder).toBe(false);
+      expect(readFileSync(join(path, "notes.md"), "utf8")).toBe("keep me\n");
+    }
+    expect(world.store.deployments().every((row) => row.mode === "copy")).toBe(true);
+    // Nothing half-written was left beside them.
+    expect(readdirSync(join(world.home, ".claude", "skills"))).toEqual(["alpha"]);
+  });
+
+  it("leaves a link alone when it no longer points at its library skill", async () => {
+    world.installAgents(".claude");
+    const alpha = world.addSkill("alpha");
+    await world.deploy.api.deploy(alpha.id, "claude_code");
+    const link = join(world.home, ".claude", "skills", "alpha");
+    rmSync(link);
+    symlinkSync(join(world.home, "elsewhere"), link);
+    expect((await storage.api.agentFolders()).linkedFolders).toBe(0);
+    await storage.prepareRemoval({ removeCopies: false, keepLinkedSkills: true });
+    // Never turned into a copy of the library skill.
+    expect(existsSync(join(link, "SKILL.md"))).toBe(false);
   });
 
   it("removes a moved library's own parts and its folder only if empty", async () => {

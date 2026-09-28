@@ -44,6 +44,22 @@ export interface RemoveAllDataOptions {
    * always removed, because they would point at nothing afterwards.
    */
   removeCopies: boolean;
+  /**
+   * Before anything goes, turn every link into the library into a real copy of the skill, so
+   * agents keep all their skills. Ignored when `removeCopies` is set. If any link cannot be
+   * turned into a folder, nothing is removed.
+   */
+  keepLinkedSkills?: boolean;
+}
+
+/** What Loadout put into agent folders, counted once per folder on disk. */
+export interface AgentFolderSummary {
+  /** Links into the library. */
+  linkedFolders: number;
+  /** Space those links would take as real folders. */
+  linkedBytes: number;
+  /** Copies of library skills. */
+  copiedFolders: number;
 }
 
 /** Why a skill folder went to Recently removed. */

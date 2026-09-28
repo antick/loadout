@@ -10,9 +10,11 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
-import { invalid } from "../errors";
+import { keepLinkedSkills, linkedFolders } from "../deploy/keep";
+import { AppError, invalid } from "../errors";
+import type { SkillStore } from "../skills/store";
 import type { GitClient } from "../install/git-client";
-import { dirSize, removePathSync, statOrNull } from "../util/fs";
+import { dirSize, lstatOrNull, removePathSync, statOrNull } from "../util/fs";
 import type { RemovedStore } from "./removed";
 
 /** SQLite keeps these next to the database while it is open. */
@@ -20,6 +22,7 @@ const DB_JOURNAL_SUFFIXES = ["", "-wal", "-shm"] as const;
 
 export interface StorageServiceDeps {
   deploy: DeployService;
+  store: SkillStore;
   git: GitClient;
   removed: RemovedStore;
 }
@@ -120,6 +123,21 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       return freed;
     },
 
+    agentFolders: async () => {
+      const linked = linkedFolders(deps.store);
+      const copies = new Set(
+        deps.store
+          .deployments()
+          .filter((row) => row.mode === "copy" && lstatOrNull(row.targetPath)?.isDirectory())
+          .map((row) => row.targetPath),
+      );
+      return {
+        linkedFolders: linked.folders,
+        linkedBytes: linked.bytes,
+        copiedFolders: copies.size,
+      };
+    },
+
     removed: async () => deps.removed.list(),
     restoreRemoved: async (id) => deps.removed.restore(id),
     deleteRemoved: async (id) => deps.removed.remove(id),
@@ -129,7 +147,18 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
   return {
     api,
 
-    prepareRemoval: async ({ removeCopies }) => {
+    prepareRemoval: async ({ removeCopies, keepLinkedSkills: keepLinks }) => {
+      if (keepLinks && !removeCopies) {
+        const kept = await keepLinkedSkills(ctx, deps.store);
+        // Half kept is worse than not starting: stop while the library is still there.
+        if (kept.failed.length > 0) {
+          const list = kept.failed.map((failure) => `${failure.name}: ${failure.message}`);
+          throw new AppError(
+            "IO",
+            `Nothing was removed: ${kept.failed.length} skill folders could not be kept. ${list.join("; ")}`,
+          );
+        }
+      }
       const undeployed = await deps.deploy.removeEverywhere({ includeCopies: removeCopies });
       const home = paths.defaultBaseDir;
       const moved = paths.baseDir !== home;

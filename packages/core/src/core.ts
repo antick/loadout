@@ -143,7 +143,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     },
   });
   const system = createSystemService(ctx, { store, install, deploy, registry });
-  const storage = createStorageService(ctx, { deploy, git: install.git, removed });
+  const storage = createStorageService(ctx, { deploy, store, git: install.git, removed });
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),

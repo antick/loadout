@@ -71,7 +71,13 @@ import type { CreateSkillInput } from "./new-skill";
 import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } from "./safety";
 import type { InstructionFile } from "./instructions";
 import type { SecretFinding } from "./secrets";
-import type { ClearableArea, RemovedFolder, RestoreRemovedResult, StorageReport } from "./storage";
+import type {
+  AgentFolderSummary,
+  ClearableArea,
+  RemovedFolder,
+  RestoreRemovedResult,
+  StorageReport,
+} from "./storage";
 import type { AppApi } from "./api-app";
 import type { SettingKey, SettingValue, Settings } from "./settings";
 
@@ -402,6 +408,8 @@ export interface SystemApi {
 /** What Loadout keeps on disk, and emptying the parts that can be rebuilt. */
 export interface StorageApi {
   report(): Promise<StorageReport>;
+  /** Links and copies Loadout put into agent folders, for the "remove all data" choice. */
+  agentFolders(): Promise<AgentFolderSummary>;
   /** Empty one area. Returns the bytes freed. Never touches a clone that is in use. */
   clear(area: ClearableArea): Promise<number>;
   /** Skill folders taken out of agent and project folders, newest first. */

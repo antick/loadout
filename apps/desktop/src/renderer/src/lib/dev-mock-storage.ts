@@ -126,6 +126,11 @@ export function createStorageMockHandlers(home: string): Record<string, Handler>
     "app.clearAppCache": () => {
       bytes.app = 1.2 * MB;
     },
+    "storage.agentFolders": () => ({
+      linkedFolders: 9,
+      linkedBytes: 1.6 * MB,
+      copiedFolders: 2,
+    }),
     "app.removeAllData": () => {
       throw new Error("The preview cannot remove data.");
     },

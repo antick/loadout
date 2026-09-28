@@ -29,6 +29,7 @@ describe("deleting a library skill", () => {
     });
     storage = createStorageService(world.ctx, {
       deploy: world.deploy,
+      store: world.store,
       git: createGitClient(world.ctx),
       removed: world.removed,
     });

@@ -137,6 +137,7 @@ describe("Recently removed on another disk", () => {
     });
     storage = createStorageService(world.ctx, {
       deploy: world.deploy,
+      store: world.store,
       git: createGitClient(world.ctx),
       removed: world.removed,
     });

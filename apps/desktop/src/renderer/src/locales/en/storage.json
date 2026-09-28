@@ -78,7 +78,7 @@
       "outside": {
         "title": "Outside this folder",
         "description": "{{app}} also writes to these places. Removing the data folder does not touch them, except where said.",
-        "agents": "Agent skills folders (such as ~/.claude/skills) get links or copies of your skills. Removing all data takes the links out; copies only when you ask.",
+        "agents": "Agent skills folders (such as ~/.claude/skills) get links or copies of your skills. Removing all data lets you keep them all as ordinary folders, keep only the copies, or remove what {{app}} added.",
         "projects": "Project folders get the skills and instruction files you add there. They are your project's files and are never removed.",
         "backup": "Your backup repository, when backup is set up. It stays on its host.",
         "keychain": "On macOS, the system keychain holds the key your GitHub sign-in is encrypted with. Removing all data deletes it.",
@@ -90,9 +90,23 @@
         "button": "Remove all data…",
         "confirmTitle": "Remove all {{app}} data?",
         "deletes": "The data folder {{path}} is deleted: every skill in the library, the database, editor history, logs, the command-line tool and the app's own data. This cannot be undone.",
-        "links": "Links to library skills in agent folders are removed first, because they would point at nothing. A library moved elsewhere is removed too.",
-        "keeps": "Project folders and your backup repository are left alone. {{app}} quits when it is done; opening it again starts fresh.",
-        "copies": "Also delete the skill copies {{app}} put into agent folders",
+        "keeps": "A library moved elsewhere is removed too. Project folders and your backup repository are left alone. {{app}} quits when it is done; opening it again starts fresh.",
+        "agentFolders": "Skills in your agents' folders",
+        "keep": {
+          "title": "Keep them all (recommended)",
+          "description_one": "The {{count}} linked skill becomes an ordinary folder ({{size}}) and copies stay, so your agents keep working as they do now. If any link cannot be kept, nothing is removed.",
+          "description_other": "The {{count}} linked skills become ordinary folders ({{size}}) and copies stay, so your agents keep working as they do now. If any link cannot be kept, nothing is removed."
+        },
+        "copiesOnly": {
+          "title": "Keep only the copies",
+          "description_one": "The {{count}} link to the library is removed, because it would point at nothing. The {{copies}} copies stay.",
+          "description_other": "The {{count}} links to the library are removed, because they would point at nothing. The {{copies}} copies stay."
+        },
+        "none": {
+          "title": "Remove everything {{app}} added",
+          "description_one": "The {{count}} skill folder {{app}} put into an agent folder is deleted. Skills you added yourself stay.",
+          "description_other": "All {{count}} skill folders {{app}} put into agent folders are deleted. Skills you added yourself stay."
+        },
         "confirm": "Remove and quit"
       },
       "errors": {

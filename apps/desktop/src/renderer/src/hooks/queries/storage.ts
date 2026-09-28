@@ -1,4 +1,4 @@
-import type { RemovedFolder, StorageReport } from "@loadout/shared";
+import type { AgentFolderSummary, RemovedFolder, StorageReport } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -18,5 +18,15 @@ export function useRemovedFolders(): UseQueryResult<RemovedFolder[]> {
     queryKey: keys.storage.removed,
     queryFn: () => api.storage.removed(),
     staleTime: 0,
+  });
+}
+
+/** Links and copies in agent folders, counted fresh whenever the removal choice opens. */
+export function useAgentFolders(enabled: boolean): UseQueryResult<AgentFolderSummary> {
+  return useQuery({
+    queryKey: keys.storage.agentFolders,
+    queryFn: () => api.storage.agentFolders(),
+    staleTime: 0,
+    enabled,
   });
 }
