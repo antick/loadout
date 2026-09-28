@@ -135,8 +135,20 @@ describe("projects", () => {
       expect(shared).toHaveLength(1);
       expect(shared[0]).toMatchObject({
         key: "codex",
-        displayName: "Codex / Antigravity / Amp / Cline / Replit / Warp / GitLab Duo",
-        agentKeys: ["codex", "antigravity", "amp", "cline", "replit", "warp", "gitlab_duo"],
+        displayName:
+          "Codex / Antigravity / Amp / Cline / Replit / Warp / GitLab Duo / Dexto / fx / Zed",
+        agentKeys: [
+          "codex",
+          "antigravity",
+          "amp",
+          "cline",
+          "replit",
+          "warp",
+          "gitlab_duo",
+          "dexto",
+          "fx",
+          "zed",
+        ],
         // Codex and Cline are not on this machine, Warp is: the shared folder is still worth using.
         installed: true,
         enabled: true,
@@ -172,6 +184,9 @@ describe("projects", () => {
           "replit",
           "warp",
           "gitlab_duo",
+          "dexto",
+          "fx",
+          "zed",
           "shares",
         ],
       });
@@ -199,7 +214,7 @@ describe("projects", () => {
       ]);
       expect(skills[0]).toMatchObject({ librarySkillId: review.id, tags: ["quality"] });
       expect(skills[2]?.agentDisplayName).toBe(
-        "Codex / Antigravity / Amp / Cline / Replit / Warp / GitLab Duo",
+        "Codex / Antigravity / Amp / Cline / Replit / Warp / GitLab Duo / Dexto / fx / Zed",
       );
     });
 

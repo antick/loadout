@@ -45,9 +45,22 @@ describe("agents service", () => {
       projectSkillsDir: ".claude/skills",
     });
     expect((await info("cursor")).installed).toBe(false);
-    expect((await info("cline")).sharesDirWith).toEqual(["warp"]);
+    expect((await info("cline")).sharesDirWith).toEqual(["warp", "dexto", "zed"]);
     expect(list[0]).not.toHaveProperty("extraScanDirs");
     expect(list[0]).not.toHaveProperty("projectExtraScanDirs");
+  });
+
+  it("keeps the built-in table consistent", () => {
+    const agentKeys = BUILT_IN_AGENTS.map((agent) => agent.key);
+    expect(new Set(agentKeys).size).toBe(agentKeys.length);
+    const names = BUILT_IN_AGENTS.map((agent) => agent.displayName.toLowerCase());
+    expect(new Set(names).size).toBe(names.length);
+    for (const agent of BUILT_IN_AGENTS) {
+      for (const dir of [agent.skillsDir, agent.detectDir, agent.projectSkillsDir ?? "x"]) {
+        expect(dir.startsWith("/") || dir.includes(".."), `${agent.key}: ${dir}`).toBe(false);
+      }
+      expect(agent.key, agent.key).toMatch(/^[a-z0-9_]+$/);
+    }
   });
 
   it("reports the other global folders an agent loads, only where they exist", async () => {

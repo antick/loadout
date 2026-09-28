@@ -63,7 +63,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ### 4. Agents
 
-- [x] 54 built-in agents with detection, global + project skill paths
+- [x] 70 built-in agents with detection, global + project skill paths
 - [x] Enable / disable, enable all / disable all
 - [x] Custom agents (name, skills path, optional project path)
 - [x] Path override + reset for built-ins (global and project path)
