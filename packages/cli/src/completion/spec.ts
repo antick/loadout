@@ -1,4 +1,4 @@
-import { SOURCE_TYPES } from "@loadout/shared";
+import { ITEM_KINDS, SOURCE_TYPES } from "@loadout/shared";
 import type { FlagSpec } from "../args";
 import type { CommandGroup, CommandSpec } from "../commands/types";
 
@@ -44,6 +44,7 @@ export interface CompletionSpec {
 /** Value placeholder of a flag → what to complete. Anything else is free text. */
 const VALUE_KINDS: Readonly<Record<string, WordKind>> = {
   key: "agents",
+  agent: "agents",
   tag: "tags",
   path: "files",
   file: "files",
@@ -54,6 +55,7 @@ const VALUE_KINDS: Readonly<Record<string, WordKind>> = {
 /** Fixed values of a flag, by its value placeholder (`--source <type>` in `skills list`). */
 const VALUE_CHOICES: Readonly<Record<string, readonly string[]>> = {
   type: SOURCE_TYPES,
+  kind: ITEM_KINDS,
 };
 
 /** A positional placeholder in a usage line → what to complete. */
