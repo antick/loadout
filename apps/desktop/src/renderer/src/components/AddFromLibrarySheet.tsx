@@ -296,7 +296,7 @@ export function AddFromLibrarySheet({
                         </span>
                       </span>
                       {info.state === "available" ? (
-                        <SourceBadge source={skill.sourceType} compact />
+                        <SourceBadge skill={skill} compact />
                       ) : (
                         <StatusBadge
                           tone={STATE_TONES[info.state]}

@@ -62,7 +62,7 @@ export function SkillRow(props: SkillItemProps): ReactNode {
         </div>
         <div className="hidden min-w-0 shrink items-center gap-1.5 lg:flex">
           <SkillTags tags={skill.tags} max={2} />
-          <SourceBadge source={skill.sourceType} compact />
+          <SourceBadge skill={skill} compact />
         </div>
         {footer ? <div className={cn(SKILL_ITEM_RAISED_CLASS, "shrink-0")}>{footer}</div> : null}
         {actions ? (

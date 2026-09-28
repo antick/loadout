@@ -2,13 +2,15 @@ import {
   type Skill,
   type SkillSource,
   groupSkillSources,
+  needsSourceSearch,
   skillsWithoutSource,
 } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
-import { Download, GitFork, RefreshCw } from "lucide-react";
-import { type ReactNode, useMemo } from "react";
+import { Download, GitFork, RefreshCw, SearchCheck } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
+import { InlineNotice } from "@/components/InlineNotice";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CardGridSkeleton } from "@/components/LinkCard";
@@ -16,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { FindSourcesDialog } from "@/features/origin/FindSourcesDialog";
 import { SourceCard } from "@/features/sources/SourceCard";
 import { useBrowseSource } from "@/features/sources/use-browse-source";
 import { useCopyText } from "@/hooks/mutations/app";
@@ -57,6 +60,22 @@ export function SourcesPage(): ReactNode {
       return skill ? [skill] : [];
     });
   const loose = all ? skillsWithoutSource(all) : 0;
+  const searchable = useMemo(() => (all ?? []).filter(needsSourceSearch), [all]);
+  const [finding, setFinding] = useState(false);
+  const findNotice =
+    searchable.length > 0 ? (
+      <InlineNotice
+        tone="info"
+        icon={SearchCheck}
+        actions={
+          <Button size="xs" variant="outline" onClick={() => setFinding(true)}>
+            {t("origin.batch.open")}
+          </Button>
+        }
+      >
+        {t("origin.batch.notice", { count: searchable.length })}
+      </InlineNotice>
+    ) : null;
   const allLabel = t("sources.allSources");
   const checkingAll = check.isPending && check.variables?.label === allLabel;
 
@@ -84,6 +103,7 @@ export function SourcesPage(): ReactNode {
           ) : undefined
         }
       />
+      {findNotice}
       {skills.isPending ? (
         <CardGridSkeleton />
       ) : skills.error ? (
@@ -139,9 +159,10 @@ export function SourcesPage(): ReactNode {
           })}
         </div>
       )}
-      {loose > 0 && sources.length > 0 ? (
+      {loose > 0 && sources.length > 0 && !findNotice ? (
         <p className="text-xs text-muted-foreground">{t("sources.loose", { count: loose })}</p>
       ) : null}
+      <FindSourcesDialog open={finding} onOpenChange={setFinding} skills={searchable} />
       <GitPreviewDialog
         preview={browse.preview}
         onDismiss={browse.dismiss}

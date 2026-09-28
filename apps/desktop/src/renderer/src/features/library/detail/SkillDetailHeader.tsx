@@ -72,7 +72,7 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <SourceBadge source={skill.sourceType} />
+        <SourceBadge skill={skill} />
         <SkillIndicators skill={skill} showAll />
         <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
         <SkillTagsEditor skill={skill} />

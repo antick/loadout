@@ -139,6 +139,7 @@
       "defaultBranch": "Default branch",
       "subpath": "Folder in the repository",
       "installedRevision": "Installed revision",
+      "unknownRevision": "Not known: your copy may differ from any version",
       "latestRevision": "Latest revision",
       "lastChecked": "Last checked",
       "neverChecked": "Never",

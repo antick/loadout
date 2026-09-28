@@ -25,6 +25,7 @@ import type {
   UpdateResult,
 } from "@loadout/shared";
 import { HOME } from "@/lib/dev-mock-data";
+import { createOriginMockHandlers } from "@/lib/dev-mock-origin";
 
 export interface LibraryMockContext {
   getSkills(): Skill[];
@@ -252,6 +253,8 @@ export function createLibraryMockHandlers(
   }
 
   return {
+    // Finding and linking sources lives in its own module; it needs the same skills.
+    ...createOriginMockHandlers(ctx),
     "updates.sourceNews": async () => currentNews(),
     "updates.checkSources": async (): Promise<SourceCheckResult> => {
       await wait(STEP_MS * 2);

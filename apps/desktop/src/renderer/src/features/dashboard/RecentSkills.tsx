@@ -27,7 +27,7 @@ export function RecentSkills({ skills }: { skills: readonly Skill[] }): ReactNod
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 text-sm font-medium">
                   <span className="truncate">{skill.name}</span>
-                  <SourceBadge source={skill.sourceType} compact />
+                  <SourceBadge skill={skill} compact />
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {skill.description ?? t("skills.noDescription")}

@@ -1,4 +1,4 @@
-import { formatDateTime, formatRelative, type Skill } from "@loadout/shared";
+import { canLinkSource, formatDateTime, formatRelative, type Skill } from "@loadout/shared";
 import {
   ArrowUpCircle,
   Download,
@@ -18,6 +18,7 @@ import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { SkillRefresh } from "@/features/library/detail/use-skill-refresh";
+import { FindSourceSection } from "@/features/origin/FindSourceSection";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { usePickFolder } from "@/hooks/mutations/app";
 import { useCheckSkillUpdate, useDetachSkill } from "@/hooks/mutations/library";
@@ -35,9 +36,20 @@ function Row({ label, children }: { label: string; children: ReactNode }): React
   );
 }
 
-function Revision({ value }: { value: string | null }): ReactNode {
+/** `unknownLabel`: what to say when there is none, "None" by default. */
+function Revision({
+  value,
+  unknownLabel,
+}: {
+  value: string | null;
+  unknownLabel?: string;
+}): ReactNode {
   const { t } = useTranslation();
-  if (!value) return <span className="text-muted-foreground">{t("library.source.none")}</span>;
+  if (!value) {
+    return (
+      <span className="text-muted-foreground">{unknownLabel ?? t("library.source.none")}</span>
+    );
+  }
   return (
     <span data-selectable title={value} className="font-mono text-xs">
       {value.slice(0, REVISION_DISPLAY_LENGTH)}
@@ -238,7 +250,11 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
                 )}
               </Row>
               <Row label={t("library.source.installedRevision")}>
-                <Revision value={skill.sourceRevision} />
+                {/* A repository skill always has one; without it, which commit it is is unknown. */}
+                <Revision
+                  value={skill.sourceRevision}
+                  unknownLabel={t("library.source.unknownRevision")}
+                />
               </Row>
               <Row label={t("library.source.latestRevision")}>
                 <Revision value={skill.remoteRevision} />
@@ -268,6 +284,8 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
           <Row label={t("library.source.changed")}>{formatDateTime(skill.updatedAt)}</Row>
         </dl>
       </PageSection>
+
+      {canLinkSource(skill) ? <FindSourceSection skill={skill} /> : null}
     </div>
   );
 }

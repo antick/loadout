@@ -62,7 +62,7 @@ export function SkillCard(props: SkillItemProps): ReactNode {
           {skill.description ?? t("skills.noDescription")}
         </p>
         <div className="flex min-w-0 items-center gap-1.5">
-          <SourceBadge source={skill.sourceType} />
+          <SourceBadge skill={skill} />
           <SkillTags tags={skill.tags} />
         </div>
         {footer ? (
