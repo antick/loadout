@@ -41,6 +41,8 @@ export interface Settings {
   safetyScanOnInstall: boolean;
   /** The SkillSpector program to run; empty looks for it on this machine. */
   safetyScannerPath: string;
+  /** Read agents' session logs on this computer to count how often each skill runs. */
+  usageTracking: boolean;
 }
 
 export type SettingKey = keyof Settings;
@@ -68,6 +70,7 @@ export const DEFAULT_SETTINGS: Settings = {
   agentControlPrompt: "",
   safetyScanOnInstall: true,
   safetyScannerPath: "",
+  usageTracking: false,
 };
 
 export const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS) as SettingKey[];

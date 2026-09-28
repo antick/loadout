@@ -62,6 +62,7 @@ loadout skills show <ref> --json
 loadout skills status <ref> --json              # which agents have it, and is it really on disk
 loadout repo show --json                        # library location and counts
 loadout doctor --json                           # everything that needs a look; exit 1 on errors
+loadout skills usage --json                     # how often agents ran each skill, if the user turned tracking on
 
 # Install (library only)
 loadout skills install ./path/to/skill-folder --json

@@ -28,12 +28,15 @@
         "deployed": "Deployed",
         "not_deployed": "Not deployed",
         "updates": "Updates available",
-        "attention": "Needs attention"
+        "attention": "Needs attention",
+        "unused": "Not used lately"
       },
       "sorts": {
         "name": "Name",
         "updated": "Recently updated",
-        "added": "Recently added"
+        "added": "Recently added",
+        "last_used": "Recently used",
+        "most_used": "Most used"
       }
     },
     "banners": {

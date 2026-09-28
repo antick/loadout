@@ -114,6 +114,12 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Your edits are never replaced without asking; the old version goes to Recently removed.
 - Per-file diff against upstream.
 
+## Skill use
+
+- Optional: counts how often each skill runs, from Claude Code's and Codex's session logs on this computer; nothing leaves it.
+- Sort the library by recent or most use, a "Not used lately" view, a use line in the skill panel and a dashboard card.
+- `loadout skills usage` shows the counts; `loadout doctor --all` lists skills not run in 30 days.
+
 ## Backup and sync
 
 - The library is a Git repository; back up to GitHub or any Git remote.

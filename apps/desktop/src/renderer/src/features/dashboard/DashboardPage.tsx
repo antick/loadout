@@ -15,6 +15,7 @@ import { GettingStarted } from "./GettingStarted";
 import { QuickActions } from "./QuickActions";
 import { RecentActivity } from "./RecentActivity";
 import { RecentSkills } from "./RecentSkills";
+import { SkillUseCard } from "./SkillUseCard";
 
 const STAT_SKELETONS = 6;
 
@@ -85,7 +86,10 @@ export function DashboardPage(): ReactNode {
           <QuickActions backup={backup.data} />
           <div className="grid gap-6 xl:grid-cols-2">
             <RecentActivity />
-            <RecentSkills skills={skillList} />
+            <div className="flex flex-col gap-6">
+              <RecentSkills skills={skillList} />
+              <SkillUseCard skills={skillList} />
+            </div>
           </div>
         </>
       )}

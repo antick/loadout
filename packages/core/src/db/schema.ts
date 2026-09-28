@@ -148,4 +148,27 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX idx_item_deployments_path ON item_deployments(target_path);
   `,
+  `
+  -- Skill runs read from agents' session logs on this computer (usage/). event_id is unique
+  -- per agent, so reading a log again never counts a run twice. name is as the agent wrote it.
+  CREATE TABLE usage_events (
+    agent_key TEXT NOT NULL,
+    event_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    used_at INTEGER NOT NULL,
+    project_path TEXT,
+    PRIMARY KEY (agent_key, event_id)
+  );
+  CREATE INDEX idx_usage_events_name ON usage_events(name);
+
+  -- How far each session log was read: read_to is the byte offset after the last whole line.
+  -- project_path: the folder the log's session ran in, when the log names it once at the top.
+  CREATE TABLE usage_files (
+    path TEXT PRIMARY KEY,
+    size INTEGER NOT NULL,
+    mtime INTEGER NOT NULL,
+    read_to INTEGER NOT NULL,
+    project_path TEXT
+  );
+  `,
 ];

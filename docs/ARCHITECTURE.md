@@ -54,6 +54,7 @@
 | `projects/`          | Project and linked workspaces → `ProjectsApi`                                                        |
 | `backup/`            | Git backup, skill-aware merge, snapshots, GitHub connect, auto backup → `BackupApi`                  |
 | `system/`            | Diagnostics, log export, crash marker, CLI publishing, agent-control setup → `SystemApi`             |
+| `usage/`             | Skill runs read from agents' session logs, incrementally, into `usage_events` → `UsageApi`           |
 | `storage/`           | Sizes of every area, clearing history/cache/logs, Recently removed, removing all data → `StorageApi` |
 
 ## Service shape

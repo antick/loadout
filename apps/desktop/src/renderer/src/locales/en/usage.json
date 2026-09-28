@@ -1,0 +1,46 @@
+{
+  "usage": {
+    "note_one": "{{count}} run · {{when}}",
+    "note_other": "{{count}} runs · {{when}}",
+    "never": "Never run",
+    "reading": "Reading agent logs…",
+    "refresh": "Read new runs",
+    "lastRead": "Logs last read: {{when}}",
+    "turnedOn": "Skill use is counted",
+    "turnedOnFound_one": "Found {{count}} run in your agents' logs.",
+    "turnedOnFound_other": "Found {{count}} runs in your agents' logs.",
+    "noLogs": "No Claude Code or Codex logs on this computer yet; runs are counted as they happen.",
+    "turnedOff": "Stopped counting skill use; what was read is forgotten",
+    "errors": {
+      "toggle": "Could not change usage tracking."
+    },
+    "detail": {
+      "title": "Use",
+      "runs_one": "{{count}} run",
+      "runs_other": "{{count}} runs",
+      "recent_one": "{{count}} in the last {{days}} days",
+      "recent_other": "{{count}} in the last {{days}} days",
+      "last": "last {{when}}",
+      "never": "No agent ran it yet.",
+      "projects": "Used in"
+    },
+    "card": {
+      "title": "Skill use",
+      "offTitle": "See which skills your agents use",
+      "offBody": "{{app}} can read Claude Code's and Codex's session logs on this computer and count each skill's runs. It keeps only the skill's name, the time and the project folder. Nothing is sent anywhere.",
+      "turnOn": "Count skill use",
+      "empty": "No agent ran a library skill in the last {{days}} days.",
+      "recent_one": "{{count}} run in {{days}} days",
+      "recent_other": "{{count}} runs in {{days}} days",
+      "unused_one": "{{count}} skill not run in {{days}} days",
+      "unused_other": "{{count}} skills not run in {{days}} days",
+      "viewUnused": "View"
+    },
+    "settings": {
+      "label": "Count skill use",
+      "description": "Read Claude Code's and Codex's session logs on this computer to see how often each skill runs. Only the skill's name, the time and the project folder are kept, and nothing is sent anywhere. Turning it off forgets what was read.",
+      "found": "Logs found",
+      "missing": "No logs yet"
+    }
+  }
+}

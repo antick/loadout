@@ -38,7 +38,9 @@ export type DataScope =
   /** Subagents, commands and rules, and where they are deployed. */
   | "items"
   /** Safety reports: kept apart from `skills` so a scan never counts as a library change. */
-  | "safety";
+  | "safety"
+  /** Skill usage read from agents' session logs. */
+  | "usage";
 
 export type AppEventName = keyof AppEvents;
 

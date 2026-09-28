@@ -10,6 +10,7 @@ import { SourceBadge } from "@/components/SourceBadge";
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SkillTagsEditor } from "@/features/library/detail/SkillTagsEditor";
+import { SkillUsageSummary } from "@/features/library/detail/SkillUsageSummary";
 import { Spinner } from "@/components/ui/spinner";
 import { useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
 
@@ -77,6 +78,7 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
         <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
         <SkillTagsEditor skill={skill} />
       </div>
+      <SkillUsageSummary skillId={skill.id} />
     </SheetHeader>
   );
 }

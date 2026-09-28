@@ -1,4 +1,10 @@
-import { type Skill, groupSkillSources } from "@loadout/shared";
+import {
+  type Skill,
+  type SkillUsage,
+  groupSkillSources,
+  isUnusedSkill,
+  usageById,
+} from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { ITEM_KINDS } from "@loadout/shared";
 import {
@@ -6,6 +12,7 @@ import {
   CircleFadingArrowUp,
   Download,
   GitFork,
+  Hourglass,
   Library,
   TriangleAlert,
 } from "lucide-react";
@@ -25,6 +32,7 @@ import {
 } from "@/components/ui/sidebar";
 import { hasUpdate, needsAttention, type StatusFilter } from "@/features/library/library-filters";
 import { useSkills } from "@/hooks/queries/skills";
+import { useUsageReport } from "@/hooks/queries/usage";
 import { useAllItems } from "@/hooks/queries/items";
 import { KIND_ICONS } from "@/features/items/ItemsPage";
 import { SIDEBAR_RECENT_SKILLS } from "@/lib/constants";
@@ -33,7 +41,9 @@ import { cn } from "@/lib/utils";
 interface LibraryView {
   status: StatusFilter;
   icon: ReactNode;
-  count(skills: readonly Skill[]): number;
+  count(skills: readonly Skill[], usage: ReadonlyMap<string, SkillUsage>): number;
+  /** Shown only while usage tracking is on. */
+  needsUsage?: boolean;
 }
 
 /** Shortcuts into the library, each opening it with one status filter applied. */
@@ -53,6 +63,12 @@ const VIEWS: readonly LibraryView[] = [
     icon: <CircleDashed />,
     count: (skills) => skills.filter((skill) => skill.deployments.length === 0).length,
   },
+  {
+    status: "unused",
+    icon: <Hourglass />,
+    count: (skills, usage) => skills.filter((skill) => isUnusedSkill(skill, usage)).length,
+    needsUsage: true,
+  },
 ];
 
 /** Library section of the sidebar: the library itself, install, quick views and recent skills. */
@@ -60,6 +76,9 @@ export function LibraryPanel(): ReactNode {
   const { t } = useTranslation();
   const skills = useSkills();
   const items = useAllItems();
+  const usageReport = useUsageReport();
+  const usage = useMemo(() => usageById(usageReport.data), [usageReport.data]);
+  const usageEnabled = usageReport.data?.enabled === true;
   const all = skills.data ?? [];
   const sourceCount = useMemo(() => groupSkillSources(skills.data ?? []).length, [skills.data]);
   const recent = useMemo(
@@ -127,8 +146,8 @@ export function LibraryPanel(): ReactNode {
         <SidebarGroupLabel>{t("sidebar.library.views")}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            {VIEWS.map((view) => {
-              const count = view.count(all);
+            {VIEWS.filter((view) => usageEnabled || !view.needsUsage).map((view) => {
+              const count = view.count(all, usage);
               return (
                 <SidebarMenuItem key={view.status}>
                   <SidebarMenuButton asChild className={cn(count === 0 && "opacity-60")}>

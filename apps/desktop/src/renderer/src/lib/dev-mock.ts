@@ -21,6 +21,8 @@ import {
 import {
   deployment,
   HOME,
+  reorder,
+  SAMPLE_DOCUMENT,
   SEED_AGENTS,
   SEED_APP_UPDATE,
   SEED_BACKUP_STATUS,
@@ -37,6 +39,7 @@ import { withSafetyMocks } from "@/lib/dev-mock-safety";
 import { createQuietMockHandlers } from "@/lib/dev-mock-quiet";
 import { createItemsMockHandlers } from "@/lib/dev-mock-items";
 import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
+import { createUsageMockHandlers } from "@/lib/dev-mock-usage";
 import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
@@ -92,16 +95,6 @@ function withPresetIds(list: Skill[]): Skill[] {
       .map((preset) => preset.id),
   }));
 }
-
-function reorder<T extends { id: string; sortOrder: number }>(items: T[], ids: string[]): T[] {
-  return ids.flatMap((id, index) => {
-    const item = items.find((entry) => entry.id === id);
-    return item ? [{ ...item, sortOrder: index }] : [];
-  });
-}
-
-const SAMPLE_DOCUMENT = (name: string, description: string | null): string =>
-  `---\nname: ${name}\ndescription: ${JSON.stringify(description ?? "")}\n---\n\n# ${name}\n\n${description ?? ""}\n\n## Steps\n\n1. Read the request.\n2. Do the work in small steps.\n3. Check the result.\n\n\`\`\`sh\necho "done"\n\`\`\`\n`;
 
 // `never[]` accepts handlers with any parameter list; arguments arrive untyped over the fake bridge.
 const handlers: Record<string, (...args: never[]) => unknown> = {
@@ -436,6 +429,10 @@ Object.assign(
 
 Object.assign(handlers, createStorageMockHandlers(HOME));
 Object.assign(handlers, createSkillsFileMockHandlers());
+Object.assign(
+  handlers,
+  createUsageMockHandlers(HOME, () => skills, emitChanged),
+);
 Object.assign(
   handlers,
   withSafetyMocks(

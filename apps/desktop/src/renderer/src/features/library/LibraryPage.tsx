@@ -22,6 +22,8 @@ import { SelectionToolbar } from "@/components/SelectionToolbar";
 import { SkillAgentBadges } from "@/components/SkillAgentBadges";
 import { SkillCard } from "@/components/SkillCard";
 import { SkillRow } from "@/components/SkillRow";
+import { SkillUsageNote } from "@/components/SkillUsageNote";
+import { UsageReadStatus } from "@/components/UsageReadStatus";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -29,12 +31,14 @@ import { LibraryBanners } from "@/features/library/LibraryBanners";
 import {
   DEFAULT_SORT_MODE,
   EMPTY_FILTERS,
+  FILTER_ALL,
   filterSkills,
   hasUpdate,
   isFiltering,
   type LibraryFilters,
   type SortMode,
   type StatusFilter,
+  needsUsage,
 } from "@/features/library/library-filters";
 import { LibrarySelectionActions } from "@/features/library/LibrarySelectionActions";
 import { LibraryToolbar } from "@/features/library/LibraryToolbar";
@@ -43,6 +47,7 @@ import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
 import { useCheckAllUpdates, useUpdateSkills } from "@/hooks/mutations/library";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
+import { useSkillUsage } from "@/hooks/queries/usage";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
@@ -105,9 +110,22 @@ export function LibraryPage({
     if (request) onRequestApplied();
   }, [request, onRequestApplied]);
 
-  const filters = useMemo<LibraryFilters>(() => ({ ...rest, sort }), [rest, sort]);
+  const usage = useSkillUsage();
+  // Usage filters and sorts stand down while tracking is off (they are not offered then).
+  const filters = useMemo<LibraryFilters>(
+    () => ({
+      ...rest,
+      status: !usage.enabled && needsUsage(rest.status) ? FILTER_ALL : rest.status,
+      sort: !usage.enabled && needsUsage(sort) ? DEFAULT_SORT_MODE : sort,
+    }),
+    [rest, sort, usage.enabled],
+  );
+  const showUsage = usage.enabled && (needsUsage(filters.sort) || needsUsage(filters.status));
   const all = skills.data;
-  const visible = useMemo(() => filterSkills(all ?? [], filters), [all, filters]);
+  const visible = useMemo(
+    () => filterSkills(all ?? [], filters, { enabled: usage.enabled, byId: usage.byId }),
+    [all, filters, usage.enabled, usage.byId],
+  );
   const visibleIds = useMemo(() => visible.map((skill) => skill.id), [visible]);
   const selection = useSelection(visibleIds);
   const selected = useMemo(
@@ -133,7 +151,16 @@ export function LibraryPage({
       selected={selection.isSelected(skill.id)}
       onSelectToggle={(target, modifiers) => selection.toggle(target.id, modifiers)}
       onOpen={(target) => onOpenSkill(target.id)}
-      footer={<SkillAgentBadges skill={skill} />}
+      footer={
+        showUsage ? (
+          <div className="flex min-w-0 items-center gap-3">
+            <SkillAgentBadges skill={skill} />
+            <SkillUsageNote usage={usage.byId.get(skill.id)} />
+          </div>
+        ) : (
+          <SkillAgentBadges skill={skill} />
+        )
+      }
       menuActions={actionsFor(skill)}
       actions={
         <IconButton
@@ -282,8 +309,11 @@ export function LibraryPage({
           tags={allTags.data ?? []}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          usageEnabled={usage.enabled}
         />
       ) : null}
+
+      {total > 0 && showUsage ? <UsageReadStatus usage={usage} className="-mt-2 self-end" /> : null}
 
       <SelectionToolbar selection={selection}>
         <LibrarySelectionActions skills={selected} onDone={selection.exit} />

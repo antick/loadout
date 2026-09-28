@@ -356,3 +356,18 @@ export const SEED_PROJECT_SUGGESTIONS: ProjectSuggestion[] = [
     guarded: false,
   },
 ];
+
+/** Items in the order of `ids`, each with its new position. */
+export function reorder<T extends { id: string; sortOrder: number }>(
+  items: T[],
+  ids: string[],
+): T[] {
+  return ids.flatMap((id, index) => {
+    const item = items.find((entry) => entry.id === id);
+    return item ? [{ ...item, sortOrder: index }] : [];
+  });
+}
+
+/** A short `SKILL.md` for a mock skill. */
+export const SAMPLE_DOCUMENT = (name: string, description: string | null): string =>
+  `---\nname: ${name}\ndescription: ${JSON.stringify(description ?? "")}\n---\n\n# ${name}\n\n${description ?? ""}\n\n## Steps\n\n1. Read the request.\n2. Do the work in small steps.\n3. Check the result.\n\n\`\`\`sh\necho "done"\n\`\`\`\n`;

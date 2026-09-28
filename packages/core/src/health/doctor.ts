@@ -12,6 +12,7 @@ import type {
 import { errorMessage } from "../errors";
 import { lstatOrNull } from "../util/fs";
 import { sourceFindings } from "./sources";
+import { usageFindings } from "./usage";
 
 const LIBRARY_WARNINGS: Record<LibraryWarning, string> = {
   config_unreadable: "The location file could not be read, so the default folder is in use.",
@@ -176,6 +177,7 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
   );
   const safety = await guarded("safety", () => api.safety.list(), [], failures);
   const projects = await guarded("projects", () => api.projects.list(), [], failures);
+  const usage = await guarded("usage", () => api.usage.report(), null, failures);
   const nameOf = new Map(skills.map((skill) => [skill.id, skill.name]));
 
   const findings = mergeShared([
@@ -209,6 +211,7 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
         message: "The project folder is gone.",
         path: project.path,
       })),
+    ...usageFindings(skills, usage),
     ...failures,
   ]);
 

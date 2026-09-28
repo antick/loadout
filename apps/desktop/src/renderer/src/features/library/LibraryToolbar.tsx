@@ -18,6 +18,7 @@ import {
   type SortMode,
   type SourceFilter,
   type StatusFilter,
+  needsUsage,
 } from "@/features/library/library-filters";
 import type { ViewMode } from "@/lib/constants";
 
@@ -27,6 +28,8 @@ export interface LibraryToolbarProps {
   tags: readonly string[];
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  /** Usage tracking is on: offer the filter and sorts that need it. */
+  usageEnabled: boolean;
 }
 
 /** Search, source / status filters, sort, grid-list switch, and the tag filter row. */
@@ -36,8 +39,11 @@ export function LibraryToolbar({
   tags,
   viewMode,
   onViewModeChange,
+  usageEnabled,
 }: LibraryToolbarProps): ReactNode {
   const { t } = useTranslation();
+  const offered = <T extends StatusFilter | SortMode>(values: readonly T[]): T[] =>
+    usageEnabled ? [...values] : values.filter((value) => !needsUsage(value));
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -71,7 +77,7 @@ export function LibraryToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STATUS_FILTERS.map((status) => (
+            {offered(STATUS_FILTERS).map((status) => (
               <SelectItem key={status} value={status}>
                 {t(`library.toolbar.statuses.${status}`)}
               </SelectItem>
@@ -87,7 +93,7 @@ export function LibraryToolbar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_MODES.map((mode) => (
+              {offered(SORT_MODES).map((mode) => (
                 <SelectItem key={mode} value={mode}>
                   {t(`library.toolbar.sorts.${mode}`)}
                 </SelectItem>

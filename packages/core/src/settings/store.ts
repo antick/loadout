@@ -101,4 +101,6 @@ export const INTERNAL_KEYS = {
   projectActivity: "projects.activity",
   /** Per repository: skills already offered and skills it gained since (`sources/`). */
   sourceNews: "sources.news",
+  /** When the agents' session logs were last read for skill usage (`usage/`). */
+  usageScannedAt: "usage.scannedAt",
 } as const;

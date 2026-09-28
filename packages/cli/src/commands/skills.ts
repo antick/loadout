@@ -11,6 +11,7 @@ import { exportCommand } from "./skills-export";
 import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
 import { checkCommand, updateCommand } from "./skills-update";
+import { usageCommand } from "./skills-usage";
 import { validateCommand } from "./skills-validate";
 import {
   AGENT_FLAG,
@@ -284,6 +285,7 @@ export const skillsGroup: CommandGroup = {
     installCommand,
     createCommand,
     renameCommand,
+    usageCommand,
     {
       name: "remove",
       summary: "Delete skills from the library and undeploy them",

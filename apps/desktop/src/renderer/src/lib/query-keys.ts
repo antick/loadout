@@ -83,6 +83,11 @@ export const keys = {
     sourceDiff: (skillId: string) => ["updates", "source-diff", skillId] as const,
     news: ["updates", "source-news"] as const,
   },
+  usage: {
+    root: ["usage"] as const,
+    report: ["usage", "report"] as const,
+    scan: ["usage", "scan"] as const,
+  },
   safety: {
     root: ["safety"] as const,
     status: ["safety", "status"] as const,

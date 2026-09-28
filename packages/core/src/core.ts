@@ -23,6 +23,7 @@ import { createSourceNewsStore } from "./sources";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
 import { createItemsService } from "./items";
+import { createUsageService } from "./usage";
 
 export interface CoreCreateOptions extends CoreOptions {
   /** Proxy-aware fetch supplied by the host. Defaults to the global `fetch`. */
@@ -181,6 +182,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const system = createSystemService(ctx, { store, install, deploy, registry });
   const storage = createStorageService(ctx, { deploy, store, git: install.git, removed });
   const skillsFile = createSkillsFileService(ctx, { git: install.git, registry, store, removed });
+  const usage = createUsageService(ctx, { store });
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),
@@ -210,6 +212,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     storage: storage.api,
     skillsFile: skillsFile.api,
     items: items.api,
+    usage: usage.api,
   };
 
   const background: CoreBackground = {

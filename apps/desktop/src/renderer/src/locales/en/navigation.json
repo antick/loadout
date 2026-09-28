@@ -30,7 +30,8 @@
       "view": {
         "updates": "Updates available",
         "attention": "Needs attention",
-        "not_deployed": "Not deployed"
+        "not_deployed": "Not deployed",
+        "unused": "Not used lately"
       },
       "recent": "Recently changed",
       "empty": "No skills yet."

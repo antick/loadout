@@ -18,6 +18,7 @@ export * from "./skill-checks";
 export * from "./new-skill";
 export * from "./new-skill-templates";
 export * from "./safety";
+export * from "./usage";
 export * from "./wsl";
 export * from "./skill-search";
 export * from "./health";

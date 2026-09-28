@@ -18,10 +18,14 @@ import { useSettings } from "@/hooks/queries/settings";
 import { LANGUAGES } from "@/lib/i18n";
 import { CLOSE_ACTIONS, DEPLOY_MODES, TEXT_SIZE_OPTIONS, THEME_OPTIONS } from "./constants";
 import { PalettePreview } from "./PalettePreview";
+import { UsagePanel } from "./UsagePanel";
 
 const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon } as const;
 
-/** Library location, how skills are installed, appearance, and what closing the window does. */
+/**
+ * Library location, how skills are installed, appearance, what closing the window does, and
+ * counting skill use.
+ */
 export function GeneralSection(): ReactNode {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
@@ -168,6 +172,8 @@ export function GeneralSection(): ReactNode {
           </SettingRow>
         </div>
       </Panel>
+
+      <UsagePanel />
     </div>
   );
 }
