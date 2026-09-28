@@ -210,6 +210,10 @@ describe("finding and importing items", () => {
     const repo = join(temp.dir, "repo");
     write(join(repo, "agents", "planner.md"), "---\ndescription: Plans.\n---\nPlan.\n");
     write(join(repo, "agents", "README.md"), "# About these agents\n");
+    write(
+      join(repo, ".claude", "agents", "cl", "locator.md"),
+      "---\ndescription: Finds.\n---\nFind.\n",
+    );
     write(join(repo, "docs", "rules", "notes.md"), "Just notes, not a rule.\n");
     write(
       join(repo, ".cursor", "rules", "ts.mdc"),
@@ -221,6 +225,7 @@ describe("finding and importing items", () => {
     );
     const found = await core.api.items.find({ type: "folder", path: repo });
     expect(found.map((item) => `${item.kind}/${item.name}@${item.path}`)).toEqual([
+      "subagent/cl-locator@.claude/agents/cl/locator.md",
       "subagent/planner@agents/planner.md",
       "command/review@.gemini/commands/review.toml",
       "rule/ts@.cursor/rules/ts.mdc",

@@ -22,8 +22,8 @@ import type { ItemPlacement } from "./placement";
 const MAX_ITEM_BYTES = 256 * 1024;
 /** How deep a repository is searched for item folders. */
 const MAX_DEPTH = 6;
-/** Command folders may group commands in subfolders (`git/commit.md` → `git-commit`). */
-const MAX_COMMAND_NESTING = 2;
+/** Item folders may group items in subfolders (`git/commit.md` → `git-commit`). */
+const MAX_NESTING = 2;
 const SKIPPED_DIRS: ReadonlySet<string> = new Set([".git", "node_modules", "__MACOSX", ".hub"]);
 /** Folder names that hold items in the library's (Claude Code's) format in any repository. */
 const PLAIN_DIRS: Record<string, ItemKind> = {
@@ -55,18 +55,14 @@ export function itemNameFrom(stem: string): string | null {
   return itemNameProblem(name) === null ? name : null;
 }
 
-/** Every item file of one folder, with command subfolders folded into the name. */
+/** Every item file of one folder, with subfolders folded into the name. */
 function filesOf(folder: ItemFolder): { path: string; name: string }[] {
   const found: { path: string; name: string }[] = [];
   const walk = (dir: string, prefix: string, depth: number): void => {
     for (const entry of readDirSafe(dir)) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (
-          folder.kind === "command" &&
-          depth < MAX_COMMAND_NESTING &&
-          !entry.name.startsWith(".")
-        ) {
+        if (depth < MAX_NESTING && !entry.name.startsWith(".")) {
           walk(path, `${prefix}${entry.name}-`, depth + 1);
         }
         continue;
