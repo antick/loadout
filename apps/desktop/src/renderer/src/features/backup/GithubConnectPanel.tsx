@@ -14,6 +14,7 @@ import { useGithubDeviceAvailable } from "@/hooks/queries/backup-page";
 import { GITHUB_NEW_TOKEN_URL, REPO_NAME_PATTERN } from "./constants";
 import { DeviceSignIn } from "./DeviceSignIn";
 import { useDeviceFlow } from "./use-device-flow";
+import { usePublicRepoConfirm } from "./use-public-repo-confirm";
 
 export interface GithubConnectPanelProps {
   /** True while the remote is being wired up after GitHub answered. */
@@ -39,7 +40,8 @@ export function GithubConnectPanel({
   const deviceAvailable = useGithubDeviceAvailable();
   const connect = useGithubConnect();
   const openExternal = useOpenExternal();
-  const flow = useDeviceFlow(onConnected);
+  const askAboutPublic = usePublicRepoConfirm(onConnected);
+  const flow = useDeviceFlow(onConnected, askAboutPublic);
 
   const name = repoName.trim();
   const nameValid = REPO_NAME_PATTERN.test(name) && name !== "." && name !== "..";
@@ -54,7 +56,11 @@ export function GithubConnectPanel({
     connect.mutate(
       { token: secret, repoName: name },
       // `reset` lets go of the input, token included; errors are toasted by the mutation.
-      { onSuccess: onConnected, onSettled: () => connect.reset() },
+      {
+        onSuccess: onConnected,
+        onError: (error) => void askAboutPublic(error),
+        onSettled: () => connect.reset(),
+      },
     );
   };
 

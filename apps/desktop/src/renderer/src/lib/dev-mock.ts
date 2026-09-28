@@ -379,8 +379,8 @@ Object.assign(
     getSettings: () => settings,
     emitChanged,
     emitStage: (stage) => listeners.forEach((listener) => listener("backup:progress", { stage })),
-    fail: (code, message) => {
-      throw new MockError(code, message);
+    fail: (code, message, details) => {
+      throw new MockError(code, message, details);
     },
   }),
 );

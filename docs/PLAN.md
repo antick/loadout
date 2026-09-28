@@ -126,6 +126,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Library as a Git repo; metadata (tags, presets, toggles) serialised next to the skills
 - [~] Connect with GitHub: personal access token works; device-flow sign-in is built but hidden until a GitHub OAuth client id is set (Settings → Backup). Next: a GitHub App instead, see [TODO.md](TODO.md)
 - [x] Any Git remote URL (https + token, ssh, self-hosted); credentials kept out of files
+- [x] Public GitHub repository: connect stops before saving the token or remote until the user confirms (token and sign-in)
 - [x] One-button sync: commit → merge → snapshot → push, retry on concurrent push
 - [x] Skill-aware merge: per skill, renames combine with edits
 - [x] Conflicts never block: keep mine / use remote / keep both, safety snapshot first

@@ -78,6 +78,8 @@ export const BACKUP_REPO_WARN_BYTES = 1024 * 1024 * 1024;
  */
 export const BACKUP_DELETE_GUARD_COUNT = 5;
 export const BACKUP_DELETE_GUARD_MIN = 3;
+/** How long a connect to a public GitHub repository waits in memory for the user's OK. */
+export const GITHUB_PUBLIC_CONFIRM_MS = 10 * 60 * 1000;
 /** The user's own "leave out of the backup" patterns: at most this many lines, this long each. */
 export const BACKUP_IGNORE_MAX_LINES = 200;
 export const BACKUP_IGNORE_MAX_LINE_LENGTH = 300;

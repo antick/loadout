@@ -37,6 +37,11 @@ export const ERROR_CODES = [
   "GITHUB_DEVICE_EXPIRED",
   "GITHUB_DEVICE_DENIED",
   "GITHUB_NOT_CONFIGURED",
+  /**
+   * The backup repository on GitHub is public; nothing was saved yet. Details: `repo`, and
+   * `confirmId` for `githubConfirmPublic` / `githubDiscardPublic`.
+   */
+  "GITHUB_REPO_PUBLIC",
   "CREDENTIALS_UNAVAILABLE",
   "BUSY",
   /** The saved library is in a folder that is not there, e.g. on a disk that is not connected. */

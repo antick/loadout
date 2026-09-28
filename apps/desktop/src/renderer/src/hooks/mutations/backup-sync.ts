@@ -1,5 +1,6 @@
 import type {
   BackupIgnoreRules,
+  GithubConnectResult,
   SyncOutcome,
   SyncPreview,
   SyncReviewAnswer,
@@ -8,6 +9,7 @@ import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/r
 import { useTranslation } from "react-i18next";
 import { invalidateAfterBackup } from "@/hooks/mutations/backup-page";
 import { api } from "@/lib/api";
+import { toastBackupError } from "@/lib/backup-errors";
 import { toastSyncOutcome } from "@/lib/backup-toast";
 import { keys } from "@/lib/query-keys";
 import { toastSuccess } from "@/lib/toast";
@@ -48,5 +50,23 @@ export function useReviewedSync(): UseMutationResult<
     mutationFn: (review) => api.backup.sync(undefined, review),
     onSuccess: (outcome) => toastSyncOutcome(outcome, t),
     onSettled: () => invalidateAfterBackup(queryClient),
+  });
+}
+
+/** Connect to a public GitHub repository after all, once the user agreed. */
+export function useGithubConfirmPublic(): UseMutationResult<GithubConnectResult, unknown, string> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (confirmId: string) => api.backup.githubConfirmPublic(confirmId),
+    onError: (error) => toastBackupError(error, t),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.backup.root }),
+  });
+}
+
+/** Forget a public-repository connect the user turned down. */
+export function useGithubDiscardPublic(): UseMutationResult<void, unknown, string> {
+  return useMutation({
+    mutationFn: (confirmId: string) => api.backup.githubDiscardPublic(confirmId),
   });
 }

@@ -62,6 +62,12 @@
       "merging": "Merging skill by skill…",
       "snapshot": "Taking a snapshot…",
       "uploading": "Uploading to the remote…"
+    },
+    "publicRepo": {
+      "title": "{{repo}} is public",
+      "body": "Anyone can read the skills you back up there, and every earlier version of them. Nothing has been saved or uploaded yet. Make the repository private on GitHub first, unless you want your skills to be public.",
+      "confirm": "Use the public repository",
+      "cancel": "Don't connect"
     }
   }
 }

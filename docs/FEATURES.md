@@ -98,6 +98,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 ## Backup and sync
 
 - The library is a Git repository; back up to GitHub or any Git remote.
+- A public GitHub repository is only used after you confirm; nothing is saved or uploaded before.
 - One-button sync with per-skill merging; conflicts never block.
 - When another device changed something, sync shows what comes in and goes out first, with each skill's files; you choose whether deletions happen here.
 - Compare a conflict file by file before choosing a version.

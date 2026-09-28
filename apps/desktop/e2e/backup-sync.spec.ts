@@ -88,3 +88,27 @@ test("a sync with nothing coming in runs straight away and shows its stages", as
   await expect(stage).toBeVisible();
   await expect(stage).toHaveCount(0);
 });
+
+test("a public GitHub repository is only used after the user agrees", async ({ page }) => {
+  await page.goto("/?backup=noremote#/backup");
+  await expect(activityBar(page)).toBeVisible();
+  const content = main(page);
+  const repoName = content.getByLabel("Repository name");
+  const connect = async (name: string): Promise<void> => {
+    await repoName.fill(name);
+    await content.getByLabel("Personal access token").fill("ghp_example");
+    await content.getByRole("button", { name: "Connect" }).click();
+  };
+
+  await connect("public-skills");
+  const ask = page.getByRole("alertdialog", { name: "dev/public-skills is public" });
+  await expect(ask).toBeVisible();
+  if (SCREENSHOTS) await page.screenshot({ path: `${SCREENSHOTS}/public-repo.png` });
+  await ask.getByRole("button", { name: "Don't connect" }).click();
+  await expect(ask).toHaveCount(0);
+  await expect(content.getByText("public-skills")).toHaveCount(0);
+
+  await connect("public-skills");
+  await ask.getByRole("button", { name: "Use the public repository" }).click();
+  await expect(content.getByText("https://github.com/dev/public-skills.git").first()).toBeVisible();
+});

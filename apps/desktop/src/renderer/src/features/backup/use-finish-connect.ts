@@ -1,9 +1,7 @@
 import type { GithubConnectResult } from "@loadout/shared";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useStartBackup } from "@/hooks/mutations/backup-page";
 import { toastSuccess } from "@/lib/toast";
-import { PUBLIC_REPO_WARNING_MS } from "./constants";
 import { remoteWebUrl } from "./remote-url";
 
 export interface FinishConnectOptions {
@@ -18,8 +16,9 @@ export interface FinishConnect {
 }
 
 /**
- * After GitHub answered with a repository: say what was found, warn about a public one, then
- * restore from it when it has content, or make this machine its first backup when it is empty.
+ * After GitHub answered with a repository (a public one was agreed to already): say what was
+ * found, then restore from it when it has content, or make this machine its first backup when it
+ * is empty.
  */
 export function useFinishConnect({
   isRepo,
@@ -37,12 +36,6 @@ export function useFinishConnect({
       }),
       t("backupPage.github.connectedAs", { login: result.login }),
     );
-    if (!result.repoPrivate) {
-      toast.warning(t("backupPage.github.publicRepoTitle"), {
-        description: t("backupPage.github.publicRepoBody"),
-        duration: PUBLIC_REPO_WARNING_MS,
-      });
-    }
     startBackup.mutate(
       { url: result.url, mode: result.remoteHasContent ? "restore" : "new", isRepo },
       { onSuccess: onDone, onError: onFailure },

@@ -59,3 +59,10 @@ export function needsReview(error: unknown): boolean {
   const code = codeOf(error);
   return code === "SYNC_MANY_DELETES" || code === "SYNC_PLAN_CHANGED";
 }
+
+/** A connect stopped at a public GitHub repository: which one, and the id to go ahead with. */
+export function publicRepoDetails(error: unknown): { repo: string; confirmId: string } | null {
+  if (!(error instanceof ApiError) || error.code !== "GITHUB_REPO_PUBLIC") return null;
+  const { repo, confirmId } = error.details ?? {};
+  return typeof repo === "string" && typeof confirmId === "string" ? { repo, confirmId } : null;
+}

@@ -119,9 +119,7 @@
       "openSettings": "Open backup settings",
       "repoCreated": "Created {{repo}}",
       "repoFound": "Connected to {{repo}}",
-      "connectedAs": "Signed in as {{login}}",
-      "publicRepoTitle": "This repository is public",
-      "publicRepoBody": "Anyone can read the skills you back up to it. Make it private in the repository settings on GitHub unless that is what you want."
+      "connectedAs": "Signed in as {{login}}"
     },
     "remote": {
       "title": "Advanced: any Git URL",

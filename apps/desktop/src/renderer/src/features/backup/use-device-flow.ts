@@ -20,7 +20,11 @@ export interface DeviceFlow {
  * "Sign in with GitHub" without the token ever reaching the UI: start, open github.com, then ask
  * the backend every few seconds until the user approves, the code expires, or they cancel.
  */
-export function useDeviceFlow(onConnected: (result: GithubConnectResult) => void): DeviceFlow {
+export function useDeviceFlow(
+  onConnected: (result: GithubConnectResult) => void,
+  /** Takes over an error that needs the user (a public repository); true when it did. */
+  onNeedsUser: (error: unknown) => boolean,
+): DeviceFlow {
   const { t } = useTranslation();
   const start = useGithubDeviceStart();
   const poll = useGithubDevicePoll();
@@ -83,6 +87,11 @@ export function useDeviceFlow(onConnected: (result: GithubConnectResult) => void
         schedule();
       } catch (error) {
         if (!isCurrent()) return;
+        if (onNeedsUser(error)) {
+          setPhase("idle");
+          setSession(null);
+          return;
+        }
         const expired = error instanceof ApiError && error.code === "GITHUB_DEVICE_EXPIRED";
         if (!expired) toastBackupError(error, t);
         setPhase(expired ? "expired" : "idle");

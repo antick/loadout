@@ -1,13 +1,15 @@
+import { randomUUID } from "node:crypto";
 import {
   APP_NAME,
   APP_SLUG,
   type DeviceFlowPoll,
+  GITHUB_PUBLIC_CONFIRM_MS,
   type DeviceFlowStart,
   type GithubAuthMethod,
   type GithubConnectResult,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { AppError, invalid } from "../errors";
+import { AppError, invalid, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { GITHUB_TOKEN_KEY } from "./credentials";
 
@@ -45,10 +47,21 @@ export interface GithubDeps {
 
 export interface GithubService {
   connect(token: string, repoName: string, method: "pat" | "oauth"): Promise<GithubConnectResult>;
+  /** Finish a connect that stopped at `GITHUB_REPO_PUBLIC`, now that the user agreed. */
+  confirmPublic(confirmId: string): Promise<GithubConnectResult>;
+  discardPublic(confirmId: string): void;
   deviceAvailable(): boolean;
   deviceStart(): Promise<DeviceFlowStart>;
   devicePoll(deviceCode: string, repoName: string): Promise<DeviceFlowPoll>;
   authMethod(): GithubAuthMethod;
+}
+
+/** A connect to a public repository, waiting in memory (never on disk) for the user's OK. */
+interface PendingPublic {
+  token: string;
+  repoName: string;
+  method: "pat" | "oauth";
+  expiresAt: number;
 }
 
 interface Reply {
@@ -82,6 +95,13 @@ function unexpected(what: string, status: number): AppError {
 }
 
 export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubService {
+  const pendingPublic = new Map<string, PendingPublic>();
+  const prunePending = (now = Date.now()): void => {
+    for (const [id, pending] of pendingPublic) {
+      if (pending.expiresAt <= now) pendingPublic.delete(id);
+    }
+  };
+
   const clientId = (): string =>
     ctx.settings.get("githubClientId").trim() || (process.env[CLIENT_ID_ENV] ?? "").trim();
 
@@ -142,6 +162,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
     token: string,
     repoName: string,
     method: "pat" | "oauth",
+    allowPublic = false,
   ): Promise<GithubConnectResult> {
     const cleanToken = token.trim();
     const name = repoName.trim();
@@ -189,6 +210,24 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
 
     const fullName =
       typeof repo.body.full_name === "string" ? repo.body.full_name : `${login}/${name}`;
+    // A public repository shows every backed-up skill, and its history, to anyone. Nothing is
+    // saved until the user says so: no token, no remote, so no automatic backup can push there.
+    if (!repoCreated && repo.body.private === false && !allowPublic) {
+      prunePending();
+      const confirmId = randomUUID();
+      pendingPublic.set(confirmId, {
+        token: cleanToken,
+        repoName: name,
+        method,
+        expiresAt: Date.now() + GITHUB_PUBLIC_CONFIRM_MS,
+      });
+      throw new AppError(
+        "GITHUB_REPO_PUBLIC",
+        `${fullName} is public: anyone can see the skills you back up there, and their history. Nothing was saved yet.`,
+        { repo: fullName, confirmId },
+      );
+    }
+
     const url = `${WEB_BASE}/${fullName}.git`;
     await ctx.secrets.set(GITHUB_TOKEN_KEY, cleanToken);
     await deps.saveRemote(url);
@@ -209,6 +248,18 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
 
   return {
     connect,
+
+    confirmPublic: async (confirmId) => {
+      prunePending();
+      const pending = pendingPublic.get(confirmId);
+      pendingPublic.delete(confirmId);
+      if (!pending) throw notFound("That connection waited too long. Connect to GitHub again.");
+      return connect(pending.token, pending.repoName, pending.method, true);
+    },
+
+    discardPublic: (confirmId) => {
+      pendingPublic.delete(confirmId);
+    },
 
     deviceAvailable: () => clientId() !== "",
 

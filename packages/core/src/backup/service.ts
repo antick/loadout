@@ -179,6 +179,8 @@ export function createBackupOperations(
     githubDeviceStart: () => github.deviceStart(),
     githubDevicePoll: (deviceCode, repoName) => github.devicePoll(deviceCode, repoName),
     githubAuthMethod: async () => github.authMethod(),
+    githubConfirmPublic: (confirmId) => github.confirmPublic(confirmId),
+    githubDiscardPublic: async (confirmId) => github.discardPublic(confirmId),
     githubDeviceAvailable: async () => github.deviceAvailable(),
   };
 

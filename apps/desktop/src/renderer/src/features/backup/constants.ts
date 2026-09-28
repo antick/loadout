@@ -24,8 +24,6 @@ export const DEVICE_POLL_MIN_INTERVAL_S = 5;
 export const DEVICE_POLL_SLOW_DOWN_S = 5;
 export const MS_PER_SECOND = 1000;
 
-/** A public backup repository is worth a long look. */
-export const PUBLIC_REPO_WARNING_MS = 15_000;
 /** Characters of a commit id shown in the history. */
 export const SHORT_COMMIT_LENGTH = 8;
 /** Oversized skills listed before the rest is summarised. */

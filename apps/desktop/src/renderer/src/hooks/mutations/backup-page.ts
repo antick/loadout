@@ -15,7 +15,7 @@ import {
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
-import { toastBackupError } from "@/lib/backup-errors";
+import { publicRepoDetails, toastBackupError } from "@/lib/backup-errors";
 import { toastSyncOutcome } from "@/lib/backup-toast";
 import { keys } from "@/lib/query-keys";
 import { toastSuccess } from "@/lib/toast";
@@ -191,7 +191,8 @@ export function useGithubConnect(): UseMutationResult<
     // The token is part of this mutation's input: drop the finished mutation from the cache at
     // once instead of keeping it for minutes.
     gcTime: 0,
-    onError: (error) => toastBackupError(error, t),
+    // A public repository is not a failure: the caller asks the user about it.
+    onError: (error) => (publicRepoDetails(error) ? undefined : toastBackupError(error, t)),
     onSettled: () => refresh(queryClient, keys.backup.root),
   });
 }

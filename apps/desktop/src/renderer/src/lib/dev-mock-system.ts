@@ -5,8 +5,9 @@
  * Scenarios come from the page URL (before the `#`): `?backup=fresh|noremote|unrelated|nogit|
  * uptodate|rejected|auth` picks the repository state (default: changes waiting plus one conflict),
  * `?library=empty` empties the library (first-run dialog, getting-started panel), `?device=1`
- * offers "Sign in with GitHub". Magic inputs: a token containing "bad" is refused, a remote URL
- * containing "offline" fails with NETWORK and one containing "private" with GIT_AUTH.
+ * offers "Sign in with GitHub". Magic inputs: a token containing "bad" is refused, a repository
+ * name containing "public" asks before connecting, a remote URL containing "offline" fails with
+ * NETWORK and one containing "private" with GIT_AUTH.
  */
 import {
   type ActivityEntry,
@@ -21,6 +22,7 @@ import {
   type CustomAgentInput,
   type DataScope,
   type ErrorCode,
+  type ErrorDetails,
   formatTimestampCompact,
   type GithubConnectResult,
   isWslPath,
@@ -52,7 +54,7 @@ export interface SystemMockContext {
   /** Where the pretend sync is, as core reports it. */
   emitStage(stage: BackupStage | null): void;
   /** Throw the bridge's error type so the code reaches the renderer. */
-  fail(code: ErrorCode, message: string): never;
+  fail(code: ErrorCode, message: string, details?: ErrorDetails): never;
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -70,6 +72,7 @@ const SYNC_STAGES: readonly BackupStage[] = [
   "uploading",
 ];
 const STAGE_MS = 300;
+const PUBLIC_CONFIRM_ID = "public-confirm";
 
 function initialStatus(): BackupStatus {
   const base: BackupStatus = { ...SEED_BACKUP_STATUS, remoteUrl: GITHUB_REMOTE, behind: 1 };
@@ -192,6 +195,7 @@ export function createSystemMockHandlers(
     return tag;
   };
 
+  let pendingPublic: string | null = null;
   const connectResult = (repoName: string): GithubConnectResult => {
     const url = `https://github.com/dev/${repoName}.git`;
     status = { ...status, remoteUrl: url };
@@ -315,7 +319,24 @@ export function createSystemMockHandlers(
     },
     "backup.githubConnect": (token: string, repoName: string) => {
       if (token.includes("bad")) ctx.fail("GITHUB_TOKEN_INVALID", "Bad credentials");
+      // Like core: a public repository waits for the user's OK before anything is saved.
+      if (repoName.includes("public")) {
+        pendingPublic = repoName;
+        ctx.fail("GITHUB_REPO_PUBLIC", `dev/${repoName} is public.`, {
+          repo: `dev/${repoName}`,
+          confirmId: PUBLIC_CONFIRM_ID,
+        });
+      }
       return connectResult(repoName);
+    },
+    "backup.githubConfirmPublic": (confirmId: string) => {
+      if (confirmId !== PUBLIC_CONFIRM_ID || !pendingPublic) ctx.fail("NOT_FOUND", "Expired.");
+      const result = connectResult(pendingPublic);
+      pendingPublic = null;
+      return result;
+    },
+    "backup.githubDiscardPublic": () => {
+      pendingPublic = null;
     },
     "backup.githubDeviceStart": () => {
       devicePolls = 0;

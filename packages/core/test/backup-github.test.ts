@@ -112,7 +112,7 @@ describe("GitHub connect", () => {
       [`GET ${API}/user`]: { status: 200, body: { login: "octo" } },
       [`GET ${API}/repos/octo/backup`]: {
         status: 200,
-        body: { full_name: "octo/backup", private: false, size: 0 },
+        body: { full_name: "octo/backup", private: true, size: 0 },
       },
       [`GET ${API}/repos/octo/backup/commits?per_page=1`]: { status: 200, body: [{ sha: "abc" }] },
     });
@@ -121,10 +121,53 @@ describe("GitHub connect", () => {
     const result = await device.api.githubConnect(TOKEN, "backup");
     expect(result).toMatchObject({
       repoCreated: false,
-      repoPrivate: false,
+      repoPrivate: true,
       remoteHasContent: true,
     });
     expect(device.ctx.settings.getRaw(INTERNAL_KEYS.backupRemoteUrl, "")).toBe(result.url);
+  });
+
+  it("saves nothing for a public repository until the user agrees", async () => {
+    // Fixed routes answer every time: the connect, its confirmation and the second connect.
+    const { fetchImpl } = stubFetch({
+      [`GET ${API}/user`]: { status: 200, body: { login: "octo" } },
+      [`GET ${API}/repos/octo/backup`]: {
+        status: 200,
+        body: { full_name: "octo/backup", private: false, size: 0 },
+      },
+      [`GET ${API}/repos/octo/backup/commits?per_page=1`]: { status: 409, body: {} },
+    });
+    device = createDevice(temp.dir, "A", { fetchImpl });
+    await device.api.init();
+
+    const refused = await device.api
+      .githubConnect(TOKEN, "backup")
+      .catch((error: unknown) => error);
+    expect(refused).toMatchObject({
+      code: "GITHUB_REPO_PUBLIC",
+      details: { repo: "octo/backup", confirmId: expect.any(String) },
+    });
+    expect(JSON.stringify(refused)).not.toContain(TOKEN);
+    expect(device.secrets.values.has(GITHUB_TOKEN_KEY)).toBe(false);
+    expect(device.ctx.settings.getRaw(INTERNAL_KEYS.backupRemoteUrl, "")).toBe("");
+    expect((await device.api.status()).remoteUrl).toBeNull();
+
+    const confirmId = (refused as { details: { confirmId: string } }).details.confirmId;
+    const result = await device.api.githubConfirmPublic(confirmId);
+    expect(result).toMatchObject({ repoPrivate: false, remoteHasContent: false });
+    expect(device.secrets.values.get(GITHUB_TOKEN_KEY)).toBe(TOKEN);
+    // Each confirmation works once.
+    await expect(device.api.githubConfirmPublic(confirmId)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+
+    // Turned down: the token is forgotten.
+    const again = await device.api.githubConnect(TOKEN, "backup").catch((error: unknown) => error);
+    const secondId = (again as { details: { confirmId: string } }).details.confirmId;
+    await device.api.githubDiscardPublic(secondId);
+    await expect(device.api.githubConfirmPublic(secondId)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 
   it("reads an empty existing repository as empty", async () => {
@@ -243,6 +286,34 @@ describe("GitHub connect", () => {
     expect(calls.find((call) => call.url.endsWith("/access_token"))?.body).toContain(
       "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code",
     );
+  });
+
+  it("holds a device sign-in to a public repository until the user agrees", async () => {
+    const { fetchImpl } = stubFetch({
+      "POST https://github.com/login/oauth/access_token": {
+        status: 200,
+        body: { access_token: "gho_devicetoken", token_type: "bearer" },
+      },
+      [`GET ${API}/user`]: { status: 200, body: { login: "octo" } },
+      [`GET ${API}/repos/octo/backup`]: {
+        status: 200,
+        body: { full_name: "octo/backup", private: false, size: 3 },
+      },
+    });
+    device = createDevice(temp.dir, "A", { fetchImpl });
+    device.ctx.settings.set("githubClientId", "client-abc");
+
+    const refused = await device.api
+      .githubDevicePoll("dev-123", "backup")
+      .catch((error: unknown) => error);
+    expect(refused).toMatchObject({ code: "GITHUB_REPO_PUBLIC" });
+    expect(JSON.stringify(refused)).not.toContain("gho_devicetoken");
+    expect(device.secrets.values.has(GITHUB_TOKEN_KEY)).toBe(false);
+
+    const confirmId = (refused as { details: { confirmId: string } }).details.confirmId;
+    expect(await device.api.githubConfirmPublic(confirmId)).toMatchObject({ repoPrivate: false });
+    expect(device.secrets.values.get(GITHUB_TOKEN_KEY)).toBe("gho_devicetoken");
+    expect(await device.api.githubAuthMethod()).toBe("oauth");
   });
 
   it("reports an expired or refused device sign-in", async () => {

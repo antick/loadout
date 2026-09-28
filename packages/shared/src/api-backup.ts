@@ -72,6 +72,13 @@ export interface BackupApi {
   githubDeviceStart(): Promise<DeviceFlowStart>;
   githubDevicePoll(deviceCode: string, repoName: string): Promise<DeviceFlowPoll>;
   githubAuthMethod(): Promise<GithubAuthMethod>;
+  /**
+   * Go ahead with a public repository after `GITHUB_REPO_PUBLIC`. The token waited in memory
+   * only, for a few minutes; after that the connect has to start again.
+   */
+  githubConfirmPublic(confirmId: string): Promise<GithubConnectResult>;
+  /** Forget the token of a public-repository connect the user turned down. */
+  githubDiscardPublic(confirmId: string): Promise<void>;
   /** True when a GitHub OAuth client id is configured, so device sign-in can be offered. */
   githubDeviceAvailable(): Promise<boolean>;
 }
