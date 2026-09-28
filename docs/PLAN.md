@@ -37,6 +37,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Parse `SKILL.md` / `skill.md` frontmatter (name, description)
 - [x] Skill cards: grid and list view, search, source filter, tag filter incl. Untagged
 - [x] Skill detail: rendered docs, file list, source metadata, per-agent toggles, projects using it
+- [x] "Manual only" badge for `disable-model-invocation: true`
 - [x] Delete skill (removes library copy, preset links, deployments)
 - [x] Tags: add/remove per skill, rename tag, delete tag, batch tag dialog
 - [x] Batch select: deploy to agents, tags, update, delete
@@ -48,6 +49,8 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] From `.zip` / `.skill` archive, or by dropping a folder or archive on the page
 - [x] From Git: https, ssh, `owner/repo`, tree URLs with branch + subpath
 - [x] Git preview: pick skills found in the repo, rename, confirm
+- [x] Preview labels what each name will do (new, in library, name in use, same name twice), groups skills by folder, filters big sources
+- [x] Sources page: one card per repository, archive or link; find new skills, update, check, show in library, remove
 - [x] Batch import every skill under a folder
 - [x] Scan agent folders for skills already on this machine and import them
 - [x] Marketplace: hot / trending / all-time boards, keyword search, one-click install
@@ -105,6 +108,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Sync status against the library; update library, update project, restore library version
 - [x] Multi-variant conflict guard
 - [x] Export library skills to a project with agent picker and remembered selection
+- [x] `skills.toml` + `skills-lock.json`: pinned project skills, applied from the project page or `loadout project apply`
 - [x] Preset pills, batch actions, tags, drag to reorder projects, remove project
 
 ### 8b. Instruction files
@@ -149,6 +153,8 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] `--json` output with stable error codes, `--dry-run`, `--yes`, `--library <path>`
 - [x] App publishes the CLI to `~/.loadout/bin` on start with a version stamp
 - [x] Bundled `manage-skills` skill teaching agents to drive the CLI; one-click setup
+- [x] Bash and Zsh tab completion; keyboard picker for multi-skill installs; `--dry-run` for install and update
+- [x] Homebrew formula (CLI) and cask (app) written and pushed to the tap on each published release
 
 ## Build order
 
@@ -162,6 +168,8 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ## Known gaps
 
+- Homebrew publishing needs the `antick/homebrew-tap` repository and a `HOMEBREW_TAP_TOKEN` secret; until both exist the publish workflow only reports that it skipped.
+- Remove all data offers to keep linked skills as folders; the same "stop managing, keep them" is not yet offered on its own, without removing the library.
 - Drag-and-drop install (Install → This computer) is built, but a real drag from the file manager has not been tried yet.
 - Windows and Linux are untested. Symlink → junction → copy fallback and the `.cmd` CLI launcher exist but have never run.
 - The CLI cannot read tokens saved by the desktop app (they are encrypted with the OS keychain), so `loadout git sync` to an HTTPS + token remote only works from the app. SSH remotes and git credential helpers work from both.
