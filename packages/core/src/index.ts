@@ -19,3 +19,9 @@ export { canonicalPath } from "./util/fs";
 export { previewLibrary } from "./install/fetched-preview";
 export { redactUrl } from "./install/git-source";
 export { readSkillIdentity } from "./skills/metadata";
+export {
+  type CheckedFolderSkill,
+  type DuplicateSkillName,
+  type FolderCheck,
+  checkSkillFolder,
+} from "./skills/validate-folder";

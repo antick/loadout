@@ -26,6 +26,8 @@ export interface CommandContext {
 
 /** What a command that runs without opening the library gets. */
 export interface FreeCommandContext extends Omit<CommandContext, "core"> {
+  /** What `~` in a path on the command line stands for. */
+  homeDir: string;
   /**
    * The saved library, or the one `--library` names, opened only when it already exists: null
    * otherwise. Never creates one. Closed by the caller.

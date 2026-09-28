@@ -95,6 +95,7 @@ loadout skills scan --all --json
 # Format checks (Agent Skills rules); exit code 1 when a skill has an error
 loadout skills validate <ref> --json
 loadout skills validate --all --json
+loadout skills validate ./path/to/skills --json   # a folder, no library needed
 
 # Rename (folder, name in SKILL.md, deployments and project links follow); preview first
 loadout skills rename <ref> <new-name> --dry-run --json

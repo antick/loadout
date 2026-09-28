@@ -109,7 +109,11 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
         core ??= openExistingLibrary(deps, baseDir);
         return core;
       };
-      const result = await command.runWithoutLibrary({ ...context, openExisting });
+      const result = await command.runWithoutLibrary({
+        ...context,
+        homeDir: deps.homeDir,
+        openExisting,
+      });
       printResult(io, json, result.value, result.text);
       return result.exitCode ?? EXIT_OK;
     }
