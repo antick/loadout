@@ -121,6 +121,11 @@ export function planText(plan: InstallPlan): string {
     `Dry run: nothing was installed. From ${plan.source}, ${plural(plan.skills.length, "skill")} would be added:`,
     table(["name", "outcome", "invocation", "folder"], rows, "  (none)"),
   ];
+  if (plan.skills.some((row) => row.outcome.kind === "taken")) {
+    lines.push(
+      "A skill identical to the one holding its name is not added twice: the library keeps one.",
+    );
+  }
   if (plan.redirectedTo) {
     lines.push(`The download moved to ${plan.redirectedTo}; installing needs --yes to accept it.`);
   }

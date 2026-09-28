@@ -22,7 +22,8 @@ export interface LibraryNameEntry {
  * - `new`: nothing has that name; it is added under it.
  * - `installed`: this source already put a skill there. The same content is kept as is; changed
  *   content is added next to it as `installAs`.
- * - `taken`: another skill (or a stray folder) has the name; this one is added as `installAs`.
+ * - `taken`: another skill (or a stray folder) has the name; this one is added as `installAs`,
+ *   unless its content is identical to what holds the name (the library then keeps that one).
  * - `repeated`: an earlier row of the same import claims the name; added as `installAs`.
  */
 export type InstallOutcomeKind = "new" | "installed" | "taken" | "repeated";

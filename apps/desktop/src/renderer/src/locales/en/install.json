@@ -173,8 +173,8 @@
       },
       "outcomeHint": {
         "installed": "Already imported from this source. Unchanged, the library copy stays as it is; changed, this is added next to it as {{installAs}}.",
-        "takenFrom": "{{name}} is taken by a skill from {{source}}. This one is added as {{installAs}}, or rename it.",
-        "takenLocal": "{{name}} is taken by a skill you made or imported. This one is added as {{installAs}}, or rename it.",
+        "takenFrom": "{{name}} is taken by a skill from {{source}}. This one is added as {{installAs}} (unless the two are identical, then the library keeps one), or rename it.",
+        "takenLocal": "{{name}} is taken by a skill you made or imported. This one is added as {{installAs}} (unless the two are identical, then the library keeps one), or rename it.",
         "takenFolder": "A folder called {{name}} is already in the library. This one is added as {{installAs}}, or rename it.",
         "repeated": "Another ticked skill here is also called {{name}}. This one is added as {{installAs}}, or rename it."
       },
