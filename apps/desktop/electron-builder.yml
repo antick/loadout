@@ -32,6 +32,7 @@ electronFuses:
 extraMetadata:
   homepage: https://loadout.potion.sh
 # File names are read by scripts/update-feed.mjs to build the update feed: change both together.
+# The landing page's download links take the .dmg next to each mac .zip (apps/landing/src/lib/downloads.ts).
 mac:
   category: public.app-category.developer-tools
   icon: build/icon.icns
