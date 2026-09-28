@@ -49,7 +49,7 @@
 | `sources/`           | Skills repositories gained since last seen: per-repository state, check, auto-add                    |
 | `origin/`            | Finding and linking the source of skills without one: local evidence, marketplace, compare           |
 | `updates/`           | Check, update, removal approval, source diff, background auto-update → `UpdatesApi`                  |
-| `presets/`           | `PresetsApi`                                                                                         |
+| `presets/`           | `PresetsApi`; `share.ts` exports a preset as a file and imports one, installing what is missing      |
 | `workspace/`         | Local skill scanning, library matching, sync status, global workspace → `WorkspaceApi`               |
 | `projects/`          | Project and linked workspaces → `ProjectsApi`                                                        |
 | `backup/`            | Git backup, skill-aware merge, snapshots, GitHub connect, auto backup → `BackupApi`                  |
