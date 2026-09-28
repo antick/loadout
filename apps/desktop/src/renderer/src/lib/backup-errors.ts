@@ -53,3 +53,9 @@ export function isRecoverableError(error: unknown): boolean {
 export function isAuthError(error: unknown): boolean {
   return codeOf(error) === "GIT_AUTH";
 }
+
+/** The sync stopped for a look first: it would delete many skills, or the remote moved on. */
+export function needsReview(error: unknown): boolean {
+  const code = codeOf(error);
+  return code === "SYNC_MANY_DELETES" || code === "SYNC_PLAN_CHANGED";
+}

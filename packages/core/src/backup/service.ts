@@ -15,6 +15,7 @@ import { readIgnoreRules, writeIgnoreRules } from "./ignore-rules";
 import { allowSecrets, scanForPush, scanUncommittedChanges } from "./secrets";
 import { buildSizeReport, refreshIgnoreFile } from "./size";
 import { DEFAULT_SNAPSHOT_LIMIT, listSnapshots, restoreSnapshot, tagSnapshot } from "./snapshots";
+import { conflictDiff, previewDiff, previewSync } from "./review";
 import { readStatus } from "./status";
 import { fetchRemote, pullRemote, syncLibrary } from "./sync";
 
@@ -104,6 +105,12 @@ export function createBackupOperations(
       ctx.touched("backup");
       return summary;
     },
+
+    preview: () => previewSync(env),
+
+    previewDiff: (skillId, remoteCommit) => previewDiff(env, skillId, remoteCommit),
+
+    conflictDiff: (skillKey) => conflictDiff(env, skillKey),
 
     snapshots: async (limit = DEFAULT_SNAPSHOT_LIMIT) => {
       assertRepo(env);

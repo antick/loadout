@@ -128,7 +128,8 @@ function canonical(value: unknown): string {
   return `{${keys.map((key) => `${JSON.stringify(key)}:${canonical(record[key])}`).join(",")}}`;
 }
 
-function sameSkill(a: SkillSide, b: SkillSide): boolean {
+/** Same content, folder name and metadata. */
+export function sameSkill(a: SkillSide, b: SkillSide): boolean {
   return a.treeHash === b.treeHash && a.path === b.path && canonical(a.meta) === canonical(b.meta);
 }
 

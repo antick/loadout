@@ -12,6 +12,47 @@
       "saved": "Patterns saved"
     },
     "removed_one": "Deleted on {{device}}: {{names}}. It is in Recently removed if you want it back.",
-    "removed_other": "Deleted on another device: {{names}}. They are in Recently removed if you want them back."
+    "removed_other": "Deleted on another device: {{names}}. They are in Recently removed if you want them back.",
+    "diff": {
+      "here": "This computer",
+      "other": "Other device"
+    },
+    "conflictDiff": {
+      "open": "Compare",
+      "title": "Compare “{{name}}”",
+      "description": "This computer's version against the one from the other device, file by file. Choose a version in the list afterwards."
+    },
+    "review": {
+      "title": "Review the sync",
+      "description_one": "The remote has {{count}} backup from another device. Here is what the sync will do.",
+      "description_other": "The remote has {{count}} backups from other devices. Here is what the sync will do.",
+      "incoming": "Coming in",
+      "outgoing": "Going out from this computer",
+      "conflicts": "Changed on both devices",
+      "conflictsHint": "This computer's version stays. Choose which one to keep afterwards, under Needs attention.",
+      "deletesHint": "Skills deleted on another device. Deleted here, they wait in Recently removed for {{days}} days. Kept, they go back to the other devices.",
+      "manyDeletes_one": "This sync deletes {{count}} skill here. Check it is meant to go.",
+      "manyDeletes_other": "This sync deletes {{count}} skills here, more than usual. If the other device lost its library, keep them all.",
+      "keepAll": "Keep all",
+      "deleteAll": "Delete all",
+      "delete": "Delete here",
+      "keep": "Keep",
+      "deleteChoice": "What to do with {{name}}",
+      "viewChanges": "View changes",
+      "renamedFrom": "was {{path}}",
+      "fromDevice": "from {{device}}",
+      "change": {
+        "added": "New",
+        "changed": "Changed",
+        "renamed": "Renamed",
+        "details": "Tags or source",
+        "deleted": "Deleted"
+      },
+      "presets_one": "{{count}} preset is updated from another device.",
+      "presets_other": "{{count}} presets are updated from other devices.",
+      "notPerSkill_one": "The skill-aware merge is off in Settings, so this {{count}} backup is merged by Git line by line and cannot be listed skill by skill.",
+      "notPerSkill_other": "The skill-aware merge is off in Settings, so these {{count}} backups are merged by Git line by line and cannot be listed skill by skill.",
+      "sync": "Sync"
+    }
   }
 }

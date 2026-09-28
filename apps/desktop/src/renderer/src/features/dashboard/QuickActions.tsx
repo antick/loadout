@@ -6,14 +6,14 @@ import { useTranslation } from "react-i18next";
 import { useShell } from "@/components/layout/shell-context";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useSyncBackup } from "@/hooks/mutations/backup-page";
+import { useSyncFlow } from "@/features/backup/sync-flow";
 
 /** The four things people come to the dashboard to start. */
 export function QuickActions({ backup }: { backup: BackupStatus | undefined }): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const shell = useShell();
-  const sync = useSyncBackup();
+  const sync = useSyncFlow();
   const backupReady = Boolean(backup?.isRepo && backup.remoteUrl && backup.gitAvailable);
 
   return (
@@ -37,11 +37,11 @@ export function QuickActions({ backup }: { backup: BackupStatus | undefined }): 
       <Button
         variant="outline"
         size="sm"
-        disabled={sync.isPending}
+        disabled={sync.busy}
         // Without a remote there is nothing to sync to yet: the Backup page walks through setup.
-        onClick={() => (backupReady ? sync.mutate() : void navigate({ to: "/backup" }))}
+        onClick={() => (backupReady ? sync.start() : void navigate({ to: "/backup" }))}
       >
-        {sync.isPending ? <Spinner /> : <CloudUpload />}
+        {sync.busy ? <Spinner /> : <CloudUpload />}
         {t("dashboard.actions.backup")}
       </Button>
     </div>

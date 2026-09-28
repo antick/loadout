@@ -1,5 +1,10 @@
 import { notFound } from "@loadout/core";
-import { DEFAULT_BACKUP_COMMIT_MESSAGE, type MergeSummary } from "@loadout/shared";
+import {
+  DEFAULT_BACKUP_COMMIT_MESSAGE,
+  type MergeSummary,
+  type SyncPreview,
+  type SyncPreviewItem,
+} from "@loadout/shared";
 import { flagBoolean, flagInteger, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import {
@@ -18,6 +23,12 @@ const MESSAGE_FLAG = {
   type: "string",
   value: "text",
   description: `Commit message. Default: "${DEFAULT_BACKUP_COMMIT_MESSAGE}".`,
+} as const;
+const ALLOW_DELETES_FLAG = {
+  name: "allow-deletes",
+  type: "boolean",
+  description:
+    "Go ahead when the sync would delete many skills here. See them with --dry-run first.",
 } as const;
 const LIMIT_FLAG = {
   name: "limit",
@@ -77,13 +88,56 @@ function describeMerge(merge: MergeSummary): string[] {
   return lines;
 }
 
+function describeItem(item: SyncPreviewItem): string {
+  const renamed = item.previousPath ? ` (was ${item.previousPath})` : "";
+  const device = item.fromDevice ? `, from ${item.fromDevice}` : "";
+  return `  ${item.change.padEnd(8)} ${item.name}${renamed}${device}`;
+}
+
+function describePreview(preview: SyncPreview): string[] {
+  if (!preview.remoteCommit) return ["No remote branch yet: a sync pushes the whole library."];
+  if (!preview.perSkill) {
+    return [
+      `${plural(preview.remoteBackups, "backup")} to merge. The skill-aware merge is off, so git merges them line by line.`,
+    ];
+  }
+  const section = (title: string, items: SyncPreviewItem[]): string[] =>
+    items.length > 0 ? [`${title}:`, ...items.map(describeItem)] : [];
+  const lines = [
+    ...section("Coming in", preview.incoming),
+    ...section("Going out", preview.outgoing),
+    ...section("Changed on both sides, this computer's version stays", preview.conflicts),
+  ];
+  if (preview.presetsIncoming > 0) {
+    lines.push(`${plural(preview.presetsIncoming, "preset")} updated from other devices.`);
+  }
+  if (preview.manyDeletes) {
+    lines.push("That is many deletions: sync again with --allow-deletes to go ahead.");
+  }
+  return lines.length > 0 ? lines : ["Nothing to sync."];
+}
+
 async function sync({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
+  if (flagBoolean(args, DRY_RUN_FLAG.name)) {
+    const preview = await core.api.backup.preview();
+    return {
+      value: { dryRun: true, preview },
+      text: [...describePreview(preview), "Nothing was changed."].join("\n"),
+    };
+  }
   if (flagBoolean(args, ALLOW_SECRETS_FLAG.name)) {
     const held = await core.api.backup.secretFindings();
     await core.api.backup.allowSecrets(held.map((finding) => finding.id));
   }
-  const value = await core.api.backup.sync(flagString(args, MESSAGE_FLAG.name));
+  // Going ahead past the deletion guard is a review answer like the app's, with nothing kept.
+  const reviewed = flagBoolean(args, ALLOW_DELETES_FLAG.name)
+    ? (await core.api.backup.preview()).remoteCommit
+    : null;
+  const value = await core.api.backup.sync(
+    flagString(args, MESSAGE_FLAG.name),
+    reviewed ? { remoteCommit: reviewed, keep: [] } : undefined,
+  );
   const lines = [
     value.committed ? "Saved local changes." : "No local changes to save.",
     ...(value.merge ? describeMerge(value.merge) : []),
@@ -144,8 +198,8 @@ export const gitGroup: CommandGroup = {
     {
       name: "sync",
       summary: "Save, merge what other devices pushed, and push",
-      usage: "[-m <message>] [--allow-secrets]",
-      flags: [MESSAGE_FLAG, ALLOW_SECRETS_FLAG],
+      usage: "[-m <message>] [--allow-secrets] [--allow-deletes] [--dry-run]",
+      flags: [MESSAGE_FLAG, ALLOW_SECRETS_FLAG, ALLOW_DELETES_FLAG, DRY_RUN_FLAG],
       run: sync,
     },
     {

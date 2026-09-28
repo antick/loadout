@@ -1,5 +1,10 @@
 import type { SecretFinding } from "./secrets";
-import type { BackupIgnoreRules, SyncReviewAnswer } from "./types-backup";
+import type {
+  BackupIgnoreRules,
+  SyncPreview,
+  SyncReviewAnswer,
+  SyncSkillDiff,
+} from "./types-backup";
 import type {
   BackupConflict,
   BackupStatus,
@@ -29,6 +34,12 @@ export interface BackupApi {
    */
   sync(message?: string, review?: SyncReviewAnswer): Promise<SyncOutcome>;
   pull(): Promise<MergeSummary>;
+  /** Fetch, then work out what a sync would do, without changing the library or the remote. */
+  preview(): Promise<SyncPreview>;
+  /** This computer's version of a skill against the one in `remoteCommit` (from a preview). */
+  previewDiff(skillId: string, remoteCommit: string): Promise<SyncSkillDiff>;
+  /** This computer's version of a conflicting skill against the other device's. */
+  conflictDiff(skillKey: string): Promise<SyncSkillDiff>;
   snapshots(limit?: number): Promise<Snapshot[]>;
   createSnapshot(): Promise<string>;
   /** Returns the safety snapshot taken before restoring. */

@@ -210,7 +210,6 @@
     "diverged": "Some skills differ from the library"
   },
   "backup": {
-    "synced": "Backup finished",
     "dot": {
       "neutral": "Backup is not set up",
       "success": "Backup is up to date",

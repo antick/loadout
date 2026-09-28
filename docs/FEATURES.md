@@ -99,6 +99,8 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 
 - The library is a Git repository; back up to GitHub or any Git remote.
 - One-button sync with per-skill merging; conflicts never block.
+- When another device changed something, sync shows what comes in and goes out first, with each skill's files; you choose whether deletions happen here.
+- Compare a conflict file by file before choosing a version.
 - A skill deleted on another device is kept in Recently removed; restoring it brings it back everywhere.
 - A sync that would delete many skills here stops and waits for you to review it.
 - Snapshots you can restore; automatic backup after changes.
@@ -109,7 +111,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 
 - `loadout` CLI for everything above, with `--json`, `--dry-run` and `--yes`.
 - Keyboard picker when an install finds several skills.
-- `--dry-run` for install and update shows what would change.
+- `--dry-run` for install, update and `git sync` shows what would change.
 - `loadout doctor`: one report of everything that needs a look.
 - Tab completion: `eval "$(loadout completion bash)"` or `zsh`.
 - Published to `~/.loadout/bin` by the app; also on npm (`@antick/loadout`) and as standalone binaries.

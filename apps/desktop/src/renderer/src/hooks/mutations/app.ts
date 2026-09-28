@@ -61,15 +61,3 @@ export function useClearLastCrash(): UseMutationResult<void, unknown, void> {
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.system.lastCrash }),
   });
 }
-
-/** Start a backup sync now (used by the command palette). */
-export function useBackupNow(): UseMutationResult<unknown, unknown, void> {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-  return useMutation({
-    mutationFn: () => api.backup.sync(),
-    onSuccess: () => toastSuccess(t("backup.synced")),
-    onError: (error) => toastError(error, "errors.backup"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.backup.root }),
-  });
-}

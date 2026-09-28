@@ -1,11 +1,12 @@
 import { type BackupConflict, type ConflictResolution, formatRelative } from "@loadout/shared";
 import { TriangleAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { useResolveBackupConflict } from "@/hooks/mutations/backup-page";
+import { ConflictDiffDialog } from "./ConflictDiffDialog";
 import { SHORT_COMMIT_LENGTH } from "./constants";
 
 const ACTIONS: readonly ConflictResolution[] = ["keep_local", "use_remote", "keep_both"];
@@ -15,6 +16,7 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
   const { t } = useTranslation();
   const confirm = useConfirm();
   const resolve = useResolveBackupConflict();
+  const [comparing, setComparing] = useState<BackupConflict | null>(null);
   if (conflicts.length === 0) return null;
 
   const choose = async (conflict: BackupConflict, action: ConflictResolution): Promise<void> => {
@@ -56,6 +58,9 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-1.5">
+                <Button size="sm" variant="ghost" onClick={() => setComparing(conflict)}>
+                  {t("backupSync.conflictDiff.open")}
+                </Button>
                 {ACTIONS.map((action) => (
                   <Button
                     key={action}
@@ -73,6 +78,7 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
           );
         })}
       </ul>
+      <ConflictDiffDialog conflict={comparing} onClose={() => setComparing(null)} />
     </PageSection>
   );
 }

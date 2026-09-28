@@ -21,7 +21,7 @@ import { keys } from "@/lib/query-keys";
 import { toastSuccess } from "@/lib/toast";
 
 /** A backup action can rewrite the whole library, so everything built from it is refetched. */
-function invalidateAfterBackup(queryClient: QueryClient): void {
+export function invalidateAfterBackup(queryClient: QueryClient): void {
   for (const queryKey of [keys.backup.root, keys.skills.root, keys.presets.root]) {
     void queryClient.invalidateQueries({ queryKey });
   }
@@ -34,18 +34,6 @@ function invalidateAfterBackup(queryClient: QueryClient): void {
  */
 function refresh(queryClient: QueryClient, queryKey: QueryKey): void {
   void queryClient.invalidateQueries({ queryKey });
-}
-
-/** Commit, merge what other devices pushed, and push. Toasts what happened. */
-export function useSyncBackup(): UseMutationResult<SyncOutcome, unknown, void> {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-  return useMutation({
-    mutationFn: () => api.backup.sync(),
-    onSuccess: (outcome) => toastSyncOutcome(outcome, t),
-    onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
-  });
 }
 
 /** Quietly look at the remote so "behind" is current. Failures (offline) are not worth a toast. */

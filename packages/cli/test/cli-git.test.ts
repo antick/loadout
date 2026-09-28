@@ -48,4 +48,31 @@ describe("git sync", () => {
     expect(pushed.code).toBe(EXIT_OK);
     expect(pushed.stdout).toContain("Pushed");
   });
+
+  it("--dry-run lists what would go out and changes nothing", async () => {
+    const remote = join(sandbox.root, "remote.git");
+    mkdirSync(remote);
+    execFileSync("git", ["init", "-q", "--bare"], { cwd: remote });
+    expect((await sandbox.cli("git", "init")).code).toBe(EXIT_OK);
+    expect((await sandbox.cli("git", "remote", remote)).code).toBe(EXIT_OK);
+    expect((await sandbox.cli("git", "sync")).code).toBe(EXIT_OK);
+    writeSkill(join(sandbox.root, "src"), "fresh");
+    expect((await sandbox.cli("skills", "install", join(sandbox.root, "src", "fresh"))).code).toBe(
+      EXIT_OK,
+    );
+    const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: remote, encoding: "utf8" });
+
+    const dry = await sandbox.cli("git", "sync", "--dry-run");
+    expect(dry.code).toBe(EXIT_OK);
+    expect(dry.stdout).toContain("Going out:");
+    expect(dry.stdout).toMatch(/added\s+fresh/);
+    expect(dry.stdout).toContain("Nothing was changed.");
+    expect(execFileSync("git", ["rev-parse", "HEAD"], { cwd: remote, encoding: "utf8" })).toBe(
+      head,
+    );
+
+    const json = await sandbox.cli("git", "sync", "--dry-run", "--json");
+    const parsed = JSON.parse(json.stdout) as { preview: { outgoing: { name: string }[] } };
+    expect(parsed.preview.outgoing.map((item) => item.name)).toEqual(["fresh"]);
+  });
 });

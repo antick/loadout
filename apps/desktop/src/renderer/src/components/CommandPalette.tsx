@@ -29,7 +29,7 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { useBackupNow } from "@/hooks/mutations/app";
+import { useSyncFlow } from "@/features/backup/sync-flow";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { usePresets } from "@/hooks/queries/presets";
@@ -50,7 +50,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
   const shell = useShell();
   const { resolvedTheme } = useTheme();
   const setSetting = useSetSetting();
-  const backupNow = useBackupNow();
+  const sync = useSyncFlow();
   const scanLibrary = useScanLibrary();
   const skills = useSkills();
   const presets = usePresets();
@@ -101,7 +101,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
             <ShieldCheck />
             {t("palette.safetyScan")}
           </CommandItem>
-          <CommandItem onSelect={() => run(() => backupNow.mutate())}>
+          <CommandItem onSelect={() => run(() => sync.start())}>
             <CloudUpload />
             {t("palette.backupNow")}
           </CommandItem>

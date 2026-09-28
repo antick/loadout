@@ -202,7 +202,7 @@ export function createSystemMockHandlers(
   };
 
   return {
-    ...createBackupSyncMockHandlers(ctx),
+    ...createBackupSyncMockHandlers({ fail: ctx.fail, status: () => status }),
     "backup.status": () => status,
     "backup.fetch": () => undefined,
     "backup.init": () => {

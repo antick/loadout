@@ -96,6 +96,9 @@ export const keys = {
     deviceAvailable: ["backup", "device-available"] as const,
     secrets: ["backup", "secrets"] as const,
     ignore: ["backup", "ignore"] as const,
+    previewDiff: (skillId: string, remoteCommit: string) =>
+      ["backup", "preview-diff", skillId, remoteCommit] as const,
+    conflictDiff: (skillKey: string) => ["backup", "conflict-diff", skillKey] as const,
   },
   settings: {
     root: ["settings"] as const,

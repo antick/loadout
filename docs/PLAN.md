@@ -130,6 +130,8 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Skill-aware merge: per skill, renames combine with edits
 - [x] Conflicts never block: keep mine / use remote / keep both, safety snapshot first
 - [x] Skills deleted on another device go to Recently removed, named in the sync toast and CLI
+- [x] Sync review: incoming, outgoing and conflicting skills with file diffs; keep or delete each incoming deletion (app, dashboard, palette); `git sync --dry-run` / `--allow-deletes`
+- [x] Conflicts: compare file by file before choosing
 - [x] Mass-delete guard: more than 5 deletions, or 3+ that are over half the library, stop the sync (automatic too) until reviewed
 - [x] Snapshot history with device name, restore any snapshot
 - [x] Automatic backup after changes settle and on quit; toggle

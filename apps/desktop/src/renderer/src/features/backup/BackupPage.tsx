@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useFetchBackup, useSetDeviceName, useSyncBackup } from "@/hooks/mutations/backup-page";
+import { useFetchBackup, useSetDeviceName } from "@/hooks/mutations/backup-page";
 import { useBackupStatus } from "@/hooks/queries/app";
 import {
   useBackupConflicts,
@@ -31,6 +31,7 @@ import { RemoteUrlPanel } from "./RemoteUrlPanel";
 import { SetupDialog } from "./SetupDialog";
 import { SnapshotHistory } from "./SnapshotHistory";
 import { StatusCard } from "./StatusCard";
+import { useSyncFlow } from "./sync-flow";
 import { useFinishConnect } from "./use-finish-connect";
 
 /** Back the library up to a Git remote, review what needs attention, and go back in time. */
@@ -40,7 +41,7 @@ export function BackupPage(): ReactNode {
   const conflicts = useBackupConflicts();
   const deviceName = useBackupDeviceName();
   const skills = useSkills();
-  const sync = useSyncBackup();
+  const sync = useSyncFlow();
   const fetchRemote = useFetchBackup();
   const renameDevice = useSetDeviceName();
   const openExternal = useOpenExternal();
@@ -98,11 +99,11 @@ export function BackupPage(): ReactNode {
         return;
       case "failed":
         if (isRecoverableError(lastError)) setRecoveryOpen(true);
-        else sync.mutate(undefined, { onSuccess: succeeded, onError: failed });
+        else sync.start({ onSuccess: succeeded, onError: failed });
         return;
       case "pending":
       case "up_to_date":
-        sync.mutate(undefined, { onSuccess: succeeded, onError: failed });
+        sync.start({ onSuccess: succeeded, onError: failed });
         return;
       case "loading":
         return;
@@ -138,7 +139,7 @@ export function BackupPage(): ReactNode {
           status={data}
           deviceName={deviceName.data}
           errorText={lastError ? backupErrorText(lastError, t) : null}
-          busy={sync.isPending || connect.isPending}
+          busy={sync.busy || connect.isPending}
           onPrimary={primary}
           onReconnect={canReconnect ? () => setReconnecting(true) : undefined}
           onRenameDevice={(name) => renameDevice.mutate(name)}

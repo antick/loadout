@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createRootRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { SyncFlowProvider } from "@/features/backup/SyncFlowProvider";
 import { subscribeAppEvents } from "@/lib/events";
 
 function RootLayout(): ReactNode {
@@ -14,9 +15,11 @@ function RootLayout(): ReactNode {
   );
 
   return (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <SyncFlowProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </SyncFlowProvider>
   );
 }
 
