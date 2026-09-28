@@ -52,7 +52,14 @@
       "presets_other": "{{count}} presets are updated from other devices.",
       "notPerSkill_one": "The skill-aware merge is off in Settings, so this {{count}} backup is merged by Git line by line and cannot be listed skill by skill.",
       "notPerSkill_other": "The skill-aware merge is off in Settings, so these {{count}} backups are merged by Git line by line and cannot be listed skill by skill.",
-      "sync": "Sync"
+      "sync": "Sync",
+      "search": "Search skills or devices",
+      "filter": {
+        "label": "Kind of change",
+        "all": "All changes"
+      },
+      "noMatch": "No skill in this sync fits the search and the filter.",
+      "clearFilters": "Clear filters"
     },
     "stage": {
       "preparing": "Checking for keys and tokens…",

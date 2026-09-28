@@ -6,7 +6,7 @@ import {
   type SyncReviewAnswer,
 } from "@loadout/shared";
 import { Info, TriangleAlert } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { BackupStageText } from "./BackupStageText";
+import { REVIEW_FILTER_MIN_ITEMS } from "./constants";
+import { type ReviewFilter, type ReviewLists, countReview, filterReview } from "./review-filter";
+import { SyncReviewFilters } from "./SyncReviewFilters";
 import { type DeleteChoice, SyncReviewRow } from "./SyncReviewRow";
 
 export interface SyncReviewDialogProps {
@@ -57,28 +60,43 @@ function Section({
   );
 }
 
-/** Kept apart so its choices start fresh for every preview. */
+/** The review's lists as narrowed by the search and filter; choices are kept for hidden rows. */
 function ReviewBody({
   preview,
+  lists,
   remoteCommit,
   kept,
   onKept,
+  onClearFilters,
 }: {
   preview: SyncPreview;
+  lists: ReviewLists;
   remoteCommit: string;
   kept: ReadonlySet<string>;
   onKept(next: Set<string>): void;
+  onClearFilters(): void;
 }): ReactNode {
   const { t } = useTranslation();
-  const deletions = preview.incoming.filter((item) => item.change === "deleted");
+  const allDeletions = preview.incoming.filter((item) => item.change === "deleted").length;
+  // "Keep all" and "Delete all" answer for the deletions in view only.
+  const deletions = lists.incoming.filter((item) => item.change === "deleted");
   const choose = (item: SyncPreviewItem, choice: DeleteChoice): void => {
     const next = new Set(kept);
     if (choice === "keep") next.add(item.id);
     else next.delete(item.id);
     onKept(next);
   };
-  const setAll = (choice: DeleteChoice): void =>
-    onKept(new Set(choice === "keep" ? deletions.map((item) => item.id) : []));
+  const setAll = (choice: DeleteChoice): void => {
+    const next = new Set(kept);
+    for (const item of deletions) {
+      if (choice === "keep") next.add(item.id);
+      else next.delete(item.id);
+    }
+    onKept(next);
+  };
+  const empty =
+    lists.incoming.length + lists.outgoing.length + lists.conflicts.length === 0 &&
+    preview.incoming.length + preview.outgoing.length + preview.conflicts.length > 0;
 
   if (!preview.perSkill) {
     return (
@@ -92,10 +110,18 @@ function ReviewBody({
     <div className="flex min-w-0 flex-col gap-4">
       {preview.manyDeletes ? (
         <InlineNotice tone="warning" icon={TriangleAlert}>
-          {t("backupSync.review.manyDeletes", { count: deletions.length })}
+          {t("backupSync.review.manyDeletes", { count: allDeletions })}
         </InlineNotice>
       ) : null}
-      {preview.incoming.length > 0 ? (
+      {empty ? (
+        <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
+          <p>{t("backupSync.review.noMatch")}</p>
+          <Button size="sm" variant="outline" onClick={onClearFilters}>
+            {t("backupSync.review.clearFilters")}
+          </Button>
+        </div>
+      ) : null}
+      {lists.incoming.length > 0 ? (
         <Section
           title={t("backupSync.review.incoming")}
           description={
@@ -116,7 +142,7 @@ function ReviewBody({
             ) : null
           }
         >
-          {preview.incoming.map((item) => (
+          {lists.incoming.map((item) => (
             <SyncReviewRow
               key={item.id}
               item={item}
@@ -132,19 +158,19 @@ function ReviewBody({
           ))}
         </Section>
       ) : null}
-      {preview.conflicts.length > 0 ? (
+      {lists.conflicts.length > 0 ? (
         <Section
           title={t("backupSync.review.conflicts")}
           description={t("backupSync.review.conflictsHint")}
         >
-          {preview.conflicts.map((item) => (
+          {lists.conflicts.map((item) => (
             <SyncReviewRow key={item.id} item={item} remoteCommit={remoteCommit} comparable />
           ))}
         </Section>
       ) : null}
-      {preview.outgoing.length > 0 ? (
+      {lists.outgoing.length > 0 ? (
         <Section title={t("backupSync.review.outgoing")}>
-          {preview.outgoing.map((item) => (
+          {lists.outgoing.map((item) => (
             <SyncReviewRow
               key={item.id}
               item={item}
@@ -174,12 +200,34 @@ export function SyncReviewDialog({
   const { t } = useTranslation();
   const [kept, setKept] = useState<Set<string>>(new Set());
   const [reviewed, setReviewed] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [wasOpen, setWasOpen] = useState(false);
   const remoteCommit = preview?.remoteCommit ?? null;
+  const clearFilters = (): void => {
+    setQuery("");
+    setFilter("all");
+  };
   // A new preview starts with every deletion going ahead, as an unreviewed sync would.
   if (remoteCommit !== reviewed) {
     setReviewed(remoteCommit);
     setKept(new Set());
+    clearFilters();
   }
+  // Opened again for the same remote state: the choices stay, an old search does not.
+  if ((preview !== null) !== wasOpen) {
+    setWasOpen(preview !== null);
+    if (preview) clearFilters();
+  }
+  const counts = useMemo(() => (preview ? countReview(preview) : null), [preview]);
+  const lists = useMemo(
+    () => (preview ? filterReview(preview, query, filter) : null),
+    [preview, query, filter],
+  );
+  const filterable =
+    preview?.perSkill === true &&
+    counts !== null &&
+    (counts.all >= REVIEW_FILTER_MIN_ITEMS || query !== "" || filter !== "all");
 
   return (
     <Dialog open={preview !== null} onOpenChange={(open) => !open && !syncing && onCancel()}>
@@ -190,13 +238,24 @@ export function SyncReviewDialog({
             {t("backupSync.review.description", { count: preview?.remoteBackups ?? 0 })}
           </DialogDescription>
         </DialogHeader>
+        {filterable ? (
+          <SyncReviewFilters
+            query={query}
+            onQuery={setQuery}
+            filter={filter}
+            onFilter={setFilter}
+            counts={counts}
+          />
+        ) : null}
         <div className="-mx-1 max-h-[60vh] min-w-0 overflow-y-auto px-1">
-          {preview && remoteCommit ? (
+          {preview && lists && remoteCommit ? (
             <ReviewBody
               preview={preview}
+              lists={lists}
               remoteCommit={remoteCommit}
               kept={kept}
               onKept={setKept}
+              onClearFilters={clearFilters}
             />
           ) : null}
         </div>

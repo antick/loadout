@@ -132,6 +132,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Conflicts never block: keep mine / use remote / keep both, safety snapshot first
 - [x] Skills deleted on another device go to Recently removed, named in the sync toast and CLI
 - [x] Sync review: incoming, outgoing and conflicting skills with file diffs; keep or delete each incoming deletion (app, dashboard, palette); `git sync --dry-run` / `--allow-deletes`
+- [x] Sync review: search and a kind-of-change filter once it lists 8 or more skills; "keep all" / "delete all" answer for the rows in view
 - [x] Conflicts: compare file by file before choosing
 - [x] Conflicts: one choice for all of them ("keep all mine", "use all remote"), one safety snapshot, all or nothing
 - [x] Sync progress by stage (manual, automatic and review) on the Backup page and in the review

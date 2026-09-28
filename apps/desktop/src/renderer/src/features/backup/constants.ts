@@ -1,4 +1,4 @@
-import { APP_NAME } from "@loadout/shared";
+import { APP_NAME, PREVIEW_SEARCH_MIN_SKILLS } from "@loadout/shared";
 
 /** Longest device name the backend keeps. */
 export const DEVICE_NAME_MAX_LENGTH = 64;
@@ -28,3 +28,5 @@ export const MS_PER_SECOND = 1000;
 export const SHORT_COMMIT_LENGTH = 8;
 /** Oversized skills listed before the rest is summarised. */
 export const MAX_LISTED_OVERSIZED = 5;
+/** A sync review this long gets a search and a filter; the same point as the install list. */
+export const REVIEW_FILTER_MIN_ITEMS = PREVIEW_SEARCH_MIN_SKILLS;
