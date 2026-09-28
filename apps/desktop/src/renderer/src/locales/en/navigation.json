@@ -26,6 +26,7 @@
       "sources": "Sources",
       "install": "Install skills",
       "views": "Views",
+      "agentFiles": "Agent files",
       "view": {
         "updates": "Updates available",
         "attention": "Needs attention",

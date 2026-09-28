@@ -35,6 +35,7 @@ import { createInstallMockHandlers } from "@/lib/dev-mock-install";
 import { withInstructionMocks } from "@/lib/dev-mock-instructions";
 import { withSafetyMocks } from "@/lib/dev-mock-safety";
 import { createQuietMockHandlers } from "@/lib/dev-mock-quiet";
+import { createItemsMockHandlers } from "@/lib/dev-mock-items";
 import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
 import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
@@ -320,6 +321,7 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
 };
 
 Object.assign(handlers, createQuietMockHandlers());
+Object.assign(handlers, createItemsMockHandlers());
 
 Object.assign(
   handlers,

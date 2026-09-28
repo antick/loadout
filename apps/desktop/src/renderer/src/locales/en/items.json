@@ -1,0 +1,148 @@
+{
+  "items": {
+    "kinds": {
+      "subagent": {
+        "title": "Subagents",
+        "one": "Subagent",
+        "about": "Helpers an agent hands work to, each with its own instructions and tools.",
+        "emptyTitle": "No subagents yet",
+        "emptyDescription": "Import the ones already in your agents' folders, or start a new one."
+      },
+      "command": {
+        "title": "Commands",
+        "one": "Command",
+        "about": "Slash commands: a saved prompt you run by typing /name.",
+        "emptyTitle": "No commands yet",
+        "emptyDescription": "Import the ones already in your agents' folders, or start a new one."
+      },
+      "rule": {
+        "title": "Rules",
+        "one": "Rule",
+        "about": "Instructions an agent always follows, or follows for matching files. Most agents read rules only inside projects.",
+        "emptyTitle": "No rules yet",
+        "emptyDescription": "Import rules from a project or repository, or start a new one."
+      }
+    },
+    "count_one": "{{count}} item",
+    "count_other": "{{count}} items",
+    "search": "Search name or description",
+    "noMatches": "Nothing matches “{{query}}”.",
+    "noDescription": "No description",
+    "notDeployed": "Not deployed",
+    "new": "New",
+    "import": {
+      "button": "Import",
+      "title": "Import subagents, commands and rules",
+      "description": "Each file is read into the library's format. Nothing is imported until you choose.",
+      "from": "Look in",
+      "agents": "Agent folders on this computer",
+      "agentsHint": "Files you or other tools put in your agents' own folders.",
+      "folder": "A folder",
+      "folderHint": "A project or a checkout: agent folders like .claude/agents, and agents/, commands/, rules/ folders.",
+      "git": "A Git repository",
+      "gitHint": "A URL or owner/repo. It is downloaded to a temporary folder.",
+      "url": "Repository",
+      "look": "Look for items",
+      "looking": "Looking…",
+      "foundNone": "No subagents, commands or rules there.",
+      "found_one": "Found {{count}} item",
+      "found_other": "Found {{count}} items",
+      "status": {
+        "new": "New",
+        "same": "Already in the library",
+        "differs": "The library has a different one"
+      },
+      "replace": "Replace library items of the same name",
+      "submit_one": "Import {{count}} item",
+      "submit_other": "Import {{count}} items",
+      "back": "Back",
+      "done_one": "Imported {{count}} item",
+      "done_other": "Imported {{count}} items",
+      "skipped_one": "{{count}} left out: the library has one of that name.",
+      "skipped_other": "{{count}} left out: the library has ones of those names.",
+      "inAgent": "in {{agent}}"
+    },
+    "create": {
+      "title": "New {{kind}}",
+      "description": "It starts from a template with the fields this kind uses.",
+      "name": "Name",
+      "nameHint": "Lowercase letters, digits, and single hyphens or underscores.",
+      "taken": "There is already one with this name.",
+      "invalid": "Use lowercase letters, digits, and single hyphens or underscores.",
+      "submit": "Create"
+    },
+    "created": "Created {{name}}",
+    "deleted": "Deleted {{name}}",
+    "keptEdited_one": "{{count}} file was changed in the agent's folder, so it was left there",
+    "keptEdited_other": "{{count}} files were changed in agents' folders, so they were left there",
+    "detail": {
+      "tabs": {
+        "document": "Document",
+        "edit": "Edit",
+        "agents": "Agents"
+      },
+      "delete": "Delete",
+      "deleteTitle": "Delete {{name}}?",
+      "deleteDescription": "It is taken out of the library and out of every agent folder it was deployed to. Files changed there are left alone.",
+      "save": "Save",
+      "saved": "Saved",
+      "unsaved": "Unsaved changes",
+      "changedOnDisk": "The file changed on disk since you opened it.",
+      "overwrite": "Save mine anyway",
+      "reload": "Load the file from disk",
+      "missing": "This item is no longer in the library.",
+      "discardTitle": "Discard unsaved changes to {{name}}?",
+      "discardDescription": "The edits you made are not saved and will be lost.",
+      "discard": "Discard changes"
+    },
+    "agents": {
+      "global": "On this computer",
+      "globalHint": "In each agent's own folder, for every project.",
+      "projects": "In projects",
+      "projectsHint": "In a linked project's folder for the agent. Most agents read rules only here.",
+      "notInstalled": "Not found on this computer",
+      "onlyProjects": "Reads these only in projects",
+      "preview": "Preview",
+      "project": "Project",
+      "agent": "Agent",
+      "add": "Add",
+      "noProjects": "Link a project on the Projects page to deploy into it.",
+      "noProjectAgents": "No agent reads this kind inside projects.",
+      "remove": "Remove",
+      "state": {
+        "in_sync": "Up to date",
+        "outdated": "Updating",
+        "edited": "Changed there, left alone",
+        "missing": "File deleted there"
+      },
+      "replaceTitle": "Replace the file at {{path}}?",
+      "replaceDescription": "Loadout did not write this file. The old one is kept beside it as {{path}}.loadout-old, which no agent reads.",
+      "replace": "Replace it",
+      "deployed": "Deployed to {{agent}}",
+      "removed": "Removed from {{agent}}"
+    },
+    "preview": {
+      "title": "What {{agent}} gets",
+      "description": "The file written to {{path}}.",
+      "occupied": "A file Loadout did not write is there now; deploying asks before replacing it.",
+      "exact": "Everything carries over as it is."
+    },
+    "warnings": {
+      "fields_dropped": "Left out, as this agent has no such setting: {{fields}}.",
+      "tools_dropped": "The tool list ({{tools}}) is left out: this agent names its tools differently, so it may use every tool.",
+      "tools_partly_mapped": "These tools have no match in this agent and are left out: {{tools}}.",
+      "model_dropped": "The model “{{model}}” is left out: this agent names models differently and uses its default.",
+      "positional_arguments": "The text uses numbered arguments ($1, $ARGUMENTS[0]); check they mean the same in this agent.",
+      "several_patterns": "Several file patterns ({{patterns}}); this agent may use only the first."
+    },
+    "errors": {
+      "create": "Couldn't create the item",
+      "delete": "Couldn't delete the item",
+      "deploy": "Couldn't deploy the item",
+      "undeploy": "Couldn't remove the item from the agent",
+      "find": "Couldn't look for items there",
+      "import": "Couldn't import the items",
+      "save": "Couldn't save the item"
+    }
+  }
+}
