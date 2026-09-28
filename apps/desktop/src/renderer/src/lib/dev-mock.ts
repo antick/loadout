@@ -34,6 +34,7 @@ import { createEditorMockHandlers } from "@/lib/dev-mock-editor";
 import { createInstallMockHandlers } from "@/lib/dev-mock-install";
 import { withInstructionMocks } from "@/lib/dev-mock-instructions";
 import { withSafetyMocks } from "@/lib/dev-mock-safety";
+import { createQuietMockHandlers } from "@/lib/dev-mock-quiet";
 import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
 import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
@@ -318,24 +319,7 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
   "backup.sync": () => ({ committed: true, merge: null, pushed: true, snapshot: null }),
 };
 
-// Calls that only need to succeed, and lists that are empty in the preview.
-for (const channel of [
-  "app.revealPath",
-  "app.resolveClose",
-  "skills.reveal",
-  "projects.reveal",
-  "system.clearLastCrash",
-]) {
-  handlers[channel] = () => undefined;
-}
-for (const channel of [
-  "projects.skills",
-  "projects.targets",
-  "workspace.list",
-  "system.activity",
-]) {
-  handlers[channel] = () => [];
-}
+Object.assign(handlers, createQuietMockHandlers());
 
 Object.assign(
   handlers,
