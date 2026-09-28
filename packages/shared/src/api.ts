@@ -71,6 +71,7 @@ import type { CreateSkillInput } from "./new-skill";
 import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } from "./safety";
 import type { InstructionFile } from "./instructions";
 import type { SecretFinding } from "./secrets";
+import type { SkillsFileApi } from "./api-skills-file";
 import type {
   AgentFolderSummary,
   ClearableArea,
@@ -438,6 +439,7 @@ export interface LoadoutApi {
   settings: SettingsApi;
   system: SystemApi;
   storage: StorageApi;
+  skillsFile: SkillsFileApi;
   app: AppApi;
 }
 
@@ -467,6 +469,7 @@ const CORE_NAMESPACE_KEYS: Record<keyof CoreApi, true> = {
   settings: true,
   system: true,
   storage: true,
+  skillsFile: true,
 };
 
 export const CORE_NAMESPACES = Object.keys(CORE_NAMESPACE_KEYS) as (keyof CoreApi)[];

@@ -78,7 +78,8 @@ function scanner(first: string, current: string, word: (index: string) => string
       continue
     fi
     if [[ $w == -* ]]; then
-      [[ " $(${FN}_valued "$group\${command:+ $command}") " == *" $w "* ]] && skip=$w
+      # Options of the command so far, and the global ones, which may come anywhere.
+      [[ " $(${FN}_valued "$group\${command:+ $command}") $(${FN}_valued "") " == *" $w "* ]] && skip=$w
       continue
     fi
     if [[ -z $group ]]; then
@@ -91,7 +92,8 @@ function scanner(first: string, current: string, word: (index: string) => string
   done
   local at="$group\${command:+ $command}"
   if [[ -n $skip ]]; then
-    kind=$(${FN}_kind "$skip")
+    kind=$(${FN}_kind "$at $skip")
+    [[ -z $kind ]] && kind=$(${FN}_kind " $skip")
   elif [[ $cur == -* ]]; then
     offer=$(${FN}_flags "$at")
   elif [[ -z $group ]]; then

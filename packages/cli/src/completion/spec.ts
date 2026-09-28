@@ -51,9 +51,9 @@ const VALUE_KINDS: Readonly<Record<string, WordKind>> = {
   preset: "presets",
 };
 
-/** Fixed values of a flag, by its name. */
-const FLAG_CHOICES: Readonly<Record<string, readonly string[]>> = {
-  source: SOURCE_TYPES,
+/** Fixed values of a flag, by its value placeholder (`--source <type>` in `skills list`). */
+const VALUE_CHOICES: Readonly<Record<string, readonly string[]>> = {
+  type: SOURCE_TYPES,
 };
 
 /** A positional placeholder in a usage line → what to complete. */
@@ -75,7 +75,7 @@ const REPEAT_MARK = "…";
 function toFlag(flag: FlagSpec): CompletionFlag {
   const spellings = [`--${flag.name}`, ...(flag.short ? [`-${flag.short}`] : [])];
   const takesValue = flag.type !== "boolean";
-  const choices = FLAG_CHOICES[flag.name];
+  const choices = takesValue ? VALUE_CHOICES[flag.value ?? ""] : undefined;
   return {
     spellings,
     takesValue,
@@ -148,12 +148,19 @@ export function completionSpec(
   return { groups: groups.map((group) => group.name), commands, globals, byPath };
 }
 
-/** Every flag of the spec that takes a value, with what to complete for it, by spelling. */
+/**
+ * What to complete after each flag that takes a value, keyed by `<command path> <spelling>` (the
+ * path is empty before a group is typed): one spelling may mean different things in two commands.
+ */
 export function valueKinds(spec: CompletionSpec): Map<string, CompletionFlag> {
   const kinds = new Map<string, CompletionFlag>();
-  for (const flag of [...spec.globals, ...[...spec.byPath.values()].flatMap((c) => c.flags)]) {
-    if (!flag.takesValue) continue;
-    for (const spelling of flag.spellings) kinds.set(spelling, flag);
-  }
+  const add = (path: string, flags: readonly CompletionFlag[]): void => {
+    for (const flag of flags) {
+      if (!flag.takesValue) continue;
+      for (const spelling of flag.spellings) kinds.set(`${path} ${spelling}`, flag);
+    }
+  };
+  add("", spec.globals);
+  for (const command of spec.byPath.values()) add(command.path, command.flags);
   return kinds;
 }

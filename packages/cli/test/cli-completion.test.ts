@@ -83,6 +83,7 @@ describe("completion", () => {
       "docs",
     ]);
     expect(complete("loadout", "skills", "list", "--source", "g")).toEqual(["git"]);
+    expect(complete("loadout", "--library", "x", "skills", "sh")).toEqual(["show"]);
     expect(complete("loadout", "skills", "deploy", "docs", "--ag")).toEqual(["--agent"]);
     expect(existsSync(join(box.root, "pwned"))).toBe(false);
   });
@@ -103,17 +104,11 @@ describe("completion spec", () => {
     expect(positionalsOf("repo", "")).toEqual({ positionals: [], repeats: false });
   });
 
-  it("gives one spelling one meaning across every command", () => {
-    const seen = new Map<string, string>();
-    for (const command of spec.byPath.values()) {
-      for (const flag of command.flags) {
-        for (const spelling of flag.spellings) {
-          const meaning = `${flag.takesValue}:${flag.kind}`;
-          expect(seen.get(spelling) ?? meaning, spelling).toBe(meaning);
-          seen.set(spelling, meaning);
-        }
-      }
-    }
-    expect(valueKinds(spec).get("--agent")?.kind).toBe("agents");
+  it("knows what each command's options take, even when two commands share a spelling", () => {
+    const kinds = valueKinds(spec);
+    expect(kinds.get("skills deploy --agent")?.kind).toBe("agents");
+    expect(kinds.get("skills list --source")?.choices).toContain("git");
+    expect(kinds.get("project init --source")?.choices).toBeUndefined();
+    expect(kinds.get(" --library")?.kind).toBe("files");
   });
 });

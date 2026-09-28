@@ -293,6 +293,31 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   agents you tick (the remembered choice, or else the first usual agent), not the library, and
   opens that copy in the editor. **Add to library** brings it into the library later.
 - Preset pills, batch enable, disable, update, tag and delete, reorder and remove projects.
+- **`skills.toml`**: a file in the project that lists the agents and the skills (by source) the
+  project uses, so everyone who checks it out gets the same ones. `skills-lock.json` beside it
+  pins the exact commit of each source and records a fingerprint of every folder written; commit
+  both. Applying copies each listed skill from its pinned commit straight into each agent's
+  project folder (the library is not touched), writes nothing for a folder that already matches,
+  and never replaces a folder changed by hand, or one Loadout did not write, unless forced (the old
+  one then goes to Recently removed). Only folders the lock proves Loadout wrote, unchanged since,
+  are ever removed. Optional `gitignore = true` keeps a marked block in `.gitignore` listing the
+  written folders. Folder paths in a lock are checked to stay inside the project.
+  Example:
+
+  ```toml
+  agents = ["claude_code", "codex"]
+
+  [[sources]]
+  url = "https://github.com/acme/skills"
+  ref = "main"              # optional branch or tag
+  skills = ["pdf", "docx"]  # optional; every skill when left out
+  ```
+
+  CLI: `loadout project init` (lists the project's skills the library knows from a repository,
+  or `--agent` / `--source`), `project apply` (`--dry-run`, `--force`, `--update`, `--prune`),
+  `project update` (move every source to its newest commit), `project prune` and
+  `project unapply --yes`. `skills.toml` is found in the folder given (`--dir`) or any folder
+  above it.
 
 ### Skill updates
 

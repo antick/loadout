@@ -17,6 +17,7 @@ import { createProjectsService } from "./projects";
 import { createSkillsService } from "./skills/service";
 import type { SkillStore } from "./skills/store";
 import { type StorageService, createRemovedStore, createStorageService } from "./storage";
+import { createSkillsFileService } from "./skills-file/service";
 import { createSystemService } from "./system";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
@@ -144,6 +145,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   });
   const system = createSystemService(ctx, { store, install, deploy, registry });
   const storage = createStorageService(ctx, { deploy, store, git: install.git, removed });
+  const skillsFile = createSkillsFileService(ctx, { git: install.git, registry, store, removed });
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),
@@ -171,6 +173,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     settings,
     system: system.api,
     storage: storage.api,
+    skillsFile: skillsFile.api,
   };
 
   const background: CoreBackground = {

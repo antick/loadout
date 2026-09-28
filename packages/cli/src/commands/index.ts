@@ -3,6 +3,7 @@ import { completionGroup } from "./completion";
 import { doctorGroup } from "./doctor";
 import { gitGroup } from "./git";
 import { presetsGroup } from "./presets";
+import { projectGroup } from "./project";
 import { removedGroup } from "./removed";
 import { repoGroup } from "./repo";
 import { skillsGroup } from "./skills";
@@ -15,6 +16,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
   skillsGroup,
   sourcesGroup,
   presetsGroup,
+  projectGroup,
   removedGroup,
   gitGroup,
   doctorGroup,
