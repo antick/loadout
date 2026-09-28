@@ -110,6 +110,16 @@ loadout presets deploy "Docs work" --agent claude_code --json   # no --agent = a
 loadout presets undeploy "Docs work" --dry-run --json
 loadout presets undeploy "Docs work" --yes --json
 
+# See what an install or update would do before doing it
+loadout skills install owner/repo --all --dry-run --json   # names each skill would get
+loadout skills update --all --dry-run --json               # files each update would change
+loadout sources list --json                                # repositories, archives and links in use
+
+# A project's skills.toml: the skills a repository uses, pinned in skills-lock.json
+loadout project apply --dir <project> --dry-run --json     # what would be written
+loadout project apply --dir <project> --json               # never overwrites hand edits without --force
+loadout project init --dir <project> --json                # write skills.toml from what the project has
+
 # Take over skills that already sit in an agent's folder
 loadout skills adopt ~/.claude/skills --dry-run --json
 loadout skills adopt ~/.claude/skills --json
