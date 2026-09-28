@@ -106,7 +106,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - `--dry-run` for install and update shows what would change.
 - `loadout doctor`: one report of everything that needs a look.
 - Tab completion: `eval "$(loadout completion bash)"` or `zsh`.
-- Published to `~/.loadout/bin` by the app; also on npm (`@antick/loadout`), Homebrew and as standalone binaries.
+- Published to `~/.loadout/bin` by the app; also on npm (`@antick/loadout`) and as standalone binaries.
 - A bundled skill teaches your agents to use the CLI.
 
 ## Recently removed

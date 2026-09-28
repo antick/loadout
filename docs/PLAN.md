@@ -154,7 +154,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] App publishes the CLI to `~/.loadout/bin` on start with a version stamp
 - [x] Bundled `manage-skills` skill teaching agents to drive the CLI; one-click setup
 - [x] Bash and Zsh tab completion; keyboard picker for multi-skill installs; `--dry-run` for install and update
-- [x] Homebrew formula (CLI) and cask (app) written and pushed to the tap on each published release
+- [ ] Homebrew (deferred): `scripts/homebrew.mjs` and `publish-homebrew.yml` are ready but unused
 
 ## Build order
 
@@ -168,7 +168,6 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ## Known gaps
 
-- Homebrew publishing needs the `antick/homebrew-tap` repository and a `HOMEBREW_TAP_TOKEN` secret; until both exist the publish workflow only reports that it skipped.
 - Remove all data offers to keep linked skills as folders; the same "stop managing, keep them" is not yet offered on its own, without removing the library.
 - Drag-and-drop install (Install → This computer) is built, but a real drag from the file manager has not been tried yet.
 - Windows and Linux are untested. Symlink → junction → copy fallback and the `.cmd` CLI launcher exist but have never run.

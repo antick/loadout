@@ -11,9 +11,7 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
 ## Install
 
 Download the installer for your system from the
-[latest release](https://github.com/antick/loadout/releases/latest), or use Homebrew:
-`brew install --cask antick/tap/loadout` (the app) or `brew install antick/tap/loadout` (only the
-command-line tool).
+[latest release](https://github.com/antick/loadout/releases/latest).
 
 The builds are not signed with an Apple or Windows certificate yet, so macOS and Windows ask
 for one extra click the first time. [docs/INSTALL.md](docs/INSTALL.md) says which file to pick

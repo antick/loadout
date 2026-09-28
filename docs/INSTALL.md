@@ -48,19 +48,6 @@ It removes the "downloaded from the internet" mark that makes macOS ask.
 
 </details>
 
-## Homebrew (macOS and Linux)
-
-```bash
-brew install --cask antick/tap/loadout   # the app (macOS)
-brew install antick/tap/loadout          # only the command-line tool, with tab completion
-```
-
-The app installed this way still needs the first-open step above, because it is not signed yet.
-It then updates itself; `brew upgrade` leaves it alone. The command-line tool is the same one the
-app publishes to `~/.loadout/bin`, so you only need it on a machine without the app.
-`brew uninstall --cask --zap loadout` removes the app's own files but never your skill library in
-`~/.loadout`.
-
 ## Windows
 
 **1. Download** `Loadout-Setup-<version>-x64.exe`.
