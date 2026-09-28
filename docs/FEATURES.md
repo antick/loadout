@@ -99,6 +99,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 ## Presets
 
 - Named groups of skills with per-agent switches; apply to agents in one click.
+- Export a preset as one file to share; importing it installs the skills the library lacks (safety-checked) and creates the preset.
 
 ## Projects
 

@@ -18,6 +18,7 @@ import {
   resolvePreset,
   resolveSkills,
 } from "./support";
+import { presetExportCommand, presetImportCommand } from "./presets-share";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
 const DESCRIPTION_FLAG = {
@@ -235,5 +236,7 @@ export const presetsGroup: CommandGroup = {
       ],
       run: undeploy,
     },
+    presetExportCommand,
+    presetImportCommand,
   ],
 };

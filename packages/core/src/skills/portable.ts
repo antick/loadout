@@ -58,7 +58,7 @@ export interface PortablePreset {
 }
 
 /** A relative, `/` separated path that stays inside the folder it is relative to. */
-function isSafeRelativePath(path: unknown): path is string {
+export function isSafeRelativePath(path: unknown): path is string {
   if (typeof path !== "string" || path.length === 0 || path.includes("\0")) return false;
   if (path.startsWith("/") || path.includes("\\") || /^[A-Za-z]:/.test(path)) return false;
   return path.split("/").every((segment) => segment !== "" && segment !== "." && segment !== "..");

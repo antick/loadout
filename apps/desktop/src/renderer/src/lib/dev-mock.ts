@@ -9,13 +9,11 @@ import {
   type ApplyResult,
   APP_NAME,
   type DataScope,
-  DEFAULT_SETTINGS,
   type ErrorCode,
   type ErrorDetails,
   type Preset,
   type PresetInput,
   type RemoveSkillsResult,
-  type Settings,
   type Skill,
 } from "@loadout/shared";
 import {
@@ -41,6 +39,8 @@ import { createItemsMockHandlers } from "@/lib/dev-mock-items";
 import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
 import { createUsageMockHandlers } from "@/lib/dev-mock-usage";
 import { createSuggestMockHandlers } from "@/lib/dev-mock-suggest";
+import { createPresetShareMockHandlers } from "@/lib/dev-mock-preset-share";
+import { createSettingsMockHandlers, getMockSettings } from "@/lib/dev-mock-settings";
 import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
@@ -65,7 +65,6 @@ const agents = SEED_AGENTS;
 let skills = SEED_SKILLS;
 let presets = SEED_PRESETS;
 let projects = SEED_PROJECTS;
-let settings: Settings = { ...DEFAULT_SETTINGS };
 
 function emitChanged(...scope: DataScope[]): void {
   for (const listener of listeners) listener("data:changed", { scope });
@@ -293,13 +292,6 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
       ]),
     ),
 
-  "settings.all": () => settings,
-  "settings.get": (key: keyof Settings) => settings[key],
-  "settings.set": (key: keyof Settings, value: never) => {
-    settings = { ...settings, [key]: value };
-    emitChanged("settings");
-  },
-
   // "Save as" answers with the suggested name in Downloads; the export pretends to write it.
   "app.pickSavePath": (defaultName: string) => `${HOME}/Downloads/${defaultName}`,
   "skills.exportArchive": (skillIds: string[], destPath: string) => ({
@@ -372,7 +364,7 @@ Object.assign(
       skills = next;
     },
     agents,
-    getSettings: () => settings,
+    getSettings: getMockSettings,
     emitChanged,
     emitStage: (stage) => listeners.forEach((listener) => listener("backup:progress", { stage })),
     fail: (code, message, details) => {
@@ -429,12 +421,14 @@ Object.assign(
 );
 
 Object.assign(handlers, createStorageMockHandlers(HOME));
-Object.assign(handlers, createSkillsFileMockHandlers());
 const skillState = { get: () => skills, set: (next: Skill[]) => void (skills = next) };
 Object.assign(
   handlers,
+  createSkillsFileMockHandlers(),
+  createSettingsMockHandlers(emitChanged),
   createUsageMockHandlers(HOME, skillState.get, emitChanged),
   createSuggestMockHandlers(skillState, emitChanged),
+  createPresetShareMockHandlers(HOME, handlers),
 );
 Object.assign(
   handlers,

@@ -39,11 +39,12 @@ export function createAppApi(deps: AppApiDeps): AppApi {
         properties: ["openFile"],
         filters: [{ name: "Skill archives", extensions: ARCHIVE_EXTENSIONS }],
       }),
-    pickSavePath: async (defaultName, title) => {
+    pickFile: (filter, title) => pick({ title, properties: ["openFile"], filters: [filter] }),
+    pickSavePath: async (defaultName, title, filter) => {
       const options: Electron.SaveDialogOptions = {
         title,
         defaultPath: join(app.getPath("downloads"), defaultName),
-        filters: [{ name: "Zip archives", extensions: [EXPORT_EXTENSION] }],
+        filters: [filter ?? { name: "Zip archives", extensions: [EXPORT_EXTENSION] }],
         properties: ["createDirectory", "showOverwriteConfirmation"],
       };
       const win = deps.window();

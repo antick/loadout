@@ -1,13 +1,29 @@
 import type { RemoveAllDataOptions } from "./storage";
 import type { AppInfo, AppUpdateStatus } from "./types";
 
+/** A file type offered in an open or save dialog: `{ name: "Preset files", extensions: ["json"] }`. */
+export interface FileTypeFilter {
+  name: string;
+  /** Without the dot. */
+  extensions: string[];
+}
+
 /** Implemented by the Electron main process, not by core. */
 export interface AppApi {
   info(): Promise<AppInfo>;
   pickFolder(title?: string): Promise<string | null>;
   pickArchive(): Promise<string | null>;
-  /** Native "Save as" for a `.zip`, starting in Downloads with `defaultName`. */
-  pickSavePath(defaultName: string, title?: string): Promise<string | null>;
+  /** Native "Open" for one file of the given type. */
+  pickFile(filter: FileTypeFilter, title?: string): Promise<string | null>;
+  /**
+   * Native "Save as", starting in Downloads with `defaultName`: a `.zip` unless `filter` says
+   * otherwise.
+   */
+  pickSavePath(
+    defaultName: string,
+    title?: string,
+    filter?: FileTypeFilter,
+  ): Promise<string | null>;
   openExternal(url: string): Promise<void>;
   revealPath(path: string): Promise<void>;
   copyText(text: string): Promise<void>;

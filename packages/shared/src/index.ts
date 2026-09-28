@@ -20,6 +20,7 @@ export * from "./new-skill-templates";
 export * from "./safety";
 export * from "./usage";
 export * from "./project-suggestions";
+export * from "./preset-share";
 export * from "./wsl";
 export * from "./skill-search";
 export * from "./health";

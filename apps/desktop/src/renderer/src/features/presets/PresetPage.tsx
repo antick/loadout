@@ -1,6 +1,6 @@
 import type { Preset, Skill } from "@loadout/shared";
 import { Navigate, useNavigate } from "@tanstack/react-router";
-import { Info, Layers, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { Info, Layers, Pencil, Play, Plus, Trash2, FileUp } from "lucide-react";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AddFromLibrarySheet } from "@/components/AddFromLibrarySheet";
@@ -24,6 +24,7 @@ import {
   useReorderPresetSkills,
 } from "@/hooks/mutations/preset-detail";
 import { useRemovePreset } from "@/hooks/mutations/presets";
+import { useExportPreset } from "@/hooks/mutations/preset-share";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { usePresets } from "@/hooks/queries/presets";
 import { useSkills } from "@/hooks/queries/skills";
@@ -59,6 +60,7 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
   const agents = useAvailableAgents();
   const apply = useApplyPreset();
   const removePreset = useRemovePreset();
+  const exportPreset = useExportPreset();
   const addSkills = useAddSkillsToPreset();
   const removeSkills = useRemoveSkillsFromPreset();
   const reorder = useReorderPresetSkills();
@@ -94,6 +96,16 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
             <Button variant="ghost" size="sm" onClick={() => shell.openPresetDialog(preset)}>
               <Pencil />
               <span className="max-xl:sr-only">{t("presetPage.edit")}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={exportPreset.isPending || members.length === 0}
+              onClick={() => exportPreset.mutate(preset)}
+              title={t("presetShare.export.action")}
+            >
+              {exportPreset.isPending ? <Spinner /> : <FileUp />}
+              <span className="max-xl:sr-only">{t("presetShare.export.action")}</span>
             </Button>
             <Button
               variant="ghost"

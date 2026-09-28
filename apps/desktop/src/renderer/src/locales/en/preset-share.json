@@ -1,0 +1,50 @@
+{
+  "presetShare": {
+    "fileType": "Loadout presets",
+    "export": {
+      "action": "Export",
+      "dialogTitle": "Export {{name}}",
+      "done_one": "Exported a preset of {{count}} skill",
+      "done_other": "Exported a preset of {{count}} skills",
+      "embedded_one": "{{count}} skill without a source went in with its files.",
+      "embedded_other": "{{count}} skills without a source went in with their files.",
+      "showFile": "Show file",
+      "failed": "Could not export the preset."
+    },
+    "import": {
+      "action": "Import",
+      "title": "Import a preset",
+      "description": "Create a preset from a file someone shared. Skills your library lacks are installed, each through the safety check.",
+      "inputLabel": "File or link",
+      "inputPlaceholder": "~/Downloads/web-kit.loadout-preset.json or https://…",
+      "inputHint": "A .loadout-preset.json file, or an https link to one.",
+      "choose": "Choose file…",
+      "pickTitle": "Choose a preset file",
+      "look": "Look inside",
+      "submit": "Import",
+      "nameLabel": "Preset name",
+      "nameTaken": "You already have a preset with this name; this one gets a number unless you rename it.",
+      "summary": {
+        "install_one": "{{count}} to install",
+        "install_other": "{{count}} to install",
+        "library_one": "{{count}} already in the library",
+        "library_other": "{{count}} already in the library",
+        "missing_one": "{{count}} not available",
+        "missing_other": "{{count}} not available"
+      },
+      "state": {
+        "library": "In library",
+        "source": "From {{from}}",
+        "files": "From the file",
+        "missing": "Not available"
+      },
+      "done": "Created preset {{name}}",
+      "installed_one": "Installed {{count}} skill.",
+      "installed_other": "Installed {{count}} skills.",
+      "reused_one": "{{count}} was in the library already.",
+      "reused_other": "{{count}} were in the library already.",
+      "failedOne": "Not added: {{name}}. {{message}}",
+      "failed": "Could not import the preset."
+    }
+  }
+}

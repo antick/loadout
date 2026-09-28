@@ -12,7 +12,7 @@ import { createSafetyService } from "./safety";
 import { createInstallService } from "./install";
 import { createInstructionFinder, createInstructionsService } from "./instructions";
 import { createMarketService } from "./market";
-import { createPresetsService } from "./presets";
+import { createPresetSharing, createPresetsService } from "./presets";
 import { createProjectsService } from "./projects";
 import { createSkillsService } from "./skills/service";
 import type { SkillStore } from "./skills/store";
@@ -130,6 +130,16 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     searchMarket: market.api.search,
   });
   const presets = createPresetsService(ctx, { store, registry, deploy });
+  const presetSharing = createPresetSharing(ctx, {
+    store,
+    presets: presets.presets,
+    api: presets.api,
+    registry,
+    install: install.api,
+    installIntoLibrary: install.installIntoLibrary,
+    download: install.download,
+    safety,
+  });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
   const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });
   const items = createItemsService(ctx, {
@@ -203,7 +213,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     market: market.api,
     safety: safety.api,
     updates: updates.api,
-    presets: presets.api,
+    presets: { ...presets.api, ...presetSharing },
     workspace: workspace.api,
     projects: projects.api,
     backup: backup.api,

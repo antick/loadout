@@ -64,6 +64,7 @@ loadout repo show --json                        # library location and counts
 loadout doctor --json                           # everything that needs a look; exit 1 on errors
 loadout skills usage --json                     # how often agents ran each skill, if the user turned tracking on
 loadout project suggest --dir . --json          # library skills that fit this linked project, and why
+loadout presets import ./team.loadout-preset.json --dry-run --json   # what importing a shared preset would install
 
 # Install (library only)
 loadout skills install ./path/to/skill-folder --json

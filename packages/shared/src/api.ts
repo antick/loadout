@@ -64,6 +64,13 @@ import type { BackupApi } from "./api-backup";
 import type { SkillsFileApi } from "./api-skills-file";
 import type { UsageApi } from "./usage";
 import type { ProjectSuggestions } from "./project-suggestions";
+import type {
+  PresetExportOptions,
+  PresetExportResult,
+  PresetImportOptions,
+  PresetImportPlan,
+  PresetImportResult,
+} from "./preset-share";
 import type { ItemsApi } from "./api-items";
 import type {
   AgentFolderSummary,
@@ -303,6 +310,19 @@ export interface PresetsApi {
   removeFromDefault(id: string): Promise<ApplyResult>;
   /** Deployment progress of every preset across the enabled agents, in preset order. */
   deployStatus(): Promise<PresetDeployStatus[]>;
+  /** Write the preset to a file others can import: skills by source, or with their files. */
+  exportFile(
+    id: string,
+    destPath: string,
+    options?: PresetExportOptions,
+  ): Promise<PresetExportResult>;
+  /** Read a preset file (a path or an https link) and say what importing it would do. */
+  previewImport(input: string): Promise<PresetImportPlan>;
+  /**
+   * Import a preset file: install the skills the library lacks, then create the preset. UNSAFE
+   * when the safety check flags a skill and `acceptRisk` is unset; what was installed stays.
+   */
+  importFile(input: string, options?: PresetImportOptions): Promise<PresetImportResult>;
 }
 
 export interface WorkspaceApi {

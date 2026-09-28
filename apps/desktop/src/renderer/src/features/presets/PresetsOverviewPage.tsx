@@ -1,6 +1,6 @@
 import type { Preset } from "@loadout/shared";
-import { Layers, Plus } from "lucide-react";
-import type { ReactNode } from "react";
+import { FileDown, Layers, Plus } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -10,6 +10,7 @@ import { CARD_GRID_CLASS, CardGridSkeleton, LinkCard } from "@/components/LinkCa
 import { PresetIcon } from "@/components/PresetIcon";
 import { Button } from "@/components/ui/button";
 import { usePresets } from "@/hooks/queries/presets";
+import { ImportPresetDialog } from "./ImportPresetDialog";
 
 function PresetCard({ preset }: { preset: Preset }): ReactNode {
   const { t } = useTranslation();
@@ -40,6 +41,7 @@ export function PresetsOverviewPage(): ReactNode {
   const shell = useShell();
   const presets = usePresets();
   const create = (): void => shell.openPresetDialog();
+  const [importing, setImporting] = useState(false);
 
   return (
     <div className="flex min-h-full flex-col gap-6 px-6 py-5">
@@ -51,10 +53,16 @@ export function PresetsOverviewPage(): ReactNode {
             : undefined
         }
         actions={
-          <Button size="sm" onClick={create}>
-            <Plus />
-            {t("presets.new")}
-          </Button>
+          <>
+            <Button variant="outline" size="sm" onClick={() => setImporting(true)}>
+              <FileDown />
+              {t("presetShare.import.action")}
+            </Button>
+            <Button size="sm" onClick={create}>
+              <Plus />
+              {t("presets.new")}
+            </Button>
+          </>
         }
       />
       {presets.isPending ? (
@@ -80,6 +88,7 @@ export function PresetsOverviewPage(): ReactNode {
           ))}
         </div>
       )}
+      <ImportPresetDialog open={importing} onOpenChange={setImporting} />
     </div>
   );
 }

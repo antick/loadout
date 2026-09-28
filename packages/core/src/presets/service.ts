@@ -18,8 +18,11 @@ export interface PresetsServiceDeps {
   deploy: Pick<DeployService, "applyPairs">;
 }
 
+/** Everything but sharing, which needs the installers (`share.ts`, wired in `core.ts`). */
+export type PresetsCoreApi = Omit<PresetsApi, "exportFile" | "previewImport" | "importFile">;
+
 export interface PresetsService {
-  api: PresetsApi;
+  api: PresetsCoreApi;
   presets: PresetStore;
 }
 
@@ -87,7 +90,7 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
     }
   }
 
-  const api: PresetsApi = {
+  const api: PresetsCoreApi = {
     list: async () => presets.list(),
 
     create: async (input) => {
