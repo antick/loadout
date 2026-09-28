@@ -12,6 +12,7 @@ import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
 import { checkCommand, updateCommand } from "./skills-update";
 import { usageCommand } from "./skills-usage";
+import { suggestForCommand } from "./skills-suggest-for";
 import { validateCommand } from "./skills-validate";
 import {
   AGENT_FLAG,
@@ -286,6 +287,7 @@ export const skillsGroup: CommandGroup = {
     createCommand,
     renameCommand,
     usageCommand,
+    suggestForCommand,
     {
       name: "remove",
       summary: "Delete skills from the library and undeploy them",

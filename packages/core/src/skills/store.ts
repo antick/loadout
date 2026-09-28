@@ -25,6 +25,7 @@ interface SkillRow {
   updated_at: number;
   edited_files: string | null;
   authored: number;
+  suggest_for: string | null;
 }
 
 interface DeploymentRow {
@@ -67,6 +68,7 @@ export interface NewSkill {
   updatedAt?: number;
   editedFiles?: string[];
   authored?: boolean;
+  suggestFor?: string[];
 }
 
 export type SkillPatch = Partial<
@@ -89,6 +91,7 @@ export type SkillPatch = Partial<
     | "updatedAt"
     | "editedFiles"
     | "authored"
+    | "suggestFor"
   >
 >;
 
@@ -110,15 +113,18 @@ const PATCH_COLUMNS: Record<keyof SkillPatch, string> = {
   updatedAt: "updated_at",
   editedFiles: "edited_files",
   authored: "authored",
+  suggestFor: "suggest_for",
 };
+/** Patches whose value is a list of strings, stored as JSON. */
+const LIST_COLUMNS: ReadonlySet<keyof SkillPatch> = new Set(["editedFiles", "suggestFor"]);
 
 /** Stored as a JSON array; an empty list is stored as NULL. */
-function encodeEditedFiles(paths: readonly string[] | null | undefined): string | null {
-  const clean = [...new Set(paths ?? [])].sort();
+function encodeList(values: readonly string[] | null | undefined): string | null {
+  const clean = [...new Set(values ?? [])].sort();
   return clean.length > 0 ? JSON.stringify(clean) : null;
 }
 
-function decodeEditedFiles(raw: string | null): string[] {
+function decodeList(raw: string | null): string[] {
   if (!raw) return [];
   try {
     const value: unknown = JSON.parse(raw);
@@ -220,10 +226,11 @@ export class SkillStore {
       presetIds: presets.get(row.id) ?? [],
       tags: tags.get(row.id) ?? [],
       hasConflict: conflicts.has(row.id),
-      editedFiles: decodeEditedFiles(row.edited_files),
+      editedFiles: decodeList(row.edited_files),
       issues: facts.issues,
       manualOnly: facts.manualOnly,
       authored: row.authored === 1,
+      suggestFor: decodeList(row.suggest_for),
     };
   }
 
@@ -289,8 +296,8 @@ export class SkillStore {
     this.#db.run(
       `INSERT INTO skills(id, name, description, source_type, source_ref, source_url, source_subpath,
         source_branch, source_revision, remote_revision, library_path, content_hash, update_status,
-        last_checked_at, created_at, updated_at, edited_files, authored)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        last_checked_at, created_at, updated_at, edited_files, authored, suggest_for)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.description,
@@ -307,8 +314,9 @@ export class SkillStore {
       now,
       input.createdAt ?? now,
       input.updatedAt ?? now,
-      encodeEditedFiles(input.editedFiles),
+      encodeList(input.editedFiles),
       input.authored ? 1 : 0,
+      encodeList(input.suggestFor),
     );
     return this.get(id);
   }
@@ -320,7 +328,7 @@ export class SkillStore {
     ][];
     const assignments = entries.map(([key]) => `${PATCH_COLUMNS[key]} = ?`).join(", ");
     const values = entries.map(([key, value]) => {
-      if (key === "editedFiles") return encodeEditedFiles(value as string[] | null);
+      if (LIST_COLUMNS.has(key)) return encodeList(value as string[] | null);
       if (typeof value === "boolean") return value ? 1 : 0;
       return (value ?? null) as string | number | null;
     });

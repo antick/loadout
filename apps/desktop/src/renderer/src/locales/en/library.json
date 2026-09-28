@@ -305,6 +305,25 @@
       "done": "Renamed {{from}} to {{to}}",
       "notRedeployed": "Could not deploy it again for: {{agents}}. Deploy it from the skill's Agents tab.",
       "error": "Could not rename the skill."
+    },
+    "suggestFor": {
+      "title": "Suggest for projects with",
+      "description": "When a linked project holds a matching file or folder, its page suggests this skill. Technologies the skill names (React, Python…) are matched too, without a pattern.",
+      "placeholder": "Cargo.toml, *.rs, prisma/**",
+      "add": "Add pattern",
+      "remove": "Remove {{pattern}}",
+      "hint": "A name matches anywhere in the project; a path with / matches from its top. * is anything but /, ** any folders. Kept in Loadout, not in SKILL.md.",
+      "full": "At most {{max}} patterns.",
+      "saved": "Suggestions updated",
+      "problem": {
+        "empty": "Type a pattern.",
+        "too_long": "Keep it to {{max}} characters or fewer.",
+        "outside": "A pattern cannot start with / or use .. to leave the project.",
+        "taken": "This pattern is there already."
+      },
+      "errors": {
+        "save": "Could not save the patterns."
+      }
     }
   },
   "batchDeploy": {

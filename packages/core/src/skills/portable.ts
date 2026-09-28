@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceType } from "@loadout/shared";
-import { APP_NAME, isNewerVersion } from "@loadout/shared";
+import { APP_NAME, cleanSuggestPatterns, isNewerVersion } from "@loadout/shared";
 import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";
@@ -39,6 +39,8 @@ export interface PortableSkill {
   editedFiles?: string[];
   /** The user wrote it, so no source is looked for. Left out when not. */
   authored?: true;
+  /** File patterns of projects it is suggested for. Left out when none. */
+  suggestFor?: string[];
 }
 
 export interface PortablePreset {
@@ -65,6 +67,11 @@ function isSafeRelativePath(path: unknown): path is string {
 /** Edited paths from a file that may come from another device; anything unsafe is dropped. */
 export function readEditedFiles(value: unknown): string[] {
   return Array.isArray(value) ? [...new Set(value.filter(isSafeRelativePath))].sort() : [];
+}
+
+/** Suggest-for patterns from a file that may come from another device; unusable ones dropped. */
+export function readSuggestFor(value: unknown): string[] {
+  return Array.isArray(value) ? cleanSuggestPatterns(value).sort() : [];
 }
 
 /** A metadata file may only name a plain folder directly inside the skills folder. */
@@ -190,6 +197,7 @@ export class PortableMetadata {
         createdAt: skill.createdAt,
         editedFiles: skill.editedFiles.length > 0 ? [...skill.editedFiles].sort() : undefined,
         authored: skill.authored ? true : undefined,
+        suggestFor: skill.suggestFor.length > 0 ? [...skill.suggestFor].sort() : undefined,
       };
       skillFiles.add(`${skill.id}.json`);
       this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), file);
@@ -309,6 +317,7 @@ export class PortableMetadata {
         sourceRevision: file.source.revision ?? current.sourceRevision,
         editedFiles: readEditedFiles(file.editedFiles),
         authored: file.authored === true,
+        suggestFor: readSuggestFor(file.suggestFor),
         updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);
@@ -331,6 +340,7 @@ export class PortableMetadata {
       createdAt: file.createdAt,
       editedFiles: readEditedFiles(file.editedFiles),
       authored: file.authored === true,
+      suggestFor: readSuggestFor(file.suggestFor),
     });
     this.#skills.setTags(file.id, file.tags);
     return file.id;

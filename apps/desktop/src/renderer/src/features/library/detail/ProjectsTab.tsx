@@ -25,6 +25,7 @@ import { useExportSkillToProject, useRemoveSkillFromProject } from "@/hooks/muta
 import { type ProjectSkillCopies, useSkillInProjects } from "@/hooks/queries/library";
 import { useProjects } from "@/hooks/queries/projects";
 import { errorMessage } from "@/lib/toast";
+import { SuggestForSection } from "./SuggestForSection";
 
 /** The copy that needs the most attention decides the badge of the whole project row. */
 function worstStatus(copies: readonly LocalSkill[]): SyncStatus {
@@ -137,8 +138,18 @@ function MissingProjectRow({ project }: { project: Project }): ReactNode {
   );
 }
 
-/** Linked projects and whether this skill is inside each one, with add and remove. */
+/** Linked projects holding this skill, and the patterns of projects it is suggested for. */
 export function ProjectsTab({ skill }: { skill: Skill }): ReactNode {
+  return (
+    <div className="flex flex-col gap-6">
+      <ProjectList skill={skill} />
+      <SuggestForSection skill={skill} />
+    </div>
+  );
+}
+
+/** Linked projects and whether this skill is inside each one, with add and remove. */
+function ProjectList({ skill }: { skill: Skill }): ReactNode {
   const { t } = useTranslation();
   const shell = useShell();
   const projects = useProjects();

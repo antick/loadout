@@ -12,6 +12,8 @@ export interface Selection {
   toggle(id: string, modifiers?: { shiftKey?: boolean }): void;
   /** Select every id in the current (filtered) list. */
   selectAll(): void;
+  /** Select exactly these ids (those in the list). */
+  select(ids: readonly string[]): void;
   clear(): void;
   enter(): void;
   exit(): void;
@@ -84,6 +86,15 @@ export function useSelection(orderedIds: readonly string[]): Selection {
     setSelected(new Set(orderedIds));
   }, [orderedIds]);
 
+  const select = useCallback(
+    (ids: readonly string[]) => {
+      const inList = new Set(orderedIds);
+      setActive(true);
+      setSelected(new Set(ids.filter((id) => inList.has(id))));
+    },
+    [orderedIds],
+  );
+
   const clear = useCallback(() => {
     setSelected(EMPTY);
     anchor.current = null;
@@ -100,10 +111,11 @@ export function useSelection(orderedIds: readonly string[]): Selection {
       isSelected: (id: string) => selected.has(id),
       toggle,
       selectAll,
+      select,
       clear,
       enter,
       exit,
     }),
-    [active, selected, orderedIds, toggle, selectAll, clear, enter, exit],
+    [active, selected, orderedIds, toggle, selectAll, select, clear, enter, exit],
   );
 }

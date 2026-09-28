@@ -105,6 +105,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Link project folders, scan for them, or pick from suggested ones.
 - Every skill in the project's agent folders, with status against the library.
 - Enable, disable, update either way, add library skills, create new project skills.
+- Suggested skills: the technologies a project uses (React, Python, Docker…) and file patterns set on a skill (`Cargo.toml`, `*.rs`); add in one click or hide per project. `loadout project suggest`.
 - **`skills.toml`**: lists a project's skills and agents; `skills-lock.json` pins exact commits. Apply from the project page or `loadout project apply`. Never overwrites hand edits unless forced.
 
 ## Skill updates

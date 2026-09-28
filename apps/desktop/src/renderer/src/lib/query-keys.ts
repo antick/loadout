@@ -67,6 +67,7 @@ export const keys = {
     document: (projectId: string, relativePath: string, agentKey: string) =>
       ["projects", "document", projectId, relativePath, agentKey] as const,
     lastExportAgents: (projectId: string) => ["projects", "last-export-agents", projectId] as const,
+    skillSuggestions: (projectId: string) => ["projects", "skill-suggestions", projectId] as const,
   },
   workspace: {
     root: ["workspace"] as const,

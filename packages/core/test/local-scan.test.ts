@@ -59,6 +59,7 @@ function librarySkill(dirName: string, overrides: Partial<Skill> = {}): Skill {
     issues: [],
     manualOnly: false,
     authored: false,
+    suggestFor: [],
     ...overrides,
   };
 }

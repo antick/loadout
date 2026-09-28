@@ -106,6 +106,7 @@ function skill(
     issues: [],
     manualOnly: false,
     authored: false,
+    suggestFor: [],
     ...extra,
   };
 }

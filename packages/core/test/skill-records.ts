@@ -29,6 +29,7 @@ export function skillRecord(id: string, extra: Partial<Skill> = {}): Skill {
     issues: [],
     manualOnly: false,
     authored: false,
+    suggestFor: [],
     ...extra,
   };
 }

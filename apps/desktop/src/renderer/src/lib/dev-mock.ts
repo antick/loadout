@@ -40,6 +40,7 @@ import { createQuietMockHandlers } from "@/lib/dev-mock-quiet";
 import { createItemsMockHandlers } from "@/lib/dev-mock-items";
 import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
 import { createUsageMockHandlers } from "@/lib/dev-mock-usage";
+import { createSuggestMockHandlers } from "@/lib/dev-mock-suggest";
 import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
@@ -429,9 +430,11 @@ Object.assign(
 
 Object.assign(handlers, createStorageMockHandlers(HOME));
 Object.assign(handlers, createSkillsFileMockHandlers());
+const skillState = { get: () => skills, set: (next: Skill[]) => void (skills = next) };
 Object.assign(
   handlers,
-  createUsageMockHandlers(HOME, () => skills, emitChanged),
+  createUsageMockHandlers(HOME, skillState.get, emitChanged),
+  createSuggestMockHandlers(skillState, emitChanged),
 );
 Object.assign(
   handlers,

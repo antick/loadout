@@ -16,6 +16,7 @@ import {
   requireYes,
   resolveUserPath,
 } from "./support";
+import { suggestCommand } from "./project-suggest";
 import type { CommandContext, CommandGroup, CommandResult, CommandSpec } from "./types";
 
 const DIR_FLAG = {
@@ -219,5 +220,6 @@ export const projectGroup: CommandGroup = {
       notes: ["Removed folders wait in Recently removed. The file and its lock stay."],
       run: unapply,
     },
+    suggestCommand,
   ],
 };

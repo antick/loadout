@@ -63,6 +63,7 @@ import type { InstructionFile } from "./instructions";
 import type { BackupApi } from "./api-backup";
 import type { SkillsFileApi } from "./api-skills-file";
 import type { UsageApi } from "./usage";
+import type { ProjectSuggestions } from "./project-suggestions";
 import type { ItemsApi } from "./api-items";
 import type {
   AgentFolderSummary,
@@ -126,6 +127,8 @@ export interface SkillsApi {
    * left out when sources are searched. INVALID_INPUT for a skill that has a source.
    */
   setAuthored(skillId: string, authored: boolean): Promise<Skill>;
+  /** The file patterns of projects this skill is suggested for; replaces the list. */
+  setSuggestFor(skillId: string, patterns: string[]): Promise<Skill>;
 }
 
 /** The in-app editor: any skill folder, in the library, an agent's folder or a project. */
@@ -362,6 +365,10 @@ export interface ProjectsApi {
   setSkillEnabled(id: string, relativePath: string, enabled: boolean): Promise<void>;
   /** Resolves to the Recently removed ids of the copies put aside. */
   deleteSkill(id: string, relativePath: string, agentKey?: string): Promise<string[]>;
+  /** Library skills worth adding to the project, from its files. Reads the project folder. */
+  suggestSkills(id: string): Promise<ProjectSuggestions>;
+  /** Stop (or start again) suggesting a skill for this project. */
+  setSuggestionDismissed(id: string, skillId: string, dismissed: boolean): Promise<void>;
   lastExportAgents(id: string): Promise<string[]>;
   setLastExportAgents(id: string, agentKeys: string[]): Promise<void>;
   reveal(id: string): Promise<void>;

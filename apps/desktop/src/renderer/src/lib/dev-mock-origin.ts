@@ -134,6 +134,7 @@ export function createOriginMockHandlers(ctx: OriginMockContext): Record<string,
         updateStatus: exact ? "up_to_date" : "update_available",
         lastCheckedAt: Date.now(),
         authored: false,
+        suggestFor: [],
       });
     },
     "skills.setAuthored": async (skillId: string, authored: boolean): Promise<Skill> => {

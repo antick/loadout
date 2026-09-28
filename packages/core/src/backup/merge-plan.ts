@@ -191,11 +191,19 @@ export function planSkill(
     source: sourceSide === "theirs" ? theirs.meta.source : ours.meta.source,
     createdAt: ours.meta.createdAt,
   };
+  // Patterns merge like tags: added on either side kept, removed on either side gone.
+  const suggestFor = mergeTags(
+    base?.meta.suggestFor ?? [],
+    ours.meta.suggestFor ?? [],
+    theirs.meta.suggestFor ?? [],
+  );
+  if (suggestFor.length > 0) meta.suggestFor = suggestFor;
 
   const touched =
     content === "theirs" ||
     path !== ours.path ||
     canonical(meta.tags) !== canonical([...ours.meta.tags].sort()) ||
+    canonical(suggestFor) !== canonical([...(ours.meta.suggestFor ?? [])].sort()) ||
     sourceSide === "theirs";
   const outcome: SkillOutcome = conflict ? "conflict" : touched ? "updated" : "unchanged";
   return { id, outcome, content, path, meta };

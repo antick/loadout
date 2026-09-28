@@ -20,6 +20,7 @@ import { refuseLinkedOverlap, refuseProjectOverlap } from "./overlap";
 import { findProjects, listProjectSkills, summarize } from "./scan";
 import { ProjectActivity } from "./activity";
 import { suggestProjects } from "./suggest";
+import { setSuggestionDismissed, suggestForProject } from "../suggest";
 import { type ProjectRecord, ProjectStore } from "./store";
 import {
   DISABLED_SUFFIX,
@@ -247,6 +248,23 @@ export function createProjectsService(
 
     deleteSkill: async (id, relativePath, agentKey) =>
       actions.deleteSkill(projects.get(id), relativePath, agentKey),
+
+    suggestSkills: async (id) => {
+      const project = projects.get(id);
+      const targets = targetsOf(project);
+      return suggestForProject(ctx, {
+        projectId: id,
+        path: project.path,
+        library: store.list(),
+        present: isDirectory(project.path) ? listProjectSkills(targets, library()) : [],
+      });
+    },
+
+    setSuggestionDismissed: async (id, skillId, dismissed) => {
+      projects.get(id);
+      setSuggestionDismissed(ctx, id, skillId, dismissed);
+      ctx.touched("projects");
+    },
 
     lastExportAgents: async (id) => {
       const targets = targetsOf(projects.get(id));

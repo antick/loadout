@@ -22,6 +22,10 @@ export interface ProjectAddSkillsSheetProps {
   project: Project;
   targets: readonly ProjectTarget[];
   groups: readonly ProjectSkillGroup[];
+  /** Skills ticked when the sheet opens, e.g. the suggestions the user chose to add. */
+  initialSkillIds?: readonly string[];
+  /** Why a skill is suggested for the project, by skill id: listed first, with the reason. */
+  suggested?: ReadonlyMap<string, string>;
 }
 
 /** The library picker for a project: choose skills and the agent folders they are copied into. */
@@ -31,6 +35,8 @@ export function ProjectAddSkillsSheet({
   project,
   targets,
   groups,
+  initialSkillIds,
+  suggested,
 }: ProjectAddSkillsSheetProps): ReactNode {
   const { t } = useTranslation();
   const library = useSkills();
@@ -106,6 +112,8 @@ export function ProjectAddSkillsSheet({
       description={t("projectPage.add.description")}
       rowState={rowState}
       onSubmit={submit}
+      initialSelectedIds={initialSkillIds}
+      featured={suggested}
       renderFooterStart={(agentKeys) =>
         available.length > 1 ? (
           <Button

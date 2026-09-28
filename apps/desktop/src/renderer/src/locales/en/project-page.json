@@ -162,6 +162,28 @@
       "missing": "Folder not found",
       "emptyTitle": "No projects yet",
       "emptyDescription": "Link a project folder to see and manage the skills in its agent folders, such as .claude/skills."
+    },
+    "suggestedSkills": {
+      "title": "Suggested for this project",
+      "uses": "Uses {{list}}",
+      "add": "Add…",
+      "addAll": "Add all {{count}}…",
+      "dismiss": "Not for this project: {{name}}",
+      "maybe": "Maybe: {{why}}",
+      "showAll": "Show all {{count}}",
+      "showFewer": "Show fewer",
+      "hidden_one": "{{count}} hidden.",
+      "hidden_other": "{{count}} hidden.",
+      "showAgain": "Show again",
+      "reason": {
+        "for": "For {{tech}}",
+        "mentions": "Mentions {{tech}}",
+        "has": "Has {{path}}",
+        "matches": "Has {{path}} ({{pattern}})"
+      },
+      "errors": {
+        "dismiss": "Could not change the suggestions."
+      }
     }
   },
   "addProject": {

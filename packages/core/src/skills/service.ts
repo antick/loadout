@@ -4,6 +4,7 @@ import {
   type SkillDocument,
   type SkillsApi,
   canLinkSource,
+  cleanSuggestPatterns,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
@@ -145,6 +146,17 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       const subject = only && skills.length === 1 ? only.name : `${skills.length} skills`;
       ctx.activity.record("export", subject, path);
       return result;
+    },
+
+    setSuggestFor: async (skillId, patterns) => {
+      const clean = cleanSuggestPatterns(patterns);
+      const skill = await ctx.lock.run(`suggest ${store.get(skillId).name}`, () => {
+        const fresh = store.get(skillId);
+        // Like tags, patterns are not an edit of the skill: its "last changed" time stays.
+        return store.update(skillId, { suggestFor: clean, updatedAt: fresh.updatedAt });
+      });
+      ctx.touched("skills");
+      return skill;
     },
 
     setAuthored: async (skillId, authored) => {

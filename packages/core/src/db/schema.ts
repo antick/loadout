@@ -171,4 +171,8 @@ export const MIGRATIONS: readonly string[] = [
     project_path TEXT
   );
   `,
+  `
+  -- File patterns of projects the skill is suggested for: a JSON array, NULL when none.
+  ALTER TABLE skills ADD COLUMN suggest_for TEXT;
+  `,
 ];

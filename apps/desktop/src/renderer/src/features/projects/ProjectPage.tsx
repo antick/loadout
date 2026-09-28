@@ -64,6 +64,7 @@ import { ProjectAddSkillsSheet } from "./ProjectAddSkillsSheet";
 import { ProjectHeader } from "./ProjectHeader";
 import { ProjectMissingBanner } from "./ProjectMissingBanner";
 import { SkillsFileSection } from "@/features/projects/SkillsFileSection";
+import { SuggestedSkillsSection } from "@/features/projects/SuggestedSkillsSection";
 import { ProjectPresetBar } from "./ProjectPresetBar";
 import { ProjectSelectionActions } from "./ProjectSelectionActions";
 import { ProjectSkillDetail } from "./ProjectSkillDetail";
@@ -138,6 +139,15 @@ function ProjectWorkspace({
     if (requestedSkill) onSkillOpened();
   }, [requestedSkill, onSkillOpened]);
   const [adding, setAdding] = useState(false);
+  // Skills to tick when the add sheet opens from a suggestion, and why each was suggested.
+  const [addPick, setAddPick] = useState<{
+    ids: string[];
+    notes: ReadonlyMap<string, string>;
+  } | null>(null);
+  const openAdd = (pick: typeof addPick = null): void => {
+    setAddPick(pick);
+    setAdding(true);
+  };
   const [refreshing, setRefreshing] = useState(false);
 
   const groups = useMemo(() => groupProjectSkills(skills.data ?? []), [skills.data]);
@@ -250,11 +260,7 @@ function ProjectWorkspace({
               <FilePlus2 />
               {t("projectPage.newSkill")}
             </Button>
-            <Button
-              size="sm"
-              disabled={project.missing || !targets.data}
-              onClick={() => setAdding(true)}
-            >
+            <Button size="sm" disabled={project.missing || !targets.data} onClick={() => openAdd()}>
               <Plus />
               {t("projectPage.addSkills")}
             </Button>
@@ -271,6 +277,11 @@ function ProjectWorkspace({
           <InstructionFilesSection files={instructionFiles.data} showReaders />
 
           {project.type === "project" ? <SkillsFileSection dir={project.path} /> : null}
+
+          <SuggestedSkillsSection
+            project={project}
+            onAdd={(ids, notes) => openAdd({ ids, notes })}
+          />
 
           <ProjectPresetBar project={project} targets={targets.data} groups={groups} />
 
@@ -328,7 +339,7 @@ function ProjectWorkspace({
               action={{
                 label: t("projectPage.addSkills"),
                 icon: Plus,
-                onClick: () => setAdding(true),
+                onClick: () => openAdd(),
               }}
               className="flex-1"
             />
@@ -403,6 +414,8 @@ function ProjectWorkspace({
         project={project}
         targets={allTargets}
         groups={groups}
+        initialSkillIds={addPick?.ids}
+        suggested={addPick?.notes}
       />
     </div>
   );

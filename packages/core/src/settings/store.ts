@@ -99,6 +99,8 @@ export const INTERNAL_KEYS = {
   githubAuthMethod: "backup.githubAuthMethod",
   projectExportAgents: (projectId: string) => `projects.exportAgents:${projectId}`,
   projectActivity: "projects.activity",
+  /** Per project: library skills the user said are not for it. */
+  projectSuggestionsDismissed: (projectId: string) => `projects.suggestionsDismissed:${projectId}`,
   /** Per repository: skills already offered and skills it gained since (`sources/`). */
   sourceNews: "sources.news",
   /** When the agents' session logs were last read for skill usage (`usage/`). */

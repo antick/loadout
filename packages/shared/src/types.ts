@@ -124,6 +124,11 @@ export interface Skill {
    * (see `canLinkSource`).
    */
   authored: boolean;
+  /**
+   * File patterns (`Cargo.toml`, `*.rs`, `prisma/**`) of projects this skill is suggested for.
+   * Kept by Loadout and backed up with the tags, never written into SKILL.md.
+   */
+  suggestFor: string[];
 }
 
 /** A `.zip` written by `skills.exportArchive`. */

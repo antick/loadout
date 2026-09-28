@@ -77,6 +77,10 @@ export interface AddFromLibrarySheetProps {
   renderFooterStart?: (agentKeys: readonly string[]) => ReactNode;
   /** Do the work. The sheet closes when the promise resolves and stays open when it rejects. */
   onSubmit: (skillIds: string[], agentKeys: string[]) => Promise<unknown>;
+  /** Skills ticked when the sheet opens (those that can be picked). */
+  initialSelectedIds?: readonly string[];
+  /** A note per skill id, e.g. why it is suggested: those skills are listed first, with it. */
+  featured?: ReadonlyMap<string, string>;
 }
 
 const SOURCE_FILTER_ALL = "all";
@@ -98,6 +102,8 @@ export function AddFromLibrarySheet({
   ctaLabel,
   renderFooterStart,
   onSubmit,
+  initialSelectedIds,
+  featured,
 }: AddFromLibrarySheetProps): ReactNode {
   const { t } = useTranslation();
   const skills = useSkills();
@@ -144,8 +150,10 @@ export function AddFromLibrarySheet({
         .filter((skill) => matchesQuery(query, skill.name, skill.description))
         .filter((skill) => matchesTagFilter(skill.tags, tagFilter))
         .filter((skill) => source === SOURCE_FILTER_ALL || skill.sourceType === source)
-        .map((skill) => ({ skill, info: infoFor(skill, agentKeys) })),
-    [skills.data, exclude, query, tagFilter, source, infoFor, agentKeys],
+        .map((skill) => ({ skill, info: infoFor(skill, agentKeys), note: featured?.get(skill.id) }))
+        // Featured skills first; the sort is stable, so each group keeps the library order.
+        .sort((a, b) => Number(b.note !== undefined) - Number(a.note !== undefined)),
+    [skills.data, exclude, query, tagFilter, source, infoFor, agentKeys, featured],
   );
 
   const pickableIds = useMemo(
@@ -156,7 +164,14 @@ export function AddFromLibrarySheet({
     [rows],
   );
   const selection = useSelection(pickableIds);
-  const { exit } = selection;
+  const { exit, select } = selection;
+  // Ticked once the rows for this opening's targets are known (the render after opening).
+  const [pendingSelect, setPendingSelect] = useState<readonly string[] | null>(null);
+  useEffect(() => {
+    if (!pendingSelect || pickableIds.length === 0) return;
+    select(pendingSelect);
+    setPendingSelect(null);
+  }, [pendingSelect, pickableIds, select]);
 
   // Every opening starts clean, with the caller's preferred targets ticked.
   useEffect(() => {
@@ -165,6 +180,9 @@ export function AddFromLibrarySheet({
     setTagFilter([]);
     setSource(SOURCE_FILTER_ALL);
     exit();
+    setPendingSelect(
+      initialSelectedIds && initialSelectedIds.length > 0 ? initialSelectedIds : null,
+    );
     setChipKeys(
       initialChipKeys(chips, target.kind === "project" ? target.initialAgentKeys : undefined),
     );
@@ -262,7 +280,7 @@ export function AddFromLibrarySheet({
             />
           ) : (
             <ul className="flex flex-col gap-0.5">
-              {rows.map(({ skill, info }) => {
+              {rows.map(({ skill, info, note }) => {
                 const pickable = info.state === "available" || info.state === "conflict";
                 const checked = selection.isSelected(skill.id);
                 return (
@@ -291,9 +309,13 @@ export function AddFromLibrarySheet({
                       />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{skill.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {info.hint ?? skill.description ?? t("skills.noDescription")}
-                        </span>
+                        {note && !info.hint ? (
+                          <span className="block truncate text-xs text-primary">{note}</span>
+                        ) : (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {info.hint ?? skill.description ?? t("skills.noDescription")}
+                          </span>
+                        )}
                       </span>
                       {info.state === "available" ? (
                         <SourceBadge skill={skill} compact />
