@@ -1,4 +1,9 @@
-import { checkSkillDocument, describeFromBody, fixFrontmatter, hasSkillErrors } from "@loadout/shared";
+import {
+  checkSkillDocument,
+  describeFromBody,
+  fixFrontmatter,
+  hasSkillErrors,
+} from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 
 /** The fix must leave nothing the format checks call an error. */
@@ -17,7 +22,8 @@ describe("fixFrontmatter", () => {
   });
 
   it("adds only the missing field and keeps the other lines as they were", () => {
-    const content = "---\n# kept comment\nname: pdf\nlicense: MIT\n---\n\nMerge PDF files quickly.\n";
+    const content =
+      "---\n# kept comment\nname: pdf\nlicense: MIT\n---\n\nMerge PDF files quickly.\n";
     const fix = fixFrontmatter(content, "pdf");
     expect(fix?.addedName).toBeNull();
     expect(fix?.content).toBe(
@@ -26,7 +32,10 @@ describe("fixFrontmatter", () => {
   });
 
   it("puts a missing name first and fills an empty key in place", () => {
-    const fix = fixFrontmatter("---\ndescription:\nlicense: MIT\n---\nUse it for reports.\n", "rep");
+    const fix = fixFrontmatter(
+      "---\ndescription:\nlicense: MIT\n---\nUse it for reports.\n",
+      "rep",
+    );
     expect(fix?.content).toBe(
       "---\nname: rep\ndescription: Use it for reports.\nlicense: MIT\n---\nUse it for reports.\n",
     );
@@ -57,7 +66,10 @@ describe("fixFrontmatter", () => {
   });
 
   it("replaces a name that is not text", () => {
-    const fix = fixFrontmatter("---\nname:\n  - a\ndescription: Something long enough.\n---\n", "x");
+    const fix = fixFrontmatter(
+      "---\nname:\n  - a\ndescription: Something long enough.\n---\n",
+      "x",
+    );
     expect(fix?.content).toBe("---\nname: x\ndescription: Something long enough.\n---\n");
   });
 
@@ -70,7 +82,8 @@ describe("fixFrontmatter", () => {
 
 describe("describeFromBody", () => {
   it("takes the first paragraph of prose, without markup", () => {
-    const body = "# Title\n\n```sh\nnot this\n```\n\n- nor a list\n\nUse **this** [line](x.md)\nand this one.\n\nNot this.";
+    const body =
+      "# Title\n\n```sh\nnot this\n```\n\n- nor a list\n\nUse **this** [line](x.md)\nand this one.\n\nNot this.";
     expect(describeFromBody(body)).toBe("Use this line and this one.");
   });
 
