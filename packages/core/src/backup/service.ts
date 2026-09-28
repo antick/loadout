@@ -15,7 +15,7 @@ import { readIgnoreRules, writeIgnoreRules } from "./ignore-rules";
 import { allowSecrets, scanForPush, scanUncommittedChanges } from "./secrets";
 import { buildSizeReport, refreshIgnoreFile } from "./size";
 import { DEFAULT_SNAPSHOT_LIMIT, listSnapshots, restoreSnapshot, tagSnapshot } from "./snapshots";
-import { conflictDiff, previewDiff, previewSync } from "./review";
+import { conflictDiff, currentLocalTree, previewDiff, previewSync } from "./review";
 import { readStatus } from "./status";
 import { fetchRemote, pullRemote, syncLibrary } from "./sync";
 
@@ -107,6 +107,8 @@ export function createBackupOperations(
     },
 
     preview: () => previewSync(env),
+
+    localTree: () => currentLocalTree(env),
 
     previewDiff: (skillId, remoteCommit) => previewDiff(env, skillId, remoteCommit),
 

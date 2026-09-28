@@ -18,7 +18,7 @@ import { gitError } from "./git";
 import { manyDeletes, planSides, readSides } from "./merge-input";
 import { reportStage, withStages } from "./progress";
 import { type SkillPlan, type SkillVersions, sameSkill } from "./merge-plan";
-import { assertRepo, originUrl, requireBranch, resolveCommit, upstreamRef } from "./repo";
+import { assertRepo, isRepo, originUrl, requireBranch, resolveCommit, upstreamRef } from "./repo";
 import { refreshIgnoreFile } from "./size";
 import { fetchRemote } from "./sync";
 
@@ -37,6 +37,7 @@ const EMPTY_SIDE = "empty";
 function emptyPreview(): SyncPreview {
   return {
     remoteCommit: null,
+    localTree: null,
     perSkill: true,
     incoming: [],
     outgoing: [],
@@ -47,8 +48,11 @@ function emptyPreview(): SyncPreview {
   };
 }
 
-/** A commit of the library as it is on disk now, parented on HEAD. Must run inside the lock. */
-async function snapshotWorkingTree(env: BackupEnv): Promise<string> {
+/**
+ * The tree of the library as it is on disk now, as the next commit would save it, and the HEAD it
+ * sits on. Must run inside the lock.
+ */
+async function workingTree(env: BackupEnv): Promise<{ tree: string; head: string | null }> {
   // The same derived files a real commit writes first, so the preview sees what it would.
   env.portable.write();
   await refreshIgnoreFile(env);
@@ -58,12 +62,27 @@ async function snapshotWorkingTree(env: BackupEnv): Promise<string> {
     const head = await resolveCommit(env, "HEAD");
     if (head) await env.git.run(["read-tree", head], options);
     await env.git.run(["add", "-A"], options);
-    const tree = await env.git.text(["write-tree"], options);
-    const parents = head ? ["-p", head] : [];
-    return await env.git.text(["commit-tree", tree, ...parents, "-m", PREVIEW_MESSAGE], options);
+    return { tree: await env.git.text(["write-tree"], options), head };
   } finally {
     await removePath(index);
   }
+}
+
+/** A commit of the library as it is on disk now, parented on HEAD. Must run inside the lock. */
+async function snapshotWorkingTree(env: BackupEnv): Promise<{ commit: string; tree: string }> {
+  const { tree, head } = await workingTree(env);
+  const parents = head ? ["-p", head] : [];
+  const commit = await env.git.text(["commit-tree", tree, ...parents, "-m", PREVIEW_MESSAGE]);
+  return { commit, tree };
+}
+
+/**
+ * What the library holds now, as an id: equal to a preview's `localTree` while nothing that a
+ * sync would save has changed. Null without a repository.
+ */
+export async function currentLocalTree(env: BackupEnv): Promise<string | null> {
+  if (!isRepo(env)) return null;
+  return env.ctx.lock.run("backup review", async () => (await workingTree(env)).tree);
 }
 
 /** Newest author per top-level folder and per skill metadata file, in one `git log`. */
@@ -135,7 +154,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
     const branch = await requireBranch(env);
     const theirs = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
     if (!theirs) return emptyPreview();
-    const ours = await snapshotWorkingTree(env);
+    const { commit: ours, tree: localTree } = await snapshotWorkingTree(env);
     const baseResult = await env.git.probe(["merge-base", ours, theirs]);
     const base = baseResult.code === 0 ? baseResult.stdout.trim() : "";
     if (!base) throw gitError("refusing to merge unrelated histories");
@@ -143,7 +162,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
     const remoteBackups = Number(await env.git.text(["rev-list", "--count", range])) || 0;
     const sides = await readSides(env, base, ours, theirs);
     if (!env.ctx.settings.get("skillAwareMerge") || !sides.describable) {
-      return { ...emptyPreview(), remoteCommit: theirs, perSkill: false, remoteBackups };
+      return { ...emptyPreview(), remoteCommit: theirs, localTree, perSkill: false, remoteBackups };
     }
 
     const planned = planSides(env, sides);
@@ -151,6 +170,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
     const preview: SyncPreview = {
       ...emptyPreview(),
       remoteCommit: theirs,
+      localTree,
       remoteBackups,
       presetsIncoming: planned.plan.presets.filter((preset) => preset.take === "theirs").length,
       manyDeletes: manyDeletes(planned),

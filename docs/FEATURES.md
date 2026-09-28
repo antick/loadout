@@ -102,6 +102,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - One-button sync with per-skill merging; conflicts never block.
 - When another device changed something, sync shows what comes in and goes out first, with each skill's files; you choose whether deletions happen here.
 - A long sync review can be searched and filtered by kind of change.
+- The sync review says when skills here changed while it was open, with Recheck.
 - Compare a conflict file by file before choosing a version.
 - Keep all your versions, or use all the remote ones, in one step when several skills conflict.
 - Shows what a running sync is doing: saving, downloading, merging, uploading.

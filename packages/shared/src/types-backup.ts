@@ -45,6 +45,11 @@ export interface SyncPreviewItem {
 export interface SyncPreview {
   /** The remote commit this preview was made against; null when there is no remote branch. */
   remoteCommit: string | null;
+  /**
+   * The library on this computer as the preview saw it, as a git tree id. Compare with
+   * `BackupApi.localTree()` to tell whether it changed since. Null when there was nothing to compare.
+   */
+  localTree: string | null;
   /** False when the skill-aware merge is off: then only the counts below are known. */
   perSkill: boolean;
   incoming: SyncPreviewItem[];

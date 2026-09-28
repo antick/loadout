@@ -168,6 +168,36 @@ describe("backup sync review", () => {
     expect(await b.api.preview()).toMatchObject({ remoteCommit: null, incoming: [], outgoing: [] });
   });
 
+  it("tells whether the library changed since a review, quietly and without changing it", async () => {
+    a.editSkill("alpha", "from A");
+    await a.api.sync();
+    const preview = await b.api.preview();
+    expect(preview.localTree).toMatch(/^[0-9a-f]{40}$/);
+    b.events.splice(0);
+    const before = state(b);
+
+    expect(await b.api.localTree()).toBe(preview.localTree);
+    expect(state(b)).toEqual(before);
+    expect(stages(b)).toEqual([]);
+
+    b.editSkill("beta", "edited on B");
+    const edited = await b.api.localTree();
+    expect(edited).not.toBe(preview.localTree);
+
+    // Tags live in the metadata a sync saves, so they count too.
+    b.store.setTags(b.skill("gamma")?.id ?? "", ["new-tag"]);
+    const tagged = await b.api.localTree();
+    expect(tagged).not.toBe(edited);
+
+    // A fresh review sees the library as it is now.
+    expect((await b.api.preview()).localTree).toBe(tagged);
+  });
+
+  it("has no library state to compare without a remote to review against", async () => {
+    await b.api.removeRemote();
+    expect((await b.api.preview()).localTree).toBeNull();
+  });
+
   it("reports each stage of a review and a sync, and the end even after a failure", async () => {
     a.editSkill("alpha", "from A");
     await a.api.sync();

@@ -18,6 +18,7 @@ const item = (
 
 const preview: SyncPreview = {
   remoteCommit: "c0ffee",
+  localTree: "7ree",
   perSkill: true,
   incoming: [
     item("pdf-tools", "added", { fromDevice: "Work Laptop" }),

@@ -7,6 +7,7 @@ import { backupErrorText, needsReview, toastBackupError } from "@/lib/backup-err
 import { type SyncFlow, type SyncFlowCallbacks, SyncFlowContext } from "./sync-flow";
 import { SyncReviewDialog } from "./SyncReviewDialog";
 import { useBackupStage } from "./use-backup-stage";
+import { useReviewStale } from "./use-review-stale";
 
 /** Only changes coming in, or a merge that cannot be listed, are worth a look first. */
 function worthReviewing(preview: SyncPreview): boolean {
@@ -73,15 +74,26 @@ export function SyncFlowProvider({ children }: { children: ReactNode }): ReactNo
     lookRef.current = look;
   }, [look]);
 
+  // Asked from the open review: show it again even with nothing coming in, never sync unasked.
+  const recheck = useCallback((): void => {
+    runPreview(undefined, {
+      onSuccess: (next) => setReview(next.remoteCommit ? next : null),
+      onError: fail,
+    });
+  }, [runPreview, fail]);
+
+  const busy = preview.isPending || sync.isPending;
+  const stale = useReviewStale(review, busy);
+
   const flow = useMemo<SyncFlow>(
     () => ({
       start: (next = {}) => {
         callbacks.current = next;
         look();
       },
-      busy: preview.isPending || sync.isPending,
+      busy,
     }),
-    [look, preview.isPending, sync.isPending],
+    [look, busy],
   );
 
   return (
@@ -89,8 +101,10 @@ export function SyncFlowProvider({ children }: { children: ReactNode }): ReactNo
       {children}
       <SyncReviewDialog
         preview={review}
-        syncing={sync.isPending || preview.isPending}
+        syncing={busy}
         stage={stage}
+        stale={stale}
+        onRecheck={recheck}
         onCancel={() => setReview(null)}
         onSync={send}
       />

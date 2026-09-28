@@ -2,7 +2,8 @@
  * DEV ONLY. The newer backup handlers for the in-memory preview bridge in `dev-mock.ts`: what is
  * left out of the backup, the sync review and skill diffs. A pattern containing "SKILL" is
  * refused, like core refuses patterns that would leave whole skills out. `?review=many` makes
- * the review show many deletions.
+ * the review show many deletions; `?review=stale` makes the library look changed since the review
+ * as soon as anything in it changes.
  */
 import type {
   BackupIgnoreRules,
@@ -22,7 +23,10 @@ export interface BackupSyncMockContext {
 
 const MOCK_REMOTE_COMMIT = "9c1e4b7a2d3f5e6a7b8c9d0e1f2a3b4c5d6e7f80";
 const OTHER_DEVICE = "Work Laptop";
-const manyDeletes = new URLSearchParams(window.location.search).get("review") === "many";
+const reviewMode = new URLSearchParams(window.location.search).get("review");
+const manyDeletes = reviewMode === "many";
+const REVIEWED_TREE = "4f2a9e1c7b3d5a6e8f0b1c2d3e4f5a6b7c8d9e0f";
+const CHANGED_TREE = "0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d";
 
 const incomingItem = (
   name: string,
@@ -43,6 +47,7 @@ function mockPreview(status: BackupStatus): SyncPreview {
     : ["old-notes"];
   return {
     remoteCommit: status.remoteUrl ? MOCK_REMOTE_COMMIT : null,
+    localTree: status.remoteUrl ? REVIEWED_TREE : null,
     perSkill: true,
     incoming:
       status.behind > 0
@@ -105,6 +110,7 @@ export function createBackupSyncMockHandlers(
 
   return {
     "backup.preview": () => mockPreview(ctx.status()),
+    "backup.localTree": () => (reviewMode === "stale" ? CHANGED_TREE : REVIEWED_TREE),
     "backup.previewDiff": (skillId: string) => mockDiff(skillId.replace(/^mock-/, "")),
     "backup.conflictDiff": (skillKey: string) => mockDiff(skillKey),
     "backup.ignoreRules": () => rules(),

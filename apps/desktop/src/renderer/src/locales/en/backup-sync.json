@@ -59,7 +59,9 @@
         "all": "All changes"
       },
       "noMatch": "No skill in this sync fits the search and the filter.",
-      "clearFilters": "Clear filters"
+      "clearFilters": "Clear filters",
+      "stale": "Skills on this computer changed since this review. Recheck to see what the sync does now.",
+      "recheck": "Recheck"
     },
     "stage": {
       "preparing": "Checking for keys and tokens…",

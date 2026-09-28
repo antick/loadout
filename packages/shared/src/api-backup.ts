@@ -36,6 +36,11 @@ export interface BackupApi {
   pull(): Promise<MergeSummary>;
   /** Fetch, then work out what a sync would do, without changing the library or the remote. */
   preview(): Promise<SyncPreview>;
+  /**
+   * The library as a sync would save it now, as an id: equal to a preview's `localTree` while
+   * nothing changed. Offline and quiet: no fetch, no progress stages. Null without a repository.
+   */
+  localTree(): Promise<string | null>;
   /** This computer's version of a skill against the one in `remoteCommit` (from a preview). */
   previewDiff(skillId: string, remoteCommit: string): Promise<SyncSkillDiff>;
   /** This computer's version of a conflicting skill against the other device's. */

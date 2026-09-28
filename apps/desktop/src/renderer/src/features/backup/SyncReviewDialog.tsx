@@ -5,7 +5,7 @@ import {
   type SyncPreviewItem,
   type SyncReviewAnswer,
 } from "@loadout/shared";
-import { Info, TriangleAlert } from "lucide-react";
+import { Info, RefreshCw, TriangleAlert } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -31,6 +31,10 @@ export interface SyncReviewDialogProps {
   syncing: boolean;
   /** What the sync is doing once it runs. */
   stage: BackupStage | null;
+  /** The library changed since this review was worked out. */
+  stale: boolean;
+  /** Work the review out again. */
+  onRecheck(): void;
   onCancel(): void;
   onSync(answer: SyncReviewAnswer): void;
 }
@@ -194,6 +198,8 @@ export function SyncReviewDialog({
   preview,
   syncing,
   stage,
+  stale,
+  onRecheck,
   onCancel,
   onSync,
 }: SyncReviewDialogProps): ReactNode {
@@ -238,6 +244,19 @@ export function SyncReviewDialog({
             {t("backupSync.review.description", { count: preview?.remoteBackups ?? 0 })}
           </DialogDescription>
         </DialogHeader>
+        {stale ? (
+          <InlineNotice
+            tone="info"
+            icon={RefreshCw}
+            actions={
+              <Button size="sm" variant="outline" disabled={syncing} onClick={onRecheck}>
+                {t("backupSync.review.recheck")}
+              </Button>
+            }
+          >
+            {t("backupSync.review.stale")}
+          </InlineNotice>
+        ) : null}
         {filterable ? (
           <SyncReviewFilters
             query={query}
