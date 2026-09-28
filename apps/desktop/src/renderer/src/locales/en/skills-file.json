@@ -1,0 +1,64 @@
+{
+  "skillsFile": {
+    "offer": "Share this project's skills: a file listing them, so everyone who opens the project gets the same ones.",
+    "createShort": "Create…",
+    "createTitle": "Create {{file}}",
+    "createDescription": "It lists the agents and the skills here that came from a repository, with the exact commits pinned when you apply it. Commit it with the project; teammates apply it in the app or with loadout project apply.",
+    "looking": "Looking at the project's skills…",
+    "agents": "Agents",
+    "noSources": "None of this project's skills came from a repository, so the file starts with no sources. Add [[sources]] to it by hand.",
+    "create": "Create file",
+    "created": "Created skills.toml",
+    "sourceCount_one": "{{count}} source",
+    "sourceCount_other": "{{count}} sources",
+    "appliedCount_one": "{{count}} folder applied",
+    "appliedCount_other": "{{count}} folders applied",
+    "notApplied": "not applied yet",
+    "apply": "Apply…",
+    "update": "Update…",
+    "more": "More for skills.toml",
+    "unapply": "Remove applied skills…",
+    "fetching": "Fetching the sources…",
+    "nothing": "Nothing to do: every skill is already in place.",
+    "newPin": "newly pinned",
+    "missing_one": "Not in its source: {{names}}",
+    "missing_other": "Not in their sources: {{names}}",
+    "unknownAgents": "No agent here called {{names}}; they get nothing.",
+    "prune": "Also remove skills the file no longer lists (only ones Loadout wrote and nobody changed)",
+    "force": "Also replace or remove folders changed by hand (the old ones go to Recently removed)",
+    "done_one": "Applied skills.toml: {{count}} folder written",
+    "done_other": "Applied skills.toml: {{count}} folders written",
+    "removedNote_one": "{{count}} folder removed; it waits in Recently removed.",
+    "removedNote_other": "{{count}} folders removed; they wait in Recently removed.",
+    "keptNote": "Kept, changed by hand: {{folders}}",
+    "unapplied_one": "Removed {{count}} applied folder. It waits in Recently removed.",
+    "unapplied_other": "Removed {{count}} applied folders. They wait in Recently removed.",
+    "title": {
+      "apply": "Apply skills.toml",
+      "update": "Update to the newest commits",
+      "unapply": "Remove applied skills"
+    },
+    "description": {
+      "apply": "Each skill is copied from its pinned commit into the project's agent folders. Your library is not touched.",
+      "update": "Every source moves to the newest commit of its branch or tag, and the pins in skills-lock.json change.",
+      "unapply": "Folders {{file}} wrote are removed and wait in Recently removed. The file and its lock stay."
+    },
+    "confirm": {
+      "apply": "Apply",
+      "update": "Update and apply",
+      "unapply": "Remove"
+    },
+    "action": {
+      "add": "Add",
+      "update": "Update",
+      "same": "Up to date",
+      "edited": "Changed by hand",
+      "remove": "Remove",
+      "keep_edited": "Changed by hand"
+    },
+    "errors": {
+      "create": "Could not create skills.toml.",
+      "apply": "Could not apply skills.toml."
+    }
+  }
+}

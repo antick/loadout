@@ -313,6 +313,11 @@ claude-code`, also `bunx`, `pnpm dlx`, `--all` and `'*'`): its source is preview
   skills = ["pdf", "docx"]  # optional; every skill when left out
   ```
 
+  In the app, a **skills.toml** strip on the project page offers **Create…** (shows the agents and
+  sources it would list first) or, once there is a file, **Apply…**, **Update…** and **Remove
+  applied skills…**. Each opens a plan listing every folder and what happens to it (Add, Update, Up
+  to date, Changed by hand, Remove) before anything is written, with boxes to also prune and to
+  replace folders changed by hand.
   CLI: `loadout project init` (lists the project's skills the library knows from a repository,
   or `--agent` / `--source`), `project apply` (`--dry-run`, `--force`, `--update`, `--prune`),
   `project update` (move every source to its newest commit), `project prune` and

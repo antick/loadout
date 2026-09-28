@@ -34,6 +34,7 @@ import { createEditorMockHandlers } from "@/lib/dev-mock-editor";
 import { createInstallMockHandlers } from "@/lib/dev-mock-install";
 import { withInstructionMocks } from "@/lib/dev-mock-instructions";
 import { withSafetyMocks } from "@/lib/dev-mock-safety";
+import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
 import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
@@ -447,6 +448,7 @@ Object.assign(
 );
 
 Object.assign(handlers, createStorageMockHandlers(HOME));
+Object.assign(handlers, createSkillsFileMockHandlers());
 Object.assign(
   handlers,
   withSafetyMocks(

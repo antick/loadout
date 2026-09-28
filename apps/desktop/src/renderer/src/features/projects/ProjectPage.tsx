@@ -63,6 +63,7 @@ import {
 import { ProjectAddSkillsSheet } from "./ProjectAddSkillsSheet";
 import { ProjectHeader } from "./ProjectHeader";
 import { ProjectMissingBanner } from "./ProjectMissingBanner";
+import { SkillsFileSection } from "@/features/projects/SkillsFileSection";
 import { ProjectPresetBar } from "./ProjectPresetBar";
 import { ProjectSelectionActions } from "./ProjectSelectionActions";
 import { ProjectSkillDetail } from "./ProjectSkillDetail";
@@ -268,6 +269,8 @@ function ProjectWorkspace({
       ) : (
         <>
           <InstructionFilesSection files={instructionFiles.data} showReaders />
+
+          {project.type === "project" ? <SkillsFileSection dir={project.path} /> : null}
 
           <ProjectPresetBar project={project} targets={targets.data} groups={groups} />
 
