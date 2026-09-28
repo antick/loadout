@@ -11,6 +11,7 @@ import type {
 } from "@loadout/shared";
 import { errorMessage } from "../errors";
 import { lstatOrNull } from "../util/fs";
+import { sourceFindings } from "./sources";
 
 const LIBRARY_WARNINGS: Record<LibraryWarning, string> = {
   config_unreadable: "The location file could not be read, so the default folder is in use.",
@@ -162,7 +163,7 @@ async function guarded<T>(
   }
 }
 
-/** Look over the library, the agents' folders, updates, backup, safety and projects. */
+/** Look over the library, the agents' folders, updates, sources, backup, safety and projects. */
 export async function checkHealth(api: CoreApi): Promise<HealthReport> {
   const failures: Finding[] = [];
   const location = await guarded("library", () => api.system.libraryLocation(), null, failures);
@@ -188,6 +189,7 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
     ...deploymentFindings(skills),
     ...folders.findings,
     ...updateFindings(skills),
+    ...sourceFindings(skills),
     ...backupFindings(skills),
     ...safety
       .filter((record) => record.verdict !== "safe")

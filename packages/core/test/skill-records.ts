@@ -1,0 +1,34 @@
+import type { Skill } from "@loadout/shared";
+
+/** A library skill record with every field set, for tests of code that only reads skills. */
+export function skillRecord(id: string, extra: Partial<Skill> = {}): Skill {
+  return {
+    id,
+    name: id,
+    dirName: id,
+    description: null,
+    sourceType: "local",
+    sourceRef: null,
+    sourceUrl: null,
+    sourceSubpath: null,
+    sourceBranch: null,
+    sourceRevision: null,
+    remoteRevision: null,
+    updateStatus: "up_to_date",
+    lastCheckedAt: null,
+    lastCheckError: null,
+    libraryPath: `/lib/${id}`,
+    contentHash: null,
+    createdAt: 0,
+    updatedAt: 0,
+    deployments: [],
+    presetIds: [],
+    tags: [],
+    hasConflict: false,
+    editedFiles: [],
+    issues: [],
+    manualOnly: false,
+    authored: false,
+    ...extra,
+  };
+}

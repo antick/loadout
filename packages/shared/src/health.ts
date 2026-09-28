@@ -1,6 +1,6 @@
 /**
  * One report of everything in the setup that needs a look: the library's own checks, where skills
- * are deployed, what sits in agent folders, updates, backup, safety and projects. `loadout doctor`
+ * are deployed, what sits in agent folders, updates, sources, backup, safety and projects. `loadout doctor`
  * prints it; errors make it exit with code 1.
  */
 
@@ -10,6 +10,7 @@ export const HEALTH_AREAS = [
   "deployments",
   "agent_folders",
   "updates",
+  "sources",
   "backup",
   "safety",
   "projects",
@@ -26,6 +27,8 @@ export interface HealthFinding {
   /** Library skill name, or the folder name for skills outside the library. */
   skill?: string;
   agent?: string;
+  /** Label of the source (repository, archive or link) the finding is about. */
+  source?: string;
   path?: string;
 }
 

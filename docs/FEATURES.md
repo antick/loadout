@@ -136,7 +136,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - `loadout` CLI for everything above, with `--json`, `--dry-run` and `--yes`.
 - Keyboard picker when an install finds several skills.
 - `--dry-run` for install, update and `git sync` shows what would change.
-- `loadout doctor`: one report of everything that needs a look.
+- `loadout doctor`: one report of everything that needs a look, including sources not checked for a month and archives that are gone.
 - `loadout skills validate ./folder` checks every skill in a folder, and names used twice, without a library; for CI.
 - Tab completion: `eval "$(loadout completion bash)"` or `zsh`.
 - Published to `~/.loadout/bin` by the app; also on npm (`@antick/loadout`) and as standalone binaries.

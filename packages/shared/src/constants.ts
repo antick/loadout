@@ -91,3 +91,6 @@ export const SYNC_STATUS_SEVERITY = {
   local_newer: 4,
   diverged: 5,
 } as const;
+
+/** `loadout doctor` names a source whose skills were not checked for updates in this long. */
+export const SOURCE_STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;

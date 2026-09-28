@@ -17,13 +17,14 @@ const AREA_TITLES: Record<HealthArea, string> = {
   deployments: "Deployments",
   agent_folders: "Agent folders",
   updates: "Updates",
+  sources: "Sources",
   backup: "Backup",
   safety: "Safety check",
   projects: "Projects",
 };
 
 function describe(finding: HealthFinding): string {
-  const who = [finding.skill, finding.agent ? `(${finding.agent})` : null]
+  const who = [finding.skill ?? finding.source, finding.agent ? `(${finding.agent})` : null]
     .filter(Boolean)
     .join(" ");
   const where = finding.path ? `\n      ${finding.path}` : "";
