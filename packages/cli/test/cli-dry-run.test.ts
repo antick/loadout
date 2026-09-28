@@ -70,19 +70,21 @@ describe("skills update --dry-run", () => {
     expect(run.stdout).toContain("+ new.md");
     expect(run.stdout).toContain("- old.md");
     expect(run.stdout).toContain("Held back without --approve-removals");
+    // `--all` looks at what a check finds, like the real run: fresh from install, nothing yet.
+    const fresh = await box.cli("skills", "update", "--all", "--dry-run", "--json");
+    expect(fresh.json<UpdatePlan>().skills).toEqual([]);
+    await box.cli("skills", "check", "--all", "--force");
     const json = (
       await box.cli("skills", "update", "--all", "--dry-run", "--json")
     ).json<UpdatePlan>();
+    expect(json.skills).toHaveLength(1);
     expect(json.skills[0]).toMatchObject({
       added: ["new.md"],
       removed: ["old.md"],
       heldBack: ["old.md"],
     });
-    // The library copy still has the old file.
-    const show = await box.cli("skills", "show", "notes", "--json");
-    const libraryPath = show.json<{ libraryPath: string }>().libraryPath;
+    // Nothing changed: the library copy still differs from its source by the same files.
     expect((await box.cli("skills", "diff", "notes", "--upstream")).stdout).toContain("old.md");
-    expect(libraryPath).toBeTruthy();
   });
 
   it("fails the run when a source cannot be read", async () => {

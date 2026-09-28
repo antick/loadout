@@ -119,7 +119,14 @@ async function updateEachApproved(
 /** `--dry-run`: compare with the source, list what would change and what would be held back. */
 async function planUpdates(context: CommandContext, one: Skill | null): Promise<CommandResult> {
   const { core } = context;
-  const skills = one ? [one] : (await core.api.skills.list()).filter(hasUpdateSource);
+  // `--all` updates only skills a check finds newer upstream: the dry run looks at the same ones.
+  let skills: Skill[] = one ? [one] : [];
+  if (!one) {
+    await core.api.updates.checkAll(false);
+    skills = (await core.api.skills.list()).filter(
+      (skill) => hasUpdateSource(skill) && skill.updateStatus === "update_available",
+    );
+  }
   const value: UpdatePlan = { dryRun: true, skills: [] };
   for (const skill of skills) value.skills.push(await planUpdate(core, skill));
   return {
@@ -181,7 +188,7 @@ export const updateCommand: CommandSpec = {
   usage: "[<ref> | --all] [--approve-removals] [--accept-risk] [--dry-run]",
   flags: [ALL_FLAG, APPROVE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
-    "--dry-run compares with the source and lists the files that would change, and whether the update would be held back; the library is not touched.",
+    "--dry-run compares with the source and lists the files that would change, and whether the update would be held back; the library is not touched. With --all it checks for updates first (like `skills check --all`) and lists the skills the real run would update.",
     "An update that would delete files or replace edits made in the app is held back and listed; that is a safety stop, not an error.",
   ],
   run: update,
