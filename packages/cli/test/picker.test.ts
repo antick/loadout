@@ -128,6 +128,16 @@ describe("picker screen", () => {
     expect(narrow.every((line) => [...line].length <= 30)).toBe(true);
   });
 
+  it("never passes a repository's control characters to the terminal", () => {
+    const hostile = createPickerState({
+      ...REQUEST,
+      skills: [row("skills/x", { description: "\u001b]52;c;aGk=\u0007\nsecond line" })],
+    });
+    const lines = renderPicker(hostile, 90, 20, PLAIN_STYLES);
+    expect(lines.join("\n")).not.toMatch(/[\u0000-\u0009\u000b-\u001f]/);
+    expect(lines.some((line) => line.includes("]52;c;aGk=  second line"))).toBe(true);
+  });
+
   it("scrolls so the cursor stays on screen", () => {
     expect(scrollTop(0, 5, 10)).toBe(0);
     expect(scrollTop(50, 100, 10)).toBe(45);

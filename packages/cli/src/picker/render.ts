@@ -47,9 +47,16 @@ const MIN_LIST_LINES = 3;
 /** Room left for the description after name, box and label. */
 const MIN_DESCRIPTION = 12;
 
+/**
+ * Control characters (escape sequences, newlines) in text a repository supplies could move the
+ * cursor, rewrite the screen or reach the clipboard: shown as spaces instead.
+ */
+const CONTROL = /[\u0000-\u001f\u007f-\u009f]/g;
+
 /** Cut to `width` visible characters. Only plain text is measured, so cut before styling. */
-function fit(text: string, width: number): string {
+function fit(raw: string, width: number): string {
   if (width <= 0) return "";
+  const text = raw.replace(CONTROL, " ");
   const chars = [...text];
   return chars.length <= width ? text : `${chars.slice(0, Math.max(0, width - 1)).join("")}…`;
 }
