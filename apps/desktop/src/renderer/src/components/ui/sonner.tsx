@@ -28,6 +28,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+          // An open dialog turns pointer events off on the page; a toast with Undo must still
+          // be clickable.
+          pointerEvents: "auto",
         } as React.CSSProperties
       }
       {...props}

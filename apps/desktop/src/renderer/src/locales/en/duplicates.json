@@ -1,0 +1,46 @@
+{
+  "duplicates": {
+    "title": "Possible duplicates",
+    "description": "Skills that look like one skill installed twice. Nothing is removed until you pick the one to keep.",
+    "banner_one": "{{count}} pair of skills may be duplicates.",
+    "banner_other": "{{count}} pairs of skills may be duplicates.",
+    "review": "Review",
+    "pairLabel": "{{a}} and {{b}}",
+    "reason": {
+      "identical": "Same files",
+      "content": "{{score}} the same text",
+      "name": "Alike name and description"
+    },
+    "dismissedBadge": "Marked as different",
+    "noDescription": "No description",
+    "changed": "Changed {{when}}",
+    "compare": "Compare text",
+    "hideCompare": "Hide comparison",
+    "keep": "Keep {{name}}",
+    "notDuplicate": "Not a duplicate",
+    "listAgain": "List again",
+    "showDismissed_one": "Also show {{count}} pair marked as different",
+    "showDismissed_other": "Also show {{count}} pairs marked as different",
+    "empty": {
+      "title": "No duplicates found",
+      "description": "No two skills in the library share their files or most of their text."
+    },
+    "merge": {
+      "title": "Keep {{keep}}?",
+      "description": "{{remove}} is removed from the library and from the agents it was deployed to, and waits in Recently removed for {{days}} days. {{keep}} takes over what pointed at it first:",
+      "descriptionPlain": "{{remove}} is removed from the library and from the agents it was deployed to, and waits in Recently removed for {{days}} days. {{keep}} already has its tags, presets and agents.",
+      "confirm": "Remove {{remove}}",
+      "tags_one": "Takes over {{count}} tag",
+      "tags_other": "Takes over {{count}} tags",
+      "presets_one": "Joins {{count}} preset",
+      "presets_other": "Joins {{count}} presets",
+      "agents": "Deployed to: {{agents}}",
+      "blocked": "Not deployed to {{agents}}: {{keep}} is blocked there",
+      "done": "Kept {{keep}} and removed {{remove}}"
+    },
+    "errors": {
+      "dismiss": "Could not save your choice.",
+      "merge": "Could not keep this skill. Nothing was removed."
+    }
+  }
+}

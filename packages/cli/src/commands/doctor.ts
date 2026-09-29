@@ -14,6 +14,7 @@ const ALL_FLAG = {
 const AREA_TITLES: Record<HealthArea, string> = {
   library: "Library",
   format: "Skill format",
+  duplicates: "Possible duplicates",
   deployments: "Deployments",
   agent_folders: "Agent folders",
   updates: "Updates",

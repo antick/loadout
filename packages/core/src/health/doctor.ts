@@ -12,6 +12,7 @@ import type {
 import { errorMessage } from "../errors";
 import { lstatOrNull } from "../util/fs";
 import { blockedFindings } from "./blocked";
+import { duplicateFindings } from "./duplicates";
 import { sourceFindings } from "./sources";
 import { usageFindings } from "./usage";
 
@@ -179,6 +180,12 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
   const safety = await guarded("safety", () => api.safety.list(), [], failures);
   const projects = await guarded("projects", () => api.projects.list(), [], failures);
   const usage = await guarded("usage", () => api.usage.report(), null, failures);
+  const duplicates = await guarded(
+    "duplicates",
+    () => api.duplicates.find(),
+    { pairs: [], dismissedCount: 0 },
+    failures,
+  );
   const nameOf = new Map(skills.map((skill) => [skill.id, skill.name]));
 
   const findings = mergeShared([
@@ -189,6 +196,7 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
       path: location?.path,
     })),
     ...formatFindings(skills),
+    ...duplicateFindings(duplicates, skills),
     ...deploymentFindings(skills),
     ...blockedFindings(skills),
     ...folders.findings,

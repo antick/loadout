@@ -23,6 +23,7 @@ import { createSourceNewsStore } from "./sources";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
 import { createItemsService } from "./items";
+import { createDuplicatesService } from "./duplicates";
 import { createUsageService } from "./usage";
 
 export interface CoreCreateOptions extends CoreOptions {
@@ -193,6 +194,10 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const storage = createStorageService(ctx, { deploy, store, git: install.git, removed });
   const skillsFile = createSkillsFileService(ctx, { git: install.git, registry, store, removed });
   const usage = createUsageService(ctx, { store });
+  const duplicates = createDuplicatesService(ctx, {
+    store,
+    api: { skills: skills.api, presets: { ...presets.api, ...presetSharing }, deploy: deploy.api },
+  });
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),
@@ -223,6 +228,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     skillsFile: skillsFile.api,
     items: items.api,
     usage: usage.api,
+    duplicates: duplicates.api,
   };
 
   const background: CoreBackground = {

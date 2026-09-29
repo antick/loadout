@@ -7,6 +7,7 @@
 export const HEALTH_AREAS = [
   "library",
   "format",
+  "duplicates",
   "deployments",
   "agent_folders",
   "updates",

@@ -27,6 +27,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - New skill from a name, a description and a starting outline (short, detailed, workflow or blank); opens in the editor.
 - Rename a skill; deployments and project links follow. Shows a dry run as you type.
 - Delete goes to Recently removed, with Undo.
+- Possible duplicates: skills with the same files, mostly the same text, or alike names and descriptions. Compare, keep one (its tags, presets and agents carry over), or mark a pair as different. `loadout skills duplicates`.
 - The database rebuilds itself from the skill files.
 
 ## Editor

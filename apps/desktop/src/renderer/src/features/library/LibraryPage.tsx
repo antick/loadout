@@ -29,6 +29,7 @@ import { UsageReadStatus } from "@/components/UsageReadStatus";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { DuplicatesDialog } from "@/features/library/duplicates/DuplicatesDialog";
 import { LibraryBanners } from "@/features/library/LibraryBanners";
 import { LibraryMatrix } from "@/features/library/matrix/LibraryMatrix";
 import {
@@ -50,6 +51,7 @@ import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
 import { useCheckAllUpdates, useUpdateSkills } from "@/hooks/mutations/library";
 import { useAvailableAgents } from "@/hooks/queries/agents";
+import { useDuplicates } from "@/hooks/queries/duplicates";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
 import { useSkillUsage } from "@/hooks/queries/usage";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -96,6 +98,8 @@ export function LibraryPage({
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
   const [rest, setRest] = useState(EMPTY_FILTERS);
   const [deployAllOpen, setDeployAllOpen] = useState(false);
+  const [duplicatesOpen, setDuplicatesOpen] = useState(false);
+  const duplicates = useDuplicates();
 
   // A status or search asked for from outside replaces the filters once; the request is then
   // cleared.
@@ -335,6 +339,8 @@ export function LibraryPage({
         updateCount={updatable.length}
         viewingUpdates={filters.status === "updates"}
         onViewUpdates={() => setRest({ ...EMPTY_FILTERS, status: "updates" })}
+        duplicateCount={duplicates.data?.pairs.length ?? 0}
+        onReviewDuplicates={() => setDuplicatesOpen(true)}
       />
 
       {total > 0 ? (
@@ -362,6 +368,8 @@ export function LibraryPage({
         skills={all ?? []}
         all
       />
+
+      <DuplicatesDialog open={duplicatesOpen} onOpenChange={setDuplicatesOpen} />
 
       <SkillDetailSheet skillId={openSkillId} onClose={() => onOpenSkill(null)} />
     </div>

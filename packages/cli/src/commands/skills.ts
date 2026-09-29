@@ -6,6 +6,7 @@ import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
 import { diffCommand } from "./skills-diff";
+import { duplicatesCommand } from "./skills-duplicates";
 import { renameCommand } from "./skills-rename";
 import { exportCommand } from "./skills-export";
 import { blockCommand, unblockCommand } from "./skills-block";
@@ -325,6 +326,7 @@ export const skillsGroup: CommandGroup = {
     suggestForCommand,
     blockCommand,
     unblockCommand,
+    duplicatesCommand,
     {
       name: "remove",
       summary: "Delete skills from the library and undeploy them",

@@ -87,6 +87,11 @@ loadout skills deploy --all --agent cursor --skip-conflicts --dry-run --json   #
 loadout skills block <ref> --agent codex --json    # never deploy it to Codex; removes it there now
 loadout skills unblock <ref> --agent codex --json  # allow it again (does not deploy it)
 
+# Skills that look like one skill installed twice (nothing is removed by itself)
+loadout skills duplicates --json
+loadout skills duplicates merge --keep <ref> --remove <ref> --dry-run --json   # tags, presets and agents move to the kept one
+loadout skills duplicates dismiss <ref> <ref> --json    # they are different skills; stop listing the pair
+
 # How copies (or the source) differ from the library, file by file
 loadout skills diff <ref> --json
 loadout skills diff <ref> --upstream --json

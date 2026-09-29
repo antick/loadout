@@ -1,5 +1,5 @@
 import { formatRelative } from "@loadout/shared";
-import { ArrowUpCircle, History } from "lucide-react";
+import { ArrowUpCircle, Copy, History } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -20,19 +20,27 @@ export interface LibraryBannersProps {
   /** The list is already filtered to those skills, so "View" would do nothing. */
   viewingUpdates: boolean;
   onViewUpdates: () => void;
+  /** Pairs of skills that may be one skill installed twice. */
+  duplicateCount: number;
+  onReviewDuplicates: () => void;
 }
 
-/** Notices above the library: updates waiting, and the last background update round. */
+/**
+ * Notices above the library: updates waiting, possible duplicates, and the last background
+ * update round.
+ */
 export function LibraryBanners({
   updateCount,
   viewingUpdates,
   onViewUpdates,
+  duplicateCount,
+  onReviewDuplicates,
 }: LibraryBannersProps): ReactNode {
   const { t } = useTranslation();
   const [autoRun, setAutoRun] = useState<AutoRun | null>(null);
   useAppEvent("updates:auto-ran", setAutoRun);
 
-  if (updateCount === 0 && !autoRun) return null;
+  if (updateCount === 0 && duplicateCount === 0 && !autoRun) return null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -49,6 +57,19 @@ export function LibraryBanners({
           }
         >
           {t("library.banners.updatesAvailable", { count: updateCount })}
+        </InlineNotice>
+      ) : null}
+      {duplicateCount > 0 ? (
+        <InlineNotice
+          tone="neutral"
+          icon={Copy}
+          actions={
+            <Button variant="ghost" size="xs" onClick={onReviewDuplicates}>
+              {t("duplicates.review")}
+            </Button>
+          }
+        >
+          {t("duplicates.banner", { count: duplicateCount })}
         </InlineNotice>
       ) : null}
       {autoRun ? (

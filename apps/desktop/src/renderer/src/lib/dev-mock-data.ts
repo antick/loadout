@@ -180,6 +180,13 @@ export const SEED_SKILLS: Skill[] = [
     "codex",
     "opencode",
   ]),
+  // Says much the same as code-review, so the duplicates review has a pair to show.
+  skill(
+    "diff-review",
+    "Review a diff for correctness, security and style before a pull request merges.",
+    { tags: ["review"] },
+    ["claude_code"],
+  ),
 ];
 
 export const SEED_PRESETS: Preset[] = [

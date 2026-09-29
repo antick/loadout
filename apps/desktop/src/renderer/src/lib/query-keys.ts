@@ -11,6 +11,7 @@ export const keys = {
     detail: (skillId: string) => ["skills", "detail", skillId] as const,
     document: (skillId: string) => ["skills", "document", skillId] as const,
     tags: ["skills", "tags"] as const,
+    duplicates: (withDismissed: boolean) => ["skills", "duplicates", withDismissed] as const,
     renamePreview: (skillId: string, name: string) =>
       ["skills", "rename-preview", skillId, name] as const,
   },

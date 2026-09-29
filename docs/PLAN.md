@@ -42,6 +42,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Tags: add/remove per skill, rename tag, delete tag, batch tag dialog
 - [x] Batch select: deploy to agents, tags, update, delete
 - [x] Activity log of install / remove / update / deploy operations
+- [x] Possible duplicates: find skills that look like one installed twice, compare, keep one, dismiss a pair
 
 ### 2. Install
 

@@ -105,4 +105,6 @@ export const INTERNAL_KEYS = {
   sourceNews: "sources.news",
   /** When the agents' session logs were last read for skill usage (`usage/`). */
   usageScannedAt: "usage.scannedAt",
+  /** Pairs of library skills the user said are not duplicates (`duplicatePairKey`), this computer only. */
+  duplicatesDismissed: "duplicates.dismissed",
 } as const;
