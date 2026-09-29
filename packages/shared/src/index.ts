@@ -16,6 +16,7 @@ export * from "./types-backup";
 export * from "./version";
 export * from "./skill-checks";
 export * from "./skill-traits";
+export * from "./agent-skill-fields";
 export * from "./new-skill";
 export * from "./new-skill-templates";
 export * from "./safety";

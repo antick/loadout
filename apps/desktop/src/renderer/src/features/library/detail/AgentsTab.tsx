@@ -26,6 +26,7 @@ import {
   useUndeploySkill,
 } from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
+import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
 
 interface AgentRowProps {
   agent: AgentInfo;
@@ -75,6 +76,7 @@ function AgentRow({
               : t("library.agents.notDeployed")}
           </p>
         )}
+        <AgentFieldNote skill={skill} agentKey={agent.key} agentName={agent.displayName} />
       </div>
       {pending ? <Spinner className="size-3.5 text-muted-foreground" /> : null}
       <Switch

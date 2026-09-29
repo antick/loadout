@@ -155,7 +155,7 @@ function toDeployment(row: DeploymentRow): DeploymentRecord {
 }
 
 const NO_CHECKS: SkillInspector = {
-  factsOf: () => ({ issues: [], manualOnly: false, traits: [] }),
+  factsOf: () => ({ issues: [], manualOnly: false, traits: [], behaviourFields: [] }),
 };
 
 /**
@@ -240,6 +240,7 @@ export class SkillStore {
       issues: facts.issues,
       manualOnly: facts.manualOnly,
       traits: facts.traits,
+      behaviourFields: facts.behaviourFields,
       authored: row.authored === 1,
       suggestFor: decodeList(row.suggest_for),
       blockedAgents: decodeList(row.blocked_agents),

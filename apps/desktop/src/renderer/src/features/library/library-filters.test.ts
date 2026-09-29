@@ -42,6 +42,7 @@ function skill(name: string, deployedTo: string[], blockedAgents: string[] = [])
     issues: [],
     manualOnly: false,
     traits: [],
+    behaviourFields: [],
     authored: false,
     suggestFor: [],
     blockedAgents,

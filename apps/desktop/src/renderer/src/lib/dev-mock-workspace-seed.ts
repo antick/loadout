@@ -212,6 +212,7 @@ export function mockImportedSkill(
     issues: [],
     manualOnly: false,
     traits: [],
+    behaviourFields: [],
   };
 }
 

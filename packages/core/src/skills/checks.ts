@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import {
   SKILL_MARKER_FILES,
+  type SkillBehaviourField,
   type SkillIssue,
   type SkillTrait,
   checkSkillDocument,
@@ -25,6 +26,8 @@ export interface SkillFacts {
   manualOnly: boolean;
   /** What the skill can make an agent do beyond reading it (scripts, hooks, MCP, tools). */
   traits: SkillTrait[];
+  /** Fields it uses that some agents skip; see `fieldNotesFor`. */
+  behaviourFields: SkillBehaviourField[];
 }
 
 /** Checks of skills, remembered per content hash so listing the library stays cheap. */
@@ -66,10 +69,12 @@ export function inspectSkillFolder(dir: string): SkillIssue[] {
 
 /** Every check of one skill folder plus the frontmatter flags shown next to it. */
 export function inspectSkillFacts(dir: string): SkillFacts {
+  const frontmatter = readFrontmatter(dir);
   return {
     issues: inspectSkillFolder(dir),
-    manualOnly: readFrontmatter(dir).manualOnly,
+    manualOnly: frontmatter.manualOnly,
     traits: skillTraits(dir),
+    behaviourFields: frontmatter.behaviourFields,
   };
 }
 
@@ -91,6 +96,7 @@ export function createSkillInspector(inspect = inspectSkillFacts): SkillInspecto
           issues: [skillIssue("frontmatter_invalid", { reason }, 1)],
           manualOnly: false,
           traits: [],
+          behaviourFields: [],
         };
       }
       if (key) cache.set(skill.id, { key, facts });

@@ -116,6 +116,7 @@ function skill(
     issues: [],
     manualOnly: false,
     traits: [],
+    behaviourFields: [],
     authored: false,
     suggestFor: [],
     blockedAgents: [],
@@ -145,7 +146,7 @@ export const SEED_SKILLS: Skill[] = [
   skill(
     "commit-messages",
     "Write conventional commit messages from staged changes.",
-    { tags: ["git"], manualOnly: true },
+    { tags: ["git"], manualOnly: true, behaviourFields: ["disable-model-invocation"] },
     ["claude_code"],
   ),
   skill(
@@ -164,6 +165,7 @@ export const SEED_SKILLS: Skill[] = [
     updateStatus: "up_to_date",
     tags: ["backend", "quality"],
     hasConflict: true,
+    behaviourFields: ["allowed-tools", "model"],
     traits: [
       skillTrait("scripts", { count: 2, examples: "scripts/apply.sh, scripts/rollback.sh" }),
       skillTrait("tool_grants", { tools: "Bash(psql *), Read" }),

@@ -34,6 +34,7 @@ function skill(id: string, extra: Partial<Skill>): Skill {
     issues: [],
     manualOnly: false,
     traits: [],
+    behaviourFields: [],
     authored: false,
     suggestFor: [],
     blockedAgents: [],

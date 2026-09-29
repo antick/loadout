@@ -173,6 +173,7 @@ export function createInstallMockHandlers(
       issues: [],
       manualOnly: false,
       traits: [],
+      behaviourFields: [],
       authored: false,
       suggestFor: [],
       blockedAgents: [],

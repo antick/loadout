@@ -4,6 +4,7 @@ import {
   REMOVED_KEEP_DAYS,
   SOURCE_TYPES,
   type Skill,
+  fieldNotesFor,
   matchesSkillQuery,
   runsCode,
 } from "@loadout/shared";
@@ -176,6 +177,8 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
         targetPath: deployment?.targetPath ?? null,
         presentOnDisk: deployment ? isPresent(deployment.targetPath) : null,
         blocked: skill.blockedAgents.includes(agent.key),
+        // Frontmatter this agent's documentation says it does not act on.
+        fieldNotes: fieldNotesFor(skill.behaviourFields, agent.key),
       };
     });
   const value = {
@@ -200,6 +203,12 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
         a.targetPath,
       ]),
       "No agents are installed.",
+    ),
+    ...agents.flatMap((a) =>
+      a.fieldNotes.map(
+        (note) =>
+          `${a.agent} ${note.level === "ignored" ? "ignores" : "does not document"} ${note.field}: it has no effect there.`,
+      ),
     ),
   ].join("\n");
   return { value, text };

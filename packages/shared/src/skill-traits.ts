@@ -149,7 +149,7 @@ const MCP_KEYS = ["mcp-servers", "mcp_servers", "mcpServers"] as const;
 const TOOL_KEYS = ["allowed-tools", "allowed_tools"] as const;
 
 /** A value that says something: not absent, empty, `false` or an empty list or map. */
-function filled(value: unknown): boolean {
+export function isFilled(value: unknown): boolean {
   if (value === null || value === undefined || value === false) return false;
   if (typeof value === "string") return value.trim().length > 0;
   if (Array.isArray(value)) return value.length > 0;
@@ -158,7 +158,7 @@ function filled(value: unknown): boolean {
 }
 
 function firstFilled(data: Readonly<Record<string, unknown>>, keys: readonly string[]): unknown {
-  for (const key of keys) if (filled(data[key])) return data[key];
+  for (const key of keys) if (isFilled(data[key])) return data[key];
   return undefined;
 }
 

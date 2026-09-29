@@ -231,7 +231,7 @@ describe("checking library skills", () => {
     let runs = 0;
     const inspector = createSkillInspector(() => {
       runs += 1;
-      return { issues: [], manualOnly: false, traits: [] };
+      return { issues: [], manualOnly: false, traits: [], behaviourFields: [] };
     });
     const skill = { id: "a", libraryPath: "/x", contentHash: "h1" };
     inspector.factsOf(skill);

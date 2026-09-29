@@ -1,0 +1,9 @@
+{
+  "fieldNotes": {
+    "ignored": "Skips {{fields}}",
+    "undocumented": "Docs do not list {{fields}}",
+    "hintIgnored": "{{agent}}'s documentation lists the fields it reads, and these are not among them. They have no effect there; the rest of the skill works.",
+    "hintUndocumented": "{{agent}}'s documentation has a table of the fields it reads, and these are not in it. They may have no effect there.",
+    "manualOnly": "A skill marked manual only may then be started by the agent on its own."
+  }
+}

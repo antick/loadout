@@ -14,6 +14,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Format checks against the Agent Skills rules, with line numbers; errors mark the skill "Needs fixing".
 - **Fix frontmatter**: adds a missing name and description, shown as a diff before saving.
 - **Manual only** badge for skills with `disable-model-invocation: true`.
+- Frontmatter an agent does not act on: a note per agent on the skill's Agents tab ("Skips allowed-tools"), only where that agent's own docs settle it (Claude Code, OpenCode, Cursor). `loadout skills status`.
 - **Runs code** badge and a "What it can do" list for skills that ship scripts, register hooks, start MCP servers or pre-approve tools; also shown in the import list before installing, and as a filter. Read from file names and frontmatter only. `loadout skills show`.
 - **Sources** page: one card per repository, archive or link; find new skills, update, check, remove.
 - A check notices skills a repository gained since you last looked; skipped or dismissed ones stay quiet.
