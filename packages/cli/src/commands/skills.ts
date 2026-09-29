@@ -10,6 +10,7 @@ import { renameCommand } from "./skills-rename";
 import { exportCommand } from "./skills-export";
 import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
+import { searchCommand } from "./skills-search";
 import { checkCommand, updateCommand } from "./skills-update";
 import { usageCommand } from "./skills-usage";
 import { suggestForCommand } from "./skills-suggest-for";
@@ -284,6 +285,7 @@ export const skillsGroup: CommandGroup = {
     },
     { name: "show", summary: "Show one skill in full", usage: "<ref>", flags: [], run: show },
     installCommand,
+    searchCommand,
     createCommand,
     renameCommand,
     usageCommand,

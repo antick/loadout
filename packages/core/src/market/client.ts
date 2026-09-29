@@ -1,6 +1,7 @@
 import {
   APP_SLUG,
   MARKETPLACE_NAME,
+  MARKET_SEARCH_DEFAULT_LIMIT,
   MARKETPLACE_URL,
   type MarketApi,
   type MarketBoard,
@@ -43,7 +44,6 @@ const MAX_CACHED_SEARCHES = 100;
 const DETAIL_CACHE_PREFIX = "detail:";
 /** Audits and documents change far less often than rankings. */
 const DETAIL_CACHE_TTL_MS = 1_800_000;
-const DEFAULT_SEARCH_LIMIT = 50;
 const MAX_SEARCH_LIMIT = 200;
 
 interface CacheRow {
@@ -167,11 +167,11 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
       }
     },
 
-    search: async (query, limit = DEFAULT_SEARCH_LIMIT) => {
+    search: async (query, limit = MARKET_SEARCH_DEFAULT_LIMIT) => {
       const q = query.trim();
       if (!q) return { skills: [], cachedAt: null };
       const capped = Math.min(
-        Math.max(Math.floor(limit) || DEFAULT_SEARCH_LIMIT, 1),
+        Math.max(Math.floor(limit) || MARKET_SEARCH_DEFAULT_LIMIT, 1),
         MAX_SEARCH_LIMIT,
       );
       const url = `${MARKETPLACE_URL}${SEARCH_PATH}?q=${encodeURIComponent(q)}&limit=${capped}`;

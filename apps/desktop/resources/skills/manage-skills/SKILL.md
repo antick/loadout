@@ -67,6 +67,7 @@ loadout project suggest --dir . --json          # library skills that fit this l
 loadout presets import ./team.loadout-preset.json --dry-run --json   # what importing a shared preset would install
 
 # Install (library only)
+loadout skills search pdf --json                # find marketplace skills; install one with skills install owner/repo@skill
 loadout skills install ./path/to/skill-folder --json
 loadout skills install ./downloads/skill.zip --name my-skill --json
 loadout skills install https://github.com/owner/repo --skill pdf-tools --json

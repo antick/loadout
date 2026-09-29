@@ -61,6 +61,8 @@ export const UPDATE_FEED_PUBLIC_KEY =
 
 export const MARKETPLACE_NAME = "skills.sh";
 export const MARKETPLACE_URL = "https://skills.sh";
+/** Results a marketplace search returns when the caller names no limit. */
+export const MARKET_SEARCH_DEFAULT_LIMIT = 50;
 
 /** Name of the bundled skill that teaches agents to drive the CLI. */
 export const AGENT_CONTROL_SKILL_NAME = "manage-skills";
