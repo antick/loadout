@@ -80,6 +80,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Symlink or copy mode (setting), copy fallback when symlinks are unavailable
 - [x] Ownership check: never overwrite or delete content Loadout did not put there
 - [x] Per-skill per-agent deploy / remove from the card badges
+- [x] Matrix view of the library: skills × agents, click to deploy or remove, right-click to block
 - [x] Content hashing for in sync / local changed / library changed / conflict
 - [x] Block a skill for an agent: skipped by every deploy, removed there when set, backed up with the tags
 - [x] Deploy all: every skill to the chosen agents, refused folders skipped and listed instead of stopping the batch

@@ -93,6 +93,9 @@ export const DEFAULT_INSTALL_TAB: InstallTab = "market";
 export const VIEW_MODES = ["grid", "list"] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
 export const DEFAULT_VIEW_MODE: ViewMode = "grid";
+/** The library adds a skills × agents table to the two views every page has. */
+export const LIBRARY_VIEW_MODES = [...VIEW_MODES, "matrix"] as const;
+export type LibraryViewMode = (typeof LIBRARY_VIEW_MODES)[number];
 
 /** Special values of the tag filter next to real tag names. */
 export const TAG_FILTER_UNTAGGED = "__untagged__";

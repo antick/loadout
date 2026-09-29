@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { LibraryBanners } from "@/features/library/LibraryBanners";
+import { LibraryMatrix } from "@/features/library/matrix/LibraryMatrix";
 import {
   DEFAULT_SORT_MODE,
   EMPTY_FILTERS,
@@ -54,6 +55,7 @@ import { useSkillUsage } from "@/hooks/queries/usage";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
+import type { LibraryViewMode } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 const VIEW_MODE_SCOPE = "library";
@@ -90,7 +92,7 @@ export function LibraryPage({
   const updateMany = useUpdateSkills();
   const deleteSkills = useDeleteSkills();
   const actionsFor = useLibrarySkillActions();
-  const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
+  const [viewMode, setViewMode] = useViewMode<LibraryViewMode>(VIEW_MODE_SCOPE);
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
   const [rest, setRest] = useState(EMPTY_FILTERS);
   const [deployAllOpen, setDeployAllOpen] = useState(false);
@@ -149,7 +151,7 @@ export function LibraryPage({
     if (Object.keys(patch).length > 0) setRest((previous) => ({ ...previous, ...patch }));
   };
 
-  const Item = viewMode === "grid" ? SkillCard : SkillRow;
+  const Item = viewMode === "list" ? SkillRow : SkillCard;
   const total = all?.length ?? 0;
 
   const renderItem = (skill: Skill): ReactNode => (
@@ -236,9 +238,22 @@ export function LibraryPage({
       />
     );
   } else {
-    content = (
-      <div className={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}>{visible.map(renderItem)}</div>
-    );
+    content =
+      viewMode === "matrix" ? (
+        <LibraryMatrix
+          skills={visible}
+          agents={availableAgents.data ?? []}
+          currentId={openSkillId}
+          selecting={selection.active}
+          isSelected={selection.isSelected}
+          onSelectToggle={(target, modifiers) => selection.toggle(target.id, modifiers)}
+          onOpen={(target) => onOpenSkill(target.id)}
+        />
+      ) : (
+        <div className={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}>
+          {visible.map(renderItem)}
+        </div>
+      );
   }
 
   return (

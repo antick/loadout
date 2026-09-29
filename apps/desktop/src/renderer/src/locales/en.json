@@ -129,7 +129,8 @@
   "viewMode": {
     "label": "View",
     "grid": "Grid view",
-    "list": "List view"
+    "list": "List view",
+    "matrix": "Matrix view: skills and agents"
   },
   "tags": {
     "filterLabel": "Filter by tag",

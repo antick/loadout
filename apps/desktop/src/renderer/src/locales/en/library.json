@@ -1,6 +1,10 @@
 {
   "library": {
     "deployAll": "Deploy all",
+    "matrix": {
+      "skill": "Skill",
+      "noAgents": "No agents are available. Switch one on from the Agents page."
+    },
     "count_one": "{{count}} skill",
     "count_other": "{{count}} skills",
     "countFiltered_one": "{{shown}} of {{count}} skill",

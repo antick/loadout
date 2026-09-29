@@ -20,14 +20,14 @@ import {
   type StatusFilter,
   needsUsage,
 } from "@/features/library/library-filters";
-import type { ViewMode } from "@/lib/constants";
+import { LIBRARY_VIEW_MODES, type LibraryViewMode } from "@/lib/constants";
 
 export interface LibraryToolbarProps {
   filters: LibraryFilters;
   onChange: (patch: Partial<LibraryFilters>) => void;
   tags: readonly string[];
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
+  viewMode: LibraryViewMode;
+  onViewModeChange: (mode: LibraryViewMode) => void;
   /** Usage tracking is on: offer the filter and sorts that need it. */
   usageEnabled: boolean;
 }
@@ -100,7 +100,7 @@ export function LibraryToolbar({
               ))}
             </SelectContent>
           </Select>
-          <ViewModeToggle value={viewMode} onChange={onViewModeChange} />
+          <ViewModeToggle value={viewMode} onChange={onViewModeChange} modes={LIBRARY_VIEW_MODES} />
         </div>
       </div>
       <TagFilterBar
