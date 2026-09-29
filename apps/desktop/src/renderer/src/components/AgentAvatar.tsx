@@ -3,8 +3,11 @@ import { agentMonogram, agentTintStyle } from "@/lib/agent-color";
 import { cn } from "@/lib/utils";
 
 export type AgentAvatarSize = "sm" | "md" | "lg";
-/** `on`: deployed / healthy, `off`: not deployed (dimmed), `warning`: needs attention. */
-export type AgentAvatarStatus = "on" | "off" | "warning";
+/**
+ * `on`: deployed / healthy, `off`: not deployed (dimmed), `warning`: needs attention,
+ * `blocked`: dimmed with a red ring, the skill may never be deployed here.
+ */
+export type AgentAvatarStatus = "on" | "off" | "warning" | "blocked";
 
 const SIZE_CLASSES: Record<AgentAvatarSize, string> = {
   sm: "size-5 rounded text-[0.5625rem]",
@@ -16,6 +19,7 @@ const STATUS_CLASSES: Record<AgentAvatarStatus, string> = {
   on: "ring-2 ring-success/70 ring-offset-1 ring-offset-background",
   off: "opacity-35 grayscale",
   warning: "ring-2 ring-warning/80 ring-offset-1 ring-offset-background",
+  blocked: "opacity-50 grayscale ring-2 ring-danger/60 ring-offset-1 ring-offset-background",
 };
 
 export interface AgentAvatarProps {

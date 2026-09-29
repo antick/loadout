@@ -174,11 +174,18 @@ export interface InstructionsApi {
 }
 
 export interface DeployApi {
+  /** INVALID_INPUT when the skill is blocked for the agent. */
   deploy(skillId: string, agentKey: string): Promise<void>;
   undeploy(skillId: string, agentKey: string): Promise<void>;
   /**
-   * Add (or remove) every skill × agent pair, skipping pairs already in the wanted state. With
-   * `dryRun`, report the same counts and conflicts without writing anything.
+   * Block or allow a skill for agents. Blocking also removes the skill from an agent it is
+   * deployed to (what Loadout put there; nothing else). Unknown agent keys are INVALID_INPUT.
+   */
+  setBlocked(skillId: string, agentKeys: string[], blocked: boolean): Promise<Skill>;
+  /**
+   * Add (or remove) every skill × agent pair, skipping pairs already in the wanted state and,
+   * when adding, pairs the skill is blocked for. With `dryRun`, report the same counts and
+   * conflicts without writing anything.
    */
   apply(
     skillIds: string[],

@@ -198,12 +198,19 @@ export function planSkill(
     theirs.meta.suggestFor ?? [],
   );
   if (suggestFor.length > 0) meta.suggestFor = suggestFor;
+  const blockedAgents = mergeTags(
+    base?.meta.blockedAgents ?? [],
+    ours.meta.blockedAgents ?? [],
+    theirs.meta.blockedAgents ?? [],
+  );
+  if (blockedAgents.length > 0) meta.blockedAgents = blockedAgents;
 
   const touched =
     content === "theirs" ||
     path !== ours.path ||
     canonical(meta.tags) !== canonical([...ours.meta.tags].sort()) ||
     canonical(suggestFor) !== canonical([...(ours.meta.suggestFor ?? [])].sort()) ||
+    canonical(blockedAgents) !== canonical([...(ours.meta.blockedAgents ?? [])].sort()) ||
     sourceSide === "theirs";
   const outcome: SkillOutcome = conflict ? "conflict" : touched ? "updated" : "unchanged";
   return { id, outcome, content, path, meta };

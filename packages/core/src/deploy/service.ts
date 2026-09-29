@@ -189,6 +189,9 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
     deploy: async (skillId, agentKey) => {
       const skill = store.get(skillId);
       const agent = requireAvailable(agentKey);
+      if (skill.blockedAgents.includes(agentKey)) {
+        throw invalid(`${skill.name} is blocked for ${agent.displayName}. Allow it there first.`);
+      }
       await ctx.lock.run(`deploy ${skill.name}`, () => ops.deployPair(ops.pairFor(skill, agent)));
       ctx.touched("skills");
     },
@@ -199,6 +202,30 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         const row = store.deployment(skillId, agentKey);
         return row ? [row] : [];
       });
+    },
+
+    setBlocked: async (skillId, agentKeys, blocked) => {
+      const wanted = [...new Set(agentKeys)];
+      for (const key of wanted) if (!registry.find(key)) throw invalid(`Unknown agent: ${key}`);
+      const label = `${blocked ? "block" : "allow"} ${store.get(skillId).name}`;
+      const skill = await ctx.lock.run(label, () => {
+        const fresh = store.get(skillId);
+        if (blocked) {
+          // What Loadout put there goes first; a failure leaves the skill unblocked, not half done.
+          for (const key of wanted) {
+            const row = store.deployment(skillId, key);
+            if (row) ops.undeployRow(row, agentName(key));
+          }
+        }
+        const kept = fresh.blockedAgents.filter((key) => !wanted.includes(key));
+        // Like tags, a block is not an edit of the skill: its "last changed" time stays.
+        return store.update(skillId, {
+          blockedAgents: blocked ? [...kept, ...wanted] : kept,
+          updatedAt: fresh.updatedAt,
+        });
+      });
+      ctx.touched("skills");
+      return skill;
     },
 
     apply: (skillIds, agentKeys, action, options) =>

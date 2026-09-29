@@ -133,15 +133,15 @@ export function AddFromLibrarySheet({
   const agentKeys = useMemo(() => chosenAgentKeys(chips, chipKeys), [chips, chipKeys]);
 
   const infoFor = useMemo(() => {
-    const fallback = (skill: Skill, keysNow: readonly string[]): PickerRowInfo => ({
-      state:
-        keysNow.length > 0 &&
-        keysNow.every((key) => skill.deployments.some((d) => d.agentKey === key))
-          ? "installed"
-          : "available",
-    });
+    const fallback = (skill: Skill, keysNow: readonly string[]): PickerRowInfo => {
+      const has = (key: string): boolean => skill.deployments.some((d) => d.agentKey === key);
+      if (keysNow.length > 0 && keysNow.every(has)) return { state: "installed" };
+      // A blocked skill cannot be installed for that agent, so it cannot be picked either.
+      const blocked = keysNow.some((key) => skill.blockedAgents.includes(key) && !has(key));
+      return blocked ? { state: "unavailable", hint: t("picker.blocked") } : { state: "available" };
+    };
     return rowState ?? fallback;
-  }, [rowState]);
+  }, [rowState, t]);
 
   const rows = useMemo(
     () =>

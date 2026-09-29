@@ -11,6 +11,7 @@ import type {
 } from "@loadout/shared";
 import { errorMessage } from "../errors";
 import { lstatOrNull } from "../util/fs";
+import { blockedFindings } from "./blocked";
 import { sourceFindings } from "./sources";
 import { usageFindings } from "./usage";
 
@@ -189,6 +190,7 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
     })),
     ...formatFindings(skills),
     ...deploymentFindings(skills),
+    ...blockedFindings(skills),
     ...folders.findings,
     ...updateFindings(skills),
     ...sourceFindings(skills),

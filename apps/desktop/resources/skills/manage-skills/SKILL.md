@@ -83,6 +83,8 @@ loadout skills create my-skill --description "…" --template workflow --json   
 loadout skills deploy <ref> --agent claude_code --agent cursor --json
 loadout skills undeploy <ref> --agent cursor --json
 loadout skills deploy <ref> --agent cursor --dry-run --json   # what would change; writes nothing
+loadout skills block <ref> --agent codex --json    # never deploy it to Codex; removes it there now
+loadout skills unblock <ref> --agent codex --json  # allow it again (does not deploy it)
 
 # How copies (or the source) differ from the library, file by file
 loadout skills diff <ref> --json

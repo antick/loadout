@@ -81,6 +81,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Ownership check: never overwrite or delete content Loadout did not put there
 - [x] Per-skill per-agent deploy / remove from the card badges
 - [x] Content hashing for in sync / local changed / library changed / conflict
+- [x] Block a skill for an agent: skipped by every deploy, removed there when set, backed up with the tags
 
 ### 6. Presets
 

@@ -129,6 +129,11 @@ export interface Skill {
    * Kept by Loadout and backed up with the tags, never written into SKILL.md.
    */
   suggestFor: string[];
+  /**
+   * Keys of agents this skill must never be deployed to. Kept by Loadout and backed up with the
+   * tags. Deploying skips these; one already deployed there is removed when the block is set.
+   */
+  blockedAgents: string[];
 }
 
 /** A `.zip` written by `skills.exportArchive`. */
@@ -301,6 +306,8 @@ export interface ApplyResult {
   added: number;
   removed: number;
   skipped: number;
+  /** Pairs left out because the skill is blocked for that agent (`Skill.blockedAgents`). */
+  blocked: number;
   conflicts: TargetConflict[];
   failed: BatchFailure[];
 }

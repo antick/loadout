@@ -18,6 +18,8 @@ export interface AgentBadgeRowProps<T extends BadgeAgent = AgentInfo> {
   pendingKeys?: ReadonlySet<string>;
   /** Deployed agents whose copy needs attention; drawn with a warning ring. */
   warningKeys?: ReadonlySet<string>;
+  /** Agents the skill is blocked for: drawn as blocked and not clickable unless deployed. */
+  blockedKeys?: ReadonlySet<string>;
   /** Called with the state the user wants for that agent. Omit for a read-only row. */
   onToggle?: (agent: T, deploy: boolean) => void;
   maxVisible?: number;
@@ -32,6 +34,7 @@ export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
   deployedKeys,
   pendingKeys,
   warningKeys,
+  blockedKeys,
   onToggle,
   maxVisible = AGENT_BADGE_MAX_VISIBLE,
   className,
@@ -48,11 +51,19 @@ export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
 
   const badge = (agent: T, withName: boolean): ReactNode => {
     const deployed = deployedKeys.has(agent.key);
+    const blocked = !deployed && (blockedKeys?.has(agent.key) ?? false);
     const pending = pendingKeys?.has(agent.key) ?? false;
-    const hint = t(deployed ? "agentBadges.clickToRemove" : "agentBadges.clickToInstall");
-    const label = t(deployed ? "agentBadges.deployedTo" : "agentBadges.notDeployedTo", {
-      agent: agent.displayName,
-    });
+    const hint = blocked
+      ? ""
+      : t(deployed ? "agentBadges.clickToRemove" : "agentBadges.clickToInstall");
+    const label = t(
+      blocked
+        ? "agentBadges.blockedFor"
+        : deployed
+          ? "agentBadges.deployedTo"
+          : "agentBadges.notDeployedTo",
+      { agent: agent.displayName },
+    );
     const avatar = pending ? (
       <span className="inline-flex size-5 items-center justify-center">
         <Spinner className="size-3.5" />
@@ -62,16 +73,24 @@ export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
         agentKey={agent.key}
         name={agent.displayName}
         size="sm"
-        status={deployed ? (warningKeys?.has(agent.key) ? "warning" : undefined) : "off"}
+        status={
+          blocked
+            ? "blocked"
+            : deployed
+              ? warningKeys?.has(agent.key)
+                ? "warning"
+                : undefined
+              : "off"
+        }
       />
     );
     const button = (
       <button
         key={agent.key}
         type="button"
-        disabled={!onToggle || pending}
+        disabled={!onToggle || pending || blocked}
         aria-pressed={deployed}
-        aria-label={`${label}. ${hint}`}
+        aria-label={hint ? `${label}. ${hint}` : label}
         onClick={() => onToggle?.(agent, !deployed)}
         className={cn(
           "inline-flex items-center gap-2 rounded transition-opacity hover:opacity-100 disabled:cursor-default",
@@ -93,7 +112,7 @@ export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent>
           <p className="font-medium">{label}</p>
-          {onToggle ? <p className="opacity-80">{hint}</p> : null}
+          {onToggle && hint ? <p className="opacity-80">{hint}</p> : null}
         </TooltipContent>
       </Tooltip>
     );

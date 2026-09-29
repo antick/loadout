@@ -112,6 +112,7 @@ export const emptyApply = (): ApplyResult => ({
   added: 0,
   removed: 0,
   skipped: 0,
+  blocked: 0,
   conflicts: [],
   failed: [],
 });
@@ -121,19 +122,23 @@ export function mergeApply(total: ApplyResult, part: ApplyResult): ApplyResult {
     added: total.added + part.added,
     removed: total.removed + part.removed,
     skipped: total.skipped + part.skipped,
+    blocked: total.blocked + part.blocked,
     conflicts: [...total.conflicts, ...part.conflicts],
     failed: [...total.failed, ...part.failed],
   };
 }
 
+const blockedNote = (result: ApplyResult): string =>
+  result.blocked > 0 ? `, ${result.blocked} blocked` : "";
+
 /** A dry run's counts: what would change, and a reminder that nothing did. */
 export function describeDryApply(result: ApplyResult): string {
-  return `Would add ${plural(result.added, "deployment")} and remove ${result.removed}; ${result.skipped} already as wanted. Nothing was changed.`;
+  return `Would add ${plural(result.added, "deployment")} and remove ${result.removed}; ${result.skipped} already as wanted${blockedNote(result)}. Nothing was changed.`;
 }
 
 export function describeApply(result: ApplyResult): string {
   const lines = [
-    `${plural(result.added, "deployment")} added, ${result.removed} removed, ${result.skipped} already as wanted.`,
+    `${plural(result.added, "deployment")} added, ${result.removed} removed, ${result.skipped} already as wanted${blockedNote(result)}.`,
   ];
   for (const failure of result.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
   return lines.join("\n");

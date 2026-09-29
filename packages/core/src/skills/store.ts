@@ -26,6 +26,7 @@ interface SkillRow {
   edited_files: string | null;
   authored: number;
   suggest_for: string | null;
+  blocked_agents: string | null;
 }
 
 interface DeploymentRow {
@@ -69,6 +70,7 @@ export interface NewSkill {
   editedFiles?: string[];
   authored?: boolean;
   suggestFor?: string[];
+  blockedAgents?: string[];
 }
 
 export type SkillPatch = Partial<
@@ -92,6 +94,7 @@ export type SkillPatch = Partial<
     | "editedFiles"
     | "authored"
     | "suggestFor"
+    | "blockedAgents"
   >
 >;
 
@@ -114,9 +117,14 @@ const PATCH_COLUMNS: Record<keyof SkillPatch, string> = {
   editedFiles: "edited_files",
   authored: "authored",
   suggestFor: "suggest_for",
+  blockedAgents: "blocked_agents",
 };
 /** Patches whose value is a list of strings, stored as JSON. */
-const LIST_COLUMNS: ReadonlySet<keyof SkillPatch> = new Set(["editedFiles", "suggestFor"]);
+const LIST_COLUMNS: ReadonlySet<keyof SkillPatch> = new Set([
+  "editedFiles",
+  "suggestFor",
+  "blockedAgents",
+]);
 
 /** Stored as a JSON array; an empty list is stored as NULL. */
 function encodeList(values: readonly string[] | null | undefined): string | null {
@@ -231,6 +239,7 @@ export class SkillStore {
       manualOnly: facts.manualOnly,
       authored: row.authored === 1,
       suggestFor: decodeList(row.suggest_for),
+      blockedAgents: decodeList(row.blocked_agents),
     };
   }
 
@@ -296,8 +305,8 @@ export class SkillStore {
     this.#db.run(
       `INSERT INTO skills(id, name, description, source_type, source_ref, source_url, source_subpath,
         source_branch, source_revision, remote_revision, library_path, content_hash, update_status,
-        last_checked_at, created_at, updated_at, edited_files, authored, suggest_for)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        last_checked_at, created_at, updated_at, edited_files, authored, suggest_for, blocked_agents)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.description,
@@ -317,6 +326,7 @@ export class SkillStore {
       encodeList(input.editedFiles),
       input.authored ? 1 : 0,
       encodeList(input.suggestFor),
+      encodeList(input.blockedAgents),
     );
     return this.get(id);
   }

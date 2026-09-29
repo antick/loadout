@@ -25,6 +25,11 @@ export interface BatchDeployDialogProps {
   onDone?: () => void;
 }
 
+/** The agent does not have the skill yet, and the skill is not blocked for it. */
+const canReceive = (skill: Skill, agentKey: string): boolean =>
+  !skill.deployments.some((d) => d.agentKey === agentKey) &&
+  !skill.blockedAgents.includes(agentKey);
+
 /** The form lives in its own component so every opening starts with no agent ticked. */
 function BatchDeployForm({
   onOpenChange,
@@ -36,14 +41,11 @@ function BatchDeployForm({
   const apply = useApplySkills();
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
 
-  /** Per agent: how many of the selected skills it does not have yet. */
+  /** Per agent: how many of the selected skills it does not have yet and may get. */
   const missingByAgent = useMemo(() => {
     const counts = new Map<string, number>();
     for (const agent of agents.data ?? []) {
-      counts.set(
-        agent.key,
-        skills.filter((skill) => !skill.deployments.some((d) => d.agentKey === agent.key)).length,
-      );
+      counts.set(agent.key, skills.filter((skill) => canReceive(skill, agent.key)).length);
     }
     return counts;
   }, [agents.data, skills]);
@@ -65,9 +67,7 @@ function BatchDeployForm({
     const agentKeys = [...chosen].filter((key) => (missingByAgent.get(key) ?? 0) > 0);
     // Only skills that are missing somewhere are sent; the backend skips pairs already in place.
     const skillIds = skills
-      .filter((skill) =>
-        agentKeys.some((key) => !skill.deployments.some((d) => d.agentKey === key)),
-      )
+      .filter((skill) => agentKeys.some((key) => canReceive(skill, key)))
       .map((skill) => skill.id);
     if (skillIds.length === 0 || agentKeys.length === 0) return;
     apply.mutate(

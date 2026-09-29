@@ -24,7 +24,7 @@ import type {
   SourceNews,
   UpdateResult,
 } from "@loadout/shared";
-import { HOME } from "@/lib/dev-mock-data";
+import { emptyApplyResult, HOME } from "@/lib/dev-mock-data";
 import { createOriginMockHandlers } from "@/lib/dev-mock-origin";
 
 export interface LibraryMockContext {
@@ -411,7 +411,7 @@ export function createLibraryMockHandlers(
     },
     "presets.applyToDefault": async (id: string): Promise<ApplyResult> => {
       await wait(STEP_MS);
-      const result: ApplyResult = { added: 0, removed: 0, skipped: 0, conflicts: [], failed: [] };
+      const result = emptyApplyResult();
       for (const { skillId, agentKey } of wantedPairs(id)) {
         if (skillId === FAILING_CHECK_SKILL) {
           const agent = ctx.getAgents().find((entry) => entry.key === agentKey);
@@ -427,7 +427,7 @@ export function createLibraryMockHandlers(
     },
     "presets.removeFromDefault": async (id: string): Promise<ApplyResult> => {
       await wait(STEP_MS);
-      const result: ApplyResult = { added: 0, removed: 0, skipped: 0, conflicts: [], failed: [] };
+      const result = emptyApplyResult();
       for (const { skillId, agentKey } of wantedPairs(id)) {
         if (ctx.setDeployed(skillId, agentKey, false)) result.removed += 1;
         else result.skipped += 1;

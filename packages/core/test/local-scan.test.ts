@@ -60,6 +60,7 @@ function librarySkill(dirName: string, overrides: Partial<Skill> = {}): Skill {
     manualOnly: false,
     authored: false,
     suggestFor: [],
+    blockedAgents: [],
     ...overrides,
   };
 }

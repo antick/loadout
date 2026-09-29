@@ -164,6 +164,7 @@ export function createInstallMockHandlers(
       manualOnly: false,
       authored: false,
       suggestFor: [],
+      blockedAgents: [],
       ...extra,
     };
     ctx.addSkill(created);

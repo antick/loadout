@@ -21,6 +21,7 @@ export function SkillAgentBadges({ skill, agents, className }: SkillAgentBadgesP
     () => new Set(skill.deployments.map((d) => d.agentKey)),
     [skill.deployments],
   );
+  const blockedKeys = useMemo(() => new Set(skill.blockedAgents), [skill.blockedAgents]);
 
   const setAgentPending = (agentKey: string, on: boolean): void =>
     setPending((previous) => {
@@ -35,6 +36,7 @@ export function SkillAgentBadges({ skill, agents, className }: SkillAgentBadgesP
       className={className}
       agents={agents ?? available.data ?? []}
       deployedKeys={deployedKeys}
+      blockedKeys={blockedKeys}
       pendingKeys={pending}
       onToggle={(agent, wantDeployed) => {
         setAgentPending(agent.key, true);

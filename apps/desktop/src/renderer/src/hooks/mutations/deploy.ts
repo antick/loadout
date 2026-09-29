@@ -101,6 +101,23 @@ export function useUndeploySkill(): UseMutationResult<
   return usePairMutation(false);
 }
 
+export interface SetBlockedInput {
+  skillId: string;
+  agentKeys: string[];
+  blocked: boolean;
+}
+
+/** Block or allow a skill for agents. Blocking also removes it from an agent it is deployed to. */
+export function useSetBlocked(): UseMutationResult<Skill, unknown, SetBlockedInput> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ skillId, agentKeys, blocked }: SetBlockedInput) =>
+      api.deploy.setBlocked(skillId, agentKeys, blocked),
+    onError: (error) => toastError(error, "errors.block"),
+    onSettled: () => invalidateDeployments(queryClient),
+  });
+}
+
 /** Add or remove many skill × agent pairs in one call and toast the counts. */
 export function useApplySkills(): UseMutationResult<ApplyResult, unknown, ApplySkillsInput> {
   const queryClient = useQueryClient();

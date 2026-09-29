@@ -49,10 +49,14 @@ export function toastApplyResult(
   hint?: string | null,
 ): void {
   const changed = action === "add" ? result.added : result.removed;
-  const summary = i18n.t(action === "add" ? "deploy.appliedAdd" : "deploy.appliedRemove", {
+  const counted = i18n.t(action === "add" ? "deploy.appliedAdd" : "deploy.appliedRemove", {
     count: changed,
     skipped: result.skipped,
   });
+  const summary =
+    result.blocked > 0
+      ? i18n.t("deploy.withBlocked", { summary: counted, count: result.blocked })
+      : counted;
   const problems = result.conflicts.length + result.failed.length;
   const changedAny = result.added + result.removed > 0;
   const description = changedAny && hint ? hint : undefined;

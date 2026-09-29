@@ -8,6 +8,7 @@ import { createCommand } from "./skills-create";
 import { diffCommand } from "./skills-diff";
 import { renameCommand } from "./skills-rename";
 import { exportCommand } from "./skills-export";
+import { blockCommand, unblockCommand } from "./skills-block";
 import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
 import { searchCommand } from "./skills-search";
@@ -157,6 +158,7 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
         mode: deployment?.mode ?? null,
         targetPath: deployment?.targetPath ?? null,
         presentOnDisk: deployment ? isPresent(deployment.targetPath) : null,
+        blocked: skill.blockedAgents.includes(agent.key),
       };
     });
   const value = {
@@ -170,8 +172,16 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
   const text = [
     `${skill.name} - updates: ${skill.updateStatus}`,
     table(
-      ["agent", "enabled", "deployed", "mode", "on disk", "path"],
-      agents.map((a) => [a.agent, a.enabled, a.deployed, a.mode, a.presentOnDisk, a.targetPath]),
+      ["agent", "enabled", "deployed", "blocked", "mode", "on disk", "path"],
+      agents.map((a) => [
+        a.agent,
+        a.enabled,
+        a.deployed,
+        a.blocked,
+        a.mode,
+        a.presentOnDisk,
+        a.targetPath,
+      ]),
       "No agents are installed.",
     ),
   ].join("\n");
@@ -290,6 +300,8 @@ export const skillsGroup: CommandGroup = {
     renameCommand,
     usageCommand,
     suggestForCommand,
+    blockCommand,
+    unblockCommand,
     {
       name: "remove",
       summary: "Delete skills from the library and undeploy them",

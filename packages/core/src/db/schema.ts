@@ -175,4 +175,8 @@ export const MIGRATIONS: readonly string[] = [
   -- File patterns of projects the skill is suggested for: a JSON array, NULL when none.
   ALTER TABLE skills ADD COLUMN suggest_for TEXT;
   `,
+  `
+  -- Keys of agents the skill must never be deployed to: a JSON array, NULL when none.
+  ALTER TABLE skills ADD COLUMN blocked_agents TEXT;
+  `,
 ];

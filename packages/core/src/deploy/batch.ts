@@ -31,6 +31,7 @@ const emptyResult = (): ApplyResult => ({
   added: 0,
   removed: 0,
   skipped: 0,
+  blocked: 0,
   conflicts: [],
   failed: [],
 });
@@ -38,7 +39,10 @@ const emptyResult = (): ApplyResult => ({
 export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply {
   const { store, registry, ops } = deps;
 
-  /** Resolve every pair, dropping the ones that need no work. Touches nothing on disk. */
+  /**
+   * Resolve every pair, dropping the ones that need no work and the ones the skill is blocked
+   * for. Touches nothing on disk.
+   */
   function plan(refs: PairRef[], result: ApplyResult): DeployPair[] {
     const agents = new Map(registry.available().map((agent) => [agent.key, agent]));
     const planned: DeployPair[] = [];
@@ -59,6 +63,10 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
       const agent = agents.get(ref.agentKey);
       if (!agent) {
         result.skipped += 1;
+        continue;
+      }
+      if (skill.blockedAgents.includes(agent.key)) {
+        result.blocked += 1;
         continue;
       }
       const pair = ops.pairFor(skill, agent);

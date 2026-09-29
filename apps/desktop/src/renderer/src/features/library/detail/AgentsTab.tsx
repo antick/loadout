@@ -1,33 +1,55 @@
 import type { AgentInfo, Skill } from "@loadout/shared";
-import { Bot, ChevronRight } from "lucide-react";
+import { Bot, ChevronRight, MoreHorizontal } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { EmptyState } from "@/components/EmptyState";
+import { IconButton } from "@/components/IconButton";
 import { ErrorState } from "@/components/ErrorState";
 import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import { useApplySkills, useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
+import {
+  useApplySkills,
+  useDeploySkill,
+  useSetBlocked,
+  useUndeploySkill,
+} from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
 
 interface AgentRowProps {
   agent: AgentInfo;
   skill: Skill;
   deployed: boolean;
+  /** The skill is blocked for this agent (`Skill.blockedAgents`). */
+  blocked: boolean;
   /** Why the agent cannot take new skills; undefined for available agents. */
   unavailableReason?: string;
 }
 
-function AgentRow({ agent, skill, deployed, unavailableReason }: AgentRowProps): ReactNode {
+function AgentRow({
+  agent,
+  skill,
+  deployed,
+  blocked,
+  unavailableReason,
+}: AgentRowProps): ReactNode {
   const { t } = useTranslation();
   const deploy = useDeploySkill();
   const undeploy = useUndeploySkill();
-  const pending = deploy.isPending || undeploy.isPending;
+  const setBlocked = useSetBlocked();
+  const pending = deploy.isPending || undeploy.isPending || setBlocked.isPending;
+  const isBlocked = blocked && !deployed;
   const target = skill.deployments.find((entry) => entry.agentKey === agent.key);
   const sharedWith = agent.sharesDirWith.length;
 
@@ -36,7 +58,7 @@ function AgentRow({ agent, skill, deployed, unavailableReason }: AgentRowProps):
       <AgentAvatar
         agentKey={agent.key}
         name={agent.displayName}
-        status={deployed ? undefined : "off"}
+        status={isBlocked ? "blocked" : deployed ? undefined : "off"}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{agent.displayName}</p>
@@ -44,6 +66,8 @@ function AgentRow({ agent, skill, deployed, unavailableReason }: AgentRowProps):
           <p className="truncate text-xs text-muted-foreground">{unavailableReason}</p>
         ) : target?.targetPath ? (
           <PathText path={target.targetPath} />
+        ) : isBlocked ? (
+          <p className="truncate text-xs text-danger">{t("library.agents.blockedNote")}</p>
         ) : (
           <p className="truncate text-xs text-muted-foreground">
             {sharedWith > 0
@@ -55,8 +79,8 @@ function AgentRow({ agent, skill, deployed, unavailableReason }: AgentRowProps):
       {pending ? <Spinner className="size-3.5 text-muted-foreground" /> : null}
       <Switch
         checked={deployed}
-        // An unavailable agent can still be cleaned up, but never deployed to.
-        disabled={pending || (Boolean(unavailableReason) && !deployed)}
+        // An unavailable or blocked agent can still be cleaned up, but never deployed to.
+        disabled={pending || ((Boolean(unavailableReason) || blocked) && !deployed)}
         aria-label={t(deployed ? "agentBadges.deployedTo" : "agentBadges.notDeployedTo", {
           agent: agent.displayName,
         })}
@@ -64,6 +88,31 @@ function AgentRow({ agent, skill, deployed, unavailableReason }: AgentRowProps):
           (next ? deploy : undeploy).mutate({ skillId: skill.id, agentKey: agent.key })
         }
       />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <IconButton
+            size="icon-xs"
+            label={t("library.agents.rowMenu", { agent: agent.displayName })}
+            icon={<MoreHorizontal />}
+            disabled={pending}
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onSelect={() =>
+              setBlocked.mutate({ skillId: skill.id, agentKeys: [agent.key], blocked: !blocked })
+            }
+          >
+            {t(
+              blocked
+                ? "library.agents.allow"
+                : deployed
+                  ? "library.agents.blockAndRemove"
+                  : "library.agents.block",
+            )}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </li>
   );
 }
@@ -78,6 +127,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
     () => new Set(skill.deployments.map((entry) => entry.agentKey)),
     [skill.deployments],
   );
+  const blockedKeys = useMemo(() => new Set(skill.blockedAgents), [skill.blockedAgents]);
 
   if (agents.isPending) {
     return (
@@ -96,6 +146,10 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
   const unavailable = agents.data.filter((agent) => !isAgentAvailable(agent));
   const availableKeys = available.map((agent) => agent.key);
   const deployedCount = available.filter((agent) => deployedKeys.has(agent.key)).length;
+  // "Deploy to all" skips blocked agents, so it has nothing to do once the rest have the skill.
+  const deployable = available.filter(
+    (agent) => !deployedKeys.has(agent.key) && !blockedKeys.has(agent.key),
+  ).length;
 
   if (available.length === 0 && unavailable.every((agent) => !deployedKeys.has(agent.key))) {
     return (
@@ -123,7 +177,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
             <Button
               variant="outline"
               size="sm"
-              disabled={apply.isPending || deployedCount === available.length}
+              disabled={apply.isPending || deployable === 0}
               onClick={() => applyAll("add")}
             >
               {t("library.agents.deployAll")}
@@ -146,6 +200,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
               agent={agent}
               skill={skill}
               deployed={deployedKeys.has(agent.key)}
+              blocked={blockedKeys.has(agent.key)}
             />
           ))}
         </ul>
@@ -165,6 +220,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
                   agent={agent}
                   skill={skill}
                   deployed={deployedKeys.has(agent.key)}
+                  blocked={blockedKeys.has(agent.key)}
                   unavailableReason={t(
                     agent.installed
                       ? "library.agents.reasonDisabled"

@@ -6,7 +6,6 @@
 import {
   type ApiResponse,
   type AppEventName,
-  type ApplyResult,
   APP_NAME,
   type DataScope,
   type ErrorCode,
@@ -39,6 +38,7 @@ import { createItemsMockHandlers } from "@/lib/dev-mock-items";
 import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
 import { createUsageMockHandlers } from "@/lib/dev-mock-usage";
 import { createSuggestMockHandlers } from "@/lib/dev-mock-suggest";
+import { createDeployMockHandlers } from "@/lib/dev-mock-deploy";
 import { createPresetShareMockHandlers } from "@/lib/dev-mock-preset-share";
 import { createSettingsMockHandlers, getMockSettings } from "@/lib/dev-mock-settings";
 import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage";
@@ -191,37 +191,6 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
       ),
     );
     return { succeeded: gone.length, failed: [], removedIds };
-  },
-
-  "deploy.deploy": (skillId: string, agentKey: string) => {
-    if (skillId === "release-notes") {
-      throw new MockError(
-        "TARGET_CONFLICT",
-        "A folder that was not installed from the library is in the way.",
-      );
-    }
-    setDeployed(skillId, agentKey, true);
-    emitChanged("skills");
-  },
-  "deploy.undeploy": (skillId: string, agentKey: string) => {
-    setDeployed(skillId, agentKey, false);
-    emitChanged("skills");
-  },
-  "deploy.apply": (
-    skillIds: string[],
-    agentKeys: string[],
-    action: "add" | "remove",
-  ): ApplyResult => {
-    const result: ApplyResult = { added: 0, removed: 0, skipped: 0, conflicts: [], failed: [] };
-    for (const skillId of skillIds) {
-      for (const agentKey of agentKeys) {
-        if (!setDeployed(skillId, agentKey, action === "add")) result.skipped += 1;
-        else if (action === "add") result.added += 1;
-        else result.removed += 1;
-      }
-    }
-    emitChanged("skills");
-    return result;
   },
 
   "presets.list": () => [...presets].sort((a, b) => a.sortOrder - b.sortOrder),
@@ -428,6 +397,15 @@ Object.assign(
   createSettingsMockHandlers(emitChanged),
   createUsageMockHandlers(HOME, skillState.get, emitChanged),
   createSuggestMockHandlers(skillState, emitChanged),
+  createDeployMockHandlers({
+    getSkills: skillState.get,
+    setSkills: skillState.set,
+    setDeployed,
+    emitChanged,
+    fail: (code, message) => {
+      throw new MockError(code, message);
+    },
+  }),
   createPresetShareMockHandlers(HOME, handlers),
 );
 Object.assign(

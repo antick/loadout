@@ -30,6 +30,7 @@
     "deploy": "Could not add the skill to the agent.",
     "undeploy": "Could not remove the skill from the agent.",
     "apply": "Could not apply the changes.",
+    "block": "Could not change the block.",
     "saveTags": "Could not save the tags.",
     "removeSkills": "Could not remove the skills.",
     "savePreset": "Could not save the preset.",
@@ -101,6 +102,8 @@
     "appliedAdd_other": "Added {{count}} deployments, skipped {{skipped}}",
     "appliedRemove_one": "Removed {{count}} deployment, skipped {{skipped}}",
     "appliedRemove_other": "Removed {{count}} deployments, skipped {{skipped}}",
+    "withBlocked_one": "{{summary}}, {{count}} blocked",
+    "withBlocked_other": "{{summary}}, {{count}} blocked",
     "appliedWithProblems_one": "{{summary}}. {{count}} could not be applied",
     "appliedWithProblems_other": "{{summary}}. {{count}} could not be applied"
   },
@@ -108,6 +111,7 @@
     "groupLabel": "Agents",
     "deployedTo": "Installed for {{agent}}",
     "notDeployedTo": "Not installed for {{agent}}",
+    "blockedFor": "Blocked for {{agent}}: this skill is never installed there",
     "clickToInstall": "Click to install",
     "clickToRemove": "Click to remove",
     "more_one": "{{count}} more agent",
@@ -230,6 +234,7 @@
     "addNone": "Add skills",
     "add_one": "Add {{count}} skill",
     "add_other": "Add {{count}} skills",
+    "blocked": "Blocked for this agent",
     "state": {
       "installed": "Already there",
       "conflict": "Name in use",

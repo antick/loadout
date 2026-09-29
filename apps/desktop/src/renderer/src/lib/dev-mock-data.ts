@@ -1,6 +1,7 @@
 /** DEV ONLY. Seed data for the in-memory preview bridge in `dev-mock.ts`. */
 import type {
   AgentInfo,
+  ApplyResult,
   AppUpdateStatus,
   BackupStatus,
   Deployment,
@@ -61,6 +62,15 @@ export const SEED_AGENTS: AgentInfo[] = [
   agent("desk_helper", "Desk Helper", ".deskhelper", { category: "assistant" }),
 ];
 
+export const emptyApplyResult = (): ApplyResult => ({
+  added: 0,
+  removed: 0,
+  skipped: 0,
+  blocked: 0,
+  conflicts: [],
+  failed: [],
+});
+
 export function deployment(skillId: string, agentKey: string): Deployment {
   const dir = SEED_AGENTS.find((entry) => entry.key === agentKey)?.skillsDir ?? "";
   return {
@@ -107,6 +117,7 @@ function skill(
     manualOnly: false,
     authored: false,
     suggestFor: [],
+    blockedAgents: [],
     ...extra,
   };
 }

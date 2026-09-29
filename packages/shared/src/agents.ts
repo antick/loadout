@@ -108,3 +108,13 @@ export const PROJECT_EXPORT_PRIORITY: readonly string[] = [
 export const AGENT_HOME_ENV_VARIABLES: readonly string[] = BUILT_IN_AGENTS.flatMap((agent) =>
   agent.homeEnv ? [agent.homeEnv.variable] : [],
 );
+
+const AGENT_KEY_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
+
+/** Agent keys from a file that may come from another device: unusable ones and repeats dropped. */
+export function cleanAgentKeys(values: readonly unknown[]): string[] {
+  const keys = values.filter(
+    (value): value is string => typeof value === "string" && AGENT_KEY_PATTERN.test(value),
+  );
+  return [...new Set(keys)].sort();
+}
