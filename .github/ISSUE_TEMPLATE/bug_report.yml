@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in Loadout does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Agents, pick Claude Code
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it happened
+      options:
+        - Desktop app
+        - Command line (loadout)
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: In the app, Settings → About → Copy diagnostics, then paste it here. For the command line, paste the output of `loadout --version` and `loadout doctor --json`.
+      render: text
+    validations:
+      required: true
