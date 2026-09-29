@@ -14,7 +14,15 @@ import { describe, expect, it } from "vitest";
 
 function row(relPath: string, extra: Partial<RepoSkillPreview> = {}): RepoSkillPreview {
   const name = relPath.split("/").at(-1) ?? relPath;
-  return { relPath, name, description: null, manualOnly: false, alreadyInstalled: false, ...extra };
+  return {
+    relPath,
+    name,
+    description: null,
+    manualOnly: false,
+    traits: [],
+    alreadyInstalled: false,
+    ...extra,
+  };
 }
 
 function entry(dirName: string, extra: Partial<LibraryNameEntry> = {}): LibraryNameEntry {

@@ -34,11 +34,12 @@ const readManualOnly = (value: string): boolean =>
 
 describe("frontmatter", () => {
   it("reads name and description", () => {
-    const empty = { name: null, description: null, manualOnly: false };
+    const empty = { name: null, description: null, manualOnly: false, traits: [] };
     expect(parseFrontmatter("---\nname: a\ndescription: b c\n---\nbody")).toEqual({
       name: "a",
       description: "b c",
       manualOnly: false,
+      traits: [],
     });
     expect(parseFrontmatter("no frontmatter")).toEqual(empty);
     expect(parseFrontmatter("---\nname: [oops\n---")).toEqual(empty);

@@ -20,6 +20,7 @@ function row(relPath: string, extra: Partial<RepoSkillPreview> = {}): RepoSkillP
     name,
     description: `About ${name}`,
     manualOnly: false,
+    traits: [],
     alreadyInstalled: false,
     ...extra,
   };

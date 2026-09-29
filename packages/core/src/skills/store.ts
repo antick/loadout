@@ -154,7 +154,9 @@ function toDeployment(row: DeploymentRow): DeploymentRecord {
   };
 }
 
-const NO_CHECKS: SkillInspector = { factsOf: () => ({ issues: [], manualOnly: false }) };
+const NO_CHECKS: SkillInspector = {
+  factsOf: () => ({ issues: [], manualOnly: false, traits: [] }),
+};
 
 /**
  * All reads and writes of skills, tags and deployments. No filesystem work happens here: the
@@ -237,6 +239,7 @@ export class SkillStore {
       editedFiles: decodeList(row.edited_files),
       issues: facts.issues,
       manualOnly: facts.manualOnly,
+      traits: facts.traits,
       authored: row.authored === 1,
       suggestFor: decodeList(row.suggest_for),
       blockedAgents: decodeList(row.blocked_agents),

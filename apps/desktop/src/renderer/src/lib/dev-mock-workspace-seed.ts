@@ -211,6 +211,7 @@ export function mockImportedSkill(
     editedFiles: [],
     issues: [],
     manualOnly: false,
+    traits: [],
   };
 }
 

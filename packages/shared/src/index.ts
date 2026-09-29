@@ -15,6 +15,7 @@ export * from "./types-install";
 export * from "./types-backup";
 export * from "./version";
 export * from "./skill-checks";
+export * from "./skill-traits";
 export * from "./new-skill";
 export * from "./new-skill-templates";
 export * from "./safety";

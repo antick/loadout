@@ -38,6 +38,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Skill cards: grid and list view, search, source filter, tag filter incl. Untagged
 - [x] Skill detail: rendered docs, file list, source metadata, per-agent toggles, projects using it
 - [x] "Manual only" badge for `disable-model-invocation: true`
+- [x] "Runs code" badge, "What it can do" list and filter: scripts, hooks, MCP servers, pre-approved tools; also in the import preview
 - [x] Delete skill (removes library copy, preset links, deployments)
 - [x] Tags: add/remove per skill, rename tag, delete tag, batch tag dialog
 - [x] Batch select: deploy to agents, tags, update, delete

@@ -2,6 +2,7 @@
 
 import type { LibraryNameEntry } from "./install-plan";
 import type { InstallOptions } from "./safety";
+import type { SkillTrait } from "./skill-traits";
 import type { BatchFailure } from "./types";
 
 // ── Install ──
@@ -13,6 +14,8 @@ export interface RepoSkillPreview {
   description: string | null;
   /** The frontmatter sets `disable-model-invocation: true`: agents run it only on request. */
   manualOnly: boolean;
+  /** What installing it would put in reach of an agent: scripts, hooks, MCP servers, tools. */
+  traits: SkillTrait[];
   /** A library skill with this name already exists; installing updates it. */
   alreadyInstalled: boolean;
 }

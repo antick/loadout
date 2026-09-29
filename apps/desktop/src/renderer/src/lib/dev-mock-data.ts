@@ -12,7 +12,7 @@ import type {
   Skill,
   SyncHealth,
 } from "@loadout/shared";
-import { BUILT_IN_AGENTS } from "@loadout/shared";
+import { BUILT_IN_AGENTS, skillTrait } from "@loadout/shared";
 
 export const HOME = "/Users/dev";
 export const LIBRARY = `${HOME}/.loadout`;
@@ -115,6 +115,7 @@ function skill(
     editedFiles: [],
     issues: [],
     manualOnly: false,
+    traits: [],
     authored: false,
     suggestFor: [],
     blockedAgents: [],
@@ -163,6 +164,10 @@ export const SEED_SKILLS: Skill[] = [
     updateStatus: "up_to_date",
     tags: ["backend", "quality"],
     hasConflict: true,
+    traits: [
+      skillTrait("scripts", { count: 2, examples: "scripts/apply.sh, scripts/rollback.sh" }),
+      skillTrait("tool_grants", { tools: "Bash(psql *), Read" }),
+    ],
   }),
   skill(
     "api-docs",

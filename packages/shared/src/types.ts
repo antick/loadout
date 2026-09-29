@@ -1,5 +1,6 @@
 import type { AgentCategory, AgentReload } from "./agents";
 import type { SkillIssue } from "./skill-checks";
+import type { SkillTrait } from "./skill-traits";
 
 // ── Agents ──
 
@@ -119,6 +120,11 @@ export interface Skill {
    * it when a person calls it by name.
    */
   manualOnly: boolean;
+  /**
+   * What the skill can make an agent do beyond reading it: run files it ships, register hooks,
+   * start MCP servers, use tools without asking. Information, not a verdict.
+   */
+  traits: SkillTrait[];
   /**
    * The user said they wrote it: no source is looked for. Only ever set on skills without one
    * (see `canLinkSource`).

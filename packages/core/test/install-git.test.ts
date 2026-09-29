@@ -117,6 +117,7 @@ describe("git preview and confirm", () => {
         name: "docx",
         description: "Test skill docx",
         manualOnly: false,
+        traits: [],
         alreadyInstalled: false,
       },
       {
@@ -124,6 +125,7 @@ describe("git preview and confirm", () => {
         name: "pdf",
         description: "Test skill pdf",
         manualOnly: false,
+        traits: [],
         alreadyInstalled: false,
       },
     ]);

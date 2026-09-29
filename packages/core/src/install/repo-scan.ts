@@ -1,6 +1,8 @@
 import { basename, join, relative } from "node:path";
 import { invalid, notFound } from "../errors";
+import { type SkillTrait, mergeTraits } from "@loadout/shared";
 import { readFrontmatter, readSkillIdentity } from "../skills/metadata";
+import { folderTraits } from "../skills/traits";
 import {
   canonicalPath,
   isDirectory,
@@ -20,6 +22,7 @@ export interface FoundSkill {
   description: string | null;
   /** The frontmatter sets `disable-model-invocation: true`. */
   manualOnly: boolean;
+  traits: SkillTrait[];
 }
 
 export interface FindOptions {
@@ -126,6 +129,7 @@ export function listRepoSkills(scanRoot: string, options: FindOptions = {}): Fou
       name: identity.name,
       description: identity.description,
       manualOnly: identity.manualOnly,
+      traits: mergeTraits(identity.traits, folderTraits(dir)),
     };
   });
 }

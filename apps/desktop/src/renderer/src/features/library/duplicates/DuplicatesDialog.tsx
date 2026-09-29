@@ -41,7 +41,15 @@ export function DuplicatesDialog({ open, onOpenChange }: DuplicatesDialogProps):
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-4 sm:max-w-3xl">
+      <DialogContent
+        className="flex max-h-[85vh] flex-col gap-4 sm:max-w-3xl"
+        onInteractOutside={(event) => {
+          // Undo on the toast of a merge must not close the list it came from.
+          if (event.target instanceof Element && event.target.closest("[data-sonner-toast]")) {
+            event.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{t("duplicates.title")}</DialogTitle>
           <DialogDescription>{t("duplicates.description")}</DialogDescription>

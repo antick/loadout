@@ -36,6 +36,7 @@
         "not_deployed": "Not deployed",
         "updates": "Updates available",
         "attention": "Needs attention",
+        "runs_code": "Runs code",
         "unused": "Not used lately"
       },
       "sorts": {

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
+import { SkillTraitBadges } from "@/components/SkillTraitBadges";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UpdateStatusBadge } from "@/components/UpdateStatusBadge";
@@ -36,6 +37,7 @@ export function SkillIndicators({
       <CheckBadges skill={skill} compact={compact} showAll={showAll} />
       <SafetyBadge skill={skill} compact={compact} showAll={showAll} />
       {skill.manualOnly ? <ManualOnlyBadge compact={compact} /> : null}
+      <SkillTraitBadges traits={skill.traits} compact={compact} showAll={showAll} />
       {skill.hasConflict ? (
         <Link
           to="/backup"

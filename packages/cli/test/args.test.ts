@@ -112,6 +112,7 @@ describe("install sources", () => {
       name: "Alpha",
       description: null,
       manualOnly: false,
+      traits: [],
       alreadyInstalled: false,
     };
     const two = {
@@ -119,6 +120,7 @@ describe("install sources", () => {
       name: "Beta",
       description: null,
       manualOnly: false,
+      traits: [],
       alreadyInstalled: false,
     };
     expect(selectSkills([one], [], false)).toEqual([one]);

@@ -22,9 +22,15 @@ import {
   type ScanResult,
   type Skill,
   type SourceType,
+  skillTrait,
 } from "@loadout/shared";
 import { commandSource, guessSource } from "@/features/install/source-guess";
 import { HOME, LIBRARY } from "@/lib/dev-mock-data";
+
+const LOG_TRIAGE_SCRIPTS = skillTrait("scripts", {
+  count: 2,
+  examples: "scripts/parse.py, scripts/tail.sh",
+});
 import {
   DISCOVERED,
   MOVED_TO_HOST,
@@ -94,6 +100,7 @@ export function createInstallMockHandlers(
           name,
           description,
           manualOnly: false,
+          traits: [],
         }))
       : [
           {
@@ -101,6 +108,7 @@ export function createInstallMockHandlers(
             name: baseName(source),
             description: "From an archive.",
             manualOnly: false,
+            traits: [],
           },
         ];
     return skills.map((entry) => ({ ...entry, alreadyInstalled: names.has(entry.name) }));
@@ -117,6 +125,7 @@ export function createInstallMockHandlers(
       return SITE_SKILLS.map((entry) => ({
         ...entry,
         manualOnly: false,
+        traits: [],
         alreadyInstalled: names.has(entry.name),
       }));
     }
@@ -127,6 +136,7 @@ export function createInstallMockHandlers(
         name: folder,
         description: "From a link.",
         manualOnly: false,
+        traits: [],
         alreadyInstalled: false,
       },
     ];
@@ -162,6 +172,7 @@ export function createInstallMockHandlers(
       editedFiles: [],
       issues: [],
       manualOnly: false,
+      traits: [],
       authored: false,
       suggestFor: [],
       blockedAgents: [],
@@ -318,6 +329,8 @@ export function createInstallMockHandlers(
           ? []
           : listed.map((entry) => ({
               manualOnly: entry.name === "log-triage",
+              // One skill in the preview ships a script, so the "Runs code" badge has a row to show.
+              traits: entry.name === "log-triage" ? [LOG_TRIAGE_SCRIPTS] : [],
               ...entry,
               alreadyInstalled: names.has(entry.name),
             }));

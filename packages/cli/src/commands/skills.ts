@@ -1,6 +1,12 @@
 import { lstatSync } from "node:fs";
 import { errorMessage, targetConflict } from "@loadout/core";
-import { REMOVED_KEEP_DAYS, SOURCE_TYPES, type Skill, matchesSkillQuery } from "@loadout/shared";
+import {
+  REMOVED_KEEP_DAYS,
+  SOURCE_TYPES,
+  type Skill,
+  matchesSkillQuery,
+  runsCode,
+} from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
@@ -70,8 +76,17 @@ const agentsOf = (skill: Skill): string => skill.deployments.map((d) => d.agentK
 export const MANUAL_ONLY_MARK = "[manual]";
 const MANUAL_ONLY_TEXT = "manual only: agents run it when you call it (disable-model-invocation)";
 
+/** Next to a skill's name when it ships scripts, hooks or MCP servers (`skills show` says which). */
+export const RUNS_CODE_MARK = "[code]";
+
 const nameCell = (skill: Skill): string =>
-  skill.manualOnly ? `${skill.name} ${MANUAL_ONLY_MARK}` : skill.name;
+  [
+    skill.name,
+    skill.manualOnly ? MANUAL_ONLY_MARK : "",
+    runsCode(skill.traits) ? RUNS_CODE_MARK : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
 /** "ok", "2 errors", "1 warning": the format checks in one cell. */
 function checksOf(skill: Skill): string {
@@ -118,6 +133,7 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
     ["Id", value.id],
     ["Description", value.description],
     ["Invocation", value.manualOnly ? MANUAL_ONLY_TEXT : null],
+    ["Can run", value.traits.map((trait) => trait.message).join(" | ")],
     ["Folder", value.libraryPath],
     ["Source", value.sourceType],
     ["From", value.sourceUrl ?? value.sourceRef],

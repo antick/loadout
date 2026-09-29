@@ -41,6 +41,7 @@ function skill(name: string, deployedTo: string[], blockedAgents: string[] = [])
     editedFiles: [],
     issues: [],
     manualOnly: false,
+    traits: [],
     authored: false,
     suggestFor: [],
     blockedAgents,

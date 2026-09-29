@@ -7,6 +7,7 @@ import {
   hasSkillErrors,
   isUnusedSkill,
   matchesSkillQuery,
+  runsCode,
 } from "@loadout/shared";
 import { matchesTagFilter } from "@/lib/tag-filter";
 
@@ -23,6 +24,7 @@ export const STATUS_FILTERS = [
   "not_deployed",
   "updates",
   "attention",
+  "runs_code",
   "unused",
 ] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -112,6 +114,8 @@ function matchesStatus(
       return hasUpdate(skill);
     case "attention":
       return needsAttention(skill);
+    case "runs_code":
+      return runsCode(skill.traits);
     default:
       return true;
   }

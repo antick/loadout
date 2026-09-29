@@ -8,6 +8,7 @@ import { CircleAlert, CirclePlus, RefreshCw, Replace } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
+import { SkillTraitBadges } from "@/components/SkillTraitBadges";
 import { StatusBadge, type StatusTone } from "@/components/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -126,6 +127,7 @@ export function PreviewRow({
           </p>
           {outcome.kind !== "new" || showNew ? <OutcomeBadge kind={outcome.kind} /> : null}
           {skill.manualOnly ? <ManualOnlyBadge /> : null}
+          <SkillTraitBadges traits={skill.traits} />
         </div>
         <p className={cn("line-clamp-2 text-xs text-muted-foreground", !checked && "opacity-70")}>
           {skill.description ?? t("skills.noDescription")}

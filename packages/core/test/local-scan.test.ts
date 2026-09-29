@@ -58,6 +58,7 @@ function librarySkill(dirName: string, overrides: Partial<Skill> = {}): Skill {
     editedFiles: [],
     issues: [],
     manualOnly: false,
+    traits: [],
     authored: false,
     suggestFor: [],
     blockedAgents: [],

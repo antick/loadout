@@ -3,11 +3,13 @@ import { basename, join } from "node:path";
 import {
   SKILL_MARKER_FILES,
   type SkillIssue,
+  type SkillTrait,
   checkSkillDocument,
   skillIssue,
 } from "@loadout/shared";
 import { canonicalPath, isInside, lstatOrNull } from "../util/fs";
 import { readFrontmatter } from "./metadata";
+import { skillTraits } from "./traits";
 
 /** What the checks need to know about a library skill. */
 export interface InspectedSkill {
@@ -21,6 +23,8 @@ export interface SkillFacts {
   issues: SkillIssue[];
   /** The frontmatter sets `disable-model-invocation: true`. */
   manualOnly: boolean;
+  /** What the skill can make an agent do beyond reading it (scripts, hooks, MCP, tools). */
+  traits: SkillTrait[];
 }
 
 /** Checks of skills, remembered per content hash so listing the library stays cheap. */
@@ -62,7 +66,11 @@ export function inspectSkillFolder(dir: string): SkillIssue[] {
 
 /** Every check of one skill folder plus the frontmatter flags shown next to it. */
 export function inspectSkillFacts(dir: string): SkillFacts {
-  return { issues: inspectSkillFolder(dir), manualOnly: readFrontmatter(dir).manualOnly };
+  return {
+    issues: inspectSkillFolder(dir),
+    manualOnly: readFrontmatter(dir).manualOnly,
+    traits: skillTraits(dir),
+  };
 }
 
 export function createSkillInspector(inspect = inspectSkillFacts): SkillInspector {
@@ -79,7 +87,11 @@ export function createSkillInspector(inspect = inspectSkillFacts): SkillInspecto
       } catch (error) {
         // One unreadable skill must never stop the whole library from listing.
         const reason = error instanceof Error ? error.message : String(error);
-        facts = { issues: [skillIssue("frontmatter_invalid", { reason }, 1)], manualOnly: false };
+        facts = {
+          issues: [skillIssue("frontmatter_invalid", { reason }, 1)],
+          manualOnly: false,
+          traits: [],
+        };
       }
       if (key) cache.set(skill.id, { key, facts });
       return facts;

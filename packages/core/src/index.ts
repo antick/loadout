@@ -19,6 +19,7 @@ export { canonicalPath, isInside } from "./util/fs";
 export { previewLibrary } from "./install/fetched-preview";
 export { redactUrl } from "./install/git-source";
 export { readSkillIdentity } from "./skills/metadata";
+export { skillTraits } from "./skills/traits";
 export {
   type CheckedFolderSkill,
   type DuplicateSkillName,

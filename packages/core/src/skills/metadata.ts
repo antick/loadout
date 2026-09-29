@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { SKILL_DOCUMENT_FILES, SKILL_MARKER_FILES, isManualOnly } from "@loadout/shared";
+import {
+  SKILL_DOCUMENT_FILES,
+  SKILL_MARKER_FILES,
+  type SkillTrait,
+  isManualOnly,
+  traitsFromFrontmatter,
+} from "@loadout/shared";
 import { parse, parseDocument, stringify } from "yaml";
 import { isInside, canonicalPath, readDirSafe, statOrNull } from "../util/fs";
 import { inferSkillName } from "../util/names";
@@ -10,11 +16,13 @@ export interface SkillFrontmatter {
   description: string | null;
   /** `disable-model-invocation: true`: agents should only run it when a person asks. */
   manualOnly: boolean;
+  /** Hooks, MCP servers and pre-approved tools the frontmatter declares. */
+  traits: SkillTrait[];
 }
 
 const FENCE = "---";
 const DOCUMENT_SEARCH_DEPTH = 4;
-const EMPTY: SkillFrontmatter = { name: null, description: null, manualOnly: false };
+const EMPTY: SkillFrontmatter = { name: null, description: null, manualOnly: false, traits: [] };
 
 /** Read `name`, `description` and the manual-only flag from YAML frontmatter. Never throws. */
 export function parseFrontmatter(text: string): SkillFrontmatter {
@@ -31,6 +39,7 @@ export function parseFrontmatter(text: string): SkillFrontmatter {
       description:
         typeof record.description === "string" ? record.description.trim() || null : null,
       manualOnly: isManualOnly(record),
+      traits: traitsFromFrontmatter(record),
     };
   } catch {
     return EMPTY;
@@ -52,6 +61,7 @@ export interface SkillIdentity {
   name: string;
   description: string | null;
   manualOnly: boolean;
+  traits: SkillTrait[];
 }
 
 export function readSkillIdentity(skillDir: string): SkillIdentity {
@@ -60,6 +70,7 @@ export function readSkillIdentity(skillDir: string): SkillIdentity {
     name: inferSkillName(frontmatter.name, skillDir),
     description: frontmatter.description,
     manualOnly: frontmatter.manualOnly,
+    traits: frontmatter.traits,
   };
 }
 

@@ -1,3 +1,4 @@
+import { runsCode } from "@loadout/shared";
 import { outcomeLabel } from "../install-outcome";
 import { plural } from "../output";
 import { type PickerLine, type PickerState, folderState, outcomesOf, visibleLines } from "./state";
@@ -77,7 +78,11 @@ function skillLine(
 ): string {
   const { row, outcome } = line;
   const head = `${indent}${box(state.checked.has(row.relPath))} ${row.name}`;
-  const label = [outcomeLabel(outcome), row.manualOnly ? "manual only" : ""]
+  const label = [
+    outcomeLabel(outcome),
+    row.manualOnly ? "manual only" : "",
+    runsCode(row.traits) ? "runs code" : "",
+  ]
     .filter(Boolean)
     .join(" · ");
   const labelText = label ? `  ${label}` : "";

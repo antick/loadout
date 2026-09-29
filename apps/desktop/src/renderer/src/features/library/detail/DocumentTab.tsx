@@ -8,6 +8,7 @@ import { MarkdownView } from "@/components/MarkdownView";
 import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { SkillIssueList } from "@/components/SkillIssueList";
+import { SkillTraitList } from "@/components/SkillTraitBadges";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
@@ -85,6 +86,14 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
               onOpenChange={setFixing}
             />
           ) : null}
+        </PageSection>
+      ) : null}
+      {skill.traits.length > 0 ? (
+        <PageSection title={t("traits.sectionTitle")}>
+          <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">
+            <SkillTraitList traits={skill.traits} />
+            <p className="text-xs text-muted-foreground">{t("traits.sectionHint")}</p>
+          </div>
         </PageSection>
       ) : null}
       <PageSection

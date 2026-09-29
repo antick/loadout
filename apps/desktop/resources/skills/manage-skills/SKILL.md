@@ -58,7 +58,7 @@ loadout agents list --installed --json          # agent keys, enabled state, ski
 loadout skills list --json                      # everything in the library
 loadout skills list --tag writing --source git --json
 loadout skills list --query pdf --json          # text in the name, description, tags or source
-loadout skills show <ref> --json
+loadout skills show <ref> --json                # includes "traits": scripts, hooks, MCP servers, pre-approved tools
 loadout skills status <ref> --json              # which agents have it, and is it really on disk
 loadout repo show --json                        # library location and counts
 loadout doctor --json                           # everything that needs a look; exit 1 on errors

@@ -1,0 +1,23 @@
+{
+  "traits": {
+    "runsCode": "Runs code",
+    "runsCodeHint": "This skill can put code in reach of your agent. Look at it before you trust it:",
+    "sectionTitle": "What it can do",
+    "sectionHint": "Read from the skill's files and its frontmatter. Nothing was run to find this.",
+    "andMore_one": "{{examples}} and {{count}} more",
+    "andMore_other": "{{examples}} and {{count}} more",
+    "label": {
+      "scripts": "Scripts",
+      "hooks": "Hooks",
+      "mcp": "MCP servers",
+      "tool_grants": "Pre-approved tools"
+    },
+    "code": {
+      "scripts_one": "Ships {{count}} file that can run: {{examples}}.",
+      "scripts_other": "Ships {{count}} files that can run: {{examples}}.",
+      "hooks": "Registers hooks that run commands ({{events}}).",
+      "mcp": "Starts MCP servers ({{servers}}).",
+      "tool_grants": "Lets the agent use tools without asking: {{tools}}."
+    }
+  }
+}

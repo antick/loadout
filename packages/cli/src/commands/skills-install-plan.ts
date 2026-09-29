@@ -1,10 +1,12 @@
 import { statSync } from "node:fs";
-import { type Core, invalid, previewLibrary, readSkillIdentity } from "@loadout/core";
+import { type Core, invalid, previewLibrary, readSkillIdentity, skillTraits } from "@loadout/core";
 import {
   type GitPreview,
   type InstallOutcome,
   type InstallSelection,
   type Skill,
+  type SkillTrait,
+  type SkillTraitCode,
   planInstallNames,
 } from "@loadout/shared";
 import { outcomeLabel } from "../install-outcome";
@@ -17,6 +19,8 @@ export interface InstallPlanRow {
   relPath: string | null;
   outcome: InstallOutcome;
   manualOnly: boolean;
+  /** What installing it puts in reach of an agent: scripts, hooks, MCP servers, tools. */
+  traits: SkillTrait[];
 }
 
 /** What `skills install --dry-run` reports. Nothing is written. */
@@ -31,6 +35,14 @@ export interface InstallPlan {
 }
 
 const NEW_LABEL = "new";
+
+/** What a trait is called in the `can run` column. */
+const TRAIT_LABELS: Record<SkillTraitCode, string> = {
+  scripts: "scripts",
+  hooks: "hooks",
+  mcp: "MCP servers",
+  tool_grants: "pre-approved tools",
+};
 
 /** The plan for chosen skills of a fetched preview. */
 export function planPreview(preview: GitPreview, items: readonly InstallSelection[]): InstallPlan {
@@ -53,6 +65,7 @@ export function planPreview(preview: GitPreview, items: readonly InstallSelectio
               relPath: item.relPath,
               outcome,
               manualOnly: row?.manualOnly ?? false,
+              traits: row?.traits ?? [],
             },
           ]
         : [];
@@ -79,7 +92,15 @@ export function planFolder(core: Core, path: string, name: string | undefined): 
     dryRun: true,
     source: path,
     skills: outcome
-      ? [{ name: chosen, relPath: null, outcome, manualOnly: identity.manualOnly }]
+      ? [
+          {
+            name: chosen,
+            relPath: null,
+            outcome,
+            manualOnly: identity.manualOnly,
+            traits: skillTraits(path),
+          },
+        ]
       : [],
     refreshesInPlace: false,
     redirectedTo: null,
@@ -102,7 +123,15 @@ export function planMarket(core: Core, source: string, skillId: string): Install
     dryRun: true,
     source: key,
     skills: outcome
-      ? [{ name, relPath: null, outcome, manualOnly: installed?.manualOnly ?? false }]
+      ? [
+          {
+            name,
+            relPath: null,
+            outcome,
+            manualOnly: installed?.manualOnly ?? false,
+            traits: installed?.traits ?? [],
+          },
+        ]
       : [],
     refreshesInPlace: installed !== undefined,
     redirectedTo: null,
@@ -117,11 +146,12 @@ export function planText(plan: InstallPlan): string {
       ? "already installed: refreshed in place"
       : outcomeLabel(row.outcome) || NEW_LABEL,
     row.manualOnly ? "manual only" : "",
+    row.traits.map((trait) => TRAIT_LABELS[trait.code]).join(", "),
     row.relPath ?? "",
   ]);
   const lines = [
     `Dry run: nothing was installed. From ${plan.source}, ${plural(plan.skills.length, "skill")} would be added:`,
-    table(["name", "outcome", "invocation", "folder"], rows, "  (none)"),
+    table(["name", "outcome", "invocation", "can run", "folder"], rows, "  (none)"),
   ];
   if (plan.skills.some((row) => row.outcome.kind === "taken")) {
     lines.push(
