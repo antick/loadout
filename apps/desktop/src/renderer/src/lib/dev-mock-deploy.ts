@@ -1,5 +1,5 @@
 /** DEV ONLY. Deploying, undeploying and blocking for the browser preview. */
-import type { ApplyResult, DataScope, ErrorCode, Skill } from "@loadout/shared";
+import type { ApplyOptions, ApplyResult, DataScope, ErrorCode, Skill } from "@loadout/shared";
 import { emptyApplyResult } from "@/lib/dev-mock-data";
 
 type Handler = (...args: never[]) => unknown;
@@ -52,12 +52,19 @@ export function createDeployMockHandlers(deps: DeployMockDeps): Record<string, H
       skillIds: string[],
       agentKeys: string[],
       action: "add" | "remove",
+      options: ApplyOptions = {},
     ): ApplyResult => {
       const result = emptyApplyResult();
       for (const skillId of skillIds) {
         for (const agentKey of agentKeys) {
           if (action === "add" && find(skillId).blockedAgents.includes(agentKey)) {
             result.blocked += 1;
+          } else if (options.skipConflicts && action === "add" && skillId === CONFLICTING_SKILL) {
+            // The real backend lists a refused folder once, however many agents asked for it.
+            const path = `/Users/dev/.claude/skills/${skillId}`;
+            if (!result.conflicts.some((entry) => entry.path === path)) {
+              result.conflicts.push({ path, reason: "not installed from the library" });
+            }
           } else if (!setDeployed(skillId, agentKey, action === "add")) result.skipped += 1;
           else if (action === "add") result.added += 1;
           else result.removed += 1;

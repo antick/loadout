@@ -21,6 +21,8 @@ export interface ApplySkillsInput {
   action: "add" | "remove";
   /** Skip the summary toast when the caller reports the outcome itself. */
   silent?: boolean;
+  /** Add what can be added and report the folders in the way, instead of adding nothing. */
+  skipConflicts?: boolean;
 }
 
 interface OptimisticContext {
@@ -122,8 +124,8 @@ export function useSetBlocked(): UseMutationResult<Skill, unknown, SetBlockedInp
 export function useApplySkills(): UseMutationResult<ApplyResult, unknown, ApplySkillsInput> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ skillIds, agentKeys, action }: ApplySkillsInput) =>
-      api.deploy.apply(skillIds, agentKeys, action),
+    mutationFn: ({ skillIds, agentKeys, action, skipConflicts }: ApplySkillsInput) =>
+      api.deploy.apply(skillIds, agentKeys, action, skipConflicts ? { skipConflicts } : undefined),
     onSuccess: (result, { action, agentKeys, silent }) => {
       if (!silent) toastApplyResult(result, action, reloadHintFor(queryClient, agentKeys));
     },

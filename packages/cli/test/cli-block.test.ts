@@ -57,3 +57,44 @@ describe("skills block and unblock", () => {
     expect((await cli("skills", "block", "missing", "--agent", AGENT)).code).toBe(EXIT_FAILED);
   });
 });
+
+describe("skills deploy --all", () => {
+  it("deploys every skill, skips blocked ones and leaves foreign folders alone", async () => {
+    writeSkill(join(sandbox.root, "src"), "beta");
+    await cli("skills", "install", "./src/beta");
+    writeSkill(join(sandbox.root, "src"), "gamma");
+    await cli("skills", "install", "./src/gamma");
+    await cli("skills", "block", "gamma", "--agent", AGENT);
+    writeSkill(sandbox.agentSkillsDir, "beta", "# mine\n");
+
+    const refused = await cli("skills", "deploy", "--all", "--agent", AGENT);
+    expect(refused.code).toBe(EXIT_FAILED);
+    expect(existsSync(join(sandbox.agentSkillsDir, "alpha"))).toBe(false);
+
+    const preview = await cli(
+      "skills",
+      "deploy",
+      "--all",
+      "--skip-conflicts",
+      "--dry-run",
+      "--agent",
+      AGENT,
+      "--json",
+    );
+    expect(preview.json()).toMatchObject({ dryRun: true, added: 1, blocked: 1 });
+
+    const run = await cli("skills", "deploy", "--all", "--skip-conflicts", "--agent", AGENT);
+    expect(run.code).toBe(EXIT_OK);
+    expect(run.stdout).toContain("1 deployment added");
+    expect(run.stdout).toContain("1 blocked");
+    expect(run.stdout).toContain("Left alone:");
+    expect(existsSync(join(sandbox.agentSkillsDir, "alpha"))).toBe(true);
+    expect(existsSync(join(sandbox.agentSkillsDir, "gamma"))).toBe(false);
+  });
+
+  it("does not mix --all with named skills", async () => {
+    expect((await cli("skills", "deploy", "alpha", "--all", "--agent", AGENT)).code).toBe(
+      EXIT_USAGE,
+    );
+  });
+});

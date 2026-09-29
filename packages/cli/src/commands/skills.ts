@@ -242,22 +242,45 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
   };
 }
 
+const ALL_FLAG = {
+  name: "all",
+  type: "boolean",
+  description: "Every skill in the library, instead of naming them.",
+} as const;
+const SKIP_CONFLICTS_FLAG = {
+  name: "skip-conflicts",
+  type: "boolean",
+  description:
+    "Leave out folders this tool did not create and deploy the rest, instead of failing.",
+} as const;
+
 function deployer(action: "add" | "remove") {
   return async ({ core, args }: CommandContext): Promise<CommandResult> => {
-    const skills = resolveSkills(core, positionalsFrom(args, 0, "a skill"));
-    const agents = requireAgents(core, args, action === "add");
+    const adding = action === "add";
+    const everything = adding && flagBoolean(args, ALL_FLAG.name);
+    if (everything) limitPositionals(args, 0);
+    const skills = everything
+      ? await core.api.skills.list()
+      : resolveSkills(core, positionalsFrom(args, 0, "a skill"));
+    const agents = requireAgents(core, args, adding);
     const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
+    const skipConflicts = adding && flagBoolean(args, SKIP_CONFLICTS_FLAG.name);
     const result = await core.api.deploy.apply(
       skills.map((skill) => skill.id),
       agents.map((agent) => agent.key),
       action,
-      { dryRun },
+      { dryRun, skipConflicts },
     );
-    // A refusal to overwrite someone else's folder is the answer, not a footnote in a summary.
-    if (result.conflicts.length > 0) throw targetConflict(result.conflicts);
+    // A refusal to overwrite someone else's folder is the answer, not a footnote in a summary,
+    // unless the caller asked to go on without those folders.
+    if (result.conflicts.length > 0 && !skipConflicts) throw targetConflict(result.conflicts);
     return {
       value: { dryRun, ...result },
-      text: dryRun ? describeDryApply(result) : describeApply(result),
+      text: [
+        dryRun ? describeDryApply(result) : describeApply(result),
+        // Only reached with --skip-conflicts; without it these were thrown as an error.
+        ...result.conflicts.map((conflict) => `Left alone: ${conflict.path} (${conflict.reason})`),
+      ].join("\n"),
       exitCode: result.failed.length > 0 ? 1 : 0,
     };
   };
@@ -312,9 +335,9 @@ export const skillsGroup: CommandGroup = {
     {
       name: "deploy",
       summary: "Make skills available to agents",
-      usage: "<ref>… --agent <key>… [--dry-run]",
-      flags: [AGENT_FLAG, DRY_RUN_FLAG],
-      notes: [DEPLOY_NOTE],
+      usage: "<ref>… | --all --agent <key>… [--skip-conflicts] [--dry-run]",
+      flags: [AGENT_FLAG, ALL_FLAG, SKIP_CONFLICTS_FLAG, DRY_RUN_FLAG],
+      notes: [DEPLOY_NOTE, "Skills blocked for an agent are skipped and counted."],
       run: deployer("add"),
     },
     {

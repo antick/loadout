@@ -9,10 +9,12 @@ import {
   Plus,
   RefreshCw,
   ScanSearch,
+  Send,
   Trash2,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BatchDeployDialog } from "@/components/BatchDeployDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { IconButton } from "@/components/IconButton";
@@ -91,6 +93,7 @@ export function LibraryPage({
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
   const [rest, setRest] = useState(EMPTY_FILTERS);
+  const [deployAllOpen, setDeployAllOpen] = useState(false);
 
   // A status or search asked for from outside replaces the filters once; the request is then
   // cleared.
@@ -274,6 +277,16 @@ export function LibraryPage({
               </Button>
             ) : null}
             <Button
+              variant="ghost"
+              size="sm"
+              disabled={total === 0}
+              onClick={() => setDeployAllOpen(true)}
+              title={t("library.deployAll")}
+            >
+              <Send />
+              <span className="max-xl:sr-only">{t("library.deployAll")}</span>
+            </Button>
+            <Button
               variant={selection.active ? "secondary" : "ghost"}
               size="sm"
               aria-pressed={selection.active}
@@ -327,6 +340,13 @@ export function LibraryPage({
       </SelectionToolbar>
 
       {content}
+
+      <BatchDeployDialog
+        open={deployAllOpen}
+        onOpenChange={setDeployAllOpen}
+        skills={all ?? []}
+        all
+      />
 
       <SkillDetailSheet skillId={openSkillId} onClose={() => onOpenSkill(null)} />
     </div>

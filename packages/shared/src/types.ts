@@ -300,6 +300,11 @@ export interface RenameResult {
 export interface ApplyOptions {
   /** Work out what would change and report it; write nothing. */
   dryRun?: boolean;
+  /**
+   * When adding: leave out the pairs whose target may not be replaced and apply the rest. They
+   * are still listed in `conflicts`. Without it, one such pair stops the whole request.
+   */
+  skipConflicts?: boolean;
 }
 
 export interface ApplyResult {

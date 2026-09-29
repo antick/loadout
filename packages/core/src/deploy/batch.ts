@@ -36,6 +36,14 @@ const emptyResult = (): ApplyResult => ({
   failed: [],
 });
 
+/** The pairs that may be written: all of them, or with `skipConflicts` those not refused. */
+function writable(planned: DeployPair[], conflicts: TargetConflict[], skip: boolean): DeployPair[] {
+  if (conflicts.length === 0) return planned;
+  if (!skip) return [];
+  const refused = new Set(conflicts.map((conflict) => targetIdentity(conflict.path)));
+  return planned.filter((pair) => !refused.has(targetIdentity(pair.targetPath)));
+}
+
 export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply {
   const { store, registry, ops } = deps;
 
@@ -98,13 +106,13 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
     return [...conflicts.values()];
   }
 
-  async function add(refs: PairRef[]): Promise<ApplyResult> {
+  async function add(refs: PairRef[], skipConflicts: boolean): Promise<ApplyResult> {
     const result = emptyResult();
     const planned = plan(refs, result);
     result.conflicts = findConflicts(planned);
-    // All or nothing: one target we may not replace means the whole request is reconsidered.
-    if (result.conflicts.length > 0) return result;
-    for (const pair of planned) {
+    // All or nothing, unless asked to leave the refused pairs out: one target we may not replace
+    // means the whole request is reconsidered.
+    for (const pair of writable(planned, result.conflicts, skipConflicts)) {
       try {
         // Ownership is judged again from the rows as they are now, so the second agent of a
         // shared folder sees what the first one just wrote as ours.
@@ -118,11 +126,11 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
   }
 
   /** What `add` would do: the same plan and conflicts, counted instead of written. */
-  function previewAdd(refs: PairRef[]): ApplyResult {
+  function previewAdd(refs: PairRef[], skipConflicts: boolean): ApplyResult {
     const result = emptyResult();
     const planned = plan(refs, result);
     result.conflicts = findConflicts(planned);
-    if (result.conflicts.length === 0) result.added = planned.length;
+    result.added = writable(planned, result.conflicts, skipConflicts).length;
     return result;
   }
 
@@ -156,9 +164,10 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
   }
 
   return async (refs, action, options = {}) => {
-    if (options.dryRun) return action === "add" ? previewAdd(refs) : previewRemove(refs);
+    const skip = options.skipConflicts === true;
+    if (options.dryRun) return action === "add" ? previewAdd(refs, skip) : previewRemove(refs);
     const result = await ctx.lock.run(action === "add" ? "deploy skills" : "undeploy skills", () =>
-      action === "add" ? add(refs) : remove(refs),
+      action === "add" ? add(refs, skip) : remove(refs),
     );
     if (result.added + result.removed > 0) ctx.touched("skills");
     return result;

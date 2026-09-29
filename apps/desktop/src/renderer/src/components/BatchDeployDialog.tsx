@@ -23,6 +23,11 @@ export interface BatchDeployDialogProps {
   onOpenChange: (open: boolean) => void;
   skills: readonly Skill[];
   onDone?: () => void;
+  /**
+   * The whole library rather than a selection: every agent that is missing something starts
+   * ticked, and folders Loadout did not create are left alone instead of stopping the deploy.
+   */
+  all?: boolean;
 }
 
 /** The agent does not have the skill yet, and the skill is not blocked for it. */
@@ -35,11 +40,12 @@ function BatchDeployForm({
   onOpenChange,
   skills,
   onDone,
+  all = false,
 }: Omit<BatchDeployDialogProps, "open">): ReactNode {
   const { t } = useTranslation();
   const agents = useAvailableAgents();
   const apply = useApplySkills();
-  const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
+  const [picked, setChosen] = useState<ReadonlySet<string> | null>(null);
 
   /** Per agent: how many of the selected skills it does not have yet and may get. */
   const missingByAgent = useMemo(() => {
@@ -51,16 +57,29 @@ function BatchDeployForm({
   }, [agents.data, skills]);
 
   const list = agents.data ?? [];
+  // For the whole library, every agent that is missing something starts ticked; the user's own
+  // choice replaces that as soon as they make one.
+  const defaults = useMemo<ReadonlySet<string>>(
+    () =>
+      all
+        ? new Set(
+            list.filter((agent) => (missingByAgent.get(agent.key) ?? 0) > 0).map((a) => a.key),
+          )
+        : new Set<string>(),
+    // `list` is rebuilt every render; `agents.data` is what it comes from.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+    [all, agents.data, missingByAgent],
+  );
+  const chosen = picked ?? defaults;
   const pairsToAdd = [...chosen].reduce((sum, key) => sum + (missingByAgent.get(key) ?? 0), 0);
   const allChosen = list.length > 0 && chosen.size === list.length;
 
-  const toggle = (agentKey: string): void =>
-    setChosen((previous) => {
-      const next = new Set(previous);
-      if (next.has(agentKey)) next.delete(agentKey);
-      else next.add(agentKey);
-      return next;
-    });
+  const toggle = (agentKey: string): void => {
+    const next = new Set(chosen);
+    if (next.has(agentKey)) next.delete(agentKey);
+    else next.add(agentKey);
+    setChosen(next);
+  };
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
@@ -71,7 +90,7 @@ function BatchDeployForm({
       .map((skill) => skill.id);
     if (skillIds.length === 0 || agentKeys.length === 0) return;
     apply.mutate(
-      { skillIds, agentKeys, action: "add" },
+      { skillIds, agentKeys, action: "add", skipConflicts: all },
       {
         onSuccess: () => {
           onOpenChange(false);
@@ -84,8 +103,12 @@ function BatchDeployForm({
   return (
     <form onSubmit={submit} className="contents">
       <DialogHeader>
-        <DialogTitle>{t("batchDeploy.title", { count: skills.length })}</DialogTitle>
-        <DialogDescription>{t("batchDeploy.description")}</DialogDescription>
+        <DialogTitle>
+          {all ? t("batchDeploy.titleAll") : t("batchDeploy.title", { count: skills.length })}
+        </DialogTitle>
+        <DialogDescription>
+          {t(all ? "batchDeploy.descriptionAll" : "batchDeploy.description")}
+        </DialogDescription>
       </DialogHeader>
 
       <div className="flex items-center justify-between">
@@ -167,11 +190,12 @@ export function BatchDeployDialog({
   onOpenChange,
   skills,
   onDone,
+  all,
 }: BatchDeployDialogProps): ReactNode {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <BatchDeployForm skills={skills} onOpenChange={onOpenChange} onDone={onDone} />
+        <BatchDeployForm skills={skills} onOpenChange={onOpenChange} onDone={onDone} all={all} />
       </DialogContent>
     </Dialog>
   );

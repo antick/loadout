@@ -1,5 +1,6 @@
 {
   "library": {
+    "deployAll": "Deploy all",
     "count_one": "{{count}} skill",
     "count_other": "{{count}} skills",
     "countFiltered_one": "{{shown}} of {{count}} skill",
@@ -337,6 +338,8 @@
     "title_one": "Deploy {{count}} skill",
     "title_other": "Deploy {{count}} skills",
     "description": "Pick the agents that should get the selection. Skills an agent already has are left alone.",
+    "titleAll": "Deploy every skill",
+    "descriptionAll": "Give the whole library to the agents you pick. Skills an agent already has, skills blocked for it and folders {{app}} did not create are left alone.",
     "agents": "Agents",
     "noAgents": "No agents are available. Switch one on from the Agents page.",
     "hasAll": "Has them all",
