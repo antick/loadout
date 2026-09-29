@@ -26,6 +26,8 @@
       "statuses": {
         "all": "Any status",
         "deployed": "Deployed",
+        "deployed_all": "On every agent",
+        "deployed_some": "On some agents",
         "not_deployed": "Not deployed",
         "updates": "Updates available",
         "attention": "Needs attention",

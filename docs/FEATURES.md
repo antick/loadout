@@ -7,6 +7,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 
 - One library in `~/.loadout`; can be moved in Settings.
 - Grid or list, search, sort, and filters by source, status and tag.
+- Status filters include on every agent, on some agents and not deployed; blocked agents are not counted against a skill.
 - Search takes words in any order and name initials: `pdfm` finds `pdf-manipulation`. The same in `⌘K` and `skills list -q`.
 - Tags: add, remove, rename, delete, edit for many skills at once.
 - Skill panel: rendered `SKILL.md`, files, source, per-agent switches, presets, projects.

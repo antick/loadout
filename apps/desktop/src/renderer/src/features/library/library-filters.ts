@@ -18,6 +18,8 @@ export type SourceFilter = typeof FILTER_ALL | SourceType;
 export const STATUS_FILTERS = [
   FILTER_ALL,
   "deployed",
+  "deployed_all",
+  "deployed_some",
   "not_deployed",
   "updates",
   "attention",
@@ -73,12 +75,37 @@ export function needsAttention(skill: Skill): boolean {
   );
 }
 
-function matchesStatus(skill: Skill, status: StatusFilter, usage: UsageLookup): boolean {
+/** Agent keys that can take skills right now; "on every agent" is measured against these. */
+export type AgentKeys = ReadonlySet<string>;
+export const NO_AGENTS: AgentKeys = new Set();
+
+/**
+ * Every agent that can take the skill has it. Agents it is blocked for do not count against it,
+ * and a skill with nowhere to go is never "on every agent".
+ */
+export function isOnEveryAgent(skill: Skill, available: AgentKeys): boolean {
+  const eligible = [...available].filter((key) => !skill.blockedAgents.includes(key));
+  return (
+    eligible.length > 0 &&
+    eligible.every((key) => skill.deployments.some((deployment) => deployment.agentKey === key))
+  );
+}
+
+function matchesStatus(
+  skill: Skill,
+  status: StatusFilter,
+  usage: UsageLookup,
+  available: AgentKeys,
+): boolean {
   switch (status) {
     case "unused":
       return !usage.enabled || isUnusedSkill(skill, usage.byId);
     case "deployed":
       return skill.deployments.length > 0;
+    case "deployed_all":
+      return isOnEveryAgent(skill, available);
+    case "deployed_some":
+      return skill.deployments.length > 0 && !isOnEveryAgent(skill, available);
     case "not_deployed":
       return skill.deployments.length === 0;
     case "updates":
@@ -127,11 +154,15 @@ export function isFiltering(filters: LibraryFilters): boolean {
   );
 }
 
-/** Search (name, description, tags, source), then source, status and tag filters, then sort. */
+/**
+ * Search (name, description, tags, source), then source, status and tag filters, then sort.
+ * `available` is the agents that can take skills, for the "on every agent" filters.
+ */
 export function filterSkills(
   skills: readonly Skill[],
   filters: LibraryFilters,
   usage: UsageLookup = NO_USAGE,
+  available: AgentKeys = NO_AGENTS,
 ): Skill[] {
   const compare = comparator(filters.sort, usage);
   return skills
@@ -139,7 +170,7 @@ export function filterSkills(
       (skill) =>
         matchesSkillQuery(skill, filters.query) &&
         (filters.source === FILTER_ALL || skill.sourceType === filters.source) &&
-        matchesStatus(skill, filters.status, usage) &&
+        matchesStatus(skill, filters.status, usage, available) &&
         matchesTagFilter(skill.tags, filters.tags),
     )
     .sort((a, b) => compare(a, b) || byName(a, b));

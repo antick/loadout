@@ -46,6 +46,7 @@ import { SkillDetailSheet } from "@/features/library/SkillDetailSheet";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
 import { useCheckAllUpdates, useUpdateSkills } from "@/hooks/mutations/library";
+import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
 import { useSkillUsage } from "@/hooks/queries/usage";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -122,9 +123,15 @@ export function LibraryPage({
   );
   const showUsage = usage.enabled && (needsUsage(filters.sort) || needsUsage(filters.status));
   const all = skills.data;
+  const availableAgents = useAvailableAgents();
+  const availableKeys = useMemo(
+    () => new Set((availableAgents.data ?? []).map((agent) => agent.key)),
+    [availableAgents.data],
+  );
   const visible = useMemo(
-    () => filterSkills(all ?? [], filters, { enabled: usage.enabled, byId: usage.byId }),
-    [all, filters, usage.enabled, usage.byId],
+    () =>
+      filterSkills(all ?? [], filters, { enabled: usage.enabled, byId: usage.byId }, availableKeys),
+    [all, filters, usage.enabled, usage.byId, availableKeys],
   );
   const visibleIds = useMemo(() => visible.map((skill) => skill.id), [visible]);
   const selection = useSelection(visibleIds);
