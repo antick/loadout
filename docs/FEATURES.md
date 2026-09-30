@@ -24,6 +24,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Optional: add those new skills by themselves (still safety-checked; a name in use waits for you).
 - Find where a skill without a source came from: the `npx skills` lock file (`~/.agents/.skill-lock.json`), its Git checkout, links in its `SKILL.md`, skills.sh, or a pasted link. Each match is compared with your copy before you link it.
 - A linked copy that differs shows an update; updating asks before replacing your changes.
+- A skill its source no longer has (deleted or renamed upstream, a dead link) shows **Source missing** with **Keep as mine** (forget the source, mark it yours, keep it deployed) and **Remove** (to Recently removed). `skills check` names them; `loadout sources mine` keeps one.
 - Find sources for every such skill at once from the Sources page; exact matches come ticked.
 - An imported skill whose Git checkout holds the same files is linked by itself.
 - Mark a skill as yours: it gets a **Mine** badge and no source is looked for.

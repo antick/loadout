@@ -233,6 +233,22 @@ export function useDetachSkill(): UseMutationResult<Skill, unknown, string> {
   });
 }
 
+/** A skill whose source is gone: forget the source and mark it as the user's own. */
+export function useKeepSkillAsMine(): UseMutationResult<Skill, unknown, string> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (skillId: string) => api.updates.detach(skillId, { markAuthored: true }),
+    onSuccess: (skill) =>
+      toastSuccess(
+        t("library.sourceGone.kept", { name: skill.name }),
+        t("library.sourceGone.keptHint"),
+      ),
+    onError: (error) => toastError(error, "library.errors.detach"),
+    onSettled: () => invalidateSkills(queryClient),
+  });
+}
+
 /** Open the skill's library folder in the OS file manager. */
 export function useRevealSkill(): UseMutationResult<void, unknown, string> {
   return useMutation({

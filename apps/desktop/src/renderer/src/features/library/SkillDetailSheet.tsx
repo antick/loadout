@@ -19,6 +19,7 @@ import { ProjectsTab } from "@/features/library/detail/ProjectsTab";
 import { RemovalGuardDialog } from "@/features/library/detail/RemovalGuardDialog";
 import { SkillDetailHeader } from "@/features/library/detail/SkillDetailHeader";
 import { SafetyTab } from "@/features/library/detail/SafetyTab";
+import { SourceGoneNotice } from "@/features/library/detail/SourceGoneNotice";
 import { SourceTab } from "@/features/library/detail/SourceTab";
 import { useSkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
@@ -45,6 +46,8 @@ function SkillDetailBody({ skill, onClose }: { skill: Skill; onClose: () => void
   const refresh = useSkillRefresh(skill);
   const deleteSkills = useDeleteSkills();
   const availableAgents = useAvailableAgents();
+  const remove = (): void =>
+    void deleteSkills([skill]).then((started) => (started ? onClose() : null));
 
   const deployedToAvailable = (availableAgents.data ?? []).filter((agent) =>
     skill.deployments.some((entry) => entry.agentKey === agent.key),
@@ -58,10 +61,8 @@ function SkillDetailBody({ skill, onClose }: { skill: Skill; onClose: () => void
 
   return (
     <>
-      <SkillDetailHeader
-        skill={skill}
-        onDelete={() => void deleteSkills([skill]).then((started) => (started ? onClose() : null))}
-      />
+      <SkillDetailHeader skill={skill} onDelete={remove} />
+      <SourceGoneNotice skill={skill} onRemove={remove} />
       <Tabs
         value={tab}
         onValueChange={(next) => setTab(next as DetailTab)}

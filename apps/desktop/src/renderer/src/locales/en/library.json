@@ -177,6 +177,16 @@
         "save": "Could not save the note."
       }
     },
+    "sourceGone": {
+      "message": "Its source no longer has this skill, so it cannot update. Your library copy and its deployments are unchanged.",
+      "reason": "Last check: {{reason}}",
+      "keep": "Keep as mine",
+      "keepHint": "Forget the source and mark the skill as yours. It stays deployed; you can link a source again from the Source tab.",
+      "remove": "Remove",
+      "removeHint": "Delete it from the library and undeploy it. It stays in Recently removed for {{days}} days.",
+      "kept": "“{{name}}” is now yours",
+      "keptHint": "It no longer follows a source, so it is never reported missing again."
+    },
     "source": {
       "title": "Where it came from",
       "type": "Type",

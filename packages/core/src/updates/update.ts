@@ -87,7 +87,7 @@ export interface Updater {
     approval?: string | null,
     options?: UpdateOptions,
   ): Promise<UpdateResult>;
-  detach(skillId: string): Promise<Skill>;
+  detach(skillId: string, options?: { markAuthored?: boolean }): Promise<Skill>;
   updateMany(skillIds: string[]): Promise<BatchUpdateResult>;
 }
 
@@ -101,6 +101,7 @@ const SOURCE_MOVED = "This skill's source changed while it was being updated. Tr
 const INSIDE_LIBRARY = "That folder is already inside the skill library";
 const NO_CHANGES_DETAIL = "No file changes";
 const DETACHED_DETAIL = "Detached from its source";
+const KEPT_AS_MINE_DETAIL = "Detached from its source and marked as yours";
 /** Where a flagged update is explained: it stays "update available" and nothing changed. */
 const MOVED_SINCE_COMPARED =
   "The source changed again since you compared it. Look at Compare again, then update.";
@@ -278,7 +279,8 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       return;
     }
     store.update(skillId, {
-      updateStatus: "error",
+      // The source answered, and the skill is not in it any more: not a failure to retry.
+      updateStatus: isAppError(error, "NOT_FOUND") ? "source_missing" : "error",
       lastCheckError: errorMessage(error),
       lastCheckedAt: Date.now(),
       updatedAt: skill.updatedAt,
@@ -435,9 +437,11 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     }
   }
 
-  async function detach(skillId: string): Promise<Skill> {
+  async function detach(skillId: string, options: { markAuthored?: boolean } = {}): Promise<Skill> {
+    const mine = options.markAuthored === true;
     const detached = await ctx.lock.run(`detach ${store.get(skillId).name}`, () =>
       store.update(skillId, {
+        ...(mine ? { authored: true } : {}),
         sourceType: "local",
         sourceRef: null,
         sourceUrl: null,
@@ -449,7 +453,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         lastCheckError: null,
       }),
     );
-    ctx.activity.record("update", detached.name, DETACHED_DETAIL);
+    ctx.activity.record("update", detached.name, mine ? KEPT_AS_MINE_DETAIL : DETACHED_DETAIL);
     ctx.touched("skills");
     return detached;
   }

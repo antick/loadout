@@ -248,6 +248,28 @@ describe("update", () => {
     expect(existsSync(join(pdf.libraryPath, "SKILL.md"))).toBe(true);
   });
 
+  it("marks the skill as gone when its folder left the repository, and keeps it as yours", async () => {
+    const pdf = await world.installFromGit("pdf");
+    rmSync(pdfInRemote(), { recursive: true });
+    commitAll(world.remote, "drop pdf");
+    const error = await rejection(world.updates.api.update(pdf.id));
+    expect(error.code).toBe("NOT_FOUND");
+    expect(world.store.get(pdf.id).updateStatus).toBe("source_missing");
+
+    const kept = await world.updates.api.detach(pdf.id, { markAuthored: true });
+    expect(kept).toMatchObject({
+      authored: true,
+      sourceType: "local",
+      sourceRef: null,
+      updateStatus: "local_only",
+      lastCheckError: null,
+    });
+    expect(existsSync(join(pdf.libraryPath, "SKILL.md"))).toBe(true);
+    expect(world.ctx.activity.list()[0]).toMatchObject({
+      detail: "Detached from its source and marked as yours",
+    });
+  });
+
   it("refuses local skills", async () => {
     const local = world.addSkill("plain");
     const error = await rejection(world.updates.api.update(local.id));

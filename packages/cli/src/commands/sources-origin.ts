@@ -129,7 +129,15 @@ async function mine({ core, args }: CommandContext): Promise<CommandResult> {
   const undo = flagBoolean(args, UNDO_FLAG.name);
   const skills = resolveSkills(core, positionalsFrom(args, 0, "a skill"));
   const value: Skill[] = [];
-  for (const skill of skills) value.push(await core.api.skills.setAuthored(skill.id, !undo));
+  for (const skill of skills) {
+    // A source that no longer has the skill is forgotten first: it can never be updated from.
+    const gone = !undo && skill.updateStatus === "source_missing";
+    value.push(
+      gone
+        ? await core.api.updates.detach(skill.id, { markAuthored: true })
+        : await core.api.skills.setAuthored(skill.id, !undo),
+    );
+  }
   const names = value.map((skill) => skill.name).join(", ");
   return {
     value,
@@ -167,6 +175,10 @@ export const originCommands: readonly LibraryCommandSpec[] = [
     summary: "Mark skills as your own, so no source is looked for",
     usage: "<skill>… [--undo]",
     flags: [UNDO_FLAG],
+    notes: [
+      "A skill whose source no longer has it (Source missing) forgets that source first;",
+      "its files and deployments stay as they are.",
+    ],
     run: mine,
   },
 ];

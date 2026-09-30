@@ -318,8 +318,10 @@ export function createLibraryMockHandlers(
       }
       return result;
     },
-    "updates.detach": (skillId: string) =>
+    "updates.detach": (skillId: string, options?: { markAuthored?: boolean }) =>
       patch(skillId, {
+        ...(options?.markAuthored ? { authored: true } : {}),
+        lastCheckError: null,
         sourceType: "local",
         sourceRef: null,
         sourceUrl: null,

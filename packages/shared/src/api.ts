@@ -299,7 +299,11 @@ export interface UpdatesApi {
     approval?: string | null,
     options?: InstallOptions,
   ): Promise<UpdateResult>;
-  detach(skillId: string): Promise<Skill>;
+  /**
+   * Forget the skill's source; its files stay as they are. `markAuthored` also marks it as yours,
+   * so no source is looked for again (for a skill whose source is gone).
+   */
+  detach(skillId: string, options?: { markAuthored?: boolean }): Promise<Skill>;
   sourceDocument(skillId: string): Promise<SourceDocument>;
   sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
   /** New skills repositories gained, as the last look found them. No network. */

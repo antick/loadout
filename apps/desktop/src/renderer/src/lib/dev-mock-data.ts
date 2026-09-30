@@ -185,6 +185,14 @@ export const SEED_SKILLS: Skill[] = [
     updateStatus: "error",
     lastCheckError: "Could not reach the source.",
   }),
+  // Deleted from its repository, so the panel offers Keep as mine and Remove.
+  skill("pr-summary", "Summarise a pull request for reviewers in five lines.", {
+    sourceType: "git",
+    sourceRef: "acme/agent-skills",
+    sourceUrl: "https://github.com/acme/agent-skills.git",
+    updateStatus: "source_missing",
+    lastCheckError: "The skill is no longer in the repository",
+  }),
   skill("test-first", "Red, green, refactor with small steps and fast feedback.", {}, [
     "claude_code",
     "cursor",

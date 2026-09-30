@@ -42,6 +42,10 @@ const checkView = (skill: Skill) => ({
   lastCheckError: skill.lastCheckError,
 });
 
+/** What to do about a skill its source no longer has: nothing can update it. */
+const goneNext = (name: string): string =>
+  `sources mine ${name} keeps it as yours; skills remove ${name} --yes deletes it`;
+
 async function check(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const force = flagBoolean(args, FORCE_FLAG.name);
@@ -53,20 +57,32 @@ async function check(context: CommandContext): Promise<CommandResult> {
       ["Status", value.updateStatus],
       ["Checked", when(value.lastCheckedAt)],
       ["Problem", value.lastCheckError],
+      ["Next", value.updateStatus === "source_missing" ? goneNext(value.name) : null],
     ]);
     return { value, text };
   }
   const batch = await core.api.updates.checkAll(force);
-  const available = (await core.api.skills.list())
+  const listed = await core.api.skills.list();
+  const available = listed
     .filter((skill) => skill.updateStatus === "update_available")
     .map(checkView);
+  const gone = listed.filter((skill) => skill.updateStatus === "source_missing").map(checkView);
   const lines = [
     `Checked ${plural(batch.succeeded, "skill")}; ${available.length} can be updated.`,
   ];
   for (const skill of available) lines.push(`  ${skill.name}`);
+  if (gone.length > 0) {
+    lines.push(`Gone from their source (${gone.length}), so they cannot update:`);
+    for (const skill of gone) lines.push(`  ${skill.name}: ${goneNext(skill.name)}`);
+  }
   for (const failure of batch.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
   return {
-    value: { checked: batch.succeeded, failed: batch.failed, updateAvailable: available },
+    value: {
+      checked: batch.succeeded,
+      failed: batch.failed,
+      updateAvailable: available,
+      sourceMissing: gone,
+    },
     text: lines.join("\n"),
     exitCode: batch.failed.length > 0 ? 1 : 0,
   };
