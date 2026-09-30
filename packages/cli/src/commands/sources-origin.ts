@@ -27,6 +27,7 @@ const MATCH_TEXT: Record<SourceCandidate["match"], (candidate: SourceCandidate) 
 };
 
 const EVIDENCE_TEXT: Record<SourceCandidate["evidence"], string> = {
+  skills_lock: "npx skills lock file",
   git_folder: "git checkout",
   skill_link: "SKILL.md link",
   marketplace: "marketplace",

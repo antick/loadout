@@ -19,7 +19,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - **Sources** page: one card per repository, archive or link; find new skills, update, check, remove.
 - A check notices skills a repository gained since you last looked; skipped or dismissed ones stay quiet.
 - Optional: add those new skills by themselves (still safety-checked; a name in use waits for you).
-- Find where a skill without a source came from: its Git checkout, links in its `SKILL.md`, skills.sh, or a pasted link. Each match is compared with your copy before you link it.
+- Find where a skill without a source came from: the `npx skills` lock file (`~/.agents/.skill-lock.json`), its Git checkout, links in its `SKILL.md`, skills.sh, or a pasted link. Each match is compared with your copy before you link it.
 - A linked copy that differs shows an update; updating asks before replacing your changes.
 - Find sources for every such skill at once from the Sources page; exact matches come ticked.
 - An imported skill whose Git checkout holds the same files is linked by itself.

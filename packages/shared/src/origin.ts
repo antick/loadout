@@ -2,17 +2,18 @@ import type { Skill } from "./types";
 
 /**
  * Finding where a skill without a source came from, so it can follow that source from then on.
- * The evidence is looked at first on this machine (the Git settings of the folder it was imported
- * from, links in its `SKILL.md`), then on the marketplace, and each candidate is compared with
- * the library copy before the user links it.
+ * The evidence is looked at first on this machine (the `npx skills` lock file, the Git settings of
+ * the folder it was imported from, links in its `SKILL.md`), then on the marketplace, and each
+ * candidate is compared with the library copy before the user links it.
  */
 
 /**
- * What pointed at a candidate. `git_folder`: the folder the skill was imported from is inside a
- * Git checkout of it. `skill_link`: its `SKILL.md` links to it. `marketplace`: a skill of the same
- * name is listed there. `pasted`: the user typed it.
+ * What pointed at a candidate. `skills_lock`: the `npx skills` lock file on this machine records
+ * it as where the skill was installed from. `git_folder`: the folder the skill was imported from
+ * is inside a Git checkout of it. `skill_link`: its `SKILL.md` links to it. `marketplace`: a skill
+ * of the same name is listed there. `pasted`: the user typed it.
  */
-export type SourceEvidence = "git_folder" | "skill_link" | "marketplace" | "pasted";
+export type SourceEvidence = "skills_lock" | "git_folder" | "skill_link" | "marketplace" | "pasted";
 
 /**
  * How the library copy compares with the candidate's latest version. `identical`: same files.

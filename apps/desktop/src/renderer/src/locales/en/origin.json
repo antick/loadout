@@ -30,6 +30,7 @@
       "different": "{{percent}}% alike"
     },
     "evidence": {
+      "skills_lock": "The npx skills lock file on this computer says it was installed from here",
       "git_folder": "The folder it came from is a Git checkout of this repository",
       "skill_link": "Its SKILL.md links here",
       "marketplace": "Listed on {{marketplace}} under the same name",

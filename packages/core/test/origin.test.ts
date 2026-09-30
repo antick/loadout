@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
 import { createOriginFinder, linkLeads, remoteUrlOf, textSimilarity } from "../src/origin";
 import { gitFolderLead } from "../src/origin/evidence";
+import { lockFileLead, lockFilePaths } from "../src/origin/lock";
 import { hashDir } from "../src/util/hash";
 import { makeSkill, writeFile } from "./helpers";
 import { commitAll, git, initRepo } from "./install-fixtures";
@@ -104,6 +105,128 @@ describe("evidence", () => {
     expect(textSimilarity("a\nb\nc\n", "a\r\nb\r\nc")).toBe(1);
     expect(textSimilarity("a\nb\nc\nd", "a\nb\nc\nx")).toBe(0.75);
     expect(textSimilarity("a\nb", "c\nd")).toBe(0);
+  });
+});
+
+/** What `npx skills add` writes: one entry per installed skill. */
+function writeLock(dir: string, skills: Record<string, Record<string, unknown>>): string {
+  const path = join(dir, ".skill-lock.json");
+  writeFile(path, JSON.stringify({ version: 3, skills }));
+  return path;
+}
+
+const PDF_LOCK = {
+  source: MARKET_SOURCE,
+  sourceType: "github",
+  sourceUrl: `${REPO_URL}.git`,
+  skillPath: "skills/pdf/SKILL.md",
+  skillFolderHash: "abc",
+};
+const homeLockDir = (): string => join(world.home, ".agents");
+const noEnv = (): Record<string, string> => ({});
+
+describe("npx skills lock file", () => {
+  it("names the repository and the skill's folder in it", () => {
+    writeLock(homeLockDir(), { pdf: PDF_LOCK });
+    expect(lockFileLead("pdf", world.home, noEnv)).toEqual({
+      input: `${REPO_URL}.git`,
+      evidence: "skills_lock",
+      subpath: "skills/pdf",
+    });
+  });
+
+  it("gives no folder for a skill at the top of its repository", () => {
+    writeLock(homeLockDir(), { herdr: { ...PDF_LOCK, skillPath: "SKILL.md" } });
+    expect(lockFileLead("herdr", world.home, noEnv)?.subpath).toBeNull();
+  });
+
+  it("reads the file under XDG_STATE_HOME first, then the one in the home folder", () => {
+    const state = join(world.root, "state");
+    expect(lockFilePaths(world.home, { XDG_STATE_HOME: state })).toEqual([
+      join(state, "skills", ".skill-lock.json"),
+      join(world.home, ".agents", ".skill-lock.json"),
+    ]);
+    writeLock(homeLockDir(), { pdf: PDF_LOCK });
+    writeLock(join(state, "skills"), {
+      pdf: { ...PDF_LOCK, sourceUrl: "https://github.com/other/skills.git" },
+    });
+    const env = (): Record<string, string> => ({ XDG_STATE_HOME: state });
+    expect(lockFileLead("pdf", world.home, env)?.input).toBe("https://github.com/other/skills.git");
+    // Only the home file knows this one.
+    writeLock(join(state, "skills"), {});
+    expect(lockFileLead("pdf", world.home, env)?.input).toBe(`${REPO_URL}.git`);
+  });
+
+  it("says nothing without a file, with a broken file, or for a skill it does not list", () => {
+    expect(lockFileLead("pdf", world.home, noEnv)).toBeNull();
+    writeFile(join(homeLockDir(), ".skill-lock.json"), "{ not json");
+    expect(lockFileLead("pdf", world.home, noEnv)).toBeNull();
+    writeFile(join(homeLockDir(), ".skill-lock.json"), JSON.stringify({ skills: [] }));
+    expect(lockFileLead("pdf", world.home, noEnv)).toBeNull();
+    writeLock(homeLockDir(), { pdf: PDF_LOCK });
+    expect(lockFileLead("docx", world.home, noEnv)).toBeNull();
+    expect(lockFileLead("constructor", world.home, noEnv)).toBeNull();
+    expect(lockFileLead("__proto__", world.home, noEnv)).toBeNull();
+  });
+
+  it("never takes a folder on disk, an address with a password, or an unknown scheme", () => {
+    writeLock(homeLockDir(), {
+      folder: { ...PDF_LOCK, sourceType: "local", sourceUrl: "/Users/me/skills" },
+      path: { ...PDF_LOCK, sourceUrl: "/Users/me/skills" },
+      secret: { ...PDF_LOCK, sourceUrl: "https://user:hunter2@github.com/acme/skills.git" },
+      odd: { ...PDF_LOCK, sourceUrl: "ftp://example.test/skills" },
+      none: { ...PDF_LOCK, sourceUrl: undefined },
+    });
+    expect(lockFileLead("folder", world.home, noEnv)).toBeNull();
+    expect(lockFileLead("path", world.home, noEnv)).toBeNull();
+    expect(lockFileLead("odd", world.home, noEnv)).toBeNull();
+    expect(lockFileLead("none", world.home, noEnv)).toBeNull();
+    // The password is dropped, not kept: the address itself is still a repository.
+    expect(lockFileLead("secret", world.home, noEnv)?.input).toBe(
+      "https://github.com/acme/skills.git",
+    );
+  });
+
+  it("finds the recorded repository and links an identical copy as up to date", async () => {
+    const pdf = importedPdf();
+    writeLock(homeLockDir(), { pdf: PDF_LOCK });
+    const search = await world.updates.api.findSource(pdf.id);
+    expect(search.failures).toEqual([]);
+    expect(search.candidates).toHaveLength(1);
+    expect(search.candidates[0]).toMatchObject({
+      label: MARKET_SOURCE,
+      subpath: "skills/pdf",
+      evidence: "skills_lock",
+      match: "identical",
+    });
+  });
+
+  it("does not trust the file over the repository: a different skill is not called identical", async () => {
+    const pdf = importedPdf({
+      body: "---\nname: pdf\ndescription: Mine\n---\n\nSomething else entirely.\n",
+    });
+    writeLock(homeLockDir(), { pdf: PDF_LOCK });
+    const [found] = (await world.updates.api.findSource(pdf.id)).candidates;
+    expect(found?.evidence).toBe("skills_lock");
+    expect(found?.match).not.toBe("identical");
+    expect(
+      await world.updates.origin.linkIfExact(pdf.id, join(world.home, "elsewhere")),
+    ).toBeNull();
+    expect(world.store.get(pdf.id).sourceType).toBe("import");
+  });
+
+  it("links an import by itself when the lock file names a repository holding the same files", async () => {
+    const pdf = importedPdf({ sourceRef: join(world.home, ".agents", "skills", "pdf") });
+    writeLock(homeLockDir(), { pdf: PDF_LOCK });
+    const linked = await world.updates.origin.linkIfExact(
+      pdf.id,
+      join(world.home, ".agents", "skills", "pdf"),
+    );
+    expect(linked).toMatchObject({
+      sourceType: "git",
+      sourceSubpath: "skills/pdf",
+      updateStatus: "up_to_date",
+    });
   });
 });
 

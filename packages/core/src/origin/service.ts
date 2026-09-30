@@ -17,6 +17,7 @@ import { mapLimit } from "../util/async";
 import { fileDigests, hashDir } from "../util/hash";
 import { type ComparedLead, compareLead } from "./compare";
 import { type SourceLead, gitFolderLead, linkLeads } from "./evidence";
+import { lockFileLead } from "./lock";
 
 export interface OriginDeps {
   store: SkillStore;
@@ -50,6 +51,7 @@ const MARKET_MIN_SIMILARITY = 0.5;
 /** Stronger evidence first; a repository found twice keeps the stronger reason. */
 const EVIDENCE_ORDER: readonly SourceEvidence[] = [
   "pasted",
+  "skills_lock",
   "git_folder",
   "skill_link",
   "marketplace",
@@ -86,6 +88,8 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
 
   function localLeads(skill: Skill, sourcePath: string | null): SourceLead[] {
     const leads: SourceLead[] = [];
+    const installed = lockFileLead(skill.name, ctx.homeDir, ctx.env);
+    if (installed) leads.push(installed);
     const folder = sourcePath ? gitFolderLead(sourcePath, ctx.homeDir) : null;
     if (folder) leads.push(folder);
     leads.push(...linkLeads(skill.libraryPath, skill.name));
