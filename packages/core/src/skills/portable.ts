@@ -1,7 +1,13 @@
 import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceType } from "@loadout/shared";
-import { APP_NAME, cleanAgentKeys, cleanSuggestPatterns, isNewerVersion } from "@loadout/shared";
+import {
+  APP_NAME,
+  cleanAgentKeys,
+  cleanSkillNote,
+  cleanSuggestPatterns,
+  isNewerVersion,
+} from "@loadout/shared";
 import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";
@@ -43,6 +49,8 @@ export interface PortableSkill {
   suggestFor?: string[];
   /** Keys of agents it must never be deployed to. Left out when none. */
   blockedAgents?: string[];
+  /** The user's own note on the skill. Left out when none. */
+  note?: string;
 }
 
 export interface PortablePreset {
@@ -79,6 +87,11 @@ export function readSuggestFor(value: unknown): string[] {
 /** Blocked agent keys from a file that may come from another device; bad ones dropped. */
 export function readBlockedAgents(value: unknown): string[] {
   return Array.isArray(value) ? cleanAgentKeys(value) : [];
+}
+
+/** The note from a file that may come from another device: trimmed and capped, or null. */
+export function readNote(value: unknown): string | null {
+  return cleanSkillNote(value);
 }
 
 /** A metadata file may only name a plain folder directly inside the skills folder. */
@@ -206,6 +219,7 @@ export class PortableMetadata {
         authored: skill.authored ? true : undefined,
         suggestFor: skill.suggestFor.length > 0 ? [...skill.suggestFor].sort() : undefined,
         blockedAgents: skill.blockedAgents.length > 0 ? [...skill.blockedAgents].sort() : undefined,
+        note: skill.note ?? undefined,
       };
       skillFiles.add(`${skill.id}.json`);
       this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), file);
@@ -327,6 +341,7 @@ export class PortableMetadata {
         authored: file.authored === true,
         suggestFor: readSuggestFor(file.suggestFor),
         blockedAgents: readBlockedAgents(file.blockedAgents),
+        note: readNote(file.note),
         updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);
@@ -351,6 +366,7 @@ export class PortableMetadata {
       authored: file.authored === true,
       suggestFor: readSuggestFor(file.suggestFor),
       blockedAgents: readBlockedAgents(file.blockedAgents),
+      note: readNote(file.note),
     });
     this.#skills.setTags(file.id, file.tags);
     return file.id;

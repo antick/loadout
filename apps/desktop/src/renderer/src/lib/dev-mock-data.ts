@@ -120,6 +120,7 @@ function skill(
     authored: false,
     suggestFor: [],
     blockedAgents: [],
+    note: null,
     ...extra,
   };
 }
@@ -164,6 +165,7 @@ export const SEED_SKILLS: Skill[] = [
     ...GIT,
     updateStatus: "up_to_date",
     tags: ["backend", "quality"],
+    note: "Run before every release. It forgets the down migration when a table is renamed.",
     hasConflict: true,
     behaviourFields: ["allowed-tools", "model"],
     traits: [

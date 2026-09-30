@@ -23,6 +23,7 @@ import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
 import { searchCommand } from "./skills-search";
 import { checkCommand, updateCommand } from "./skills-update";
+import { noteCommand } from "./skills-note";
 import { usageCommand } from "./skills-usage";
 import { suggestForCommand } from "./skills-suggest-for";
 import { validateCommand } from "./skills-validate";
@@ -52,7 +53,7 @@ const QUERY_FLAG = {
   short: "q",
   type: "string",
   value: "text",
-  description: "Only skills with this text in the name, description, tags or source.",
+  description: "Only skills with this text in the name, description, tags, note or source.",
 } as const;
 const SOURCE_FLAG = {
   name: "source",
@@ -144,6 +145,7 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
     ["Branch", value.sourceBranch],
     ["Updates", value.updateStatus],
     ["Tags", value.tags.join(", ")],
+    ["Note", value.note],
     ["Deployed to", agentsOf(value)],
     ["Installed", when(value.createdAt)],
     ["Changed", when(value.updatedAt)],
@@ -399,5 +401,6 @@ export const skillsGroup: CommandGroup = {
       flags: [ADD_FLAG, REMOVE_FLAG],
       run: editTags,
     },
+    noteCommand,
   ],
 };

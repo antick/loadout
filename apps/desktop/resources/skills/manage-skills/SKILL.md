@@ -58,7 +58,7 @@ loadout agents list --installed --json          # agent keys, enabled state, ski
 loadout agents listing --json                   # what Claude Code's skill listing costs in context; over budget means descriptions get cut
 loadout skills list --json                      # everything in the library
 loadout skills list --tag writing --source git --json
-loadout skills list --query pdf --json          # text in the name, description, tags or source
+loadout skills list --query pdf --json          # text in the name, description, tags, note or source
 loadout skills show <ref> --json                # includes "traits": scripts, hooks, MCP servers, pre-approved tools
 loadout skills status <ref> --json              # which agents have it, is it really on disk, and frontmatter an agent skips
 loadout repo show --json                        # library location and counts
@@ -124,6 +124,7 @@ loadout skills rename <ref> <new-name> --json
 
 # Tags
 loadout skills tag <ref> --add writing --remove draft --json
+loadout skills note <ref> "Run before a release" --json   # the user's own note; --clear takes it off; skills list --query finds it
 
 # Subagents, slash commands and rules ("items"): one Markdown file each, converted per agent
 loadout items list --kind subagent --json

@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
 import { cn } from "@/lib/utils";
 import { FixFrontmatterDialog } from "./FixFrontmatterDialog";
+import { NoteSection } from "./NoteSection";
 
 const CHIP_CLASS =
   "inline-flex h-6 items-center rounded-md border bg-muted/40 font-mono text-xs data-[main=true]:border-primary/40 data-[main=true]:text-foreground";
@@ -88,6 +89,7 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
           ) : null}
         </PageSection>
       ) : null}
+      <NoteSection skill={skill} />
       {skill.traits.length > 0 ? (
         <PageSection title={t("traits.sectionTitle")}>
           <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">

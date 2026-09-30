@@ -146,6 +146,11 @@ export interface Skill {
    * tags. Deploying skips these; one already deployed there is removed when the block is set.
    */
   blockedAgents: string[];
+  /**
+   * The user's own note on the skill: why it is here, when to use it. Kept by Loadout and backed
+   * up with the tags, never written into SKILL.md. Null when there is none.
+   */
+  note: string | null;
 }
 
 /** A `.zip` written by `skills.exportArchive`. */

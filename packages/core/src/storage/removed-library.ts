@@ -30,6 +30,8 @@ export interface LibraryRecord {
   editedFiles: string[];
   /** Absent in records written before it was kept. */
   authored?: boolean;
+  /** Absent in records written before it was kept. */
+  note?: string | null;
   tags: string[];
   presetIds: string[];
 }
@@ -51,6 +53,7 @@ export function libraryRecordOf(skill: Skill): LibraryRecord {
     createdAt: skill.createdAt,
     editedFiles: [...skill.editedFiles],
     authored: skill.authored,
+    note: skill.note,
     tags: [...skill.tags],
     presetIds: [...skill.presetIds],
   };
@@ -109,6 +112,7 @@ export function restoreLibraryRow(
     createdAt: record.createdAt,
     editedFiles: strings(record.editedFiles),
     authored: record.authored === true,
+    note: typeof record.note === "string" ? record.note : null,
   });
   store.setTags(skill.id, strings(record.tags));
   const presets = new PresetStore(ctx.db);

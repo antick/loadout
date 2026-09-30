@@ -179,4 +179,8 @@ export const MIGRATIONS: readonly string[] = [
   -- Keys of agents the skill must never be deployed to: a JSON array, NULL when none.
   ALTER TABLE skills ADD COLUMN blocked_agents TEXT;
   `,
+  `
+  -- The user's own note on the skill, NULL when none.
+  ALTER TABLE skills ADD COLUMN note TEXT;
+  `,
 ];

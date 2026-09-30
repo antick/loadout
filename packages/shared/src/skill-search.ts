@@ -1,6 +1,7 @@
 import type { Skill } from "./types";
 
-type SearchableSkill = Pick<Skill, "name" | "description" | "tags" | "sourceRef" | "sourceUrl">;
+type SearchableSkill = Pick<Skill, "name" | "description" | "tags" | "sourceRef" | "sourceUrl"> &
+  Partial<Pick<Skill, "note">>;
 
 /** What separates the parts of a skill name: `pdf-form_filler v2` has four. */
 const NAME_PARTS = /[\s\-_./:]+/;
@@ -29,9 +30,9 @@ export function matchesNameParts(name: string, word: string): boolean {
 
 /**
  * The library search, shared by the app and the command line, ignoring case. A skill matches when
- * the whole text is anywhere in its name, description, tags or source; or when every word of it
- * is, each word either in one of those or made of the starts of the name's parts (`pdfm` for
- * `pdf-manipulation`). An empty query matches everything.
+ * the whole text is anywhere in its name, description, tags, note or source; or when every word
+ * of it is, each word either in one of those or made of the starts of the name's parts (`pdfm`
+ * for `pdf-manipulation`). An empty query matches everything.
  */
 export function matchesSkillQuery(skill: SearchableSkill, query: string): boolean {
   const needle = query.trim().toLowerCase();
@@ -42,6 +43,7 @@ export function matchesSkillQuery(skill: SearchableSkill, query: string): boolea
     skill.tags.join(" "),
     skill.sourceRef,
     skill.sourceUrl,
+    skill.note,
   ].flatMap((field) => (field ? [field.toLowerCase()] : []));
   if (fields.some((field) => field.includes(needle))) return true;
   return needle

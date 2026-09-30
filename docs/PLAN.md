@@ -42,6 +42,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] "Runs code" badge, "What it can do" list and filter: scripts, hooks, MCP servers, pre-approved tools; also in the import preview
 - [x] Delete skill (removes library copy, preset links, deployments)
 - [x] Tags: add/remove per skill, rename tag, delete tag, batch tag dialog
+- [x] A note per skill, kept by Loadout, searched, backed up, `loadout skills note`
 - [x] Batch select: deploy to agents, tags, update, delete
 - [x] Activity log of install / remove / update / deploy operations
 - [x] Possible duplicates: find skills that look like one installed twice, compare, keep one, dismiss a pair

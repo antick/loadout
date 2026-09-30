@@ -27,6 +27,7 @@ interface SkillRow {
   authored: number;
   suggest_for: string | null;
   blocked_agents: string | null;
+  note: string | null;
 }
 
 interface DeploymentRow {
@@ -71,6 +72,7 @@ export interface NewSkill {
   authored?: boolean;
   suggestFor?: string[];
   blockedAgents?: string[];
+  note?: string | null;
 }
 
 export type SkillPatch = Partial<
@@ -95,6 +97,7 @@ export type SkillPatch = Partial<
     | "authored"
     | "suggestFor"
     | "blockedAgents"
+    | "note"
   >
 >;
 
@@ -118,6 +121,7 @@ const PATCH_COLUMNS: Record<keyof SkillPatch, string> = {
   authored: "authored",
   suggestFor: "suggest_for",
   blockedAgents: "blocked_agents",
+  note: "note",
 };
 /** Patches whose value is a list of strings, stored as JSON. */
 const LIST_COLUMNS: ReadonlySet<keyof SkillPatch> = new Set([
@@ -244,6 +248,7 @@ export class SkillStore {
       authored: row.authored === 1,
       suggestFor: decodeList(row.suggest_for),
       blockedAgents: decodeList(row.blocked_agents),
+      note: row.note ?? null,
     };
   }
 
@@ -309,8 +314,9 @@ export class SkillStore {
     this.#db.run(
       `INSERT INTO skills(id, name, description, source_type, source_ref, source_url, source_subpath,
         source_branch, source_revision, remote_revision, library_path, content_hash, update_status,
-        last_checked_at, created_at, updated_at, edited_files, authored, suggest_for, blocked_agents)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        last_checked_at, created_at, updated_at, edited_files, authored, suggest_for, blocked_agents,
+        note)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.description,
@@ -331,6 +337,7 @@ export class SkillStore {
       input.authored ? 1 : 0,
       encodeList(input.suggestFor),
       encodeList(input.blockedAgents),
+      input.note ?? null,
     );
     return this.get(id);
   }

@@ -1,6 +1,6 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { FileWarning, PencilLine, TriangleAlert } from "lucide-react";
+import { FileWarning, PencilLine, StickyNote, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
@@ -37,6 +37,7 @@ export function SkillIndicators({
       <CheckBadges skill={skill} compact={compact} showAll={showAll} />
       <SafetyBadge skill={skill} compact={compact} showAll={showAll} />
       {skill.manualOnly ? <ManualOnlyBadge compact={compact} /> : null}
+      {skill.note ? <NoteBadge note={skill.note} compact={compact} /> : null}
       <SkillTraitBadges traits={skill.traits} compact={compact} showAll={showAll} />
       {skill.hasConflict ? (
         <Link
@@ -71,6 +72,26 @@ export function SkillIndicators({
         </Tooltip>
       ) : null}
     </>
+  );
+}
+
+/** The user's own note, shown in full on hover. */
+function NoteBadge({ note, compact }: { note: string; compact?: boolean }): ReactNode {
+  const { t } = useTranslation();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">
+          <StatusBadge
+            tone="neutral"
+            icon={<StickyNote />}
+            label={t("library.note.badge")}
+            compact={compact}
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-72 whitespace-pre-wrap">{note}</TooltipContent>
+    </Tooltip>
   );
 }
 

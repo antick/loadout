@@ -33,6 +33,7 @@ export function skillRecord(id: string, extra: Partial<Skill> = {}): Skill {
     authored: false,
     suggestFor: [],
     blockedAgents: [],
+    note: null,
     ...extra,
   };
 }

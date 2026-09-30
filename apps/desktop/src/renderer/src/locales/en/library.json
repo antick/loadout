@@ -16,7 +16,7 @@
     "newSkill": "New skill",
     "deleteSkill": "Delete {{name}}",
     "toolbar": {
-      "search": "Search name, description, tags or source",
+      "search": "Search name, description, tags, notes or source",
       "source": "Filter by source",
       "status": "Filter by status",
       "sort": "Sort by",
@@ -142,6 +142,21 @@
     "document": {
       "files_one": "{{count}} item in the skill folder",
       "files_other": "{{count}} items in the skill folder"
+    },
+    "note": {
+      "title": "Your note",
+      "badge": "Has a note",
+      "add": "Add a note",
+      "edit": "Edit",
+      "empty": "Why you keep it, when to use it, what to watch for. Kept by Loadout, not written into SKILL.md; the search finds it.",
+      "placeholder": "Run before every release. It forgets the down migration when a table is renamed.",
+      "hint": "⌘ Enter saves, Esc cancels.",
+      "count": "{{count}} of {{max}}",
+      "saved": "Note saved",
+      "removed": "Note removed",
+      "errors": {
+        "save": "Could not save the note."
+      }
     },
     "source": {
       "title": "Where it came from",

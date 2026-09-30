@@ -10,6 +10,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Status filters include on every agent, on some agents and not deployed; blocked agents are not counted against a skill.
 - Search takes words in any order and name initials: `pdfm` finds `pdf-manipulation`. The same in `⌘K` and `skills list -q`.
 - Tags: add, remove, rename, delete, edit for many skills at once.
+- **Your note** on a skill: why it is there, when to use it. Kept by Loadout, never in `SKILL.md`, found by the search, backed up with the tags. `loadout skills note`.
 - Skill panel: rendered `SKILL.md`, files, source, per-agent switches, presets, projects.
 - Format checks against the Agent Skills rules, with line numbers; errors mark the skill "Needs fixing".
 - **Fix frontmatter**: adds a missing name and description, shown as a diff before saving.

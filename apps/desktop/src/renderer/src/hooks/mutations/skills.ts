@@ -1,4 +1,9 @@
-import { REMOVED_KEEP_DAYS, type RemoveSkillsResult, type RenameResult } from "@loadout/shared";
+import {
+  REMOVED_KEEP_DAYS,
+  type RemoveSkillsResult,
+  type RenameResult,
+  type Skill,
+} from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -18,6 +23,25 @@ export function useSetSkillTags(): UseMutationResult<void, unknown, SetSkillTags
   return useMutation({
     mutationFn: ({ skillId, tags }: SetSkillTagsInput) => api.skills.setTags(skillId, tags),
     onError: (error) => toastError(error, "errors.saveTags"),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
+  });
+}
+
+export interface SetSkillNoteInput {
+  skillId: string;
+  /** Blank takes the note off. */
+  note: string;
+}
+
+/** Replace the user's note on one skill. */
+export function useSetSkillNote(): UseMutationResult<Skill, unknown, SetSkillNoteInput> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ skillId, note }: SetSkillNoteInput) => api.skills.setNote(skillId, note),
+    onSuccess: (skill) =>
+      toastSuccess(skill.note ? t("library.note.saved") : t("library.note.removed")),
+    onError: (error) => toastError(error, "library.note.errors.save"),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
   });
 }

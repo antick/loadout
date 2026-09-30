@@ -4,6 +4,7 @@ import {
   type SkillDocument,
   type SkillsApi,
   canLinkSource,
+  cleanSkillNote,
   cleanSuggestPatterns,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
@@ -154,6 +155,17 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
         const fresh = store.get(skillId);
         // Like tags, patterns are not an edit of the skill: its "last changed" time stays.
         return store.update(skillId, { suggestFor: clean, updatedAt: fresh.updatedAt });
+      });
+      ctx.touched("skills");
+      return skill;
+    },
+
+    setNote: async (skillId, note) => {
+      const clean = cleanSkillNote(note);
+      const skill = await ctx.lock.run(`note ${store.get(skillId).name}`, () => {
+        const fresh = store.get(skillId);
+        // A note is not an edit of the skill: its "last changed" time stays.
+        return store.update(skillId, { note: clean, updatedAt: fresh.updatedAt });
       });
       ctx.touched("skills");
       return skill;

@@ -24,6 +24,7 @@ import type {
   SourceNews,
   UpdateResult,
 } from "@loadout/shared";
+import { cleanSkillNote } from "@loadout/shared";
 import { emptyApplyResult, HOME } from "@/lib/dev-mock-data";
 import { createOriginMockHandlers } from "@/lib/dev-mock-origin";
 
@@ -255,6 +256,8 @@ export function createLibraryMockHandlers(
   return {
     // Finding and linking sources lives in its own module; it needs the same skills.
     ...createOriginMockHandlers(ctx),
+    "skills.setNote": async (skillId: string, note: string | null): Promise<Skill> =>
+      patch(skillId, { note: cleanSkillNote(note) }),
     "updates.sourceNews": async () => currentNews(),
     "updates.checkSources": async (): Promise<SourceCheckResult> => {
       await wait(STEP_MS * 2);

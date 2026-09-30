@@ -204,6 +204,10 @@ export function planSkill(
     theirs.meta.blockedAgents ?? [],
   );
   if (blockedAgents.length > 0) meta.blockedAgents = blockedAgents;
+  // The note is one value: the side that changed it wins; both changed, ours stays.
+  const notePick = pickSide(base?.meta.note, ours.meta.note, theirs.meta.note);
+  const note = notePick === "theirs" ? theirs.meta.note : ours.meta.note;
+  if (note !== undefined) meta.note = note;
 
   const touched =
     content === "theirs" ||
@@ -211,6 +215,7 @@ export function planSkill(
     canonical(meta.tags) !== canonical([...ours.meta.tags].sort()) ||
     canonical(suggestFor) !== canonical([...(ours.meta.suggestFor ?? [])].sort()) ||
     canonical(blockedAgents) !== canonical([...(ours.meta.blockedAgents ?? [])].sort()) ||
+    note !== ours.meta.note ||
     sourceSide === "theirs";
   const outcome: SkillOutcome = conflict ? "conflict" : touched ? "updated" : "unchanged";
   return { id, outcome, content, path, meta };
