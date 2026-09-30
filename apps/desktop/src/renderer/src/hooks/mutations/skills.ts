@@ -4,7 +4,12 @@ import {
   type RenameResult,
   type Skill,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  type UseMutationResult,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -42,6 +47,52 @@ export function useSetSkillNote(): UseMutationResult<Skill, unknown, SetSkillNot
     onSuccess: (skill) =>
       toastSuccess(skill.note ? t("library.note.saved") : t("library.note.removed")),
     onError: (error) => toastError(error, "library.note.errors.save"),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
+  });
+}
+
+export interface SetFavoriteInput {
+  skillId: string;
+  favorite: boolean;
+}
+
+interface FavoriteContext {
+  previous?: Skill[];
+}
+
+/** Flip the star in the cached skill list before the backend answers. */
+async function flipFavorite(
+  queryClient: QueryClient,
+  { skillId, favorite }: SetFavoriteInput,
+): Promise<FavoriteContext> {
+  await queryClient.cancelQueries({ queryKey: keys.skills.all });
+  const previous = queryClient.getQueryData<Skill[]>(keys.skills.all);
+  if (!previous) return {};
+  queryClient.setQueryData<Skill[]>(
+    keys.skills.all,
+    previous.map((skill) =>
+      skill.id === skillId ? { ...skill, favoritedAt: favorite ? Date.now() : null } : skill,
+    ),
+  );
+  return { previous };
+}
+
+/** Make a skill a favourite or take that back; the star flips at once and rolls back on failure. */
+export function useSetFavorite(): UseMutationResult<
+  Skill,
+  unknown,
+  SetFavoriteInput,
+  FavoriteContext
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ skillId, favorite }: SetFavoriteInput) =>
+      api.skills.setFavorite(skillId, favorite),
+    onMutate: (input) => flipFavorite(queryClient, input),
+    onError: (error, _input, context) => {
+      if (context?.previous) queryClient.setQueryData(keys.skills.all, context.previous);
+      toastError(error, "library.favorites.errors.save");
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
   });
 }

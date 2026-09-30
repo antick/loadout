@@ -106,6 +106,7 @@ async function useRemote(
     source: meta?.source ?? { type: local?.sourceType ?? "import" },
     createdAt: meta?.createdAt ?? local?.createdAt ?? Date.now(),
     note: meta?.note ?? local?.note ?? undefined,
+    favoritedAt: meta?.favoritedAt ?? local?.favoritedAt ?? undefined,
   };
   writeJsonAtomic(metadataFile(env, conflict.skillKey), next);
 }

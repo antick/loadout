@@ -125,6 +125,7 @@ loadout skills rename <ref> <new-name> --json
 # Tags
 loadout skills tag <ref> --add writing --remove draft --json
 loadout skills note <ref> "Run before a release" --json   # the user's own note; --clear takes it off; skills list --query finds it
+loadout skills favorite <ref>… --json               # mark as favorites; --undo takes it back; skills list --favorites shows them
 
 # Subagents, slash commands and rules ("items"): one Markdown file each, converted per agent
 loadout items list --kind subagent --json

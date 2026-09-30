@@ -178,6 +178,7 @@ export function createInstallMockHandlers(
       suggestFor: [],
       blockedAgents: [],
       note: existing?.note ?? null,
+      favoritedAt: existing?.favoritedAt ?? null,
       ...extra,
     };
     ctx.addSkill(created);

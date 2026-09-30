@@ -28,6 +28,7 @@
       "views": "Views",
       "agentFiles": "Agent files",
       "view": {
+        "favorites": "Favourites",
         "updates": "Updates available",
         "attention": "Needs attention",
         "not_deployed": "Not deployed",

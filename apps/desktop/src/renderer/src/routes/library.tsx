@@ -10,6 +10,8 @@ export interface LibrarySearch {
   status?: StatusFilter;
   /** Search text to switch to once, e.g. a source's address from the Sources page. */
   q?: string;
+  /** Switch to favourites only once, e.g. from the sidebar. */
+  favorites?: boolean;
 }
 
 function isStatusFilter(value: unknown): value is StatusFilter {
@@ -17,12 +19,12 @@ function isStatusFilter(value: unknown): value is StatusFilter {
 }
 
 function LibraryRoute(): ReactNode {
-  const { skill, status, q } = Route.useSearch();
+  const { skill, status, q, favorites } = Route.useSearch();
   const navigate = Route.useNavigate();
   const clearRequest = useCallback(
     () =>
       void navigate({
-        search: (prev) => ({ ...prev, status: undefined, q: undefined }),
+        search: (prev) => ({ ...prev, status: undefined, q: undefined, favorites: undefined }),
         replace: true,
       }),
     [navigate],
@@ -35,6 +37,7 @@ function LibraryRoute(): ReactNode {
       }
       requestedStatus={status ?? null}
       requestedQuery={q ?? null}
+      requestedFavorites={favorites === true}
       onRequestApplied={clearRequest}
     />
   );
@@ -45,6 +48,7 @@ export const Route = createFileRoute("/library")({
     skill: typeof search.skill === "string" && search.skill ? search.skill : undefined,
     status: isStatusFilter(search.status) ? search.status : undefined,
     q: typeof search.q === "string" && search.q ? search.q : undefined,
+    favorites: search.favorites === true || search.favorites === "true" ? true : undefined,
   }),
   component: LibraryRoute,
 });

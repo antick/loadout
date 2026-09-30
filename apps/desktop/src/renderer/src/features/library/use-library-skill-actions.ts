@@ -5,6 +5,8 @@ import {
   FolderOpen,
   PencilLine,
   RefreshCw,
+  Star,
+  StarOff,
   TextCursorInput,
   Trash2,
 } from "lucide-react";
@@ -14,6 +16,7 @@ import { useShell } from "@/components/layout/shell-context";
 import type { SkillAction } from "@/components/skill-action";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useCheckSkillUpdate, useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
+import { useSetFavorite } from "@/hooks/mutations/skills";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { editLink } from "@/lib/skill-location";
 
@@ -25,6 +28,7 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
   const check = useCheckSkillUpdate();
   const exportSkills = useExportSkills();
   const deleteSkills = useDeleteSkills();
+  const setFavorite = useSetFavorite();
   const shell = useShell();
 
   return useCallback(
@@ -47,6 +51,16 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
           label: t("library.detail.reveal"),
           icon: FolderOpen,
           run: () => reveal.mutate(skill.id),
+        },
+        {
+          id: "favorite",
+          label: t(
+            skill.favoritedAt === null ? "library.favorites.add" : "library.favorites.remove",
+            { name: skill.name },
+          ),
+          icon: skill.favoritedAt === null ? Star : StarOff,
+          run: () =>
+            setFavorite.mutate({ skillId: skill.id, favorite: skill.favoritedAt === null }),
         },
       ];
       actions.push({
@@ -72,6 +86,6 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
       });
       return actions;
     },
-    [t, navigate, reveal, check, exportSkills, deleteSkills, shell],
+    [t, navigate, reveal, check, exportSkills, deleteSkills, setFavorite, shell],
   );
 }

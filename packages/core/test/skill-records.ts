@@ -34,6 +34,7 @@ export function skillRecord(id: string, extra: Partial<Skill> = {}): Skill {
     suggestFor: [],
     blockedAgents: [],
     note: null,
+    favoritedAt: null,
     ...extra,
   };
 }

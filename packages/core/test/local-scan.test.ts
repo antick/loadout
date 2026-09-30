@@ -64,6 +64,7 @@ function librarySkill(dirName: string, overrides: Partial<Skill> = {}): Skill {
     suggestFor: [],
     blockedAgents: [],
     note: null,
+    favoritedAt: null,
     ...overrides,
   };
 }

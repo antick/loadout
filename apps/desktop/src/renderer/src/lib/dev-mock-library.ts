@@ -258,6 +258,11 @@ export function createLibraryMockHandlers(
     ...createOriginMockHandlers(ctx),
     "skills.setNote": async (skillId: string, note: string | null): Promise<Skill> =>
       patch(skillId, { note: cleanSkillNote(note) }),
+    "skills.setFavorite": async (skillId: string, favorite: boolean): Promise<Skill> => {
+      const found = find(skillId);
+      if (favorite === (found.favoritedAt !== null)) return found;
+      return patch(skillId, { favoritedAt: favorite ? Date.now() : null });
+    },
     "updates.sourceNews": async () => currentNews(),
     "updates.checkSources": async (): Promise<SourceCheckResult> => {
       await wait(STEP_MS * 2);

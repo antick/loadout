@@ -47,6 +47,7 @@ function skill(name: string, deployedTo: string[], blockedAgents: string[] = [])
     suggestFor: [],
     blockedAgents,
     note: null,
+    favoritedAt: null,
   };
 }
 

@@ -53,6 +53,8 @@ export interface LibraryFilters {
   source: SourceFilter;
   status: StatusFilter;
   tags: readonly string[];
+  /** Only favourites. Combines with the rest. */
+  favorites: boolean;
   sort: SortMode;
 }
 
@@ -61,7 +63,12 @@ export const EMPTY_FILTERS: Omit<LibraryFilters, "sort"> = {
   source: FILTER_ALL,
   status: FILTER_ALL,
   tags: [],
+  favorites: false,
 };
+
+export function isFavorite(skill: Pick<Skill, "favoritedAt">): boolean {
+  return skill.favoritedAt !== null;
+}
 
 /** Update states the user has to look at: the check failed or the source is gone. */
 const ATTENTION_STATUSES: ReadonlySet<UpdateStatus> = new Set(["error", "source_missing"]);
@@ -154,12 +161,14 @@ export function isFiltering(filters: LibraryFilters): boolean {
     filters.query.trim() !== "" ||
     filters.source !== FILTER_ALL ||
     filters.status !== FILTER_ALL ||
-    filters.tags.length > 0
+    filters.tags.length > 0 ||
+    filters.favorites
   );
 }
 
 /**
- * Search (name, description, tags, source), then source, status and tag filters, then sort.
+ * Search (name, description, tags, note, source), then source, status, favourite and tag filters,
+ * then sort.
  * `available` is the agents that can take skills, for the "on every agent" filters.
  */
 export function filterSkills(
@@ -175,6 +184,7 @@ export function filterSkills(
         matchesSkillQuery(skill, filters.query) &&
         (filters.source === FILTER_ALL || skill.sourceType === filters.source) &&
         matchesStatus(skill, filters.status, usage, available) &&
+        (!filters.favorites || isFavorite(skill)) &&
         matchesTagFilter(skill.tags, filters.tags),
     )
     .sort((a, b) => compare(a, b) || byName(a, b));

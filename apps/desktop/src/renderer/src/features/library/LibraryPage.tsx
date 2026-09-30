@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { BatchDeployDialog } from "@/components/BatchDeployDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
@@ -74,6 +75,8 @@ export interface LibraryPageProps {
   requestedStatus: StatusFilter | null;
   /** Search text asked for from outside (the Sources page); applied once, then cleared. */
   requestedQuery: string | null;
+  /** Favourites only, asked for from outside (the sidebar); applied once, then cleared. */
+  requestedFavorites: boolean;
   onRequestApplied: () => void;
 }
 
@@ -83,6 +86,7 @@ export function LibraryPage({
   onOpenSkill,
   requestedStatus,
   requestedQuery,
+  requestedFavorites,
   onRequestApplied,
 }: LibraryPageProps): ReactNode {
   const { t } = useTranslation();
@@ -104,7 +108,9 @@ export function LibraryPage({
   // A status or search asked for from outside replaces the filters once; the request is then
   // cleared.
   const request =
-    requestedStatus || requestedQuery ? `${requestedStatus}\0${requestedQuery}` : null;
+    requestedStatus || requestedQuery || requestedFavorites
+      ? `${requestedStatus}\0${requestedQuery}\0${requestedFavorites}`
+      : null;
   const [seenRequest, setSeenRequest] = useState<string | null>(null);
   if (request !== seenRequest) {
     setSeenRequest(request);
@@ -113,6 +119,7 @@ export function LibraryPage({
         ...EMPTY_FILTERS,
         status: requestedStatus ?? EMPTY_FILTERS.status,
         query: requestedQuery ?? EMPTY_FILTERS.query,
+        favorites: requestedFavorites,
       });
     }
   }
@@ -179,13 +186,16 @@ export function LibraryPage({
       }
       menuActions={actionsFor(skill)}
       actions={
-        <IconButton
-          size="icon-xs"
-          label={t("library.deleteSkill", { name: skill.name })}
-          icon={<Trash2 />}
-          className="text-muted-foreground hover:text-danger"
-          onClick={() => void deleteSkills([skill])}
-        />
+        <>
+          <FavoriteButton skill={skill} />
+          <IconButton
+            size="icon-xs"
+            label={t("library.deleteSkill", { name: skill.name })}
+            icon={<Trash2 />}
+            className="text-muted-foreground hover:text-danger"
+            onClick={() => void deleteSkills([skill])}
+          />
+        </>
       }
     />
   );

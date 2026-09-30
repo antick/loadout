@@ -151,6 +151,11 @@ export interface Skill {
    * up with the tags, never written into SKILL.md. Null when there is none.
    */
   note: string | null;
+  /**
+   * When the user made the skill a favourite (epoch ms), null when it is not one. Kept by
+   * Loadout and backed up with the tags.
+   */
+  favoritedAt: number | null;
 }
 
 /** A `.zip` written by `skills.exportArchive`. */

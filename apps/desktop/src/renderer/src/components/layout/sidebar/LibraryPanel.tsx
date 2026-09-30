@@ -14,6 +14,7 @@ import {
   GitFork,
   Hourglass,
   Library,
+  Star,
   TriangleAlert,
 } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
@@ -30,7 +31,13 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
-import { hasUpdate, needsAttention, type StatusFilter } from "@/features/library/library-filters";
+import {
+  hasUpdate,
+  isFavorite,
+  needsAttention,
+  type StatusFilter,
+} from "@/features/library/library-filters";
+import type { LibrarySearch } from "@/routes/library";
 import { useSkills } from "@/hooks/queries/skills";
 import { useUsageReport } from "@/hooks/queries/usage";
 import { useAllItems } from "@/hooks/queries/items";
@@ -39,32 +46,45 @@ import { SIDEBAR_RECENT_SKILLS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface LibraryView {
-  status: StatusFilter;
+  /** Label key under `sidebar.library.view`, and the React key. */
+  id: StatusFilter | "favorites";
+  /** What the library opens with. */
+  search: LibrarySearch;
   icon: ReactNode;
   count(skills: readonly Skill[], usage: ReadonlyMap<string, SkillUsage>): number;
   /** Shown only while usage tracking is on. */
   needsUsage?: boolean;
 }
 
-/** Shortcuts into the library, each opening it with one status filter applied. */
+/** Shortcuts into the library, each opening it with one filter applied. */
 const VIEWS: readonly LibraryView[] = [
   {
-    status: "updates",
+    id: "favorites",
+    search: { favorites: true },
+    icon: <Star />,
+    count: (skills) => skills.filter(isFavorite).length,
+  },
+  {
+    id: "updates",
+    search: { status: "updates" },
     icon: <CircleFadingArrowUp />,
     count: (skills) => skills.filter(hasUpdate).length,
   },
   {
-    status: "attention",
+    id: "attention",
+    search: { status: "attention" },
     icon: <TriangleAlert />,
     count: (skills) => skills.filter(needsAttention).length,
   },
   {
-    status: "not_deployed",
+    id: "not_deployed",
+    search: { status: "not_deployed" },
     icon: <CircleDashed />,
     count: (skills) => skills.filter((skill) => skill.deployments.length === 0).length,
   },
   {
-    status: "unused",
+    id: "unused",
+    search: { status: "unused" },
     icon: <Hourglass />,
     count: (skills, usage) => skills.filter((skill) => isUnusedSkill(skill, usage)).length,
     needsUsage: true,
@@ -149,11 +169,11 @@ export function LibraryPanel(): ReactNode {
             {VIEWS.filter((view) => usageEnabled || !view.needsUsage).map((view) => {
               const count = view.count(all, usage);
               return (
-                <SidebarMenuItem key={view.status}>
+                <SidebarMenuItem key={view.id}>
                   <SidebarMenuButton asChild className={cn(count === 0 && "opacity-60")}>
-                    <Link to="/library" search={{ status: view.status }} draggable={false}>
+                    <Link to="/library" search={view.search} draggable={false}>
                       {view.icon}
-                      <span className="truncate">{t(`sidebar.library.view.${view.status}`)}</span>
+                      <span className="truncate">{t(`sidebar.library.view.${view.id}`)}</span>
                     </Link>
                   </SidebarMenuButton>
                   {skills.data ? (

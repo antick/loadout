@@ -183,4 +183,8 @@ export const MIGRATIONS: readonly string[] = [
   -- The user's own note on the skill, NULL when none.
   ALTER TABLE skills ADD COLUMN note TEXT;
   `,
+  `
+  -- When the user made the skill a favourite (epoch ms), NULL when it is not one.
+  ALTER TABLE skills ADD COLUMN favorited_at INTEGER;
+  `,
 ];

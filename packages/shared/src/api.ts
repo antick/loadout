@@ -141,6 +141,8 @@ export interface SkillsApi {
   setSuggestFor(skillId: string, patterns: string[]): Promise<Skill>;
   /** The user's note on the skill; null or blank takes it off. Trimmed and capped. */
   setNote(skillId: string, note: string | null): Promise<Skill>;
+  /** Make the skill a favourite, or take that back. Already so: nothing changes. */
+  setFavorite(skillId: string, favorite: boolean): Promise<Skill>;
 }
 
 /** The in-app editor: any skill folder, in the library, an agent's folder or a project. */

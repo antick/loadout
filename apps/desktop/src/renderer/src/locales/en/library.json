@@ -143,6 +143,14 @@
       "files_one": "{{count}} item in the skill folder",
       "files_other": "{{count}} items in the skill folder"
     },
+    "favorites": {
+      "only": "Favourites only",
+      "add": "Add {{name}} to favourites",
+      "remove": "Remove {{name}} from favourites",
+      "errors": {
+        "save": "Could not change the favourites."
+      }
+    },
     "note": {
       "title": "Your note",
       "badge": "Has a note",

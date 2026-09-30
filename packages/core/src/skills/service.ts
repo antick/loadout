@@ -171,6 +171,21 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       return skill;
     },
 
+    setFavorite: async (skillId, favorite) => {
+      const skill = await ctx.lock.run(`favourite ${store.get(skillId).name}`, () => {
+        const fresh = store.get(skillId);
+        // Already as asked: the time it became one stays.
+        if (favorite === (fresh.favoritedAt !== null)) return fresh;
+        // Not an edit of the skill: its "last changed" time stays.
+        return store.update(skillId, {
+          favoritedAt: favorite ? Date.now() : null,
+          updatedAt: fresh.updatedAt,
+        });
+      });
+      ctx.touched("skills");
+      return skill;
+    },
+
     setAuthored: async (skillId, authored) => {
       const skill = await ctx.lock.run(`mark ${store.get(skillId).name}`, () => {
         const fresh = store.get(skillId);

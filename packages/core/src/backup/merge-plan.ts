@@ -208,6 +208,13 @@ export function planSkill(
   const notePick = pickSide(base?.meta.note, ours.meta.note, theirs.meta.note);
   const note = notePick === "theirs" ? theirs.meta.note : ours.meta.note;
   if (note !== undefined) meta.note = note;
+  const favoritePick = pickSide(
+    base?.meta.favoritedAt,
+    ours.meta.favoritedAt,
+    theirs.meta.favoritedAt,
+  );
+  const favoritedAt = favoritePick === "theirs" ? theirs.meta.favoritedAt : ours.meta.favoritedAt;
+  if (favoritedAt !== undefined) meta.favoritedAt = favoritedAt;
 
   const touched =
     content === "theirs" ||
@@ -216,6 +223,7 @@ export function planSkill(
     canonical(suggestFor) !== canonical([...(ours.meta.suggestFor ?? [])].sort()) ||
     canonical(blockedAgents) !== canonical([...(ours.meta.blockedAgents ?? [])].sort()) ||
     note !== ours.meta.note ||
+    favoritedAt !== ours.meta.favoritedAt ||
     sourceSide === "theirs";
   const outcome: SkillOutcome = conflict ? "conflict" : touched ? "updated" : "unchanged";
   return { id, outcome, content, path, meta };

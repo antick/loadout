@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { FileArchive, FolderOpen, PencilLine, TextCursorInput, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { IconButton } from "@/components/IconButton";
 import { useShell } from "@/components/layout/shell-context";
 import { SkillIndicators } from "@/components/SkillIndicators";
@@ -21,7 +22,7 @@ export interface SkillDetailHeaderProps {
 
 /**
  * Top of the detail panel: name, description, source and update badges, tags, and the edit,
- * rename, reveal, export and delete actions.
+ * favourite, rename, reveal, export and delete actions.
  */
 export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): ReactNode {
   const { t } = useTranslation();
@@ -48,6 +49,7 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
               {t("editor.open")}
             </Link>
           </Button>
+          <FavoriteButton skill={skill} size="icon-sm" />
           <IconButton
             label={t("library.rename.action")}
             icon={<TextCursorInput />}

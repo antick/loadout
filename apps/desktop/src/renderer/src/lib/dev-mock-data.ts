@@ -121,6 +121,7 @@ function skill(
     suggestFor: [],
     blockedAgents: [],
     note: null,
+    favoritedAt: null,
     ...extra,
   };
 }
@@ -141,6 +142,7 @@ export const SEED_SKILLS: Skill[] = [
       updateStatus: "update_available",
       remoteRevision: "9be01d7",
       tags: ["review", "quality"],
+      favoritedAt: NOW - 30 * HOUR,
     },
     ["claude_code", "cursor", "codex"],
   ),

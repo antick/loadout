@@ -43,6 +43,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Delete skill (removes library copy, preset links, deployments)
 - [x] Tags: add/remove per skill, rename tag, delete tag, batch tag dialog
 - [x] A note per skill, kept by Loadout, searched, backed up, `loadout skills note`
+- [x] Favourites: star per skill, favourites filter and sidebar view, `loadout skills favorite`
 - [x] Batch select: deploy to agents, tags, update, delete
 - [x] Activity log of install / remove / update / deploy operations
 - [x] Possible duplicates: find skills that look like one installed twice, compare, keep one, dismiss a pair

@@ -11,6 +11,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Search takes words in any order and name initials: `pdfm` finds `pdf-manipulation`. The same in `⌘K` and `skills list -q`.
 - Tags: add, remove, rename, delete, edit for many skills at once.
 - **Your note** on a skill: why it is there, when to use it. Kept by Loadout, never in `SKILL.md`, found by the search, backed up with the tags. `loadout skills note`.
+- **Favourites**: star a skill on its card, in its panel or from its menu; a Favourites view in the sidebar and a star filter in the library. Backed up with the tags. `loadout skills favorite`, `skills list --favorites`.
 - Skill panel: rendered `SKILL.md`, files, source, per-agent switches, presets, projects.
 - Format checks against the Agent Skills rules, with line numbers; errors mark the skill "Needs fixing".
 - **Fix frontmatter**: adds a missing name and description, shown as a diff before saving.

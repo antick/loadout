@@ -51,6 +51,8 @@ export interface PortableSkill {
   blockedAgents?: string[];
   /** The user's own note on the skill. Left out when none. */
   note?: string;
+  /** When it became a favourite (epoch ms). Left out when it is not one. */
+  favoritedAt?: number;
 }
 
 export interface PortablePreset {
@@ -92,6 +94,11 @@ export function readBlockedAgents(value: unknown): string[] {
 /** The note from a file that may come from another device: trimmed and capped, or null. */
 export function readNote(value: unknown): string | null {
   return cleanSkillNote(value);
+}
+
+/** The favourite time from a file that may come from another device; anything odd is "not one". */
+export function readFavoritedAt(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
 }
 
 /** A metadata file may only name a plain folder directly inside the skills folder. */
@@ -220,6 +227,7 @@ export class PortableMetadata {
         suggestFor: skill.suggestFor.length > 0 ? [...skill.suggestFor].sort() : undefined,
         blockedAgents: skill.blockedAgents.length > 0 ? [...skill.blockedAgents].sort() : undefined,
         note: skill.note ?? undefined,
+        favoritedAt: skill.favoritedAt ?? undefined,
       };
       skillFiles.add(`${skill.id}.json`);
       this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), file);
@@ -342,6 +350,7 @@ export class PortableMetadata {
         suggestFor: readSuggestFor(file.suggestFor),
         blockedAgents: readBlockedAgents(file.blockedAgents),
         note: readNote(file.note),
+        favoritedAt: readFavoritedAt(file.favoritedAt),
         updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);
@@ -367,6 +376,7 @@ export class PortableMetadata {
       suggestFor: readSuggestFor(file.suggestFor),
       blockedAgents: readBlockedAgents(file.blockedAgents),
       note: readNote(file.note),
+      favoritedAt: readFavoritedAt(file.favoritedAt),
     });
     this.#skills.setTags(file.id, file.tags);
     return file.id;

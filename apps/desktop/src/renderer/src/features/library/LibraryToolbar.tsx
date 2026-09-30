@@ -1,3 +1,4 @@
+import { Star } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchInput } from "@/components/SearchInput";
@@ -9,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Toggle } from "@/components/ui/toggle";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
 import {
   type LibraryFilters,
@@ -21,6 +23,7 @@ import {
   needsUsage,
 } from "@/features/library/library-filters";
 import { LIBRARY_VIEW_MODES, type LibraryViewMode } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export interface LibraryToolbarProps {
   filters: LibraryFilters;
@@ -32,7 +35,7 @@ export interface LibraryToolbarProps {
   usageEnabled: boolean;
 }
 
-/** Search, source / status filters, sort, grid-list switch, and the tag filter row. */
+/** Search, source / status / favourite filters, sort, grid-list switch, and the tag filter row. */
 export function LibraryToolbar({
   filters,
   onChange,
@@ -84,6 +87,17 @@ export function LibraryToolbar({
             ))}
           </SelectContent>
         </Select>
+        <Toggle
+          size="sm"
+          variant="outline"
+          pressed={filters.favorites}
+          aria-label={t("library.favorites.only")}
+          title={t("library.favorites.only")}
+          className="data-[state=on]:text-primary"
+          onPressedChange={(favorites) => onChange({ favorites })}
+        >
+          <Star className={cn(filters.favorites && "fill-current")} />
+        </Toggle>
         <div className="ml-auto flex items-center gap-2">
           <Select
             value={filters.sort}

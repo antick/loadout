@@ -23,6 +23,7 @@ import { installCommand } from "./skills-install";
 import { scanCommand } from "./skills-scan";
 import { searchCommand } from "./skills-search";
 import { checkCommand, updateCommand } from "./skills-update";
+import { favoriteCommand } from "./skills-favorite";
 import { noteCommand } from "./skills-note";
 import { usageCommand } from "./skills-usage";
 import { suggestForCommand } from "./skills-suggest-for";
@@ -61,6 +62,11 @@ const SOURCE_FLAG = {
   value: "type",
   description: `Only skills from this source: ${SOURCE_TYPES.join(", ")}.`,
 } as const;
+const FAVORITES_FLAG = {
+  name: "favorites",
+  type: "boolean",
+  description: "Only favorite skills.",
+} as const;
 const ADD_FLAG = {
   name: "add",
   type: "list",
@@ -83,9 +89,13 @@ const MANUAL_ONLY_TEXT = "manual only: agents run it when you call it (disable-m
 /** Next to a skill's name when it ships scripts, hooks or MCP servers (`skills show` says which). */
 export const RUNS_CODE_MARK = "[code]";
 
+/** Next to a skill's name when it is a favorite. */
+export const FAVORITE_MARK = "[fav]";
+
 const nameCell = (skill: Skill): string =>
   [
     skill.name,
+    skill.favoritedAt !== null ? FAVORITE_MARK : "",
     skill.manualOnly ? MANUAL_ONLY_MARK : "",
     runsCode(skill.traits) ? RUNS_CODE_MARK : "",
   ]
@@ -105,12 +115,14 @@ async function list({ core, args }: CommandContext): Promise<CommandResult> {
   const tags = flagList(args, TAG_FLAG.name).map((tag) => tag.toLowerCase());
   const source = flagString(args, SOURCE_FLAG.name);
   const query = flagString(args, QUERY_FLAG.name) ?? "";
+  const favorites = flagBoolean(args, FAVORITES_FLAG.name);
   if (source !== undefined && !SOURCE_TYPES.some((type) => type === source)) {
     throw new UsageError(`--source must be one of: ${SOURCE_TYPES.join(", ")}.`);
   }
   const value = (await core.api.skills.list()).filter(
     (skill) =>
       matchesSkillQuery(skill, query) &&
+      (!favorites || skill.favoritedAt !== null) &&
       (source === undefined || skill.sourceType === source) &&
       tags.every((tag) => skill.tags.some((own) => own.toLowerCase() === tag)),
   );
@@ -146,6 +158,7 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
     ["Updates", value.updateStatus],
     ["Tags", value.tags.join(", ")],
     ["Note", value.note],
+    ["Favorite", value.favoritedAt === null ? null : `since ${when(value.favoritedAt)}`],
     ["Deployed to", agentsOf(value)],
     ["Installed", when(value.createdAt)],
     ["Changed", when(value.updatedAt)],
@@ -342,8 +355,8 @@ export const skillsGroup: CommandGroup = {
     {
       name: "list",
       summary: "List library skills",
-      usage: "[--query <text>] [--tag <tag>…] [--source <type>]",
-      flags: [QUERY_FLAG, TAG_FLAG, SOURCE_FLAG],
+      usage: "[--query <text>] [--tag <tag>…] [--source <type>] [--favorites]",
+      flags: [QUERY_FLAG, TAG_FLAG, SOURCE_FLAG, FAVORITES_FLAG],
       run: list,
     },
     { name: "show", summary: "Show one skill in full", usage: "<ref>", flags: [], run: show },
@@ -402,5 +415,6 @@ export const skillsGroup: CommandGroup = {
       run: editTags,
     },
     noteCommand,
+    favoriteCommand,
   ],
 };
