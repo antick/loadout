@@ -1,6 +1,15 @@
 {
   "library": {
     "deployAll": "Deploy all",
+    "groupBySource": "Group by source",
+    "groups": {
+      "noSource": "No source",
+      "toggle": "Fold or unfold {{name}}",
+      "count_one": "{{count}} skill",
+      "count_other": "{{count}} skills",
+      "showSource": "Sources",
+      "deploy": "Deploy to agents…"
+    },
     "matrix": {
       "skill": "Skill",
       "noAgents": "No agents are available. Switch one on from the Agents page."

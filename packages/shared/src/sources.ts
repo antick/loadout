@@ -107,10 +107,14 @@ export function repositorySourceKey(url: string, branch: string | null): string 
   return `${normalizeSourceUrl(url)}${branch ? `#${branch}` : ""}`;
 }
 
+/** A source without the per-skill tallies: what one skill alone can say about where it is from. */
+export type SkillSourceIdentity = Omit<
+  SkillSource,
+  "skillIds" | "updatesAvailable" | "problems" | "lastCheckedAt"
+>;
+
 /** Where one skill came from, as a source; null when it has none worth grouping. */
-function sourceOf(
-  skill: Skill,
-): Omit<SkillSource, "skillIds" | "updatesAvailable" | "problems" | "lastCheckedAt"> | null {
+export function skillSourceOf(skill: Skill): SkillSourceIdentity | null {
   if ((skill.sourceType === "git" || skill.sourceType === "marketplace") && skill.sourceUrl) {
     const branch = skill.sourceType === "git" ? skill.sourceBranch : null;
     const url = skill.sourceUrl;
@@ -157,7 +161,7 @@ function sourceOf(
 export function groupSkillSources(skills: readonly Skill[]): SkillSource[] {
   const sources = new Map<string, SkillSource>();
   for (const skill of skills) {
-    const found = sourceOf(skill);
+    const found = skillSourceOf(skill);
     if (!found) continue;
     const source = sources.get(found.key) ?? {
       ...found,
@@ -182,5 +186,5 @@ export function groupSkillSources(skills: readonly Skill[]): SkillSource[] {
 
 /** How many skills belong to no source (made here, or imported from a single folder). */
 export function skillsWithoutSource(skills: readonly Skill[]): number {
-  return skills.filter((skill) => sourceOf(skill) === null).length;
+  return skills.filter((skill) => skillSourceOf(skill) === null).length;
 }

@@ -36,6 +36,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] SQLite metadata, rebuilt from skill files when missing
 - [x] Parse `SKILL.md` / `skill.md` frontmatter (name, description)
 - [x] Skill cards: grid and list view, search, source filter, tag filter incl. Untagged
+- [x] Group by source: folding sections per repository, archive or link, deploy per section
 - [x] Skill detail: rendered docs, file list, source metadata, per-agent toggles, projects using it
 - [x] "Manual only" badge for `disable-model-invocation: true`
 - [x] Per-agent note for frontmatter the agent does not act on, from each agent's own docs

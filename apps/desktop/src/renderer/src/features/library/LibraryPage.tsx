@@ -32,6 +32,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { DuplicatesDialog } from "@/features/library/duplicates/DuplicatesDialog";
 import { LibraryBanners } from "@/features/library/LibraryBanners";
+import { groupLibraryBySource } from "@/features/library/library-groups";
+import { LibraryGroups } from "@/features/library/LibraryGroups";
 import { LibraryMatrix } from "@/features/library/matrix/LibraryMatrix";
 import {
   DEFAULT_SORT_MODE,
@@ -63,6 +65,7 @@ import { cn } from "@/lib/utils";
 
 const VIEW_MODE_SCOPE = "library";
 const SORT_STORAGE_KEY = "library.sort";
+const GROUP_STORAGE_KEY = "library.group-by-source";
 const GRID_CLASS = "grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]";
 const LIST_CLASS = "flex flex-col gap-1.5";
 const SKELETON_ITEMS = [0, 1, 2, 3, 4, 5];
@@ -100,6 +103,7 @@ export function LibraryPage({
   const actionsFor = useLibrarySkillActions();
   const [viewMode, setViewMode] = useViewMode<LibraryViewMode>(VIEW_MODE_SCOPE);
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
+  const [groupBySource, setGroupBySource] = usePersistedState<boolean>(GROUP_STORAGE_KEY, false);
   const [rest, setRest] = useState(EMPTY_FILTERS);
   const [deployAllOpen, setDeployAllOpen] = useState(false);
   const [duplicatesOpen, setDuplicatesOpen] = useState(false);
@@ -149,7 +153,15 @@ export function LibraryPage({
       filterSkills(all ?? [], filters, { enabled: usage.enabled, byId: usage.byId }, availableKeys),
     [all, filters, usage.enabled, usage.byId, availableKeys],
   );
-  const visibleIds = useMemo(() => visible.map((skill) => skill.id), [visible]);
+  // Sections change the order on screen; the selection follows it so shift-click ranges do too.
+  const groups = useMemo(
+    () => (groupBySource && viewMode !== "matrix" ? groupLibraryBySource(visible) : null),
+    [groupBySource, viewMode, visible],
+  );
+  const visibleIds = useMemo(
+    () => (groups ?? [{ skills: visible }]).flatMap((group) => group.skills.map((s) => s.id)),
+    [groups, visible],
+  );
   const selection = useSelection(visibleIds);
   const selected = useMemo(
     () => visible.filter((skill) => selection.isSelected(skill.id)),
@@ -263,6 +275,12 @@ export function LibraryPage({
           onSelectToggle={(target, modifiers) => selection.toggle(target.id, modifiers)}
           onOpen={(target) => onOpenSkill(target.id)}
         />
+      ) : groups ? (
+        <LibraryGroups
+          groups={groups}
+          itemsClassName={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}
+          renderItem={renderItem}
+        />
       ) : (
         <div className={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}>
           {visible.map(renderItem)}
@@ -361,6 +379,8 @@ export function LibraryPage({
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           usageEnabled={usage.enabled}
+          groupBySource={groupBySource}
+          onGroupBySourceChange={setGroupBySource}
         />
       ) : null}
 

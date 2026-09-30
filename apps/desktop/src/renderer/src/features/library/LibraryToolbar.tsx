@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Layers, Star } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchInput } from "@/components/SearchInput";
@@ -33,9 +33,12 @@ export interface LibraryToolbarProps {
   onViewModeChange: (mode: LibraryViewMode) => void;
   /** Usage tracking is on: offer the filter and sorts that need it. */
   usageEnabled: boolean;
+  /** One section per repository, archive or link (grid and list views only). */
+  groupBySource: boolean;
+  onGroupBySourceChange: (on: boolean) => void;
 }
 
-/** Search, source / status / favourite filters, sort, grid-list switch, and the tag filter row. */
+/** Search, source / status / favourite filters, sort, group-by-source and view switches, tags. */
 export function LibraryToolbar({
   filters,
   onChange,
@@ -43,6 +46,8 @@ export function LibraryToolbar({
   viewMode,
   onViewModeChange,
   usageEnabled,
+  groupBySource,
+  onGroupBySourceChange,
 }: LibraryToolbarProps): ReactNode {
   const { t } = useTranslation();
   const offered = <T extends StatusFilter | SortMode>(values: readonly T[]): T[] =>
@@ -114,6 +119,17 @@ export function LibraryToolbar({
               ))}
             </SelectContent>
           </Select>
+          <Toggle
+            size="sm"
+            variant="outline"
+            pressed={groupBySource && viewMode !== "matrix"}
+            disabled={viewMode === "matrix"}
+            aria-label={t("library.groupBySource")}
+            title={t("library.groupBySource")}
+            onPressedChange={onGroupBySourceChange}
+          >
+            <Layers />
+          </Toggle>
           <ViewModeToggle value={viewMode} onChange={onViewModeChange} modes={LIBRARY_VIEW_MODES} />
         </div>
       </div>
