@@ -63,6 +63,7 @@ loadout skills show <ref> --json                # includes "traits": scripts, ho
 loadout skills status <ref> --json              # which agents have it, is it really on disk, and frontmatter an agent skips
 loadout repo show --json                        # library location and counts
 loadout doctor --json                           # everything that needs a look; exit 1 on errors
+loadout skills repair --json                    # put back deployments that are missing or broken links; never replaces a foreign folder
 loadout skills usage --json                     # how often agents ran each skill, if the user turned tracking on
 loadout project suggest --dir . --json          # library skills that fit this linked project, and why
 loadout presets import ./team.loadout-preset.json --dry-run --json   # what importing a shared preset would install
@@ -256,6 +257,6 @@ command again with `--approve-removals`.
 
 Start with `repo show --json` and `agents list --json`. A skill "not showing up" is almost
 always one of: installed but never deployed, deployed to a different agent, the agent is
-disabled, or `skills status` reports `presentOnDisk: false` (deploy it again). An agent may
+disabled, or `skills status` reports `presentOnDisk: false` (`skills repair` puts it back). An agent may
 also ignore a skill whose SKILL.md is broken: run `skills validate <ref>` and report any `error`
 (missing frontmatter, name or description, or YAML that does not parse).

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import type {
   CoreApi,
   HealthArea,
@@ -45,18 +46,34 @@ function formatFindings(skills: readonly Skill[]): Finding[] {
   );
 }
 
+/** Nothing at the path: "missing". A link that leads nowhere: "broken". Otherwise null. */
+function deploymentProblem(targetPath: string): "missing" | "broken" | null {
+  const stat = lstatOrNull(targetPath);
+  if (stat === null) return "missing";
+  return stat.isSymbolicLink() && !existsSync(targetPath) ? "broken" : null;
+}
+
+const DEPLOYMENT_MESSAGES = {
+  missing: "Deployed, but not on disk. skills repair puts it back.",
+  broken: "Deployed, but its link leads nowhere. skills repair puts it back.",
+} as const;
+
 function deploymentFindings(skills: readonly Skill[]): Finding[] {
   return skills.flatMap((skill) =>
-    skill.deployments
-      .filter((deployment) => lstatOrNull(deployment.targetPath) === null)
-      .map((deployment) => ({
-        area: "deployments" as const,
-        severity: "error" as const,
-        message: "Deployed, but not on disk. Deploy it again to put it back.",
-        skill: skill.name,
-        agent: deployment.agentKey,
-        path: deployment.targetPath,
-      })),
+    skill.deployments.flatMap((deployment) => {
+      const problem = deploymentProblem(deployment.targetPath);
+      if (!problem) return [];
+      return [
+        {
+          area: "deployments" as const,
+          severity: "error" as const,
+          message: DEPLOYMENT_MESSAGES[problem],
+          skill: skill.name,
+          agent: deployment.agentKey,
+          path: deployment.targetPath,
+        },
+      ];
+    }),
   );
 }
 

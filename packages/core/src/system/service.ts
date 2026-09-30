@@ -2,7 +2,7 @@ import { arch, platform, release } from "node:os";
 import type { DiagnosticInfo, SystemApi } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
-import type { DeployService } from "../deploy";
+import type { DeployRepair, DeployService } from "../deploy";
 import type { InstallService } from "../install";
 import { describeLocation, setLibraryPath } from "../paths";
 import type { SkillStore } from "../skills/store";
@@ -16,6 +16,7 @@ export interface SystemServiceDeps {
   install: Pick<InstallService, "git" | "installIntoLibrary">;
   deploy: Pick<DeployService, "api">;
   registry: AgentRegistry;
+  repair: DeployRepair;
 }
 
 export interface SystemService {
@@ -57,6 +58,9 @@ export function createSystemService(ctx: CoreContext, deps: SystemServiceDeps): 
     exportLogs: async () => exportLogs(ctx, await diagnostics()),
     lastCrash: async () => readCrashMarker(ctx.paths.crashMarkerPath, ctx.homeDir),
     clearLastCrash: async () => clearCrashMarker(ctx.paths.crashMarkerPath),
+    repairReport: async () => deps.repair.last(),
+    repairDeployments: () => deps.repair.run(),
+    dismissRepair: async () => deps.repair.dismiss(),
     cliStatus: async () => cli.status(),
     agentControlStatus: async () => agentControl.status(),
     setupAgentControl: agentControl.setup,

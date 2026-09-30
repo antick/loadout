@@ -6,6 +6,7 @@ import type {
   DetectedEditor,
   DiagnosticInfo,
   LibraryLocation,
+  RepairReport,
 } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -50,6 +51,11 @@ export function useLibraryLocation(): UseQueryResult<LibraryLocation> {
 /** Versions and paths of this computer; `gitVersion` is null when Git is not installed. */
 export function useDiagnostics(): UseQueryResult<DiagnosticInfo> {
   return useQuery({ queryKey: keys.system.diagnostics, queryFn: () => api.system.diagnostics() });
+}
+
+/** What the deployment repair found at start-up, or null before it ran or once dismissed. */
+export function useRepairReport(): UseQueryResult<RepairReport | null> {
+  return useQuery({ queryKey: keys.system.repair, queryFn: () => api.system.repairReport() });
 }
 
 /** The crash recorded by the previous run, or null. */

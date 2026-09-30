@@ -25,6 +25,7 @@ import { searchCommand } from "./skills-search";
 import { checkCommand, updateCommand } from "./skills-update";
 import { favoriteCommand } from "./skills-favorite";
 import { noteCommand } from "./skills-note";
+import { repairCommand } from "./skills-repair";
 import { usageCommand } from "./skills-usage";
 import { suggestForCommand } from "./skills-suggest-for";
 import { validateCommand } from "./skills-validate";
@@ -402,6 +403,7 @@ export const skillsGroup: CommandGroup = {
     },
     checkCommand,
     updateCommand,
+    repairCommand,
     validateCommand,
     diffCommand,
     scanCommand,

@@ -106,7 +106,12 @@ export function subscribeAppEvents(
   const offAppUpdate = onAppEvent("app-update:status", (status) =>
     queryClient.setQueryData(keys.app.update, status),
   );
+  const offRepair = onAppEvent("deploy:repaired", (report) => {
+    queryClient.setQueryData(keys.system.repair, report);
+    if (report.repaired.length > 0) invalidateScopes(queryClient, ["skills"]);
+  });
   return () => {
+    offRepair();
     offAppUpdate();
     offData();
     offNavigate();

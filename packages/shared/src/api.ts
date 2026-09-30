@@ -10,6 +10,7 @@ import type {
   BrokenSkillFolder,
   CliStatus,
   CrashInfo,
+  RepairReport,
   CustomAgentInput,
   DiagnosticInfo,
   LibraryLocation,
@@ -424,6 +425,14 @@ export interface SystemApi {
   exportLogs(): Promise<LogExport>;
   lastCrash(): Promise<CrashInfo | null>;
   clearLastCrash(): Promise<void>;
+  /**
+   * What the deployment repair found when the app started, or on the last `repairDeployments`;
+   * null before it ran or once dismissed.
+   */
+  repairReport(): Promise<RepairReport | null>;
+  /** Put back every recorded deployment that is missing or a broken link, now. */
+  repairDeployments(): Promise<RepairReport>;
+  dismissRepair(): Promise<void>;
   cliStatus(): Promise<CliStatus>;
   agentControlStatus(): Promise<AgentControlStatus>;
   /** Install the bundled management skill and deploy it to the chosen agents. */

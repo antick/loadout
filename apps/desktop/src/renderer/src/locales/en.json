@@ -342,6 +342,10 @@
   "banners": {
     "crashTitle": "{{app}} closed unexpectedly {{when}}.",
     "viewLogs": "View logs",
+    "repairTitle_one": "{{count}} deployment could not be put back.",
+    "repairTitle_other": "{{count}} deployments could not be put back.",
+    "repairDone_one": "Put back {{count}} deployment.",
+    "repairDone_other": "Put back {{count}} deployments.",
     "libraryTitle": "The library location needs attention.",
     "openSettings": "Open settings",
     "libraryWarnings": {

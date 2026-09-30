@@ -1,6 +1,7 @@
 import type { AppUpdateStatus, AutoBackupEvent } from "./types";
 import type { BackupProgress } from "./types-backup";
 import type { InstallProgress } from "./types-install";
+import type { RepairReport } from "./types-system";
 
 /** Main → renderer notifications. Payload type per event name. */
 export interface AppEvents {
@@ -26,6 +27,8 @@ export interface AppEvents {
   "library:missing": { path: string };
   /** The app-update flow moved: checked, downloading (with progress), ready, failed. */
   "app-update:status": AppUpdateStatus;
+  /** The deployment repair ran: at start-up, or on request. */
+  "deploy:repaired": RepairReport;
 }
 
 export type DataScope =
@@ -54,6 +57,7 @@ export const APP_EVENT_NAMES = [
   "app:navigate",
   "library:missing",
   "app-update:status",
+  "deploy:repaired",
 ] as const satisfies readonly AppEventName[];
 
 export const IPC_INVOKE_CHANNEL = "loadout:invoke";

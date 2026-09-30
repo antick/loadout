@@ -1,4 +1,4 @@
-import type { EditorChoice } from "@loadout/shared";
+import type { EditorChoice, RepairReport } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
@@ -73,5 +73,35 @@ export function useClearLastCrash(): UseMutationResult<void, unknown, void> {
     mutationFn: () => api.system.clearLastCrash(),
     onError: (error) => toastError(error),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.system.lastCrash }),
+  });
+}
+
+/** Run the deployment repair again, e.g. after moving a folder out of the way. */
+export function useRepairDeployments(): UseMutationResult<RepairReport, unknown, void> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: () => api.system.repairDeployments(),
+    onSuccess: (report) => {
+      queryClient.setQueryData(keys.system.repair, report);
+      if (report.failed.length === 0) {
+        toastSuccess(t("banners.repairDone", { count: report.repaired.length }));
+      }
+    },
+    onError: (error) => toastError(error),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: keys.system.repair });
+      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
+    },
+  });
+}
+
+/** Take the repair banner down until the next run. */
+export function useDismissRepair(): UseMutationResult<void, unknown, void> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.system.dismissRepair(),
+    onError: (error) => toastError(error),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.system.repair }),
   });
 }

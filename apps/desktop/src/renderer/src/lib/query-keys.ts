@@ -135,6 +135,7 @@ export const keys = {
     diagnostics: ["system", "diagnostics"] as const,
     logExcerpt: ["system", "log-excerpt"] as const,
     lastCrash: ["system", "last-crash"] as const,
+    repair: ["system", "repair"] as const,
     cliStatus: ["system", "cli-status"] as const,
     agentControl: ["system", "agent-control"] as const,
   },

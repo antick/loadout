@@ -23,6 +23,7 @@ import {
   type DataScope,
   type ErrorCode,
   type ErrorDetails,
+  type RepairReport,
   formatTimestampCompact,
   type GithubConnectResult,
   isWslPath,
@@ -144,6 +145,29 @@ const SEED_ACTIVITY: ActivityEntry[] = [
     at: NOW - (index * 3 + 1) * HOUR,
   }),
 );
+
+const cleanRepair = (): RepairReport => ({
+  ranAt: NOW,
+  checked: 6,
+  repaired: [],
+  failed: [],
+  skippedAgents: 0,
+});
+let repairReport: RepairReport | null =
+  params.get("repair") === "failed"
+    ? {
+        ...cleanRepair(),
+        failed: [
+          {
+            skill: "release-notes",
+            agentKey: "cursor",
+            agent: "Cursor",
+            path: `${HOME}/.cursor/skills/release-notes`,
+            message: "A folder that Loadout did not create is in the way.",
+          },
+        ],
+      }
+    : cleanRepair();
 
 export function createSystemMockHandlers(
   ctx: SystemMockContext,
@@ -445,6 +469,15 @@ export function createSystemMockHandlers(
       zipPath: `${HOME}/Downloads/${CLI_BINARY_NAME}-logs-${formatTimestampCompact(Date.now())}.zip`,
       fileCount: 4,
     }),
+    // `?repair=failed` previews the banner for a deployment that could not be put back.
+    "system.repairReport": () => repairReport,
+    "system.repairDeployments": () => {
+      repairReport = { ...cleanRepair(), repaired: [] };
+      return repairReport;
+    },
+    "system.dismissRepair": () => {
+      repairReport = null;
+    },
     "system.lastCrash": () =>
       params.get("crash") === "1"
         ? { at: NOW - HOUR, message: "TypeError: cannot read properties of undefined" }

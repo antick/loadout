@@ -6,6 +6,7 @@ import { CloseDialog } from "@/components/CloseDialog";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SkillPicker } from "@/components/SkillPicker";
 import { CrashBanner } from "@/components/CrashBanner";
+import { RepairBanner } from "@/components/RepairBanner";
 import { LibraryMissingDialog } from "@/components/LibraryMissingDialog";
 import { HelpDialog } from "@/components/HelpDialog";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -151,6 +152,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               </SidebarSlotRefContext.Provider>
               <SidebarInset className="min-w-0 overflow-hidden">
                 <CrashBanner />
+                <RepairBanner />
                 <LibraryWarningBanner />
                 <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
               </SidebarInset>

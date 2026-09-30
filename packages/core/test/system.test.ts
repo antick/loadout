@@ -22,6 +22,7 @@ import {
   sanitizeText,
   windowsLauncher,
 } from "../src/system";
+import { createDeployRepair } from "../src/deploy";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { makeSkill, writeFile } from "./helpers";
 
@@ -35,6 +36,11 @@ function build(): SystemService {
     install,
     deploy: world.deploy,
     registry: world.registry,
+    repair: createDeployRepair(world.ctx, {
+      store: world.store,
+      registry: world.registry,
+      deploy: world.deploy,
+    }),
   });
 }
 

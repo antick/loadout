@@ -6,7 +6,12 @@ import { createAgentsService } from "./agents";
 import { createBackupService } from "./backup";
 import type { CoreContext } from "./context";
 import { type CoreOptions, createContext } from "./create-context";
-import { createDeployService, createStaleCopyRefresher, pruneBrokenLinks } from "./deploy";
+import {
+  createDeployRepair,
+  createDeployService,
+  createStaleCopyRefresher,
+  pruneBrokenLinks,
+} from "./deploy";
 import { createEditorService, createFileHistory } from "./editor";
 import { createSafetyService } from "./safety";
 import { createInstallService } from "./install";
@@ -92,6 +97,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const removed = createRemovedStore(ctx, { store });
   const deploy = createDeployService(ctx, { store, registry, removed });
   const staleCopies = createStaleCopyRefresher(ctx, deploy);
+  const repair = createDeployRepair(ctx, { store, registry, deploy });
   const agents = createAgentsService(ctx, { registry, deploy });
   const history = createFileHistory(ctx.paths.historyDir);
   const safety = createSafetyService(ctx, {
@@ -192,7 +198,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       refreshItems();
     },
   });
-  const system = createSystemService(ctx, { store, install, deploy, registry });
+  const system = createSystemService(ctx, { store, install, deploy, registry, repair });
   const storage = createStorageService(ctx, { deploy, store, git: install.git, removed });
   const skillsFile = createSkillsFileService(ctx, { git: install.git, registry, store, removed });
   const usage = createUsageService(ctx, { store });
@@ -242,6 +248,10 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     start: () => {
       // Library edits made while the app was closed left the copies behind.
       staleCopies.request();
+      // Deployments that went missing while the app was closed come back; what cannot is reported.
+      void repair
+        .run()
+        .catch((error: unknown) => ctx.log.warn("Could not repair deployments", error));
       updates.auto.start();
       backup.auto.start();
       void system

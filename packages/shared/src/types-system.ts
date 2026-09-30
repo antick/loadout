@@ -220,6 +220,31 @@ export interface CrashInfo {
   message: string;
 }
 
+/** A recorded deployment the start-up repair put back. */
+export interface RepairedDeployment {
+  skill: string;
+  agentKey: string;
+  /** The agent's display name. */
+  agent: string;
+  path: string;
+}
+
+export interface RepairFailure extends RepairedDeployment {
+  /** Why it could not be put back, for people. */
+  message: string;
+}
+
+/** What the deployment repair found and did (`SystemApi.repairReport`). */
+export interface RepairReport {
+  ranAt: number;
+  /** Deployments looked at: those of agents that are installed and switched on. */
+  checked: number;
+  repaired: RepairedDeployment[];
+  failed: RepairFailure[];
+  /** Deployments of agents not installed or switched off, left alone. */
+  skippedAgents: number;
+}
+
 export type LibraryWarning = "config_unreadable" | "library_path_invalid" | "migration_incomplete";
 
 export interface LibraryLocation {

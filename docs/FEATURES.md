@@ -75,6 +75,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Block a skill for an agent: it is removed there and skipped by every deploy. Backed up with the tags; projects are not affected. `loadout skills block`.
 - Deploy all: the whole library to the agents you pick, leaving out blocked skills and folders Loadout didn't create. `loadout skills deploy --all --skip-conflicts`.
 - Copies follow library changes, unless the copy was edited in the agent's folder.
+- Every start puts back deployments that went missing or whose link leads nowhere, the normal way, so a folder Loadout did not create is never replaced; what could not be put back shows in a banner with Retry. `loadout skills repair`; `loadout doctor` names broken links too.
 
 ## Instruction files
 
