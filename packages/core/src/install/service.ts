@@ -25,7 +25,7 @@ import type { SourceNewsStore } from "../sources/news-store";
 import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
 import { type ClawhubClient, createClawhubClient } from "../market/clawhub";
-import { createClawhubInstaller } from "./clawhub-install";
+import { createClawhubInstaller, createClawhubReader } from "./clawhub-install";
 
 export interface InstallServiceDeps {
   store: SkillStore;
@@ -90,13 +90,9 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
   const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl });
-  const fromClawhub = createClawhubInstaller(ctx, {
-    store,
-    clawhub,
-    cancels,
-    install,
-    safety: deps.safety,
-  });
+  const clawhubDeps = { store, clawhub, cancels, install, safety: deps.safety };
+  const fromClawhub = createClawhubInstaller(ctx, clawhubDeps);
+  const readClawhubSkill = createClawhubReader(ctx, clawhubDeps);
   const scan = createScanService(ctx, {
     store,
     registry,
@@ -175,6 +171,8 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     previewArchive: gitInstaller.previewArchive,
     confirmGit: gitInstaller.confirmGit,
     cancelPreview: gitInstaller.cancelPreview,
+    readPreviewSkill: gitInstaller.readPreviewSkill,
+    readClawhubSkill,
     fromMarket: gitInstaller.fromMarket,
     fromClawhub,
     cancel: async (key) => cancels.cancel(key),

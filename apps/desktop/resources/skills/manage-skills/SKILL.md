@@ -77,6 +77,7 @@ loadout skills install https://github.com/owner/repo --skill pdf-tools --json
 loadout skills install owner/repo --all --json          # every skill in the repository
 loadout skills install owner/repo@skill-name --json     # one marketplace skill
 loadout skills install owner/repo --skill pdf --replace --json  # replace the library's pdf instead of adding pdf-2
+loadout skills use owner/repo@skill-name                 # read a skill's SKILL.md without installing it (safety-checked)
 
 # Start a new skill from scratch (name: lowercase letters, numbers, hyphens)
 loadout skills create my-skill --description "What it does and when to use it" --json

@@ -1,7 +1,7 @@
 /** Install and marketplace types. Split from `types.ts` to keep both files small. */
 
 import type { LibraryNameEntry } from "./install-plan";
-import type { InstallOptions } from "./safety";
+import type { InstallOptions, SafetyReport } from "./safety";
 import type { SkillTrait } from "./skill-traits";
 import type { BatchFailure } from "./types";
 
@@ -18,6 +18,14 @@ export interface RepoSkillPreview {
   traits: SkillTrait[];
   /** A library skill with this name already exists; installing updates it. */
   alreadyInstalled: boolean;
+}
+
+/** A skill read without installing it: its `SKILL.md` as written, and the safety check's report. */
+export interface PreviewedSkill {
+  name: string;
+  document: string;
+  /** Null when the safety check is off or no engine is available. */
+  safety: SafetyReport | null;
 }
 
 export interface GitPreview {

@@ -8,6 +8,11 @@ export interface CommandResult {
   text: string;
   /** Set when part of a batch failed: the value is still printed, the exit code says "look". */
   exitCode?: number;
+  /**
+   * For a person, kept out of a result another program reads (such as a document piped into an
+   * agent): printed to stderr, and only in text mode; `--json` carries the same facts in `value`.
+   */
+  notice?: string;
 }
 
 export interface CommandContext {

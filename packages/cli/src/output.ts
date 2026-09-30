@@ -58,6 +58,16 @@ export function printResult(io: CliIo, json: boolean, value: unknown, text: stri
   io.stdout(`${json ? JSON.stringify(value ?? null) : terminalSafe(text)}\n`);
 }
 
+/** A command's result on stdout; its notice, if any, on stderr in text mode. */
+export function printCommandResult(
+  io: CliIo,
+  json: boolean,
+  result: { value: unknown; text: string; notice?: string },
+): void {
+  printResult(io, json, result.value, result.text);
+  if (!json && result.notice) io.stderr(`${terminalSafe(result.notice)}\n`);
+}
+
 /** Findings listed per flagged skill in text mode; `--json` has them all. */
 const FLAGGED_FINDINGS_SHOWN = 5;
 

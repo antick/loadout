@@ -28,7 +28,7 @@ import { repositorySourceKey } from "@loadout/shared";
 import type { SourceNewsStore } from "../sources/news-store";
 import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, installChecked } from "./safety-gate";
-import { createPreviewSessions, emitProgress } from "./preview-sessions";
+import { type PreviewSessions, createPreviewSessions, emitProgress } from "./preview-sessions";
 import { listRepoSkills, resolveSkillDir } from "./repo-scan";
 import { matchRequested } from "./requested";
 import { type SkillsCommand, agentKeyFor, parseSkillsCommand } from "./skills-command";
@@ -64,6 +64,7 @@ export interface GitInstaller {
     options?: ConfirmOptions,
   ): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
+  readPreviewSkill: PreviewSessions["read"];
   fromMarket(source: string, skillId: string, options?: InstallOptions): Promise<Skill>;
   /** Delete every checkout still waiting for a confirm. Call on shutdown. */
   dispose(): Promise<void>;
@@ -256,6 +257,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
 
     confirmGit: sessions.confirm,
     cancelPreview: sessions.cancel,
+    readPreviewSkill: sessions.read,
 
     fromMarket: async (source, skillId, options = {}) => {
       const cloneUrl = marketSourceToUrl(source);

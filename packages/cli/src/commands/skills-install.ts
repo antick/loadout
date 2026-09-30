@@ -25,7 +25,7 @@ export type InstallSource =
   | { kind: "market"; source: string; skillId: string }
   | { kind: "clawhub"; owner: string; slug: string };
 
-const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
+export const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 const PATH_START = /^(?:~|\.{1,2}(?:[\\/]|$)|[\\/]|[A-Za-z]:[\\/])/;
 const REPO = String.raw`[A-Za-z0-9_][\w.-]*\/[A-Za-z0-9_][\w.-]*`;
 const SHORTHAND = new RegExp(`^${REPO}$`);

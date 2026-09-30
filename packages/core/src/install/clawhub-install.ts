@@ -1,6 +1,12 @@
 import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { CLAWHUB_NAME, type InstallOptions, type Skill, clawhubSkillUrl } from "@loadout/shared";
+import {
+  CLAWHUB_NAME,
+  type InstallOptions,
+  type PreviewedSkill,
+  type Skill,
+  clawhubSkillUrl,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { cancelled } from "../errors";
 import { CLAWHUB_META_FILES, type ClawhubClient, parseClawhubRef } from "../market/clawhub";
@@ -9,6 +15,7 @@ import { archiveSkillDir, unpackArchive } from "./archive";
 import type { CancelRegistry } from "./cancel";
 import type { InstallIntoLibrary } from "./library";
 import { emitProgress } from "./preview-sessions";
+import { readCheckedSkill } from "./read-skill";
 import { type SafetyGate, installChecked } from "./safety-gate";
 
 export interface ClawhubInstallerDeps {
@@ -43,6 +50,47 @@ export async function openClawhubVersion(
     await archive.cleanup();
     throw error;
   }
+}
+
+/** Read a ClawHub skill at its latest version without installing it (`skills use`). */
+export function createClawhubReader(ctx: CoreContext, deps: ClawhubInstallerDeps) {
+  return async function readClawhub(
+    ownerInput: string,
+    slugInput: string,
+    options: InstallOptions = {},
+  ): Promise<PreviewedSkill> {
+    const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
+    const key = clawhubTaskKey(owner, slug);
+    const handle = deps.cancels.register(key);
+    let cleanup: (() => Promise<void>) | null = null;
+    try {
+      emitProgress(ctx, key, "downloading", { name: slug });
+      const found = await deps.clawhub.detail(owner, slug);
+      if (!found.version)
+        throw new Error(`${owner}/${slug} has no published version on ${CLAWHUB_NAME}`);
+      const opened = await openClawhubVersion(
+        deps.clawhub,
+        found.owner,
+        found.slug,
+        found.version,
+        handle.signal,
+      );
+      cleanup = opened.cleanup;
+      if (handle.signal.aborted) throw cancelled();
+      return await readCheckedSkill(
+        deps.safety,
+        { name: found.slug, dir: opened.dir },
+        {
+          ...options,
+          progressKey: key,
+        },
+      );
+    } finally {
+      await cleanup?.();
+      handle.done();
+      emitProgress(ctx, key, "done");
+    }
+  };
 }
 
 /** Install a skill from the ClawHub registry at its latest version. */

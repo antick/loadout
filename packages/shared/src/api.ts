@@ -58,6 +58,7 @@ import type {
   MarketSkillDetail,
   ScanResult,
   MarketProvider,
+  PreviewedSkill,
 } from "./types-install";
 import type { CreateSkillInput } from "./new-skill";
 import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } from "./safety";
@@ -223,6 +224,17 @@ export interface InstallApi {
     options?: ConfirmOptions,
   ): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
+  /**
+   * One skill of an open preview, read without installing it: its `SKILL.md` after the safety
+   * check. UNSAFE like `confirmGit` while the check flags it and `acceptRisk` is unset.
+   */
+  readPreviewSkill(
+    previewId: string,
+    relPath: string,
+    options?: InstallOptions,
+  ): Promise<PreviewedSkill>;
+  /** The same for a ClawHub skill at its latest version. */
+  readClawhubSkill(owner: string, slug: string, options?: InstallOptions): Promise<PreviewedSkill>;
   fromMarket(source: string, skillId: string, options?: InstallOptions): Promise<Skill>;
   /** A skill from the ClawHub registry, at its latest version. Progress key `clawhub:owner/slug`. */
   fromClawhub(owner: string, slug: string, options?: InstallOptions): Promise<Skill>;

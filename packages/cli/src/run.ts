@@ -12,7 +12,7 @@ import { COMMAND_GROUPS, type CommandGroup, type CommandSpec } from "./commands"
 import { resolveUserPath } from "./commands/support";
 import type { SkillPicker } from "./picker/state";
 import { GLOBAL_FLAGS, commandHelp, groupHelp, rootHelp } from "./help";
-import { type CliIo, printError, printResult } from "./output";
+import { type CliIo, printCommandResult, printError } from "./output";
 
 export interface CliDeps {
   createCore(options: CoreCreateOptions): Core;
@@ -114,7 +114,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
         homeDir: deps.homeDir,
         openExisting,
       });
-      printResult(io, json, result.value, result.text);
+      printCommandResult(io, json, result);
       return result.exitCode ?? EXIT_OK;
     }
     if (command.createsLibraryAt) {
@@ -127,7 +127,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
     }
     core = deps.createCore({ ...deps.coreOptions, ...(baseDir === undefined ? {} : { baseDir }) });
     const result = await command.run({ core, ...context });
-    printResult(io, json, result.value, result.text);
+    printCommandResult(io, json, result);
     return result.exitCode ?? EXIT_OK;
   } catch (error) {
     if (error instanceof UsageError) {

@@ -1,15 +1,18 @@
 import { randomUUID } from "node:crypto";
 import type {
   ConfirmOptions,
+  InstallOptions,
   InstallPhase,
   InstallProgress,
   InstallSelection,
+  PreviewedSkill,
   Skill,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
 import type { InstallIntoLibrary, InstallRecord } from "./library";
+import { readCheckedSkill } from "./read-skill";
 import { type ReplaceDeps, installReplacing, skillHoldingName } from "./replace";
 import type { SafetyGate } from "./safety-gate";
 
@@ -40,6 +43,8 @@ export interface PreviewSessions {
   /** Keep a session; returns its id. */
   open(session: PreviewSession): Promise<string>;
   confirm(previewId: string, items: InstallSelection[], options?: ConfirmOptions): Promise<Skill[]>;
+  /** One listed skill's `SKILL.md` after the safety check. The preview stays open. */
+  read(previewId: string, relPath: string, options?: InstallOptions): Promise<PreviewedSkill>;
   cancel(previewId: string): Promise<void>;
   /** Delete every session still waiting for a confirm. Call on shutdown. */
   dispose(): Promise<void>;
@@ -147,6 +152,28 @@ export function createPreviewSessions(
         // Installed or failed halfway, the status bar stops showing the install.
         emitProgress(ctx, session.key, "done");
         await session.cleanup();
+      }
+    },
+
+    read: async (previewId, relPath, options = {}) => {
+      await sweepExpired();
+      const session = sessions.get(previewId);
+      if (!session) throw invalid(SESSION_EXPIRED);
+      const dir = session.dirs.get(relPath);
+      if (!dir) throw invalid(`'${relPath}' is not one of the skills in this preview`);
+      // The whole folder: the safety check reads its scripts, not just the document.
+      await session.materialize?.([dir]);
+      try {
+        return await readCheckedSkill(
+          safety,
+          { name: relPath, dir },
+          {
+            ...options,
+            progressKey: session.key,
+          },
+        );
+      } finally {
+        emitProgress(ctx, session.key, "done");
       }
     },
 
