@@ -10,9 +10,11 @@ import {
   type Skill,
   newSkillDescriptionProblem,
   newSkillNameProblem,
+  skillAuthoringPrompt,
   toSkillNameInput,
 } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
+import { ClipboardCopy } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionSelect } from "@/components/OptionSelect";
@@ -33,10 +35,11 @@ import { useCreateSkill } from "@/hooks/mutations/library";
 import { useCreateProjectSkill } from "@/hooks/mutations/project-detail";
 import { useAppInfo, useLibraryLocation } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
+import { api } from "@/lib/api";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { compactHome, joinPath } from "@/lib/paths";
-import { toastSuccess } from "@/lib/toast";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { NewSkillPlaceField } from "./NewSkillPlaceField";
 import { useNewSkillPlace } from "./use-new-skill-place";
@@ -81,6 +84,8 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   // Problems show once the field was left or the form was sent, not while the first word is typed.
   const [nameTouched, setNameTouched] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  /** Which button sent the form, so its own spinner turns. */
+  const [sentWithPrompt, setSentWithPrompt] = useState(false);
 
   const libraryNames = useMemo(() => takenNames(skills), [skills]);
   const taken = project ? place.taken : libraryNames;
@@ -97,44 +102,66 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   const valid = nameProblem === null && descriptionProblem === null && placeReady;
 
   const [firstTarget] = place.targets;
-  const folderPath =
+  /** Where the new skill's folder will be; null until the name is usable. */
+  const skillFolder =
     !trimmedName || nameProblem
       ? null
       : project
         ? firstTarget
-          ? joinPath(
-              project.path,
-              [firstTarget.relativeDir, trimmedName, NEW_SKILL_DOCUMENT].filter(Boolean).join("/"),
-            )
+          ? joinPath(project.path, [firstTarget.relativeDir, trimmedName].filter(Boolean).join("/"))
           : null
         : location
-          ? joinPath(
-              location.path,
-              `${LIBRARY_SKILLS_DIR_NAME}/${trimmedName}/${NEW_SKILL_DOCUMENT}`,
-            )
+          ? joinPath(location.path, `${LIBRARY_SKILLS_DIR_NAME}/${trimmedName}`)
           : null;
+  const folderPath = skillFolder ? joinPath(skillFolder, NEW_SKILL_DOCUMENT) : null;
   const folder = folderPath ? compactHome(folderPath, info?.homeDir) : null;
   const moreFolders = project ? place.targets.length - 1 : 0;
+  // An agent writes one folder; a project skill in several would leave the others behind.
+  const canPrompt = moreFolders === 0;
 
-  const created = (createdName: string): void => {
+  /** The prompt goes to the clipboard; the skill is created whether or not copying works. */
+  const copyPrompt = async (skillName: string, skillPath: string): Promise<void> => {
+    const prompt = skillAuthoringPrompt({
+      name: skillName,
+      description: trimmedDescription,
+      folder: skillPath,
+    });
+    try {
+      await api.app.copyText(prompt);
+      toastSuccess(
+        t("library.create.promptCopied", { name: skillName }),
+        t("library.create.promptCopiedHint"),
+      );
+    } catch (error) {
+      toastSuccess(t("library.create.created", { name: skillName }));
+      toastError(error, "errors.copy");
+    }
+  };
+
+  const created = (createdName: string, promptFolder: string | null): void => {
     onOpenChange(false);
+    if (promptFolder) {
+      void copyPrompt(createdName, promptFolder);
+      return;
+    }
     toastSuccess(
       t("library.create.created", { name: createdName }),
       t(project ? "library.create.createdInProjectHint" : "library.create.createdHint"),
     );
   };
 
-  const submit = (event: FormEvent): void => {
+  const submit = (event: FormEvent, withPrompt = false): void => {
     event.preventDefault();
     setSubmitted(true);
-    if (!valid || pending) return;
+    if (!valid || pending || (withPrompt && !canPrompt)) return;
+    setSentWithPrompt(withPrompt);
     const skill = { name: trimmedName, description: trimmedDescription, template };
     if (project) {
       createInProject.mutate(
         { projectId: project.id, skill, agentKeys: place.agentKeys },
         {
           onSuccess: (ref) => {
-            created(skill.name);
+            created(skill.name, withPrompt ? skillFolder : null);
             void navigate({
               to: "/projects/$projectId/edit",
               params: { projectId: project.id },
@@ -147,7 +174,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
     }
     createInLibrary.mutate(skill, {
       onSuccess: (saved) => {
-        created(saved.name);
+        created(saved.name, withPrompt ? saved.libraryPath : null);
         void navigate({ to: "/library/$skillId/edit", params: { skillId: saved.id } });
       },
     });
@@ -250,8 +277,18 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
           {t("common.cancel")}
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!valid || pending || !canPrompt}
+          title={t(canPrompt ? "library.create.promptHint" : "library.create.promptOneFolder")}
+          onClick={(event) => submit(event, true)}
+        >
+          {pending && sentWithPrompt ? <Spinner /> : <ClipboardCopy />}
+          {t("library.create.submitPrompt")}
+        </Button>
         <Button type="submit" disabled={!valid || pending}>
-          {pending ? <Spinner /> : null}
+          {pending && !sentWithPrompt ? <Spinner /> : null}
           {t("library.create.submit")}
         </Button>
       </DialogFooter>

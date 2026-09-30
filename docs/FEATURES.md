@@ -32,6 +32,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Publish chosen skills to a Git repository laid out for `npx skills add` (`skills/`, or its `.curated` and `.experimental` folders). It shows what would change first, copies only skill folders, holds back keys and tokens, never forces a push and never touches the backup repository. `loadout skills publish`.
 - Publish one skill as a version on ClawHub: slug, display name, version (the next patch of what is there), changelog and topics from its tags; shows the files and holds back anything that looks like a key; needs a token kept in the system keychain (Settings → Marketplaces) and your MIT-0 agreement.
 - New skill from a name, a description and a starting outline (short, detailed, workflow or blank); opens in the editor.
+- **Create and copy prompt**: creates the skill, then copies a prompt that has your agent write all of it in the new folder (description, instructions, examples, `references/`, `scripts/`) by the same rules the format check uses. `loadout skills create --prompt`.
 - Rename a skill; deployments and project links follow. Shows a dry run as you type.
 - Delete goes to Recently removed, with Undo.
 - Possible duplicates: skills with the same files, mostly the same text, or alike names and descriptions. Compare, keep one (its tags, presets and agents carry over), or mark a pair as different. `loadout skills duplicates`.

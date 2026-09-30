@@ -58,6 +58,39 @@ describe("skills create", () => {
     const unknown = await cli("skills", "create", "x", "--description", "x", "--template", "nope");
     expect(unknown.code).toBe(EXIT_USAGE);
   });
+
+  it("prints only a prompt for an agent with --prompt, naming the new folder", async () => {
+    const run = await cli(
+      "skills",
+      "create",
+      "ship-it",
+      "--description",
+      "Ship a release.",
+      "--prompt",
+    );
+    expect(run.code).toBe(EXIT_OK);
+    const folder = join(sandbox.libraryDir, "ship-it");
+    expect(run.stdout.startsWith("Write the agent skill `ship-it` in full")).toBe(true);
+    expect(run.stdout).toContain(`\n${folder}\n`);
+    expect(run.stdout).toContain("> Ship a release.");
+    expect(run.stdout).toContain("Keep `name: ship-it`");
+    expect(run.stderr).toContain("Paste the prompt above into your agent");
+    expect(readFileSync(join(folder, "SKILL.md"), "utf8")).toContain("name: ship-it");
+
+    const json = await cli(
+      "skills",
+      "create",
+      "ship-that",
+      "--description",
+      "x",
+      "--prompt",
+      "--json",
+    );
+    expect(json.json()).toMatchObject({
+      name: "ship-that",
+      prompt: expect.stringContaining("ship-that"),
+    });
+  });
 });
 
 /** Prints a flagged report for a skill whose SKILL.md says EVIL, a clean one otherwise. */

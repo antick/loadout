@@ -19,6 +19,7 @@ export * from "./skill-traits";
 export * from "./agent-skill-fields";
 export * from "./new-skill";
 export * from "./new-skill-templates";
+export * from "./skill-authoring-prompt";
 export * from "./safety";
 export * from "./usage";
 export * from "./duplicates";
