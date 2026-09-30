@@ -4,7 +4,7 @@
     "tabs": {
       "market": {
         "label": "Marketplace",
-        "subtitle": "Skills published by the community"
+        "subtitle": "Skills published on skills.sh and ClawHub"
       },
       "local": {
         "label": "This computer",
@@ -92,12 +92,20 @@
       "boards": {
         "hot": "Hot",
         "trending": "Trending",
-        "all_time": "All time"
+        "all_time": "All time",
+        "downloads": "Most downloaded",
+        "newest": "Newest"
       },
       "searchPlaceholder": "Search {{marketplace}}",
       "searchScope": "Search looks across all of {{marketplace}}, not just the ranking above.",
-      "sourceFilter": "Filter by contributor",
-      "allSources": "All contributors",
+      "sourceFilter": {
+        "skills_sh": "Filter by contributor",
+        "clawhub": "Filter by publisher"
+      },
+      "allSources": {
+        "skills_sh": "All contributors",
+        "clawhub": "All publishers"
+      },
       "onlyThisSource": "Show only this contributor",
       "clearFilter": "Show all contributors",
       "browseSite": "Open {{marketplace}}",
@@ -118,7 +126,7 @@
         "open": "Details of {{name}}",
         "repository": "Repository",
         "auditsTitle": "Security audits",
-        "auditsHint": "Published by {{marketplace}} from outside auditors. A signal worth reading, not a guarantee.",
+        "auditsHint": "Published by {{marketplace}}. A signal worth reading, not a guarantee.",
         "auditsNone": "No audits published for this skill yet.",
         "auditsFailed": "The audits could not be loaded. Check your connection, or read them on the web.",
         "risk": "Risk: {{level}}",
@@ -132,11 +140,13 @@
         "deployedTo": "Deployed to",
         "notDeployed": "Not deployed to any agent yet.",
         "openInLibrary": "Open in library",
-        "documentMissing": "The SKILL.md could not be found in the repository.",
-        "documentFailed": "The details could not be loaded. Check your connection and try again."
+        "documentMissing": "The SKILL.md could not be found.",
+        "documentFailed": "The details could not be loaded. Check your connection and try again.",
+        "changelog": "What changed in v{{version}}"
       },
       "cached": "Could not reach {{marketplace}}. This is the copy from {{when}}.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "providerLabel": "Marketplace"
     },
     "local": {
       "folderTitle": "Choose a skill folder",

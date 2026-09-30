@@ -70,6 +70,7 @@ loadout presets import ./team.loadout-preset.json --dry-run --json   # what impo
 
 # Install (library only)
 loadout skills search pdf --json                # find marketplace skills; install one with skills install owner/repo@skill
+loadout skills search pdf --on clawhub --json          # the ClawHub registry instead; install with skills install @owner/slug
 loadout skills install ./path/to/skill-folder --json
 loadout skills install ./downloads/skill.zip --name my-skill --json
 loadout skills install https://github.com/owner/repo --skill pdf-tools --json

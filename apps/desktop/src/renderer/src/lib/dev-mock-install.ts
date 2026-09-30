@@ -255,6 +255,23 @@ export function createInstallMockHandlers(
         });
       });
     },
+    "install.fromClawhub": (owner: string, slug: string) => {
+      const key = `clawhub:${owner}/${slug}`;
+      return tracked(key, async () => {
+        ctx.emitProgress({ key, phase: "downloading", name: slug });
+        await wait(STEP_MS * 2);
+        checkCancelled(key);
+        ctx.emitProgress({ key, phase: "installing", name: slug });
+        await wait(STEP_MS);
+        ctx.emitProgress({ key, phase: "done", name: slug });
+        return makeSkill(slug, "clawhub", {
+          sourceRef: `${owner}/${slug}`,
+          sourceUrl: `https://clawhub.ai/${owner}/skills/${slug}`,
+          sourceRevision: "1.2.0",
+          remoteRevision: "1.2.0",
+        });
+      });
+    },
     "skills.create": async (input: CreateSkillInput) => {
       await wait(STEP_MS * 2);
       const name = input.name.trim();

@@ -8,3 +8,11 @@ export {
   frontmatterName,
   parseAudits,
 } from "./detail";
+export {
+  CLAWHUB_META_FILES,
+  type ClawhubClient,
+  type ClawhubDetail,
+  type ClawhubEntry,
+  createClawhubClient,
+  parseClawhubRef,
+} from "./clawhub";

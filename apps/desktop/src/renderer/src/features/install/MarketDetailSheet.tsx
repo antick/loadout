@@ -1,5 +1,4 @@
 import {
-  MARKETPLACE_NAME,
   type MarketAudit,
   type MarketAuditStatus,
   type MarketSkill,
@@ -34,6 +33,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { MARKET_PROVIDER_NAMES } from "@/features/install/constants";
 import { type InstallTask, installPhaseText } from "@/features/install/install-tasks";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useAgents } from "@/hooks/queries/agents";
@@ -62,10 +62,9 @@ export interface MarketDetailSheetProps {
 
 /** The library copy of a marketplace skill, installed from the marketplace under that id. */
 function libraryCopy(skills: readonly Skill[] | undefined, skill: MarketSkill): Skill | null {
-  return (
-    skills?.find((entry) => entry.sourceType === "marketplace" && entry.sourceRef === skill.id) ??
-    null
-  );
+  const ref = skill.provider === "clawhub" ? `${skill.source}/${skill.skillId}` : skill.id;
+  const type = skill.provider === "clawhub" ? "clawhub" : "marketplace";
+  return skills?.find((entry) => entry.sourceType === type && entry.sourceRef === ref) ?? null;
 }
 
 function AuditRow({ audit }: { audit: MarketAudit }): ReactNode {
@@ -106,9 +105,11 @@ function AuditRow({ audit }: { audit: MarketAudit }): ReactNode {
 function AuditsSection({
   audits,
   loading,
+  marketplace,
 }: {
   audits: MarketAudit[] | null | undefined;
   loading: boolean;
+  marketplace: string;
 }): ReactNode {
   const { t } = useTranslation();
   const auditKeys = occurrenceKeys(audits ?? [], (audit) => audit.provider);
@@ -119,7 +120,7 @@ function AuditsSection({
         <h3 className="text-sm font-semibold">{t("install.market.detail.auditsTitle")}</h3>
       </div>
       <p className="text-xs text-muted-foreground">
-        {t("install.market.detail.auditsHint", { marketplace: MARKETPLACE_NAME })}
+        {t("install.market.detail.auditsHint", { marketplace })}
       </p>
       {loading ? (
         <div className="flex flex-col gap-2">
@@ -198,6 +199,8 @@ function DetailBody({
   const skills = useSkills();
   const copy = libraryCopy(skills.data, skill);
   const installed = skill.installed || copy !== null;
+  const marketplace = MARKET_PROVIDER_NAMES[skill.provider];
+  const repoUrl = detail.data?.repoUrl ?? null;
 
   return (
     <>
@@ -217,6 +220,9 @@ function DetailBody({
               <Download className="size-3" />
               {formatCount(skill.installs)}
             </span>
+            {(detail.data?.version ?? skill.version) ? (
+              <span className="font-mono text-xs">v{detail.data?.version ?? skill.version}</span>
+            ) : null}
           </div>
         </SheetDescription>
         <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -244,15 +250,12 @@ function DetailBody({
             <span className="text-xs text-muted-foreground">{installPhaseText(task.progress)}</span>
           ) : null}
           <div className="ml-auto flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => detail.data && openExternal.mutate(detail.data.repoUrl)}
-              disabled={!detail.data}
-            >
-              <FolderGit2 />
-              {t("install.market.detail.repository")}
-            </Button>
+            {repoUrl ? (
+              <Button variant="ghost" size="sm" onClick={() => openExternal.mutate(repoUrl)}>
+                <FolderGit2 />
+                {t("install.market.detail.repository")}
+              </Button>
+            ) : null}
             <Button
               variant="ghost"
               size="sm"
@@ -260,7 +263,7 @@ function DetailBody({
               disabled={!detail.data}
             >
               <ExternalLink />
-              {MARKETPLACE_NAME}
+              {marketplace}
             </Button>
           </div>
         </div>
@@ -269,7 +272,22 @@ function DetailBody({
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4">
         {copy ? <LibraryNote copy={copy} onOpen={() => onOpenLibrary(copy.id)} /> : null}
 
-        <AuditsSection audits={detail.data?.audits} loading={detail.isPending} />
+        {detail.data?.changelog ? (
+          <section className="flex flex-col gap-1">
+            <h3 className="text-sm font-semibold">
+              {t("install.market.detail.changelog", { version: detail.data.version ?? "" })}
+            </h3>
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground" data-selectable>
+              {detail.data.changelog}
+            </p>
+          </section>
+        ) : null}
+
+        <AuditsSection
+          audits={detail.data?.audits}
+          loading={detail.isPending}
+          marketplace={marketplace}
+        />
 
         <section className="flex flex-col gap-2">
           <div className="flex items-baseline gap-2">
@@ -296,12 +314,8 @@ function DetailBody({
               tone="neutral"
               icon={FileQuestion}
               actions={
-                detail.data ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openExternal.mutate(detail.data.repoUrl)}
-                  >
+                repoUrl ? (
+                  <Button variant="outline" size="sm" onClick={() => openExternal.mutate(repoUrl)}>
                     {t("install.market.detail.repository")}
                   </Button>
                 ) : null

@@ -57,6 +57,7 @@ import type {
   MarketListing,
   MarketSkillDetail,
   ScanResult,
+  MarketProvider,
 } from "./types-install";
 import type { CreateSkillInput } from "./new-skill";
 import type { InstallOptions, SafetyRecord, SafetyScanSummary, SafetyStatus } from "./safety";
@@ -223,6 +224,8 @@ export interface InstallApi {
   ): Promise<Skill[]>;
   cancelPreview(previewId: string): Promise<void>;
   fromMarket(source: string, skillId: string, options?: InstallOptions): Promise<Skill>;
+  /** A skill from the ClawHub registry, at its latest version. Progress key `clawhub:owner/slug`. */
+  fromClawhub(owner: string, slug: string, options?: InstallOptions): Promise<Skill>;
   /** Returns whether anything was running under that key. */
   cancel(key: string): Promise<boolean>;
   scanLocal(): Promise<ScanResult>;
@@ -245,11 +248,11 @@ export interface SafetyApi {
 
 export interface MarketApi {
   /** A ranking; offline, the last copy fetched, with `cachedAt` saying how old it is. */
-  board(board: MarketBoard): Promise<MarketListing>;
+  board(board: MarketBoard, provider?: MarketProvider): Promise<MarketListing>;
   /** Live search; offline, the last answer to the same search, with `cachedAt`. */
-  search(query: string, limit?: number): Promise<MarketListing>;
+  search(query: string, limit?: number, provider?: MarketProvider): Promise<MarketListing>;
   /** Security audits and the `SKILL.md` of one skill, to read before installing it. */
-  detail(source: string, skillId: string): Promise<MarketSkillDetail>;
+  detail(source: string, skillId: string, provider?: MarketProvider): Promise<MarketSkillDetail>;
 }
 
 export interface UpdateRequestOptions extends InstallOptions {

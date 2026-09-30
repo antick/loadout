@@ -1,12 +1,26 @@
 import type { InstallTab } from "@/lib/constants";
-import type { MarketBoard } from "@loadout/shared";
+import {
+  CLAWHUB_NAME,
+  CLAWHUB_URL,
+  MARKETPLACE_NAME,
+  MARKETPLACE_URL,
+  type MarketBoard,
+  type MarketProvider,
+} from "@loadout/shared";
 
-export const MARKET_BOARDS = [
-  "hot",
-  "trending",
-  "all_time",
-] as const satisfies readonly MarketBoard[];
-export const DEFAULT_MARKET_BOARD: MarketBoard = "hot";
+/** The first board of each marketplace. */
+export const DEFAULT_MARKET_BOARD_OF: Record<MarketProvider, MarketBoard> = {
+  skills_sh: "hot",
+  clawhub: "trending",
+};
+export const MARKET_PROVIDER_NAMES: Record<MarketProvider, string> = {
+  skills_sh: MARKETPLACE_NAME,
+  clawhub: CLAWHUB_NAME,
+};
+export const MARKET_PROVIDER_URLS: Record<MarketProvider, string> = {
+  skills_sh: MARKETPLACE_URL,
+  clawhub: CLAWHUB_URL,
+};
 
 /** Board results shown per page; boards arrive whole, so paging is done here. */
 export const MARKET_PAGE_SIZE = 24;

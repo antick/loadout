@@ -335,11 +335,14 @@ describe("find and link a source", () => {
       cachedAt: null,
       skills: [
         {
+          provider: "skills_sh",
           id: `${MARKET_SOURCE}/pdf`,
           skillId: "pdf",
           name: "pdf",
           source: MARKET_SOURCE,
           installs: 10,
+          summary: null,
+          version: null,
           installed: false,
         },
       ],

@@ -56,6 +56,7 @@ async function targetOf(
   // A numbered library copy (`pdf-2`) is still called `pdf` upstream.
   const baseName = NUMBERED.exec(skillName)?.[1] ?? skillName;
   return {
+    kind: "git",
     url: parsed.cloneUrl,
     branch: lead.branch ?? branch,
     subpath: lead.subpath ?? subpath,
@@ -76,9 +77,9 @@ async function revisionOf(
     const sha = await git.lsRemote(target.url, { branch: target.branch });
     if (sha) return { target, revision: sha };
     const fallback = { ...target, branch: null };
-    return { target: fallback, revision: await resolveRemoteRevision(git, fallback) };
+    return { target: fallback, revision: await resolveRemoteRevision({ git }, fallback) };
   }
-  return { target, revision: await resolveRemoteRevision(git, target) };
+  return { target, revision: await resolveRemoteRevision({ git }, target) };
 }
 
 async function open(
@@ -88,7 +89,7 @@ async function open(
   locator: string,
 ): Promise<OpenedSource> {
   try {
-    return await openRemoteSource(git, target, revision);
+    return await openRemoteSource({ git }, target, revision);
   } catch (error) {
     // The repository is there, the skill is not: say which skill was looked for.
     if (isAppError(error, "NOT_FOUND")) {

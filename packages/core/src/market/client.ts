@@ -1,11 +1,13 @@
 import {
   APP_SLUG,
+  CLAWHUB_NAME,
   MARKETPLACE_NAME,
   MARKET_SEARCH_DEFAULT_LIMIT,
   MARKETPLACE_URL,
   type MarketApi,
   type MarketBoard,
   type MarketListing,
+  type MarketProvider,
   type MarketSkill,
   type MarketSkillDetail,
 } from "@loadout/shared";
@@ -13,6 +15,7 @@ import type { CoreContext } from "../context";
 import { AppError, errorMessage, invalid, isAppError } from "../errors";
 import { createDownload } from "../install/download";
 import type { SkillStore } from "../skills/store";
+import { type ClawhubClient, type ClawhubEntry, createClawhubClient } from "./clawhub";
 import { createMarketDetail } from "./detail";
 import { type MarketEntry, parseBoardHtml, parseSearchResponse } from "./parse";
 
@@ -23,13 +26,16 @@ export interface MarketServiceDeps {
    * proxy-aware one; tests inject a fake.
    */
   fetchImpl?: typeof fetch;
+  /** Shared with the installer and the updater; a fresh one when absent. */
+  clawhub?: ClawhubClient;
 }
 
 export interface MarketService {
   api: MarketApi;
+  clawhub: ClawhubClient;
 }
 
-const BOARD_PATHS: Record<MarketBoard, string> = {
+const BOARD_PATHS: Partial<Record<MarketBoard, string>> = {
   hot: "/hot",
   trending: "/trending",
   all_time: "/",
@@ -45,6 +51,8 @@ const DETAIL_CACHE_PREFIX = "detail:";
 /** Audits and documents change far less often than rankings. */
 const DETAIL_CACHE_TTL_MS = 1_800_000;
 const MAX_SEARCH_LIMIT = 200;
+/** ClawHub answers are cached under their own keys, apart from skills.sh's. */
+const CLAWHUB_CACHE_PREFIX = "clawhub:";
 
 interface CacheRow {
   data: string;
@@ -54,6 +62,7 @@ interface CacheRow {
 export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): MarketService {
   const { store } = deps;
   const fetchDetail = createMarketDetail({ download: createDownload(deps.fetchImpl) });
+  const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl });
 
   async function request(url: string, accept: string): Promise<Response> {
     const fetchImpl = deps.fetchImpl ?? fetch;
@@ -102,16 +111,18 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     );
   }
 
-  /** Only the latest searches are kept for offline use. */
+  /** Only the latest searches are kept for offline use, per marketplace. */
   function pruneSearches(): void {
-    ctx.db.run(
-      `DELETE FROM market_cache WHERE cache_key LIKE ? AND cache_key NOT IN (
-         SELECT cache_key FROM market_cache WHERE cache_key LIKE ?
-         ORDER BY fetched_at DESC LIMIT ?)`,
-      `${SEARCH_CACHE_PREFIX}%`,
-      `${SEARCH_CACHE_PREFIX}%`,
-      MAX_CACHED_SEARCHES,
-    );
+    for (const prefix of [SEARCH_CACHE_PREFIX, `${CLAWHUB_CACHE_PREFIX}${SEARCH_CACHE_PREFIX}`]) {
+      ctx.db.run(
+        `DELETE FROM market_cache WHERE cache_key LIKE ? AND cache_key NOT IN (
+           SELECT cache_key FROM market_cache WHERE cache_key LIKE ?
+           ORDER BY fetched_at DESC LIMIT ?)`,
+        `${prefix}%`,
+        `${prefix}%`,
+        MAX_CACHED_SEARCHES,
+      );
+    }
   }
 
   function live(entries: MarketEntry[]): MarketListing {
@@ -138,12 +149,52 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     );
     return entries.map((entry) => {
       const id = `${entry.source}/${entry.skillId}`;
-      return { id, ...entry, installed: installed.has(id) };
+      return {
+        provider: "skills_sh" as const,
+        id,
+        ...entry,
+        installed: installed.has(id),
+        summary: null,
+        version: null,
+      };
     });
   }
 
+  /** ClawHub entries with `installed` from the library, by `owner/slug`. */
+  function withClawhubInstalled(entries: ClawhubEntry[]): MarketSkill[] {
+    const installed = new Set(
+      store.list().flatMap((s) => (s.sourceType === "clawhub" && s.sourceRef ? [s.sourceRef] : [])),
+    );
+    return entries.map((entry) => ({
+      ...entry,
+      installed: installed.has(`${entry.source}/${entry.skillId}`),
+    }));
+  }
+
+  /** A ClawHub listing, cached like a skills.sh one and served from the cache when offline. */
+  async function clawhubListing(
+    key: string,
+    ttlMs: number,
+    fetchEntries: () => Promise<ClawhubEntry[]>,
+    what: string,
+  ): Promise<MarketListing> {
+    const cached = readCache<ClawhubEntry[]>(key, ttlMs);
+    if (cached?.fresh) return { skills: withClawhubInstalled(cached.entries), cachedAt: null };
+    try {
+      const entries = await fetchEntries();
+      writeCache(key, entries);
+      return { skills: withClawhubInstalled(entries), cachedAt: null };
+    } catch (error) {
+      if (!cached || !isAppError(error)) throw error;
+      ctx.log.warn(`Showing a cached ${CLAWHUB_NAME} ${what}`, error);
+      return { skills: withClawhubInstalled(cached.entries), cachedAt: cached.fetchedAt };
+    }
+  }
+
   async function fetchBoard(board: MarketBoard): Promise<MarketEntry[]> {
-    const response = await request(`${MARKETPLACE_URL}${BOARD_PATHS[board]}`, "text/html");
+    const path = BOARD_PATHS[board];
+    if (!path) throw invalid(`Unknown marketplace board: ${board}`);
+    const response = await request(`${MARKETPLACE_URL}${path}`, "text/html");
     const entries = parseBoardHtml(await response.text());
     if (entries.length === 0) {
       // An empty board means the page changed shape, not that the marketplace is empty.
@@ -153,7 +204,15 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
   }
 
   const api: MarketApi = {
-    board: async (board) => {
+    board: async (board, provider: MarketProvider = "skills_sh") => {
+      if (provider === "clawhub") {
+        return clawhubListing(
+          `${CLAWHUB_CACHE_PREFIX}${BOARD_CACHE_PREFIX}${board}`,
+          BOARD_CACHE_TTL_MS,
+          () => clawhub.list(board),
+          "board",
+        );
+      }
       if (!(board in BOARD_PATHS)) throw invalid(`Unknown marketplace board: ${board}`);
       const key = `${BOARD_CACHE_PREFIX}${board}`;
       const cached = readCache(key);
@@ -167,13 +226,23 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
       }
     },
 
-    search: async (query, limit = MARKET_SEARCH_DEFAULT_LIMIT) => {
+    search: async (query, limit = MARKET_SEARCH_DEFAULT_LIMIT, provider = "skills_sh") => {
       const q = query.trim();
       if (!q) return { skills: [], cachedAt: null };
       const capped = Math.min(
         Math.max(Math.floor(limit) || MARKET_SEARCH_DEFAULT_LIMIT, 1),
         MAX_SEARCH_LIMIT,
       );
+      if (provider === "clawhub") {
+        const listing = await clawhubListing(
+          `${CLAWHUB_CACHE_PREFIX}${SEARCH_CACHE_PREFIX}${capped}:${q.toLowerCase()}`,
+          BOARD_CACHE_TTL_MS,
+          () => clawhub.search(q, capped),
+          "search",
+        );
+        pruneSearches();
+        return listing;
+      }
       const url = `${MARKETPLACE_URL}${SEARCH_PATH}?q=${encodeURIComponent(q)}&limit=${capped}`;
       const key = `${SEARCH_CACHE_PREFIX}${capped}:${q.toLowerCase()}`;
       try {
@@ -193,7 +262,17 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
       }
     },
 
-    detail: async (source, skillId) => {
+    detail: async (source, skillId, provider = "skills_sh") => {
+      if (provider === "clawhub") {
+        const key = `${CLAWHUB_CACHE_PREFIX}${DETAIL_CACHE_PREFIX}${source.trim()}/${skillId.trim()}`;
+        const cached = readCache<MarketSkillDetail>(key, DETAIL_CACHE_TTL_MS);
+        if (cached?.fresh) return cached.entries;
+        const found = await clawhub.detail(source.trim() || null, skillId.trim());
+        const audits = await clawhub.audits(found.owner, found.slug);
+        const detail: MarketSkillDetail = { ...found, audits };
+        if (audits !== null && detail.document !== null) writeCache(key, detail);
+        return detail;
+      }
       const key = `${DETAIL_CACHE_PREFIX}${source.trim()}/${skillId.trim()}`;
       const cached = readCache<MarketSkillDetail>(key, DETAIL_CACHE_TTL_MS);
       if (cached?.fresh) return cached.entries;
@@ -204,5 +283,5 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     },
   };
 
-  return { api };
+  return { api, clawhub };
 }

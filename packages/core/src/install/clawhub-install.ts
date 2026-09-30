@@ -1,0 +1,105 @@
+import { readdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { CLAWHUB_NAME, type InstallOptions, type Skill, clawhubSkillUrl } from "@loadout/shared";
+import type { CoreContext } from "../context";
+import { cancelled } from "../errors";
+import { CLAWHUB_META_FILES, type ClawhubClient, parseClawhubRef } from "../market/clawhub";
+import type { SkillStore } from "../skills/store";
+import { archiveSkillDir, unpackArchive } from "./archive";
+import type { CancelRegistry } from "./cancel";
+import type { InstallIntoLibrary } from "./library";
+import { emitProgress } from "./preview-sessions";
+import { type SafetyGate, installChecked } from "./safety-gate";
+
+export interface ClawhubInstallerDeps {
+  store: SkillStore;
+  clawhub: ClawhubClient;
+  cancels: CancelRegistry;
+  install: InstallIntoLibrary;
+  safety?: SafetyGate;
+}
+
+/** Progress and cancel key of a ClawHub install, as the app names it. */
+export function clawhubTaskKey(owner: string, slug: string): string {
+  return `clawhub:${owner}/${slug}`;
+}
+
+/** A ClawHub download, unpacked, with the registry's own files taken out. Always call `cleanup`. */
+export async function openClawhubVersion(
+  clawhub: ClawhubClient,
+  owner: string,
+  slug: string,
+  version: string,
+  signal?: AbortSignal,
+): Promise<{ dir: string; cleanup(): Promise<void> }> {
+  const data = await clawhub.download(owner, slug, version, signal);
+  const archive = await unpackArchive(data, `${slug}-${version}.zip`);
+  try {
+    for (const name of readdirSync(archive.root)) {
+      if (CLAWHUB_META_FILES.has(name)) rmSync(join(archive.root, name), { force: true });
+    }
+    return { dir: archiveSkillDir(archive.root), cleanup: archive.cleanup };
+  } catch (error) {
+    await archive.cleanup();
+    throw error;
+  }
+}
+
+/** Install a skill from the ClawHub registry at its latest version. */
+export function createClawhubInstaller(ctx: CoreContext, deps: ClawhubInstallerDeps) {
+  return async function fromClawhub(
+    ownerInput: string,
+    slugInput: string,
+    options: InstallOptions = {},
+  ): Promise<Skill> {
+    const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
+    const key = clawhubTaskKey(owner, slug);
+    const handle = deps.cancels.register(key);
+    let cleanup: (() => Promise<void>) | null = null;
+    let installedName: string | null = null;
+    try {
+      emitProgress(ctx, key, "downloading", { name: slug });
+      const found = await deps.clawhub.detail(owner, slug);
+      if (!found.version)
+        throw new Error(`${owner}/${slug} has no published version on ${CLAWHUB_NAME}`);
+      const opened = await openClawhubVersion(
+        deps.clawhub,
+        found.owner,
+        found.slug,
+        found.version,
+        handle.signal,
+      );
+      cleanup = opened.cleanup;
+      if (handle.signal.aborted) throw cancelled();
+      emitProgress(ctx, key, "installing", { name: slug });
+      const ref = `${found.owner}/${found.slug}`;
+      const skill = await installChecked(
+        deps.install,
+        deps.safety,
+        {
+          sourceDir: opened.dir,
+          name: found.slug,
+          record: {
+            sourceType: "clawhub",
+            sourceRef: ref,
+            sourceUrl: clawhubSkillUrl(found.owner, found.slug),
+            sourceSubpath: null,
+            sourceBranch: null,
+            sourceRevision: found.version,
+            remoteRevision: found.version,
+            updateStatus: "up_to_date",
+            // Installing what is already installed refreshes it instead of adding `<slug>-2`.
+            replaceSkillId: deps.store.findBySource("clawhub", ref)?.id ?? null,
+          },
+        },
+        { ...options, progressKey: key },
+      );
+      installedName = skill.name;
+      return skill;
+    } finally {
+      await cleanup?.();
+      handle.done();
+      emitProgress(ctx, key, "done", installedName ? { name: installedName } : {});
+    }
+  };
+}

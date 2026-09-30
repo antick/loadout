@@ -35,6 +35,7 @@
         "import": "Imported",
         "git": "Git",
         "marketplace": "Marketplace",
+        "clawhub": "ClawHub",
         "url": "Link"
       },
       "statuses": {

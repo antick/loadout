@@ -40,7 +40,7 @@ export function useBrowseSource(): BrowseSource {
   const [preview, setPreview] = useState<GitPreview | null>(null);
 
   const browse = async (source: SkillSource, tick?: readonly string[]): Promise<void> => {
-    if (busyKey) return;
+    if (busyKey || !source.browse) return;
     setBusyKey(source.key);
     try {
       const { kind, target } = source.browse;

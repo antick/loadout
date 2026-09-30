@@ -15,7 +15,8 @@ import { createUpdater } from "./update";
 export interface UpdatesServiceDeps {
   store: SkillStore;
   /** Same git client, cancel registry and way into the library the installer uses. */
-  install: Pick<InstallService, "git" | "download" | "cancels" | "installIntoLibrary">;
+  install: Pick<InstallService, "git" | "download" | "cancels" | "installIntoLibrary"> &
+    Partial<Pick<InstallService, "clawhub">>;
   deploy: Pick<DeployService, "refreshCopies">;
   /** Checks every new version before it replaces the library copy. */
   safety?: SafetyGate;
@@ -37,18 +38,29 @@ export interface UpdatesService {
 
 export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps): UpdatesService {
   const { store, install, deploy } = deps;
-  const checker = createChecker(ctx, { store, git: install.git, download: install.download });
+  const checker = createChecker(ctx, {
+    store,
+    git: install.git,
+    download: install.download,
+    clawhub: install.clawhub,
+  });
   const updater = createUpdater(ctx, {
     store,
     git: install.git,
     download: install.download,
     cancels: install.cancels,
     installIntoLibrary: install.installIntoLibrary,
+    clawhub: install.clawhub,
     refreshCopies: deploy.refreshCopies,
     safety: deps.safety,
     removed: deps.removed,
   });
-  const preview = createSourcePreview({ store, git: install.git, download: install.download });
+  const preview = createSourcePreview({
+    store,
+    git: install.git,
+    download: install.download,
+    clawhub: install.clawhub,
+  });
   const sourceNews = deps.sourceNews ?? createSourceNewsStore(ctx);
   const sources = createSourceChecker(ctx, {
     store,

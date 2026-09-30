@@ -40,6 +40,8 @@ function fakeFetch(respond: (url: string) => Response | Promise<Response>): {
 }
 
 const html = (body: string): Response => new Response(body, { status: 200 });
+/** skills.sh listings carry neither a summary nor a version. */
+const NO_EXTRAS = { summary: null, version: null };
 const json = (body: unknown): Response => Response.json(body);
 
 describe("marketplace page parsing", () => {
@@ -89,8 +91,8 @@ describe("marketplace service", () => {
     const hot = await market.api.board("hot");
     expect(hot).toEqual({
       skills: [
-        { id: "acme/skills/pdf", ...PDF, installed: false },
-        { id: "acme/skills/docx", ...DOCX, installed: false },
+        { provider: "skills_sh", id: "acme/skills/pdf", ...PDF, installed: false, ...NO_EXTRAS },
+        { provider: "skills_sh", id: "acme/skills/docx", ...DOCX, installed: false, ...NO_EXTRAS },
       ],
       cachedAt: null,
     });
@@ -196,7 +198,9 @@ describe("marketplace service", () => {
 
     const found = await market.api.search(" pdf & more ", 1);
     expect(found).toEqual({
-      skills: [{ id: "acme/skills/pdf", ...PDF, installed: false }],
+      skills: [
+        { provider: "skills_sh", id: "acme/skills/pdf", ...PDF, installed: false, ...NO_EXTRAS },
+      ],
       cachedAt: null,
     });
     await market.api.search("x", 100_000);

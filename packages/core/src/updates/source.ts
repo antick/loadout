@@ -1,7 +1,14 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
-import { APP_SLUG, MARKETPLACE_NAME, type Skill, type SourceType } from "@loadout/shared";
+import {
+  APP_SLUG,
+  CLAWHUB_NAME,
+  MARKETPLACE_NAME,
+  type Skill,
+  type SourceType,
+  clawhubSkillUrl,
+} from "@loadout/shared";
 import { AppError, invalid, notFound } from "../errors";
 import {
   type Download,
@@ -24,6 +31,8 @@ import {
   skillFileLink,
   unpackArchive,
 } from "../install";
+import { openClawhubVersion } from "../install/clawhub-install";
+import { type ClawhubClient, parseClawhubRef } from "../market/clawhub";
 import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
 
 /**
@@ -38,9 +47,10 @@ export const WORKSPACE_REVISION = "workspace";
 /** Revision label of an archive link: whatever the link serves right now. */
 export const LINK_REVISION = "latest";
 
-const REMOTE_TYPES: ReadonlySet<SourceType> = new Set(["git", "marketplace"]);
+const REMOTE_TYPES: ReadonlySet<SourceType> = new Set(["git", "marketplace", "clawhub"]);
 const SOURCE_LABELS: Record<SourceType, string> = {
   marketplace: MARKETPLACE_NAME,
+  clawhub: CLAWHUB_NAME,
   git: "Git",
   local: "Local",
   import: "Imported",
@@ -55,13 +65,23 @@ export function sourceLabel(skill: Pick<Skill, "sourceType">): string {
   return SOURCE_LABELS[skill.sourceType];
 }
 
-/** The repository a git or marketplace skill follows. */
+/** The repository a git or marketplace skill follows, or the registry entry a ClawHub skill does. */
 export interface RemoteTarget {
+  /** A Git repository, or a ClawHub skill served as versioned zips. */
+  kind: "git" | "clawhub";
   url: string;
   branch: string | null;
   subpath: string | null;
   /** Marketplace skills are found by name, because repositories move their folders around. */
   locator: string | null;
+  /** ClawHub: who published the skill, and its slug. */
+  clawhub?: { owner: string; slug: string };
+}
+
+/** What resolves remote revisions: Git for repositories, the ClawHub client for the registry. */
+export interface RemoteClients {
+  git: GitClient;
+  clawhub?: ClawhubClient;
 }
 
 /** `owner/repo/skill` → [`owner/repo`, `skill`]. */
@@ -76,9 +96,21 @@ function splitMarketRef(ref: string): [source: string, locator: string] {
  * whatever the original reference parses to. Throws INVALID_INPUT when neither is usable.
  */
 export function remoteTargetOf(skill: Skill): RemoteTarget {
+  if (skill.sourceType === "clawhub") {
+    const { owner, slug } = parseClawhubRef(skill.sourceRef ?? "");
+    return {
+      kind: "clawhub",
+      url: clawhubSkillUrl(owner, slug),
+      branch: null,
+      subpath: null,
+      locator: null,
+      clawhub: { owner, slug },
+    };
+  }
   if (skill.sourceType === "marketplace") {
     const [source, locator] = splitMarketRef(skill.sourceRef ?? "");
     return {
+      kind: "git",
       // A stored URL may come from another device's backup: checked like a typed one.
       url: skill.sourceUrl ? validateGitInput(skill.sourceUrl) : marketSourceToUrl(source),
       branch: skill.sourceBranch,
@@ -90,6 +122,7 @@ export function remoteTargetOf(skill: Skill): RemoteTarget {
   if (skill.sourceUrl) {
     // The URL may come from another device's backup: it gets the same check as a typed one.
     return {
+      kind: "git",
       url: validateGitInput(skill.sourceUrl, { allowLocalPath: true }),
       branch: skill.sourceBranch,
       subpath: skill.sourceSubpath,
@@ -99,6 +132,7 @@ export function remoteTargetOf(skill: Skill): RemoteTarget {
   if (!skill.sourceRef) throw invalid("This skill has no repository URL recorded");
   const parsed = parseGitSource(skill.sourceRef);
   return {
+    kind: "git",
     url: parsed.cloneUrl,
     branch: skill.sourceBranch ?? parsed.branch,
     subpath: skill.sourceSubpath ?? parsed.subpath,
@@ -107,16 +141,29 @@ export function remoteTargetOf(skill: Skill): RemoteTarget {
 }
 
 /** Identity of a remote lookup: skills sharing it share one network call. */
-export function remoteKey(target: Pick<RemoteTarget, "url" | "branch">): string {
+export function remoteKey(target: Pick<RemoteTarget, "kind" | "url" | "branch">): string {
+  if (target.kind === "clawhub") return `clawhub\n${target.url}`;
   return `${normalizeRepoUrl(target.url)}\n${target.branch ?? ""}`;
 }
 
-/** The commit the remote serves right now. Throws when the branch or tag is gone. */
+function requireClawhub(clients: RemoteClients): ClawhubClient {
+  if (!clients.clawhub) throw new AppError("UNSUPPORTED", `${CLAWHUB_NAME} is not available here`);
+  return clients.clawhub;
+}
+
+/**
+ * The commit the remote serves right now, or the latest version on the registry. Throws when
+ * the branch or tag is gone.
+ */
 export async function resolveRemoteRevision(
-  git: GitClient,
+  clients: RemoteClients,
   target: RemoteTarget,
   signal?: AbortSignal,
 ): Promise<string> {
+  if (target.kind === "clawhub" && target.clawhub) {
+    return requireClawhub(clients).latestVersion(target.clawhub.owner, target.clawhub.slug);
+  }
+  const { git } = clients;
   const sha = await git.lsRemote(target.url, { branch: target.branch, signal });
   if (sha) return sha;
   const what = target.branch ? `'${target.branch}'` : "The default branch";
@@ -275,13 +322,22 @@ export async function openLocalSource(
   };
 }
 
-/** Check the repository out at `revision` and find the skill's folder in it. */
+/**
+ * Check the repository out at `revision` and find the skill's folder in it; or download that
+ * version of a registry skill.
+ */
 export async function openRemoteSource(
-  git: GitClient,
+  clients: RemoteClients,
   target: RemoteTarget,
   revision: string,
   signal?: AbortSignal,
 ): Promise<OpenedSource> {
+  if (target.kind === "clawhub" && target.clawhub) {
+    const { owner, slug } = target.clawhub;
+    const opened = await openClawhubVersion(requireClawhub(clients), owner, slug, revision, signal);
+    return { dir: opened.dir, revision, subpath: null, cleanup: opened.cleanup };
+  }
+  const { git } = clients;
   const checkout = await git.checkout(target.url, {
     branch: target.branch,
     revision,

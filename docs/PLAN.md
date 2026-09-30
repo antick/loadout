@@ -64,6 +64,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Batch import every skill under a folder
 - [x] Scan agent folders for skills already on this machine and import them
 - [x] Marketplace: hot / trending / all-time boards, keyword search, one-click install
+- [x] ClawHub marketplace: boards, search, detail with version and scan, install from its zip, version-based updates
 - [x] Progress phases, cancel, timeout, proxy support
 
 ### 3. Updates

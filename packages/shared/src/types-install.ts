@@ -119,7 +119,17 @@ export interface ScanResult {
   skills: DiscoveredSkill[];
 }
 
-export type MarketBoard = "hot" | "trending" | "all_time";
+/** Where marketplace listings come from. */
+export const MARKET_PROVIDERS = ["skills_sh", "clawhub"] as const;
+export type MarketProvider = (typeof MARKET_PROVIDERS)[number];
+export const DEFAULT_MARKET_PROVIDER: MarketProvider = "skills_sh";
+
+/** skills.sh ranks by installs over a period; ClawHub sorts its catalogue. */
+export type MarketBoard = "hot" | "trending" | "all_time" | "downloads" | "newest";
+export const MARKET_BOARDS_OF: Record<MarketProvider, readonly MarketBoard[]> = {
+  skills_sh: ["hot", "trending", "all_time"],
+  clawhub: ["trending", "downloads", "newest"],
+};
 
 export type MarketAuditStatus = "pass" | "warn" | "fail" | "unknown";
 
@@ -139,14 +149,19 @@ export interface MarketAudit {
 
 /** What to read before installing a marketplace skill. */
 export interface MarketSkillDetail {
-  /** `owner/repo/skill`. */
+  provider: MarketProvider;
+  /** `owner/repo/skill`, or `clawhub:owner/slug`. */
   id: string;
   source: string;
   skillId: string;
   /** The skill's page on the marketplace. */
   pageUrl: string;
-  /** The GitHub repository it installs from. */
-  repoUrl: string;
+  /** The GitHub repository it installs from; null for a registry that serves the files itself. */
+  repoUrl: string | null;
+  /** The version that would be installed; null where versions do not exist (skills.sh). */
+  version: string | null;
+  /** What that version's publisher said changed. */
+  changelog: string | null;
   /** Null when the audits could not be fetched; empty when none are published. */
   audits: MarketAudit[] | null;
   /** The skill's `SKILL.md`; null when it could not be found or fetched. */
@@ -166,12 +181,24 @@ export interface MarketListing {
 }
 
 export interface MarketSkill {
-  /** `owner/repo/skill`. */
+  provider: MarketProvider;
+  /** `owner/repo/skill`, or `clawhub:owner/slug`. */
   id: string;
+  /** The skill's folder name (skills.sh) or slug (ClawHub). */
   skillId: string;
   name: string;
-  /** `owner/repo`. */
+  /** `owner/repo` (skills.sh) or the publisher's handle (ClawHub). */
   source: string;
   installs: number;
   installed: boolean;
+  /** A one-line summary, where the marketplace gives one. */
+  summary: string | null;
+  /** The latest version, where versions exist. */
+  version: string | null;
+}
+
+/** `MarketSkill.id` of a ClawHub skill, matching a library skill's `sourceRef` after the prefix. */
+export const CLAWHUB_ID_PREFIX = "clawhub:";
+export function clawhubMarketId(owner: string, slug: string): string {
+  return `${CLAWHUB_ID_PREFIX}${owner}/${slug}`;
 }

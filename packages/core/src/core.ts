@@ -134,7 +134,11 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     rename: { deploy, projectSkillFolders: () => projects.skillFolders() },
     removed,
   });
-  const market = createMarketService(ctx, { store, fetchImpl: options.fetchImpl });
+  const market = createMarketService(ctx, {
+    store,
+    fetchImpl: options.fetchImpl,
+    clawhub: install.clawhub,
+  });
   const updates = createUpdatesService(ctx, {
     store,
     install,

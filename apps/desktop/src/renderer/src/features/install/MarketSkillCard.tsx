@@ -1,4 +1,4 @@
-import { MARKETPLACE_NAME, type MarketSkill, formatCount } from "@loadout/shared";
+import { type MarketSkill, formatCount } from "@loadout/shared";
 import { Check, Download, ExternalLink, RefreshCw, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { MARKET_PROVIDER_NAMES } from "@/features/install/constants";
 import { type InstallTask, installPhaseText } from "@/features/install/install-tasks";
 
 export interface MarketSkillCardProps {
@@ -54,6 +55,11 @@ export function MarketSkillCard({
         ) : null}
       </div>
 
+      {skill.summary ? (
+        <p className="line-clamp-2 text-xs text-muted-foreground" title={skill.summary}>
+          {skill.summary}
+        </p>
+      ) : null}
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -62,6 +68,7 @@ export function MarketSkillCard({
             className="relative -mx-1 w-fit max-w-full truncate rounded px-1 text-left font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             {skill.source}
+            {skill.version ? ` · v${skill.version}` : ""}
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom">{t("install.market.onlyThisSource")}</TooltipContent>
@@ -79,7 +86,9 @@ export function MarketSkillCard({
           </span>
         </span>
         <IconButton
-          label={t("install.market.viewOnWeb", { marketplace: MARKETPLACE_NAME })}
+          label={t("install.market.viewOnWeb", {
+            marketplace: MARKET_PROVIDER_NAMES[skill.provider],
+          })}
           icon={<ExternalLink />}
           onClick={() => onViewOnWeb(skill)}
         />

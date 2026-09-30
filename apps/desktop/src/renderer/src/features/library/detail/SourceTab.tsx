@@ -80,7 +80,7 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
   const openExternal = useOpenExternal();
   const [reporting, setReporting] = useState(false);
 
-  const remote = skill.sourceType === "git" || skill.sourceType === "marketplace";
+  const remote = ["git", "marketplace", "clawhub"].includes(skill.sourceType);
   /** An archive linked on the web: checked and refreshed by downloading it again. */
   const link = skill.sourceType === "url";
   const hasSource = Boolean(skill.sourceRef ?? skill.sourceUrl);

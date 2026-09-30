@@ -8,6 +8,7 @@ import {
   Link2,
   type LucideIcon,
   Send,
+  Package,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,6 +24,7 @@ const KIND_ICONS: Record<SkillSourceKind, LucideIcon> = {
   repository: GitBranch,
   archive: FileArchive,
   link: Link2,
+  registry: Package,
 };
 
 export interface LibraryGroupsProps {

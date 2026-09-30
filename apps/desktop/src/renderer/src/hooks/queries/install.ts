@@ -1,6 +1,7 @@
 import type {
   MarketBoard,
   MarketListing,
+  MarketProvider,
   MarketSkill,
   MarketSkillDetail,
   ScanResult,
@@ -10,10 +11,14 @@ import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
 /** One marketplace leaderboard. The backend caches boards, so switching back is instant. */
-export function useMarketBoard(board: MarketBoard, enabled = true): UseQueryResult<MarketListing> {
+export function useMarketBoard(
+  provider: MarketProvider,
+  board: MarketBoard,
+  enabled = true,
+): UseQueryResult<MarketListing> {
   return useQuery({
-    queryKey: keys.market.board(board),
-    queryFn: () => api.market.board(board),
+    queryKey: keys.market.board(provider, board),
+    queryFn: () => api.market.board(board, provider),
     enabled,
   });
 }
@@ -22,11 +27,15 @@ export function useMarketBoard(board: MarketBoard, enabled = true): UseQueryResu
  * Marketplace keyword search. Raising `limit` refetches with more results while the current ones
  * stay on screen. Disabled for a blank query.
  */
-export function useMarketSearch(query: string, limit: number): UseQueryResult<MarketListing> {
+export function useMarketSearch(
+  provider: MarketProvider,
+  query: string,
+  limit: number,
+): UseQueryResult<MarketListing> {
   const trimmed = query.trim();
   return useQuery({
-    queryKey: [...keys.market.search(trimmed), limit],
-    queryFn: () => api.market.search(trimmed, limit),
+    queryKey: [...keys.market.search(provider, trimmed), limit],
+    queryFn: () => api.market.search(trimmed, limit, provider),
     enabled: trimmed.length > 0,
     placeholderData: keepPreviousData,
   });
@@ -37,11 +46,11 @@ const MARKET_DETAIL_STALE_MS = 300_000;
 
 /** Audits and SKILL.md of one marketplace skill, for its detail sheet. */
 export function useMarketDetail(
-  skill: Pick<MarketSkill, "id" | "source" | "skillId">,
+  skill: Pick<MarketSkill, "id" | "source" | "skillId" | "provider">,
 ): UseQueryResult<MarketSkillDetail> {
   return useQuery({
-    queryKey: keys.market.detail(skill.id),
-    queryFn: () => api.market.detail(skill.source, skill.skillId),
+    queryKey: keys.market.detail(skill.provider, skill.id),
+    queryFn: () => api.market.detail(skill.source, skill.skillId, skill.provider),
     staleTime: MARKET_DETAIL_STALE_MS,
   });
 }

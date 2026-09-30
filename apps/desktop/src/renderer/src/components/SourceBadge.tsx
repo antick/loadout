@@ -5,6 +5,7 @@ import {
   HardDrive,
   Link2,
   type LucideIcon,
+  Package,
   Store,
   UserPen,
 } from "lucide-react";
@@ -17,6 +18,7 @@ const SOURCE_ICONS: Record<SourceType, LucideIcon> = {
   import: FolderInput,
   git: GitBranch,
   marketplace: Store,
+  clawhub: Package,
   url: Link2,
 };
 

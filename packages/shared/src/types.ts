@@ -51,11 +51,13 @@ export interface CustomAgentInput {
 // ── Skills ──
 
 /**
- * Where a library skill came from, in the order filters list them. `url` is something on the web
- * that is not a repository: an archive link, a link to a `SKILL.md`, or a skill a site publishes
- * in its well-known index (then `sourceUrl` is the index and `sourceSubpath` the skill's name).
+ * Where a library skill came from, in the order filters list them. `marketplace` is a GitHub
+ * repository found on skills.sh; `clawhub` a versioned skill on the ClawHub registry (`sourceRef`
+ * is `owner/slug`, `sourceRevision` the version). `url` is something on the web that is not a
+ * repository: an archive link, a link to a `SKILL.md`, or a skill a site publishes in its
+ * well-known index (then `sourceUrl` is the index and `sourceSubpath` the skill's name).
  */
-export const SOURCE_TYPES = ["local", "import", "git", "marketplace", "url"] as const;
+export const SOURCE_TYPES = ["local", "import", "git", "marketplace", "clawhub", "url"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export type UpdateStatus =

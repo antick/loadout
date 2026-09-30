@@ -123,7 +123,7 @@ export function createSourceChecker(ctx: CoreContext, deps: SourceCheckerDeps): 
     const [first] = repository.skills;
     if (!first) return;
     const target = remoteTargetOf(first);
-    const revision = await resolveRemoteRevision(git, target);
+    const revision = await resolveRemoteRevision({ git }, target);
     const before = news.get(repository.key);
     if (before && before.revision === revision) {
       news.set(repository.key, { ...before, checkedAt: Date.now() });

@@ -8,8 +8,11 @@ import {
   MARKETPLACE_URL,
   type MarketAudit,
   type MarketBoard,
+  type MarketProvider,
   type MarketSkill,
   type MarketSkillDetail,
+  clawhubMarketId,
+  clawhubSkillUrl,
 } from "@loadout/shared";
 import type { InstallMockContext } from "@/lib/dev-mock-install";
 
@@ -115,11 +118,31 @@ const CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 130 }, (_
   const round = Math.floor(index / TOPICS.length);
   const skillId = round === 0 ? pick(TOPICS, index) : `${pick(TOPICS, index)}-${round + 1}`;
   return {
+    provider: "skills_sh",
     id: `${source}/${skillId}`,
     skillId,
     name: skillId,
     source,
     installs: Math.round(980_000 / (index + 1) ** 1.3) + ((index * 37) % 90),
+    summary: null,
+    version: null,
+  };
+});
+
+const PUBLISHERS = ["pskoett", "openclaw", "spclaudehome", "maria-dev"] as const;
+/** ClawHub's catalogue: versioned, with a summary and a publisher handle. */
+const CLAWHUB_CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 24 }, (_, index) => {
+  const owner = pick(PUBLISHERS, index);
+  const slug = pick(TOPICS, index * 3);
+  return {
+    provider: "clawhub",
+    id: clawhubMarketId(owner, slug),
+    skillId: slug,
+    name: slug.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()),
+    source: owner,
+    installs: Math.round(120_000 / (index + 1) ** 1.2),
+    summary: `Use when the task is about ${slug.replace(/-/g, " ")}. Checks the input first, then does the work in small steps.`,
+    version: `${1 + (index % 3)}.${index % 5}.${index % 4}`,
   };
 });
 
@@ -127,6 +150,16 @@ const BOARD_ORDER: Record<MarketBoard, (index: number) => number> = {
   all_time: (index) => index,
   hot: (index) => (index * 17) % CATALOG.length,
   trending: (index) => (index * 29 + 11) % CATALOG.length,
+  downloads: (index) => index,
+  newest: (index) => index,
+};
+/** ClawHub's boards over its own, smaller catalogue: each shows every entry once. */
+const CLAWHUB_BOARD_ORDER: Record<MarketBoard, (index: number) => number> = {
+  trending: (index) => (index * 7 + 3) % CLAWHUB_CATALOG.length,
+  downloads: (index) => index,
+  newest: (index) => CLAWHUB_CATALOG.length - 1 - index,
+  hot: (index) => index,
+  all_time: (index) => index,
 };
 
 export function createMarketMockHandlers(
@@ -142,9 +175,53 @@ export function createMarketMockHandlers(
     return entries.map((entry) => ({ ...entry, installed: installed.has(entry.id) }));
   }
 
+  function withClawhubInstalled(entries: Omit<MarketSkill, "installed">[]): MarketSkill[] {
+    const installed = new Set(
+      ctx
+        .getSkills()
+        .filter((entry) => entry.sourceType === "clawhub")
+        .map((entry) => entry.sourceRef),
+    );
+    return entries.map((entry) => ({
+      ...entry,
+      installed: installed.has(`${entry.source}/${entry.skillId}`),
+    }));
+  }
+
+  function clawhubDetail(owner: string, slug: string): MarketSkillDetail {
+    const entry = CLAWHUB_CATALOG.find((item) => item.source === owner && item.skillId === slug);
+    return {
+      provider: "clawhub",
+      id: clawhubMarketId(owner, slug),
+      source: owner,
+      skillId: slug,
+      pageUrl: clawhubSkillUrl(owner, slug),
+      repoUrl: null,
+      version: entry?.version ?? "1.0.0",
+      changelog: "Clearer steps, and the checks run before anything is written.",
+      audits: [
+        {
+          provider: "ClawHub scan",
+          status: "pass",
+          summary: "No malicious behaviour found; reads files and runs the tests.",
+          riskLevel: "CLEAN",
+          auditedAt: new Date(Date.now() - 3 * DAY_MS).toISOString(),
+          url: clawhubSkillUrl(owner, slug),
+        },
+      ],
+      document: mockDocument(slug),
+      documentPath: "SKILL.md",
+    };
+  }
+
   return {
-    "market.detail": async (source: string, skillId: string): Promise<MarketSkillDetail> => {
+    "market.detail": async (
+      source: string,
+      skillId: string,
+      provider: MarketProvider = "skills_sh",
+    ): Promise<MarketSkillDetail> => {
       await new Promise((resolve) => window.setTimeout(resolve, DETAIL_DELAY_MS));
+      if (provider === "clawhub") return clawhubDetail(source, skillId);
       const id = `${source}/${skillId}`;
       const index =
         Math.max(
@@ -153,11 +230,14 @@ export function createMarketMockHandlers(
         ) + 1;
       const pageUrl = `${MARKETPLACE_URL}/${id}`;
       return {
+        provider: "skills_sh",
         id,
         source,
         skillId,
         pageUrl,
         repoUrl: `https://github.com/${source}`,
+        version: null,
+        changelog: null,
         audits:
           index % AUDITS_FAIL_EVERY === 0
             ? null
@@ -169,15 +249,40 @@ export function createMarketMockHandlers(
       };
     },
     // The "trending" board plays the offline case: an older copy, with how old it is.
-    "market.board": (board: MarketBoard) => ({
-      skills: withInstalled(
-        Array.from({ length: BOARD_SIZE }, (_, index) => pick(CATALOG, BOARD_ORDER[board](index))),
-      ),
-      cachedAt: board === "trending" ? Date.now() - OFFLINE_COPY_AGE_MS : null,
-    }),
-    "market.search": (query: string, limit?: number) => {
+    "market.board": (board: MarketBoard, provider: MarketProvider = "skills_sh") => {
+      if (provider === "clawhub") {
+        return {
+          skills: withClawhubInstalled(
+            CLAWHUB_CATALOG.map((_, index) =>
+              pick(CLAWHUB_CATALOG, CLAWHUB_BOARD_ORDER[board](index)),
+            ),
+          ),
+          cachedAt: null,
+        };
+      }
+      return {
+        skills: withInstalled(
+          Array.from({ length: BOARD_SIZE }, (_, index) =>
+            pick(CATALOG, BOARD_ORDER[board](index)),
+          ),
+        ),
+        cachedAt: board === "trending" ? Date.now() - OFFLINE_COPY_AGE_MS : null,
+      };
+    },
+    "market.search": (query: string, limit?: number, provider: MarketProvider = "skills_sh") => {
       const needle = query.trim().toLowerCase();
       if (needle === "offline") ctx.fail("NETWORK", `Could not resolve host: ${MARKETPLACE_URL}`);
+      if (provider === "clawhub") {
+        return {
+          skills: withClawhubInstalled(
+            CLAWHUB_CATALOG.filter((entry) => entry.id.toLowerCase().includes(needle)).slice(
+              0,
+              limit ?? 50,
+            ),
+          ),
+          cachedAt: null,
+        };
+      }
       return {
         skills: withInstalled(
           CATALOG.filter((entry) => entry.id.toLowerCase().includes(needle)).slice(0, limit ?? 50),

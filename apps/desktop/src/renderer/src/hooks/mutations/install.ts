@@ -21,9 +21,20 @@ import { toastError } from "@/lib/toast";
 /** Task key of "import everything the scan found"; the backend reports no progress for it. */
 export const IMPORT_ALL_DISCOVERED_KEY = "scan:import-all";
 
-/** Progress and cancel key of a marketplace install: `owner/repo/skill`, as the backend names it. */
-export function marketTaskKey(skill: Pick<MarketSkill, "source" | "skillId">): string {
-  return `${skill.source}/${skill.skillId}`;
+/**
+ * Progress and cancel key of a marketplace install, as the backend names it: `owner/repo/skill`
+ * for skills.sh, `clawhub:owner/slug` for ClawHub.
+ */
+export function marketTaskKey(skill: Pick<MarketSkill, "source" | "skillId" | "provider">): string {
+  const ref = `${skill.source}/${skill.skillId}`;
+  return skill.provider === "clawhub" ? `clawhub:${ref}` : ref;
+}
+
+function installMarketSkill(skill: MarketSkill, acceptRisk?: boolean): Promise<Skill> {
+  const options = acceptRisk ? { acceptRisk: true } : undefined;
+  return skill.provider === "clawhub"
+    ? api.install.fromClawhub(skill.source, skill.skillId, options)
+    : api.install.fromMarket(skill.source, skill.skillId, options);
 }
 
 /** Task key of importing one discovered skill: the folder it is copied from. */
@@ -82,9 +93,8 @@ export function useInstallFromMarket(): (skill: MarketSkill) => Promise<Skill | 
       return run({
         key,
         title: t("install.toast.installing", { name: skill.name }),
-        run: () => api.install.fromMarket(skill.source, skill.skillId),
-        runAcceptingRisk: () =>
-          api.install.fromMarket(skill.source, skill.skillId, { acceptRisk: true }),
+        run: () => installMarketSkill(skill),
+        runAcceptingRisk: () => installMarketSkill(skill, true),
         cancel: () => api.install.cancel(key),
         success: (installed) => installedOne(t, installed),
       });

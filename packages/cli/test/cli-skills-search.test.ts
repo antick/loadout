@@ -27,8 +27,8 @@ describe("skills search", () => {
     const { box, urls } = withMarket(() => Response.json({ skills: [PDF, DOCX] }));
     const run = await box.cli("skills", "search", "pdf", "tools");
     expect(run.code).toBe(EXIT_OK);
-    expect(run.stdout).toMatch(/acme\/skills@pdf\s+1\.2K/);
-    expect(run.stdout).toMatch(/acme\/skills@docx\s+35/);
+    expect(run.stdout).toMatch(/acme\/skills@pdf\s+-\s+1\.2K/);
+    expect(run.stdout).toMatch(/acme\/skills@docx\s+-\s+35/);
     expect(run.stdout).toContain("skills install <skill>");
     expect(urls).toHaveLength(1);
     expect(urls[0]).toContain("q=pdf%20tools");

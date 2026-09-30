@@ -1,5 +1,3 @@
-import type { MarketBoard } from "@loadout/shared";
-
 /**
  * Every TanStack Query key in the app. Each namespace has a `root` prefix (use it to invalidate the
  * whole namespace) and specific keys underneath it.
@@ -101,9 +99,9 @@ export const keys = {
   },
   market: {
     root: ["market"] as const,
-    board: (board: MarketBoard) => ["market", "board", board] as const,
-    search: (query: string) => ["market", "search", query] as const,
-    detail: (id: string) => ["market", "detail", id] as const,
+    board: (provider: string, board: string) => ["market", "board", provider, board] as const,
+    search: (provider: string, query: string) => ["market", "search", provider, query] as const,
+    detail: (provider: string, id: string) => ["market", "detail", provider, id] as const,
   },
   backup: {
     root: ["backup"] as const,

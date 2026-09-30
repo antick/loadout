@@ -1,4 +1,4 @@
-import { MARKETPLACE_NAME, type Skill } from "@loadout/shared";
+import { CLAWHUB_NAME, MARKETPLACE_NAME, type Skill } from "@loadout/shared";
 
 /** Credentials inside a clone URL are never shown. */
 const URL_CREDENTIALS_PATTERN = /\/\/[^/@]+@/;
@@ -8,13 +8,14 @@ const URL_CREDENTIALS_PATTERN = /\/\/[^/@]+@/;
  * folder or archive it was imported from. Edits to such a skill can be replaced by an update.
  */
 export function hasTrackedSource(skill: Skill): boolean {
-  if (skill.sourceType === "git" || skill.sourceType === "marketplace") return true;
+  if (["git", "marketplace", "clawhub"].includes(skill.sourceType)) return true;
   return Boolean(skill.sourceRef);
 }
 
 /** Short name of where the skill is updated from, for sentences like "updated from …". */
 export function sourceLabelOf(skill: Skill): string {
   if (skill.sourceType === "marketplace") return MARKETPLACE_NAME;
+  if (skill.sourceType === "clawhub") return CLAWHUB_NAME;
   const ref = skill.sourceType === "git" ? (skill.sourceUrl ?? skill.sourceRef) : skill.sourceRef;
   return (ref ?? "").replace(URL_CREDENTIALS_PATTERN, "//");
 }

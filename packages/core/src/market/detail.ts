@@ -201,11 +201,14 @@ export function createMarketDetail(
       audits(repo, encodeURIComponent(id), pageUrl),
     ]);
     return {
+      provider: "skills_sh",
       id: `${repo}/${id}`,
       source: repo,
       skillId: id,
       pageUrl,
       repoUrl: `${GITHUB_WEB}/${repo}`,
+      version: null,
+      changelog: null,
       audits: published,
       document: found?.content ?? null,
       documentPath: found?.path ?? null,

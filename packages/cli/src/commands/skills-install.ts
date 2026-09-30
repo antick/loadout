@@ -22,13 +22,16 @@ import type { CommandContext, CommandResult, CommandSpec } from "./types";
 export type InstallSource =
   | { kind: "path"; path: string }
   | { kind: "git"; url: string }
-  | { kind: "market"; source: string; skillId: string };
+  | { kind: "market"; source: string; skillId: string }
+  | { kind: "clawhub"; owner: string; slug: string };
 
 const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 const PATH_START = /^(?:~|\.{1,2}(?:[\\/]|$)|[\\/]|[A-Za-z]:[\\/])/;
 const REPO = String.raw`[A-Za-z0-9_][\w.-]*\/[A-Za-z0-9_][\w.-]*`;
 const SHORTHAND = new RegExp(`^${REPO}$`);
 const MARKET_SKILL = new RegExp(`^(${REPO})[@/]([^\\s@/]+)$`);
+/** `clawhub:owner/slug` or `@owner/slug`: a skill on the ClawHub registry. */
+const CLAWHUB_SKILL = /^(?:clawhub:|@)([\w.-]+)\/([\w.-]+)$/i;
 /** A first segment with a dot in it is a host name (`github.com/…`), not a GitHub owner. */
 const HOST_FIRST = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s]+$/i;
 
@@ -39,6 +42,8 @@ const HOST_FIRST = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s]+$/i;
 export function classifySource(input: string): InstallSource {
   const text = input.trim();
   const lower = text.toLowerCase();
+  const clawhub = CLAWHUB_SKILL.exec(text);
+  if (clawhub?.[1] && clawhub[2]) return { kind: "clawhub", owner: clawhub[1], slug: clawhub[2] };
   if (text.includes("://") || text.startsWith("git@")) return { kind: "git", url: text };
   if (PATH_START.test(text) || ARCHIVE_SUFFIXES.some((suffix) => lower.endsWith(suffix))) {
     return { kind: "path", path: text };
@@ -49,7 +54,7 @@ export function classifySource(input: string): InstallSource {
   const market = MARKET_SKILL.exec(text);
   if (market?.[1] && market[2]) return { kind: "market", source: market[1], skillId: market[2] };
   throw new UsageError(
-    `Can not tell what "${text}" is. Use ./folder or ./file.zip for something on disk, a full git URL, owner/repo, or owner/repo@skill.`,
+    `Can not tell what "${text}" is. Use ./folder or ./file.zip for something on disk, a full git URL, owner/repo, owner/repo@skill, or @owner/slug for ClawHub.`,
   );
 }
 
@@ -226,6 +231,9 @@ async function installFromPath(context: CommandContext, path: string): Promise<I
 async function plan(context: CommandContext, source: InstallSource): Promise<InstallPlan> {
   const { core, args, cwd } = context;
   const name = flagString(args, NAME_FLAG.name);
+  if (source.kind === "clawhub") {
+    return planMarket(core, source.owner, source.slug, "clawhub");
+  }
   if (source.kind === "market") {
     if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
     return planMarket(core, source.source, source.skillId);
@@ -256,6 +264,12 @@ async function run(context: CommandContext): Promise<CommandResult> {
   } else if (source.kind === "market") {
     if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
     const skill = await core.api.install.fromMarket(source.source, source.skillId, {
+      acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
+    });
+    result = { skills: [skill], asked: [], replaced: [] };
+  } else if (source.kind === "clawhub") {
+    if (name !== undefined) throw new UsageError("--name is not supported for @owner/slug.");
+    const skill = await core.api.install.fromClawhub(source.owner, source.slug, {
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });
     result = { skills: [skill], asked: [], replaced: [] };
@@ -293,6 +307,7 @@ export const installCommand: CommandSpec = {
     "skip it, and scripts or --json never see it.",
     "--dry-run fetches the source and lists what would be added and under which names.",
     "Sources: ./folder, ./archive.zip (.skill, .tar, .tar.gz, .tgz), a git URL, owner/repo,",
+    "@owner/slug for a ClawHub skill,",
     "owner/repo@skill, a link to an archive or a SKILL.md, or a site that publishes skills",
     "(https://example.com, read from /.well-known/agent-skills/index.json).",
     "--yes also accepts a download that moved to another site than the link names.",

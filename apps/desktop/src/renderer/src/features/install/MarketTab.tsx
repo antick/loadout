@@ -1,14 +1,16 @@
 import {
   ApiError,
+  DEFAULT_MARKET_PROVIDER,
   type ErrorCode,
-  MARKETPLACE_NAME,
-  MARKETPLACE_URL,
+  MARKET_BOARDS_OF,
+  MARKET_PROVIDERS,
   type MarketBoard,
+  type MarketProvider,
   type MarketSkill,
   formatRelative,
 } from "@loadout/shared";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CloudOff, ExternalLink, RefreshCw, SearchX, Store } from "lucide-react";
+import { CloudOff, ExternalLink, Package, RefreshCw, SearchX, Store } from "lucide-react";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
@@ -29,9 +31,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
-  DEFAULT_MARKET_BOARD,
-  MARKET_BOARDS,
+  DEFAULT_MARKET_BOARD_OF,
   MARKET_PAGE_SIZE,
+  MARKET_PROVIDER_NAMES,
+  MARKET_PROVIDER_URLS,
   MARKET_SEARCH_DEBOUNCE_MS,
   MARKET_SEARCH_LIMIT_MAX,
   MARKET_SEARCH_LIMIT_STEP,
@@ -47,9 +50,12 @@ import { useOpenExternal } from "@/hooks/mutations/app";
 import { marketTaskKey, useInstallFromMarket } from "@/hooks/mutations/install";
 import { useMarketBoard, useMarketSearch } from "@/hooks/queries/install";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { cn } from "@/lib/utils";
 
 const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3";
+const PROVIDER_STORAGE_KEY = "install.market-provider";
+const PROVIDER_ICONS: Record<MarketProvider, typeof Store> = { skills_sh: Store, clawhub: Package };
 const CONNECTION_ERROR_CODES: ReadonlySet<ErrorCode> = new Set(["NETWORK", "TIMEOUT"]);
 
 function MarketSkeleton(): ReactNode {
@@ -69,11 +75,17 @@ function MarketSkeleton(): ReactNode {
   );
 }
 
-/** Browse the marketplace boards or search it, narrow by contributor, and install. */
+/** Browse a marketplace's boards or search it, narrow by contributor, and install. */
 export function MarketTab(): ReactNode {
   const { t } = useTranslation();
   const top = useRef<HTMLDivElement>(null);
-  const [board, setBoard] = useState<MarketBoard>(DEFAULT_MARKET_BOARD);
+  const [provider, setProvider] = usePersistedState<MarketProvider>(
+    PROVIDER_STORAGE_KEY,
+    DEFAULT_MARKET_PROVIDER,
+  );
+  const [board, setBoard] = useState<MarketBoard>(DEFAULT_MARKET_BOARD_OF[provider]);
+  const boards = MARKET_BOARDS_OF[provider];
+  const marketplace = MARKET_PROVIDER_NAMES[provider];
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(MARKET_SEARCH_LIMIT_STEP);
   const [source, setSource] = useState<string>(SOURCE_FILTER_ALL);
@@ -83,8 +95,8 @@ export function MarketTab(): ReactNode {
 
   const debouncedQuery = useDebouncedValue(query, MARKET_SEARCH_DEBOUNCE_MS).trim();
   const searching = debouncedQuery.length >= MARKET_SEARCH_MIN_CHARS;
-  const boardQuery = useMarketBoard(board, !searching);
-  const searchQuery = useMarketSearch(searching ? debouncedQuery : "", limit);
+  const boardQuery = useMarketBoard(provider, board, !searching);
+  const searchQuery = useMarketSearch(provider, searching ? debouncedQuery : "", limit);
   const active = searching ? searchQuery : boardQuery;
 
   const { task, cancel } = useInstallTask();
@@ -122,17 +134,41 @@ export function MarketTab(): ReactNode {
           type="single"
           variant="outline"
           size="sm"
+          value={provider}
+          aria-label={t("install.market.providerLabel")}
+          onValueChange={(value) => {
+            const next = MARKET_PROVIDERS.find((entry) => entry === value);
+            if (!next) return;
+            setProvider(next);
+            setBoard(DEFAULT_MARKET_BOARD_OF[next]);
+            resetView();
+          }}
+        >
+          {MARKET_PROVIDERS.map((entry) => {
+            const Icon = PROVIDER_ICONS[entry];
+            return (
+              <ToggleGroupItem key={entry} value={entry} className="gap-1.5 px-3">
+                <Icon />
+                {MARKET_PROVIDER_NAMES[entry]}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
           value={board}
           aria-label={t("install.market.boardLabel")}
           disabled={searching}
           onValueChange={(value) => {
-            const next = MARKET_BOARDS.find((entry) => entry === value);
+            const next = boards.find((entry) => entry === value);
             if (!next) return;
             setBoard(next);
             resetView();
           }}
         >
-          {MARKET_BOARDS.map((entry) => (
+          {boards.map((entry) => (
             <ToggleGroupItem key={entry} value={entry} className="px-3">
               {t(`install.market.boards.${entry}`)}
             </ToggleGroupItem>
@@ -141,7 +177,7 @@ export function MarketTab(): ReactNode {
 
         <SearchInput
           value={query}
-          placeholder={t("install.market.searchPlaceholder", { marketplace: MARKETPLACE_NAME })}
+          placeholder={t("install.market.searchPlaceholder", { marketplace })}
           className="w-72"
           onChange={(value) => {
             setQuery(value);
@@ -160,13 +196,13 @@ export function MarketTab(): ReactNode {
           <SelectTrigger
             size="sm"
             className="max-w-64 font-mono text-xs"
-            aria-label={t("install.market.sourceFilter")}
+            aria-label={t(`install.market.sourceFilter.${provider}`)}
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={SOURCE_FILTER_ALL} className="font-sans text-sm">
-              {t("install.market.allSources")}
+              {t(`install.market.allSources.${provider}`)}
             </SelectItem>
             {sources.length > 0 ? <SelectSeparator /> : null}
             {source !== SOURCE_FILTER_ALL && !sources.some((entry) => entry.source === source) ? (
@@ -191,16 +227,16 @@ export function MarketTab(): ReactNode {
           variant="ghost"
           size="sm"
           className="ml-auto"
-          onClick={() => openExternal.mutate(MARKETPLACE_URL)}
+          onClick={() => openExternal.mutate(MARKET_PROVIDER_URLS[provider])}
         >
           <ExternalLink />
-          {t("install.market.browseSite", { marketplace: MARKETPLACE_NAME })}
+          {t("install.market.browseSite", { marketplace })}
         </Button>
       </div>
 
       {searching ? (
         <p className="-mt-2 text-xs text-muted-foreground">
-          {t("install.market.searchScope", { marketplace: MARKETPLACE_NAME })}
+          {t("install.market.searchScope", { marketplace })}
         </p>
       ) : null}
 
@@ -220,10 +256,7 @@ export function MarketTab(): ReactNode {
             </Button>
           }
         >
-          {t("install.market.cached", {
-            marketplace: MARKETPLACE_NAME,
-            when: formatRelative(cachedAt),
-          })}
+          {t("install.market.cached", { marketplace, when: formatRelative(cachedAt) })}
         </InlineNotice>
       ) : null}
 
@@ -233,7 +266,7 @@ export function MarketTab(): ReactNode {
         <div className="flex flex-col items-center">
           <ErrorState
             error={active.error}
-            title={t("install.market.loadFailed", { marketplace: MARKETPLACE_NAME })}
+            title={t("install.market.loadFailed", { marketplace })}
             onRetry={() => void active.refetch()}
           />
           {connectionError ? (
@@ -285,7 +318,7 @@ export function MarketTab(): ReactNode {
                 task={task(marketTaskKey(skill))}
                 onInstall={(entry) => void install(entry)}
                 onCancel={(entry) => cancel(marketTaskKey(entry))}
-                onViewOnWeb={(entry) => openExternal.mutate(marketSkillUrl(MARKETPLACE_URL, entry))}
+                onViewOnWeb={(entry) => openExternal.mutate(marketSkillUrl(entry))}
                 onOpen={setDetailFor}
                 onFilterSource={(next) => {
                   setSource(next);

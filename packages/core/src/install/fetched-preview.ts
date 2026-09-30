@@ -70,7 +70,7 @@ export function previewRows(
 
 /** Where a library skill came from, as shown next to a name it holds. Never with credentials. */
 function shownSource(skill: Skill): string | null {
-  if (skill.sourceType === "marketplace") return skill.sourceRef;
+  if (skill.sourceType === "marketplace" || skill.sourceType === "clawhub") return skill.sourceRef;
   const ref = skill.sourceUrl ?? skill.sourceRef;
   return ref ? redactUrl(ref) : null;
 }

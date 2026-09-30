@@ -1,5 +1,6 @@
 import type { Skill, SourceDiff, SourceDiffOptions, SourceDocument } from "@loadout/shared";
 import type { Download, GitClient } from "../install";
+import type { ClawhubClient } from "../market/clawhub";
 import { readSkillDocument } from "../skills/metadata";
 import { libraryCopyOverrides } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
@@ -18,6 +19,7 @@ export interface SourcePreviewDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
+  clawhub?: ClawhubClient;
 }
 
 export interface SourcePreview {
@@ -28,11 +30,12 @@ export interface SourcePreview {
 /** Look at a skill's upstream without changing anything in the library. */
 export function createSourcePreview(deps: SourcePreviewDeps): SourcePreview {
   const { store, git, download } = deps;
+  const clients = { git, clawhub: deps.clawhub };
 
   async function open(skill: Skill): Promise<OpenedSource> {
     if (!isRemoteSource(skill)) return openLocalSource(skill, download);
     const target = remoteTargetOf(skill);
-    return openRemoteSource(git, target, await resolveRemoteRevision(git, target));
+    return openRemoteSource(clients, target, await resolveRemoteRevision(clients, target));
   }
 
   /** Temp checkouts are removed however `read` ends. */

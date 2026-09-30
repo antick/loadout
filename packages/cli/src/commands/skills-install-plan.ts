@@ -108,14 +108,19 @@ export function planFolder(core: Core, path: string, name: string | undefined): 
 }
 
 /**
- * The plan for `owner/repo@skill`. Nothing is fetched: the marketplace installs by folder name,
- * and installing one that is already here refreshes it in place.
+ * The plan for `owner/repo@skill` or `@owner/slug`. Nothing is fetched: a marketplace installs by
+ * name, and installing one that is already here refreshes it in place.
  */
-export function planMarket(core: Core, source: string, skillId: string): InstallPlan {
+export function planMarket(
+  core: Core,
+  source: string,
+  skillId: string,
+  sourceType: "marketplace" | "clawhub" = "marketplace",
+): InstallPlan {
   const key = `${source.trim()}/${skillId.trim()}`;
   const installed = core.store
     .list()
-    .find((skill) => skill.sourceType === "marketplace" && skill.sourceRef === key);
+    .find((skill) => skill.sourceType === sourceType && skill.sourceRef === key);
   const library = previewLibrary(core.ctx, core.store, (skill) => skill.id === installed?.id);
   const name = installed?.name ?? skillId;
   const [outcome] = planInstallNames([name], library);

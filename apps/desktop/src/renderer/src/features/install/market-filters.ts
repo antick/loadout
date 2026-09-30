@@ -1,4 +1,4 @@
-import type { MarketSkill } from "@loadout/shared";
+import { MARKETPLACE_URL, type MarketSkill, clawhubSkillUrl } from "@loadout/shared";
 import { SOURCE_FILTER_ALL } from "@/features/install/constants";
 
 export interface SourceOption {
@@ -20,8 +20,9 @@ export function filterBySource(skills: readonly MarketSkill[], source: string): 
   return source === SOURCE_FILTER_ALL ? [...skills] : skills.filter((s) => s.source === source);
 }
 
-/** The skill's page on the marketplace website. */
-export function marketSkillUrl(baseUrl: string, skill: MarketSkill): string {
+/** The skill's page on its marketplace's website. */
+export function marketSkillUrl(skill: MarketSkill): string {
+  if (skill.provider === "clawhub") return clawhubSkillUrl(skill.source, skill.skillId);
   const path = [...skill.source.split("/"), skill.skillId].map(encodeURIComponent).join("/");
-  return `${baseUrl}/${path}`;
+  return `${MARKETPLACE_URL}/${path}`;
 }

@@ -1,4 +1,4 @@
-import { type Skill, type SkillSourceIdentity, skillSourceOf } from "@loadout/shared";
+import { CLAWHUB_NAME, type Skill, type SkillSourceIdentity, skillSourceOf } from "@loadout/shared";
 
 /** Skills without a shared source (made here, imported from a folder) go under this key. */
 export const NO_SOURCE_GROUP = "__none__";
@@ -19,11 +19,16 @@ export function groupLibraryBySource(skills: readonly Skill[]): LibraryGroup[] {
   const groups = new Map<string, LibraryGroup>();
   const unsourced: LibraryGroup = { key: NO_SOURCE_GROUP, source: null, skills: [] };
   for (const skill of skills) {
-    const source = skillSourceOf(skill);
-    if (!source) {
+    const found = skillSourceOf(skill);
+    if (!found) {
       unsourced.skills.push(skill);
       continue;
     }
+    // Registry skills are one source each; in the library they read better as one section.
+    const source: SkillSourceIdentity =
+      found.kind === "registry"
+        ? { ...found, key: "registry:clawhub", label: CLAWHUB_NAME }
+        : found;
     const group = groups.get(source.key) ?? { key: source.key, source, skills: [] };
     group.skills.push(skill);
     groups.set(source.key, group);

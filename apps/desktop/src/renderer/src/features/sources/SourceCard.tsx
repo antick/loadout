@@ -16,6 +16,7 @@ import {
   Link2,
   type LucideIcon,
   MoreHorizontal,
+  Package,
   PackageSearch,
   RefreshCw,
   Sparkles,
@@ -39,6 +40,7 @@ const KIND_ICONS: Record<SkillSourceKind, LucideIcon> = {
   repository: GitBranch,
   archive: FileArchive,
   link: Link2,
+  registry: Package,
 };
 
 /** Skill names listed on a card before "and N more". */
@@ -212,10 +214,12 @@ export function SourceCard({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={onBrowse} disabled={browsing}>
-          {browsing ? <Spinner /> : <PackageSearch />}
-          {t("sources.browse")}
-        </Button>
+        {source.browse ? (
+          <Button size="sm" variant="outline" onClick={onBrowse} disabled={browsing}>
+            {browsing ? <Spinner /> : <PackageSearch />}
+            {t("sources.browse")}
+          </Button>
+        ) : null}
         {source.updatesAvailable > 0 ? (
           <Button size="sm" variant="outline" onClick={onUpdate}>
             <CircleFadingArrowUp />

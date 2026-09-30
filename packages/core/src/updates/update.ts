@@ -6,6 +6,7 @@ import type {
   UpdateResult,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
+import type { ClawhubClient } from "../market/clawhub";
 import type { RedeployReport } from "../deploy";
 import {
   AppError,
@@ -58,6 +59,8 @@ export interface UpdaterDeps {
   safety?: SafetyGate;
   /** Keeps the edited version an approved update replaces; absent in tests that do not care. */
   removed?: Pick<RemovedStore, "keepCopy">;
+  /** The registry client, for ClawHub skills. */
+  clawhub?: ClawhubClient;
 }
 
 export interface UpdateOptions {
@@ -144,6 +147,7 @@ function patchFromRecord(record: InstallRecord): SkillPatch {
 
 export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   const { store, git, download, cancels } = deps;
+  const clients = { git, clawhub: deps.clawhub };
   /** Failures the library installer already wrote to the history. */
   const recordedFailures = new WeakSet<object>();
 
@@ -298,7 +302,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     try {
       ctx.emit("install:progress", { key, phase: "cloning", name: skill.name });
       const target = remoteTargetOf(skill);
-      const revision = await resolveRemoteRevision(git, target, handle.signal);
+      const revision = await resolveRemoteRevision(clients, target, handle.signal);
       if (options.expectedRevision && revision !== options.expectedRevision) {
         throw new AppError("CHANGED_ON_DISK", MOVED_SINCE_COMPARED);
       }
@@ -306,7 +310,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       const source =
         revision === skill.sourceRevision
           ? null
-          : await openRemoteSource(git, target, revision, handle.signal);
+          : await openRemoteSource(clients, target, revision, handle.signal);
       try {
         if (handle.signal.aborted) throw cancelled();
         ctx.emit("install:progress", { key, phase: "installing", name: skill.name });

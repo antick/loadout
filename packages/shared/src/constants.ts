@@ -61,6 +61,14 @@ export const UPDATE_FEED_PUBLIC_KEY =
 
 export const MARKETPLACE_NAME = "skills.sh";
 export const MARKETPLACE_URL = "https://skills.sh";
+/** The second marketplace: a registry with its own API, versions and security scans. */
+export const CLAWHUB_NAME = "ClawHub";
+export const CLAWHUB_URL = "https://clawhub.ai";
+export const CLAWHUB_API_URL = "https://clawhub.ai/api/v1";
+/** A skill's page on ClawHub. */
+export function clawhubSkillUrl(owner: string, slug: string): string {
+  return `${CLAWHUB_URL}/${encodeURIComponent(owner)}/skills/${encodeURIComponent(slug)}`;
+}
 /** Results a marketplace search returns when the caller names no limit. */
 export const MARKET_SEARCH_DEFAULT_LIMIT = 50;
 

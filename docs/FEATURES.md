@@ -57,6 +57,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Skills grouped by folder with a tick-all per folder; a filter for sources with 8 or more skills.
 - A download that moves to another site needs your OK first.
 - Marketplace (skills.sh): boards, search, audits and `SKILL.md` before installing; works offline from cache.
+- ClawHub as a second marketplace: trending, most downloaded and newest, search, the version, changelog, security scan and `SKILL.md` before installing; installs the registry's zip, and updates follow new versions. `loadout skills install @owner/slug`, `loadout skills search --on clawhub`.
 - Scan this machine for skills already in agent folders and import them.
 - Progress, cancel, timeouts, proxy; deploy straight from the success toast.
 

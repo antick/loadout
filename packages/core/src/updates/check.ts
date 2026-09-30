@@ -1,5 +1,6 @@
 import type { BatchResult, Skill, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
+import type { ClawhubClient } from "../market/clawhub";
 import { errorMessage, isAppError } from "../errors";
 import type { Download, GitClient } from "../install";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
@@ -22,6 +23,8 @@ export interface CheckerDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
+  /** The registry client, for ClawHub skills. */
+  clawhub?: ClawhubClient;
 }
 
 export interface CheckOptions {
@@ -158,10 +161,11 @@ function targetOrFailure(skill: Skill): RemoteTarget | { failure: string } {
 
 export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
   const { store, git, download } = deps;
+  const clients = { git, clawhub: deps.clawhub };
 
   async function lookup(target: RemoteTarget): Promise<RemoteOutcome> {
     try {
-      return { revision: await resolveRemoteRevision(git, target) };
+      return { revision: await resolveRemoteRevision(clients, target) };
     } catch (error) {
       return { failure: errorMessage(error) };
     }

@@ -24,6 +24,8 @@ import { type InstallIntoLibrary, type InstallRecord, installIntoLibrary } from 
 import type { SourceNewsStore } from "../sources/news-store";
 import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
+import { type ClawhubClient, createClawhubClient } from "../market/clawhub";
+import { createClawhubInstaller } from "./clawhub-install";
 
 export interface InstallServiceDeps {
   store: SkillStore;
@@ -45,6 +47,8 @@ export interface InstallServiceDeps {
   sourceNews?: Pick<SourceNewsStore, "markSeen">;
   /** Called after a skill found in an agent's folder is imported, with the folder it came from. */
   onImported?: (skill: Skill, sourcePath: string) => void;
+  /** Tests only: a ClawHub client with a fake fetch. */
+  clawhub?: ClawhubClient;
 }
 
 export interface InstallService {
@@ -53,6 +57,8 @@ export interface InstallService {
   git: GitClient;
   /** Shared by the updates service, which downloads archive links again to check them. */
   download: Download;
+  /** Shared by the marketplace and the updates service: one ClawHub client for all. */
+  clawhub: ClawhubClient;
   /** Shared so an update can be cancelled through `install.cancel("update:<skillId>")`. */
   cancels: CancelRegistry;
   /** The single way into the library, bound to this context. */
@@ -82,6 +88,14 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     allowLocalGitSources: deps.allowLocalGitSources,
     previewTtlMs: deps.previewTtlMs,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
+  });
+  const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl });
+  const fromClawhub = createClawhubInstaller(ctx, {
+    store,
+    clawhub,
+    cancels,
+    install,
+    safety: deps.safety,
   });
   const scan = createScanService(ctx, {
     store,
@@ -162,6 +176,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     confirmGit: gitInstaller.confirmGit,
     cancelPreview: gitInstaller.cancelPreview,
     fromMarket: gitInstaller.fromMarket,
+    fromClawhub,
     cancel: async (key) => cancels.cancel(key),
     scanLocal: scan.scanLocal,
     importDiscovered: scan.importDiscovered,
@@ -172,6 +187,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     api,
     git,
     download,
+    clawhub,
     cancels,
     installIntoLibrary: install,
     dispose: gitInstaller.dispose,

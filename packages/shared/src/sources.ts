@@ -6,7 +6,7 @@ import type { Skill } from "./types";
  * made in the app or imported from single folders have no shared source and are left out.
  */
 
-export type SkillSourceKind = "repository" | "archive" | "link";
+export type SkillSourceKind = "repository" | "archive" | "link" | "registry";
 
 export interface SkillSource {
   /** Stable identity: the repository (and branch), the archive path or the link. */
@@ -27,9 +27,9 @@ export interface SkillSource {
   lastCheckedAt: number | null;
   /**
    * What to preview to see everything the source offers now: text for `install.previewGit`, or
-   * an archive path for `install.previewArchive`.
+   * an archive path for `install.previewArchive`. Null for a registry entry, which is one skill.
    */
-  browse: { kind: "git" | "archive"; target: string };
+  browse: { kind: "git" | "archive"; target: string } | null;
 }
 
 /** A skill a repository holds now that was not there when it was last looked at. */
@@ -130,6 +130,17 @@ export function skillSourceOf(skill: Skill): SkillSourceIdentity | null {
   }
   const ref = skill.sourceRef;
   if (!ref) return null;
+  if (skill.sourceType === "clawhub") {
+    return {
+      key: `clawhub:${ref}`,
+      kind: "registry",
+      label: ref,
+      location: skill.sourceUrl ?? ref,
+      branch: null,
+      viaMarketplace: false,
+      browse: null,
+    };
+  }
   if (skill.sourceType === "url") {
     const parsed = hostAndPath(ref);
     const label = parsed ? `${parsed.host}/${lastSegment(parsed.path)}` : ref;
