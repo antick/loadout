@@ -185,7 +185,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] `--json` output with stable error codes, `--dry-run`, `--yes`, `--library <path>`
 - [x] App publishes the CLI to `~/.loadout/bin` on start with a version stamp
 - [x] Bundled `manage-skills` skill teaching agents to drive the CLI; one-click setup
-- [x] Bash and Zsh tab completion; keyboard picker for multi-skill installs; `--dry-run` for install and update
+- [x] Bash and Zsh tab completion; keyboard picker for multi-skill installs and search results; `--dry-run` for install and update
 - [ ] Homebrew (deferred): `scripts/homebrew.mjs` and `publish-homebrew.yml` are ready but unused
 
 ## Build order

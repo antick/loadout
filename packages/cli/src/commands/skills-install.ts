@@ -62,6 +62,10 @@ function lastSegment(relPath: string): string {
   return relPath.split("/").findLast(Boolean) ?? relPath;
 }
 
+/** Said after anything lands in the library. */
+export const NOT_DEPLOYED_HINT =
+  "Installing does not deploy. Next: skills deploy <ref> --agent <key>";
+
 const REPLACE_FOLDER =
   "--replace works for repositories, links and archives. For a folder, delete the library skill first or pick another --name.";
 
@@ -292,7 +296,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
       `The name was in use, so these got a numbered name instead: ${renamed.map((s) => s.name).join(", ")}.`,
     );
   }
-  lines.push("Installing does not deploy. Next: skills deploy <ref> --agent <key>");
+  lines.push(NOT_DEPLOYED_HINT);
   return { value: { installed }, text: lines.join("\n") };
 }
 
