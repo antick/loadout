@@ -16,6 +16,7 @@ export const HEALTH_AREAS = [
   "safety",
   "projects",
   "usage",
+  "listing",
 ] as const;
 export type HealthArea = (typeof HEALTH_AREAS)[number];
 

@@ -64,6 +64,7 @@ import type { BackupApi } from "./api-backup";
 import type { SkillsFileApi } from "./api-skills-file";
 import type { UsageApi } from "./usage";
 import type { DuplicatesApi } from "./duplicates";
+import type { ListingApi } from "./skill-listing";
 import type { ProjectSuggestions } from "./project-suggestions";
 import type {
   PresetExportOptions,
@@ -462,6 +463,7 @@ export interface LoadoutApi {
   items: ItemsApi;
   usage: UsageApi;
   duplicates: DuplicatesApi;
+  listing: ListingApi;
   app: AppApi;
 }
 
@@ -495,6 +497,7 @@ const CORE_NAMESPACE_KEYS: Record<keyof CoreApi, true> = {
   items: true,
   usage: true,
   duplicates: true,
+  listing: true,
 };
 
 export const CORE_NAMESPACES = Object.keys(CORE_NAMESPACE_KEYS) as (keyof CoreApi)[];

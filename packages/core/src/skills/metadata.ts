@@ -34,27 +34,40 @@ const EMPTY: SkillFrontmatter = {
   behaviourFields: [],
 };
 
-/** Read `name`, `description` and the manual-only flag from YAML frontmatter. Never throws. */
-export function parseFrontmatter(text: string): SkillFrontmatter {
+/**
+ * The parsed frontmatter of a document and the text after it. `data` is null when there is no
+ * frontmatter, it is not closed, it does not parse, or it is not a map. Never throws.
+ */
+export function splitFrontmatter(text: string): {
+  data: Record<string, unknown> | null;
+  body: string;
+} {
   const trimmed = text.trim();
-  if (!trimmed.startsWith(FENCE)) return EMPTY;
+  if (!trimmed.startsWith(FENCE)) return { data: null, body: text };
   const end = trimmed.indexOf(`\n${FENCE}`, FENCE.length);
-  if (end === -1) return EMPTY;
+  if (end === -1) return { data: null, body: text };
+  const body = trimmed.slice(end + 1 + FENCE.length);
   try {
     const data: unknown = parse(trimmed.slice(FENCE.length, end));
-    if (typeof data !== "object" || data === null) return EMPTY;
-    const record = data as Record<string, unknown>;
-    return {
-      name: typeof record.name === "string" ? record.name.trim() || null : null,
-      description:
-        typeof record.description === "string" ? record.description.trim() || null : null,
-      manualOnly: isManualOnly(record),
-      traits: traitsFromFrontmatter(record),
-      behaviourFields: behaviourFieldsIn(record),
-    };
+    if (typeof data !== "object" || data === null || Array.isArray(data))
+      return { data: null, body };
+    return { data: data as Record<string, unknown>, body };
   } catch {
-    return EMPTY;
+    return { data: null, body };
   }
+}
+
+/** Read `name`, `description` and the manual-only flag from YAML frontmatter. Never throws. */
+export function parseFrontmatter(text: string): SkillFrontmatter {
+  const { data: record } = splitFrontmatter(text);
+  if (!record) return EMPTY;
+  return {
+    name: typeof record.name === "string" ? record.name.trim() || null : null,
+    description: typeof record.description === "string" ? record.description.trim() || null : null,
+    manualOnly: isManualOnly(record),
+    traits: traitsFromFrontmatter(record),
+    behaviourFields: behaviourFieldsIn(record),
+  };
 }
 
 export function readFrontmatter(skillDir: string): SkillFrontmatter {

@@ -105,6 +105,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Batch remove / batch delete local
 - [x] Folders the agent skips (no `SKILL.md`, dangling link) listed with a reason; reveal or delete
 - [x] Local / Diff / Library document tabs
+- [x] Claude Code skill listing: estimated cost against its context budget, biggest skills, warning when over; in `loadout doctor` and `loadout agents listing`
 
 ### 8. Project workspaces
 

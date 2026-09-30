@@ -45,6 +45,7 @@ export function useRefreshWorkspace(): (agentKey: string) => Promise<void> {
       queryClient.invalidateQueries({ queryKey: keys.workspace.list(agentKey) }),
       queryClient.invalidateQueries({ queryKey: keys.workspace.broken(agentKey) }),
       queryClient.invalidateQueries({ queryKey: keys.workspace.plugins(agentKey) }),
+      queryClient.invalidateQueries({ queryKey: keys.workspace.listingOf(agentKey) }),
       queryClient.invalidateQueries({ queryKey: keys.workspace.counts }),
     ]);
   };

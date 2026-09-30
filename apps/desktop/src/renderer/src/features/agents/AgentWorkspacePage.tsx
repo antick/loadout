@@ -30,6 +30,7 @@ import {
   useWorkspaceDocument,
   useWorkspaceSkills,
 } from "@/hooks/queries/workspace";
+import { useSkillListing } from "@/hooks/queries/listing";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
@@ -38,6 +39,7 @@ import { AgentPresetBar } from "./AgentPresetBar";
 import { AgentSelectionActions } from "./AgentSelectionActions";
 import { AgentWorkspaceHeader } from "./AgentWorkspaceHeader";
 import { BrokenFoldersNotice } from "./BrokenFoldersNotice";
+import { ListingBudgetCard } from "./ListingBudgetCard";
 import { PluginSkillsSection } from "./PluginSkillsSection";
 import { useAgentSkillActions } from "./use-agent-skill-actions";
 
@@ -51,6 +53,7 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const workspace = useWorkspaceSkills(agentKey);
   const broken = useBrokenFolders(agentKey);
   const plugins = usePluginSkills(agentKey);
+  const listing = useSkillListing(agentKey);
   const refresh = useRefreshWorkspace();
   const deployToAgent = useDeployToAgent();
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
@@ -161,6 +164,8 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
       <InstructionFilesSection files={agentInstructions} showReaders={false} />
 
       <AgentPresetBar agentKeys={[agentKey]} />
+
+      {listing.data ? <ListingBudgetCard report={listing.data} /> : null}
 
       <BrokenFoldersNotice agentKey={agentKey} agentName={agentName} folders={broken.data} />
 

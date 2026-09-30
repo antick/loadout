@@ -9,10 +9,12 @@ import type {
   Skill,
   SyncStatus,
 } from "@loadout/shared";
+import { LISTING_AGENT_KEY } from "@loadout/shared";
 import { errorMessage } from "../errors";
 import { lstatOrNull } from "../util/fs";
 import { blockedFindings } from "./blocked";
 import { duplicateFindings } from "./duplicates";
+import { listingFindings } from "./listing";
 import { sourceFindings } from "./sources";
 import { usageFindings } from "./usage";
 
@@ -186,6 +188,12 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
     { pairs: [], dismissedCount: 0 },
     failures,
   );
+  const listing = await guarded(
+    "listing",
+    () => api.listing.report(LISTING_AGENT_KEY),
+    null,
+    failures,
+  );
   const nameOf = new Map(skills.map((skill) => [skill.id, skill.name]));
 
   const findings = mergeShared([
@@ -222,6 +230,7 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
         path: project.path,
       })),
     ...usageFindings(skills, usage),
+    ...listingFindings(listing),
     ...failures,
   ]);
 

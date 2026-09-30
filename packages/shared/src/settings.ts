@@ -1,3 +1,4 @@
+import { LISTING_WINDOW_CHOICES, type ListingWindow } from "./skill-listing";
 import type { DeployMode } from "./types";
 
 export type ThemeSetting = "light" | "dark" | "system";
@@ -43,6 +44,8 @@ export interface Settings {
   safetyScannerPath: string;
   /** Read agents' session logs on this computer to count how often each skill runs. */
   usageTracking: boolean;
+  /** The context window the skill listing estimate assumes for Claude Code (`skill-listing.ts`). */
+  skillListingWindow: ListingWindow;
 }
 
 export type SettingKey = keyof Settings;
@@ -71,6 +74,7 @@ export const DEFAULT_SETTINGS: Settings = {
   safetyScanOnInstall: true,
   safetyScannerPath: "",
   usageTracking: false,
+  skillListingWindow: "200k",
 };
 
 export const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS) as SettingKey[];
@@ -105,6 +109,7 @@ export const SETTING_CHOICES: Partial<Record<SettingKey, readonly string[]>> = {
   autoUpdateInterval: ["off", "1h", "6h", "24h"],
   backupFirstRunPrompt: ["", "fresh", "restored"],
   agentControlPrompt: ["", "dismissed", "installed"],
+  skillListingWindow: LISTING_WINDOW_CHOICES,
 };
 
 /** Whether `value` is one the setting `key` accepts: its type, its choices, no negative number. */

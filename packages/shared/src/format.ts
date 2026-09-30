@@ -72,6 +72,13 @@ export function formatCount(count: number): string {
   return COMPACT_COUNT.format(count);
 }
 
+const WHOLE_NUMBER = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+
+/** `9,400`: a whole number with the reader's digit grouping. */
+export function formatNumber(value: number): string {
+  return WHOLE_NUMBER.format(value);
+}
+
 /** "Codex, Goose and Warp". */
 export function formatNameList(names: readonly string[]): string {
   return AND_LIST.format(names);

@@ -90,6 +90,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Upload to library, pull from library, remove, delete; compare local and library.
 - Lists folders the agent skips, and why.
 - Claude Code: skills its plugins bring, read only; one also in its folder is flagged Loaded twice.
+- Claude Code: what its skill listing costs. It puts every skill's name and description in each conversation and cuts descriptions past about 1% of the context window. Shows an estimate against that budget (200K or 1M window), the biggest skills, and a warning when over. Also in `loadout doctor` and `loadout agents listing`.
 
 ## Subagents, commands and rules
 

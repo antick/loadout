@@ -1,6 +1,7 @@
 import { notFound } from "@loadout/core";
 import { flagBoolean } from "../args";
 import { plural, table } from "../output";
+import { listingCommand } from "./agents-listing";
 import { DRY_RUN_FLAG, YES_FLAG, limitPositionals, positionalsFrom, requireYes } from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
@@ -105,5 +106,6 @@ export const agentsGroup: CommandGroup = {
       ],
       run: switcher(false),
     },
+    listingCommand,
   ],
 };

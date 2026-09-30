@@ -75,6 +75,10 @@ export const keys = {
     list: (agentKey: string) => ["workspace", "list", agentKey] as const,
     broken: (agentKey: string) => ["workspace", "broken", agentKey] as const,
     plugins: (agentKey: string) => ["workspace", "plugins", agentKey] as const,
+    /** Every context window's estimate for one agent. */
+    listingOf: (agentKey: string) => ["workspace", "listing", agentKey] as const,
+    listing: (agentKey: string, window: string) =>
+      ["workspace", "listing", agentKey, window] as const,
     counts: ["workspace", "counts"] as const,
     document: (agentKey: string, relativePath: string) =>
       ["workspace", "document", agentKey, relativePath] as const,

@@ -104,3 +104,5 @@ export const TAG_FILTER_UNTAGGED = "__untagged__";
 export const SOURCE_SEARCH_CONCURRENCY = 3;
 /** Plugin skills on an agent page before "Show more". */
 export const PLUGIN_SKILLS_SHOWN = 6;
+/** Skills named in the skill listing card before "Show all". */
+export const LISTING_SKILLS_SHOWN = 5;

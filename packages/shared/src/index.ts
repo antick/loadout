@@ -22,6 +22,7 @@ export * from "./new-skill-templates";
 export * from "./safety";
 export * from "./usage";
 export * from "./duplicates";
+export * from "./skill-listing";
 export * from "./project-suggestions";
 export * from "./preset-share";
 export * from "./wsl";

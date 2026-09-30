@@ -23,6 +23,7 @@ const AREA_TITLES: Record<HealthArea, string> = {
   safety: "Safety check",
   projects: "Projects",
   usage: "Skill use",
+  listing: "Skill listing",
 };
 
 function describe(finding: HealthFinding): string {

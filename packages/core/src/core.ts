@@ -24,6 +24,7 @@ import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
 import { createItemsService } from "./items";
 import { createDuplicatesService } from "./duplicates";
+import { createListingService } from "./listing";
 import { createUsageService } from "./usage";
 
 export interface CoreCreateOptions extends CoreOptions {
@@ -199,6 +200,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     api: { skills: skills.api, presets: { ...presets.api, ...presetSharing }, deploy: deploy.api },
   });
 
+  const listing = createListingService(ctx, { registry, workspace: workspace.api });
+
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),
     get: async (key) => ctx.settings.get(key),
@@ -229,6 +232,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     items: items.api,
     usage: usage.api,
     duplicates: duplicates.api,
+    listing: listing.api,
   };
 
   const background: CoreBackground = {

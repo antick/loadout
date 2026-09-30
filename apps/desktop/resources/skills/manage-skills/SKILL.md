@@ -55,6 +55,7 @@ Examples write `loadout` for the literal path you found above.
 ```sh
 # Look around
 loadout agents list --installed --json          # agent keys, enabled state, skills folders
+loadout agents listing --json                   # what Claude Code's skill listing costs in context; over budget means descriptions get cut
 loadout skills list --json                      # everything in the library
 loadout skills list --tag writing --source git --json
 loadout skills list --query pdf --json          # text in the name, description, tags or source

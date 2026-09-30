@@ -1,0 +1,31 @@
+{
+  "listing": {
+    "title": "Skill listing",
+    "description": "{{agent}} lists each skill's name and description in every conversation, within a budget of about 1% of its context window. An estimate from its documented rules.",
+    "usage": "About {{used}} of {{budget}} characters",
+    "percent": "{{percent}}% of the budget",
+    "counts": "{{full}} with a description · {{nameOnly}} by name only · {{hidden}} hidden from the model",
+    "over": "About {{over}} characters over. {{agent}} cuts the descriptions of the skills used least, so they may stop being picked. Shorten the biggest descriptions below, or set disable-model-invocation: true on skills you only call by name.",
+    "fits": "It fits. {{agent}} shows every listed description in full.",
+    "window": "Context window",
+    "windowChoice": {
+      "200k": "200K tokens",
+      "1m": "1M tokens"
+    },
+    "windowHint": "Set this to the window of the model you use. A 1M window has five times the budget.",
+    "source": {
+      "default": "1% of the window",
+      "fraction": "Set by skillListingBudgetFraction in {{agent}}'s settings",
+      "characters": "Set by SLASH_COMMAND_TOOL_CHAR_BUDGET in {{agent}}'s settings"
+    },
+    "biggest": "Biggest, in characters",
+    "nameOnly": "Name only",
+    "cut": "Long description",
+    "cutHint": "Its description is longer than {{agent}} keeps, so the end is cut.",
+    "showAll_one": "Show all {{count}} listed skill",
+    "showAll_other": "Show all {{count}} listed skills",
+    "showFewer": "Show fewer",
+    "details": "Details",
+    "hideDetails": "Hide details"
+  }
+}

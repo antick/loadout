@@ -1,4 +1,9 @@
-import { ITEM_KINDS, NEW_SKILL_TEMPLATES, SOURCE_TYPES } from "@loadout/shared";
+import {
+  ITEM_KINDS,
+  LISTING_WINDOW_CHOICES,
+  NEW_SKILL_TEMPLATES,
+  SOURCE_TYPES,
+} from "@loadout/shared";
 import type { FlagSpec } from "../args";
 import type { CommandGroup, CommandSpec } from "../commands/types";
 
@@ -57,6 +62,7 @@ const VALUE_CHOICES: Readonly<Record<string, readonly string[]>> = {
   type: SOURCE_TYPES,
   kind: ITEM_KINDS,
   template: NEW_SKILL_TEMPLATES,
+  window: LISTING_WINDOW_CHOICES,
 };
 
 /** A positional placeholder in a usage line → what to complete. */
