@@ -53,6 +53,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - From a link to an archive or a `SKILL.md`, or a site publishing `/.well-known/agent-skills/`.
 - From Git: URLs, `owner/repo`, tree links, `#branch`, `owner/repo@skill`, and pasted `npx skills add …` commands.
 - Works without Git for public GitHub and GitLab repositories.
+- Private GitHub repositories also work with a `GITHUB_TOKEN`, `GH_TOKEN` or a GitHub CLI sign-in (`gh auth login`). Git gets it only after your own credential helpers and SSH keys, so a login that works today is never replaced; the Git tab says which one is in use.
 - The import list says what each skill will do: New, In library, Name in use (and its new name), Same name twice.
 - A name in use can instead replace the library skill, keeping its tags, presets and agents; the old version goes to Recently removed.
 - Skills grouped by folder with a tick-all per folder; a filter for sources with 8 or more skills.
@@ -193,7 +194,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - English only.
 - GitHub device sign-in needs an OAuth client id; tokens and Git URLs work.
 - Builds are not signed with an Apple or Windows certificate.
-- The CLI can't read tokens saved by the app; use SSH or a credential helper.
+- The CLI can't read tokens saved by the app; use SSH, a credential helper, or for GitHub a GitHub CLI sign-in or `GITHUB_TOKEN`.
 - Roo Code's folder of rule files is not covered; Cline and Kiro rule folders are, as Rules.
 - Windows and Linux are untested.
 - Subagents, commands and rules: deleting one does not go to Recently removed; they cannot be renamed or updated from their source; when two computers change the same one before syncing, this computer's version wins (the other is in the backup's history).

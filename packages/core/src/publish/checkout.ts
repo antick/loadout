@@ -68,6 +68,7 @@ export async function openCheckout(ctx: CoreContext, target: ResolvedTarget): Pr
     // Never the device name: this commit may be read by anyone.
     deviceName: () => APP_NAME,
     proxy: () => ctx.settings.proxy(),
+    github: ctx.github,
     remoteUrl: () => url,
   });
   const network: GitCallOptions = { network: true, remoteUrl: url };

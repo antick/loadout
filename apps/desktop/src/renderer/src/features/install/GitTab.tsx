@@ -1,6 +1,12 @@
-import type { ConfirmOptions, GitPreview, InstallSelection } from "@loadout/shared";
+import type {
+  ConfirmOptions,
+  GitHubSignInOrigin,
+  GitPreview,
+  InstallSelection,
+} from "@loadout/shared";
 import { ExternalLink, KeyRound, PackageSearch, TriangleAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ProgressPanel } from "@/components/ProgressPanel";
@@ -62,9 +68,19 @@ function GitAccessNote(): ReactNode {
         <p className="text-xs leading-5 text-muted-foreground">
           {t("install.git.privateDescription")}
         </p>
+        <p className="text-xs leading-5 text-muted-foreground">
+          {githubSignInText(diagnostics.data.githubSignIn, t)}
+        </p>
       </div>
     </div>
   );
+}
+
+/** Whether a GitHub token the computer already has will reach Git, and how to get one if not. */
+function githubSignInText(origin: GitHubSignInOrigin | null, t: TFunction): string {
+  if (origin === "gh") return t("install.git.githubSignInGh");
+  if (origin) return t("install.git.githubSignInEnv", { name: origin });
+  return t("install.git.githubSignInNone");
 }
 
 /**

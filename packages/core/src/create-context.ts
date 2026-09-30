@@ -19,6 +19,7 @@ import { SettingsStore } from "./settings/store";
 import { createSkillInspector } from "./skills/checks";
 import { PortableMetadata } from "./skills/portable";
 import { SkillStore } from "./skills/store";
+import { createGitHubSignIn } from "./util/github-token";
 
 export interface CoreOptions {
   homeDir?: string;
@@ -151,16 +152,19 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     announce();
   };
 
+  const env: EnvReader =
+    options.env ?? (options.homeDir === undefined ? () => process.env : () => ({}));
   const ctx: CoreContext = {
     paths: resolved.paths,
     homeDir: home,
-    env: options.env ?? (options.homeDir === undefined ? () => process.env : () => ({})),
+    env,
     db,
     settings: new SettingsStore(db),
     lock,
     log,
     activity: new ActivityLog(db),
     secrets: options.secrets ?? noSecretStore,
+    github: createGitHubSignIn(env),
     host,
     warnings: resolved.warnings,
     emit,

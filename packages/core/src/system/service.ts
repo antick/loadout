@@ -41,6 +41,7 @@ export function createSystemService(ctx: CoreContext, deps: SystemServiceDeps): 
       libraryPath: location.path,
       libraryPathOverridden: location.overridden,
       gitVersion,
+      githubSignIn: await ctx.github.origin(),
     };
   }
 

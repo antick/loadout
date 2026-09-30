@@ -5,6 +5,7 @@ import type { RepoLock } from "./lock";
 import type { Logger } from "./log";
 import type { LibraryPaths } from "./paths";
 import type { SettingsStore } from "./settings/store";
+import type { GitHubSignIn } from "./util/github-token";
 
 /** Where credentials live. The desktop app backs this with the OS keychain; the CLI has none. */
 export interface SecretStore {
@@ -56,6 +57,8 @@ export interface CoreContext {
   log: Logger;
   activity: ActivityLog;
   secrets: SecretStore;
+  /** A GitHub token the computer already has (environment or GitHub CLI), git's last resort. */
+  github: GitHubSignIn;
   host: HostBridge;
   warnings: LibraryWarning[];
   emit: EventSink;

@@ -201,7 +201,14 @@ export interface DiagnosticInfo {
   libraryPath: string;
   libraryPathOverridden: boolean;
   gitVersion: string | null;
+  /**
+   * Where a GitHub token this computer already has comes from (`GITHUB_TOKEN`, `GH_TOKEN` or the
+   * GitHub CLI's sign-in), or null. Git uses it for github.com when nothing else answers.
+   */
+  githubSignIn: GitHubSignInOrigin | null;
 }
+
+export type GitHubSignInOrigin = "GITHUB_TOKEN" | "GH_TOKEN" | "gh";
 
 export interface LogExcerpt {
   logPath: string;

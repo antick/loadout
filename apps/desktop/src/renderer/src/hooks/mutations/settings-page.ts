@@ -209,6 +209,7 @@ export function useCopyDiagnostics(): UseMutationResult<void, unknown, void> {
         `- Version: ${info.appVersion}`,
         `- System: ${info.os} ${info.osVersion} (${info.arch})`,
         `- Git: ${info.gitVersion ?? "not found"}`,
+        `- GitHub sign-in for Git: ${info.githubSignIn ?? "none"}`,
         `- Library location: ${info.libraryPathOverridden ? "custom" : "default"}`,
         `- Enabled agents: ${enabled.map((agent) => agent.key).join(", ") || "none"}`,
         `- Last crash: ${crash ? `${formatDateTime(crash.at)} ${crash.message}` : "none"}`,

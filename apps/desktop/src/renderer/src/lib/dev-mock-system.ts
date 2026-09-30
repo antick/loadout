@@ -458,6 +458,7 @@ export function createSystemMockHandlers(
       libraryPath: LIBRARY,
       libraryPathOverridden: false,
       gitVersion: GIT_VERSION,
+      githubSignIn: "gh",
     }),
     "system.logExcerpt": () => ({
       logPath: `${LIBRARY}/logs/main.log`,

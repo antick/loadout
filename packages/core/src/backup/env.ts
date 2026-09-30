@@ -131,6 +131,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
       secrets: ctx.secrets,
       deviceName,
       proxy: () => ctx.settings.proxy(),
+      github: ctx.github,
       remoteUrl,
     }),
     reconcile: async (authoritative) => {

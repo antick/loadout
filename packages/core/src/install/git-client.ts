@@ -208,6 +208,8 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
           GIT_TERMINAL_PROMPT: "0",
           LC_ALL: "C",
           GIT_ALLOW_PROTOCOL: GIT_TRANSPORTS,
+          // A token the computer already has, asked only after the user's own helpers.
+          ...(call.network ? await ctx.github.gitEnvironment(process.env) : {}),
         },
         timeoutMs: GIT_TIMEOUT_MS,
         signal: call.signal,

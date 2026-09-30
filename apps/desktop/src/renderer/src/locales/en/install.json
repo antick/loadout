@@ -64,7 +64,7 @@
       "timeout": "The server took too long to answer.",
       "proxyHint": "Check your connection. If you are behind a proxy, set it in Settings.",
       "openSettings": "Open settings",
-      "authHint": "The repository asked for credentials. Make sure your SSH key or Git credential helper works in a terminal first.",
+      "authHint": "The repository asked for credentials. Make sure your SSH key or Git credential helper works in a terminal first. For GitHub, signing in to the GitHub CLI (gh auth login) also works.",
       "readArchive": "Could not read the archive."
     },
     "batch": {
@@ -231,6 +231,9 @@
       "agentsUnknown_other": "These are not agents here, so they are left out: {{names}}.",
       "privateTitle": "Private repositories",
       "privateDescription": "Cloning uses the Git on this computer, so whatever works in your terminal works here: an SSH key for git@ addresses, or a credential helper for https. {{app}} never asks for or stores a Git password.",
+      "githubSignInGh": "GitHub: you are signed in to the GitHub CLI, so private GitHub repositories work too.",
+      "githubSignInEnv": "GitHub: {{name}} is set, so private GitHub repositories work too.",
+      "githubSignInNone": "GitHub: signing in to the GitHub CLI (gh auth login) is enough for private GitHub repositories.",
       "noGitTitle": "Git is not installed",
       "noGitDescription": "Public repositories on GitHub and GitLab still install: {{app}} downloads them directly. Private repositories and other hosts need Git.",
       "getGit": "Get Git"

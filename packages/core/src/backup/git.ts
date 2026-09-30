@@ -3,6 +3,7 @@ import type { SecretStore } from "../context";
 import { AppError, isAppError } from "../errors";
 import { type ExecResult, exec } from "../util/exec";
 import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
+import type { GitHubSignIn } from "../util/github-token";
 import { authEnvironment, maskUrlCredentials } from "./credentials";
 import { deviceEmail } from "./device";
 
@@ -125,6 +126,8 @@ export interface GitDeps {
   proxy(): string | null;
   /** Saved remote URL, used to look up the token for network calls. */
   remoteUrl(): string | null;
+  /** A GitHub token the computer already has, used when none is saved for the remote. */
+  github?: GitHubSignIn;
 }
 
 export function createGit(deps: GitDeps): Git {
@@ -138,6 +141,10 @@ export function createGit(deps: GitDeps): Git {
     if (options.network) {
       config.push(...proxyConfig(deps.proxy()));
       authEnv = await authEnvironment(deps.secrets, options.remoteUrl ?? deps.remoteUrl());
+      // A saved token is sent outright; otherwise the computer's own is git's last helper.
+      if (Object.keys(authEnv).length === 0 && deps.github) {
+        authEnv = await deps.github.gitEnvironment({ ...process.env, ...options.env });
+      }
     }
     const fullArgs = [...configFlags(config), ...(options.globalArgs ?? []), ...args];
     try {

@@ -5,7 +5,7 @@
     "description": "Copy these skills into a Git repository so anyone can install them with npx skills add. Only the skill folders are copied. Nothing is sent until you press Publish.",
     "repo": "Repository",
     "repoPlaceholder": "owner/repo or https://github.com/owner/repo",
-    "repoHint": "It can be public or private. Loadout signs in with your SSH key, your Git credential helper, or the token saved in Settings, Backup.",
+    "repoHint": "It can be public or private. Loadout signs in with your SSH key, your Git credential helper, the token saved in Settings, Backup, or your GitHub CLI sign-in.",
     "branch": "Branch",
     "branchPlaceholder": "Default branch",
     "layer": "Folder",
