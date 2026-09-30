@@ -7,6 +7,7 @@ import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
 import { hashDir } from "../util/hash";
+import { type FolderQuestion, type FolderUnchanged, folderComparer } from "./folder-check";
 import { type LockMode, runLocked } from "./locking";
 import {
   type DownloadCache,
@@ -113,6 +114,37 @@ function remoteFinding(
 }
 
 /**
+ * The commit moved but the skill's folder did not: nothing to update. The skill now counts as
+ * installed from the new commit, as an update would record it, so the next check starts there.
+ */
+function unchangedFolderFinding(skill: Skill, compared: string, revision: string): Finding {
+  const fallback = remoteFinding(skill, { revision });
+  return {
+    guard: guardOf(skill),
+    patch: (fresh) =>
+      fresh.sourceRevision === compared
+        ? {
+            sourceRevision: revision,
+            remoteRevision: revision,
+            updateStatus: "up_to_date",
+            lastCheckError: null,
+          }
+        : fallback.patch(fresh),
+  };
+}
+
+/** The folder question a remote skill raises, or null when its commit did not move. */
+function folderQuestion(
+  skill: Skill,
+  target: RemoteTarget,
+  outcome: RemoteOutcome,
+): FolderQuestion | null {
+  if (target.kind !== "git" || "failure" in outcome || !skill.sourceRevision) return null;
+  if (outcome.revision === skill.sourceRevision) return null;
+  return { target, from: skill.sourceRevision, to: outcome.revision };
+}
+
+/**
  * Compare a folder, archive or archive link with what was installed from it (`installedHash`),
  * so an edit of the library copy is not taken for a change of the source. Skills installed
  * before that was recorded compare with the library. Reads only, so it runs without the lock.
@@ -174,15 +206,28 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
   /** Network and hashing happen here, before any lock is taken. */
   async function investigate(
     skill: Skill,
-    shared?: ReadonlyMap<string, RemoteOutcome>,
-    downloads?: DownloadCache,
+    round: {
+      shared?: ReadonlyMap<string, RemoteOutcome>;
+      downloads?: DownloadCache;
+      folders?: FolderUnchanged;
+    } = {},
   ): Promise<Finding> {
     if (!isRemoteSource(skill)) {
-      return localFinding(skill, store.installed(skill.id)?.hash ?? null, download, downloads);
+      return localFinding(
+        skill,
+        store.installed(skill.id)?.hash ?? null,
+        download,
+        round.downloads,
+      );
     }
     const target = targetOrFailure(skill);
     if ("failure" in target) return remoteFinding(skill, target);
-    const outcome = shared?.get(remoteKey(target)) ?? (await lookup(target));
+    const outcome = round.shared?.get(remoteKey(target)) ?? (await lookup(target));
+    const question = folderQuestion(skill, target, outcome);
+    const folders = round.folders ?? folderComparer(git);
+    if (question && (await folders(question))) {
+      return unchangedFolderFinding(skill, question.from, question.to);
+    }
     return remoteFinding(skill, outcome, store.installed(skill.id)?.hash ?? null);
   }
 
@@ -231,9 +276,19 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       const result: BatchResult = { succeeded: skills.length - due.length, failed: [] };
       // Skills taken from one archive link download it once per round.
       const downloads: DownloadCache = new Map();
+      // Skills of one repository whose commit moved: one fetch of folder trees for all of them.
+      const planned = due.flatMap((skill): FolderQuestion[] => {
+        if (!isRemoteSource(skill)) return [];
+        const target = targetOrFailure(skill);
+        if ("failure" in target) return [];
+        const outcome = outcomes.get(remoteKey(target));
+        const question = outcome ? folderQuestion(skill, target, outcome) : null;
+        return question ? [question] : [];
+      });
+      const round = { shared: outcomes, downloads, folders: folderComparer(git, planned) };
       for (const skill of due) {
         try {
-          const checked = await apply(skill, await investigate(skill, outcomes, downloads), "wait");
+          const checked = await apply(skill, await investigate(skill, round), "wait");
           if (checked.updateStatus === "error") {
             result.failed.push({
               name: skill.name,

@@ -41,6 +41,13 @@ export function withHttpFallback(git: GitClient, http: HttpGit): GitClient {
         http.canReadRefs(url),
         () => http.listRefs(url, options),
       ),
+    // Without Git nothing says which folders a commit touched: the check falls back to commits.
+    folderTrees: (url, revisions, paths, options) =>
+      orHttp(
+        () => git.folderTrees(url, revisions, paths, options),
+        true,
+        async () => new Map(),
+      ),
     checkout: (url, options) =>
       orHttp(
         () => git.checkout(url, options),

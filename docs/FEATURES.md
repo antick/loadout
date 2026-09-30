@@ -131,6 +131,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 ## Skill updates
 
 - Check and update one or all; background checks every 1, 6 or 24 hours.
+- A new commit only counts as an update when it changed the skill's own folder: Git's fingerprint of that folder is compared at both commits, read without downloading any files, once per repository per check. Without Git it falls back to comparing commits.
 - Shows files an update would delete and asks first.
 - Your edits are never replaced without asking; the old version goes to Recently removed.
 - Per-file diff against upstream.

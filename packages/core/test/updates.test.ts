@@ -63,6 +63,45 @@ describe("check", () => {
     expect(world.lookups()).toBe(before + 2);
   });
 
+  it("offers no update when the commit changed another skill's folder only", async () => {
+    const pdf = await world.installFromGit("pdf");
+    const docx = await world.installFromGit("docx");
+    const next = changePdfUpstream();
+
+    const untouched = await world.updates.api.check(docx.id, true);
+    expect(untouched).toMatchObject({
+      updateStatus: "up_to_date",
+      sourceRevision: next,
+      remoteRevision: next,
+      contentHash: docx.contentHash,
+      updatedAt: docx.updatedAt,
+    });
+    expect((await world.updates.api.check(pdf.id, true)).updateStatus).toBe("update_available");
+    expect(leftoverCheckouts(world.tmp)).toEqual([]);
+  });
+
+  it("reads the folder trees of one repository once per round of checks", async () => {
+    await world.installFromGit("pdf");
+    await world.installFromGit("docx");
+    changePdfUpstream();
+    let reads = 0;
+    const counting = world.withGit({
+      folderTrees: (...args) => {
+        reads += 1;
+        return world.install.git.folderTrees(...args);
+      },
+    });
+    await counting.api.checkAll(true);
+    expect(reads).toBe(1);
+  });
+
+  it("falls back to the commit when the folder trees cannot be read", async () => {
+    const docx = await world.installFromGit("docx");
+    changePdfUpstream();
+    const blind = world.withGit({ folderTrees: async () => new Map() });
+    expect((await blind.api.check(docx.id, true)).updateStatus).toBe("update_available");
+  });
+
   it("is unknown without an installed revision", async () => {
     const pdf = await world.installFromGit("pdf");
     world.store.update(pdf.id, { sourceRevision: null });
@@ -138,7 +177,7 @@ describe("check", () => {
       updateStatus: "unknown",
     });
     const fresh = world.addSkill("plain");
-    changePdfUpstream();
+    const next = changePdfUpstream();
 
     const before = world.lookups();
     const result = await world.updates.api.checkAll();
@@ -153,7 +192,11 @@ describe("check", () => {
     expect(forced.succeeded).toBe(3);
     expect(forced.failed.map((failure) => failure.name)).toEqual(["broken"]);
     expect(world.store.get(pdf.id).updateStatus).toBe("update_available");
-    expect(world.store.get(docx.id).updateStatus).toBe("update_available");
+    // The commit only touched pdf: docx's folder is the same, so it counts as the new commit's.
+    expect(world.store.get(docx.id)).toMatchObject({
+      updateStatus: "up_to_date",
+      sourceRevision: next,
+    });
     expect(world.store.get(broken.id).updateStatus).toBe("error");
     expect(world.store.get(fresh.id).updateStatus).toBe("local_only");
   });

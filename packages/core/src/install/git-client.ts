@@ -32,6 +32,8 @@ import {
 } from "./git-refs";
 import { type RemoteRefs, normalizeRepoUrl, redactUrl, repoNameFromUrl } from "./git-source";
 import { MANIFEST_PATTERNS, applyWorkingTree, folderPattern } from "./git-sparse";
+import { gitFailure } from "./git-errors";
+import { type FolderTrees, readFolderTrees } from "./git-trees";
 
 export interface CheckoutOptions {
   /** Branch or tag; null means the remote's default branch. */
@@ -81,6 +83,13 @@ export interface GitClient {
   lsRemote(url: string, options?: RemoteOptions): Promise<string | null>;
   listRefs(url: string, options?: RemoteOptions): Promise<RemoteRefs>;
   checkout(url: string, options?: CheckoutOptions): Promise<Checkout>;
+  /** Tree ids of `paths` at exact commits, read without file contents (see `git-trees.ts`). */
+  folderTrees(
+    url: string,
+    revisions: readonly string[],
+    paths: readonly string[],
+    options?: RemoteOptions,
+  ): Promise<FolderTrees>;
   /** Empty the clone cache, leaving clones in use alone. Returns the bytes freed. */
   clearCache(): Promise<number>;
 }
@@ -112,22 +121,6 @@ const FALLBACK_REPO_NAME = "repository";
 /** Prefix of every temporary working copy we hand out. */
 export const CLONE_DIR_PREFIX = `${APP_SLUG}-clone-`;
 
-const NETWORK_MARKERS = [
-  "could not resolve host",
-  "failed to connect",
-  "connection refused",
-  "connection timed out",
-  "network is unreachable",
-];
-const AUTH_MARKERS = [
-  "authentication failed",
-  "could not read username",
-  "could not read password",
-  "terminal prompts disabled",
-  "permission denied (publickey",
-  "invalid username or password",
-  "invalid credentials",
-];
 /** Failures where throwing the cache away and cloning again could not possibly help. */
 const KEEP_CACHE_CODES: ReadonlySet<ErrorCode> = new Set([
   "CANCELLED",
@@ -151,37 +144,11 @@ function percentReader(
   };
 }
 
-/** SSH chatter that would otherwise hide the real error line. */
-const NOISE = /^warning: permanently added/i;
-
-function lastMeaningfulLine(stderr: string): string {
-  const lines = stderr
-    .split(/[\r\n]+/)
-    .map((line) => line.trim())
-    .filter((line) => line && !NOISE.test(line));
-  const fatal = lines.filter((line) => /^(fatal|error):/i.test(line));
-  return (fatal.at(-1) ?? lines.at(-1) ?? "unknown error").replace(/^(fatal|error):\s*/i, "");
-}
-
-/** Turn a failed git call into the right error code. */
-export function gitFailure(action: string, stderr: string): AppError {
-  const text = stderr.toLowerCase();
-  const reason = redactUrl(lastMeaningfulLine(stderr));
-  if (NETWORK_MARKERS.some((marker) => text.includes(marker))) {
-    return new AppError("NETWORK", `${action}: ${reason}. Check your network connection.`);
-  }
-  if (AUTH_MARKERS.some((marker) => text.includes(marker))) {
-    return new AppError(
-      "GIT_AUTH",
-      `${action}: authentication failed, or the repository does not exist (${reason}).`,
-    );
-  }
-  return new AppError("GIT", `${action}: ${reason}`);
-}
-
 function isHopeless(error: unknown): boolean {
   return error instanceof AppError && KEEP_CACHE_CODES.has(error.code);
 }
+
+export { gitFailure };
 
 /** System git with a shared clone cache. All network calls honour the proxy setting. */
 export function createGitClient(ctx: CoreContext, config: GitClientOptions = {}): GitClient {
@@ -419,6 +386,9 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
       );
       return pickRevision(parseRefLines(result.stdout), candidates);
     },
+
+    folderTrees: (url, revisions, paths, remote = {}) =>
+      readFolderTrees(run, CLONE_DIR_PREFIX, url, revisions, paths, remote.signal),
 
     listRefs: async (url, remote = {}) => {
       const result = await runOk(
