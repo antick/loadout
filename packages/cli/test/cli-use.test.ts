@@ -73,9 +73,25 @@ describe("skills use", () => {
     });
   });
 
-  it("points a folder at its own SKILL.md", async () => {
-    const run = await sandbox.cli("skills", "use", writeSkill(sandbox.root, "local"));
-    expect(run.code).toBe(EXIT_USAGE);
-    expect(run.stderr).toContain("read its SKILL.md directly");
+  it("reads a folder where it is, safety-checked like the rest", async () => {
+    const folder = writeSkill(sandbox.root, "local", "# Local\n");
+    const run = await sandbox.cli("skills", "use", "./local");
+    expect(run.code).toBe(EXIT_OK);
+    expect(run.stdout).toBe(readFileSync(join(folder, "SKILL.md"), "utf8"));
+    expect(await librarySize()).toBe(0);
+
+    const evil = await sandbox.cli("skills", "use", join(maker.root, "evil"));
+    expect(evil.code).toBe(EXIT_FAILED);
+    expect(evil.stderr).toContain("Error (UNSAFE)");
+
+    const empty = join(sandbox.root, "empty");
+    mkdirSync(empty);
+    expect((await sandbox.cli("skills", "use", "./empty", "--json")).json()).toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    expect((await sandbox.cli("skills", "use", "./nowhere", "--json")).json()).toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect((await sandbox.cli("skills", "use", "./local", "--skill", "x")).code).toBe(EXIT_USAGE);
   });
 });

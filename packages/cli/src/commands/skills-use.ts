@@ -36,9 +36,6 @@ const USE_YES_FLAG = {
   description: "Read from a download that moved to another site than the link names.",
 };
 
-const FOLDER_HINT =
-  "A folder is already on this computer: read its SKILL.md directly, or install it with `skills install`.";
-
 /** The one skill a preview should give: named, the one the typed text asked for, or the only one. */
 function pickSkill(preview: GitPreview, wanted: string | undefined): RepoSkillPreview {
   if (wanted !== undefined) {
@@ -103,11 +100,14 @@ async function run(context: CommandContext): Promise<CommandResult> {
     read = await readFromPreview(context, await core.api.install.previewGit(source.url), wanted);
   } else {
     const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
-    // Only archives are fetched; a folder is read where it is.
-    if (!ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
-      throw new UsageError(FOLDER_HINT);
+    if (ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
+      read = await readFromPreview(context, await core.api.install.previewArchive(path), wanted);
+    } else {
+      // A folder is read where it is: one skill, so --skill has nothing to pick.
+      if (wanted !== undefined)
+        throw new UsageError("--skill picks from a repository or archive, not a folder.");
+      read = await core.api.install.readFolderSkill(path, { acceptRisk });
     }
-    read = await readFromPreview(context, await core.api.install.previewArchive(path), wanted);
   }
   // printResult adds the final line break back.
   const text = read.document.endsWith("\n") ? read.document.slice(0, -1) : read.document;
@@ -124,8 +124,8 @@ export const useCommand: CommandSpec = {
   usage: "<source> [--skill <name>] [--yes] [--accept-risk]",
   flags: [SKILL_FLAG, USE_YES_FLAG, USE_RISK_FLAG],
   notes: [
-    "Takes the same sources as `skills install`: owner/repo@skill, owner/repo, a git URL, a link,",
-    "an archive, or @owner/slug for ClawHub. Nothing is added to the library.",
+    "Takes the same sources as `skills install`: ./folder, owner/repo@skill, owner/repo, a git",
+    "URL, a link, an archive, or @owner/slug for ClawHub. Nothing is added to the library.",
     "stdout is the document alone, so `skills use owner/repo@pdf | claude` works; safety notes",
     "go to stderr. A skill the safety check flags fails with UNSAFE; --accept-risk prints it.",
   ],

@@ -233,6 +233,8 @@ export interface InstallApi {
     relPath: string,
     options?: InstallOptions,
   ): Promise<PreviewedSkill>;
+  /** The same for a skill folder on this computer. */
+  readFolderSkill(folderPath: string, options?: InstallOptions): Promise<PreviewedSkill>;
   /** The same for a ClawHub skill at its latest version. */
   readClawhubSkill(owner: string, slug: string, options?: InstallOptions): Promise<PreviewedSkill>;
   fromMarket(source: string, skillId: string, options?: InstallOptions): Promise<Skill>;

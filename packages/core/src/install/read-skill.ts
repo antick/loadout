@@ -1,6 +1,7 @@
 import type { InstallOptions, PreviewedSkill } from "@loadout/shared";
-import { notFound } from "../errors";
-import { readSkillDocument } from "../skills/metadata";
+import { invalid, notFound } from "../errors";
+import { readSkillDocument, readSkillIdentity } from "../skills/metadata";
+import { isSkillDir, statOrNull } from "../util/fs";
 import type { SafetyGate } from "./safety-gate";
 
 /**
@@ -17,4 +18,19 @@ export async function readCheckedSkill(
   if (!found) throw notFound(`${candidate.name} has no SKILL.md to read.`);
   const [report] = safety ? await safety.check([candidate], options) : [null];
   return { name: candidate.name, document: found.content, safety: report ?? null };
+}
+
+/** A skill folder on this computer, read where it is. */
+export async function readFolderSkill(
+  safety: SafetyGate | undefined,
+  folderPath: string,
+  options: InstallOptions = {},
+): Promise<PreviewedSkill> {
+  if (!statOrNull(folderPath)) throw notFound(`Nothing found at ${folderPath}`);
+  if (!isSkillDir(folderPath)) throw invalid(`No SKILL.md found in ${folderPath}`);
+  return readCheckedSkill(
+    safety,
+    { name: readSkillIdentity(folderPath).name, dir: folderPath },
+    options,
+  );
 }

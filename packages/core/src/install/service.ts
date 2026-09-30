@@ -26,6 +26,7 @@ import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
 import { type ClawhubClient, createClawhubClient } from "../market/clawhub";
 import { createClawhubInstaller, createClawhubReader } from "./clawhub-install";
+import { readFolderSkill } from "./read-skill";
 
 export interface InstallServiceDeps {
   store: SkillStore;
@@ -173,6 +174,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     cancelPreview: gitInstaller.cancelPreview,
     readPreviewSkill: gitInstaller.readPreviewSkill,
     readClawhubSkill,
+    readFolderSkill: (folderPath, options) => readFolderSkill(deps.safety, folderPath, options),
     fromMarket: gitInstaller.fromMarket,
     fromClawhub,
     cancel: async (key) => cancels.cancel(key),

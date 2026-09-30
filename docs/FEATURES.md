@@ -167,7 +167,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - `--dry-run` for install, update and `git sync` shows what would change.
 - `loadout doctor`: one report of everything that needs a look, including sources not checked for a month and archives that are gone.
 - `loadout skills search <words>` looks up skills.sh from the terminal; nothing is installed until you run `skills install`.
-- `loadout skills use <source>` prints a skill's `SKILL.md` without installing it, to try it or pipe it into an agent (`skills use owner/repo@pdf | claude`). Same sources and safety check as an install; safety notes go to stderr.
+- `loadout skills use <source>` prints a skill's `SKILL.md` without installing it, to try it or pipe it into an agent (`skills use owner/repo@pdf | claude`). Same sources as an install, folders included, and the same safety check; safety notes go to stderr.
 - `loadout skills validate ./folder` checks every skill in a folder, and names used twice, without a library; for CI.
 - Text a repository wrote (names, descriptions, `SKILL.md`) is printed with its escape sequences shown as spaces, so it cannot clear the screen or reach the clipboard.
 - Tab completion: `eval "$(loadout completion bash)"` or `zsh`.
