@@ -11,7 +11,10 @@ import { exec } from "./exec";
  */
 
 export interface GitHubSignIn {
-  /** Where the token came from, or null when there is none. Looked up once per process. */
+  /**
+   * Where the token came from, or null when there is none. A found token is trusted for a while,
+   * a missing one is looked for again soon, so signing in to `gh` needs no restart.
+   */
   origin(): Promise<GitHubSignInOrigin | null>;
   /**
    * Environment that adds the token as git's last helper for github.com, after any `GIT_CONFIG_*`
@@ -24,6 +27,10 @@ const ENV_NAMES = ["GITHUB_TOKEN", "GH_TOKEN"] as const;
 const GH_BINARY = "gh";
 const GH_ARGS = ["auth", "token", "--hostname", "github.com"];
 const GH_TIMEOUT_MS = 5_000;
+/** How long a found token is used before asking again (it may have been rotated or signed out). */
+const FOUND_TTL_MS = 10 * 60_000;
+/** How long "no token" stands before looking again, e.g. after `gh auth login`. */
+const MISSING_TTL_MS = 60_000;
 /** Holds the token for the helper below; git passes its environment on to helpers. */
 export const TOKEN_ENV = "LOADOUT_GITHUB_TOKEN";
 /** User name sent with a token. GitHub accepts any non-empty name next to one. */
@@ -62,9 +69,35 @@ async function lookUp(env: EnvReader, run: Run): Promise<Found | null> {
   }
 }
 
-export function createGitHubSignIn(env: EnvReader, run: Run = exec): GitHubSignIn {
-  let found: Promise<Found | null> | null = null;
-  const get = (): Promise<Found | null> => (found ??= lookUp(env, run));
+export function createGitHubSignIn(
+  env: EnvReader,
+  run: Run = exec,
+  now: () => number = Date.now,
+): GitHubSignIn {
+  /** The last lookup, shared by every caller while it runs, and until it goes stale. */
+  let last: {
+    at: number;
+    result: Promise<Found | null>;
+    settled: Found | null | undefined;
+  } | null = null;
+  const get = (): Promise<Found | null> => {
+    if (last) {
+      const ttl = last.settled === null ? MISSING_TTL_MS : FOUND_TTL_MS;
+      if (last.settled === undefined || now() - last.at < ttl) return last.result;
+    }
+    const entry: NonNullable<typeof last> = {
+      at: now(),
+      result: lookUp(env, run),
+      settled: undefined,
+    };
+    entry.result = entry.result.then((found) => {
+      entry.settled = found;
+      entry.at = now();
+      return found;
+    });
+    last = entry;
+    return entry.result;
+  };
 
   return {
     origin: async () => (await get())?.origin ?? null,

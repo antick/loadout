@@ -43,6 +43,55 @@ describe("finding the token", () => {
     expect(sandboxed.calls).toEqual([]);
   });
 
+  it("looks again a minute after finding none, so signing in to gh needs no restart", async () => {
+    let clock = 0;
+    let signedIn = false;
+    const calls: string[][] = [];
+    const run: Run = async (command, args) => {
+      calls.push([command, ...args]);
+      return signedIn
+        ? { code: 0, stdout: GH_TOKEN, stderr: "" }
+        : { code: 1, stdout: "", stderr: "" };
+    };
+    const signIn = createGitHubSignIn(
+      () => ({ PATH: "/bin" }),
+      run,
+      () => clock,
+    );
+    expect(await signIn.origin()).toBeNull();
+    signedIn = true;
+    clock += 59_000;
+    expect(await signIn.origin()).toBeNull();
+    expect(calls).toHaveLength(1);
+    clock += 2_000;
+    expect(await signIn.origin()).toBe("gh");
+    expect(calls).toHaveLength(2);
+  });
+
+  it("keeps a found token for ten minutes, then asks again", async () => {
+    let clock = 0;
+    const gh = fakeGh(GH_TOKEN);
+    const signIn = createGitHubSignIn(
+      () => ({ PATH: "/bin" }),
+      gh.run,
+      () => clock,
+    );
+    await signIn.origin();
+    clock += 9 * 60_000;
+    await signIn.gitEnvironment();
+    expect(gh.calls).toHaveLength(1);
+    clock += 2 * 60_000;
+    await signIn.origin();
+    expect(gh.calls).toHaveLength(2);
+  });
+
+  it("shares one lookup between callers that ask at the same time", async () => {
+    const gh = fakeGh(GH_TOKEN);
+    const signIn = createGitHubSignIn(() => ({ PATH: "/bin" }), gh.run);
+    await Promise.all([signIn.origin(), signIn.gitEnvironment(), signIn.origin()]);
+    expect(gh.calls).toHaveLength(1);
+  });
+
   it("has no token when gh is signed out or prints something that is not one", async () => {
     expect(await createGitHubSignIn(() => ({ PATH: "/bin" }), fakeGh("", 1).run).origin()).toBe(
       null,
