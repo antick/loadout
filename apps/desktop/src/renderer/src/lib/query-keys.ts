@@ -121,6 +121,8 @@ export const keys = {
   publish: {
     root: ["publish"] as const,
     defaults: ["publish", "defaults"] as const,
+    clawhubAccount: ["publish", "clawhub-account"] as const,
+    clawhubPreview: (skillId: string) => ["publish", "clawhub-preview", skillId] as const,
   },
   settings: {
     root: ["settings"] as const,

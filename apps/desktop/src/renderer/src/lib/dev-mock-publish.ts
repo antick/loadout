@@ -4,6 +4,10 @@
  * "secret" shows the key warning; one that contains "bad" fails, so the error shows too.
  */
 import {
+  type ClawhubAccount,
+  type ClawhubPublishInput,
+  type ClawhubPublishPreview,
+  type ClawhubPublishResult,
   DEFAULT_PUBLISH_LAYER,
   PUBLISH_LAYER_DIRS,
   type PublishInput,
@@ -69,7 +73,56 @@ export function createPublishMockHandlers(getSkills: () => Skill[]): Record<stri
     };
   }
 
+  // `?clawhub=none` previews the dialog without a token; a token containing "bad" is refused.
+  const params = new URLSearchParams(window.location.search);
+  let clawhub: ClawhubAccount =
+    params.get("clawhub") === "none"
+      ? { available: true, saved: false, handle: null, problem: null }
+      : { available: true, saved: true, handle: "maria-dev", problem: null };
+
   return {
+    "publish.clawhubAccount": () => clawhub,
+    "publish.setClawhubToken": async (token: string | null): Promise<ClawhubAccount> => {
+      if (token && /bad/i.test(token)) {
+        throw Object.assign(new Error("ClawHub refused the token"), { code: "INVALID_INPUT" });
+      }
+      clawhub = token
+        ? { available: true, saved: true, handle: "maria-dev", problem: null }
+        : { available: true, saved: false, handle: null, problem: null };
+      return clawhub;
+    },
+    "publish.clawhubPreview": async (skillId: string): Promise<ClawhubPublishPreview> => {
+      const skill = getSkills().find((entry) => entry.id === skillId);
+      if (!skill) throw Object.assign(new Error("No such skill"), { code: "NOT_FOUND" });
+      const published = skill.name === "code-review";
+      return {
+        skillId,
+        handle: clawhub.handle ?? "",
+        slug: skill.name,
+        displayName: skill.name,
+        summary: skill.description,
+        topics: skill.tags.slice(0, 5),
+        latestVersion: published ? "1.2.0" : null,
+        suggestedVersion: published ? "1.2.1" : "1.0.0",
+        files: [
+          { path: "SKILL.md", bytes: 2140 },
+          { path: "references/guide.md", bytes: 5300 },
+        ],
+        totalBytes: 7440,
+        secrets: [],
+        problems: [],
+      };
+    },
+    "publish.publishToClawhub": async (
+      input: ClawhubPublishInput,
+    ): Promise<ClawhubPublishResult> => ({
+      handle: clawhub.handle ?? "maria-dev",
+      slug: input.slug,
+      version: input.version,
+      status: input.slug === "code-review" ? "published" : "pending",
+      pageUrl: `https://clawhub.ai/${clawhub.handle ?? "maria-dev"}/skills/${input.slug}`,
+      installCommand: `loadout skills install @${clawhub.handle ?? "maria-dev"}/${input.slug}`,
+    }),
     "publish.defaults": () => saved,
     "publish.preview": async (input: PublishInput) => planFor(input),
     "publish.publish": async (input: PublishInput): Promise<PublishResult> => {

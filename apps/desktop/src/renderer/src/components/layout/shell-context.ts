@@ -16,6 +16,8 @@ export interface ShellActions {
   openNewSkill(projectId?: string): void;
   /** Rename a library skill everywhere it is deployed. */
   openRenameSkill(skill: Skill): void;
+  /** Upload a library skill as a version on ClawHub. */
+  openPublishToClawhub(skill: Skill): void;
   openAddProject(): void;
 }
 

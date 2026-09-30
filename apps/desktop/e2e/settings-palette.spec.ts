@@ -7,6 +7,7 @@ const SETTINGS_SECTIONS = [
   "Storage",
   "Network",
   "Skill updates",
+  "Marketplaces",
   "Safety",
   "Backup",
   "Agent control",

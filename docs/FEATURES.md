@@ -30,6 +30,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Batch deploy, tag, add to preset, export, update and delete.
 - Export skills as one `.zip` that installs anywhere.
 - Publish chosen skills to a Git repository laid out for `npx skills add` (`skills/`, or its `.curated` and `.experimental` folders). It shows what would change first, copies only skill folders, holds back keys and tokens, never forces a push and never touches the backup repository. `loadout skills publish`.
+- Publish one skill as a version on ClawHub: slug, display name, version (the next patch of what is there), changelog and topics from its tags; shows the files and holds back anything that looks like a key; needs a token kept in the system keychain (Settings → Marketplaces) and your MIT-0 agreement.
 - New skill from a name, a description and a starting outline (short, detailed, workflow or blank); opens in the editor.
 - Rename a skill; deployments and project links follow. Shows a dry run as you type.
 - Delete goes to Recently removed, with Undo.

@@ -5,6 +5,7 @@ import {
   CodeXml,
   FileArchive,
   FolderOpen,
+  Package,
   PencilLine,
   RefreshCw,
   Star,
@@ -80,6 +81,12 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
         label: t("library.export.action"),
         icon: FileArchive,
         run: () => exportSkills.mutate([skill]),
+      });
+      actions.push({
+        id: "clawhub",
+        label: t("publish.clawhub.action"),
+        icon: Package,
+        run: () => shell.openPublishToClawhub(skill),
       });
       if (hasTrackedSource(skill)) {
         actions.push({

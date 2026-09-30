@@ -131,7 +131,7 @@ const CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 130 }, (_
 
 const PUBLISHERS = ["pskoett", "openclaw", "spclaudehome", "maria-dev"] as const;
 /** ClawHub's catalogue: versioned, with a summary and a publisher handle. */
-const CLAWHUB_CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 24 }, (_, index) => {
+const CLAWHUB_CATALOG: Omit<MarketSkill, "installed">[] = Array.from({ length: 20 }, (_, index) => {
   const owner = pick(PUBLISHERS, index);
   const slug = pick(TOPICS, index * 3);
   return {

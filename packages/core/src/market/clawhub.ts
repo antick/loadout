@@ -19,6 +19,7 @@ import { AppError, errorMessage, invalid, notFound } from "../errors";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const DOWNLOAD_TIMEOUT_MS = 60_000;
+const PUBLISH_TIMEOUT_MS = 120_000;
 const LIST_LIMIT = 50;
 const MAX_SEARCH_LIMIT = 200;
 /** Sort each board asks the registry for. */
@@ -56,6 +57,16 @@ export interface ClawhubClient {
   latestVersion(owner: string, slug: string): Promise<string>;
   /** The zip of one version. */
   download(owner: string, slug: string, version: string, signal?: AbortSignal): Promise<Buffer>;
+  /** The handle a token signs in as. INVALID_INPUT when the registry refuses the token. */
+  whoami(token: string): Promise<string>;
+  /** Every version published under a slug and handle, newest first; empty when not published. */
+  versions(owner: string, slug: string): Promise<string[]>;
+  /** Upload one version. Files are `path` inside the skill and their bytes. */
+  publish(
+    token: string,
+    payload: Record<string, unknown>,
+    files: readonly { path: string; data: Buffer }[],
+  ): Promise<{ status: "published" | "pending" }>;
 }
 
 export interface ClawhubClientDeps {
@@ -109,11 +120,22 @@ function query(params: Record<string, string | null | undefined>): string {
 export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient {
   const fetchImpl = deps.fetchImpl ?? fetch;
 
-  async function request(path: string, accept: string, timeoutMs = REQUEST_TIMEOUT_MS) {
+  async function request(
+    path: string,
+    accept: string,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+    init: { token?: string; method?: string; body?: FormData } = {},
+  ) {
     let response: Response;
     try {
       response = await fetchImpl(`${CLAWHUB_API_URL}${path}`, {
-        headers: { "User-Agent": APP_SLUG, Accept: accept },
+        method: init.method ?? "GET",
+        body: init.body,
+        headers: {
+          "User-Agent": APP_SLUG,
+          Accept: accept,
+          ...(init.token ? { Authorization: `Bearer ${init.token}` } : {}),
+        },
         signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
@@ -125,8 +147,11 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
     return response;
   }
 
-  async function json(path: string): Promise<{ status: number; body: Json }> {
-    const response = await request(path, "application/json");
+  async function json(
+    path: string,
+    init: { token?: string; method?: string; body?: FormData } = {},
+  ): Promise<{ status: number; body: Json }> {
+    const response = await request(path, "application/json", REQUEST_TIMEOUT_MS, init);
     let body: Json = {};
     try {
       body = asObject(await response.json());
@@ -134,6 +159,7 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
       if (response.ok)
         throw new AppError("NETWORK", `The ${CLAWHUB_NAME} answer could not be read`);
     }
+    if (response.status === 401) throw invalid(`${CLAWHUB_NAME} refused the token`);
     if (response.status === 404) throw notFound(asText(body.message) ?? `Not on ${CLAWHUB_NAME}`);
     if (response.status === 429) {
       throw new AppError("NETWORK", `${CLAWHUB_NAME} is rate limiting requests; try again later`);
@@ -240,6 +266,63 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
       const found = await detail(owner, slug);
       if (!found.version) throw notFound(`${owner}/${slug} has no published version`);
       return found.version;
+    },
+
+    whoami: async (token) => {
+      const { body } = await json("/whoami", { token });
+      const handle = asText(asObject(body.user).handle) ?? asText(body.handle);
+      if (!handle) throw invalid(`${CLAWHUB_NAME} did not say who the token belongs to`);
+      return handle;
+    },
+
+    versions: async (owner, slug) => {
+      try {
+        const { body } = await json(
+          `/skills/${encodeURIComponent(slug)}/versions${query({ owner })}`,
+        );
+        const items = Array.isArray(body.items)
+          ? body.items
+          : Array.isArray(body.versions)
+            ? body.versions
+            : [];
+        return items.flatMap((raw) => {
+          const version = asText(asObject(raw).version);
+          return version ? [version] : [];
+        });
+      } catch (error) {
+        if (error instanceof AppError && error.code === "NOT_FOUND") return [];
+        throw error;
+      }
+    },
+
+    publish: async (token, payload, files) => {
+      const form = new FormData();
+      form.set("payload", JSON.stringify(payload));
+      for (const file of files) {
+        form.append("files", new Blob([new Uint8Array(file.data)]), file.path);
+      }
+      const response = await request("/skills", "application/json", PUBLISH_TIMEOUT_MS, {
+        token,
+        method: "POST",
+        body: form,
+      });
+      if (response.status === 401 || response.status === 403) {
+        throw invalid(`${CLAWHUB_NAME} refused the token, or it may not publish under that handle`);
+      }
+      if (response.status === 429) {
+        throw new AppError(
+          "NETWORK",
+          `${CLAWHUB_NAME} is rate limiting publishes; try again later`,
+        );
+      }
+      if (!response.ok) {
+        const text = (await response.text().catch(() => "")).trim();
+        throw invalid(
+          `${CLAWHUB_NAME} did not accept the version: ${text || `HTTP ${response.status}`}`,
+        );
+      }
+      const body = asObject(await response.json().catch(() => ({})));
+      return { status: asText(body.publicationStatus) === "pending" ? "pending" : "published" };
     },
 
     download: async (owner, slug, version, signal) => {

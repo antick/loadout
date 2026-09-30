@@ -217,7 +217,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     api: { skills: skills.api, presets: { ...presets.api, ...presetSharing }, deploy: deploy.api },
   });
 
-  const publish = createPublishService(ctx, { store });
+  const publish = createPublishService(ctx, { store, clawhub: install.clawhub });
   const listing = createListingService(ctx, { registry, workspace: workspace.api });
 
   const settings: SettingsApi = {

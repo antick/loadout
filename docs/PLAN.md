@@ -49,6 +49,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Activity log of install / remove / update / deploy operations
 - [x] Possible duplicates: find skills that look like one installed twice, compare, keep one, dismiss a pair
 - [x] Publish skills to a Git repository for `npx skills add`: preview, key check, layers, `loadout skills publish`
+- [x] Publish a skill to ClawHub: token in the keychain, version suggestion, key check, MIT-0 consent
 
 ### 2. Install
 

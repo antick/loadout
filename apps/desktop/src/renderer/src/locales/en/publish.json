@@ -50,6 +50,38 @@
       "skipped": "Skipped: {{names}}",
       "install": "Anyone can install them with",
       "noInstall": "Install them from that repository with npx skills add."
+    },
+    "clawhub": {
+      "action": "Publish to ClawHub…",
+      "title": "Publish {{name}} to ClawHub",
+      "description": "Upload this skill as a new version on the ClawHub registry, under your handle. Nothing is sent until you press Publish.",
+      "signedInAs": "Publishing as @{{handle}}.",
+      "latest": "Latest published version: {{version}}.",
+      "notYet": "Not published yet: it starts at 1.0.0.",
+      "noToken": "No ClawHub token is saved. Add one in Settings, Marketplaces, then come back.",
+      "tokenProblem": "The saved ClawHub token does not work: {{problem}}",
+      "openSettings": "Open settings",
+      "slug": "Slug",
+      "slugHint": "Lower-case letters, digits and dashes. Names the skill on ClawHub.",
+      "version": "Version",
+      "versionHint": "Three numbers, like 1.2.3. Each publish needs a new one.",
+      "displayName": "Display name",
+      "changelog": "What changed",
+      "changelogPlaceholder": "Shown next to this version on ClawHub.",
+      "files_one": "{{count}} file, {{size}}",
+      "files_other": "{{count}} files, {{size}}",
+      "topics": "Topics from its tags: {{topics}}",
+      "secrets_one": "One file looks like it holds a key or token. Anyone could read it on ClawHub.",
+      "secrets_other": "{{count}} files look like they hold a key or token. Anyone could read them on ClawHub.",
+      "publishAnyway": "Publish anyway",
+      "license": "I release this version under the {{license}} licence, as {{marketplace}} requires: anyone may use, change and share it, without attribution.",
+      "tokens": "ClawHub settings",
+      "submit": "Publish v{{version}}",
+      "doneTitle": "Published to ClawHub",
+      "doneLive": "{{ref}}@{{version}} is live on ClawHub.",
+      "donePending": "{{ref}}@{{version}} was accepted. It goes public once ClawHub's security scan finishes.",
+      "installWith": "Others install it with:",
+      "openPage": "Open on ClawHub"
     }
   }
 }

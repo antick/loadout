@@ -18,6 +18,10 @@
         "title": "Skill updates",
         "description": "Keep skills from Git and the marketplace current."
       },
+      "marketplaces": {
+        "title": "Marketplaces",
+        "description": "Where skills are installed from, and where you publish them."
+      },
       "safety": {
         "title": "Safety",
         "description": "Skills are checked for destructive commands, prompt injection, credential theft and code that phones home before they reach your agents."
@@ -339,6 +343,25 @@
       "copyDiagnostics": "Copy diagnostics",
       "diagnosticsCopied": "Diagnostics copied. Paste them into your bug report",
       "privacy": "Nothing is sent anywhere: the export is a file on this computer and the diagnostics go to your clipboard."
+    },
+    "marketplaces": {
+      "clawhub": {
+        "description": "A registry of versioned skills with its own security scans. Browsing and installing need no account; publishing needs a token from your ClawHub settings.",
+        "tokens": "ClawHub settings",
+        "token": "API token",
+        "tokenHint": "Kept in the system keychain and sent only to ClawHub. Loadout checks it with ClawHub before saving.",
+        "save": "Save token",
+        "saved": "Signed in to ClawHub as @{{handle}}",
+        "forgotten": "The ClawHub token was forgotten",
+        "forget": "Forget",
+        "signedIn": "Signed in as @{{handle}}. Publishing goes out under this handle.",
+        "problem": "The saved token no longer works: {{problem}}",
+        "none": "No token saved. You can browse and install without one.",
+        "noKeychain": "The system keychain is not available here, so a token cannot be kept.",
+        "errors": {
+          "save": "Could not save the ClawHub token."
+        }
+      }
     }
   },
   "agentControl": {

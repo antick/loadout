@@ -7,6 +7,7 @@ import {
   Network,
   RefreshCw,
   Settings2,
+  Store,
   ShieldCheck,
   TerminalSquare,
 } from "lucide-react";
@@ -19,6 +20,7 @@ export const SETTINGS_SECTION_ICONS: Record<SettingsSection, LucideIcon> = {
   storage: HardDrive,
   network: Network,
   updates: RefreshCw,
+  marketplaces: Store,
   safety: ShieldCheck,
   backup: CloudUpload,
   cli: TerminalSquare,

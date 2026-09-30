@@ -26,6 +26,7 @@ import { PresetDialog } from "@/components/PresetDialog";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { FirstRunDialog } from "@/features/backup/FirstRunDialog";
 import { NewSkillDialog } from "@/features/library/NewSkillDialog";
+import { ClawhubPublishDialog } from "@/features/library/publish/ClawhubPublishDialog";
 import { RenameSkillDialog } from "@/features/library/RenameSkillDialog";
 import { FlaggedInstallDialog } from "@/features/safety/FlaggedInstallDialog";
 import { AddProjectDialog } from "@/features/projects/AddProjectDialog";
@@ -63,6 +64,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     projectId: null,
   });
   const [renaming, setRenaming] = useState<Skill | null>(null);
+  const [publishingToClawhub, setPublishingToClawhub] = useState<Skill | null>(null);
   const [presetDialog, setPresetDialog] = useState<{ open: boolean; preset: Preset | null }>({
     open: false,
     preset: null,
@@ -99,6 +101,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
       openAddProject: () => setAddProjectOpen(true),
       openNewSkill: (projectId) => setNewSkill({ open: true, projectId: projectId ?? null }),
       openRenameSkill: setRenaming,
+      openPublishToClawhub: setPublishingToClawhub,
     }),
     [],
   );
@@ -176,6 +179,10 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             open={newSkill.open}
             projectId={newSkill.projectId}
             onOpenChange={(open) => setNewSkill((previous) => ({ ...previous, open }))}
+          />
+          <ClawhubPublishDialog
+            skill={publishingToClawhub}
+            onOpenChange={(open) => (open ? undefined : setPublishingToClawhub(null))}
           />
           <RenameSkillDialog
             skill={renaming}

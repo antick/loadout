@@ -7,6 +7,7 @@ import { AgentsSection } from "./AgentsSection";
 import { BackupSection } from "./BackupSection";
 import type { SettingsSection } from "./constants";
 import { GeneralSection } from "./GeneralSection";
+import { MarketplacesSection } from "./MarketplacesSection";
 import { NetworkSection } from "./NetworkSection";
 import { SafetySection } from "./SafetySection";
 import { StorageSection } from "./StorageSection";
@@ -18,6 +19,7 @@ const SECTION_VIEWS: Record<SettingsSection, () => ReactNode> = {
   storage: StorageSection,
   network: NetworkSection,
   updates: UpdatesSection,
+  marketplaces: MarketplacesSection,
   safety: SafetySection,
   backup: BackupSection,
   cli: AgentControlSection,
