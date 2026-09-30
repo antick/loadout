@@ -26,6 +26,7 @@ import { createItemsService } from "./items";
 import { createDuplicatesService } from "./duplicates";
 import { createListingService } from "./listing";
 import { createUsageService } from "./usage";
+import { createPublishService } from "./publish";
 
 export interface CoreCreateOptions extends CoreOptions {
   /** Proxy-aware fetch supplied by the host. Defaults to the global `fetch`. */
@@ -200,6 +201,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     api: { skills: skills.api, presets: { ...presets.api, ...presetSharing }, deploy: deploy.api },
   });
 
+  const publish = createPublishService(ctx, { store });
   const listing = createListingService(ctx, { registry, workspace: workspace.api });
 
   const settings: SettingsApi = {
@@ -232,6 +234,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     items: items.api,
     usage: usage.api,
     duplicates: duplicates.api,
+    publish: publish.api,
     listing: listing.api,
   };
 

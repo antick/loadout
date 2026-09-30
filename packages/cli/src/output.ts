@@ -83,6 +83,6 @@ export function printError(io: CliIo, json: boolean, error: ErrorShape): void {
     lines.push(`  ${name}: the safety check could not finish (${reason})`);
   }
   if (error.code === "UNSAFE") lines.push("Add --accept-risk to install it anyway.");
-  if (error.code === "SECRETS_FOUND") lines.push("Add --allow-secrets to back it up anyway.");
+  if (error.code === "SECRETS_FOUND") lines.push("Add --allow-secrets to go ahead anyway.");
   io.stderr(`${lines.join("\n")}\n`);
 }

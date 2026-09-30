@@ -120,6 +120,10 @@ export const keys = {
       ["backup", "preview-diff", skillId, remoteCommit] as const,
     conflictDiff: (skillKey: string) => ["backup", "conflict-diff", skillKey] as const,
   },
+  publish: {
+    root: ["publish"] as const,
+    defaults: ["publish", "defaults"] as const,
+  },
   settings: {
     root: ["settings"] as const,
     all: ["settings", "all"] as const,

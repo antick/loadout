@@ -39,6 +39,7 @@ import { createSkillsFileMockHandlers } from "@/lib/dev-mock-skills-file";
 import { createUsageMockHandlers } from "@/lib/dev-mock-usage";
 import { createListingMockHandlers } from "@/lib/dev-mock-listing";
 import { createSimilarMockHandlers } from "@/lib/dev-mock-similar";
+import { createPublishMockHandlers } from "@/lib/dev-mock-publish";
 import { createSuggestMockHandlers } from "@/lib/dev-mock-suggest";
 import { createDeployMockHandlers } from "@/lib/dev-mock-deploy";
 import { createPresetShareMockHandlers } from "@/lib/dev-mock-preset-share";
@@ -412,6 +413,7 @@ Object.assign(
   }),
   createPresetShareMockHandlers(HOME, handlers),
   createSimilarMockHandlers(skillState.get, handlers),
+  createPublishMockHandlers(skillState.get),
   createListingMockHandlers(getMockSettings, handlers),
 );
 Object.assign(

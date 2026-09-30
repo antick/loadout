@@ -129,7 +129,8 @@ export type ActivityKind =
   | "backup"
   | "restore"
   | "preset"
-  | "export";
+  | "export"
+  | "publish";
 
 export interface ActivityEntry {
   id: string;

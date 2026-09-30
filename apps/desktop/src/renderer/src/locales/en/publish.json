@@ -1,0 +1,55 @@
+{
+  "publish": {
+    "title_one": "Publish {{count}} skill",
+    "title_other": "Publish {{count}} skills",
+    "description": "Copy these skills into a Git repository so anyone can install them with npx skills add. Only the skill folders are copied. Nothing is sent until you press Publish.",
+    "repo": "Repository",
+    "repoPlaceholder": "owner/repo or https://github.com/owner/repo",
+    "repoHint": "It can be public or private. Loadout signs in with your SSH key, your Git credential helper, or the token saved in Settings, Backup.",
+    "branch": "Branch",
+    "branchPlaceholder": "Default branch",
+    "layer": "Folder",
+    "layers": {
+      "root": "Each skill goes into skills/<name>/.",
+      "curated": "Each skill goes into skills/.curated/<name>/.",
+      "experimental": "Each skill goes into skills/.experimental/<name>/."
+    },
+    "checkHint": "Check first: Loadout looks at the repository and lists what would change.",
+    "check": "Check",
+    "submit_one": "Publish {{count}} skill",
+    "submit_other": "Publish {{count}} skills",
+    "private": "Tags, agents and backup data are not copied.",
+    "nothingToPublish": "Nothing to publish.",
+    "done": "Done",
+    "status": {
+      "new": "New",
+      "changed": "Changed",
+      "unchanged": "Same",
+      "skipped": "Skipped"
+    },
+    "plan": {
+      "title": "What would be published",
+      "branch": "Goes to {{branch}}.",
+      "newBranch": "The branch {{branch}} is new. It starts from the default branch.",
+      "emptyRepo": "The repository is empty. {{branch}} is created.",
+      "changes": "{{added}} added, {{changed}} changed, {{removed}} removed",
+      "leftOut": "Left out: {{names}}"
+    },
+    "secrets": {
+      "title_one": "This looks like a key or token. Anyone who can read the repository could use it.",
+      "title_other": "These look like keys or tokens. Anyone who can read the repository could use them.",
+      "allow": "I checked. It is safe to share."
+    },
+    "result": {
+      "title": "Published",
+      "published_one": "Published {{names}}.",
+      "published_other": "Published {{count}} skills: {{names}}.",
+      "unchanged_one": "{{count}} was already up to date.",
+      "unchanged_other": "{{count}} were already up to date.",
+      "nothing": "Nothing to publish. The repository already has these skills as they are.",
+      "skipped": "Skipped: {{names}}",
+      "install": "Anyone can install them with",
+      "noInstall": "Install them from that repository with npx skills add."
+    }
+  }
+}

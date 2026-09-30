@@ -107,4 +107,6 @@ export const INTERNAL_KEYS = {
   usageScannedAt: "usage.scannedAt",
   /** Pairs of library skills the user said are not duplicates (`duplicatePairKey`), this computer only. */
   duplicatesDismissed: "duplicates.dismissed",
+  /** Where skills were last published: repository, branch and layer (`publish/`). */
+  publishTarget: "publish.target",
 } as const;

@@ -93,6 +93,10 @@ loadout skills duplicates --json
 loadout skills duplicates merge --keep <ref> --remove <ref> --dry-run --json   # tags, presets and agents move to the kept one
 loadout skills duplicates dismiss <ref> <ref> --json    # they are different skills; stop listing the pair
 
+# Publish skills to a Git repository so others can `npx skills add` them. Pushes to a remote: only when the user asked, and preview first
+loadout skills publish <ref>... --repo owner/repo --dry-run --json   # what would change; writes nothing
+loadout skills publish <ref>... --repo owner/repo --yes --json       # copies the skill folders, commits, pushes; never forces
+
 # A skill misbehaved: prepare an issue for the repository it came from (prints text and a link; sends nothing, the user files it)
 loadout skills feedback <ref> -m "what happened" --proposal "wording that would have prevented it" --json
 

@@ -74,7 +74,8 @@
         "backup": "Backup",
         "restore": "Restored",
         "preset": "Preset",
-        "export": "Exported"
+        "export": "Exported",
+        "publish": "Published"
       }
     },
     "recent": {

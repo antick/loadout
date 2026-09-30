@@ -1,5 +1,15 @@
 import type { Skill } from "@loadout/shared";
-import { ArrowUpCircle, FileArchive, Layers, Plus, Send, Tags, Trash2 } from "lucide-react";
+import {
+  ArrowUpCircle,
+  FileArchive,
+  Layers,
+  Plus,
+  Send,
+  Share2,
+  Tags,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BatchDeployDialog } from "@/components/BatchDeployDialog";
@@ -17,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { hasUpdate } from "@/features/library/library-filters";
+import { PublishDialog } from "@/features/library/publish/PublishDialog";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useExportSkills, useUpdateSkills } from "@/hooks/mutations/library";
 import { useAddSkillsToPreset } from "@/hooks/mutations/preset-detail";
@@ -43,6 +54,7 @@ export function LibrarySelectionActions({
   const deleteSkills = useDeleteSkills();
   const [deployOpen, setDeployOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
 
   const none = skills.length === 0;
   const updatable = skills.filter(hasUpdate);
@@ -90,17 +102,28 @@ export function LibrarySelectionActions({
         {t("library.selection.tags")}
       </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={none || exportSkills.isPending}
-        onClick={() =>
-          exportSkills.mutate(skills, { onSuccess: (result) => (result ? onDone() : null) })
-        }
-      >
-        {exportSkills.isPending ? <Spinner /> : <FileArchive />}
-        {t("library.selection.export")}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" disabled={none || exportSkills.isPending}>
+            {exportSkills.isPending ? <Spinner /> : <Share2 />}
+            {t("library.selection.share")}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-64">
+          <DropdownMenuItem
+            onSelect={() =>
+              exportSkills.mutate(skills, { onSuccess: (result) => (result ? onDone() : null) })
+            }
+          >
+            <FileArchive />
+            {t("library.selection.export")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setPublishOpen(true)}>
+            <Upload />
+            {t("library.selection.publish")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {updatable.length > 0 ? (
         <Button
@@ -133,6 +156,12 @@ export function LibrarySelectionActions({
       <BatchDeployDialog
         open={deployOpen}
         onOpenChange={setDeployOpen}
+        skills={skills}
+        onDone={onDone}
+      />
+      <PublishDialog
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
         skills={skills}
         onDone={onDone}
       />

@@ -26,6 +26,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Mark a skill as yours: it gets a **Mine** badge and no source is looked for.
 - Batch deploy, tag, add to preset, export, update and delete.
 - Export skills as one `.zip` that installs anywhere.
+- Publish chosen skills to a Git repository laid out for `npx skills add` (`skills/`, or its `.curated` and `.experimental` folders). It shows what would change first, copies only skill folders, holds back keys and tokens, never forces a push and never touches the backup repository. `loadout skills publish`.
 - New skill from a name, a description and a starting outline (short, detailed, workflow or blank); opens in the editor.
 - Rename a skill; deployments and project links follow. Shows a dry run as you type.
 - Delete goes to Recently removed, with Undo.

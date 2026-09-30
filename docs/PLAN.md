@@ -45,6 +45,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Batch select: deploy to agents, tags, update, delete
 - [x] Activity log of install / remove / update / deploy operations
 - [x] Possible duplicates: find skills that look like one installed twice, compare, keep one, dismiss a pair
+- [x] Publish skills to a Git repository for `npx skills add`: preview, key check, layers, `loadout skills publish`
 
 ### 2. Install
 

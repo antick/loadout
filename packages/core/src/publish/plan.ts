@@ -1,0 +1,161 @@
+import { readFileSync } from "node:fs";
+import { basename, join } from "node:path";
+import {
+  PUBLISH_LAYERS,
+  PUBLISH_LAYER_DIRS,
+  PUBLISH_LEFT_OUT_SHOWN,
+  PUBLISH_MAX_FILE_BYTES,
+  type PublishFileCounts,
+  type PublishSkillPlan,
+  type SecretFinding,
+  type Skill,
+  formatBytes,
+} from "@loadout/shared";
+import { isSafeSkillPath } from "../backup/env";
+import { findSecrets } from "../backup/secrets";
+import { isDirectory } from "../util/fs";
+import { type PublishFile, collectFiles, digestsInTree, digestsOf } from "./files";
+import type { ResolvedTarget } from "./target";
+
+/** What publishing would do to a repository, worked out without changing anything. */
+
+/** Larger files are not text a skill carries by hand; reading them would only cost time. */
+const MAX_SCANNED_BYTES = 1024 * 1024;
+const SKILL_FILE = "SKILL.md";
+const NO_FILES: PublishFileCounts = { added: 0, changed: 0, removed: 0 };
+
+export interface PlannedSkill {
+  plan: PublishSkillPlan;
+  /** What gets copied; empty for a skipped skill. */
+  files: PublishFile[];
+}
+
+export interface Planned {
+  skills: PlannedSkill[];
+  secrets: SecretFinding[];
+}
+
+function compare(
+  ours: ReadonlyMap<string, string>,
+  theirs: ReadonlyMap<string, string>,
+): PublishFileCounts {
+  let added = 0;
+  let changed = 0;
+  for (const [path, digest] of ours) {
+    const there = theirs.get(path);
+    if (there === undefined) added += 1;
+    else if (there !== digest) changed += 1;
+  }
+  const removed = [...theirs.keys()].filter((path) => !ours.has(path)).length;
+  return { added, changed, removed };
+}
+
+function findingsIn(folder: string, files: readonly PublishFile[]): SecretFinding[] {
+  const found: SecretFinding[] = [];
+  for (const file of files) {
+    if (file.size > MAX_SCANNED_BYTES) continue;
+    const bytes = readFileSync(file.absolutePath);
+    if (bytes.includes(0)) continue;
+    found.push(
+      ...findSecrets(`${folder}/${file.relativePath}`, file.absolutePath, bytes.toString("utf8")),
+    );
+  }
+  return found;
+}
+
+/** The layer folder of the repository that already holds a skill of this name, other than ours. */
+function publishedElsewhere(
+  checkoutDir: string,
+  target: ResolvedTarget,
+  folder: string,
+): string | null {
+  for (const layer of PUBLISH_LAYERS) {
+    const dir = PUBLISH_LAYER_DIRS[layer];
+    if (dir === target.layerDir) continue;
+    if (isDirectory(join(checkoutDir, ...dir.split("/"), folder))) return dir;
+  }
+  return null;
+}
+
+function skipped(
+  skill: Skill,
+  folder: string,
+  reason: string,
+  leftOut: string[] = [],
+): PlannedSkill {
+  return {
+    files: [],
+    plan: {
+      skillId: skill.id,
+      name: skill.name,
+      folder,
+      status: "skipped",
+      reason,
+      files: NO_FILES,
+      leftOut: leftOut.slice(0, PUBLISH_LEFT_OUT_SHOWN),
+      leftOutCount: leftOut.length,
+    },
+  };
+}
+
+function planSkill(skill: Skill, checkoutDir: string, target: ResolvedTarget): PlannedSkill {
+  const name = basename(skill.libraryPath);
+  const folder = `${target.layerDir}/${name}`;
+  if (!isSafeSkillPath(name)) {
+    return skipped(skill, folder, "Its folder name cannot be used in a repository.");
+  }
+  if (!isDirectory(skill.libraryPath)) return skipped(skill, folder, "Its folder is missing.");
+  const collected = collectFiles(skill.libraryPath);
+  const { files, leftOut } = collected;
+  if (!files.some((file) => file.relativePath === SKILL_FILE)) {
+    return skipped(skill, folder, `It has no ${SKILL_FILE}.`, leftOut);
+  }
+  if (collected.tooLarge) {
+    return skipped(
+      skill,
+      folder,
+      `${collected.tooLarge} is larger than ${formatBytes(PUBLISH_MAX_FILE_BYTES)}.`,
+      leftOut,
+    );
+  }
+  const elsewhere = publishedElsewhere(checkoutDir, target, name);
+  if (elsewhere) {
+    return skipped(
+      skill,
+      folder,
+      `The repository already has it in ${elsewhere}/. Remove that copy first, or publish there.`,
+      leftOut,
+    );
+  }
+
+  const there = digestsInTree(join(checkoutDir, ...folder.split("/")));
+  const counts = compare(digestsOf(files), there);
+  const isNew = there.size === 0;
+  const same = !isNew && counts.added + counts.changed + counts.removed === 0;
+  return {
+    files,
+    plan: {
+      skillId: skill.id,
+      name: skill.name,
+      folder,
+      status: isNew ? "new" : same ? "unchanged" : "changed",
+      reason: null,
+      files: isNew || same ? NO_FILES : counts,
+      leftOut: leftOut.slice(0, PUBLISH_LEFT_OUT_SHOWN),
+      leftOutCount: leftOut.length,
+    },
+  };
+}
+
+/** Compare the skills with the repository's working copy and look for keys in what would go. */
+export function planSkills(
+  skills: readonly Skill[],
+  checkoutDir: string,
+  target: ResolvedTarget,
+): Planned {
+  const planned = skills.map((skill) => planSkill(skill, checkoutDir, target));
+  const secrets = planned.flatMap(({ plan, files }) =>
+    plan.status === "skipped" ? [] : findingsIn(plan.folder, files),
+  );
+  return { skills: planned, secrets };
+}

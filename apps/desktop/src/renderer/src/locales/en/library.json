@@ -84,6 +84,8 @@
       "addToPreset": "Add to preset…",
       "choosePreset": "Add the selection to",
       "tags": "Tags…",
+      "share": "Share…",
+      "publish": "Publish to a repository…",
       "update_one": "Update {{count}}",
       "update_other": "Update {{count}}",
       "delete_one": "Delete {{count}}",

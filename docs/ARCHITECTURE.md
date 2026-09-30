@@ -56,6 +56,7 @@
 | `system/`            | Diagnostics, log export, crash marker, CLI publishing, agent-control setup → `SystemApi`             |
 | `suggest/`           | Library skills that fit a project: its technologies and files, the skills' own patterns              |
 | `usage/`             | Skill runs read from agents' session logs, incrementally, into `usage_events` → `UsageApi`           |
+| `publish/`           | Publishes chosen skills to another Git repository: own clone, key check, never forces → `PublishApi` |
 | `storage/`           | Sizes of every area, clearing history/cache/logs, Recently removed, removing all data → `StorageApi` |
 
 ## Service shape

@@ -16,6 +16,7 @@ import {
   Trash2,
   Unplug,
   TextCursorInput,
+  Upload,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -43,6 +44,7 @@ const KIND_ICONS: Record<ActivityKind, LucideIcon> = {
   backup: CloudUpload,
   restore: History,
   preset: Layers,
+  publish: Upload,
 };
 const SKELETON_ROWS = 5;
 
