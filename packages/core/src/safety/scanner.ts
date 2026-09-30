@@ -188,6 +188,7 @@ export function parseReport(stdout: string, scannedAt: number): SafetyReport {
   const metadata = asObject(data.metadata);
 
   return {
+    engine: "skillspector",
     verdict: verdictOf(score, asText(risk.max_issue_severity), all.length),
     score,
     recommendation: asText(risk.recommendation),

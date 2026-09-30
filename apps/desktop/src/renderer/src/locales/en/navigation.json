@@ -31,6 +31,7 @@
         "favorites": "Favourites",
         "updates": "Updates available",
         "attention": "Needs attention",
+        "flagged": "Safety flagged",
         "not_deployed": "Not deployed",
         "unused": "Not used lately"
       },

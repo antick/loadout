@@ -25,6 +25,7 @@
       "LOW": "Low"
     },
     "scannedAt": "Checked {{when}} · SkillSpector {{version}}",
+    "scannedAtBuiltin": "Checked {{when}} · {{app}} rules",
     "noFindings": "No findings.",
     "prompt": {
       "titleOne": "The safety check flagged {{name}}",
@@ -33,9 +34,9 @@
       "uncheckedTitleOne": "The safety check could not finish on {{name}}",
       "uncheckedTitleMany_one": "The safety check could not finish on {{count}} skill",
       "uncheckedTitleMany_other": "The safety check could not finish on {{count}} skills",
-      "uncheckedReason": "SkillSpector stopped before it had an answer ({{reason}}). A skill can do that on purpose to avoid being checked.",
-      "description": "SkillSpector found things a skill should not do, such as overriding your agent's instructions, reading credentials or running downloaded code. Nothing has been installed. Install anyway only if you know and trust where it comes from.",
-      "updateDescription": "SkillSpector found things a skill should not do in its new version, such as overriding your agent's instructions, reading credentials or running downloaded code. The version you have now is unchanged. Update anyway only if you know and trust where it comes from.",
+      "uncheckedReason": "The check stopped before it had an answer ({{reason}}). A skill can do that on purpose to avoid being checked.",
+      "description": "The safety check found things a skill should not do, such as overriding your agent's instructions, reading credentials or running downloaded code. Nothing has been installed. Install anyway only if you know and trust where it comes from.",
+      "updateDescription": "The safety check found things a skill should not do in its new version, such as overriding your agent's instructions, reading credentials or running downloaded code. The version you have now is unchanged. Update anyway only if you know and trust where it comes from.",
       "dontInstall": "Don't install",
       "installAnyway": "Install anyway",
       "dontUpdate": "Don't update",
@@ -65,7 +66,7 @@
       "none": "Not checked yet.",
       "check": "Check now",
       "checkAgain": "Check again",
-      "needsScanner": "Install SkillSpector to check skills for prompt injection, credential theft and risky scripts.",
+      "needsScanner": "No safety check is available here. Install SkillSpector to check skills for prompt injection, credential theft and risky scripts.",
       "openSettings": "Set it up"
     },
     "errors": {

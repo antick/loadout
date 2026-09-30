@@ -18,10 +18,11 @@ const FORCE_FLAG = {
 function line(name: string, record: SafetyRecord): string {
   const worst = record.findings[0];
   const detail = worst ? `, ${worst.severity} ${worst.category} in ${worst.file}` : "";
-  return `${name}: ${record.verdict} (risk ${record.score}/100${detail})`;
+  const engine = record.engine === "builtin" ? "rules" : "SkillSpector";
+  return `${name}: ${record.verdict} (risk ${record.score}/100${detail}; ${engine})`;
 }
 
-/** Run the SkillSpector safety check on library skills. */
+/** Run the safety check on library skills: Loadout's rules, or SkillSpector when installed. */
 async function scan(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const all = flagBoolean(args, ALL_FLAG.name);
@@ -49,12 +50,13 @@ async function scan(context: CommandContext): Promise<CommandResult> {
 
 export const scanCommand: CommandSpec = {
   name: "scan",
-  summary: "Safety-check skills with SkillSpector",
+  summary: "Safety-check skills: built-in rules, or SkillSpector when installed",
   usage: "<ref>… | --all [--force]",
   flags: [ALL_FLAG, FORCE_FLAG],
   notes: [
-    "Needs NVIDIA SkillSpector: uv tool install git+https://github.com/NVIDIA/skillspector.git",
-    "Static checks only, no AI model. Verdicts: safe, caution, unsafe.",
+    "Loadout's own rules always run: destructive commands, code that phones home, prompt injection, credential theft. Static, no AI model.",
+    "With NVIDIA SkillSpector installed (uv tool install git+https://github.com/NVIDIA/skillspector.git) its deeper checks run instead.",
+    "Verdicts: safe, caution, unsafe.",
   ],
   run: scan,
 };

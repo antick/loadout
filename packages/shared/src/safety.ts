@@ -1,8 +1,11 @@
 /**
- * Safety checks of skills with NVIDIA SkillSpector (github.com/NVIDIA/SkillSpector), an optional
- * scanner the user installs. It runs static checks only (`--no-llm`: no model calls, no keys).
- * Without it every check is skipped and the app works as before.
+ * Safety checks of skills. Loadout's own rules always run: static pattern matching over a skill's
+ * files, no model and no key. With NVIDIA SkillSpector (github.com/NVIDIA/SkillSpector)
+ * installed, that runs instead, in static mode (`--no-llm`), for deeper checks.
  */
+
+/** What produced a report: Loadout's own rules, or the SkillSpector program. */
+export type SafetyEngine = "builtin" | "skillspector";
 
 /**
  * `unsafe`: the scanner says not to install (a risk score over its threshold, or a high or
@@ -34,6 +37,7 @@ export interface SafetyFinding {
 }
 
 export interface SafetyReport {
+  engine: SafetyEngine;
   verdict: SafetyVerdict;
   /** 0–100, higher is riskier. */
   score: number;
@@ -43,6 +47,7 @@ export interface SafetyReport {
   counts: Record<SafetySeverity, number>;
   /** Worst first, capped; `counts` has the full numbers. */
   findings: SafetyFinding[];
+  /** SkillSpector's version, or the built-in rule set's. */
   scannerVersion: string | null;
   /** Epoch ms. */
   scannedAt: number;
@@ -58,7 +63,9 @@ export interface SafetyRecord extends SafetyReport {
 }
 
 export interface SafetyStatus {
-  /** The scanner was found and answers. */
+  /** What checks run now: SkillSpector when it is found, else the built-in rules; null when off. */
+  engine: SafetyEngine | null;
+  /** The SkillSpector program was found and answers. */
   available: boolean;
   /** The program that runs; null when none was found. */
   path: string | null;

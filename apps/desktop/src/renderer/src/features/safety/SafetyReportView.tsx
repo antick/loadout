@@ -129,10 +129,12 @@ export function SafetyReportView({
           </span>
         ) : null}
         <span className="ml-auto text-xs text-muted-foreground">
-          {t("safety.scannedAt", {
-            when: formatRelative(report.scannedAt),
-            version: report.scannerVersion ?? "?",
-          })}
+          {report.engine === "builtin"
+            ? t("safety.scannedAtBuiltin", { when: formatRelative(report.scannedAt) })
+            : t("safety.scannedAt", {
+                when: formatRelative(report.scannedAt),
+                version: report.scannerVersion ?? "?",
+              })}
         </span>
       </div>
       {stale ? <p className="text-xs text-muted-foreground">{t("safety.staleHint")}</p> : null}

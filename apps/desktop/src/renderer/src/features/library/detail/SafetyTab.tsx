@@ -19,7 +19,7 @@ export function SafetyTab({ skill }: { skill: Skill }): ReactNode {
   const scan = useScanSkill();
 
   if (status.isPending) return <Skeleton className="h-24 w-full" />;
-  if (!status.data?.available && !record) {
+  if (!status.data?.engine && !record) {
     return (
       <EmptyState
         icon={ShieldOff}
@@ -39,7 +39,7 @@ export function SafetyTab({ skill }: { skill: Skill }): ReactNode {
     <Button
       variant="outline"
       size="sm"
-      disabled={!status.data?.available || scan.isPending}
+      disabled={!status.data?.engine || scan.isPending}
       onClick={() => scan.mutate(skill.id)}
     >
       {scan.isPending ? <Spinner /> : <ScanSearch />}

@@ -31,6 +31,8 @@ export interface Sandbox {
 export function createSandbox(
   options: {
     safetyScannerPath?: string | null;
+    /** Run Loadout's own safety rules (off by default, like the scanner). */
+    builtinSafety?: boolean;
     picker?: SkillPicker;
     /** Stands in for the network (the marketplace); the real one when absent. */
     fetchImpl?: typeof fetch;
@@ -54,6 +56,7 @@ export function createSandbox(
         configDir: join(root, "config"),
         logger: silentLogger,
         safetyScannerPath: options.safetyScannerPath ?? null,
+        builtinSafety: options.builtinSafety ?? false,
         ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
       },
       ...(options.picker ? { picker: options.picker } : {}),

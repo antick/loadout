@@ -109,14 +109,18 @@ describe.skipIf(process.platform === "win32")("skills scan and the safety check"
       expect(json.json()).toMatchObject({
         ok: false,
         code: "UNSAFE",
-        details: { flagged: [{ name: "evil", report: { verdict: "unsafe", score: 90 } }] },
+        details: {
+          flagged: [
+            { name: "evil", report: { engine: "skillspector", verdict: "unsafe", score: 90 } },
+          ],
+        },
       });
 
       expect((await sandbox.cli("skills", "install", evil, "--accept-risk")).code).toBe(EXIT_OK);
       const scan = await sandbox.cli("skills", "scan", "--all", "--force");
       expect(scan.stdout).toContain("Checked 2 skills: 1 flagged, 0 to review.");
       expect((await sandbox.cli("skills", "scan", "evil")).stdout).toContain(
-        "evil: unsafe (risk 90/100, HIGH Prompt Injection in SKILL.md)",
+        "evil: unsafe (risk 90/100, HIGH Prompt Injection in SKILL.md; SkillSpector)",
       );
       expect((await sandbox.cli("skills", "scan")).code).toBe(EXIT_USAGE);
     } finally {

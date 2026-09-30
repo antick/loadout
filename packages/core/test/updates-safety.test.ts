@@ -11,6 +11,7 @@ import { commitAll } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
 const REPORT: SafetyReport = {
+  engine: "skillspector",
   verdict: "unsafe",
   score: 90,
   recommendation: "DO_NOT_INSTALL",

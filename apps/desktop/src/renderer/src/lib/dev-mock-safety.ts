@@ -25,6 +25,7 @@ const FLAGGED_PREFIX = "prompt-library";
 const SCAN_MS = 400;
 
 const FLAGGED_REPORT: SafetyReport = {
+  engine: "skillspector",
   verdict: "unsafe",
   score: 100,
   recommendation: "DO_NOT_INSTALL",
@@ -73,6 +74,7 @@ const FLAGGED_REPORT: SafetyReport = {
 };
 
 const CLEAN_REPORT: SafetyReport = {
+  engine: "builtin",
   verdict: "safe",
   score: 0,
   recommendation: "SAFE",
@@ -137,6 +139,7 @@ export function withSafetyMocks(
 
   return {
     "safety.status": (): SafetyStatus => ({
+      engine: "skillspector",
       available: true,
       path: `${ctx.home}/.local/bin/skillspector`,
       version: "2.12.0",

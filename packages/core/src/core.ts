@@ -41,6 +41,11 @@ export interface CoreCreateOptions extends CoreOptions {
    * this machine, so results never depend on what the developer has installed.
    */
   safetyScannerPath?: string | null;
+  /**
+   * Run Loadout's own safety rules when SkillSpector is not found. On in the app; off in tests
+   * that name no scanner (`safetyScannerPath: null`) unless they ask for it.
+   */
+  builtinSafety?: boolean;
 }
 
 /** Long-running work the host starts once and stops on quit. */
@@ -102,6 +107,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const history = createFileHistory(ctx.paths.historyDir);
   const safety = createSafetyService(ctx, {
     store,
+    builtin: options.builtinSafety ?? options.safetyScannerPath === undefined,
     findProgram:
       options.safetyScannerPath === undefined
         ? undefined
@@ -248,6 +254,10 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     start: () => {
       // Library edits made while the app was closed left the copies behind.
       staleCopies.request();
+      // Skills that arrived without a check (an older version, the CLI) get one from the rules.
+      void safety
+        .scanDueQuietly()
+        .catch((error: unknown) => ctx.log.warn("Could not check the library", error));
       // Deployments that went missing while the app was closed come back; what cannot is reported.
       void repair
         .run()

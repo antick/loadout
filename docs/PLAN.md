@@ -52,6 +52,8 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ### 2. Install
 
+- [x] Built-in safety rules on every install and at start-up; SkillSpector takes over when installed; "Safety flagged" filter
+
 - [x] From local folder (tracked source, re-import, relink, detach)
 - [x] From `.zip` / `.skill` archive, or by dropping a folder or archive on the page
 - [x] From Git: https, ssh, `owner/repo`, tree URLs with branch + subpath

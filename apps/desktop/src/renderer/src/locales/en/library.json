@@ -46,6 +46,7 @@
         "updates": "Updates available",
         "attention": "Needs attention",
         "runs_code": "Runs code",
+        "flagged": "Safety flagged",
         "unused": "Not used lately"
       },
       "sorts": {

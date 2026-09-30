@@ -94,10 +94,11 @@ async function fakeScan(_program: string, dir: string): Promise<SafetyReport> {
   return parseReport(text.includes(EVIL) ? FLAGGED_OUTPUT : CLEAN_OUTPUT, Date.now());
 }
 
-function setup(program: string | null = "/bin/skillspector"): void {
+function setup(program: string | null = "/bin/skillspector", builtin = false): void {
   safety = createSafetyService(world.ctx, {
     store: world.store,
     scan: fakeScan,
+    builtin,
     findProgram: () => (program ? { path: program, version: "2.12.0" } : null),
   });
   install = createInstallHarness(world, { safety });

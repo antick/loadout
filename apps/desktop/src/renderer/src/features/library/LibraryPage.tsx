@@ -56,6 +56,7 @@ import { useCheckAllUpdates, useUpdateSkills } from "@/hooks/mutations/library";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useDuplicates } from "@/hooks/queries/duplicates";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
+import { useSafetyReports } from "@/hooks/queries/safety";
 import { useSkillUsage } from "@/hooks/queries/usage";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useSelection } from "@/hooks/use-selection";
@@ -148,10 +149,17 @@ export function LibraryPage({
     () => new Set((availableAgents.data ?? []).map((agent) => agent.key)),
     [availableAgents.data],
   );
+  const safety = useSafetyReports();
   const visible = useMemo(
     () =>
-      filterSkills(all ?? [], filters, { enabled: usage.enabled, byId: usage.byId }, availableKeys),
-    [all, filters, usage.enabled, usage.byId, availableKeys],
+      filterSkills(
+        all ?? [],
+        filters,
+        { enabled: usage.enabled, byId: usage.byId },
+        availableKeys,
+        safety,
+      ),
+    [all, filters, usage.enabled, usage.byId, availableKeys, safety],
   );
   // Sections change the order on screen; the selection follows it so shift-click ranges do too.
   const groups = useMemo(

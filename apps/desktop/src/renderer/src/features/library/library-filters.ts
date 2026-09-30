@@ -1,5 +1,6 @@
 import {
   SOURCE_TYPES,
+  type SafetyRecord,
   type Skill,
   type SkillUsage,
   type SourceType,
@@ -25,6 +26,7 @@ export const STATUS_FILTERS = [
   "updates",
   "attention",
   "runs_code",
+  "flagged",
   "unused",
 ] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -47,6 +49,15 @@ export interface UsageLookup {
 }
 
 export const NO_USAGE: UsageLookup = { enabled: false, byId: new Map() };
+
+/** The last safety report of each skill by id; a report that still holds and is not "safe". */
+export type SafetyLookup = ReadonlyMap<string, SafetyRecord>;
+export const NO_SAFETY: SafetyLookup = new Map();
+
+export function isSafetyFlagged(skill: Pick<Skill, "id">, safety: SafetyLookup): boolean {
+  const record = safety.get(skill.id);
+  return record !== undefined && !record.stale && record.verdict !== "safe";
+}
 
 export interface LibraryFilters {
   query: string;
@@ -105,8 +116,11 @@ function matchesStatus(
   status: StatusFilter,
   usage: UsageLookup,
   available: AgentKeys,
+  safety: SafetyLookup,
 ): boolean {
   switch (status) {
+    case "flagged":
+      return isSafetyFlagged(skill, safety);
     case "unused":
       return !usage.enabled || isUnusedSkill(skill, usage.byId);
     case "deployed":
@@ -176,6 +190,7 @@ export function filterSkills(
   filters: LibraryFilters,
   usage: UsageLookup = NO_USAGE,
   available: AgentKeys = NO_AGENTS,
+  safety: SafetyLookup = NO_SAFETY,
 ): Skill[] {
   const compare = comparator(filters.sort, usage);
   return skills
@@ -183,7 +198,7 @@ export function filterSkills(
       (skill) =>
         matchesSkillQuery(skill, filters.query) &&
         (filters.source === FILTER_ALL || skill.sourceType === filters.source) &&
-        matchesStatus(skill, filters.status, usage, available) &&
+        matchesStatus(skill, filters.status, usage, available, safety) &&
         (!filters.favorites || isFavorite(skill)) &&
         matchesTagFilter(skill.tags, filters.tags),
     )

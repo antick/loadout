@@ -3,6 +3,7 @@ import {
   type UncheckedSkill,
   SAFETY_SCAN_LIBRARY_KEY,
   type SafetyApi,
+  type SafetyEngine,
   type SafetyRecord,
   type SafetyReport,
   type SafetyScanSummary,
@@ -13,6 +14,7 @@ import type { CoreContext } from "../context";
 import { AppError, errorMessage, unsupported } from "../errors";
 import type { SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
+import { scanWithRules } from "./builtin";
 import { type ScannerProgram, findScanner, runScanner, scannerVersion } from "./scanner";
 import { SafetyStore } from "./store";
 
@@ -22,6 +24,8 @@ export interface SafetyServiceDeps {
   scan?: (programPath: string, skillDir: string) => Promise<SafetyReport>;
   /** Tests only: the program to use, instead of looking for one. */
   findProgram?: () => ScannerProgram | null;
+  /** Run Loadout's own rules when SkillSpector is not found (default true; tests turn it off). */
+  builtin?: boolean;
 }
 
 /** A skill about to be installed: what it will be called and where its files are now. */
@@ -33,9 +37,9 @@ export interface SafetyCandidate {
 export interface SafetyService {
   api: SafetyApi;
   /**
-   * Scan skills before they are installed. Throws UNSAFE, listing every flagged one, unless
-   * `acceptRisk`. Skipped (null reports) when the scanner is missing or switched off, and for a
-   * skill it could not scan: a broken scanner must never stop installs.
+   * Scan skills before they are installed. Throws UNSAFE, listing every flagged one, and every
+   * one the check could not finish on, unless `acceptRisk`. Skipped (null reports) when the
+   * check is switched off or no engine is available.
    */
   check(
     candidates: readonly SafetyCandidate[],
@@ -43,6 +47,8 @@ export interface SafetyService {
   ): Promise<(SafetyReport | null)[]>;
   /** Keep the report a skill was installed with, so the library shows it without a rescan. */
   remember(skill: Skill, report: SafetyReport | null): void;
+  /** Built-in rules over every skill without a current report; how many were checked. */
+  scanDueQuietly(): Promise<number>;
 }
 
 /** Scans run side by side; each is its own process. */
@@ -72,6 +78,7 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
   const { store } = deps;
   const reports = new SafetyStore(ctx.paths.cacheDir);
   const scan = deps.scan ?? runScanner;
+  const builtin = deps.builtin ?? true;
   let program: { value: ScannerProgram | null; at: number; configured: string } | null = null;
 
   /** The scanner, looked for again when the setting changed or a minute went by. */
@@ -91,19 +98,34 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     return value;
   }
 
-  async function requireProgram(): Promise<ScannerProgram> {
+  /** What checks a folder now: SkillSpector when found, else the built-in rules, else nothing. */
+  type Engine = { kind: "skillspector"; program: ScannerProgram } | { kind: "builtin" };
+
+  async function currentEngine(): Promise<Engine | null> {
     const found = await currentProgram();
-    if (!found) {
-      throw unsupported(
-        "SkillSpector is not installed. Install it, or set where it is in Settings → Safety.",
-      );
-    }
-    return found;
+    if (found) return { kind: "skillspector", program: found };
+    return builtin ? { kind: "builtin" } : null;
   }
 
-  async function scanOne(found: ScannerProgram, skill: Skill): Promise<SafetyRecord> {
+  async function requireEngine(): Promise<Engine> {
+    const engine = await currentEngine();
+    if (!engine) {
+      throw unsupported(
+        "No safety check is available. Install SkillSpector, or set where it is in Settings → Safety.",
+      );
+    }
+    return engine;
+  }
+
+  function scanDir(engine: Engine, dir: string): Promise<SafetyReport> {
+    return engine.kind === "builtin"
+      ? Promise.resolve(scanWithRules(dir))
+      : scan(engine.program.path, dir);
+  }
+
+  async function scanOne(engine: Engine, skill: Skill): Promise<SafetyRecord> {
     const hash = skill.contentHash ?? "";
-    const report = await scan(found.path, skill.libraryPath);
+    const report = await scanDir(engine, skill.libraryPath);
     reports.put(skill.id, { contentHash: hash, report });
     return toRecord(skill, hash, report);
   }
@@ -111,7 +133,9 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
   const api: SafetyApi = {
     status: async (): Promise<SafetyStatus> => {
       const found = await currentProgram();
+      const engine: SafetyEngine | null = found ? "skillspector" : builtin ? "builtin" : null;
       return {
+        engine,
         available: found !== null,
         path: found?.path ?? null,
         version: found?.version ?? null,
@@ -131,22 +155,28 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
 
     scanSkill: async (skillId) => {
       const skill = store.get(skillId);
-      const record = await scanOne(await requireProgram(), skill);
+      const record = await scanOne(await requireEngine(), skill);
       ctx.touched("safety");
       return record;
     },
 
     scanLibrary: async (force = false) => {
-      const found = await requireProgram();
+      const engine = await requireEngine();
       const stored = reports.all();
+      // A report from the other engine is due again: a deeper check is worth having.
       const due = store
         .list()
-        .filter((skill) => force || stored[skill.id]?.contentHash !== skill.contentHash);
+        .filter(
+          (skill) =>
+            force ||
+            stored[skill.id]?.contentHash !== skill.contentHash ||
+            stored[skill.id]?.report.engine !== engine.kind,
+        );
       const summary: SafetyScanSummary = { scanned: 0, unsafe: 0, caution: 0, failed: [] };
       let done = 0;
       await mapLimit(due, SCAN_WORKERS, async (skill) => {
         try {
-          const record = await scanOne(found, skill);
+          const record = await scanOne(engine, skill);
           summary.scanned += 1;
           if (record.verdict === "unsafe") summary.unsafe += 1;
           if (record.verdict === "caution") summary.caution += 1;
@@ -181,8 +211,8 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     if (candidates.length === 0 || !ctx.settings.get("safetyScanOnInstall")) {
       return candidates.map(() => null);
     }
-    const found = await currentProgram();
-    if (!found) return candidates.map(() => null);
+    const engine = await currentEngine();
+    if (!engine) return candidates.map(() => null);
     const unchecked: UncheckedSkill[] = [];
     let done = 0;
     const results = await mapLimit(candidates, SCAN_WORKERS, async (candidate) => {
@@ -196,7 +226,7 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
         });
       }
       try {
-        return await scan(found.path, candidate.dir);
+        return await scanDir(engine, candidate.dir);
       } catch (error) {
         // Not a pass: a skill can make the scanner crash or hang on purpose.
         ctx.log.warn(`Safety check could not finish for ${candidate.name}: ${errorMessage(error)}`);
@@ -216,6 +246,28 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     return results;
   }
 
+  /**
+   * Check library skills that have no current report, quietly: no progress, no activity entry.
+   * For the app's start, with the built-in rules only; SkillSpector is a process per skill.
+   */
+  async function scanDueQuietly(): Promise<number> {
+    const engine = await currentEngine();
+    if (engine?.kind !== "builtin") return 0;
+    const stored = reports.all();
+    const due = store.list().filter((skill) => stored[skill.id]?.contentHash !== skill.contentHash);
+    let scanned = 0;
+    for (const skill of due) {
+      try {
+        await scanOne(engine, skill);
+        scanned += 1;
+      } catch (error) {
+        ctx.log.warn(`Safety check could not finish for ${skill.name}: ${errorMessage(error)}`);
+      }
+    }
+    if (scanned > 0) ctx.touched("safety");
+    return scanned;
+  }
+
   function remember(skill: Skill, report: SafetyReport | null): void {
     if (!report || !skill.contentHash) return;
     try {
@@ -225,5 +277,5 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     }
   }
 
-  return { api, check, remember };
+  return { api, check, remember, scanDueQuietly };
 }

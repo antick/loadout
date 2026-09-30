@@ -93,8 +93,8 @@ function LibraryCoverage(): ReactNode {
 }
 
 /**
- * The optional SkillSpector scanner: whether it is here, checking installs with it, and scanning
- * the whole library.
+ * The safety check: the built-in rules that always run, the optional SkillSpector scanner that
+ * takes over when it is here, checking installs, and scanning the whole library.
  */
 export function SafetySection(): ReactNode {
   const { t } = useTranslation();
@@ -108,6 +108,7 @@ export function SafetySection(): ReactNode {
   const switchId = useId();
   const scanning = Boolean(task(SAFETY_SCAN_LIBRARY_KEY));
   const available = status.data?.available ?? false;
+  const engine = status.data?.engine ?? null;
 
   let found: ReactNode;
   if (status.isPending) found = <Skeleton className="h-10 w-full" />;
@@ -124,9 +125,9 @@ export function SafetySection(): ReactNode {
     );
   } else {
     found = (
-      <InlineNotice tone="warning" icon={ShieldOff}>
+      <InlineNotice tone={engine ? "info" : "warning"} icon={engine ? ShieldCheck : ShieldOff}>
         <div className="flex flex-col gap-2">
-          <p>{t("settings.safety.missing")}</p>
+          <p>{t(engine ? "settings.safety.builtinOnly" : "settings.safety.missing")}</p>
           <CopyableCommand
             command={SAFETY_SCANNER_INSTALL_COMMAND}
             caption={t("settings.safety.installCaption")}
@@ -158,18 +159,18 @@ export function SafetySection(): ReactNode {
           >
             <Switch
               id={switchId}
-              checked={scanOnInstall && available}
-              disabled={!available}
+              checked={scanOnInstall && engine !== null}
+              disabled={engine === null}
               onCheckedChange={(value) => setSetting.mutate({ key: "safetyScanOnInstall", value })}
             />
           </SettingRow>
           <SettingRow
             label={t("settings.safety.library")}
-            description={available ? <LibraryCoverage /> : t("settings.safety.libraryNeedsScanner")}
+            description={engine ? <LibraryCoverage /> : t("settings.safety.libraryNeedsScanner")}
           >
             <Button
               variant="outline"
-              disabled={!available || scanning}
+              disabled={engine === null || scanning}
               onClick={() => void scanLibrary(false)}
             >
               {scanning ? <Spinner /> : <ScanSearch />}
@@ -177,7 +178,7 @@ export function SafetySection(): ReactNode {
             </Button>
             <Button
               variant="ghost"
-              disabled={!available || scanning}
+              disabled={engine === null || scanning}
               onClick={() => void scanLibrary(true)}
             >
               {t("settings.safety.rescanAll")}

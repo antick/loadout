@@ -84,9 +84,10 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 
 ## Safety check
 
-- Optional, with NVIDIA SkillSpector installed; static checks, no AI or API key.
-- Runs before every install and update; a flagged skill needs your OK.
-- Reports kept per skill, shown on the skill's Safety tab.
+- Always on: Loadout's own rules read every text file of a skill for destructive commands, code that phones home, privilege escalation, hidden payloads, prompt injection and credential theft. Static, no AI or API key. A hit in a comment or in a document's prose counts for less.
+- With NVIDIA SkillSpector installed, its deeper static checks run instead.
+- Runs before every install and update; a flagged skill needs your OK. Skills that arrived unchecked are checked when the app starts.
+- Reports kept per skill, shown on the skill's Safety tab; a **Safety flagged** filter and sidebar view list what needs a look.
 
 ## Agent pages
 

@@ -14,6 +14,7 @@ import {
   GitFork,
   Hourglass,
   Library,
+  ShieldAlert,
   Star,
   TriangleAlert,
 } from "lucide-react";
@@ -34,11 +35,14 @@ import {
 import {
   hasUpdate,
   isFavorite,
+  isSafetyFlagged,
   needsAttention,
+  type SafetyLookup,
   type StatusFilter,
 } from "@/features/library/library-filters";
 import type { LibrarySearch } from "@/routes/library";
 import { useSkills } from "@/hooks/queries/skills";
+import { useSafetyReports } from "@/hooks/queries/safety";
 import { useUsageReport } from "@/hooks/queries/usage";
 import { useAllItems } from "@/hooks/queries/items";
 import { KIND_ICONS } from "@/features/items/ItemsPage";
@@ -51,7 +55,11 @@ interface LibraryView {
   /** What the library opens with. */
   search: LibrarySearch;
   icon: ReactNode;
-  count(skills: readonly Skill[], usage: ReadonlyMap<string, SkillUsage>): number;
+  count(
+    skills: readonly Skill[],
+    usage: ReadonlyMap<string, SkillUsage>,
+    safety: SafetyLookup,
+  ): number;
   /** Shown only while usage tracking is on. */
   needsUsage?: boolean;
 }
@@ -77,6 +85,13 @@ const VIEWS: readonly LibraryView[] = [
     count: (skills) => skills.filter(needsAttention).length,
   },
   {
+    id: "flagged",
+    search: { status: "flagged" },
+    icon: <ShieldAlert />,
+    count: (skills, _usage, safety) =>
+      skills.filter((skill) => isSafetyFlagged(skill, safety)).length,
+  },
+  {
     id: "not_deployed",
     search: { status: "not_deployed" },
     icon: <CircleDashed />,
@@ -99,6 +114,7 @@ export function LibraryPanel(): ReactNode {
   const usageReport = useUsageReport();
   const usage = useMemo(() => usageById(usageReport.data), [usageReport.data]);
   const usageEnabled = usageReport.data?.enabled === true;
+  const safety = useSafetyReports();
   const all = skills.data ?? [];
   const sourceCount = useMemo(() => groupSkillSources(skills.data ?? []).length, [skills.data]);
   const recent = useMemo(
@@ -167,7 +183,7 @@ export function LibraryPanel(): ReactNode {
         <SidebarGroupContent>
           <SidebarMenu>
             {VIEWS.filter((view) => usageEnabled || !view.needsUsage).map((view) => {
-              const count = view.count(all, usage);
+              const count = view.count(all, usage, safety);
               return (
                 <SidebarMenuItem key={view.id}>
                   <SidebarMenuButton asChild className={cn(count === 0 && "opacity-60")}>
