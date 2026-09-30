@@ -1,4 +1,4 @@
-import { runsCode } from "@loadout/shared";
+import { runsCode, terminalSafe } from "@loadout/shared";
 import { outcomeLabel } from "../install-outcome";
 import { plural } from "../output";
 import { type PickerLine, type PickerState, folderState, outcomesOf, visibleLines } from "./state";
@@ -48,18 +48,10 @@ const MIN_LIST_LINES = 3;
 /** Room left for the description after name, box and label. */
 const MIN_DESCRIPTION = 12;
 
-/**
- * Control characters (escape sequences, newlines) in text a repository supplies could move the
- * cursor, rewrite the screen or reach the clipboard: shown as spaces instead.
- */
-const isControl = (code: number): boolean => code <= 0x1f || (code >= 0x7f && code <= 0x9f);
-const printable = (text: string): string =>
-  [...text].map((ch) => (isControl(ch.codePointAt(0) ?? 0) ? " " : ch)).join("");
-
 /** Cut to `width` visible characters. Only plain text is measured, so cut before styling. */
 function fit(raw: string, width: number): string {
   if (width <= 0) return "";
-  const text = printable(raw);
+  const text = terminalSafe(raw, { singleLine: true });
   const chars = [...text];
   return chars.length <= width ? text : `${chars.slice(0, Math.max(0, width - 1)).join("")}…`;
 }

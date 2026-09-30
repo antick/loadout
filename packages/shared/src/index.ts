@@ -50,3 +50,4 @@ export * from "./types-items";
 export * from "./api-items";
 export * from "./skill-notes";
 export * from "./editors";
+export * from "./terminal-text";

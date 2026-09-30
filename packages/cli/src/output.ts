@@ -1,4 +1,4 @@
-import { type ErrorShape, formatDateTime } from "@loadout/shared";
+import { type ErrorShape, formatDateTime, terminalSafe } from "@loadout/shared";
 
 export interface CliIo {
   stdout(text: string): void;
@@ -15,7 +15,7 @@ export type Cell = string | number | boolean | null | undefined;
 function cellText(cell: Cell): string {
   if (cell === null || cell === undefined || cell === "") return EMPTY_CELL;
   if (typeof cell === "boolean") return cell ? YES : NO;
-  return String(cell);
+  return terminalSafe(String(cell), { singleLine: true });
 }
 
 /** Plain aligned columns. `empty` is shown instead of a header with nothing under it. */
@@ -50,8 +50,12 @@ export function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
+/**
+ * Text mode can carry names and descriptions a repository wrote, so control characters are shown
+ * as spaces. JSON escapes them itself.
+ */
 export function printResult(io: CliIo, json: boolean, value: unknown, text: string): void {
-  io.stdout(`${json ? JSON.stringify(value ?? null) : text}\n`);
+  io.stdout(`${json ? JSON.stringify(value ?? null) : terminalSafe(text)}\n`);
 }
 
 /** Findings listed per flagged skill in text mode; `--json` has them all. */
@@ -84,5 +88,5 @@ export function printError(io: CliIo, json: boolean, error: ErrorShape): void {
   }
   if (error.code === "UNSAFE") lines.push("Add --accept-risk to install it anyway.");
   if (error.code === "SECRETS_FOUND") lines.push("Add --allow-secrets to go ahead anyway.");
-  io.stderr(`${lines.join("\n")}\n`);
+  io.stderr(`${terminalSafe(lines.join("\n"))}\n`);
 }

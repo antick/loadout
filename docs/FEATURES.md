@@ -164,6 +164,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - `loadout doctor`: one report of everything that needs a look, including sources not checked for a month and archives that are gone.
 - `loadout skills search <words>` looks up skills.sh from the terminal; nothing is installed until you run `skills install`.
 - `loadout skills validate ./folder` checks every skill in a folder, and names used twice, without a library; for CI.
+- Text a repository wrote (names, descriptions, `SKILL.md`) is printed with its escape sequences shown as spaces, so it cannot clear the screen or reach the clipboard.
 - Tab completion: `eval "$(loadout completion bash)"` or `zsh`.
 - Published to `~/.loadout/bin` by the app; also on npm (`@antick/loadout`) and as standalone binaries.
 - A bundled skill teaches your agents to use the CLI.
