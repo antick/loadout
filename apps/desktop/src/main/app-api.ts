@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { type BrowserWindow, app, clipboard, dialog, session, shell } from "electron";
 import { APP_NAME, type AppApi, type Platform, type RemoveAllDataOptions } from "@loadout/shared";
 import { ARCHIVE_EXTENSIONS, EXPORT_EXTENSION } from "./constants";
+import { createEditorOpener } from "./editors";
 import { revealInFileManager } from "./reveal";
 import type { UpdateService } from "./update/service";
 
@@ -14,6 +15,8 @@ export interface AppApiDeps {
   /** Clean agent folders, close the library, start the clean-up process and exit. */
   removeAllData(options: RemoveAllDataOptions): Promise<void>;
   updates: UpdateService;
+  /** Environment to look for editors in: the user's shell `PATH` when it was read. */
+  env: () => Readonly<Record<string, string | undefined>>;
 }
 
 /** The part of the API only Electron can provide: dialogs, shell, clipboard, app lifecycle. */
@@ -25,6 +28,11 @@ export function createAppApi(deps: AppApiDeps): AppApi {
       : await dialog.showOpenDialog(options);
     return result.canceled ? null : (result.filePaths[0] ?? null);
   };
+
+  const editors = createEditorOpener({
+    detect: () => ({ platform: process.platform, homeDir: homedir(), env: deps.env() }),
+    openPath: (path) => shell.openPath(path),
+  });
 
   return {
     info: async () => ({
@@ -58,6 +66,8 @@ export function createAppApi(deps: AppApiDeps): AppApi {
       await shell.openExternal(url);
     },
     revealPath: revealInFileManager,
+    editors: async () => editors.editors(),
+    openInEditor: (editor, path) => editors.open(editor, path),
     copyText: async (text) => clipboard.writeText(text),
     updateStatus: async () => deps.updates.status(),
     checkUpdate: () => deps.updates.check(),

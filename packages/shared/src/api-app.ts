@@ -1,3 +1,4 @@
+import type { DetectedEditor, EditorChoice } from "./editors";
 import type { RemoveAllDataOptions } from "./storage";
 import type { AppInfo, AppUpdateStatus } from "./types";
 
@@ -26,6 +27,10 @@ export interface AppApi {
   ): Promise<string | null>;
   openExternal(url: string): Promise<void>;
   revealPath(path: string): Promise<void>;
+  /** Code editors found on this computer, in a fixed order. */
+  editors(): Promise<DetectedEditor[]>;
+  /** Open a file or folder in an editor found here, or in the system's default app. */
+  openInEditor(editor: EditorChoice, path: string): Promise<void>;
   copyText(text: string): Promise<void>;
   /** Where the app-update flow stands. Changes arrive as `app-update:status` events too. */
   updateStatus(): Promise<AppUpdateStatus>;

@@ -1,6 +1,14 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { FileArchive, FolderOpen, PencilLine, TextCursorInput, Trash2 } from "lucide-react";
+import {
+  AppWindow,
+  CodeXml,
+  FileArchive,
+  FolderOpen,
+  PencilLine,
+  TextCursorInput,
+  Trash2,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -13,7 +21,9 @@ import { SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet
 import { SkillTagsEditor } from "@/features/library/detail/SkillTagsEditor";
 import { SkillUsageSummary } from "@/features/library/detail/SkillUsageSummary";
 import { Spinner } from "@/components/ui/spinner";
+import { useOpenInEditor } from "@/hooks/mutations/app";
 import { useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
+import { useDefaultEditor } from "@/hooks/use-default-editor";
 
 export interface SkillDetailHeaderProps {
   skill: Skill;
@@ -22,12 +32,14 @@ export interface SkillDetailHeaderProps {
 
 /**
  * Top of the detail panel: name, description, source and update badges, tags, and the edit,
- * favourite, rename, reveal, export and delete actions.
+ * favourite, rename, reveal, open-in-editor, export and delete actions.
  */
 export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): ReactNode {
   const { t } = useTranslation();
   const reveal = useRevealSkill();
   const exportSkills = useExportSkills();
+  const openInEditor = useOpenInEditor();
+  const editor = useDefaultEditor();
   const shell = useShell();
 
   return (
@@ -59,6 +71,11 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
             label={t("library.detail.reveal")}
             icon={<FolderOpen />}
             onClick={() => reveal.mutate(skill.id)}
+          />
+          <IconButton
+            label={editor.label}
+            icon={editor.id === "system" ? <AppWindow /> : <CodeXml />}
+            onClick={() => openInEditor.mutate({ editor: editor.id, path: skill.libraryPath })}
           />
           <IconButton
             label={t("library.export.action")}

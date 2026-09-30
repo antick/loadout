@@ -146,5 +146,6 @@ export const keys = {
     root: ["app"] as const,
     info: ["app", "info"] as const,
     update: ["app", "update"] as const,
+    editors: ["app", "editors"] as const,
   },
 } as const;

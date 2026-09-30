@@ -175,6 +175,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 ## App
 
 - Activity bar, sidebar and status bar; resizable sidebar; keyboard shortcuts.
+- **Open in editor** on every skill, file and folder path: VS Code, Cursor, Windsurf, Zed or Sublime Text when found on this computer, else the system's default app. Pick one in Settings → General.
 - Dashboard, command palette (`⌘K`), quick-start guide.
 - Four colour palettes in light and dark, four text sizes.
 - Tray icon; updates itself with a checksum check.

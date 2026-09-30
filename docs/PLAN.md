@@ -158,6 +158,8 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ### 10. App shell
 
+- [x] Open in editor: VS Code, Cursor, Windsurf, Zed, Sublime Text found on this computer, or the system default; chosen in Settings
+
 - [x] Sidebar: dashboard, library, install, agents, presets, projects, backup, settings
 - [x] Dashboard: stats, quick actions, recent activity, agent-control setup card
 - [x] Command palette (⌘K): skills, presets, projects, actions

@@ -1,6 +1,8 @@
 import type { Skill } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  AppWindow,
+  CodeXml,
   FileArchive,
   FolderOpen,
   PencilLine,
@@ -15,8 +17,10 @@ import { useTranslation } from "react-i18next";
 import { useShell } from "@/components/layout/shell-context";
 import type { SkillAction } from "@/components/skill-action";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { useOpenInEditor } from "@/hooks/mutations/app";
 import { useCheckSkillUpdate, useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
 import { useSetFavorite } from "@/hooks/mutations/skills";
+import { useDefaultEditor } from "@/hooks/use-default-editor";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { editLink } from "@/lib/skill-location";
 
@@ -29,6 +33,8 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
   const exportSkills = useExportSkills();
   const deleteSkills = useDeleteSkills();
   const setFavorite = useSetFavorite();
+  const openInEditor = useOpenInEditor();
+  const editor = useDefaultEditor();
   const shell = useShell();
 
   return useCallback(
@@ -51,6 +57,12 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
           label: t("library.detail.reveal"),
           icon: FolderOpen,
           run: () => reveal.mutate(skill.id),
+        },
+        {
+          id: "open",
+          label: editor.label,
+          icon: editor.id === "system" ? AppWindow : CodeXml,
+          run: () => openInEditor.mutate({ editor: editor.id, path: skill.libraryPath }),
         },
         {
           id: "favorite",
@@ -86,6 +98,17 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
       });
       return actions;
     },
-    [t, navigate, reveal, check, exportSkills, deleteSkills, setFavorite, shell],
+    [
+      t,
+      navigate,
+      reveal,
+      check,
+      exportSkills,
+      deleteSkills,
+      setFavorite,
+      openInEditor,
+      editor,
+      shell,
+    ],
   );
 }

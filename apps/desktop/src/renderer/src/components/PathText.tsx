@@ -10,14 +10,17 @@ export interface PathTextProps {
   copy?: boolean;
   /** Show the "reveal in file manager" button (default true). */
   reveal?: boolean;
+  /** Show the "open in editor" button (defaults to `reveal`). */
+  open?: boolean;
   className?: string;
 }
 
-/** A filesystem path in mono with the home folder shortened to `~`, plus copy and reveal. */
+/** A filesystem path in mono with the home folder shortened to `~`, plus copy, reveal and open. */
 export function PathText({
   path,
   copy = true,
   reveal = true,
+  open = reveal,
   className,
 }: PathTextProps): ReactNode {
   const { data: info } = useAppInfo();
@@ -37,6 +40,7 @@ export function PathText({
         path={path}
         copy={copy}
         reveal={reveal}
+        open={open}
         className="opacity-0 transition-opacity group-focus-within/path:opacity-100 group-hover/path:opacity-100"
       />
     </span>

@@ -3,11 +3,13 @@ import type {
   AppUpdateStatus,
   BackupStatus,
   CrashInfo,
+  DetectedEditor,
   DiagnosticInfo,
   LibraryLocation,
 } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { EDITORS_STALE_MS } from "@/lib/constants";
 import { keys } from "@/lib/query-keys";
 
 /** App name, version, platform and home directory. Never changes while the app runs. */
@@ -16,6 +18,15 @@ export function useAppInfo(): UseQueryResult<AppInfo> {
     queryKey: keys.app.info,
     queryFn: () => api.app.info(),
     staleTime: Number.POSITIVE_INFINITY,
+  });
+}
+
+/** Code editors found on this computer. Looked for again now and then. */
+export function useEditors(): UseQueryResult<DetectedEditor[]> {
+  return useQuery({
+    queryKey: keys.app.editors,
+    queryFn: () => api.app.editors(),
+    staleTime: EDITORS_STALE_MS,
   });
 }
 

@@ -46,6 +46,8 @@ export interface Settings {
   usageTracking: boolean;
   /** The context window the skill listing estimate assumes for Claude Code (`skill-listing.ts`). */
   skillListingWindow: ListingWindow;
+  /** An `EditorId` the "Open in editor" buttons use; empty for the system's default app. */
+  defaultEditor: string;
 }
 
 export type SettingKey = keyof Settings;
@@ -75,6 +77,7 @@ export const DEFAULT_SETTINGS: Settings = {
   safetyScannerPath: "",
   usageTracking: false,
   skillListingWindow: "200k",
+  defaultEditor: "",
 };
 
 export const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS) as SettingKey[];

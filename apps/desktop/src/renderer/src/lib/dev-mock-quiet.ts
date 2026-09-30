@@ -4,6 +4,7 @@ type Handler = (...args: never[]) => unknown;
 
 const SUCCEED = [
   "app.revealPath",
+  "app.openInEditor",
   "app.resolveClose",
   "skills.reveal",
   "projects.reveal",

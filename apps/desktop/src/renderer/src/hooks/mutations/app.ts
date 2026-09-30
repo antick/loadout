@@ -1,3 +1,4 @@
+import type { EditorChoice } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
@@ -27,6 +28,19 @@ export function useRevealPath(): UseMutationResult<void, unknown, string> {
   return useMutation({
     mutationFn: (path: string) => api.app.revealPath(path),
     onError: (error) => toastError(error, "errors.reveal"),
+  });
+}
+
+export interface OpenInEditorInput {
+  editor: EditorChoice;
+  path: string;
+}
+
+/** Open a file or folder in an editor found on this computer, or the system's default app. */
+export function useOpenInEditor(): UseMutationResult<void, unknown, OpenInEditorInput> {
+  return useMutation({
+    mutationFn: ({ editor, path }: OpenInEditorInput) => api.app.openInEditor(editor, path),
+    onError: (error) => toastError(error, "errors.openInEditor"),
   });
 }
 

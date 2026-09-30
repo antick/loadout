@@ -1,8 +1,11 @@
 import {
   type CloseActionSetting,
   type DeployMode,
+  EDITOR_NAMES,
   PALETTES,
   type PaletteSetting,
+  SYSTEM_EDITOR,
+  isEditorId,
 } from "@loadout/shared";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { type ReactNode, useId } from "react";
@@ -14,6 +17,7 @@ import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useSetSetting } from "@/hooks/mutations/settings";
+import { useEditors } from "@/hooks/queries/app";
 import { useSettings } from "@/hooks/queries/settings";
 import { LANGUAGES } from "@/lib/i18n";
 import { CLOSE_ACTIONS, DEPLOY_MODES, TEXT_SIZE_OPTIONS, THEME_OPTIONS } from "./constants";
@@ -32,8 +36,26 @@ export function GeneralSection(): ReactNode {
   const setSetting = useSetSetting();
   const textSizeId = useId();
   const languageId = useId();
+  const editorId = useId();
   const trayId = useId();
+  const editors = useEditors();
   if (!settings) return null;
+
+  // The chosen editor stays in the list while it is not found, so the choice is not lost.
+  const chosen = isEditorId(settings.defaultEditor) ? settings.defaultEditor : null;
+  const found = editors.data ?? [];
+  const editorOptions = [
+    SYSTEM_EDITOR,
+    ...found.map((editor) => editor.id),
+    ...(chosen && !found.some((editor) => editor.id === chosen) ? [chosen] : []),
+  ];
+  const editorLabel = (option: string): string => {
+    if (option === SYSTEM_EDITOR) return t("settings.general.editor.system");
+    const name = isEditorId(option) ? EDITOR_NAMES[option] : option;
+    return found.some((editor) => editor.id === option)
+      ? name
+      : t("settings.general.editor.notFound", { name });
+  };
 
   const deployChoices: Choice<DeployMode>[] = DEPLOY_MODES.map((mode) => ({
     value: mode,
@@ -129,6 +151,25 @@ export function GeneralSection(): ReactNode {
               labelOf={(size) => t(`settings.general.appearance.textSizes.${size}`)}
               onChange={(value) => setSetting.mutate({ key: "textSize", value })}
               className="w-36"
+            />
+          </SettingRow>
+          <SettingRow
+            label={t("settings.general.editor.title")}
+            description={t("settings.general.editor.hint")}
+            htmlFor={editorId}
+          >
+            <OptionSelect
+              id={editorId}
+              value={chosen ?? SYSTEM_EDITOR}
+              options={editorOptions}
+              labelOf={editorLabel}
+              onChange={(value) =>
+                setSetting.mutate({
+                  key: "defaultEditor",
+                  value: value === SYSTEM_EDITOR ? "" : value,
+                })
+              }
+              className="w-48"
             />
           </SettingRow>
           <SettingRow label={t("settings.general.appearance.language")} htmlFor={languageId}>

@@ -118,6 +118,10 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     void navigator.clipboard?.writeText(text)?.catch(() => undefined),
   "app.openExternal": (url: string) => void window.open(url, "_blank", "noopener"),
   "app.pickFolder": () => `${HOME}/code/new-project`,
+  "app.editors": () => [
+    { id: "vscode", name: "Visual Studio Code" },
+    { id: "cursor", name: "Cursor" },
+  ],
 
   "agents.list": () => agents,
   "skills.list": () => withPresetIds(skills),

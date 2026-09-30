@@ -20,6 +20,9 @@ export const CRASH_DUMPS_DIR = "Crashpad";
 /** Chromium's single-instance marker: a link named `<host>-<pid>` while that instance runs. */
 export const SINGLETON_LOCK_FILE = "SingletonLock";
 
+/** Editors found on this computer are looked for again after this long. */
+export const EDITOR_DETECT_TTL_MS = 60_000;
+
 /** File-watcher timings. */
 export const WATCH_DEBOUNCE_MS = 500;
 /** Merges bursts of change events into one tray menu rebuild. */

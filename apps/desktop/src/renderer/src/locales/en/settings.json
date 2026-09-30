@@ -179,6 +179,12 @@
         "hide": "Minimise to the tray",
         "quit": "Quit {{app}}",
         "hideNeedsTray": "Turn the tray icon on to use this."
+      },
+      "editor": {
+        "title": "Open in editor",
+        "hint": "Which editor the \"Open in editor\" buttons on skills, files and folders use.",
+        "system": "System default app",
+        "notFound": "{{name}} (not found)"
       }
     },
     "network": {

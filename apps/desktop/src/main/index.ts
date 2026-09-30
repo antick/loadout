@@ -312,6 +312,8 @@ function start(): void {
       hideToTray,
       removeAllData,
       updates: createUpdates(core.ctx.log, core.ctx.paths.logsDir),
+      // The shell's PATH wins here: a Dock launch has a bare one without the editors on it.
+      env: () => ({ ...process.env, ...shellEnv }),
       resolveClose: (action, remember) => {
         if (remember) core?.ctx.settings.set("closeAction", action);
         if (action === "quit") quit();
@@ -354,8 +356,9 @@ function start(): void {
     ),
   ];
 
-  // Opened from the Dock, the app misses what the shell profile exports (CODEX_HOME, …).
-  void readShellEnv(AGENT_HOME_ENV_VARIABLES).then((read) => {
+  // Opened from the Dock, the app misses what the shell profile exports (CODEX_HOME, …), and
+  // the PATH the editors' commands are on.
+  void readShellEnv([...AGENT_HOME_ENV_VARIABLES, "PATH"]).then((read) => {
     const found = read ?? {};
     shellEnv = found;
     // Only now are agents' folders final: a skill follows an agent whose folder moved. Never
