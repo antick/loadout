@@ -1,0 +1,26 @@
+{
+  "feedback": {
+    "action": "Report a problem",
+    "title": "Report a problem with {{name}}",
+    "description": "This prepares an issue for the repository the skill came from. Nothing is sent from here: you read it on {{site}}, then file it yourself.",
+    "descriptionNoSite": "This prepares a report for the repository the skill came from. Its host is not GitHub or GitLab, so copy the report and file it where that repository takes issues.",
+    "goesTo": "Goes to {{repository}}",
+    "public": "Anyone who can see that repository's issues can read this. Leave out keys, tokens and private details.",
+    "happened": "What happened",
+    "happenedHint": "What you asked for, what the skill did, and what you expected.",
+    "happenedPlaceholder": "It edited files before showing the summary the skill says to show first.",
+    "proposal": "Proposed change to SKILL.md",
+    "optional": "Optional",
+    "proposalHint": "The wording that would have prevented it.",
+    "preview": "What will be filed",
+    "previewHint": "Exactly this text goes into the issue, the first line as its title. Nothing from this computer is added.",
+    "tooLong": "Too long: at most {{max}} characters.",
+    "copy": "Copy report",
+    "open": "Open on {{site}}",
+    "opening": "The report is long, so it was copied. Paste it into the issue that opened.",
+    "sites": {
+      "github": "GitHub",
+      "gitlab": "GitLab"
+    }
+  }
+}

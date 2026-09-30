@@ -1,15 +1,22 @@
-import { canLinkSource, formatDateTime, formatRelative, type Skill } from "@loadout/shared";
+import {
+  canLinkSource,
+  canReportSkill,
+  formatDateTime,
+  formatRelative,
+  type Skill,
+} from "@loadout/shared";
 import {
   ArrowUpCircle,
   Download,
   ExternalLink,
   FolderSearch,
   FolderSync,
+  MessageSquareWarning,
   RefreshCw,
   Unlink,
   X,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -17,6 +24,7 @@ import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { ReportProblemDialog } from "@/features/library/detail/ReportProblemDialog";
 import type { SkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { FindSourceSection } from "@/features/origin/FindSourceSection";
 import { useOpenExternal } from "@/hooks/mutations/app";
@@ -70,6 +78,7 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
   const detach = useDetachSkill();
   const pickFolder = usePickFolder();
   const openExternal = useOpenExternal();
+  const [reporting, setReporting] = useState(false);
 
   const remote = skill.sourceType === "git" || skill.sourceType === "marketplace";
   /** An archive linked on the web: checked and refreshed by downloading it again. */
@@ -134,6 +143,12 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
                 {refresh.runningKind === "update" ? <Spinner /> : <ArrowUpCircle />}
                 {t("library.source.update")}
               </Button>
+              {canReportSkill(skill) ? (
+                <Button variant="ghost" size="sm" onClick={() => setReporting(true)}>
+                  <MessageSquareWarning />
+                  {t("feedback.action")}
+                </Button>
+              ) : null}
             </>
           ) : (
             <>
@@ -286,6 +301,8 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
       </PageSection>
 
       {canLinkSource(skill) ? <FindSourceSection skill={skill} /> : null}
+
+      <ReportProblemDialog skill={reporting ? skill : null} onOpenChange={setReporting} />
     </div>
   );
 }

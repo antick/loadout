@@ -66,6 +66,7 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 - [x] Update one / batch update, "content unchanged" handling for monorepos
 - [x] Removal guard: show files an update would delete, require approval
 - [x] Compare local with upstream: per-file diff, source document view
+- [x] Report a problem with a skill: prefilled new-issue page on GitHub or GitLab, or copy the text; `loadout skills feedback`
 - [x] Background auto-check (off / 1h / 6h / 24h), optional auto-apply, notification banner
 
 ### 4. Agents

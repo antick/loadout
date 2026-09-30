@@ -112,7 +112,9 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
   "app.downloadUpdate": () => SEED_APP_UPDATE,
   "app.cancelUpdate": () => SEED_APP_UPDATE,
   "app.installUpdate": () => undefined,
-  "app.copyText": (text: string) => void navigator.clipboard?.writeText(text),
+  // The preview may not be allowed to write the clipboard (headless browsers refuse); that is fine.
+  "app.copyText": (text: string) =>
+    void navigator.clipboard?.writeText(text)?.catch(() => undefined),
   "app.openExternal": (url: string) => void window.open(url, "_blank", "noopener"),
   "app.pickFolder": () => `${HOME}/code/new-project`,
 

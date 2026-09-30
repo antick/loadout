@@ -122,6 +122,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Shows files an update would delete and asks first.
 - Your edits are never replaced without asking; the old version goes to Recently removed.
 - Per-file diff against upstream.
+- Report a problem with a skill from a repository: prepares an issue (what happened, a proposed `SKILL.md` change, context), shown in full first. Opens the repository's new-issue page on GitHub or GitLab filled in, or copies the text. Nothing is sent by Loadout and nothing from this computer is added. `loadout skills feedback`.
 
 ## Skill use
 

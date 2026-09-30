@@ -93,6 +93,9 @@ loadout skills duplicates --json
 loadout skills duplicates merge --keep <ref> --remove <ref> --dry-run --json   # tags, presets and agents move to the kept one
 loadout skills duplicates dismiss <ref> <ref> --json    # they are different skills; stop listing the pair
 
+# A skill misbehaved: prepare an issue for the repository it came from (prints text and a link; sends nothing, the user files it)
+loadout skills feedback <ref> -m "what happened" --proposal "wording that would have prevented it" --json
+
 # How copies (or the source) differ from the library, file by file
 loadout skills diff <ref> --json
 loadout skills diff <ref> --upstream --json
