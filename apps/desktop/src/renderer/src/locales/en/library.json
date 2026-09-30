@@ -336,7 +336,7 @@
       "submit": "Create and edit",
       "submitPrompt": "Create and copy prompt",
       "promptHint": "Creates the skill, then copies a prompt your agent can use to write all of it in the new folder.",
-      "promptOneFolder": "Pick one agent folder to get a prompt: an agent writes the skill in one place.",
+      "promptHintCopies": "Creates the skill, then copies a prompt your agent can use to write all of it in the first folder and copy it into the others.",
       "promptCopied": "Created {{name}} and copied a prompt",
       "promptCopiedHint": "Paste it into your agent: it writes the whole skill in the new folder. The editor shows its changes as they land.",
       "created": "Created {{name}}",

@@ -12,9 +12,25 @@ export interface SkillAuthoringInput {
   description: string;
   /** Absolute path of the skill's folder. */
   folder: string;
+  /**
+   * Other folders that hold the same skill (a project skill in several agents' folders). The
+   * agent writes the skill in `folder`, then copies the finished folder into each of these.
+   */
+  copies?: readonly string[];
 }
 
 export function skillAuthoringPrompt(input: SkillAuthoringInput): string {
+  const copies = input.copies ?? [];
+  const copyStep =
+    copies.length === 0
+      ? ""
+      : `
+## Copies
+
+This skill also lives in ${copies.length === 1 ? "another folder" : `${copies.length} other folders`}. When it is finished, copy the whole folder above into ${copies.length === 1 ? "this one" : "each of these"}, replacing what is there, so every copy is identical:
+
+${copies.map((path) => `- ${path}`).join("\n")}
+`;
   const quoted = input.description
     .trim()
     .split(/\r?\n/)
@@ -45,9 +61,9 @@ ${quoted}
 
 - Keep \`name: ${input.name}\`: it matches the folder name.
 - Keep the frontmatter valid YAML between the two \`---\` lines.
-- Write only inside the folder above.
+- Write only inside the ${copies.length === 0 ? "folder" : "folders"} above.
 - Scripts never download and run code, and never send data anywhere the task does not need.
-
+${copyStep}
 When you are done, list the files you wrote.
 `;
 }

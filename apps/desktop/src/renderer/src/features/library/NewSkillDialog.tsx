@@ -1,6 +1,5 @@
 import {
   DEFAULT_NEW_SKILL_TEMPLATE,
-  LIBRARY_SKILLS_DIR_NAME,
   NEW_SKILL_DOCUMENT,
   NEW_SKILL_TEMPLATES,
   type NewSkillTemplate,
@@ -42,6 +41,7 @@ import { compactHome, joinPath } from "@/lib/paths";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { NewSkillPlaceField } from "./NewSkillPlaceField";
+import { newSkillFolders } from "./new-skill-folders";
 import { useNewSkillPlace } from "./use-new-skill-place";
 
 export interface NewSkillDialogProps {
@@ -101,23 +101,15 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   const placeReady = place.ready && (!project || place.targets.length > 0);
   const valid = nameProblem === null && descriptionProblem === null && placeReady;
 
-  const [firstTarget] = place.targets;
-  /** Where the new skill's folder will be; null until the name is usable. */
-  const skillFolder =
-    !trimmedName || nameProblem
-      ? null
-      : project
-        ? firstTarget
-          ? joinPath(project.path, [firstTarget.relativeDir, trimmedName].filter(Boolean).join("/"))
-          : null
-        : location
-          ? joinPath(location.path, `${LIBRARY_SKILLS_DIR_NAME}/${trimmedName}`)
-          : null;
+  const { main: skillFolder, copies: copyFolders } = newSkillFolders({
+    name: trimmedName && !nameProblem ? trimmedName : null,
+    project,
+    targets: place.targets,
+    libraryPath: location?.path ?? null,
+  });
   const folderPath = skillFolder ? joinPath(skillFolder, NEW_SKILL_DOCUMENT) : null;
   const folder = folderPath ? compactHome(folderPath, info?.homeDir) : null;
-  const moreFolders = project ? place.targets.length - 1 : 0;
-  // An agent writes one folder; a project skill in several would leave the others behind.
-  const canPrompt = moreFolders === 0;
+  const moreFolders = copyFolders.length;
 
   /** The prompt goes to the clipboard; the skill is created whether or not copying works. */
   const copyPrompt = async (skillName: string, skillPath: string): Promise<void> => {
@@ -125,6 +117,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
       name: skillName,
       description: trimmedDescription,
       folder: skillPath,
+      copies: copyFolders,
     });
     try {
       await api.app.copyText(prompt);
@@ -153,7 +146,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   const submit = (event: FormEvent, withPrompt = false): void => {
     event.preventDefault();
     setSubmitted(true);
-    if (!valid || pending || (withPrompt && !canPrompt)) return;
+    if (!valid || pending) return;
     setSentWithPrompt(withPrompt);
     const skill = { name: trimmedName, description: trimmedDescription, template };
     if (project) {
@@ -280,8 +273,10 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
         <Button
           type="button"
           variant="outline"
-          disabled={!valid || pending || !canPrompt}
-          title={t(canPrompt ? "library.create.promptHint" : "library.create.promptOneFolder")}
+          disabled={!valid || pending}
+          title={t(
+            moreFolders > 0 ? "library.create.promptHintCopies" : "library.create.promptHint",
+          )}
           onClick={(event) => submit(event, true)}
         >
           {pending && sentWithPrompt ? <Spinner /> : <ClipboardCopy />}
