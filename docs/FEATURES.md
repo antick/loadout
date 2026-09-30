@@ -92,6 +92,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Everything in an agent's skills folder, including skills installed outside Loadout.
 - Status per skill (local only, in sync, changed), and "Loaded twice" warnings.
 - Upload to library, pull from library, remove, delete; compare local and library.
+- Add Skills by tag: each tag chip says how many of its skills the agent has (3/7); switching one on ticks the ones it is missing.
 - Lists folders the agent skips, and why.
 - Claude Code: skills its plugins bring, read only; one also in its folder is flagged Loaded twice.
 - Claude Code: what its skill listing costs. It puts every skill's name and description in each conversation and cuts descriptions past about 1% of the context window. Shows an estimate against that budget (200K or 1M window), the biggest skills, and a warning when over. Also in `loadout doctor` and `loadout agents listing`.

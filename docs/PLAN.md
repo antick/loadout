@@ -74,6 +74,8 @@ Status legend: `[x]` done and verified · `[~]` partly done · `[ ]` not started
 
 ### 4. Agents
 
+- [x] Add Skills picker: tag chips with the agent's coverage (3/7); a tag ticks the skills it is missing
+
 - [x] 69 built-in agents with detection, global + project skill paths
 - [x] Enable / disable, enable all / disable all
 - [x] Custom agents (name, skills path, optional project path)

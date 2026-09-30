@@ -239,6 +239,9 @@
     "add_one": "Add {{count}} skill",
     "add_other": "Add {{count}} skills",
     "blocked": "Blocked for this agent",
+    "tagAllOn": "{{agent}} already has every {{tag}} skill",
+    "tagSelectRest_one": "Ticks the {{count}} {{tag}} skill {{agent}} is missing",
+    "tagSelectRest_other": "Ticks the {{count}} {{tag}} skills {{agent}} is missing",
     "state": {
       "installed": "Already there",
       "conflict": "Name in use",

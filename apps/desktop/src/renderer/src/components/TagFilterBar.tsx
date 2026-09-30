@@ -31,6 +31,10 @@ export interface TagFilterBarProps {
   manageable?: boolean;
   /** Hide the "Untagged" pill, e.g. when every listed skill has tags. */
   hideUntagged?: boolean;
+  /** A short figure after a tag, such as how many of its skills an agent has ("3/7"). */
+  countOf?: (tag: string) => string | undefined;
+  /** Tooltip of a tag pill. */
+  titleOf?: (tag: string) => string | undefined;
   className?: string;
 }
 
@@ -41,6 +45,8 @@ export function TagFilterBar({
   onChange,
   manageable,
   hideUntagged,
+  countOf,
+  titleOf,
   className,
 }: TagFilterBarProps): ReactNode {
   const { t } = useTranslation();
@@ -91,7 +97,14 @@ export function TagFilterBar({
       )}
       {tags.map((tag) => {
         const pill = (
-          <TagPill key={tag} tag={tag} active={value.includes(tag)} onClick={() => toggle(tag)} />
+          <TagPill
+            key={tag}
+            tag={tag}
+            active={value.includes(tag)}
+            count={countOf?.(tag)}
+            title={titleOf?.(tag)}
+            onClick={() => toggle(tag)}
+          />
         );
         if (!manageable) return pill;
         return (

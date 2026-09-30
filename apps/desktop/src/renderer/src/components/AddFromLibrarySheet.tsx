@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useAgents } from "@/hooks/queries/agents";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
+import { agentColumnCoverage } from "@/features/library/matrix/matrix-state";
 import { useSelection } from "@/hooks/use-selection";
 import { matchesTagFilter } from "@/lib/tag-filter";
 import { cn, matchesQuery } from "@/lib/utils";
@@ -132,6 +133,20 @@ export function AddFromLibrarySheet({
 
   const agentKeys = useMemo(() => chosenAgentKeys(chips, chipKeys), [chips, chipKeys]);
 
+  // For an agent: how many skills of each tag it already has, so the gaps show at a glance.
+  const coverage = useMemo(() => {
+    if (target.kind !== "agent") return null;
+    const byTag = new Map<string, { deployed: number; total: number }>();
+    const listed = (skills.data ?? []).filter((skill) => !exclude?.(skill));
+    for (const tag of allTags.data ?? []) {
+      const tagged = listed.filter((skill) => skill.tags.includes(tag));
+      const counts = agentColumnCoverage(tagged, target.agentKey);
+      if (counts.total > 0) byTag.set(tag, counts);
+    }
+    return byTag;
+  }, [target, skills.data, allTags.data, exclude]);
+  const agentLabel = chips[0]?.label ?? "";
+
   const infoFor = useMemo(() => {
     const fallback = (skill: Skill, keysNow: readonly string[]): PickerRowInfo => {
       const has = (key: string): boolean => skill.deployments.some((d) => d.agentKey === key);
@@ -165,7 +180,8 @@ export function AddFromLibrarySheet({
   );
   const selection = useSelection(pickableIds);
   const { exit, select } = selection;
-  // Ticked once the rows for this opening's targets are known (the render after opening).
+  // Ticked once the rows for this opening's targets are known (the render after opening), and
+  // once a tag chip narrows the list to skills the agent is still missing.
   const [pendingSelect, setPendingSelect] = useState<readonly string[] | null>(null);
   useEffect(() => {
     if (!pendingSelect || pickableIds.length === 0) return;
@@ -189,6 +205,22 @@ export function AddFromLibrarySheet({
     // Only re-run when the sheet opens; chips are stable for one opening.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  /** A tag switched on for an agent ticks the skills of that tag the agent is missing. */
+  const changeTagFilter = (next: string[]): void => {
+    setTagFilter(next);
+    if (!coverage) return;
+    const added = next.filter((tag) => !tagFilter.includes(tag));
+    if (added.length === 0) return;
+    const missing = (skills.data ?? [])
+      .filter((skill) => added.some((tag) => skill.tags.includes(tag)))
+      .filter((skill) => {
+        const state = infoFor(skill, agentKeys).state;
+        return state === "available" || state === "conflict";
+      })
+      .map((skill) => skill.id);
+    setPendingSelect([...selection.selectedIds, ...missing]);
+  };
 
   const submit = async (): Promise<void> => {
     setSubmitting(true);
@@ -242,7 +274,23 @@ export function AddFromLibrarySheet({
               </SelectContent>
             </Select>
           </div>
-          <TagFilterBar tags={allTags.data ?? []} value={tagFilter} onChange={setTagFilter} />
+          <TagFilterBar
+            tags={allTags.data ?? []}
+            value={tagFilter}
+            onChange={changeTagFilter}
+            countOf={(tag) => {
+              const counts = coverage?.get(tag);
+              return counts ? `${counts.deployed}/${counts.total}` : undefined;
+            }}
+            titleOf={(tag) => {
+              const counts = coverage?.get(tag);
+              if (!counts) return undefined;
+              const rest = counts.total - counts.deployed;
+              return rest === 0
+                ? t("picker.tagAllOn", { tag, agent: agentLabel })
+                : t("picker.tagSelectRest", { count: rest, tag, agent: agentLabel });
+            }}
+          />
           <AgentTargetChips
             label={t("picker.targets")}
             chips={chips}

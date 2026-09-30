@@ -9,7 +9,10 @@ export interface TagPillProps {
   active?: boolean;
   /** Struck through, e.g. marked for removal in a batch edit. */
   struck?: boolean;
-  count?: number;
+  /** A number after the label, or a short text such as "3/7". */
+  count?: number | string;
+  /** Tooltip. */
+  title?: string;
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   onRemove?: () => void;
   className?: string;
@@ -24,6 +27,7 @@ export function TagPill({
   active,
   struck,
   count,
+  title,
   onClick,
   onRemove,
   className,
@@ -44,7 +48,7 @@ export function TagPill({
 
   if (!onClick) {
     return (
-      <span className={cn(PILL_CLASS, tone, className)}>
+      <span title={title} className={cn(PILL_CLASS, tone, className)}>
         {body}
         {onRemove ? (
           <button
@@ -63,6 +67,7 @@ export function TagPill({
     <button
       type="button"
       aria-pressed={active}
+      title={title}
       onClick={onClick}
       className={cn(
         PILL_CLASS,
