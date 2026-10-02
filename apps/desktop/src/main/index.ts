@@ -17,6 +17,7 @@ import {
   UPDATE_FEED_URL,
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
+import { createCrashHandlers } from "./crash";
 import { type AppDataMove, adoptAppData, removeOldAppData } from "./app-data";
 import { startRemoval } from "./remover";
 import { revealInFileManager } from "./reveal";
@@ -198,17 +199,6 @@ function openWindow(): void {
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
-}
-
-function recordCrash(error: unknown): void {
-  try {
-    if (!core) return;
-    const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
-    core.ctx.log.error("Unhandled failure in the main process", error);
-    writeFileSync(core.ctx.paths.crashMarkerPath, JSON.stringify({ at: Date.now(), message }));
-  } catch {
-    // Nothing more can be done while crashing.
-  }
 }
 
 /** Self-update: a published build checks the release feed; a development build only a test feed. */
@@ -400,8 +390,14 @@ function start(): void {
   openWindow();
 }
 
-process.on("uncaughtException", recordCrash);
-process.on("unhandledRejection", recordCrash);
+const crash = createCrashHandlers({
+  target: () =>
+    core ? { log: core.ctx.log, crashMarkerPath: core.ctx.paths.crashMarkerPath } : null,
+  showError: (message) => dialog.showErrorBox(`${APP_NAME} stopped after an error`, message),
+  exit: (code) => app.exit(code),
+});
+process.on("uncaughtException", crash.uncaughtException);
+process.on("unhandledRejection", crash.unhandledRejection);
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
