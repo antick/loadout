@@ -2,6 +2,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync } fr
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createContext } from "../src/create-context";
+import { RepoLock } from "../src/lock";
 import {
   type LibraryPaths,
   isAppRunning,
@@ -138,6 +139,25 @@ describe("library location", () => {
     expect(existsSync(target)).toBe(false);
     // The app, starting later, still carries it out.
     expect(resolve().paths.baseDir).toBe(target);
+  });
+
+  it("waits to move the library while another process works in it", async () => {
+    const seeded = seedDefaultLibrary();
+    const target = join(temp.dir, "elsewhere");
+    setLibraryPath(seeded, target);
+
+    // A CLI command (another process) holds the library's lock.
+    const cli = new RepoLock(seeded.lockPath);
+    await cli.run("sync in another process", () => {
+      const during = resolve();
+      expect(during.paths.baseDir).toBe(homeDir());
+      expect(existsSync(join(homeDir(), "skills", "alpha", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(target, "skills"))).toBe(false);
+      expect(existsSync(seeded.lockPath)).toBe(true);
+    });
+    // Once it is done, the next start carries the move out.
+    expect(resolve().paths.baseDir).toBe(target);
+    expect(existsSync(join(target, "skills", "alpha", "SKILL.md"))).toBe(true);
   });
 
   it("moves back into the home folder although it is not empty", () => {

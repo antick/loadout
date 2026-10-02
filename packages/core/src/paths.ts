@@ -15,7 +15,7 @@ import {
   type LibraryWarning,
 } from "@loadout/shared";
 import { errorMessage } from "./errors";
-import { processAlive } from "./lock";
+import { RepoLock, processAlive } from "./lock";
 import {
   canonicalPath,
   ensureDir,
@@ -299,10 +299,21 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
       // Not moved yet: the data is still where it was.
       return { paths: buildPaths(pending, defaultBaseDir), warnings, notes, unavailable: false };
     }
-    if (existsSync(pending) && !same && !migrate(pending, baseDir, defaultBaseDir, notes)) {
-      warnings.push("migration_incomplete");
-      baseDir = pending;
-      keepMarker = true;
+    if (existsSync(pending) && !same) {
+      // Only while nobody works in it: a CLI command mid-sync must not see its folders leave.
+      let moved = false;
+      const ran = new RepoLock(join(pending, LOCK_FILE)).holdSync("move the library", () => {
+        moved = migrate(pending, baseDir, defaultBaseDir, notes);
+      });
+      if (!ran) {
+        notes.push(`Library move waits: ${pending} is in use`);
+        return { paths: buildPaths(pending, defaultBaseDir), warnings, notes, unavailable: false };
+      }
+      if (!moved) {
+        warnings.push("migration_incomplete");
+        baseDir = pending;
+        keepMarker = true;
+      }
     }
     if (!keepMarker) {
       writeJsonAtomic(configPath, { libraryPath: config.libraryPath, pendingMigrationFrom: null });
