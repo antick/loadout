@@ -66,7 +66,9 @@ export function FirstRunDialog(): ReactNode {
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => (!next && !restore.isPending ? setClosed(true) : undefined)}
+      // Closed any other way (Esc, a click outside) is the same answer as "start fresh": it is
+      // asked once, not on every launch.
+      onOpenChange={(next) => (!next && !restore.isPending ? startFresh() : undefined)}
     >
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={submit} className="contents">
