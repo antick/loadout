@@ -2,6 +2,7 @@ import type { AgentCategory, AgentReload } from "./agents";
 import type { SkillIssue } from "./skill-checks";
 import type { SkillBehaviourField } from "./agent-skill-fields";
 import type { SkillTrait } from "./skill-traits";
+import type { InstallOptions } from "./safety";
 
 // ── Agents ──
 
@@ -233,6 +234,15 @@ export interface UpdateResult {
   approval: string | null;
   /** The edited library version this update replaced, kept in Recently removed. */
   removedIds: string[];
+}
+
+/** Options of an update from the source, or a re-import of a folder or archive. */
+export interface RefreshOptions extends InstallOptions {
+  /**
+   * Fetch the new version and say what it would hold back (`pendingRemovals`), by the same rule
+   * a real update uses, but write nothing: not the files, not the row.
+   */
+  dryRun?: boolean;
 }
 
 export interface BatchUpdateResult {

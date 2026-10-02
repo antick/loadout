@@ -36,6 +36,7 @@ import type {
   SourceDiff,
   SourceDiffOptions,
   SourceDocument,
+  RefreshOptions,
   UpdateResult,
 } from "./types";
 import type {
@@ -269,7 +270,7 @@ export interface MarketApi {
   detail(source: string, skillId: string, provider?: MarketProvider): Promise<MarketSkillDetail>;
 }
 
-export interface UpdateRequestOptions extends InstallOptions {
+export interface UpdateRequestOptions extends RefreshOptions {
   /**
    * The upstream revision the user compared against. When upstream moved on since, nothing is
    * installed (CHANGED_ON_DISK): the user never saw what the newer revision changes.
@@ -293,7 +294,7 @@ export interface UpdatesApi {
   reimport(
     skillId: string,
     approval?: string | null,
-    options?: InstallOptions,
+    options?: RefreshOptions,
   ): Promise<UpdateResult>;
   relink(
     skillId: string,

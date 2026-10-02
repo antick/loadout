@@ -1,4 +1,6 @@
 import type { PendingRemoval, Skill } from "@loadout/shared";
+import { invalid } from "../errors";
+import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
 import { lstatOrNull, targetIdentity } from "../util/fs";
 import { fileDigests } from "../util/hash";
@@ -56,4 +58,25 @@ export function pendingRemovals(
     }
   }
   return sortRemovals(removals);
+}
+
+export interface Assessment {
+  contentChanged: boolean;
+  /** The new content's folder when the content changes; null when it stays. */
+  changedDir: string | null;
+  removals: PendingRemoval[];
+}
+
+/** What replacing `fresh` with the content in `sourceDir` would change, and what it would delete. */
+export function assessReplacement(
+  store: SkillStore,
+  fresh: Skill,
+  sourceDir: string | null,
+): Assessment {
+  const newHash = sourceDir ? hashAsLibraryCopy(sourceDir, fresh.dirName) : fresh.contentHash;
+  if (sourceDir && newHash === null) throw invalid("The source has no files to install");
+  // Against the stored hash: a commit elsewhere in a big repository changes nothing here.
+  const contentChanged = newHash !== fresh.contentHash;
+  const changedDir = contentChanged ? sourceDir : null;
+  return { contentChanged, changedDir, removals: pendingRemovals(store, fresh, changedDir) };
 }

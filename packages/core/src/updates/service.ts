@@ -88,10 +88,14 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
       updater.update(skillId, approval, {
         acceptRisk: options?.acceptRisk,
         expectedRevision: options?.expectedRevision,
+        dryRun: options?.dryRun,
       }),
     updateMany: updater.updateMany,
     reimport: (skillId, approval, options) =>
-      updater.reimport(skillId, approval, { acceptRisk: options?.acceptRisk }),
+      updater.reimport(skillId, approval, {
+        acceptRisk: options?.acceptRisk,
+        dryRun: options?.dryRun,
+      }),
     relink: (skillId, sourcePath, approval, options) =>
       updater.relink(skillId, sourcePath, approval, { acceptRisk: options?.acceptRisk }),
     detach: updater.detach,

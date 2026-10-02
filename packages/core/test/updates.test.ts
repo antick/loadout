@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError, cancelled } from "../src/errors";
 import { LIBRARY_LOCATION, updateCancelKey } from "../src/updates";
-import { writeFile } from "./helpers";
+import { makeSkill, writeFile } from "./helpers";
 import { commitAll, git, leftoverCheckouts } from "./install-fixtures";
 import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -387,6 +387,36 @@ describe("removal guard", () => {
     expect(existsSync(join(pdf.libraryPath, "notes"))).toBe(false);
     expect(existsSync(join(world.claudeTarget("pdf"), "notes"))).toBe(false);
     expect(existsSync(join(world.claudeTarget("pdf"), "scratch.txt"))).toBe(false);
+  });
+
+  it("says on a dry run what the real update would hold back, and writes nothing", async () => {
+    world.ctx.settings.set("deployMode", "copy");
+    const pdf = await world.installFromGit("pdf");
+    await world.deploy.api.deploy(pdf.id, "claude_code");
+    writeFile(join(world.claudeTarget("pdf"), "scratch.txt"), "made by the agent");
+    dropNotesUpstream();
+
+    const dry = await world.updates.api.update(pdf.id, null, { dryRun: true });
+    const asked = await world.updates.api.update(pdf.id);
+    expect(dry.pendingRemovals).toEqual(asked.pendingRemovals);
+    expect(dry.pendingRemovals).toContainEqual({
+      location: "claude_code",
+      path: "scratch.txt",
+      kind: "removed",
+    });
+
+    // Nothing to hold back: a dry run still writes nothing, not even the row.
+    const docx = await world.installFromGit("docx");
+    const before = world.store.get(docx.id);
+    makeSkill(join(world.remote, "skills"), "docx", { body: "second edition" });
+    commitAll(world.remote, "docx: second edition");
+    const quiet = await world.updates.api.update(docx.id, null, { dryRun: true });
+    expect(quiet).toMatchObject({ contentChanged: true, pendingRemovals: [], approval: null });
+    expect(world.store.get(docx.id)).toMatchObject({
+      sourceRevision: before.sourceRevision,
+      contentHash: before.contentHash,
+      updateStatus: before.updateStatus,
+    });
   });
 
   it("asks again when the remote moved after the list was shown", async () => {

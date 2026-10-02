@@ -1,5 +1,11 @@
-import { type Core, errorMessage, isRemoteSource, redactUrl } from "@loadout/core";
-import type { FileDiffEntry, Skill } from "@loadout/shared";
+import {
+  type Core,
+  LIBRARY_LOCATION,
+  errorMessage,
+  isRemoteSource,
+  redactUrl,
+} from "@loadout/core";
+import type { FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
 import { plural } from "../output";
 
 /** What `skills update --dry-run` found for one skill. Nothing is written. */
@@ -45,14 +51,23 @@ function whereFrom(skill: Skill, label: string): string {
 const pathsWith = (entries: readonly FileDiffEntry[], status: FileDiffEntry["status"]): string[] =>
   entries.filter((entry) => entry.status === status).map((entry) => entry.path);
 
-/** Compare one skill with its source, the way the Compare tab does. */
+/** A file the update would delete or replace; one in an agent's copy names the agent. */
+const heldBackPath = (removal: PendingRemoval): string =>
+  removal.location === LIBRARY_LOCATION ? removal.path : `${removal.location}: ${removal.path}`;
+
+/**
+ * Compare one skill with its source, the way the Compare tab does. What it would hold back comes
+ * from the update itself, run dry, so it is the same rule the real update uses.
+ */
 export async function planUpdate(core: Core, skill: Skill): Promise<UpdatePlanRow> {
   const empty = { added: [], modified: [], removed: [], heldBack: [] };
   try {
     const diff = await core.api.updates.sourceDiff(skill.id, { asLibraryCopy: true });
     const removed = pathsWith(diff.entries, "removed");
     const modified = pathsWith(diff.entries, "modified");
-    const replacedEdits = skill.editedFiles.filter((path) => modified.includes(path));
+    const dry = isRemoteSource(skill)
+      ? await core.api.updates.update(skill.id, null, { dryRun: true })
+      : await core.api.updates.reimport(skill.id, null, { dryRun: true });
     return {
       id: skill.id,
       name: skill.name,
@@ -62,7 +77,7 @@ export async function planUpdate(core: Core, skill: Skill): Promise<UpdatePlanRo
       added: pathsWith(diff.entries, "added"),
       modified,
       removed,
-      heldBack: [...removed, ...replacedEdits],
+      heldBack: dry.pendingRemovals.map(heldBackPath),
       error: null,
     };
   } catch (error) {

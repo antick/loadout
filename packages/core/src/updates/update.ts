@@ -37,7 +37,7 @@ import {
   normalizeAbsolutePath,
 } from "../util/fs";
 import { type LockMode, runLocked } from "./locking";
-import { pendingRemovals } from "./pending";
+import { assessReplacement } from "./pending";
 import { LIBRARY_LOCATION, approvalToken, isApproved } from "./removals";
 import {
   isRemoteSource,
@@ -72,6 +72,8 @@ export interface UpdateOptions {
    * is installed: the user never saw what the newer revision changes.
    */
   expectedRevision?: string | null;
+  /** Only say what it would hold back: see `RefreshOptions.dryRun`. */
+  dryRun?: boolean;
 }
 
 export interface Updater {
@@ -123,6 +125,8 @@ interface Replacement {
   approval: string | null | undefined;
   lockMode: LockMode;
   acceptRisk?: boolean;
+  /** Work out the removals and stop: nothing is written. */
+  dryRun?: boolean;
   /** Throw when the row no longer describes the source the new content was taken from. */
   verify(fresh: Skill): void;
   /** Source fields of the row once the replacement is in. */
@@ -197,20 +201,29 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   }
 
   async function replace(plan: Replacement): Promise<UpdateResult> {
+    if (plan.dryRun) {
+      // Reads only: no lock, no safety check, nothing written.
+      const fresh = store.get(plan.skillId);
+      plan.verify(fresh);
+      const { contentChanged, removals } = assessReplacement(store, fresh, plan.sourceDir);
+      return {
+        skill: fresh,
+        contentChanged,
+        pendingRemovals: removals,
+        approval: null,
+        removedIds: [],
+      };
+    }
     const safetyReport = await checkNewVersion(plan);
     const name = store.get(plan.skillId).name;
     const result = await runLocked(ctx, plan.lockMode, `update ${name}`, async () => {
       const fresh = store.get(plan.skillId);
       plan.verify(fresh);
-      const newHash = plan.sourceDir
-        ? hashAsLibraryCopy(plan.sourceDir, fresh.dirName)
-        : fresh.contentHash;
-      if (plan.sourceDir && newHash === null) throw invalid("The source has no files to install");
-      // Against the stored hash: a commit elsewhere in a big repository changes nothing here.
-      const contentChanged = newHash !== fresh.contentHash;
-      const changedDir = contentChanged ? plan.sourceDir : null;
-
-      const removals = pendingRemovals(store, fresh, changedDir);
+      const { contentChanged, changedDir, removals } = assessReplacement(
+        store,
+        fresh,
+        plan.sourceDir,
+      );
       if (!isApproved(plan.approval, plan.domain, removals)) {
         const patch = plan.declined(fresh);
         const skill = patch
@@ -323,6 +336,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           approval,
           lockMode: options.lockMode ?? "wait",
           acceptRisk: options.acceptRisk,
+          dryRun: options.dryRun,
           verify: (fresh) => {
             const still = isRemoteSource(fresh) && remoteKey(remoteTargetOf(fresh));
             if (still !== remoteKey(target)) throw invalid(SOURCE_MOVED);
@@ -376,6 +390,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           approval,
           lockMode: "wait",
           acceptRisk: options.acceptRisk,
+          dryRun: options.dryRun,
           verify: (fresh) => {
             if (fresh.sourceRef !== skill.sourceRef) throw invalid(SOURCE_MOVED);
           },

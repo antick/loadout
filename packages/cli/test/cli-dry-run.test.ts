@@ -87,6 +87,28 @@ describe("skills update --dry-run", () => {
     expect((await box.cli("skills", "diff", "notes", "--upstream")).stdout).toContain("old.md");
   });
 
+  it("holds back what the real update holds back: a file edited by hand in the library", async () => {
+    const folder = writeSkill(box.root, "notes");
+    writeFileSync(join(folder, "guide.md"), "v1\n");
+    await box.cli("skills", "install", folder);
+    const shown = (await box.cli("skills", "show", "notes", "--json")).json<{
+      libraryPath: string;
+    }>();
+    // Changed outside the app, so the skill's own record of edits does not know about it.
+    writeFileSync(join(shown.libraryPath, "guide.md"), "my own words\n");
+    writeFileSync(join(folder, "guide.md"), "v2\n");
+
+    const plan = (
+      await box.cli("skills", "update", "notes", "--dry-run", "--json")
+    ).json<UpdatePlan>();
+    expect(plan.skills[0]?.heldBack).toEqual(["guide.md"]);
+
+    const real = await box.cli("skills", "update", "notes", "--json");
+    expect(real.json<{ pendingRemovals: { path: string }[] }>().pendingRemovals).toEqual([
+      expect.objectContaining({ path: "guide.md" }),
+    ]);
+  });
+
   it("fails the run when a source cannot be read", async () => {
     const folder = writeSkill(box.root, "gone");
     await box.cli("skills", "install", folder);
