@@ -86,15 +86,26 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
     return skill;
   }
 
-  function localLeads(skill: Skill, sourcePath: string | null): SourceLead[] {
+  /** What this machine itself says: the `npx skills` lock file, and the folder's own checkout. */
+  function machineLeads(skill: Skill, sourcePath: string | null): SourceLead[] {
     const leads: SourceLead[] = [];
     const installed = lockFileLead(skill.name, ctx.homeDir, ctx.env);
     if (installed) leads.push(installed);
     const folder = sourcePath ? gitFolderLead(sourcePath, ctx.homeDir) : null;
     if (folder) leads.push(folder);
-    leads.push(...linkLeads(skill.libraryPath, skill.name));
     return leads;
   }
+
+  /** Those, then repositories the skill's own document links to. */
+  function localLeads(skill: Skill, sourcePath: string | null): SourceLead[] {
+    return [...machineLeads(skill, sourcePath), ...linkLeads(skill.libraryPath, skill.name)];
+  }
+
+  /**
+   * Automatic linking after an import, one skill at a time: an "import all" must not start a
+   * clone per skill at once. Settles whatever happened, never rejects.
+   */
+  let linking: Promise<unknown> = Promise.resolve();
 
   async function marketLeads(skill: Skill): Promise<SourceLead[]> {
     if (!deps.searchMarket) return [];
@@ -194,6 +205,30 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
     return { skillId, candidates, failures };
   }
 
+  /**
+   * Only what this machine says is followed here; a link in a document usually points at docs or
+   * a library, and following it means a clone. Those wait until the user asks (Find source).
+   */
+  async function linkByItself(skillId: string, sourcePath: string | null): Promise<Skill | null> {
+    try {
+      const skill = store.find(skillId);
+      if (!skill || !canLinkSource(skill) || skill.authored) return null;
+      for (const lead of machineLeads(skill, sourcePath)) {
+        let compared: ComparedLead;
+        try {
+          compared = await compare(skill, lead);
+        } catch {
+          continue;
+        }
+        if (compared.candidate.match !== "identical") continue;
+        return await link(skill, compared, " (found automatically)");
+      }
+    } catch (error) {
+      ctx.log.warn(`Looking for the source of an imported skill failed`, error);
+    }
+    return null;
+  }
+
   return {
     find,
 
@@ -216,24 +251,10 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
       return link(skill, compared, "");
     },
 
-    linkIfExact: async (skillId, sourcePath) => {
-      try {
-        const skill = store.find(skillId);
-        if (!skill || !canLinkSource(skill) || skill.authored) return null;
-        for (const lead of localLeads(skill, sourcePath)) {
-          let compared: ComparedLead;
-          try {
-            compared = await compare(skill, lead);
-          } catch {
-            continue;
-          }
-          if (compared.candidate.match !== "identical") continue;
-          return await link(skill, compared, " (found automatically)");
-        }
-      } catch (error) {
-        ctx.log.warn(`Looking for the source of an imported skill failed`, error);
-      }
-      return null;
+    linkIfExact: (skillId, sourcePath) => {
+      const turn = linking.then(() => linkByItself(skillId, sourcePath));
+      linking = turn;
+      return turn;
     },
   };
 }

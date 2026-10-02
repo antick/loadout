@@ -413,6 +413,43 @@ describe("link by itself after an import", () => {
     expect(world.store.get(pdf.id).sourceType).toBe("import");
   });
 
+  it("follows no links from SKILL.md on its own: those are for Find source", async () => {
+    // The document links its repository, which holds the very same files.
+    const pdf = importedPdf({ body: `${upstreamDocument()}\nFrom ${REPO_URL}\n` });
+    writeFile(pdfInRemote("SKILL.md"), `${upstreamDocument()}\nFrom ${REPO_URL}\n`);
+    commitAll(world.remote, "pdf: link home");
+    let fetched = 0;
+    const counting = world.withGit({
+      checkout: (...args) => {
+        fetched += 1;
+        return world.install.git.checkout(...args);
+      },
+    });
+    expect(await counting.origin.linkIfExact(pdf.id, join(world.home, "elsewhere"))).toBeNull();
+    expect(fetched).toBe(0);
+  });
+
+  it("looks for one imported skill at a time", async () => {
+    const folder = clonedByHand();
+    const pdf = importedPdf({ sourceRef: folder });
+    let running = 0;
+    let most = 0;
+    const counting = world.withGit({
+      checkout: async (...args) => {
+        running += 1;
+        most = Math.max(most, running);
+        try {
+          return await world.install.git.checkout(...args);
+        } finally {
+          running -= 1;
+        }
+      },
+    });
+    await Promise.all([1, 2, 3].map(() => counting.origin.linkIfExact(pdf.id, folder)));
+    expect(most).toBe(1);
+    expect(world.store.get(pdf.id).sourceType).toBe("git");
+  });
+
   it("leaves a skill marked as the user's own alone", async () => {
     const folder = clonedByHand();
     const pdf = importedPdf({ sourceRef: folder });
