@@ -25,6 +25,7 @@ import {
   setContentMtime,
   skillText,
 } from "./workspace-world";
+import { createPublishService } from "../src/publish";
 
 const T0 = Date.UTC(2026, 0, 1);
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -44,6 +45,7 @@ describe("recently removed", () => {
       store: world.store,
       git: createGitClient(world.ctx),
       removed: world.removed,
+      publish: createPublishService(world.ctx, { store: world.store }),
     });
   });
   afterEach(() => world.cleanup());

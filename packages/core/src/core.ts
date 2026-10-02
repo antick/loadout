@@ -213,7 +213,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     },
   });
   const system = createSystemService(ctx, { store, install, deploy, registry, repair });
-  const storage = createStorageService(ctx, { deploy, store, git: install.git, removed });
+
   const skillsFile = createSkillsFileService(ctx, {
     git: install.git,
     registry,
@@ -228,6 +228,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   });
 
   const publish = createPublishService(ctx, { store, clawhub: install.clawhub });
+  const storage = createStorageService(ctx, { deploy, store, git: install.git, removed, publish });
   const listing = createListingService(ctx, { registry, workspace: workspace.api });
 
   const settings: SettingsApi = {

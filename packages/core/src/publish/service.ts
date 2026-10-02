@@ -21,7 +21,8 @@ import { writeAndCommit } from "./apply";
 import { secretsHeldBack } from "./files";
 import { type Checkout, openCheckout } from "./checkout";
 import { type Planned, planSkills } from "./plan";
-import { type ResolvedTarget, resolveTarget } from "./target";
+import { type ResolvedTarget, publishCacheRoot, resolveTarget } from "./target";
+import { dirSize, readDirSafe, removePathSync } from "../util/fs";
 
 export interface PublishDeps {
   store: SkillStore;
@@ -38,6 +39,11 @@ export interface PublishHooks {
 
 export interface PublishService {
   api: PublishApi;
+  /**
+   * Delete every publishing working copy, each once nothing publishes to it: they are clones,
+   * made again on the next publish. Returns the bytes freed.
+   */
+  clearWorkingCopies(): Promise<number>;
 }
 
 /** A push refused because the branch moved is tried again from the new state, this many times. */
@@ -205,7 +211,21 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
     return { plan, commit, published, unchanged, installCommands };
   }
 
+  async function clearWorkingCopies(): Promise<number> {
+    let freed = 0;
+    for (const entry of readDirSafe(publishCacheRoot(ctx))) {
+      const dir = join(publishCacheRoot(ctx), entry.name);
+      // Through the same queue as a publish to it: one running finishes first.
+      await serialized(dir, async () => {
+        freed += dirSize(dir);
+        removePathSync(dir);
+      });
+    }
+    return freed;
+  }
+
   return {
+    clearWorkingCopies,
     api: {
       defaults: async () =>
         ctx.settings.getRaw<PublishTarget | null>(INTERNAL_KEYS.publishTarget, null),

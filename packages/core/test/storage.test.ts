@@ -2,6 +2,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, symlinkSync }
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createGitClient } from "../src/install/git-client";
+import { createPublishService } from "../src/publish";
 import { type StorageService, createRemovedStore, createStorageService } from "../src/storage";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { writeFile } from "./helpers";
@@ -16,6 +17,7 @@ beforeEach(() => {
     store: world.store,
     git: createGitClient(world.ctx),
     removed: createRemovedStore(world.ctx, { store: world.store }),
+    publish: createPublishService(world.ctx, { store: world.store }),
   });
 });
 afterEach(() => world.cleanup());
@@ -52,10 +54,12 @@ describe("clear", () => {
     expect(existsSync(world.ctx.paths.historyDir)).toBe(false);
   });
 
-  it("empties the clone cache", async () => {
+  it("empties the clone cache and the publishing working copies", async () => {
     writeFile(join(world.ctx.paths.cacheDir, "repos", "0123456789abcdef", "HEAD"), "ref");
-    expect(await storage.api.clear("cache")).toBe(3);
+    writeFile(join(world.ctx.paths.cacheDir, "publish", "0123456789abcdef", "HEAD"), "refs");
+    expect(await storage.api.clear("cache")).toBe(7);
     expect(existsSync(join(world.ctx.paths.cacheDir, "repos", "0123456789abcdef"))).toBe(false);
+    expect(existsSync(join(world.ctx.paths.cacheDir, "publish", "0123456789abcdef"))).toBe(false);
   });
 
   it("removes old logs and empties the current one", async () => {
@@ -64,9 +68,13 @@ describe("clear", () => {
     writeFile(`${current}.1`, "yesterday\n");
     Object.defineProperty(world.ctx.log, "filePath", { value: current });
 
+    writeFile(world.ctx.paths.crashMarkerPath, "{}");
+
     expect(await storage.api.clear("logs")).toBe(16);
     expect(readFileSync(current, "utf8")).toBe("");
     expect(existsSync(`${current}.1`)).toBe(false);
+    // The notice about the last crash is not a log: it waits to be shown.
+    expect(existsSync(world.ctx.paths.crashMarkerPath)).toBe(true);
   });
 
   it("refuses the areas that hold data", async () => {

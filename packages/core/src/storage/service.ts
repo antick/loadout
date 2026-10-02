@@ -1,5 +1,4 @@
-import { existsSync, readdirSync, truncateSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, truncateSync } from "node:fs";
 import {
   CLEARABLE_AREAS,
   type ClearableArea,
@@ -15,6 +14,8 @@ import { AppError, invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
 import type { GitClient } from "../install/git-client";
 import { dirSize, lstatOrNull, removePathSync, statOrNull } from "../util/fs";
+import type { PublishService } from "../publish/service";
+import { listLogFiles } from "../system/logs";
 import type { RemovedStore } from "./removed";
 
 /** SQLite keeps these next to the database while it is open. */
@@ -25,6 +26,7 @@ export interface StorageServiceDeps {
   store: SkillStore;
   git: GitClient;
   removed: RemovedStore;
+  publish: Pick<PublishService, "clearWorkingCopies">;
 }
 
 /** What to delete once the app has exited, so nothing it still writes brings a file back. */
@@ -76,12 +78,14 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
     return { area, path, bytes, exists: existsSync(path), clearable: isClearable(area) };
   }
 
-  /** Old logs go; the current log is emptied, since the logger keeps writing to it. */
+  /**
+   * Old logs go; the current log is emptied, since the logger keeps writing to it. The crash
+   * notice next to them is not a log: it stays until it has been shown.
+   */
   function clearLogs(): number {
     let freed = 0;
     const current = ctx.log.filePath;
-    for (const name of existsSync(paths.logsDir) ? readdirSync(paths.logsDir) : []) {
-      const path = join(paths.logsDir, name);
+    for (const path of listLogFiles(paths.logsDir)) {
       freed += sizeOf(path);
       if (path === current) truncateSync(path, 0);
       else removePathSync(path);
@@ -106,7 +110,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       if (!isClearable(area)) throw invalid(`${String(area)} cannot be cleared`);
       let freed = 0;
       if (area === "cache") {
-        freed = await deps.git.clearCache();
+        freed = (await deps.git.clearCache()) + (await deps.publish.clearWorkingCopies());
       } else if (area === "removed") {
         freed = await deps.removed.clear();
       } else if (area === "history") {

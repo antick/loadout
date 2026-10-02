@@ -17,6 +17,7 @@ import { type StorageService, createStorageService } from "../src/storage";
 import { moveEntrySync } from "../src/util/fs";
 import { makeSkill } from "./helpers";
 import { type WorkspaceWorld, createWorkspaceWorld, skillText } from "./workspace-world";
+import { createPublishService } from "../src/publish";
 
 /**
  * Two disks, simulated: while `crossDisk` is on, a rename into another folder fails the way it
@@ -140,6 +141,7 @@ describe("Recently removed on another disk", () => {
       store: world.store,
       git: createGitClient(world.ctx),
       removed: world.removed,
+      publish: createPublishService(world.ctx, { store: world.store }),
     });
     disk.crossDisk = true;
   });
