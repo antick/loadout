@@ -123,7 +123,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     replace: { removed, refreshCopies: deploy.refreshCopies },
     sourceNews,
     // Updates are wired further down; an import only happens once everything is built.
-    onImported: (skill, sourcePath) => void updates.origin.linkIfExact(skill.id, sourcePath),
+    onImported: (skill, sourcePath) =>
+      ctx.lock.outside(() => void updates.origin.linkIfExact(skill.id, sourcePath)),
   });
   const skills = createSkillsService(ctx, {
     store,

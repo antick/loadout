@@ -173,7 +173,8 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
       if (scope.includes("skills") || scope.includes("presets")) metadataDirty = true;
       if (scheduled) return;
       scheduled = true;
-      setImmediate(flushLater);
+      // Its own turn at the lock: called inside an operation, it waits for that one to finish.
+      setImmediate(() => lock.outside(flushLater));
     },
   };
 

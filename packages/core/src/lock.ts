@@ -35,10 +35,13 @@ export function processAlive(pid: number): boolean {
  */
 export class RepoLock {
   readonly #path: string;
-  /** Set inside the call chain that holds the lock. */
-  readonly #held = new AsyncLocalStorage<true>();
-  /** Some call chain of this process holds the lock right now. */
-  #active = false;
+  /**
+   * The hold a call chain runs in. Work the holder schedules (a timer, a promise left running)
+   * carries it too, so it only counts while that hold is still the current one.
+   */
+  readonly #held = new AsyncLocalStorage<object>();
+  /** The hold of this process right now; null when no call chain of it holds the lock. */
+  #current: object | null = null;
   /** `startedAt` written into the file we created, to release only our own lock. */
   #ownStartedAt: number | null = null;
   #queue: Promise<unknown> = Promise.resolve();
@@ -106,19 +109,35 @@ export class RepoLock {
     }
   }
 
+  /** This call chain is inside the hold in progress. */
+  #inside(): boolean {
+    const hold = this.#held.getStore();
+    return hold !== undefined && hold === this.#current;
+  }
+
+  #enter(): object {
+    const hold = {};
+    this.#current = hold;
+    return hold;
+  }
+
+  #leave(): void {
+    this.#current = null;
+    this.#release();
+  }
+
   async #holding<T>(fn: () => Promise<T> | T): Promise<T> {
-    this.#active = true;
+    const hold = this.#enter();
     try {
-      return await this.#held.run(true, fn);
+      return await this.#held.run(hold, fn);
     } finally {
-      this.#active = false;
-      this.#release();
+      this.#leave();
     }
   }
 
   /** Run `fn` holding the lock, waiting up to 20 s for another process to finish. */
   async run<T>(operation: string, fn: () => Promise<T> | T): Promise<T> {
-    if (this.#held.getStore()) return fn();
+    if (this.#inside()) return fn();
     const task = this.#queue.then(async () => {
       const deadline = Date.now() + WAIT_MS;
       while (!this.#tryAcquire(operation)) {
@@ -142,25 +161,32 @@ export class RepoLock {
    * it. True when it ran. Only for work that is safe to leave to the next start.
    */
   holdSync(operation: string, fn: () => void): boolean {
-    if (this.#held.getStore()) {
+    if (this.#inside()) {
       fn();
       return true;
     }
-    if (this.#active || !this.#tryAcquire(operation)) return false;
-    this.#active = true;
+    if (this.#current !== null || !this.#tryAcquire(operation)) return false;
+    const hold = this.#enter();
     try {
-      this.#held.run(true, fn);
+      this.#held.run(hold, fn);
       return true;
     } finally {
-      this.#active = false;
-      this.#release();
+      this.#leave();
     }
   }
 
   /** Background work: take the lock only if it is free right now. Returns null when it was busy. */
   async tryRun<T>(operation: string, fn: () => Promise<T> | T): Promise<T | null> {
-    if (this.#held.getStore()) return fn();
-    if (this.#active || !this.#tryAcquire(operation)) return null;
+    if (this.#inside()) return fn();
+    if (this.#current !== null || !this.#tryAcquire(operation)) return null;
     return this.#holding(fn);
+  }
+
+  /**
+   * Start `fn` as work of its own, not part of the operation holding the lock here: a lock it
+   * asks for waits until that operation is done. For work the holder starts and does not wait on.
+   */
+  outside<T>(fn: () => T): T {
+    return this.#held.exit(fn);
   }
 }
