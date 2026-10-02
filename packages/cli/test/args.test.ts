@@ -106,6 +106,21 @@ describe("install sources", () => {
     expect(() => classifySource("just-a-word")).toThrow(UsageError);
   });
 
+  it("hands every Git spelling the app takes to Git, as typed", () => {
+    for (const text of [
+      "owner/repo#dev",
+      "owner/repo#dev@my-skill",
+      "github:owner/repo",
+      "gitlab:group/sub/repo",
+      "owner/repo/skills/my-skill",
+      "owner/repo/skills/my-skill@pdf",
+      "npx skills add owner/repo --skill pdf",
+      "skills add owner/repo",
+    ]) {
+      expect(classifySource(text)).toEqual({ kind: "git", url: text });
+    }
+  });
+
   it("picks repository skills only when the choice is clear", () => {
     const one = {
       relPath: "skills/alpha",

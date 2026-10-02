@@ -1,4 +1,4 @@
-import { cancelled, notFound } from "@loadout/core";
+import { cancelled, notFound, parseSkillsCommand } from "@loadout/core";
 import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
@@ -34,6 +34,13 @@ const MARKET_SKILL = new RegExp(`^(${REPO})[@/]([^\\s@/]+)$`);
 const CLAWHUB_SKILL = /^(?:clawhub:|@)([\w.-]+)\/([\w.-]+)$/i;
 /** A first segment with a dot in it is a host name (`github.com/…`), not a GitHub owner. */
 const HOST_FIRST = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s]+$/i;
+/** `github:owner/repo`, `gitlab:group/repo`: the host named before the repository. */
+const HOST_PREFIX = /^(?:github|gitlab):\S+$/i;
+/**
+ * `owner/repo#branch`, `owner/repo#branch@skill`, `owner/repo/path/in/repo[@skill]`: a branch or a
+ * path core reads out of the text. One segment after the repository is a marketplace skill id.
+ */
+const SHORTHAND_MORE = new RegExp(`^${REPO}(?:#\\S+|(?:\\/[^\\s/@#]+){2,}(?:@[^\\s/@]+)?)$`);
 
 /**
  * Decide what a source is from its spelling alone. Looking at the disk instead would make
@@ -44,6 +51,8 @@ export function classifySource(input: string): InstallSource {
   const lower = text.toLowerCase();
   const clawhub = CLAWHUB_SKILL.exec(text);
   if (clawhub?.[1] && clawhub[2]) return { kind: "clawhub", owner: clawhub[1], slug: clawhub[2] };
+  // A pasted `npx skills add …` names its source, skills and agents; core reads all of it.
+  if (parseSkillsCommand(text)) return { kind: "git", url: text };
   if (text.includes("://") || text.startsWith("git@")) return { kind: "git", url: text };
   if (PATH_START.test(text) || ARCHIVE_SUFFIXES.some((suffix) => lower.endsWith(suffix))) {
     return { kind: "path", path: text };
@@ -53,8 +62,9 @@ export function classifySource(input: string): InstallSource {
   if (lower.endsWith(".git") || SHORTHAND.test(text)) return { kind: "git", url: text };
   const market = MARKET_SKILL.exec(text);
   if (market?.[1] && market[2]) return { kind: "market", source: market[1], skillId: market[2] };
+  if (HOST_PREFIX.test(text) || SHORTHAND_MORE.test(text)) return { kind: "git", url: text };
   throw new UsageError(
-    `Can not tell what "${text}" is. Use ./folder or ./file.zip for something on disk, a full git URL, owner/repo, owner/repo@skill, or @owner/slug for ClawHub.`,
+    `Can not tell what "${text}" is. Use ./folder or ./file.zip for something on disk, a full git URL, owner/repo, owner/repo#branch, owner/repo@skill, or @owner/slug for ClawHub.`,
   );
 }
 
@@ -131,6 +141,14 @@ async function chooseSkills(
   const { args, picker } = context;
   const wanted = flagList(args, SKILL_FLAG.name);
   const all = flagBoolean(args, ALL_FLAG.name);
+  // Skills the source text named (`owner/repo#dev@pdf`, a pasted `--skill pdf`) count as --skill.
+  if (wanted.length === 0 && !all) {
+    const [missing] = preview.missing;
+    if (missing !== undefined)
+      throw notFound(`No skill called "${missing}" in that ${preview.kind}.`);
+    const named = preview.selected ?? [];
+    if (named.length > 0) return preview.skills.filter((skill) => named.includes(skill.relPath));
+  }
   if (!picker || wanted.length > 0 || all || preview.skills.length < 2) {
     return selectSkills(preview.skills, wanted, all, preview.kind);
   }
@@ -311,7 +329,8 @@ export const installCommand: CommandSpec = {
     "skip it, and scripts or --json never see it.",
     "--dry-run fetches the source and lists what would be added and under which names.",
     "Sources: ./folder, ./archive.zip (.skill, .tar, .tar.gz, .tgz), a git URL, owner/repo,",
-    "@owner/slug for a ClawHub skill,",
+    "owner/repo#branch, owner/repo/path/in/repo, github:owner/repo, a pasted",
+    "`npx skills add …` command, @owner/slug for a ClawHub skill,",
     "owner/repo@skill, a link to an archive or a SKILL.md, or a site that publishes skills",
     "(https://example.com, read from /.well-known/agent-skills/index.json).",
     "--yes also accepts a download that moved to another site than the link names.",
