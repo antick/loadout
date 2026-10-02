@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { APP_NAME, type DeployMode } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -282,6 +282,29 @@ describe("deploy service", () => {
     const last = world.ctx.activity.list()[0];
     expect(last).toMatchObject({ kind: "undeploy", subject: "alpha", detail: "Claude Code" });
   });
+
+  it.skipIf(process.platform === "win32")(
+    "keeps the row when the folder cannot be removed, so it is still known to be ours",
+    async () => {
+      world.ctx.settings.set("deployMode", "copy");
+      const skill = world.addSkill("alpha");
+      await world.deploy.api.deploy(skill.id, "claude_code");
+      const folder = join(world.home, ".claude", "skills");
+      chmodSync(folder, 0o555);
+      try {
+        await world.deploy.api.undeploy(skill.id, "claude_code");
+      } finally {
+        chmodSync(folder, 0o755);
+      }
+      expect(existsSync(claudeTarget("alpha"))).toBe(true);
+      expect(world.store.deployment(skill.id, "claude_code")).not.toBeNull();
+
+      // Once it can be removed, removing it again works: nothing was orphaned.
+      await world.deploy.api.undeploy(skill.id, "claude_code");
+      expect(existsSync(claudeTarget("alpha"))).toBe(false);
+      expect(world.store.deployment(skill.id, "claude_code")).toBeNull();
+    },
+  );
 
   it("writes nothing when one target in a batch is refused", async () => {
     const alpha = world.addSkill("alpha");

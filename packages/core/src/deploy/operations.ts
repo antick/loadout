@@ -98,10 +98,13 @@ export function createDeployOperations(
    * The path is ours to remove only when no row of any skill or agent still points at it, and
    * only if it still looks like what `row` recorded. When in doubt the content stays.
    */
+  /** Remove the folder `row` recorded unless another row still points at it. `row` may still exist. */
   function releasePath(row: DeploymentRecord, place = row.agentKey): boolean {
     let survivors: DeploymentRecord[];
     try {
-      survivors = rowsAtPath(store.deployments(), row.targetPath);
+      survivors = rowsAtPath(store.deployments(), row.targetPath).filter(
+        (other) => other.skillId !== row.skillId || other.agentKey !== row.agentKey,
+      );
     } catch (error) {
       ctx.log.warn(`Kept ${row.targetPath}: could not check who else uses it`, error);
       return false;
@@ -159,8 +162,9 @@ export function createDeployOperations(
 
   function undeployRow(row: DeploymentRecord, agentName = row.agentKey): boolean {
     const skillName = store.find(row.skillId)?.name ?? row.skillId;
-    store.deleteDeployment(row.skillId, row.agentKey);
+    // The folder first: if removing it fails, the row stays as the proof the folder is ours.
     const released = releasePath(row, agentName);
+    store.deleteDeployment(row.skillId, row.agentKey);
     ctx.activity.record("undeploy", skillName, agentName);
     return released;
   }
