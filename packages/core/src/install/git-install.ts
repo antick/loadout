@@ -26,7 +26,7 @@ import {
 import type { InstallIntoLibrary } from "./library";
 import { repositorySourceKey } from "@loadout/shared";
 import type { SourceNewsStore } from "../sources/news-store";
-import type { ReplaceDeps } from "./replace";
+import { type ReplaceDeps, installOver } from "./replace";
 import { type SafetyGate, installChecked } from "./safety-gate";
 import { type PreviewSessions, createPreviewSessions, emitProgress } from "./preview-sessions";
 import { listRepoSkills, resolveSkillDir } from "./repo-scan";
@@ -282,8 +282,10 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
         const dir = resolveSkillDir(checkout.dir, undefined, id);
         await checkout.materialize([dir]);
         if (handle.signal.aborted) throw cancelled();
+        // Installing what is already installed refreshes it instead of adding `<id>-2`.
+        const owner = store.findBySource("marketplace", key);
         const skill = await installChecked(
-          install,
+          installOver(ctx, install, deps.replace, owner),
           deps.safety,
           {
             sourceDir: dir,
@@ -296,8 +298,6 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
               sourceBranch: null,
               sourceRevision: checkout.revision,
               updateStatus: "up_to_date",
-              // Installing what is already installed refreshes it instead of adding `<id>-2`.
-              replaceSkillId: store.findBySource("marketplace", key)?.id ?? null,
             },
           },
           { ...options, progressKey: key },

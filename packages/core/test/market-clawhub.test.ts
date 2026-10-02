@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -177,6 +177,24 @@ describe("ClawHub as a marketplace", () => {
     const updated = await core.api.skills.get(skill.id);
     expect(updated.sourceRevision).toBe("1.1.0");
     expect(readFileSync(join(updated.libraryPath, "SKILL.md"), "utf8")).toContain("# v1.1.0");
+  });
+
+  it("installing again keeps the edited version and refreshes deployed copies", async () => {
+    mkdirSync(join(temp.dir, ".claude"), { recursive: true });
+    core.ctx.settings.set("deployMode", "copy");
+    const skill = await core.api.install.fromClawhub(OWNER, SLUG);
+    await core.api.deploy.apply([skill.id], ["claude_code"], "add");
+    const copy = join(temp.dir, ".claude", "skills", SLUG, "SKILL.md");
+    writeFileSync(join(skill.libraryPath, "notes.md"), "my own notes");
+
+    registry.state.version = "1.1.0";
+    const again = await core.api.install.fromClawhub(OWNER, SLUG);
+
+    expect(again.id).toBe(skill.id);
+    expect(readFileSync(join(again.libraryPath, "SKILL.md"), "utf8")).toContain("# v1.1.0");
+    expect(readFileSync(copy, "utf8")).toContain("# v1.1.0");
+    const kept = await core.api.storage.removed();
+    expect(kept.map((entry) => [entry.name, entry.reason])).toEqual([[SLUG, "replaced"]]);
   });
 
   it("refuses an odd reference", async () => {

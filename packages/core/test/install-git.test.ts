@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { planInstallNames } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createGitClient, gitFailure } from "../src/install/git-client";
+import { createRemovedStore } from "../src/storage/removed";
 import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
 import {
   type InstallHarness,
@@ -314,6 +315,27 @@ describe("marketplace install", () => {
     expect(readFileSync(join(first.libraryPath, "SKILL.md"), "utf8")).toContain("second edition");
     expect(readdirSync(skillsDirOf(world)).filter((n) => n.startsWith("pdf"))).toEqual(["pdf"]);
     expect(leftoverCheckouts(tmp)).toEqual([]);
+  });
+
+  it("installing again keeps the edited version and refreshes deployed copies", async () => {
+    const removed = createRemovedStore(world.ctx, { store: world.store });
+    const refreshed: string[] = [];
+    const harness = createInstallHarness(world, {
+      replace: { removed, refreshCopies: async (skill) => void refreshed.push(skill.id) },
+    });
+    const first = await harness.api.fromMarket("acme/skills", "pdf");
+    writeFile(join(first.libraryPath, "notes.md"), "my own notes");
+
+    makeSkill(join(remote, "skills"), "pdf", { body: "second edition" });
+    commitAll(remote, "edit pdf");
+    const second = await harness.api.fromMarket("acme/skills", "pdf");
+
+    expect(second.id).toBe(first.id);
+    expect(readFileSync(join(second.libraryPath, "SKILL.md"), "utf8")).toContain("second edition");
+    expect(removed.list().map((entry) => [entry.name, entry.reason])).toEqual([
+      ["pdf", "replaced"],
+    ]);
+    expect(refreshed).toEqual([first.id]);
   });
 
   it("keeps line endings as committed when Git would convert them (Git for Windows)", async () => {

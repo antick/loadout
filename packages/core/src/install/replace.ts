@@ -51,3 +51,17 @@ export async function installReplacing(
   await deps.refreshCopies?.(skill);
   return skill;
 }
+
+/**
+ * The installer for a fresh copy of a skill that may already be in the library (installing a
+ * marketplace skill again): over `owner` the way `installReplacing` does, else a plain install.
+ */
+export function installOver(
+  ctx: CoreContext,
+  install: InstallIntoLibrary,
+  deps: ReplaceDeps | undefined,
+  owner: Skill | null,
+): InstallIntoLibrary {
+  if (!owner) return install;
+  return (request) => installReplacing(ctx, install, deps ?? {}, owner, request);
+}

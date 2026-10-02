@@ -91,7 +91,14 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
   const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl });
-  const clawhubDeps = { store, clawhub, cancels, install, safety: deps.safety };
+  const clawhubDeps = {
+    store,
+    clawhub,
+    cancels,
+    install,
+    safety: deps.safety,
+    replace: deps.replace,
+  };
   const fromClawhub = createClawhubInstaller(ctx, clawhubDeps);
   const readClawhubSkill = createClawhubReader(ctx, clawhubDeps);
   const scan = createScanService(ctx, {

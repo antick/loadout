@@ -15,6 +15,7 @@ import { archiveSkillDir, unpackArchive } from "./archive";
 import type { CancelRegistry } from "./cancel";
 import type { InstallIntoLibrary } from "./library";
 import { emitProgress } from "./preview-sessions";
+import { type ReplaceDeps, installOver } from "./replace";
 import { readCheckedSkill } from "./read-skill";
 import { type SafetyGate, installChecked } from "./safety-gate";
 
@@ -24,6 +25,8 @@ export interface ClawhubInstallerDeps {
   cancels: CancelRegistry;
   install: InstallIntoLibrary;
   safety?: SafetyGate;
+  /** Recently removed and deployed copies, for installing a skill that is already there. */
+  replace?: ReplaceDeps;
 }
 
 /** Progress and cancel key of a ClawHub install, as the app names it. */
@@ -121,8 +124,10 @@ export function createClawhubInstaller(ctx: CoreContext, deps: ClawhubInstallerD
       if (handle.signal.aborted) throw cancelled();
       emitProgress(ctx, key, "installing", { name: slug });
       const ref = `${found.owner}/${found.slug}`;
+      // Installing what is already installed refreshes it instead of adding `<slug>-2`.
+      const installed = deps.store.findBySource("clawhub", ref);
       const skill = await installChecked(
-        deps.install,
+        installOver(ctx, deps.install, deps.replace, installed),
         deps.safety,
         {
           sourceDir: opened.dir,
@@ -136,8 +141,6 @@ export function createClawhubInstaller(ctx: CoreContext, deps: ClawhubInstallerD
             sourceRevision: found.version,
             remoteRevision: found.version,
             updateStatus: "up_to_date",
-            // Installing what is already installed refreshes it instead of adding `<slug>-2`.
-            replaceSkillId: deps.store.findBySource("clawhub", ref)?.id ?? null,
           },
         },
         { ...options, progressKey: key },
