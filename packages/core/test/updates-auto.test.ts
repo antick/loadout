@@ -42,17 +42,15 @@ describe("auto-updater schedule", () => {
 
   const target: AutoUpdateTarget = {
     skills: () => skills,
-    check: async (skillId, options) => {
-      calls.push(`check:${skillId}:${options.force}:${options.lockMode}`);
-      const skill = skills.find((s) => s.id === skillId);
-      if (!skill) throw new Error("unknown skill");
-      if (skill.name === "busy") throw new AppError("BUSY", "busy");
-      return skill;
+    checkAll: async (force, options) => {
+      calls.push(`checkAll:${force}:${options.lockMode}`);
+      return { succeeded: skills.length, failed: [] };
     },
     update: async (skillId, approval, options) => {
       calls.push(`update:${skillId}:${approval}:${options.lockMode}`);
       const skill = skills.find((s) => s.id === skillId) as Skill;
       if (skill.name === "explodes") throw new AppError("GIT", "boom");
+      if (skill.name === "busy") throw new AppError("BUSY", "busy");
       return {
         skill,
         contentChanged: true,
@@ -95,7 +93,7 @@ describe("auto-updater schedule", () => {
     await vi.advanceTimersByTimeAsync(AUTO_FIRST_TICK_MS - 1);
     expect(calls).toEqual([]);
     await vi.advanceTimersByTimeAsync(1 + AUTO_SKILL_PAUSE_MS);
-    expect(calls).toEqual([`check:${skills[0]?.id}:true:try`]);
+    expect(calls).toEqual(["checkAll:true:try"]);
     expect(events).toHaveLength(1);
     const firstRun = world.ctx.settings.get("autoUpdateLastRunAt");
     expect(firstRun).toBeGreaterThan(0);
@@ -162,12 +160,13 @@ describe("auto-updater schedule", () => {
     await vi.advanceTimersByTimeAsync(skills.length * AUTO_SKILL_PAUSE_MS);
     const summary = await pending;
 
-    // held + local stay available; explodes fails; busy and untracked are left for later.
-    expect(summary).toMatchObject({ updated: 1, available: 2, failed: 1, added: 0 });
+    // held, local and busy stay available; explodes fails; untracked is not looked at.
+    expect(summary).toMatchObject({ updated: 1, available: 3, failed: 1, added: 0 });
     expect(events).toEqual([summary]);
-    // Repositories are looked at once a round.
+    // One check of the whole library, and repositories looked at once a round.
+    expect(calls.filter((call) => call.startsWith("checkAll"))).toEqual(["checkAll:true:try"]);
     expect(sourceRounds).toBe(1);
-    expect(calls).not.toContain(`check:${idOf("untracked")}:true:try`);
+    expect(calls).not.toContain(`update:${idOf("untracked")}:null:try`);
     expect(calls).not.toContain(`update:${idOf("local")}:null:try`);
     expect(calls).toContain(`update:${idOf("applied")}:null:try`);
   });
@@ -206,8 +205,11 @@ describe("auto-updater round over real services", () => {
     const next = commitAll(world.remote, "changes");
     writeFile(join(sourceDir, "extra.md"), "local change");
 
+    const before = world.lookups();
     const summary = await world.updates.auto.runNow();
     expect(summary).toMatchObject({ updated: 1, available: 2, failed: 0 });
+    // One lookup checks both skills of the repository; then one per update tried, one for news.
+    expect(world.lookups() - before).toBe(4);
     expect(world.ctx.settings.get("autoUpdateLastRunAt")).toBe(summary.ranAt);
     expect(world.install.events.filter(({ event }) => event === "updates:auto-ran")).toEqual([
       { event: "updates:auto-ran", payload: summary },

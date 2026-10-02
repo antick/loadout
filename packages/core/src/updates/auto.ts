@@ -1,6 +1,7 @@
 import {
   AUTO_UPDATE_INTERVAL_MS,
   type AppEvents,
+  type BatchResult,
   type Skill,
   type SourceCheckResult,
   type UpdateResult,
@@ -8,7 +9,7 @@ import {
 import type { CoreContext } from "../context";
 import { isAppError } from "../errors";
 import { pause } from "../util/async";
-import type { CheckOptions } from "./check";
+import type { LockMode } from "./locking";
 import { isRemoteSource } from "./source";
 import type { UpdateOptions } from "./update";
 
@@ -29,7 +30,8 @@ export type AutoRunSummary = AppEvents["updates:auto-ran"];
 /** The parts of the updates service a round drives. */
 export interface AutoUpdateTarget {
   skills(): Skill[];
-  check(skillId: string, options: CheckOptions): Promise<Skill>;
+  /** One check of the whole library: one lookup per repository, not one per skill. */
+  checkAll(force: boolean, options: { lockMode: LockMode }): Promise<BatchResult>;
   update(skillId: string, approval: null, options: UpdateOptions): Promise<UpdateResult>;
   /** Look for skills repositories gained; adds them when that setting is on. */
   checkSources(): Promise<SourceCheckResult>;
@@ -70,26 +72,19 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
     return last === 0 || last + every <= now;
   }
 
-  async function visit(skill: Skill, apply: boolean): Promise<Visit> {
-    let checked: Skill;
-    try {
-      checked = await target.check(skill.id, { force: true, ...BACKGROUND });
-    } catch (error) {
-      if (isAppError(error, "BUSY")) return "none";
-      ctx.log.warn(`Automatic update check of ${skill.name} failed`, error);
-      return "failed";
-    }
+  /** What the check found for `checked`, and the update when applying is on. */
+  async function visit(checked: Skill, apply: boolean): Promise<Visit> {
     if (checked.updateStatus === "error") return "failed";
     if (checked.updateStatus !== "update_available") return "none";
     // Local sources are only reported: copying someone's working folder is their call.
     if (!apply || !isRemoteSource(checked)) return "available";
     try {
-      const outcome = await target.update(skill.id, null, BACKGROUND);
+      const outcome = await target.update(checked.id, null, BACKGROUND);
       if (outcome.pendingRemovals.length > 0) return "available";
       return outcome.contentChanged ? "updated" : "none";
     } catch (error) {
       if (isAppError(error, "BUSY")) return "available";
-      ctx.log.warn(`Automatic update of ${skill.name} failed`, error);
+      ctx.log.warn(`Automatic update of ${checked.name} failed`, error);
       return "failed";
     }
   }
@@ -104,6 +99,12 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
       added: 0,
     };
     const apply = ctx.settings.get("autoUpdateApply");
+    try {
+      // A skill the library was too busy to check keeps its last answer for this round.
+      await target.checkAll(true, BACKGROUND);
+    } catch (error) {
+      ctx.log.warn("Automatic update check failed", error);
+    }
     for (const skill of target.skills().filter(isTracked)) {
       await pause(AUTO_SKILL_PAUSE_MS);
       // Stopped half way: leave the last-run time alone so the next launch finishes the job.

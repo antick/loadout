@@ -36,7 +36,8 @@ export interface CheckOptions {
 
 export interface Checker {
   check(skillId: string, options?: CheckOptions): Promise<Skill>;
-  checkAll(force?: boolean): Promise<BatchResult>;
+  /** `lockMode: "try"` for background rounds: a skill whose library is busy is skipped. */
+  checkAll(force?: boolean, options?: { lockMode?: LockMode }): Promise<BatchResult>;
 }
 
 const MAX_CONCURRENT_LOOKUPS = 8;
@@ -257,7 +258,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       return apply(skill, await investigate(skill), options.lockMode ?? "wait");
     },
 
-    checkAll: async (force = false) => {
+    checkAll: async (force = false, options = {}) => {
       const skills = store.list();
       const now = Date.now();
       const due = force ? skills : skills.filter((skill) => !isFresh(skill, ttl(), now));
@@ -288,7 +289,11 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       const round = { shared: outcomes, downloads, folders: folderComparer(git, planned) };
       for (const skill of due) {
         try {
-          const checked = await apply(skill, await investigate(skill, round), "wait");
+          const checked = await apply(
+            skill,
+            await investigate(skill, round),
+            options.lockMode ?? "wait",
+          );
           if (checked.updateStatus === "error") {
             result.failed.push({
               name: skill.name,

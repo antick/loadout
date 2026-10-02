@@ -76,14 +76,14 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
   });
   const auto = createAutoUpdater(ctx, {
     skills: () => store.list(),
-    check: checker.check,
+    checkAll: checker.checkAll,
     update: updater.update,
     checkSources: () => sources.check(),
   });
 
   const api: UpdatesApi = {
     check: (skillId, force) => checker.check(skillId, { force }),
-    checkAll: checker.checkAll,
+    checkAll: (force) => checker.checkAll(force),
     update: (skillId, approval, options) =>
       updater.update(skillId, approval, {
         acceptRisk: options?.acceptRisk,
