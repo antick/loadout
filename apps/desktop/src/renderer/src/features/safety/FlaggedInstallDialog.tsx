@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useLastDefined } from "@/hooks/use-last-defined";
 import { getFlaggedPrompt, subscribeFlaggedPrompt } from "./flagged-prompt";
 import { SafetyReportView } from "./SafetyReportView";
 
@@ -20,12 +21,14 @@ import { SafetyReportView } from "./SafetyReportView";
 export function FlaggedInstallDialog(): ReactNode {
   const { t } = useTranslation();
   const prompt = useSyncExternalStore(subscribeFlaggedPrompt, getFlaggedPrompt);
-  const flagged = prompt?.flagged ?? [];
-  const unchecked = prompt?.unchecked ?? [];
+  // Answered, it keeps showing what it asked while it fades out; the buttons act on `prompt` only.
+  const shown = useLastDefined(prompt);
+  const flagged = shown?.flagged ?? [];
+  const unchecked = shown?.unchecked ?? [];
   const [only] = flagged;
   const [onlyUnchecked] = unchecked;
   const safeChoice = useRef<HTMLButtonElement>(null);
-  const update = prompt?.action === "update";
+  const update = shown?.action === "update";
 
   return (
     <Dialog
