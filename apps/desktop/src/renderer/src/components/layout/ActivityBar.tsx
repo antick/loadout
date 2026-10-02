@@ -21,7 +21,7 @@ import {
 import { useShell } from "@/components/layout/shell-context";
 import { StatusDot } from "@/components/StatusDot";
 import { useAppInfo, useBackupStatus } from "@/hooks/queries/app";
-import { backupTone } from "@/lib/backup-tone";
+import { backupTone } from "@/lib/backup-mode";
 import { ACTIVITY_BAR_WIDTH_PX } from "@/lib/constants";
 import { shortcutLabel } from "@/lib/shortcuts";
 

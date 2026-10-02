@@ -1,3 +1,4 @@
+import type { StatusTone } from "@/components/StatusBadge";
 import type { BackupStatus } from "@loadout/shared";
 
 export type FixReason = "unrelated_histories" | "detached";
@@ -42,4 +43,21 @@ export function deriveBackupMode(
   if (local) return { kind: "pending", side: "local" };
   if (remoteAhead) return { kind: "pending", side: "remote" };
   return { kind: "up_to_date" };
+}
+
+/** The colour of each backup state, the same wherever backup health is shown. */
+export const BACKUP_MODE_TONES: Record<BackupModeKind, StatusTone> = {
+  loading: "neutral",
+  git_missing: "danger",
+  not_set_up: "neutral",
+  needs_remote: "neutral",
+  needs_fix: "danger",
+  failed: "danger",
+  pending: "warning",
+  up_to_date: "success",
+};
+
+/** Backup health as a colour for the status bar and activity bar; null before the status loads. */
+export function backupTone(status: BackupStatus | undefined): StatusTone | null {
+  return status ? BACKUP_MODE_TONES[deriveBackupMode(status, null, null).kind] : null;
 }

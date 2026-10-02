@@ -20,7 +20,7 @@ import { useBackupStatus } from "@/hooks/queries/app";
 import { useSetting } from "@/hooks/queries/settings";
 import { useSkills } from "@/hooks/queries/skills";
 import { STATUS_BAR_HEIGHT_CLASS } from "@/lib/constants";
-import { backupTone } from "@/lib/backup-tone";
+import { backupTone } from "@/lib/backup-mode";
 import { useAppEvent } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +74,9 @@ export function StatusBar(): ReactNode {
     tone === "success"
       ? t("statusBar.backup.success", { when: formatRelative(backup.data?.lastCommitAt) })
       : tone === "warning"
-        ? t("statusBar.backup.warning", { count: backup.data?.changedSkillCount ?? 0 })
+        ? backup.data?.changedSkillCount
+          ? t("statusBar.backup.warning", { count: backup.data.changedSkillCount })
+          : t("statusBar.backup.waiting")
         : tone
           ? t(`statusBar.backup.${tone}`)
           : null;

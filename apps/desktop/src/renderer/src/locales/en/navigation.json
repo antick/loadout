@@ -58,6 +58,7 @@
       "success": "Backed up {{when}}",
       "warning_one": "{{count}} skill not backed up",
       "warning_other": "{{count}} skills not backed up",
+      "waiting": "Sync waiting",
       "danger": "Backup needs attention"
     },
     "skills_one": "{{count}} skill",

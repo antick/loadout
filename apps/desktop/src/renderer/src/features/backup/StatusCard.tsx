@@ -13,13 +13,12 @@ import {
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineEdit } from "@/components/InlineEdit";
-import type { StatusTone } from "@/components/StatusBadge";
 import { TONE_CLASSES } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import type { BackupMode, BackupModeKind } from "@/lib/backup-mode";
+import { BACKUP_MODE_TONES, type BackupMode, type BackupModeKind } from "@/lib/backup-mode";
 import { DEVICE_NAME_MAX_LENGTH } from "./constants";
 import { BackupStageText } from "./BackupStageText";
 
@@ -38,15 +37,15 @@ export interface StatusCardProps {
   onRenameDevice: (name: string) => void;
 }
 
-const MODE_LOOK: Record<BackupModeKind, { tone: StatusTone; icon: LucideIcon }> = {
-  loading: { tone: "neutral", icon: RefreshCw },
-  git_missing: { tone: "danger", icon: TerminalSquare },
-  not_set_up: { tone: "neutral", icon: CloudOff },
-  needs_remote: { tone: "neutral", icon: CloudOff },
-  needs_fix: { tone: "danger", icon: Wrench },
-  failed: { tone: "danger", icon: CircleAlert },
-  pending: { tone: "warning", icon: CloudUpload },
-  up_to_date: { tone: "success", icon: CircleCheck },
+const MODE_ICONS: Record<BackupModeKind, LucideIcon> = {
+  loading: RefreshCw,
+  git_missing: TerminalSquare,
+  not_set_up: CloudOff,
+  needs_remote: CloudOff,
+  needs_fix: Wrench,
+  failed: CircleAlert,
+  pending: CloudUpload,
+  up_to_date: CircleCheck,
 };
 
 /** i18n key suffix for the mode: pending and needs-fix have one wording per variant. */
@@ -94,7 +93,8 @@ export function StatusCard({
     );
   }
 
-  const { tone, icon: Icon } = MODE_LOOK[mode.kind];
+  const tone = BACKUP_MODE_TONES[mode.kind];
+  const Icon = MODE_ICONS[mode.kind];
   const key = copyKey(mode);
   // Local wording counts changed skills; remote wording counts the backups to bring in.
   const count =

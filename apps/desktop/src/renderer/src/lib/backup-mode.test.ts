@@ -1,6 +1,6 @@
 import type { BackupStatus } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
-import { deriveBackupMode } from "./backup-mode";
+import { backupTone, deriveBackupMode } from "./backup-mode";
 
 const healthy: BackupStatus = {
   isRepo: true,
@@ -88,5 +88,18 @@ describe("deriveBackupMode", () => {
 
   it("is up to date when nothing is waiting", () => {
     expect(deriveBackupMode(healthy, null, null)).toEqual({ kind: "up_to_date" });
+  });
+});
+
+describe("backupTone", () => {
+  it("gives the status bar and activity bar the Backup page's colour", () => {
+    expect(backupTone(undefined)).toBeNull();
+    expect(backupTone(healthy)).toBe("success");
+    expect(backupTone({ ...healthy, isRepo: false, remoteUrl: null })).toBe("neutral");
+    // A remote that was never pushed to is waiting, not broken.
+    expect(backupTone({ ...healthy, upstreamHealth: "no_upstream" })).toBe("warning");
+    // No git at all is a problem even before the backup is set up.
+    expect(backupTone({ ...healthy, gitAvailable: false, isRepo: false })).toBe("danger");
+    expect(backupTone({ ...healthy, upstreamHealth: "detached" })).toBe("danger");
   });
 });

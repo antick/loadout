@@ -4,21 +4,9 @@ import { ArrowUpCircle, Bot, CloudUpload, FolderKanban, Layers, Library } from "
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { StatCard } from "@/components/StatCard";
-import type { StatusTone } from "@/components/StatusBadge";
 import { isAgentAvailable } from "@/hooks/queries/agents";
-import { type BackupModeKind, deriveBackupMode } from "@/lib/backup-mode";
+import { BACKUP_MODE_TONES, deriveBackupMode } from "@/lib/backup-mode";
 import { PERCENT } from "./constants";
-
-const BACKUP_TONES: Record<BackupModeKind, StatusTone> = {
-  loading: "neutral",
-  git_missing: "danger",
-  not_set_up: "neutral",
-  needs_remote: "neutral",
-  needs_fix: "danger",
-  failed: "danger",
-  pending: "warning",
-  up_to_date: "success",
-};
 
 export interface DashboardStatsProps {
   skills: readonly Skill[];
@@ -110,7 +98,7 @@ export function DashboardStats({
         label={t("dashboard.stats.backup")}
         value={<span className="text-base">{t(`dashboard.backupState.${backupKind}`)}</span>}
         icon={CloudUpload}
-        tone={BACKUP_TONES[backupKind]}
+        tone={BACKUP_MODE_TONES[backupKind]}
         onClick={() => void navigate({ to: "/backup" })}
       />
     </div>
