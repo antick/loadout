@@ -209,6 +209,10 @@ describe("global workspace", () => {
     expect(skillText(updated.libraryPath)).toContain("v2");
     expect(skillText(join(world.home, ".cursor", "skills", "helper"))).toContain("v2");
     expect(world.store.list()).toHaveLength(1);
+    // The library version it replaced is kept, like any other replaced skill.
+    expect(world.removed.list().map((entry) => [entry.name, entry.reason])).toEqual([
+      ["helper", "replaced"],
+    ]);
   });
 
   it("moves a nested skill to where deployments live, only once the library holds it", async () => {

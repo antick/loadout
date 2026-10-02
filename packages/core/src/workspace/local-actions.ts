@@ -6,6 +6,7 @@ import { writeTarget } from "../deploy";
 import { samePath } from "../deploy/evidence";
 import { invalid, notFound } from "../errors";
 import type { InstallIntoLibrary } from "../install/library";
+import { installReplacing } from "../install/replace";
 import { readSkillDocument } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
@@ -36,7 +37,7 @@ export interface LocalSyncDeps {
   deploy: Pick<DeployService, "refreshCopies">;
   install: { installIntoLibrary: InstallIntoLibrary };
   /** Recently removed: where a folder the user replaces or deletes is kept. */
-  removed: Pick<RemovedStore, "setAside">;
+  removed: Pick<RemovedStore, "setAside" | "keepCopy">;
 }
 
 /** Where a replaced folder is kept, and how its place is named there. */
@@ -112,7 +113,7 @@ export async function pushLocalToLibrary(
   entry: Pick<LocalEntry, "path" | "name">,
   match: Skill | null,
 ): Promise<Skill> {
-  const { store, deploy, install } = deps;
+  const { store, deploy, install, removed } = deps;
   if (!match) {
     const name = firstFreeName(entry.name, (candidate) => store.findByName(candidate).length === 0);
     return install.installIntoLibrary({
@@ -122,9 +123,16 @@ export async function pushLocalToLibrary(
       record: { sourceType: "local", sourceRef: entry.path, updateStatus: "local_only" },
     });
   }
-  const updated = await install.installIntoLibrary({
+  // Copies deployed elsewhere were made from the old content.
+  const refreshCopies = async (skill: Skill): Promise<void> => {
+    const report = await deploy.refreshCopies(skill);
+    for (const conflict of report.conflicts) {
+      ctx.log.warn(`Did not refresh ${conflict.path}: it ${conflict.reason}`);
+    }
+  };
+  // The library version it replaces goes to Recently removed, as any replaced skill does.
+  return installReplacing(ctx, install.installIntoLibrary, { removed, refreshCopies }, match, {
     sourceDir: entry.path,
-    name: match.name,
     activityKind: "import",
     record: {
       sourceType: match.sourceType,
@@ -135,15 +143,8 @@ export async function pushLocalToLibrary(
       sourceRevision: match.sourceRevision,
       remoteRevision: match.remoteRevision,
       updateStatus: "local_only",
-      replaceSkillId: match.id,
     },
   });
-  // Copies deployed elsewhere were made from the old content.
-  const report = await deploy.refreshCopies(updated);
-  for (const conflict of report.conflicts) {
-    ctx.log.warn(`Did not refresh ${conflict.path}: it ${conflict.reason}`);
-  }
-  return updated;
 }
 
 /**
