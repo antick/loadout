@@ -8,7 +8,7 @@ import {
 } from "@loadout/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type SkillRefreshRequest,
@@ -57,7 +57,16 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
   const [progress, setProgress] = useState<InstallProgress | null>(null);
   const [runningKind, setRunningKind] = useState<SkillRefreshRequest["kind"] | null>(null);
   const progressKey = updateProgressKey(skill.id);
-  const { mutate } = refresh;
+  const { mutateAsync } = refresh;
+  // The panel can close while an update runs. Its answer is still acted on (callbacks passed to
+  // `mutate` would be dropped); only the removal question needs the panel, so it says so instead.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useAppEvent("install:progress", (event) => {
     if (event.key === progressKey) setProgress(event);
@@ -73,46 +82,57 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
       setRunningKind(request.kind);
       // When Compare was opened, install exactly the version it showed, nothing newer.
       const compared = queryClient.getQueryData<SourceDiff>(keys.updates.sourceDiff(skill.id));
-      mutate(
-        { skillId: skill.id, request, approval, acceptRisk, expectedRevision: compared?.revision },
-        {
-          onError: (error) => {
-            if (!(error instanceof ApiError) || error.code !== "UNSAFE") return;
-            // The new version was flagged: show the findings, update only on a clear yes.
-            void askToInstallFlagged(error.details, "update").then((yes) => {
-              if (yes) runRefresh(request, approval, true);
-              else toast.info(t("safety.prompt.notUpdated"));
-            });
-          },
-          onSuccess: (result) => {
-            if (result.pendingRemovals.length > 0) {
-              setPending({
-                request,
-                removals: result.pendingRemovals,
-                approval: result.approval,
-                acceptRisk,
+      mutateAsync({
+        skillId: skill.id,
+        request,
+        approval,
+        acceptRisk,
+        expectedRevision: compared?.revision,
+      })
+        .then((result) => {
+          if (result.pendingRemovals.length > 0) {
+            if (!mounted.current) {
+              toast.info(t("library.refresh.waiting", { name: result.skill.name }), {
+                description: t("library.refresh.waitingDescription", {
+                  count: result.pendingRemovals.length,
+                }),
               });
               return;
             }
-            setPending(null);
-            // Replaced edits wait in Recently removed; Undo puts them back.
-            toastWithUndo(
-              queryClient,
-              t(result.contentChanged ? "library.refresh.done" : "library.refresh.unchanged", {
-                name: result.skill.name,
-              }),
-              result.removedIds,
-              t("library.refresh.editsKept", { days: REMOVED_KEEP_DAYS }),
-            );
-          },
-          onSettled: () => {
-            setProgress(null);
-            setRunningKind(null);
-          },
-        },
-      );
+            setPending({
+              request,
+              removals: result.pendingRemovals,
+              approval: result.approval,
+              acceptRisk,
+            });
+            return;
+          }
+          setPending(null);
+          // Replaced edits wait in Recently removed; Undo puts them back.
+          toastWithUndo(
+            queryClient,
+            t(result.contentChanged ? "library.refresh.done" : "library.refresh.unchanged", {
+              name: result.skill.name,
+            }),
+            result.removedIds,
+            t("library.refresh.editsKept", { days: REMOVED_KEEP_DAYS }),
+          );
+        })
+        .catch((error: unknown) => {
+          // Other errors were toasted by the mutation itself.
+          if (!(error instanceof ApiError) || error.code !== "UNSAFE") return;
+          // The new version was flagged: show the findings, update only on a clear yes.
+          void askToInstallFlagged(error.details, "update").then((yes) => {
+            if (yes) runRefresh(request, approval, true);
+            else toast.info(t("safety.prompt.notUpdated"));
+          });
+        })
+        .finally(() => {
+          setProgress(null);
+          setRunningKind(null);
+        });
     },
-    [mutate, queryClient, skill.id, t],
+    [mutateAsync, queryClient, skill.id, t],
   );
 
   return {

@@ -116,6 +116,9 @@
       "done": "“{{name}}” is up to date with its source",
       "unchanged": "“{{name}}” had no file changes",
       "editsKept": "Your edited version is kept in Settings → Storage → Recently removed for {{days}} days.",
+      "waiting": "“{{name}}” was not updated yet",
+      "waitingDescription_one": "The new version deletes {{count}} file. Open the skill and update it again to review it.",
+      "waitingDescription_other": "The new version deletes {{count}} files. Open the skill and update it again to review them.",
       "phases": {
         "starting": "Starting…",
         "cloning": "Fetching the source…",
