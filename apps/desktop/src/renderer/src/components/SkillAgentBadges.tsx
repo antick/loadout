@@ -1,8 +1,9 @@
 import type { AgentInfo, Skill } from "@loadout/shared";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo } from "react";
 import { AgentBadgeRow } from "@/components/AgentBadgeRow";
 import { useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
 import { useAvailableAgents } from "@/hooks/queries/agents";
+import { usePendingSet } from "@/hooks/use-pending-set";
 
 export interface SkillAgentBadgesProps {
   skill: Skill;
@@ -16,20 +17,12 @@ export function SkillAgentBadges({ skill, agents, className }: SkillAgentBadgesP
   const available = useAvailableAgents();
   const deploy = useDeploySkill();
   const undeploy = useUndeploySkill();
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+  const { pending, mark } = usePendingSet();
   const deployedKeys = useMemo(
     () => new Set(skill.deployments.map((d) => d.agentKey)),
     [skill.deployments],
   );
   const blockedKeys = useMemo(() => new Set(skill.blockedAgents), [skill.blockedAgents]);
-
-  const setAgentPending = (agentKey: string, on: boolean): void =>
-    setPending((previous) => {
-      const next = new Set(previous);
-      if (on) next.add(agentKey);
-      else next.delete(agentKey);
-      return next;
-    });
 
   return (
     <AgentBadgeRow
@@ -39,11 +32,14 @@ export function SkillAgentBadges({ skill, agents, className }: SkillAgentBadgesP
       blockedKeys={blockedKeys}
       pendingKeys={pending}
       onToggle={(agent, wantDeployed) => {
-        setAgentPending(agent.key, true);
-        (wantDeployed ? deploy : undeploy).mutate(
-          { skillId: skill.id, agentKey: agent.key },
-          { onSettled: () => setAgentPending(agent.key, false) },
-        );
+        mark(agent.key, true);
+        // `mutateAsync`, not per-call callbacks: TanStack Query only calls those for the latest
+        // call, so a second badge clicked meanwhile would leave the first one spinning for good.
+        // A failure is toasted by the mutation itself.
+        (wantDeployed ? deploy : undeploy)
+          .mutateAsync({ skillId: skill.id, agentKey: agent.key })
+          .catch(() => undefined)
+          .finally(() => mark(agent.key, false));
       }}
     />
   );

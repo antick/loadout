@@ -14,6 +14,7 @@ import {
   usePushToLibrary,
   useSetProjectSkillEnabled,
 } from "@/hooks/mutations/project-detail";
+import { usePendingSet } from "@/hooks/use-pending-set";
 import { editLink } from "@/lib/skill-location";
 import type { VersionChoice } from "./PushVersionDialog";
 import {
@@ -63,17 +64,8 @@ export function useProjectSkillActions(
   // a mutation, so a quick second toggle would leave the first switch spinning for good.
   const { mutateAsync: exportSkill } = useExportSkill();
   const { mutateAsync: deleteSkill } = useDeleteProjectSkill();
-  const [pendingTargets, setPendingTargets] = useState<ReadonlySet<string>>(new Set());
+  const { pending: pendingTargets, mark: markPending } = usePendingSet();
   const projectId = project.id;
-
-  const markPending = useCallback((id: string, on: boolean) => {
-    setPendingTargets((previous) => {
-      const next = new Set(previous);
-      if (on) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  }, []);
 
   const actionsFor = useCallback(
     (group: ProjectSkillGroup): SkillAction[] => {
