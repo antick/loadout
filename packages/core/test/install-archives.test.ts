@@ -191,6 +191,8 @@ describe("archive files with several skills", () => {
 
     const preview = await world.install.api.previewArchive(path);
     expect(preview).toMatchObject({ kind: "archive", repoUrl: path });
+    // The status bar stops showing the scan once the list is there.
+    expect(world.install.progressFor(path).at(-1)).toBe("done");
     const [haiku] = await world.install.api.confirmGit(preview.previewId, [
       { relPath: "bundle/haiku", name: "" },
     ]);

@@ -240,19 +240,24 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     previewArchive: async (archivePath) => {
       const path = archivePath.trim();
       if (!path) throw invalid("Archive path is required");
-      return previewFetched({
-        key: archivePath,
-        kind: "archive",
-        shownAs: path,
-        fetch: () => unpackArchiveFile(path),
-        record: (subpath) => ({
-          sourceType: "local",
-          sourceRef: path,
-          sourceSubpath: subpath,
-          updateStatus: "local_only",
-        }),
-        installed: (s) => s.sourceType === "local" && s.sourceRef === path,
-      });
+      try {
+        return await previewFetched({
+          key: archivePath,
+          kind: "archive",
+          shownAs: path,
+          fetch: () => unpackArchiveFile(path),
+          record: (subpath) => ({
+            sourceType: "local",
+            sourceRef: path,
+            sourceSubpath: subpath,
+            updateStatus: "local_only",
+          }),
+          installed: (s) => s.sourceType === "local" && s.sourceRef === path,
+        });
+      } finally {
+        // Listed, failed or cancelled: the status bar stops showing the scan either way.
+        emitProgress(ctx, archivePath, "done");
+      }
     },
 
     confirmGit: sessions.confirm,
