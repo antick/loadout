@@ -52,8 +52,11 @@ export interface CoreCreateOptions extends CoreOptions {
 export interface CoreBackground {
   start(): void;
   stop(): void;
-  /** Files changed outside the app (by hand, an agent, or the CLI). */
-  libraryChangedOnDisk(): void;
+  /**
+   * Files changed outside the app (by hand, an agent, or the CLI). Settles once the library is
+   * re-indexed, which waits for any operation working in it; it never rejects.
+   */
+  libraryChangedOnDisk(): Promise<void>;
   /** Last chance to save: a local backup commit, no network. */
   beforeQuit(): Promise<void>;
 }
@@ -87,14 +90,13 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const bundle = createContext(options);
   const { ctx, store, portable } = bundle;
 
-  // Pick up anything that changed while the app was closed (manual edits, CLI use, a restore).
-  portable.rebuild({ authoritative: false });
-
   const registry = new AgentRegistry(ctx);
-  // Writing the metadata and pruning links left by deleted skills change the library: only
-  // when nobody else is working in it (an app mid-restore must not see links vanish). When it
-  // is busy this waits for the next start.
+  // Pick up anything that changed while the app was closed (manual edits, CLI use, a restore),
+  // write the metadata and prune links left by deleted skills: only when nobody else is working
+  // in the library. Mid-merge a skill folder is set aside for a moment, and its row would go
+  // with its deployments. When it is busy, the process working in it keeps the index.
   const tidied = ctx.lock.holdSync("tidy the library on start", () => {
+    portable.rebuild({ authoritative: false });
     portable.write();
     pruneBrokenLinks(ctx, { registry, store });
   });
@@ -255,6 +257,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     listing: listing.api,
   };
 
+  /** An outside change waiting for its turn at the lock: later changes ride along with it. */
+  let waiting: { done: Promise<void> } | null = null;
   const background: CoreBackground = {
     start: () => {
       // Library edits made while the app was closed left the copies behind.
@@ -278,19 +282,27 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       backup.auto.stop();
     },
     libraryChangedOnDisk: () => {
-      try {
-        portable.rebuild({ authoritative: false });
-        // Mid-restore or mid-merge a skill folder can be missing for a moment: prune only when
-        // nothing is working in the library. The next change looks again.
-        ctx.lock.holdSync("prune links after an outside change", () =>
-          pruneBrokenLinks(ctx, { registry, store }),
-        );
-      } catch (error) {
-        ctx.log.warn("Could not re-index the library after an outside change", error);
-      }
-      staleCopies.request();
-      refreshItems();
-      backup.auto.notifyChanged();
+      if (waiting) return waiting.done;
+      const turn = { done: Promise.resolve() };
+      waiting = turn;
+      // Mid-restore or mid-merge a skill folder can be missing for a moment: re-index and prune
+      // once whatever works in the library is done, never in between.
+      turn.done = ctx.lock
+        .run("re-index after an outside change", () => {
+          if (waiting === turn) waiting = null;
+          portable.rebuild({ authoritative: false });
+          pruneBrokenLinks(ctx, { registry, store });
+        })
+        .then(() => {
+          staleCopies.request();
+          refreshItems();
+          backup.auto.notifyChanged();
+        })
+        .catch((error: unknown) => {
+          if (waiting === turn) waiting = null;
+          ctx.log.warn("Could not re-index the library after an outside change", error);
+        });
+      return turn.done;
     },
     beforeQuit: async () => {
       updates.auto.stop();

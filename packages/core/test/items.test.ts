@@ -116,7 +116,7 @@ describe("deploying items", () => {
     await core.api.items.deploy(REVIEWER, CLAUDE);
     const libraryFile = (await core.api.items.get(REVIEWER)).path;
     writeFileSync(libraryFile, content.replace("Review it.", "Synced text."));
-    core.background.libraryChangedOnDisk();
+    await core.background.libraryChangedOnDisk();
     expect(readFileSync(join(home, ".claude", "agents", "reviewer.md"), "utf8")).toContain(
       "Synced text.",
     );

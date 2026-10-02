@@ -341,11 +341,13 @@ function start(): void {
       () => (core ? core.watchPaths() : []),
       () => {
         if (!checkLibrary()) return;
-        core?.background.libraryChangedOnDisk();
-        send("data:changed", {
-          scope: ["skills", "agents", "presets", "projects", "backup", "items"],
+        const reindexed = core?.background.libraryChangedOnDisk() ?? Promise.resolve();
+        void reindexed.then(() => {
+          send("data:changed", {
+            scope: ["skills", "agents", "presets", "projects", "backup", "items"],
+          });
+          tray?.refresh();
         });
-        tray?.refresh();
       },
     ),
     watchFolders(
