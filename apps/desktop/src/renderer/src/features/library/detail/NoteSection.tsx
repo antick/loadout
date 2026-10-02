@@ -6,6 +6,7 @@ import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useSetSkillNote } from "@/hooks/mutations/skills";
+import { ownsEscape } from "@/lib/escape";
 
 /** Show the character count once the note is this close to the cap. */
 const COUNT_FROM = SKILL_NOTE_MAX_LENGTH - 200;
@@ -60,6 +61,7 @@ export function NoteSection({ skill }: { skill: Skill }): ReactNode {
             className="min-h-24 text-sm"
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={onKeyDown}
+            {...ownsEscape}
           />
           <div className="flex items-center gap-2">
             <Button type="button" size="sm" disabled={save.isPending} onClick={submit}>

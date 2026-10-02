@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { ownsEscape } from "@/lib/escape";
 
 export interface InlineEditProps {
   value: string;
@@ -50,6 +51,7 @@ export function InlineEdit({
         className={cn("h-7 px-2", className)}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => finish(true)}
+        {...ownsEscape}
         onKeyDown={(event) => {
           if (event.key === "Enter") finish(true);
           if (event.key === "Escape") {

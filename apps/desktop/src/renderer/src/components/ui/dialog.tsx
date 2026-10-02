@@ -5,7 +5,7 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { Button } from "@/components/ui/button";
 import { i18n } from "@/lib/i18n";
-import { searchOwnsEscape } from "@/lib/escape";
+import { fieldOwnsEscape } from "@/lib/escape";
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -58,7 +58,7 @@ function DialogContent({
           className,
         )}
         onEscapeKeyDown={(event) => {
-          if (searchOwnsEscape(event)) event.preventDefault();
+          if (fieldOwnsEscape(event)) event.preventDefault();
           onEscapeKeyDown?.(event);
         }}
         {...props}

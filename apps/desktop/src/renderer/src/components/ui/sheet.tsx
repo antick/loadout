@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
 import { i18n } from "@/lib/i18n";
-import { searchOwnsEscape } from "@/lib/escape";
+import { fieldOwnsEscape } from "@/lib/escape";
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
@@ -66,7 +66,7 @@ function SheetContent({
           className,
         )}
         onEscapeKeyDown={(event) => {
-          if (searchOwnsEscape(event)) event.preventDefault();
+          if (fieldOwnsEscape(event)) event.preventDefault();
           onEscapeKeyDown?.(event);
         }}
         {...props}
