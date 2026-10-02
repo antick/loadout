@@ -15,8 +15,9 @@ import { AppError, errorMessage, unsupported } from "../errors";
 import type { SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
 import { scanWithRules } from "./builtin";
+import { BUILTIN_RULES_VERSION } from "./rules";
 import { type ScannerProgram, findScanner, runScanner, scannerVersion } from "./scanner";
-import { SafetyStore } from "./store";
+import { SafetyStore, type StoredReport } from "./store";
 
 export interface SafetyServiceDeps {
   store: SkillStore;
@@ -70,8 +71,18 @@ function flaggedMessage(
   return `The safety check flagged ${subject}. Read the findings, then install anyway only if you trust the source.`;
 }
 
+/**
+ * A kept report still speaks for the skill: made from the same files and, for Loadout's own
+ * rules, by the rules this version has. A report from older rules is checked again.
+ */
+function isCurrent(skill: Skill, entry: StoredReport | undefined): boolean {
+  if (!entry || entry.contentHash !== skill.contentHash) return false;
+  return entry.report.engine !== "builtin" || entry.report.scannerVersion === BUILTIN_RULES_VERSION;
+}
+
 function toRecord(skill: Skill, contentHash: string, report: SafetyReport): SafetyRecord {
-  return { ...report, skillId: skill.id, contentHash, stale: skill.contentHash !== contentHash };
+  const stale = !isCurrent(skill, { contentHash, report });
+  return { ...report, skillId: skill.id, contentHash, stale };
 }
 
 export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): SafetyService {
@@ -169,7 +180,7 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
         .filter(
           (skill) =>
             force ||
-            stored[skill.id]?.contentHash !== skill.contentHash ||
+            !isCurrent(skill, stored[skill.id]) ||
             stored[skill.id]?.report.engine !== engine.kind,
         );
       const summary: SafetyScanSummary = { scanned: 0, unsafe: 0, caution: 0, failed: [] };
@@ -254,7 +265,7 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     const engine = await currentEngine();
     if (engine?.kind !== "builtin") return 0;
     const stored = reports.all();
-    const due = store.list().filter((skill) => stored[skill.id]?.contentHash !== skill.contentHash);
+    const due = store.list().filter((skill) => !isCurrent(skill, stored[skill.id]));
     let scanned = 0;
     for (const skill of due) {
       try {

@@ -3,7 +3,12 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Core, createCore } from "../src/core";
 import { silentLogger } from "../src/log";
-import { SAFETY_RULES, createSafetyService, scanWithRules } from "../src/safety";
+import {
+  BUILTIN_RULES_VERSION,
+  SAFETY_RULES,
+  createSafetyService,
+  scanWithRules,
+} from "../src/safety";
 import { createTestWorld, makeSkill, tempDir, type TestWorld } from "./helpers";
 import { type InstallHarness, createInstallHarness } from "./install-fixtures";
 
@@ -152,6 +157,22 @@ describe("the safety service with the built-in rules", () => {
       "unsafe",
     ]);
     expect(await safety.scanDueQuietly()).toBe(0);
+  });
+
+  it("checks again a report made by an older set of rules", async () => {
+    const safety = setup(true);
+    const skill = await install.api.fromPath(makeSkill(sources, "plain"));
+    const [current] = await safety.api.list();
+    expect(current).toMatchObject({ scannerVersion: BUILTIN_RULES_VERSION, stale: false });
+    if (!current) return;
+    safety.remember(skill, { ...current, scannerVersion: "0" });
+
+    expect((await safety.api.list())[0]).toMatchObject({ stale: true });
+    expect(await safety.scanDueQuietly()).toBe(1);
+    expect((await safety.api.list())[0]).toMatchObject({
+      scannerVersion: BUILTIN_RULES_VERSION,
+      stale: false,
+    });
   });
 });
 
