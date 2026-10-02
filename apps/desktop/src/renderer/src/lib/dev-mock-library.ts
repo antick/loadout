@@ -194,7 +194,12 @@ export function createLibraryMockHandlers(
         };
       }
     }
-    await phases(`${UPDATE_KEY_PREFIX}${skillId}`, ["cloning", "installing", "deploying"]);
+    await phases(`${UPDATE_KEY_PREFIX}${skillId}`, [
+      "cloning",
+      "checking",
+      "installing",
+      "deploying",
+    ]);
     const contentChanged = skill.updateStatus === "update_available" || guarded || !isRemote(skill);
     const updated = patch(skillId, {
       ...changes,

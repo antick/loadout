@@ -124,6 +124,7 @@
         "cloning": "Fetching the source…",
         "downloading": "Downloading the source…",
         "scanning": "Looking for the skill…",
+        "checking": "Running the safety check on the new version…",
         "installing": "Replacing the library copy…",
         "deploying": "Refreshing installed copies…",
         "done": "Finishing…"

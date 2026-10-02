@@ -30,6 +30,7 @@ import { FindSourceSection } from "@/features/origin/FindSourceSection";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { usePickFolder } from "@/hooks/mutations/app";
 import { useCheckSkillUpdate, useDetachSkill } from "@/hooks/mutations/library";
+import { installPhaseText } from "@/features/install/install-tasks";
 
 /** Characters of a revision shown; the full value stays in the tooltip. */
 const REVISION_DISPLAY_LENGTH = 10;
@@ -115,7 +116,10 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
           }
         >
           <span aria-live="polite">
-            {t(`library.refresh.phases.${refresh.progress?.phase ?? "starting"}`)}
+            {t(`library.refresh.phases.${refresh.progress?.phase ?? "starting"}`, {
+              // A phase without update wording reads as it does for an install.
+              defaultValue: installPhaseText(refresh.progress),
+            })}
           </span>
         </InlineNotice>
       ) : null}
