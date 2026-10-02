@@ -3,7 +3,7 @@ import { existsSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { BackupConflict, ConflictResolution } from "@loadout/shared";
 import { AppError, notFound } from "../errors";
-import type { PortableSkill } from "../skills/portable";
+import { type PortableSkill, toPortableSkill } from "../skills/portable";
 import { removePath, writeJsonAtomic } from "../util/fs";
 import { firstFreeName } from "../util/names";
 import { deleteConflict, findConflict } from "./conflict-store";
@@ -99,14 +99,17 @@ async function useRemote(
   if (aside) work.replaced.push({ aside, target });
   work.created.push(target);
   renameSync(staged.folder, target);
+  // The other device's metadata wins; what it leaves out (a block, a note) stays as it is here.
   const next: PortableSkill = {
+    tags: [],
+    source: { type: "import" },
+    createdAt: Date.now(),
+    ...(local ? toPortableSkill(local) : {}),
+    ...meta,
+    // The edited files describe the content, which now comes from the other device.
+    editedFiles: meta?.editedFiles,
     id: conflict.skillKey,
     path: folder,
-    tags: meta?.tags ?? local?.tags ?? [],
-    source: meta?.source ?? { type: local?.sourceType ?? "import" },
-    createdAt: meta?.createdAt ?? local?.createdAt ?? Date.now(),
-    note: meta?.note ?? local?.note ?? undefined,
-    favoritedAt: meta?.favoritedAt ?? local?.favoritedAt ?? undefined,
   };
   writeJsonAtomic(metadataFile(env, conflict.skillKey), next);
 }

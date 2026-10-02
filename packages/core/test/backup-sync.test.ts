@@ -118,6 +118,31 @@ describe("backup sync", () => {
     expect(a.git("rev-parse", "HEAD")).toBe(b.git("rev-parse", "HEAD"));
   });
 
+  it("keeps Mine and the edited files through a merge on both devices", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
+    track(a);
+    const b = track(await joinRemote(temp.dir, remote));
+    const id = b.skill("alpha")?.id ?? "";
+
+    b.store.update(id, { authored: true, editedFiles: ["SKILL.md"] });
+    b.store.setTags(id, ["from-b"]);
+    a.editSkill("beta", "from A");
+    await a.api.sync();
+    const outcome = await b.api.sync();
+
+    // A real merge, not a fast-forward, decided skill by skill.
+    expect(b.git("log", "-1", "--format=%P").split(" ")).toHaveLength(2);
+    expect(outcome.merge?.updated).toEqual([{ name: "beta", fromDevice: "Device A" }]);
+    expect(b.skill("alpha")).toMatchObject({ authored: true, editedFiles: ["SKILL.md"] });
+
+    await a.api.sync();
+    expect(a.skill("alpha")).toMatchObject({
+      authored: true,
+      editedFiles: ["SKILL.md"],
+      tags: ["from-b"],
+    });
+  });
+
   it("combines a rename on one device with an edit on the other", async () => {
     const { a, remote } = await seedRemote(temp.dir, ["alpha"]);
     track(a);

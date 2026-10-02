@@ -111,6 +111,19 @@ describe("backup conflicts", () => {
     expect(a.read("alpha")).toBe("A's version");
   });
 
+  it("use_remote keeps what the other device's metadata leaves out", async () => {
+    await b.api.sync();
+    b.store.update(alphaId, { blockedAgents: ["cursor"], suggestFor: ["*.rs"], authored: true });
+    await b.api.resolveConflict(alphaId, "use_remote");
+
+    expect(b.read("alpha")).toBe("A's version");
+    expect(b.skill("alpha")).toMatchObject({
+      blockedAgents: ["cursor"],
+      suggestFor: ["*.rs"],
+      authored: true,
+    });
+  });
+
   it("keep_both adds the other version as a new skill next to ours", async () => {
     await b.api.sync();
     await b.api.resolveConflict(alphaId, "keep_both");

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import type { SourceType } from "@loadout/shared";
+import type { Skill, SourceType } from "@loadout/shared";
 import {
   APP_NAME,
   cleanAgentKeys,
@@ -70,6 +70,31 @@ export interface PortablePreset {
 }
 
 /** A relative, `/` separated path that stays inside the folder it is relative to. */
+/** A skill's portable metadata file, as it is written for the backup. */
+export function toPortableSkill(skill: Skill): PortableSkill {
+  const local = MACHINE_LOCAL_SOURCES.has(skill.sourceType);
+  return {
+    id: skill.id,
+    path: skill.dirName,
+    tags: [...skill.tags].sort(),
+    source: {
+      type: skill.sourceType,
+      ref: local ? undefined : skill.sourceRef,
+      url: skill.sourceUrl,
+      subpath: skill.sourceSubpath,
+      branch: skill.sourceBranch,
+      revision: skill.sourceRevision,
+    },
+    createdAt: skill.createdAt,
+    editedFiles: skill.editedFiles.length > 0 ? [...skill.editedFiles].sort() : undefined,
+    authored: skill.authored ? true : undefined,
+    suggestFor: skill.suggestFor.length > 0 ? [...skill.suggestFor].sort() : undefined,
+    blockedAgents: skill.blockedAgents.length > 0 ? [...skill.blockedAgents].sort() : undefined,
+    note: skill.note ?? undefined,
+    favoritedAt: skill.favoritedAt ?? undefined,
+  };
+}
+
 export function isSafeRelativePath(path: unknown): path is string {
   if (typeof path !== "string" || path.length === 0 || path.includes("\0")) return false;
   if (path.startsWith("/") || path.includes("\\") || /^[A-Za-z]:/.test(path)) return false;
@@ -208,29 +233,8 @@ export class PortableMetadata {
 
     const skillFiles = new Set<string>();
     for (const skill of this.#skills.list()) {
-      const local = MACHINE_LOCAL_SOURCES.has(skill.sourceType);
-      const file: PortableSkill = {
-        id: skill.id,
-        path: skill.dirName,
-        tags: [...skill.tags].sort(),
-        source: {
-          type: skill.sourceType,
-          ref: local ? undefined : skill.sourceRef,
-          url: skill.sourceUrl,
-          subpath: skill.sourceSubpath,
-          branch: skill.sourceBranch,
-          revision: skill.sourceRevision,
-        },
-        createdAt: skill.createdAt,
-        editedFiles: skill.editedFiles.length > 0 ? [...skill.editedFiles].sort() : undefined,
-        authored: skill.authored ? true : undefined,
-        suggestFor: skill.suggestFor.length > 0 ? [...skill.suggestFor].sort() : undefined,
-        blockedAgents: skill.blockedAgents.length > 0 ? [...skill.blockedAgents].sort() : undefined,
-        note: skill.note ?? undefined,
-        favoritedAt: skill.favoritedAt ?? undefined,
-      };
       skillFiles.add(`${skill.id}.json`);
-      this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), file);
+      this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), toPortableSkill(skill));
     }
     pruneDir(this.#skillsMetaDir, skillFiles);
 

@@ -215,6 +215,12 @@ export function planSkill(
   );
   const favoritedAt = favoritePick === "theirs" ? theirs.meta.favoritedAt : ours.meta.favoritedAt;
   if (favoritedAt !== undefined) meta.favoritedAt = favoritedAt;
+  const authoredPick = pickSide(base?.meta.authored, ours.meta.authored, theirs.meta.authored);
+  const authored = authoredPick === "theirs" ? theirs.meta.authored : ours.meta.authored;
+  if (authored) meta.authored = authored;
+  // The edited files describe the content, so they come from the side the content comes from.
+  const editedFiles = content === "theirs" ? theirs.meta.editedFiles : ours.meta.editedFiles;
+  if (editedFiles && editedFiles.length > 0) meta.editedFiles = editedFiles;
 
   const touched =
     content === "theirs" ||
@@ -224,6 +230,7 @@ export function planSkill(
     canonical(blockedAgents) !== canonical([...(ours.meta.blockedAgents ?? [])].sort()) ||
     note !== ours.meta.note ||
     favoritedAt !== ours.meta.favoritedAt ||
+    authored !== ours.meta.authored ||
     sourceSide === "theirs";
   const outcome: SkillOutcome = conflict ? "conflict" : touched ? "updated" : "unchanged";
   return { id, outcome, content, path, meta };

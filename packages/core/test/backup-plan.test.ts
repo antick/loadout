@@ -121,6 +121,34 @@ describe("merge plan: one skill", () => {
     });
   });
 
+  it("keeps Mine and the edited files when both sides have the skill", () => {
+    const mine = (path: string, hash: string, tags: string[] = []): SkillSide => {
+      const result = side(path, hash, tags);
+      result.meta = { ...result.meta, authored: true, editedFiles: ["SKILL.md"] };
+      return result;
+    };
+    // Only a tag changed on the remote: everything else stays as it is here.
+    const tagged = planSkill("s1", {
+      base: mine("alpha", "t0"),
+      ours: mine("alpha", "t0"),
+      theirs: mine("alpha", "t0", ["new"]),
+    });
+    expect(tagged.meta).toMatchObject({ authored: true, editedFiles: ["SKILL.md"] });
+
+    // Marked as mine on the remote only: that change comes in.
+    const marked = planSkill("s1", { base, ours: base, theirs: mine("alpha", "t0") });
+    expect(marked).toMatchObject({ outcome: "updated", meta: { authored: true } });
+
+    // The edited files describe the content, so they follow the side the content comes from.
+    const updated = planSkill("s1", {
+      base: mine("alpha", "t0"),
+      ours: mine("alpha", "t0"),
+      theirs: side("alpha", "t1", [], "r2"),
+    });
+    expect(updated).toMatchObject({ outcome: "updated", content: "theirs" });
+    expect(updated.meta?.editedFiles).toBeUndefined();
+  });
+
   it("lets our rename win over a different rename", () => {
     const plan = planSkill("s1", {
       base,
