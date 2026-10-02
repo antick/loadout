@@ -14,9 +14,9 @@
         "--filter",
         "@loadout/desktop",
         "exec",
-        "electron-vite",
-        "dev",
-        "--rendererOnly"
+        "vite",
+        "--config",
+        "e2e/vite.config.ts"
       ],
       "port": 5199,
       "env": {
