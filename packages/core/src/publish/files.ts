@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { PUBLISH_MAX_FILE_BYTES } from "@loadout/shared";
+import { PUBLISH_MAX_FILE_BYTES, type SecretFinding } from "@loadout/shared";
+import { findSecrets } from "../backup/secrets";
+import { AppError } from "../errors";
 import { lstatOrNull, readDirSafe } from "../util/fs";
 import { isIgnoredContentName } from "../util/hash";
 
@@ -12,11 +14,18 @@ import { isIgnoredContentName } from "../util/hash";
 
 const EXECUTABLE_BITS = 0o111;
 /** Folders never published. Their names are what the user sees as "left out". */
-const LEFT_OUT_DIRS: ReadonlySet<string> = new Set(["node_modules", ".venv"]);
+const LEFT_OUT_DIRS: ReadonlySet<string> = new Set([
+  "node_modules",
+  ".venv",
+  "venv",
+  "__pycache__",
+]);
 const ENV_FILE = /^\.env(?:\..+)?$/i;
 /** `.env.example` documents the variables; it holds no values. */
 const ENV_TEMPLATE = /\.(?:example|sample|template)$/i;
 const LOG_FILE = /\.log$/i;
+/** Larger files are not read for keys: a key file is small, and this keeps a check quick. */
+const MAX_SCANNED_BYTES = 1024 * 1024;
 
 export interface PublishFile {
   /** Path inside the skill folder, `/` separated. */
@@ -107,4 +116,29 @@ export function digestsInTree(dir: string): Map<string, string> {
   };
   walk(dir, "");
   return found;
+}
+
+/** What looks like a key or token in the files, each named `<prefix>/<path>` (or its path). */
+export function findSecretsIn(files: readonly PublishFile[], prefix = ""): SecretFinding[] {
+  const found: SecretFinding[] = [];
+  for (const file of files) {
+    if (file.size > MAX_SCANNED_BYTES) continue;
+    const bytes = readFileSync(file.absolutePath);
+    if (bytes.includes(0)) continue;
+    const name = prefix ? `${prefix}/${file.relativePath}` : file.relativePath;
+    found.push(...findSecrets(name, file.absolutePath, bytes.toString("utf8")));
+  }
+  return found;
+}
+
+/** The error a publish stops with when files look like they hold keys; lists every finding. */
+export function secretsHeldBack(findings: SecretFinding[]): AppError {
+  const [first] = findings;
+  const where = first ? `${first.file}, line ${first.line}` : "";
+  const more = findings.length > 1 ? ` and ${findings.length - 1} more` : "";
+  return new AppError(
+    "SECRETS_FOUND",
+    `Publishing held back: ${where}${more} looks like a key or token. Remove it from the skill, or publish anyway if it is safe to share.`,
+    { secrets: findings },
+  );
 }

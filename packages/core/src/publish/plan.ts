@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import {
   PUBLISH_LAYERS,
@@ -12,15 +11,13 @@ import {
   formatBytes,
 } from "@loadout/shared";
 import { isSafeSkillPath } from "../backup/env";
-import { findSecrets } from "../backup/secrets";
 import { isDirectory } from "../util/fs";
-import { type PublishFile, collectFiles, digestsInTree, digestsOf } from "./files";
+import { type PublishFile, collectFiles, digestsInTree, digestsOf, findSecretsIn } from "./files";
 import type { ResolvedTarget } from "./target";
 
 /** What publishing would do to a repository, worked out without changing anything. */
 
 /** Larger files are not text a skill carries by hand; reading them would only cost time. */
-const MAX_SCANNED_BYTES = 1024 * 1024;
 const SKILL_FILE = "SKILL.md";
 const NO_FILES: PublishFileCounts = { added: 0, changed: 0, removed: 0 };
 
@@ -48,19 +45,6 @@ function compare(
   }
   const removed = [...theirs.keys()].filter((path) => !ours.has(path)).length;
   return { added, changed, removed };
-}
-
-function findingsIn(folder: string, files: readonly PublishFile[]): SecretFinding[] {
-  const found: SecretFinding[] = [];
-  for (const file of files) {
-    if (file.size > MAX_SCANNED_BYTES) continue;
-    const bytes = readFileSync(file.absolutePath);
-    if (bytes.includes(0)) continue;
-    found.push(
-      ...findSecrets(`${folder}/${file.relativePath}`, file.absolutePath, bytes.toString("utf8")),
-    );
-  }
-  return found;
 }
 
 /** The layer folder of the repository that already holds a skill of this name, other than ours. */
@@ -155,7 +139,7 @@ export function planSkills(
 ): Planned {
   const planned = skills.map((skill) => planSkill(skill, checkoutDir, target));
   const secrets = planned.flatMap(({ plan, files }) =>
-    plan.status === "skipped" ? [] : findingsIn(plan.folder, files),
+    plan.status === "skipped" ? [] : findSecretsIn(files, plan.folder),
   );
   return { skills: planned, secrets };
 }

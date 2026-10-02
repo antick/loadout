@@ -189,11 +189,49 @@ describe("publishing to ClawHub", () => {
       acceptLicense: true,
     };
     await expect(core.api.publish.publishToClawhub(input)).rejects.toMatchObject({
-      code: "INVALID_INPUT",
+      code: "SECRETS_FOUND",
     });
     expect(registry.state.uploads).toHaveLength(0);
     await core.api.publish.publishToClawhub({ ...input, allowSecrets: true });
     expect(registry.state.uploads).toHaveLength(1);
+  });
+
+  it("leaves out what Git publishing leaves out, and finds every key", async () => {
+    await core.api.publish.setClawhubToken(TOKEN);
+    const skill = await core.api.install.fromPath(makeSkill(join(temp.dir, "src"), "envy"));
+    const write = (path: string, text: string): void => {
+      mkdirSync(join(skill.libraryPath, path, ".."), { recursive: true });
+      writeFileSync(join(skill.libraryPath, path), text);
+    };
+    write(".env.local", "API=1\n");
+    write(".env.production", "API=2\n");
+    write("logs/run.log", "started\n");
+    write(".env.example", "API=\n");
+    write("scripts/keys.sh", `A=${FAKE_KEY}\nB=${FAKE_KEY.replace("aB3", "zZ9")}\n`);
+    write("docs/aws.md", "Example: AKIAIOSFODNN7EXAMPLE\n");
+
+    const preview = await core.api.publish.clawhubPreview(skill.id);
+    expect(preview.files.map((file) => file.path)).toEqual([
+      ".env.example",
+      "SKILL.md",
+      "docs/aws.md",
+      "scripts/keys.sh",
+    ]);
+    expect(preview.secrets.map((found) => [found.file, found.line])).toEqual([
+      ["scripts/keys.sh", 1],
+      ["scripts/keys.sh", 2],
+    ]);
+    await expect(
+      core.api.publish.publishToClawhub({
+        skillId: skill.id,
+        slug: "envy",
+        displayName: "Envy",
+        version: "1.0.0",
+        changelog: "",
+        acceptLicense: true,
+      }),
+    ).rejects.toMatchObject({ code: "SECRETS_FOUND" });
+    expect(registry.state.uploads).toHaveLength(0);
   });
 
   it("says plainly when no token is saved", async () => {

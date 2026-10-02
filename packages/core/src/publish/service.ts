@@ -7,7 +7,6 @@ import {
   type PublishPlan,
   type PublishResult,
   type PublishTarget,
-  type SecretFinding,
   type Skill,
   installCommand,
   repositoryLabel,
@@ -19,6 +18,7 @@ import { AppError, invalid, isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { SkillStore } from "../skills/store";
 import { writeAndCommit } from "./apply";
+import { secretsHeldBack } from "./files";
 import { type Checkout, openCheckout } from "./checkout";
 import { type Planned, planSkills } from "./plan";
 import { type ResolvedTarget, resolveTarget } from "./target";
@@ -81,17 +81,6 @@ function publishError(error: unknown): unknown {
     );
   }
   return error;
-}
-
-function secretsHeldBack(findings: SecretFinding[]): AppError {
-  const [first] = findings;
-  const where = first ? `${first.file}, line ${first.line}` : "";
-  const more = findings.length > 1 ? ` and ${findings.length - 1} more` : "";
-  return new AppError(
-    "SECRETS_FOUND",
-    `Publishing held back: ${where}${more} looks like a key or token. Remove it from the skill, or publish anyway if it is safe to share.`,
-    { secrets: findings },
-  );
 }
 
 /** How people install from the repository: `owner/repo` on GitHub, the address elsewhere. */

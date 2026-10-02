@@ -12,7 +12,6 @@ import {
   type ClawhubPublishInput,
   type ClawhubPublishPreview,
   type ClawhubPublishResult,
-  type SecretFinding,
   clawhubSkillUrl,
   clawhubSlugOf,
   isNewerVersion,
@@ -20,10 +19,9 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, errorMessage, invalid } from "../errors";
-import type { ClawhubClient } from "../market/clawhub";
+import { CLAWHUB_META_FILES, type ClawhubClient } from "../market/clawhub";
 import type { SkillStore } from "../skills/store";
-import { listContentFiles } from "../util/hash";
-import { SECRET_PATTERNS } from "../util/secret-patterns";
+import { type PublishFile, collectFiles, findSecretsIn, secretsHeldBack } from "./files";
 
 /**
  * Publishing one library skill as a version on ClawHub, under the user's own token. The token
@@ -35,19 +33,8 @@ const NO_KEYCHAIN = "The system keychain is not available, so a ClawHub token ca
 const NO_TOKEN = `No ${CLAWHUB_NAME} token is saved. Add one in Settings → Marketplaces.`;
 /** Registry topics are lower case, short, and ClawHub keeps a few words for itself. */
 const RESERVED_TOPICS: ReadonlySet<string> = new Set(["clawhub", "official", "verified"]);
-/** Entries never sent: dependencies, environments, version control, editor and OS litter. */
-const LEFT_OUT_NAMES: ReadonlySet<string> = new Set([
-  "node_modules",
-  ".git",
-  ".venv",
-  "venv",
-  "__pycache__",
-  ".env",
-  ".DS_Store",
-  ".clawhub",
-  "_meta.json",
-]);
-const MAX_SCANNED_BYTES = 1024 * 1024;
+/** The registry's own files in a skill installed from it; never sent back. */
+const REGISTRY_FILES: ReadonlySet<string> = new Set([".clawhub", ...CLAWHUB_META_FILES]);
 
 export interface ClawhubPublisherDeps {
   store: SkillStore;
@@ -61,47 +48,12 @@ export interface ClawhubPublisher {
   publish(input: ClawhubPublishInput): Promise<ClawhubPublishResult>;
 }
 
-function leftOut(relativePath: string): boolean {
-  return relativePath.split("/").some((part) => LEFT_OUT_NAMES.has(part));
-}
-
 /** Topics as ClawHub takes them: from tags, lower case, capped in number and length. */
 export function clawhubTopicsOf(tags: readonly string[]): string[] {
   const topics = tags
     .map((tag) => clawhubSlugOf(tag))
     .filter((tag) => tag && tag.length <= CLAWHUB_MAX_TOPIC_LENGTH && !RESERVED_TOPICS.has(tag));
   return [...new Set(topics)].slice(0, CLAWHUB_MAX_TOPICS);
-}
-
-/** The first and last few characters of a key, the rest hidden. */
-function mask(value: string): string {
-  return value.length <= 8 ? "…" : `${value.slice(0, 4)}…${value.slice(-4)}`;
-}
-
-function secretFindings(
-  files: readonly { path: string; absolutePath: string; data: Buffer }[],
-): SecretFinding[] {
-  const found: SecretFinding[] = [];
-  for (const file of files) {
-    if (file.data.length > MAX_SCANNED_BYTES || file.data.includes(0)) continue;
-    const text = file.data.toString("utf8");
-    for (const secret of SECRET_PATTERNS) {
-      secret.regex.lastIndex = 0;
-      const match = secret.regex.exec(text);
-      if (!match) continue;
-      const line = text.slice(0, match.index).split("\n").length;
-      found.push({
-        id: `${file.path}:${line}:${secret.kind}`,
-        file: file.path,
-        path: file.absolutePath,
-        line,
-        kind: secret.kind,
-        masked: mask(match[0]),
-        committed: false,
-      });
-    }
-  }
-  return found;
 }
 
 export function createClawhubPublisher(
@@ -140,22 +92,27 @@ export function createClawhubPublisher(
     }
   }
 
-  function filesOf(skillId: string): { path: string; absolutePath: string; data: Buffer }[] {
+  /** What a version is made of: the files Git publishing would publish, the registry's own aside. */
+  function filesOf(skillId: string): {
+    files: PublishFile[];
+    upload: { path: string; data: Buffer }[];
+  } {
     const skill = store.get(skillId);
-    return listContentFiles(skill.libraryPath)
-      .filter((file) => !leftOut(file.relativePath))
-      .map((file) => ({
-        path: file.relativePath,
-        absolutePath: file.absolutePath,
-        data: readFileSync(file.absolutePath),
-      }));
+    const files = collectFiles(skill.libraryPath).files.filter(
+      (file) => !REGISTRY_FILES.has(file.relativePath.split("/")[0] ?? ""),
+    );
+    const upload = files.map((file) => ({
+      path: file.relativePath,
+      data: readFileSync(file.absolutePath),
+    }));
+    return { files, upload };
   }
 
   async function preview(skillId: string): Promise<ClawhubPublishPreview> {
     const skill = store.get(skillId);
     const { handle } = await requireToken();
     const slug = clawhubSlugOf(skill.name);
-    const files = filesOf(skillId);
+    const { files: collected, upload: files } = filesOf(skillId);
     const totalBytes = files.reduce((sum, file) => sum + file.data.length, 0);
     const problems: string[] = [];
     if (!files.some((file) => file.path === "SKILL.md")) {
@@ -185,7 +142,7 @@ export function createClawhubPublisher(
       suggestedVersion: nextPatchVersion(latestVersion),
       files: files.map((file) => ({ path: file.path, bytes: file.data.length })),
       totalBytes,
-      secrets: secretFindings(files),
+      secrets: findSecretsIn(collected),
       problems,
     };
   }
@@ -205,19 +162,11 @@ export function createClawhubPublisher(
     if (!displayName) throw invalid("Give the skill a display name.");
     const skill = store.get(input.skillId);
     const { token, handle } = await requireToken();
-    const files = filesOf(input.skillId);
+    const { files: collected, upload: files } = filesOf(input.skillId);
     if (!files.some((file) => file.path === "SKILL.md"))
       throw invalid("The skill has no SKILL.md at its top.");
-    const secrets = secretFindings(files);
-    if (secrets.length > 0 && !input.allowSecrets) {
-      throw new AppError(
-        "INVALID_INPUT",
-        `${secrets.length} file(s) look like they hold a key or token.`,
-        {
-          secrets,
-        },
-      );
-    }
+    const secrets = findSecretsIn(collected);
+    if (secrets.length > 0 && !input.allowSecrets) throw secretsHeldBack(secrets);
     const topics = clawhubTopicsOf(input.topics ?? skill.tags);
     const payload: Record<string, unknown> = {
       slug,
