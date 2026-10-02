@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { REMOVER_SCRIPT, type RemovalJob, startRemoval } from "./remover";
+import { REMOVER_SCRIPT, type RemovalJob, keychainServiceToRemove, startRemoval } from "./remover";
 
 /** Run the clean-up script to the end, as the detached process would, for a job already due. */
 function runRemoval(job: RemovalJob): void {
@@ -67,5 +67,13 @@ describe("the clean-up script", () => {
     }
     expect(Date.now() - started).toBeGreaterThanOrEqual(350);
     expect(existsSync(home)).toBe(false);
+  });
+});
+
+describe("the keychain item", () => {
+  it("is removed by the installed app on macOS, never by a development build", () => {
+    expect(keychainServiceToRemove("darwin", true, "Loadout")).toBe("Loadout Safe Storage");
+    expect(keychainServiceToRemove("darwin", false, "Loadout")).toBeNull();
+    expect(keychainServiceToRemove("win32", true, "Loadout")).toBeNull();
   });
 });

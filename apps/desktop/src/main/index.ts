@@ -19,7 +19,7 @@ import {
 import { createAppApi } from "./app-api";
 import { createCrashHandlers } from "./crash";
 import { type AppDataMove, adoptAppData, removeOldAppData } from "./app-data";
-import { startRemoval } from "./remover";
+import { keychainServiceToRemove, startRemoval } from "./remover";
 import { revealInFileManager } from "./reveal";
 import { readShellEnv } from "./shell-env";
 import {
@@ -170,7 +170,7 @@ async function removeAllData(options: RemoveAllDataOptions): Promise<void> {
       pid: process.pid,
       paths: [...plan.paths, ...(existsSync(legacyAppDataDir) ? [legacyAppDataDir] : [])],
       emptyDirs: plan.emptyDirs,
-      keychainService: process.platform === "darwin" ? `${app.getName()} Safe Storage` : null,
+      keychainService: keychainServiceToRemove(process.platform, app.isPackaged, app.getName()),
     },
     process.execPath,
   );
