@@ -207,7 +207,8 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     removed,
     fetchImpl: options.fetchImpl,
     afterContentChange: async () => {
-      for (const skill of store.list()) await deploy.refreshCopies(skill);
+      // Only copies now behind the library; one edited in the agent's folder is left alone.
+      await deploy.refreshStaleCopies();
       refreshItems();
     },
   });
