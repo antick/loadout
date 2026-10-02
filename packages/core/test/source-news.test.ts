@@ -97,4 +97,23 @@ describe("new skills in a repository", () => {
     expect(result.failed).toHaveLength(1);
     expect(result.failed[0]?.message).toContain("offline");
   });
+
+  it("leaves registry skills out: they are not repositories to clone", async () => {
+    await world.installFromGit("pdf");
+    const dir = makeSkill(`${world.root}/registry`, "self-improving-agent");
+    world.store.insert({
+      name: "self-improving-agent",
+      description: "From ClawHub",
+      sourceType: "clawhub",
+      sourceRef: "pskoett/self-improving-agent",
+      sourceUrl: "https://clawhub.ai/pskoett/skills/self-improving-agent",
+      sourceRevision: "1.0.0",
+      libraryPath: dir,
+      contentHash: null,
+      updateStatus: "up_to_date",
+    });
+
+    const result = await world.updates.api.checkSources();
+    expect(result.failed).toEqual([]);
+  });
 });

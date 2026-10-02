@@ -3,7 +3,7 @@ import {
   type Skill,
   type SourceCheckResult,
   type SourceNews,
-  repositorySourceKey,
+  skillSourceOf,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
@@ -13,12 +13,7 @@ import { skillHoldingName } from "../install/replace";
 import { listRepoSkills } from "../install/repo-scan";
 import { type SafetyGate, batchFailureMessage, installChecked } from "../install/safety-gate";
 import type { SkillStore } from "../skills/store";
-import {
-  type RemoteTarget,
-  isRemoteSource,
-  remoteTargetOf,
-  resolveRemoteRevision,
-} from "../updates/source";
+import { type RemoteTarget, remoteTargetOf, resolveRemoteRevision } from "../updates/source";
 import type { RepositoryState, SourceNewsStore } from "./news-store";
 
 export interface SourceCheckerDeps {
@@ -48,11 +43,8 @@ interface FoundInRepository extends NewSourceSkill {
 
 /** The repository a skill came from, keyed as the Sources page keys it; null for other sources. */
 function repositoryKeyOf(skill: Skill): string | null {
-  if (!isRemoteSource(skill) || !skill.sourceUrl) return null;
-  return repositorySourceKey(
-    skill.sourceUrl,
-    skill.sourceType === "git" ? skill.sourceBranch : null,
-  );
+  const source = skillSourceOf(skill);
+  return source?.kind === "repository" ? source.key : null;
 }
 
 function repositories(skills: readonly Skill[]): Repository[] {
