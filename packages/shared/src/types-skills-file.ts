@@ -107,6 +107,8 @@ export interface SkillsFileApplyOptions {
   force?: boolean;
   /** Also remove folders the file no longer asks for. */
   prune?: boolean;
+  /** Write skills the safety check flags. Without it, a flagged skill stops the run (UNSAFE). */
+  acceptRisk?: boolean;
 }
 
 export interface SkillsFileResult {

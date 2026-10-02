@@ -213,7 +213,13 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   });
   const system = createSystemService(ctx, { store, install, deploy, registry, repair });
   const storage = createStorageService(ctx, { deploy, store, git: install.git, removed });
-  const skillsFile = createSkillsFileService(ctx, { git: install.git, registry, store, removed });
+  const skillsFile = createSkillsFileService(ctx, {
+    git: install.git,
+    registry,
+    store,
+    removed,
+    safety,
+  });
   const usage = createUsageService(ctx, { store });
   const duplicates = createDuplicatesService(ctx, {
     store,

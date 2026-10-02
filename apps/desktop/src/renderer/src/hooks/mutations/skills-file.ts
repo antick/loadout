@@ -1,12 +1,14 @@
-import type {
-  SkillsFileApplyOptions,
-  SkillsFileInfo,
-  SkillsFileInit,
-  SkillsFileResult,
+import {
+  ApiError,
+  type SkillsFileApplyOptions,
+  type SkillsFileInfo,
+  type SkillsFileInit,
+  type SkillsFileResult,
 } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import type { SkillsFileMode } from "@/hooks/queries/skills-file";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -28,20 +30,35 @@ export function useCreateSkillsFile(): UseMutationResult<
   });
 }
 
-/** Apply, update or unapply, with one toast saying what happened and what was kept. */
+/**
+ * Apply, update or unapply, with one toast saying what happened and what was kept. When the
+ * safety check flags a skill the user is asked, as for any install, and a yes runs it again.
+ * Null when they said no: nothing was written.
+ */
 export function useRunSkillsFile(): UseMutationResult<
-  SkillsFileResult,
+  SkillsFileResult | null,
   unknown,
   { dir: string; mode: SkillsFileMode; options: SkillsFileApplyOptions }
 > {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ dir, mode, options }) =>
-      mode === "unapply"
-        ? api.skillsFile.unapply(dir, { force: options.force })
-        : api.skillsFile.apply(dir, { ...options, update: mode === "update" }),
+    mutationFn: async ({ dir, mode, options }) => {
+      if (mode === "unapply") return api.skillsFile.unapply(dir, { force: options.force });
+      const apply = { ...options, update: mode === "update" };
+      try {
+        return await api.skillsFile.apply(dir, apply);
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.code !== "UNSAFE") throw error;
+        if (!(await askToInstallFlagged(error.details))) return null;
+        return api.skillsFile.apply(dir, { ...apply, acceptRisk: true });
+      }
+    },
     onSuccess: (result, { mode }) => {
+      if (!result) {
+        toast.info(t("safety.prompt.notInstalled"));
+        return;
+      }
       const unapplied = mode === "unapply";
       const summary = unapplied
         ? t("skillsFile.unapplied", { count: result.removed })

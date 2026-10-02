@@ -9,6 +9,7 @@ import {
 import { flagBoolean, flagList, flagString } from "../args";
 import { plural, table } from "../output";
 import {
+  ACCEPT_RISK_FLAG,
   AGENT_FLAG,
   DRY_RUN_FLAG,
   YES_FLAG,
@@ -117,8 +118,8 @@ function applyCommand(
   return {
     name,
     summary,
-    usage: "[--dir <path>] [--force] [--dry-run]",
-    flags: [DIR_FLAG, ...extraFlags, FORCE_FLAG, DRY_RUN_FLAG],
+    usage: "[--dir <path>] [--force] [--accept-risk] [--dry-run]",
+    flags: [DIR_FLAG, ...extraFlags, FORCE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
     notes,
     run: async (context) => {
       const { core, args } = context;
@@ -127,6 +128,7 @@ function applyCommand(
         update: preset.update === true || flagBoolean(args, UPDATE_FLAG.name),
         prune: preset.prune === true || flagBoolean(args, PRUNE_FLAG.name),
         force: flagBoolean(args, FORCE_FLAG.name),
+        acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
       };
       const dir = directory(context);
       if (flagBoolean(args, DRY_RUN_FLAG.name)) {
@@ -202,6 +204,8 @@ export const projectGroup: CommandGroup = {
     applyCommand("apply", "Put the listed skills into the project's agent folders", {}, [
       `Uses the commits pinned in ${SKILLS_LOCK_NAME}, so everyone gets identical files.`,
       "Folders changed by hand are never replaced without --force. The library is not touched.",
+      "Skills are safety-checked before they are written; a flagged one stops the run with",
+      "UNSAFE and its findings. --accept-risk writes it anyway.",
     ]),
     applyCommand("update", "Move every source to its newest commit, then apply", { update: true }, [
       `Rewrites the pins in ${SKILLS_LOCK_NAME}.`,

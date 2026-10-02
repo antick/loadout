@@ -1,6 +1,7 @@
 /**
  * DEV ONLY. `safety.*` for the browser preview, and a flagged install to try the prompt: any
- * marketplace skill or path whose name starts with `prompt-library` is flagged until accepted.
+ * marketplace skill, path or `skills.toml` skill whose name starts with `prompt-library` is
+ * flagged until accepted.
  */
 import type {
   ErrorCode,
@@ -11,6 +12,8 @@ import type {
   SafetyReport,
   SafetyStatus,
   Skill,
+  SkillsFileApplyOptions,
+  SkillsFilePlan,
 } from "@loadout/shared";
 
 type Handler = (...args: never[]) => unknown;
@@ -97,6 +100,8 @@ export function withSafetyMocks(
   handlers: Record<string, Handler>,
 ): Record<string, Handler> {
   const records = new Map<string, SafetyRecord>();
+  const planFile = handlers["skillsFile.plan"];
+  const applyFile = handlers["skillsFile.apply"];
 
   function reportFor(name: string): SafetyReport {
     return name.startsWith(FLAGGED_PREFIX) ? FLAGGED_REPORT : CLEAN_REPORT;
@@ -169,5 +174,16 @@ export function withSafetyMocks(
       2,
     ),
     "install.fromPath": gated("install.fromPath", (path: string) => baseName(path), 2),
+    // `skills.toml` checks every skill it would write, before writing any.
+    "skillsFile.apply": async (dir: string, options?: SkillsFileApplyOptions) => {
+      const plan = (await planFile?.(dir as never)) as SkillsFilePlan;
+      const flagged: FlaggedSkill[] = plan.entries
+        .filter((entry) => entry.action !== "same" && entry.skill.startsWith(FLAGGED_PREFIX))
+        .map((entry) => ({ name: entry.skill, report: FLAGGED_REPORT }));
+      if (flagged.length > 0 && !options?.acceptRisk) {
+        ctx.fail("UNSAFE", `The safety check flagged ${flagged.length} skills.`, { flagged });
+      }
+      return applyFile?.(dir as never, options as never);
+    },
   };
 }

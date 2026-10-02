@@ -16,9 +16,10 @@ import type { GitClient } from "../install/git-client";
 import { findSkillDirs } from "../install/repo-scan";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
+import type { SafetyService } from "../safety/service";
 import type { RemovedStore } from "../storage/removed";
 import { writeFileAtomic } from "../util/fs";
-import { applyPlan } from "./apply";
+import { applyPlan, skillsToWrite } from "./apply";
 import { findSkillsFile, loadSkillsFile, stringifySkillsFile } from "./format";
 import { preparePlan } from "./plan";
 import { realPathOf } from "./safety";
@@ -28,6 +29,8 @@ export interface SkillsFileDeps {
   registry: AgentRegistry;
   store: SkillStore;
   removed: RemovedStore;
+  /** Checks every skill before it is written, as an install does; absent in tests that skip it. */
+  safety?: Pick<SafetyService, "check">;
   /** Tests only: a local folder may stand in for a remote repository. */
   allowLocalGitSources?: boolean;
 }
@@ -130,6 +133,14 @@ export function createSkillsFileService(
           allowLocalGitSources: deps.allowLocalGitSources,
         });
         try {
+          // Before the lock too: a scan is slow, and a flagged skill stops the run unwritten.
+          const candidates = skillsToWrite(info, prepared).map((skill) => ({
+            name: skill.name,
+            dir: skill.dir,
+          }));
+          if (candidates.length > 0) {
+            await deps.safety?.check(candidates, { acceptRisk: options.acceptRisk === true });
+          }
           const result = await ctx.lock.run(`apply ${SKILLS_FILE_NAME}`, () =>
             applyPlan(info, prepared, { removed: deps.removed }, options.force === true),
           );

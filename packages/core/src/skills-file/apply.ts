@@ -9,6 +9,7 @@ import {
   type SkillsFileResult,
   type SkillsLock,
 } from "@loadout/shared";
+import type { FoundSkill } from "../install/repo-scan";
 import type { RemovedStore } from "../storage/removed";
 import { removePath, replaceDirAtomic, statOrNull, writeFileAtomic } from "../util/fs";
 import { LOCK_VERSION, writeLock } from "./format";
@@ -43,6 +44,20 @@ export function updateGitignore(root: string, folders: readonly string[]): void 
 
 export interface ApplyDeps {
   removed: RemovedStore;
+}
+
+/**
+ * The skills a run would write into the project, new or changed, once each however many agent
+ * folders get them: what the safety check has to look at before anything is written.
+ */
+export function skillsToWrite(info: SkillsFileInfo, prepared: PreparedPlan): FoundSkill[] {
+  const oldLock = new Map((info.lock?.folders ?? []).map((entry) => [entry.folder, entry]));
+  const byDir = new Map<string, FoundSkill>();
+  for (const item of prepared.wanted) {
+    if (actionFor(item, oldLock.get(item.folder)) === "same") continue;
+    byDir.set(item.skill.dir, item.skill);
+  }
+  return [...byDir.values()];
 }
 
 /**
