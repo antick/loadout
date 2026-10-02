@@ -10,7 +10,7 @@ import type { DeployService } from "./service";
 export interface DeployRepairDeps {
   store: SkillStore;
   registry: AgentRegistry;
-  deploy: Pick<DeployService, "api">;
+  deploy: Pick<DeployService, "putBack">;
 }
 
 export interface DeployRepair {
@@ -70,7 +70,8 @@ export function createDeployRepair(ctx: CoreContext, deps: DeployRepairDeps): De
         continue;
       }
       try {
-        await deps.deploy.api.deploy(skill.id, row.agentKey);
+        // Where it was recorded: the agent's folder may read differently right now.
+        await deps.deploy.putBack(row);
         repaired.push(entry);
       } catch (error) {
         failed.push({ ...entry, message: errorMessage(error) });

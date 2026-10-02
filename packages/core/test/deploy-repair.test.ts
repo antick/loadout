@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Core, createCore } from "../src/core";
 import { createDeployRepair } from "../src/deploy";
 import { silentLogger } from "../src/log";
+import { INTERNAL_KEYS } from "../src/settings/store";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { tempDir } from "./helpers";
 
@@ -41,6 +42,25 @@ describe("repairing deployments", () => {
       expect(lstatSync(join(agentDir(), name)).isSymbolicLink()).toBe(true);
       expect(existsSync(join(agentDir(), name, "SKILL.md"))).toBe(true);
     }
+  });
+
+  it("puts a deployment back where it was recorded, not where the agent's folder is now", async () => {
+    const alpha = world.addSkill("alpha");
+    await world.deploy.api.deploy(alpha.id, "claude_code");
+    rmSync(join(agentDir(), "alpha"));
+    // The agent's folder reads differently for a moment (an app opened from the Dock, before
+    // the shell's variables are known): repair must not move the deployment there.
+    const elsewhere = join(world.home, "elsewhere", "skills");
+    world.ctx.settings.setRaw(INTERNAL_KEYS.agentPathOverrides, { claude_code: elsewhere });
+
+    const report = await repair().run();
+
+    expect(report.repaired).toHaveLength(1);
+    expect(lstatSync(join(agentDir(), "alpha")).isSymbolicLink()).toBe(true);
+    expect(existsSync(join(elsewhere, "alpha"))).toBe(false);
+    expect(world.store.deployment(alpha.id, "claude_code")?.targetPath).toBe(
+      join(agentDir(), "alpha"),
+    );
   });
 
   it("puts back a deleted copy, even when the skill did not change", async () => {

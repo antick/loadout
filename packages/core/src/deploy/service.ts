@@ -60,6 +60,11 @@ export interface DeployService {
   /** Re-copy every copy-mode deployment after the library content of `skill` changed. */
   refreshCopies(skill: Skill, options?: RefreshOptions): Promise<RedeployReport>;
   /**
+   * Deploy a recorded pair again at the path its row recorded, not the agent's present folder,
+   * the normal way: a folder Loadout did not create is refused (TARGET_CONFLICT), never replaced.
+   */
+  putBack(row: DeploymentRecord): Promise<void>;
+  /**
    * Re-copy every copy made from an older version of its library skill, e.g. after the library
    * was edited outside the app. A copy edited inside an agent's folder is kept, never replaced.
    */
@@ -257,6 +262,18 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       ),
 
     refreshCopies,
+
+    putBack: async (row) => {
+      const skill = store.get(row.skillId);
+      const pair = {
+        skill,
+        agentKey: row.agentKey,
+        agentName: agentName(row.agentKey),
+        targetPath: row.targetPath,
+      };
+      await ctx.lock.run(`put back ${skill.name}`, () => ops.deployPair(pair));
+      ctx.touched("skills");
+    },
 
     refreshStaleCopies: async () => {
       const total: StaleCopiesReport = { written: 0, conflicts: [], failed: [], kept: [] };
