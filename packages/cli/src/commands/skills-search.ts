@@ -90,6 +90,12 @@ async function pickAndInstall(
   });
   if (!keys) return null;
   const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
+  // Accepting findings is a choice about one skill whose findings were read, never a batch.
+  if (acceptRisk && keys.length > 1) {
+    throw new UsageError(
+      `--${ACCEPT_RISK_FLAG.name} works on one skill at a time: tick one, or install each with skills install <skill> --${ACCEPT_RISK_FLAG.name}.`,
+    );
+  }
   const result: PickedInstall = { installed: [], failed: [] };
   for (const skill of keys.flatMap((key) => rows.get(key) ?? [])) {
     try {
@@ -168,7 +174,8 @@ export const searchCommand: CommandSpec = {
     "Lists owner/repo@skill names (skills.sh) or @owner/slug names (ClawHub) in the marketplace's order.",
     "In a terminal, results not in the library open in a picker: tick some and press enter to",
     "install them, or esc to only list them. Scripts and --json never see it and install nothing.",
-    "Every skill is safety-checked on install; --accept-risk installs a flagged one anyway.",
+    "Every skill is safety-checked on install; --accept-risk installs a flagged one anyway,",
+    "with one skill ticked only.",
     "Works from the last answer when offline, and says so.",
   ],
   run: search,

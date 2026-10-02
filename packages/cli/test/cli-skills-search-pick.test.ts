@@ -1,7 +1,7 @@
 import { strToU8, zipSync } from "fflate";
 import { afterEach, describe, expect, it } from "vitest";
 import type { PickRequest, SkillPicker } from "../src/picker/state";
-import { EXIT_OK } from "../src/run";
+import { EXIT_OK, EXIT_USAGE } from "../src/run";
 import { type Sandbox, createSandbox } from "./harness";
 
 const OWNER = "acme";
@@ -105,6 +105,21 @@ describe("skills search in a terminal", () => {
     expect(run.stdout).toContain("skills install <skill>");
     const list = await box.cli("skills", "list", "--json");
     expect(list.json<{ name: string }[]>().map((skill) => skill.name)).toEqual([GOOD]);
+  });
+
+  it("takes --accept-risk for one ticked skill only, and installs nothing otherwise", async () => {
+    const { box } = withPicker((request) => request.skills.map((row) => row.relPath));
+    const run = await search(box, "--accept-risk");
+    expect(run.code).toBe(EXIT_USAGE);
+    expect(run.stderr).toContain("--accept-risk works on one skill at a time");
+    const list = await box.cli("skills", "list", "--json");
+    expect(list.json<unknown[]>()).toEqual([]);
+    box.cleanup();
+
+    const one = withPicker((request) =>
+      request.skills.filter((row) => row.name === GOOD).map((row) => row.relPath),
+    );
+    expect((await search(one.box, "--accept-risk")).code).toBe(EXIT_OK);
   });
 
   it("only lists the results when the picker is cancelled", async () => {
