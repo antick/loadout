@@ -1,5 +1,5 @@
 import { posix } from "node:path";
-import { isArchivePath } from "./archive";
+import { isArchivePath } from "@loadout/shared";
 
 /**
  * Links to a file on the web: an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`) or a lone

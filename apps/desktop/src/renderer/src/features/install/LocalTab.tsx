@@ -1,3 +1,4 @@
+import { ARCHIVE_SUFFIXES, isArchivePath } from "@loadout/shared";
 import type { BatchImportResult, GitPreview, InstallSelection } from "@loadout/shared";
 import { FileArchive, FolderInput, FolderTree, PackagePlus, X } from "lucide-react";
 import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
-import { ARCHIVE_EXTENSIONS } from "@/features/install/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { cn } from "@/lib/utils";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
@@ -92,10 +92,7 @@ export function LocalTab(): ReactNode {
     if (!file) return;
     const path = window.loadout.pathForFile(file);
     if (!path) return;
-    const isArchive = ARCHIVE_EXTENSIONS.some((extension) =>
-      path.toLowerCase().endsWith(extension),
-    );
-    void accept({ path, kind: isArchive ? "archive" : "folder" });
+    void accept({ path, kind: isArchivePath(path) ? "archive" : "folder" });
   };
 
   const singleTask = picked ? task(picked.path) : undefined;
@@ -156,7 +153,7 @@ export function LocalTab(): ReactNode {
           icon={FileArchive}
           title={t("install.local.archiveTitle")}
           description={t("install.local.archiveDescription")}
-          hint={ARCHIVE_EXTENSIONS.join("  ")}
+          hint={ARCHIVE_SUFFIXES.join("  ")}
           tone="info"
           busy={pickArchive.isPending || previewArchive.isPending}
           onClick={() => void choose("archive")}

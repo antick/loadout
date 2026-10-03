@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { archiveExtension, isArchivePath } from "../src/install";
+import { archiveSuffixOf, isArchivePath } from "@loadout/shared";
 import { tarBuffer } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -39,10 +39,10 @@ afterEach(() => world.restore());
 
 describe("tar archives", () => {
   it("knows the tar extensions, longest first", () => {
-    expect(archiveExtension("/a/b.tar.gz")).toBe(".tar.gz");
-    expect(archiveExtension("B.TGZ")).toBe(".tgz");
-    expect(archiveExtension("c.tar")).toBe(".tar");
-    expect(archiveExtension("d.gz")).toBeNull();
+    expect(archiveSuffixOf("/a/b.tar.gz")).toBe(".tar.gz");
+    expect(archiveSuffixOf("B.TGZ")).toBe(".tgz");
+    expect(archiveSuffixOf("c.tar")).toBe(".tar");
+    expect(archiveSuffixOf("d.gz")).toBeNull();
     expect(isArchivePath("e.zip")).toBe(true);
   });
 

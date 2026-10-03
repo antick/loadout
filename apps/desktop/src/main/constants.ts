@@ -1,4 +1,5 @@
 /** Values owned by the Electron main process. */
+import { ARCHIVE_SUFFIXES } from "@loadout/shared";
 
 export const WINDOW_DEFAULT_WIDTH = 1320;
 export const WINDOW_DEFAULT_HEIGHT = 860;
@@ -60,7 +61,9 @@ export const UPDATE_PENDING_FILE = "pending-install.json";
 export const UPDATE_LOG_FILE = "update.log";
 
 /** File picker filter; `gz` covers `.tar.gz`, since a filter only sees the last extension. */
-export const ARCHIVE_EXTENSIONS = ["zip", "skill", "tar", "gz", "tgz"];
+export const ARCHIVE_EXTENSIONS = [
+  ...new Set(ARCHIVE_SUFFIXES.map((suffix) => suffix.slice(suffix.lastIndexOf(".") + 1))),
+];
 /** What "Export as .zip" saves. */
 export const EXPORT_EXTENSION = "zip";
 

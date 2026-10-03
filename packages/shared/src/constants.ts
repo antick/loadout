@@ -104,3 +104,20 @@ export const SYNC_STATUS_SEVERITY = {
 
 /** `loadout doctor` names a source whose skills were not checked for updates in this long. */
 export const SOURCE_STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Archives Loadout writes (export) as well as reads. */
+export const ZIP_SUFFIXES = [".zip", ".skill"] as const;
+/** Read only. `.tar.gz` comes before `.tar` so the longest match wins. */
+export const TAR_SUFFIXES = [".tar.gz", ".tgz", ".tar"] as const;
+/** Every archive a skill can be installed from. */
+export const ARCHIVE_SUFFIXES = [...ZIP_SUFFIXES, ...TAR_SUFFIXES] as const;
+
+/** The archive suffix `path` ends with (`.tar.gz`, `.zip`, ...), in any case; null for none. */
+export function archiveSuffixOf(path: string): (typeof ARCHIVE_SUFFIXES)[number] | null {
+  const lower = path.toLowerCase();
+  return ARCHIVE_SUFFIXES.find((suffix) => lower.endsWith(suffix)) ?? null;
+}
+
+export function isArchivePath(path: string): boolean {
+  return archiveSuffixOf(path) !== null;
+}

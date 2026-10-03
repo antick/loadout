@@ -1,3 +1,4 @@
+import { isArchivePath } from "@loadout/shared";
 import { cancelled, notFound, parseSkillsCommand } from "@loadout/core";
 import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
@@ -25,7 +26,6 @@ export type InstallSource =
   | { kind: "market"; source: string; skillId: string }
   | { kind: "clawhub"; owner: string; slug: string };
 
-export const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 const PATH_START = /^(?:~|\.{1,2}(?:[\\/]|$)|[\\/]|[A-Za-z]:[\\/])/;
 const REPO = String.raw`[A-Za-z0-9_][\w.-]*\/[A-Za-z0-9_][\w.-]*`;
 const SHORTHAND = new RegExp(`^${REPO}$`);
@@ -54,7 +54,7 @@ export function classifySource(input: string): InstallSource {
   // A pasted `npx skills add …` names its source, skills and agents; core reads all of it.
   if (parseSkillsCommand(text)) return { kind: "git", url: text };
   if (text.includes("://") || text.startsWith("git@")) return { kind: "git", url: text };
-  if (PATH_START.test(text) || ARCHIVE_SUFFIXES.some((suffix) => lower.endsWith(suffix))) {
+  if (PATH_START.test(text) || isArchivePath(text)) {
     return { kind: "path", path: text };
   }
   // `github.com/owner/repo` is a web address without its scheme, never an `owner/repo@skill`.
@@ -233,7 +233,7 @@ async function installFromPath(context: CommandContext, path: string): Promise<I
   const { core, args } = context;
   const name = flagString(args, NAME_FLAG.name);
   const replace = flagBoolean(args, REPLACE_FLAG.name);
-  if (ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
+  if (isArchivePath(path)) {
     const preview = await core.api.install.previewArchive(path);
     // Replacing goes through the preview, which knows which library skill holds the name.
     if (preview.skills.length > 1 || replace) return installFromPreview(context, preview);
@@ -264,7 +264,7 @@ async function plan(context: CommandContext, source: InstallSource): Promise<Ins
     return planFromPreview(context, await core.api.install.previewGit(source.url));
   }
   const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
-  if (!ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
+  if (!isArchivePath(path)) {
     if (flagBoolean(args, REPLACE_FLAG.name)) throw new UsageError(REPLACE_FOLDER);
     return planFolder(core, path, name);
   }

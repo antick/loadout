@@ -24,7 +24,6 @@ import {
   crossSiteHost,
   extractArchive,
   fetchWellKnownSkill,
-  isArchivePath,
   isWellKnownIndexUrl,
   marketSourceToUrl,
   normalizeRepoUrl,
@@ -41,6 +40,7 @@ import { openClawhubVersion } from "../install/clawhub-install";
 import { type ClawhubClient, parseClawhubRef } from "../market/clawhub";
 
 import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
+import { isArchivePath } from "@loadout/shared";
 
 /**
  * Where a library skill's upstream lives and how to open it. Shared by check, update and the

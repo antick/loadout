@@ -1,8 +1,9 @@
+import { isArchivePath } from "@loadout/shared";
 import { notFound } from "@loadout/core";
 import type { GitPreview, PreviewedSkill, RepoSkillPreview, SafetyReport } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString } from "../args";
 import { plural } from "../output";
-import { ARCHIVE_SUFFIXES, classifySource, selectSkills } from "./skills-install";
+import { classifySource, selectSkills } from "./skills-install";
 import {
   ACCEPT_RISK_FLAG,
   YES_FLAG,
@@ -100,7 +101,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
     read = await readFromPreview(context, await core.api.install.previewGit(source.url), wanted);
   } else {
     const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
-    if (ARCHIVE_SUFFIXES.some((suffix) => path.toLowerCase().endsWith(suffix))) {
+    if (isArchivePath(path)) {
       read = await readFromPreview(context, await core.api.install.previewArchive(path), wanted);
     } else {
       // A folder is read where it is: one skill, so --skill has nothing to pick.

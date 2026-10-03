@@ -42,7 +42,5 @@ export {
   type UnpackedArchive,
   archiveSkillDir,
   unpackArchive,
-  archiveExtension,
   extractArchive,
-  isArchivePath,
 } from "./archive";

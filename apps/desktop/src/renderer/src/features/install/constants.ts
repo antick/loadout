@@ -58,7 +58,6 @@ export const ARCHIVE_LINK_PATTERN =
 export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
 
 /** Archive types the installer accepts, for the option card's hint. */
-export const ARCHIVE_EXTENSIONS = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 
 /** Errors listed in a batch result before the rest collapse into "and N more". */
 export const BATCH_ERRORS_MAX_VISIBLE = 5;

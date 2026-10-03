@@ -2,7 +2,13 @@ import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
-import { APP_SLUG, formatBytes } from "@loadout/shared";
+import {
+  APP_SLUG,
+  TAR_SUFFIXES,
+  archiveSuffixOf,
+  formatBytes,
+  isArchivePath,
+} from "@loadout/shared";
 import { unzipSync } from "fflate";
 import { errorMessage, invalid, isAppError, notFound } from "../errors";
 import { isInside, isSkillDir, removePath, resolveInside } from "../util/fs";
@@ -17,11 +23,6 @@ export interface ExtractedArchive {
   cleanup(): Promise<void>;
 }
 
-/** Archives Loadout writes (export) as well as reads. */
-export const ZIP_EXTENSIONS: readonly string[] = [".zip", ".skill"];
-/** Read only. `.tar.gz` comes before `.tar` so the longest match wins. */
-const TAR_EXTENSIONS: readonly string[] = [".tar.gz", ".tgz", ".tar"];
-const ARCHIVE_EXTENSIONS: readonly string[] = [...ZIP_EXTENSIONS, ...TAR_EXTENSIONS];
 const EXTRACT_DIR_PREFIX = `${APP_SLUG}-archive-`;
 const FALLBACK_ARCHIVE_NAME = "archive";
 const SKILL_SEARCH_DEPTH = 4;
@@ -41,16 +42,6 @@ const MODE_SYMLINK = 0o120000;
 const EXECUTABLE_BITS = 0o111;
 const EXECUTABLE_MODE = 0o755;
 
-/** The archive extension `path` ends with (`.tar.gz`, `.zip`, …), or null. */
-export function archiveExtension(path: string): string | null {
-  const lower = path.toLowerCase();
-  return ARCHIVE_EXTENSIONS.find((extension) => lower.endsWith(extension)) ?? null;
-}
-
-export function isArchivePath(path: string): boolean {
-  return archiveExtension(path) !== null;
-}
-
 function isZip(data: Buffer): boolean {
   return data[0] === ZIP_MAGIC[0] && data[1] === ZIP_MAGIC[1];
 }
@@ -59,8 +50,8 @@ function isZip(data: Buffer): boolean {
 function isTarData(data: Buffer, name: string): boolean {
   if (isZip(data)) return false;
   if (isGzip(data) || isTar(data)) return true;
-  const extension = archiveExtension(name);
-  return extension !== null && TAR_EXTENSIONS.includes(extension);
+  const suffix = archiveSuffixOf(name);
+  return suffix !== null && (TAR_SUFFIXES as readonly string[]).includes(suffix);
 }
 
 /**
@@ -168,7 +159,7 @@ export async function unpackArchive(data: Buffer, name: string): Promise<Unpacke
   const parent = await mkdtemp(join(tmpdir(), EXTRACT_DIR_PREFIX));
   const cleanup = (): Promise<void> => removePath(parent).catch(() => undefined);
   const file = basename(name);
-  const extension = archiveExtension(file) ?? extname(file);
+  const extension = archiveSuffixOf(file) ?? extname(file);
   const stem = file.slice(0, file.length - extension.length);
   const root = join(parent, trySanitizeSkillName(stem) ?? FALLBACK_ARCHIVE_NAME);
   try {

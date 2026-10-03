@@ -1,4 +1,5 @@
 import type { Skill } from "./types";
+import { isArchivePath } from "./constants";
 
 /**
  * Finding where a skill without a source came from, so it can follow that source from then on.
@@ -61,8 +62,6 @@ export type SourceChoice = Pick<
   "url" | "branch" | "subpath" | "marketRef" | "evidence"
 >;
 
-const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
-
 /**
  * True for a skill that follows nothing a check can reach upstream: made here, detached, or
  * imported from a folder. Such a skill can be linked to a repository. Archives and links already
@@ -71,8 +70,7 @@ const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 export function canLinkSource(skill: Pick<Skill, "sourceType" | "sourceRef">): boolean {
   if (skill.sourceType === "import") return true;
   if (skill.sourceType !== "local") return false;
-  const ref = skill.sourceRef?.toLowerCase() ?? "";
-  return !ARCHIVE_SUFFIXES.some((suffix) => ref.endsWith(suffix));
+  return !isArchivePath(skill.sourceRef ?? "");
 }
 
 /** Skills worth searching a source for: linkable and not marked as the user's own. */

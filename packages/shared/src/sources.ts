@@ -1,5 +1,6 @@
 import type { Skill } from "./types";
 import { redactUrl } from "./secrets";
+import { isArchivePath } from "./constants";
 
 /**
  * The places skills came from, grouped from the skills themselves: a Git repository (installed
@@ -58,7 +59,6 @@ export interface SourceCheckResult {
   failed: { name: string; message: string }[];
 }
 
-const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 const GIT_SUFFIX = /\.git$/i;
 /** `git@host:owner/repo`. */
 const SCP_STYLE = /^[^@\s]+@([^:\s]+):(.+)$/;
@@ -96,9 +96,6 @@ export function repositoryLabel(url: string): string {
 function lastSegment(path: string): string {
   return path.split(/[\\/]/).findLast(Boolean) ?? path;
 }
-
-const isArchivePath = (ref: string): boolean =>
-  ARCHIVE_SUFFIXES.some((suffix) => ref.toLowerCase().endsWith(suffix));
 
 /** `SkillSource.key` of a repository at a branch: one spelling of the URL, `#branch` when set. */
 export function repositorySourceKey(url: string, branch: string | null): string {
