@@ -4,7 +4,7 @@ One desktop app to manage AI agent skills across every coding tool.
 
 A skill is a folder with a `SKILL.md`. Loadout keeps every skill in one library
 (`~/.loadout`) and deploys it, by symlink or copy, into the skills folder of each agent you
-use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and 49 more.
+use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and more than 60 others.
 
 ![Loadout dashboard: skills in the library, deploy coverage, connected agents and recent activity](docs/screenshots/dashboard.png)
 
@@ -74,20 +74,14 @@ Every feature in detail, current limitations and what still needs testing:
 
 ## Run locally
 
-1. Install Node.js 22.12 or newer and Git. Use the pnpm version pinned in the
-   `packageManager` field of [package.json](package.json), currently `12.4.2`:
+1. Install Node.js 22.12 or newer and Git. Then let Node's Corepack provide the pnpm version
+   pinned in the `packageManager` field of [package.json](package.json):
 
    ```bash
-   npm install --global pnpm@12.4.2
+   corepack enable
    ```
 
-2. Open a terminal in your Loadout checkout. For this machine:
-
-   ```bash
-   cd /Users/pankaj/Projects/personal/loadout
-   ```
-
-   On another machine, use the folder where you cloned this repository.
+2. Open a terminal in the folder where you cloned this repository.
 
 3. Confirm the tools are available:
 
@@ -172,15 +166,16 @@ in-memory data, no Electron) in headless Chromium with Playwright. Run them with
 ## Website
 
 `apps/landing` is the landing page at [loadout.potion.sh](https://loadout.potion.sh), an Astro
-static site. `pnpm exec turbo run build --filter=@loadout/landing` builds it. Vercel builds and
+static site. `pnpm --filter @loadout/landing run dev` serves it while you work on it, and
+`pnpm exec turbo run build --filter=@loadout/landing` builds it. Vercel builds and
 serves it from `vercel.json`; links such as where installers are downloaded live in
 `apps/landing/src/lib/site.ts`. The agent list on the page comes from `@loadout/shared`, so it
 always matches the app.
 
 ## Releases
 
-GitHub Actions runs `pnpm check` on Linux and macOS for every push to `main` and every pull
-request, and the UI tests on Linux (`.github/workflows/ci.yml`).
+GitHub Actions runs `pnpm check` on Linux, macOS and Windows for every push to `main` and every
+pull request, and the UI tests on Linux (`.github/workflows/ci.yml`).
 
 Installers are published as GitHub releases of this repository. The app's update check reads
 `latest.json` from the newest published release, and the landing page links there.
@@ -200,8 +195,6 @@ SHA-256) with `apps/desktop/scripts/update-feed.mjs`, and puts everything in a *
    git push origin v0.2.0
    ```
 
-   Or run **Release builds** by hand from this repository's Actions tab.
-
 3. When the workflow finishes, open github.com/antick/loadout/releases, check the draft and click
    **Publish release**.
 
@@ -219,16 +212,11 @@ without a valid signature from that key; its public half is `UPDATE_FEED_PUBLIC_
 manager): losing it means shipping one more release signed with it that carries a new public
 key, which is impossible without it.
 
-### Publish the CLI to npm
+### The CLI on npm
 
-The CLI is also on npm as `@antick/loadout`, at the app's version. After publishing a release:
-
-1. Sign in once: `pnpm login` (an npm account that owns the `antick` scope).
-2. Build the package: `pnpm --filter @loadout/cli run pack:npm`. It lands in
-   `packages/cli/dist/npm`: a small launcher, the bundled CLI, a README and the licence.
-3. Publish it: `cd packages/cli/dist/npm && pnpm publish --access public`.
-
-npm refuses to publish the same version twice, so bump `apps/desktop/package.json` first.
+Publishing a release also publishes the CLI of that tag to npm as `@antick/loadout`
+(`.github/workflows/publish-npm.yml`). No npm token is stored: npm trusts that workflow through
+trusted publishing. A failed run can be re-run from the Actions tab.
 
 ### Test an update locally
 
@@ -258,7 +246,7 @@ a development build never replaces itself.
 | `packages/shared` | Types, API contract, events, settings, formatters  |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the rules and
-[docs/PLAN.md](docs/PLAN.md) for the feature checklist.
+[docs/FEATURES.md](docs/FEATURES.md) for every feature.
 
 ## License
 
