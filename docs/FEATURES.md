@@ -1,7 +1,7 @@
 # Loadout features
 
 Loadout keeps AI agent skills (folders with a `SKILL.md`) in one library and puts them in your
-agents' and projects' folders. Setup: [README](../README.md#run-locally). Checklist: [PLAN.md](PLAN.md).
+agents' and projects' folders. Setup: [README](../README.md#run-locally). Planned: [TODO.md](TODO.md).
 
 ## Library
 
@@ -200,5 +200,5 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Checkl
 - Builds are not signed with an Apple or Windows certificate.
 - The CLI can't read tokens saved by the app; use SSH, a credential helper, or for GitHub a GitHub CLI sign-in or `GITHUB_TOKEN`.
 - Roo Code's folder of rule files is not covered; Cline and Kiro rule folders are, as Rules.
-- Windows and Linux are untested.
+- Windows and Linux are untested, and so is a real drag from the file manager.
 - Subagents, commands and rules: deleting one does not go to Recently removed; they cannot be renamed or updated from their source; when two computers change the same one before syncing, this computer's version wins (the other is in the backup's history).

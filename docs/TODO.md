@@ -1,6 +1,6 @@
 # To do
 
-Work we decided on but have not started. Done items move to [PLAN.md](PLAN.md).
+Work we decided on but have not started. Done items move to [FEATURES.md](FEATURES.md).
 
 ## GitHub sign-in through a GitHub App
 
@@ -31,5 +31,12 @@ and are not affected.
       path in `credentials.ts`. Check it works for push, fetch and tags.
 - [ ] Settings → Backup shows the account, the repository, "Change repository access" (opens the
       App's installation page) and "Disconnect".
-- [ ] Update FEATURES.md and PLAN.md, and drop the "needs an OAuth client id" line from Current
+- [ ] Update FEATURES.md, and drop the "needs an OAuth client id" line from Current
       limitations.
+
+## Smaller open items
+
+- [ ] Instruction files: keep one file in step across agents (`CLAUDE.md` as a link to `AGENTS.md`).
+- [ ] Instruction files: CLI commands, folders of rule files, custom agents and path overrides.
+- [ ] "Stop managing, keep them as folders" on its own, without removing all data.
+- [ ] Homebrew (deferred): `scripts/homebrew.mjs` and `publish-homebrew.yml` are ready but unused.
