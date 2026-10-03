@@ -15,8 +15,8 @@ import { resolveCommit, upstreamRef } from "./repo";
  * are matched, so a skill that merely talks about keys passes.
  */
 
-/** Larger files are not text a skill carries by hand; reading them would only cost time. */
-const MAX_SCANNED_BYTES = 1024 * 1024;
+/** Larger files are not text a skill carries by hand; reading them for keys would only cost time. */
+export const MAX_SCANNED_BYTES = 1024 * 1024;
 /** Characters of a match shown on each side of the hidden middle. */
 const MASK_KEEP = 4;
 const ID_LENGTH = 16;

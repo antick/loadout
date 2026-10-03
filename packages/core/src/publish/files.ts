@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PUBLISH_MAX_FILE_BYTES, type SecretFinding } from "@loadout/shared";
-import { findSecrets } from "../backup/secrets";
+import { MAX_SCANNED_BYTES, findSecrets } from "../backup/secrets";
 import { AppError } from "../errors";
 import { lstatOrNull, readDirSafe } from "../util/fs";
 import { isIgnoredContentName } from "../util/hash";
@@ -24,8 +24,6 @@ const ENV_FILE = /^\.env(?:\..+)?$/i;
 /** `.env.example` documents the variables; it holds no values. */
 const ENV_TEMPLATE = /\.(?:example|sample|template)$/i;
 const LOG_FILE = /\.log$/i;
-/** Larger files are not read for keys: a key file is small, and this keeps a check quick. */
-const MAX_SCANNED_BYTES = 1024 * 1024;
 
 export interface PublishFile {
   /** Path inside the skill folder, `/` separated. */
