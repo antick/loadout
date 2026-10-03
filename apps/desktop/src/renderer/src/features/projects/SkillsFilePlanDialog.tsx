@@ -31,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { useRunSkillsFile } from "@/hooks/mutations/skills-file";
 import { type SkillsFileMode, useSkillsFilePlan } from "@/hooks/queries/skills-file";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 /** Characters of a commit shown next to a source. */
 const SHORT_REVISION = 7;
@@ -184,15 +185,17 @@ export function SkillsFilePlanDialog({
     setPrune(false);
     onClose();
   };
-  const ready = plan.data && mode;
+  // Closing, it keeps showing what it was about while it fades out.
+  const shown = useLastDefined(mode);
+  const ready = plan.data && shown;
 
   return (
     <Dialog open={mode !== null} onOpenChange={(open) => !open && !run.isPending && close()}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{mode ? t(`skillsFile.title.${mode}`) : null}</DialogTitle>
+          <DialogTitle>{shown ? t(`skillsFile.title.${shown}`) : null}</DialogTitle>
           <DialogDescription>
-            {mode ? t(`skillsFile.description.${mode}`, { file: SKILLS_FILE_NAME }) : null}
+            {shown ? t(`skillsFile.description.${shown}`, { file: SKILLS_FILE_NAME }) : null}
           </DialogDescription>
         </DialogHeader>
         {plan.isPending ? (
@@ -205,7 +208,7 @@ export function SkillsFilePlanDialog({
         ) : ready ? (
           <PlanBody
             plan={plan.data}
-            mode={mode}
+            mode={shown}
             force={force}
             prune={prune}
             onForce={setForce}
@@ -217,14 +220,14 @@ export function SkillsFilePlanDialog({
             {t("common.cancel")}
           </Button>
           <Button
-            variant={mode === "unapply" ? "destructive" : "default"}
+            variant={shown === "unapply" ? "destructive" : "default"}
             disabled={!plan.data || !hasWork(plan.data, force) || run.isPending}
             onClick={() =>
               mode && run.mutate({ dir, mode, options: { force, prune } }, { onSuccess: close })
             }
           >
             {run.isPending ? <Spinner /> : null}
-            {mode ? t(`skillsFile.confirm.${mode}`) : null}
+            {shown ? t(`skillsFile.confirm.${shown}`) : null}
           </Button>
         </DialogFooter>
       </DialogContent>
