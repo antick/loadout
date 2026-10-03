@@ -37,7 +37,8 @@ export function memorySecrets(available = true): MemorySecrets {
 /** Keep the developer's own git settings (signing, hooks, default branch) out of the tests. */
 export function isolateGit(root: string): void {
   const config = join(root, "gitconfig");
-  writeFileSync(config, "");
+  // Git's own background upkeep after commits and fetches is a process per call and tests nothing.
+  writeFileSync(config, "[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n");
   process.env.GIT_CONFIG_GLOBAL = config;
   process.env.GIT_CONFIG_NOSYSTEM = "1";
 }
