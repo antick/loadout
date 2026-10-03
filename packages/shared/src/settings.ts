@@ -42,7 +42,7 @@ export interface Settings {
   /** OAuth app client id for GitHub device sign-in. Empty hides that option. */
   githubClientId: string;
   agentControlPrompt: AgentControlPrompt;
-  /** Run the safety scanner on every install, before anything is written. Needs the scanner. */
+  /** Run the safety check on every install, before anything is written. */
   safetyScanOnInstall: boolean;
   /** The SkillSpector program to run; empty looks for it on this machine. */
   safetyScannerPath: string;

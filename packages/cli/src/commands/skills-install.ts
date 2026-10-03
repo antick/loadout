@@ -336,7 +336,7 @@ export const installCommand: CommandSpec = {
     "--yes also accepts a download that moved to another site than the link names.",
     "--replace puts a skill in place of the library skill holding its name, keeping its tags,",
     "presets and agents; the old version goes to Recently removed.",
-    "With SkillSpector installed, skills are safety-checked first; a flagged one fails with",
+    "Every skill is safety-checked first; a flagged one fails with",
     "UNSAFE and its findings. --accept-risk installs it anyway.",
     "A folder must start with ./, ../, / or ~/ - a bare owner/repo always means GitHub.",
   ],
