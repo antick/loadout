@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Skeleton } from "@/components/ui/skeleton";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
 import { useBackupStatus } from "@/hooks/queries/app";
 import { usePresets } from "@/hooks/queries/presets";
@@ -16,6 +15,7 @@ import { QuickActions } from "./QuickActions";
 import { RecentActivity } from "./RecentActivity";
 import { RecentSkills } from "./RecentSkills";
 import { SkillUseCard } from "./SkillUseCard";
+import { Skeletons } from "@/components/Skeletons";
 
 const STAT_SKELETONS = 6;
 
@@ -69,9 +69,7 @@ export function DashboardPage(): ReactNode {
 
       {skills.isPending ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 2xl:grid-cols-6">
-          {Array.from({ length: STAT_SKELETONS }, (_, index) => (
-            <Skeleton key={index} className="h-24 rounded-lg" />
-          ))}
+          <Skeletons count={STAT_SKELETONS} className="h-24 rounded-lg" />
         </div>
       ) : empty ? (
         <GettingStarted />

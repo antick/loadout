@@ -21,6 +21,7 @@ import {
 } from "@/hooks/mutations/install";
 import { useAgents } from "@/hooks/queries/agents";
 import { useScanLocal } from "@/hooks/queries/install";
+import { Skeletons } from "@/components/Skeletons";
 
 const STATS_GRID_CLASS = "grid grid-cols-2 gap-3 lg:grid-cols-4";
 
@@ -53,9 +54,7 @@ function ScanSkeleton(): ReactNode {
   return (
     <div className="flex flex-col gap-6" aria-hidden="true">
       <div className={STATS_GRID_CLASS}>
-        {Array.from({ length: SCAN_STAT_COUNT }, (_, index) => (
-          <Skeleton key={index} className="h-20 rounded-lg" />
-        ))}
+        <Skeletons count={SCAN_STAT_COUNT} className="h-20 rounded-lg" />
       </div>
       <div className="divide-y rounded-lg border bg-card">
         {Array.from({ length: SCAN_SKELETON_COUNT }, (_, index) => (

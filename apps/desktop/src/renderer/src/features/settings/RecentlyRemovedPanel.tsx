@@ -17,7 +17,6 @@ import { Panel } from "@/components/Panel";
 import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
   useClearStorage,
@@ -26,6 +25,7 @@ import {
   useRevealRemoved,
 } from "@/hooks/mutations/storage";
 import { useRemovedFolders } from "@/hooks/queries/storage";
+import { Skeletons } from "@/components/Skeletons";
 
 const SKELETON_ROWS = 2;
 
@@ -80,9 +80,7 @@ export function RecentlyRemovedPanel(): ReactNode {
   if (removed.isPending) {
     body = (
       <div className="flex flex-col gap-2">
-        {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-          <Skeleton key={index} className="h-12 w-full" />
-        ))}
+        <Skeletons count={SKELETON_ROWS} className="h-12 w-full" />
       </div>
     );
   } else if (removed.isError) {

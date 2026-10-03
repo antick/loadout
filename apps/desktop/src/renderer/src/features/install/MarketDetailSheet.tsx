@@ -40,6 +40,7 @@ import { useAgents } from "@/hooks/queries/agents";
 import { useMarketDetail } from "@/hooks/queries/install";
 import { useSkills } from "@/hooks/queries/skills";
 import { occurrenceKeys } from "@/lib/utils";
+import { Skeletons } from "@/components/Skeletons";
 
 const AUDIT_TONES: Record<MarketAuditStatus, StatusTone> = {
   pass: "success",
@@ -124,9 +125,7 @@ function AuditsSection({
       </p>
       {loading ? (
         <div className="flex flex-col gap-2">
-          {Array.from({ length: AUDIT_SKELETON_ROWS }, (_, index) => (
-            <Skeleton key={index} className="h-10 w-full" />
-          ))}
+          <Skeletons count={AUDIT_SKELETON_ROWS} className="h-10 w-full" />
         </div>
       ) : audits === null || audits === undefined ? (
         <InlineNotice tone="warning" icon={ShieldQuestion}>

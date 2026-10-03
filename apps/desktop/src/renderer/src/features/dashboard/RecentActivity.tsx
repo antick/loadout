@@ -24,10 +24,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageSection } from "@/components/PageSection";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useActivity } from "@/hooks/queries/dashboard";
 import { cn } from "@/lib/utils";
 import { ACTIVITY_LIMIT } from "./constants";
+import { Skeletons } from "@/components/Skeletons";
 
 const KIND_ICONS: Record<ActivityKind, LucideIcon> = {
   install: PackagePlus,
@@ -57,9 +57,7 @@ export function RecentActivity(): ReactNode {
   if (activity.isPending) {
     body = (
       <div className="flex flex-col gap-2 p-3">
-        {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-          <Skeleton key={index} className="h-9 w-full" />
-        ))}
+        <Skeletons count={SKELETON_ROWS} className="h-9 w-full" />
       </div>
     );
   } else if (activity.isError) {

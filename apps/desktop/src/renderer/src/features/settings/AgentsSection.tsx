@@ -8,7 +8,6 @@ import { SearchInput } from "@/components/SearchInput";
 import { SortableList } from "@/components/SortableList";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSetAgentOrder, useSetAllAgentsEnabled } from "@/hooks/mutations/settings-page";
 import { useAgents } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
@@ -19,6 +18,7 @@ import { groupAgents, mergeGroupOrder } from "./agent-groups";
 import { AGENT_GROUP_IDS, type AgentGroupId } from "./constants";
 import { SECTION_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
+import { Skeletons } from "@/components/Skeletons";
 
 const SKELETON_CARDS = 4;
 /** Groups that start collapsed: the long list of agents that are not on this machine. */
@@ -130,9 +130,7 @@ export function AgentsSection(): ReactNode {
 
       {agents.isPending ? (
         <div className="flex flex-col gap-2">
-          {Array.from({ length: SKELETON_CARDS }, (_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-lg" />
-          ))}
+          <Skeletons count={SKELETON_CARDS} className="h-24 w-full rounded-lg" />
         </div>
       ) : (
         AGENT_GROUP_IDS.map((groupId) => {

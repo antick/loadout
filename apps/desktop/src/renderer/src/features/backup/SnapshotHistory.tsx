@@ -13,10 +13,10 @@ import { ErrorState } from "@/components/ErrorState";
 import { PageSection } from "@/components/PageSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useRestoreSnapshot } from "@/hooks/mutations/backup-page";
 import { useBackupSnapshots } from "@/hooks/queries/backup-page";
 import { SHORT_COMMIT_LENGTH } from "./constants";
+import { Skeletons } from "@/components/Skeletons";
 
 /** `YYYYMMDD-HHMMSS`, the part of a snapshot tag that says when it was taken. */
 const COMPACT_STAMP_LENGTH = 15;
@@ -74,9 +74,7 @@ export function SnapshotHistory({
   } else if (snapshots.isPending) {
     body = (
       <div className="flex flex-col gap-2">
-        {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-          <Skeleton key={index} className="h-12 w-full rounded-lg" />
-        ))}
+        <Skeletons count={SKELETON_ROWS} className="h-12 w-full rounded-lg" />
       </div>
     );
   } else if (snapshots.isError) {
