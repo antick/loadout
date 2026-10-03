@@ -1,4 +1,4 @@
-import { isArchivePath } from "@loadout/shared";
+import { isArchivePath, skillMatchesName } from "@loadout/shared";
 import { cancelled, notFound, parseSkillsCommand } from "@loadout/core";
 import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
@@ -68,10 +68,6 @@ export function classifySource(input: string): InstallSource {
   );
 }
 
-function lastSegment(relPath: string): string {
-  return relPath.split("/").findLast(Boolean) ?? relPath;
-}
-
 /** Said after anything lands in the library. */
 export const NOT_DEPLOYED_HINT =
   "Installing does not deploy. Next: skills deploy <ref> --agent <key>";
@@ -95,13 +91,7 @@ export function selectSkills(
     );
   }
   return wanted.map((want) => {
-    const key = want.toLowerCase();
-    const match = available.find(
-      (skill) =>
-        skill.relPath === want ||
-        skill.name.toLowerCase() === key ||
-        lastSegment(skill.relPath).toLowerCase() === key,
-    );
+    const match = available.find((skill) => skillMatchesName(skill, want));
     if (!match) throw notFound(`No skill called "${want}" in that ${what}.`);
     return match;
   });

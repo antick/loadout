@@ -1,6 +1,7 @@
 import type { Skill } from "./types";
 import { redactUrl } from "./secrets";
 import { isArchivePath } from "./constants";
+import { lastPathSegment } from "./skill-match";
 
 /**
  * The places skills came from, grouped from the skills themselves: a Git repository (installed
@@ -93,10 +94,6 @@ export function repositoryLabel(url: string): string {
   return host === GITHUB_HOST ? path : `${host}/${path}`;
 }
 
-function lastSegment(path: string): string {
-  return path.split(/[\\/]/).findLast(Boolean) ?? path;
-}
-
 /** `SkillSource.key` of a repository at a branch: one spelling of the URL, `#branch` when set. */
 export function repositorySourceKey(url: string, branch: string | null): string {
   return `${normalizeSourceUrl(url)}${branch ? `#${branch}` : ""}`;
@@ -138,7 +135,7 @@ export function skillSourceOf(skill: Skill): SkillSourceIdentity | null {
   }
   if (skill.sourceType === "url") {
     const parsed = hostAndPath(ref);
-    const label = parsed ? `${parsed.host}/${lastSegment(parsed.path)}` : ref;
+    const label = parsed ? `${parsed.host}/${lastPathSegment(parsed.path)}` : ref;
     return {
       key: ref,
       kind: "link",
@@ -153,7 +150,7 @@ export function skillSourceOf(skill: Skill): SkillSourceIdentity | null {
     return {
       key: ref,
       kind: "archive",
-      label: lastSegment(ref),
+      label: lastPathSegment(ref),
       location: ref,
       branch: null,
       viaMarketplace: false,

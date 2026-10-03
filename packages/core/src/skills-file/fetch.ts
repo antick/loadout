@@ -1,4 +1,4 @@
-import type { SkillsFileSource } from "@loadout/shared";
+import { type SkillsFileSource, skillMatchesName } from "@loadout/shared";
 import { invalid } from "../errors";
 import type { GitClient } from "../install/git-client";
 import { parseGitSource, resolveTreeRef } from "../install/git-source";
@@ -54,10 +54,6 @@ export async function fetchSource(
   }
 }
 
-function lastSegment(relPath: string): string {
-  return relPath.split("/").findLast(Boolean) ?? relPath;
-}
-
 /**
  * The skills of a source the file asks for, by name or folder name, and the names it asks for
  * that the source does not have. Null takes them all.
@@ -70,13 +66,7 @@ export function chooseSkills(
   const chosen: FoundSkill[] = [];
   const missing: string[] = [];
   for (const name of wanted) {
-    const key = name.toLowerCase();
-    const match = available.find(
-      (skill) =>
-        skill.relPath === name ||
-        skill.name.toLowerCase() === key ||
-        lastSegment(skill.relPath).toLowerCase() === key,
-    );
+    const match = available.find((skill) => skillMatchesName(skill, name));
     if (!match) missing.push(name);
     else if (!chosen.includes(match)) chosen.push(match);
   }

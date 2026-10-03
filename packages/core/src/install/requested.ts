@@ -1,4 +1,4 @@
-import type { RepoSkillPreview } from "@loadout/shared";
+import { type RepoSkillPreview, skillMatchesName } from "@loadout/shared";
 
 /** Which skills of a preview were asked for by name, and which names matched nothing. */
 export interface RequestedSkills {
@@ -7,13 +7,9 @@ export interface RequestedSkills {
   missing: string[];
 }
 
-function lastSegment(relPath: string): string {
-  return relPath.split("/").findLast(Boolean) ?? relPath;
-}
-
 /**
  * Match names from `owner/repo@skill`, `#main@skill` or `--skill` against what a source really
- * holds: by the skill's own name or its folder name, ignoring case. Never guesses beyond that.
+ * holds, the way `skillMatchesName` does.
  */
 export function matchRequested(
   skills: readonly Pick<RepoSkillPreview, "relPath" | "name">[],
@@ -24,11 +20,7 @@ export function matchRequested(
   const selected = new Set<string>();
   const missing: string[] = [];
   for (const name of names) {
-    const key = name.toLowerCase();
-    const matches = skills.filter(
-      (skill) =>
-        skill.name.toLowerCase() === key || lastSegment(skill.relPath).toLowerCase() === key,
-    );
+    const matches = skills.filter((skill) => skillMatchesName(skill, name));
     if (matches.length === 0) missing.push(name);
     for (const match of matches) selected.add(match.relPath);
   }
