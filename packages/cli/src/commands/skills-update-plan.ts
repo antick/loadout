@@ -1,4 +1,4 @@
-import { redactUrl } from "@loadout/shared";
+import { redactUrl, formatRevision } from "@loadout/shared";
 import { type Core, LIBRARY_LOCATION, errorMessage, isRemoteSource } from "@loadout/core";
 import type { FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
 
@@ -30,7 +30,6 @@ export interface UpdatePlan {
 }
 
 /** Characters of a revision shown in the text. */
-const SHORT_REVISION = 7;
 const FILES_SHOWN = 8;
 
 /** A skill with somewhere to update from: a repository, the marketplace, a folder or an archive. */
@@ -95,7 +94,7 @@ function rowText(row: UpdatePlanRow): string[] {
   if (row.error) return [`${row.name}: could not read its source (${row.error}).`];
   if (changeCount(row) === 0)
     return [`${row.name}: already matches ${row.source ?? "its source"}.`];
-  const at = row.revision ? ` at ${row.revision.slice(0, SHORT_REVISION)}` : "";
+  const at = row.revision ? ` at ${formatRevision(row.revision)}` : "";
   const lines = [
     `${row.name}: would update from ${row.source ?? "its source"}${at}, ${plural(changeCount(row), "file")} change:`,
   ];

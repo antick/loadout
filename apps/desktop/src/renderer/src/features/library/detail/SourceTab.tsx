@@ -4,6 +4,7 @@ import {
   formatDateTime,
   formatRelative,
   type Skill,
+  formatRevision,
 } from "@loadout/shared";
 import {
   ArrowUpCircle,
@@ -33,7 +34,6 @@ import { useCheckSkillUpdate, useDetachSkill } from "@/hooks/mutations/library";
 import { installPhaseText } from "@/features/install/install-tasks";
 
 /** Characters of a revision shown; the full value stays in the tooltip. */
-const REVISION_DISPLAY_LENGTH = 10;
 const ABSOLUTE_PATH_PATTERN = /^(\/|~|[A-Za-z]:[\\/])/;
 
 function Row({ label, children }: { label: string; children: ReactNode }): ReactNode {
@@ -61,7 +61,7 @@ function Revision({
   }
   return (
     <span data-selectable title={value} className="font-mono text-xs">
-      {value.slice(0, REVISION_DISPLAY_LENGTH)}
+      {formatRevision(value)}
     </span>
   );
 }

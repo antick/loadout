@@ -3,6 +3,7 @@ import {
   type SkillsFileAction,
   type SkillsFileEntry,
   type SkillsFilePlan,
+  formatRevision,
 } from "@loadout/shared";
 import {
   CircleAlert,
@@ -34,7 +35,6 @@ import { type SkillsFileMode, useSkillsFilePlan } from "@/hooks/queries/skills-f
 import { useLastDefined } from "@/hooks/use-last-defined";
 
 /** Characters of a commit shown next to a source. */
-const SHORT_REVISION = 7;
 const FORCE_ID = "skills-file-force";
 const PRUNE_ID = "skills-file-prune";
 
@@ -106,7 +106,7 @@ function PlanBody({
             <li key={`${source.url}#${source.ref ?? ""}`} className="flex flex-wrap gap-x-2">
               <span className="font-mono text-foreground">{source.url}</span>
               {source.ref ? <span>{source.ref}</span> : null}
-              <span className="font-mono">{source.revision.slice(0, SHORT_REVISION)}</span>
+              <span className="font-mono">{formatRevision(source.revision)}</span>
               {source.moved ? <span>{t("skillsFile.newPin")}</span> : null}
             </li>
           ))}

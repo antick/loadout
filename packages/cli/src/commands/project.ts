@@ -5,6 +5,7 @@ import {
   type SkillsFileInit,
   type SkillsFilePlan,
   type SkillsFileResult,
+  formatRevision,
 } from "@loadout/shared";
 import { flagBoolean, flagList, flagString } from "../args";
 import { plural, table } from "../output";
@@ -50,7 +51,6 @@ const PRUNE_FLAG = {
 } as const;
 
 /** Characters of a commit shown in text. */
-const SHORT_REVISION = 7;
 
 const ACTION_WORDS: Record<SkillsFileAction, string> = {
   add: "add",
@@ -71,7 +71,7 @@ function directory(context: CommandContext): string {
 function planText(plan: SkillsFilePlan, heading: string): string {
   const lines = [heading, `Project: ${plan.root}`];
   for (const source of plan.sources) {
-    const at = source.revision.slice(0, SHORT_REVISION);
+    const at = formatRevision(source.revision);
     const ref = source.ref ? ` (${source.ref})` : "";
     lines.push(`Source ${source.url}${ref} at ${at}${source.moved ? ", newly pinned" : ""}`);
     if (source.missing.length > 0) {

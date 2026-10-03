@@ -1,3 +1,4 @@
+import { formatRevision } from "@loadout/shared";
 import type { Skill } from "@loadout/shared";
 import { CloudOff, GitCompareArrows } from "lucide-react";
 import type { ReactNode } from "react";
@@ -13,7 +14,6 @@ import { useSkillDocument } from "@/hooks/queries/skills";
 import { errorMessage } from "@/lib/toast";
 
 /** Characters of a revision shown next to the source name. */
-const REVISION_DISPLAY_LENGTH = 10;
 
 /**
  * Library copy against its source, fetched only when this tab is opened: changed files, then the
@@ -50,7 +50,7 @@ export function CompareTab({ skill }: { skill: Skill }): ReactNode {
     );
   }
 
-  const revision = diff.data?.revision?.slice(0, REVISION_DISPLAY_LENGTH);
+  const revision = diff.data?.revision ? formatRevision(diff.data.revision) : undefined;
 
   return (
     <div className="flex flex-col gap-6">
