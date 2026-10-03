@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import { TEST_MAX_WORKERS } from "../../vitest.workers";
 
 // Same as core: each CLI test opens a real library on disk, which Windows runners do slowly.
 export default defineConfig({
@@ -6,5 +7,6 @@ export default defineConfig({
     include: ["test/**/*.test.ts"],
     environment: "node",
     testTimeout: 30_000,
+    maxWorkers: TEST_MAX_WORKERS,
   },
 });
