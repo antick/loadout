@@ -1,10 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
+import type { Core } from "../src/core";
 import { createBareRemote, isolateGit } from "./backup-world";
-import { tempDir } from "./helpers";
+import { tempDir, createTestCore } from "./helpers";
 
 /** Two full cores (devices) sharing one remote, with copy-mode deployments on the second. */
 describe("deployed copies after a sync", () => {
@@ -16,11 +15,9 @@ describe("deployed copies after a sync", () => {
     const home = join(temp.dir, `home-${name}`);
     mkdirSync(join(home, ".claude"), { recursive: true });
     mkdirSync(join(home, ".cursor"), { recursive: true });
-    return createCore({
+    return createTestCore({
       homeDir: home,
       configDir: join(temp.dir, `config-${name}`),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
   };
 

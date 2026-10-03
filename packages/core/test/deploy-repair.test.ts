@@ -1,12 +1,11 @@
 import { existsSync, lstatSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type Core, createCore } from "../src/core";
+import type { Core } from "../src/core";
 import { createDeployRepair } from "../src/deploy";
-import { silentLogger } from "../src/log";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
-import { tempDir } from "./helpers";
+import { tempDir, createTestCore } from "./helpers";
 
 describe("repairing deployments", () => {
   let world: DeployWorld;
@@ -136,11 +135,8 @@ describe("repair when the app starts", () => {
   beforeEach(() => {
     temp = tempDir();
     mkdirSync(join(temp.dir, ".claude"), { recursive: true });
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
   });
   afterEach(() => {

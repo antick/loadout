@@ -2,9 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
-import { tempDir } from "./helpers";
+import type { Core } from "../src/core";
+import { tempDir, createTestCore } from "./helpers";
 
 const OWNER = "pskoett";
 const SLUG = "self-improving-agent";
@@ -90,11 +89,8 @@ describe("ClawHub as a marketplace", () => {
   beforeEach(() => {
     temp = tempDir();
     registry = fakeRegistry();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
       fetchImpl: registry.fetchImpl,
     });
   });

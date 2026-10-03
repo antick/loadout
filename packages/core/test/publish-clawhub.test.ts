@@ -2,10 +2,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { SecretStore } from "../src/context";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
+import type { Core } from "../src/core";
 import { clawhubTopicsOf } from "../src/publish";
-import { makeSkill, tempDir } from "./helpers";
+import { makeSkill, tempDir, createTestCore } from "./helpers";
 
 const TOKEN = "clh_test_token";
 /** A token-shaped string the key check recognises and does not take for a documentation example. */
@@ -72,11 +71,8 @@ describe("publishing to ClawHub", () => {
     temp = tempDir();
     registry = fakeRegistry();
     secrets = memorySecrets();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
       fetchImpl: registry.fetchImpl,
       secrets,
     });

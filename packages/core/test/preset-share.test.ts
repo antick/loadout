@@ -2,10 +2,9 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PRESET_FILE_FORMAT, type PresetFile } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
+import type { Core } from "../src/core";
 import { parsePresetFile } from "../src/presets/share-file";
-import { makeSkill, tempDir } from "./helpers";
+import { makeSkill, tempDir, createTestCore } from "./helpers";
 import { commitAll, initRepo, redirectGithubTo } from "./install-fixtures";
 
 const REPO = "https://github.com/acme/skills";
@@ -19,11 +18,8 @@ function newCore(name: string): Core {
   const home = join(temp.dir, name);
   mkdirSync(join(home, ".claude"), { recursive: true });
   mkdirSync(join(home, ".cursor"), { recursive: true });
-  const core = createCore({
+  const core = createTestCore({
     homeDir: home,
-    configDir: join(home, "config"),
-    logger: silentLogger,
-    safetyScannerPath: null,
   });
   cores.push(core);
   return core;

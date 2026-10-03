@@ -2,10 +2,9 @@ import { mkdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
+import type { Core } from "../src/core";
 import { RepoLock } from "../src/lock";
-import { silentLogger } from "../src/log";
-import { tempDir } from "./helpers";
+import { tempDir, createTestCore } from "./helpers";
 
 /**
  * Another process (a CLI sync, the app mid-merge) can set a skill folder aside for a moment while
@@ -19,11 +18,8 @@ describe("re-indexing the library while another process works in it", () => {
   let aside: string;
 
   const open = (): Core =>
-    createCore({
+    createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
 
   beforeEach(async () => {

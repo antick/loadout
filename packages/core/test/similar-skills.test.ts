@@ -2,11 +2,10 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { duplicatePairKey } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
+import type { Core } from "../src/core";
 import { type SimilarityInput, findSimilarPairs, nameSimilarity } from "../src/duplicates";
 import { AppError } from "../src/errors";
-import { silentLogger } from "../src/log";
-import { makeSkill, tempDir } from "./helpers";
+import { makeSkill, tempDir, createTestCore } from "./helpers";
 
 const GUIDE = [
   "# PDF tools",
@@ -108,11 +107,8 @@ describe("duplicates in a library", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
     source = join(temp.dir, "src");
     mkdirSync(join(temp.dir, ".claude"), { recursive: true });

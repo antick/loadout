@@ -1,12 +1,11 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type Core, createCore } from "../src/core";
+import type { Core } from "../src/core";
 import { createStaleCopyRefresher } from "../src/deploy";
 import type { StaleCopiesReport } from "../src/deploy";
-import { silentLogger } from "../src/log";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
-import { tempDir, writeFile } from "./helpers";
+import { tempDir, writeFile, createTestCore } from "./helpers";
 
 const emptyReport = (): StaleCopiesReport => ({ written: 0, conflicts: [], failed: [], kept: [] });
 
@@ -121,11 +120,8 @@ describe("outside library edits in the running app", () => {
   beforeEach(() => {
     temp = tempDir();
     mkdirSync(join(temp.dir, ".claude"), { recursive: true });
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
   });
   afterEach(() => {

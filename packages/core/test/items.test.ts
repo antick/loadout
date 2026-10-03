@@ -7,9 +7,8 @@ import {
   parseTomlStrings,
 } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
-import { tempDir } from "./helpers";
+import type { Core } from "../src/core";
+import { tempDir, createTestCore } from "./helpers";
 
 /** Subagents, commands and rules: library, deploys with conversion, ownership, import. */
 
@@ -33,11 +32,9 @@ beforeEach(() => {
   mkdirSync(join(home, ".claude"), { recursive: true });
   mkdirSync(join(home, ".config", "opencode"), { recursive: true });
   mkdirSync(join(home, ".gemini"), { recursive: true });
-  core = createCore({
+  core = createTestCore({
     homeDir: home,
     configDir: join(temp.dir, "config"),
-    logger: silentLogger,
-    safetyScannerPath: null,
   });
 });
 

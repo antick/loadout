@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { expect } from "vitest";
+import { type Core, type CoreCreateOptions, createCore } from "../src/core";
 import { type ContextBundle, createContext } from "../src/create-context";
 import { AppError } from "../src/errors";
 import { silentLogger } from "../src/log";
@@ -82,4 +83,17 @@ export async function rejection(promise: Promise<unknown>): Promise<AppError> {
   );
   expect(error).toBeInstanceOf(AppError);
   return error as AppError;
+}
+
+/**
+ * A core for a test: quiet, without the safety scanner, its settings in `<homeDir>/config` unless
+ * the test says otherwise.
+ */
+export function createTestCore(options: CoreCreateOptions & { homeDir: string }): Core {
+  return createCore({
+    configDir: join(options.homeDir, "config"),
+    logger: silentLogger,
+    safetyScannerPath: null,
+    ...options,
+  });
 }

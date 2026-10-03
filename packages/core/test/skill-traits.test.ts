@@ -2,12 +2,11 @@ import { chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { isRunnableFile, runsCode, scriptsTrait, traitsFromFrontmatter } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
+import type { Core } from "../src/core";
 import { listRepoSkills } from "../src/install/repo-scan";
-import { silentLogger } from "../src/log";
 import { parseFrontmatter } from "../src/skills/metadata";
 import { skillTraits } from "../src/skills/traits";
-import { makeSkill, tempDir, writeFile } from "./helpers";
+import { makeSkill, tempDir, writeFile, createTestCore } from "./helpers";
 
 const codes = (traits: readonly { code: string }[]): string[] => traits.map((trait) => trait.code);
 
@@ -116,11 +115,8 @@ describe("traits in the library and in previews", () => {
   let core: Core;
   beforeEach(() => {
     temp = tempDir();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
   });
   afterEach(() => {

@@ -1,20 +1,15 @@
-import { join } from "node:path";
 import { API_NAMESPACES, CORE_NAMESPACES } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
-import { tempDir } from "./helpers";
+import type { Core } from "../src/core";
+import { tempDir, createTestCore } from "./helpers";
 
 describe("API namespaces", () => {
   let temp: ReturnType<typeof tempDir>;
   let core: Core;
   beforeEach(() => {
     temp = tempDir();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
   });
   afterEach(() => {

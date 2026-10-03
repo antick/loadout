@@ -1,15 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
+import type { Core } from "../src/core";
 import {
   BUILTIN_RULES_VERSION,
   SAFETY_RULES,
   createSafetyService,
   scanWithRules,
 } from "../src/safety";
-import { createTestWorld, makeSkill, tempDir, type TestWorld } from "./helpers";
+import { createTestWorld, makeSkill, tempDir, type TestWorld, createTestCore } from "./helpers";
 import { type InstallHarness, createInstallHarness } from "./install-fixtures";
 
 const EVIL_SCRIPT = [
@@ -188,20 +187,14 @@ describe("the app's default", () => {
   });
 
   it("runs the rules when no scanner is named, and not when a test names none", async () => {
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
       builtinSafety: true,
     });
     expect((await core.api.safety.status()).engine).toBe("builtin");
     core.close();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
     expect((await core.api.safety.status()).engine).toBeNull();
   });

@@ -3,9 +3,8 @@ import { join } from "node:path";
 import { SKILL_NOTE_MAX_LENGTH, matchesSkillQuery } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type SkillSide, planSkill } from "../src/backup/merge-plan";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
-import { makeSkill, tempDir } from "./helpers";
+import type { Core } from "../src/core";
+import { makeSkill, tempDir, createTestCore } from "./helpers";
 
 /** One side of a merge: the same skill, with this note. */
 function side(note?: string): SkillSide {
@@ -21,11 +20,8 @@ describe("a note on a skill", () => {
   let core: Core;
   beforeEach(() => {
     temp = tempDir();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
   });
   afterEach(() => {

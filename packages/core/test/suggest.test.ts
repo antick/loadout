@@ -3,12 +3,11 @@ import { join } from "node:path";
 import { cleanSuggestPatterns, suggestPatternProblem } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type SkillSide, planSkill } from "../src/backup/merge-plan";
-import { type Core, createCore } from "../src/core";
-import { silentLogger } from "../src/log";
+import type { Core } from "../src/core";
 import { firstMatch } from "../src/suggest";
 import { matchSkills } from "../src/suggest/match";
 import { readProjectFiles } from "../src/suggest/project-files";
-import { makeSkill, tempDir, writeFile } from "./helpers";
+import { makeSkill, tempDir, writeFile, createTestCore } from "./helpers";
 import { skillRecord } from "./skill-records";
 import { type WorkspaceWorld, createWorkspaceWorld } from "./workspace-world";
 
@@ -153,11 +152,8 @@ describe("keeping suggest-for patterns", () => {
   let core: Core;
   beforeEach(() => {
     temp = tempDir();
-    core = createCore({
+    core = createTestCore({
       homeDir: temp.dir,
-      configDir: join(temp.dir, "config"),
-      logger: silentLogger,
-      safetyScannerPath: null,
     });
   });
   afterEach(() => {
