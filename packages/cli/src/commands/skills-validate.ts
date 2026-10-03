@@ -4,14 +4,13 @@ import { UsageError, flagBoolean } from "../args";
 import { plural } from "../output";
 import { limitPositionals, resolveUserPath } from "./support";
 import type { CommandResult, FreeCommandContext, FreeCommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const ALL_FLAG = {
   name: "all",
   type: "boolean",
   description: "Every skill in the library.",
 } as const;
-
-const EXIT_ERRORS = 1;
 
 const view = (skill: Skill) => ({ id: skill.id, name: skill.name, issues: skill.issues });
 
@@ -57,7 +56,7 @@ async function validateLibrary(core: Core, ref: string | undefined): Promise<Com
   return {
     value: ref === undefined ? flagged.map(view) : view(skills[0] as Skill),
     text: lines.join("\n"),
-    exitCode: broken.length > 0 ? EXIT_ERRORS : 0,
+    exitCode: exitCodeFor(broken.length > 0),
   };
 }
 
@@ -88,7 +87,7 @@ function validateFolder(context: FreeCommandContext, input: string): CommandResu
   return {
     value: check,
     text: folderText(check).join("\n"),
-    exitCode: failed ? EXIT_ERRORS : 0,
+    exitCode: exitCodeFor(failed),
   };
 }
 

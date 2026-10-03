@@ -20,6 +20,7 @@ import {
 } from "./support";
 import { presetExportCommand, presetImportCommand } from "./presets-share";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const DESCRIPTION_FLAG = {
   name: "description",
@@ -133,7 +134,7 @@ function finish(preset: Preset, value: ApplyResult): CommandResult {
   for (const conflict of value.conflicts)
     lines.push(`Left alone: ${conflict.path} ${conflict.reason}`);
   const incomplete = value.failed.length > 0 || value.conflicts.length > 0;
-  return { value, text: lines.join("\n"), exitCode: incomplete ? 1 : 0 };
+  return { value, text: lines.join("\n"), exitCode: exitCodeFor(incomplete) };
 }
 
 async function deploy(context: CommandContext): Promise<CommandResult> {

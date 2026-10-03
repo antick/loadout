@@ -10,6 +10,7 @@ import { APP_NAME, type ErrorShape } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString, parseArgs, splitCommandPath } from "./args";
 import { COMMAND_GROUPS, type CommandGroup, type CommandSpec } from "./commands";
 import { resolveUserPath } from "./commands/support";
+import { EXIT_FAILED, EXIT_OK, EXIT_USAGE } from "./exit-codes";
 import type { SkillPicker } from "./picker/state";
 import { GLOBAL_FLAGS, commandHelp, groupHelp, rootHelp } from "./help";
 import { type CliIo, printCommandResult, printError } from "./output";
@@ -26,9 +27,8 @@ export interface CliDeps {
   picker?: SkillPicker;
 }
 
-export const EXIT_OK = 0;
-export const EXIT_FAILED = 1;
-export const EXIT_USAGE = 2;
+export { EXIT_FAILED, EXIT_OK, EXIT_USAGE };
+
 const COMMAND_DEPTH = 2;
 const JSON_FLAG = "--json";
 

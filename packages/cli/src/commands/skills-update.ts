@@ -5,6 +5,7 @@ import { fields, plural, when } from "../output";
 import { type UpdatePlan, hasUpdateSource, planUpdate, updatePlanText } from "./skills-update-plan";
 import { ACCEPT_RISK_FLAG, DRY_RUN_FLAG, limitPositionals } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const ALL_FLAG = {
   name: "all",
@@ -84,7 +85,7 @@ async function check(context: CommandContext): Promise<CommandResult> {
       sourceMissing: gone,
     },
     text: lines.join("\n"),
-    exitCode: batch.failed.length > 0 ? 1 : 0,
+    exitCode: exitCodeFor(batch.failed.length > 0),
   };
 }
 
@@ -148,7 +149,7 @@ async function planUpdates(context: CommandContext, one: Skill | null): Promise<
   return {
     value,
     text: updatePlanText(value),
-    exitCode: value.skills.some((row) => row.error) ? 1 : 0,
+    exitCode: exitCodeFor(value.skills.some((row) => row.error)),
   };
 }
 
@@ -187,7 +188,7 @@ async function update(context: CommandContext): Promise<CommandResult> {
     );
   }
   for (const failure of value.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
-  return { value, text: lines.join("\n"), exitCode: value.failed.length > 0 ? 1 : 0 };
+  return { value, text: lines.join("\n"), exitCode: exitCodeFor(value.failed.length > 0) };
 }
 
 export const checkCommand: CommandSpec = {

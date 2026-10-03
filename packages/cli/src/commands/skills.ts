@@ -44,6 +44,7 @@ import {
   resolveSkills,
 } from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const TAG_FLAG = {
   name: "tag",
@@ -280,7 +281,7 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
       failed: result.failed,
     },
     text: lines.join("\n"),
-    exitCode: result.failed.length > 0 ? 1 : 0,
+    exitCode: exitCodeFor(result.failed.length > 0),
   };
 }
 
@@ -323,7 +324,7 @@ function deployer(action: "add" | "remove") {
         // Only reached with --skip-conflicts; without it these were thrown as an error.
         ...result.conflicts.map((conflict) => `Left alone: ${conflict.path} (${conflict.reason})`),
       ].join("\n"),
-      exitCode: result.failed.length > 0 ? 1 : 0,
+      exitCode: exitCodeFor(result.failed.length > 0),
     };
   };
 }

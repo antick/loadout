@@ -17,6 +17,7 @@ import { plural, table } from "../output";
 import { NOT_DEPLOYED_HINT } from "./skills-install";
 import { ACCEPT_RISK_FLAG, positionalsFrom } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const LIMIT_FLAG = {
   name: "limit",
@@ -141,7 +142,7 @@ async function search(context: CommandContext): Promise<CommandResult> {
     return {
       value: { ...listing, ...picked },
       text: pickedText(picked),
-      exitCode: picked.failed.length > 0 ? 1 : 0,
+      exitCode: exitCodeFor(picked.failed.length > 0),
     };
   }
   const rows = listing.skills.map((skill) => [

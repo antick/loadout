@@ -15,6 +15,7 @@ import {
   resolveUserPath,
 } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const OUT_FLAG = {
   name: "out",
@@ -97,7 +98,7 @@ async function importPreset(context: CommandContext): Promise<CommandResult> {
   for (const failure of result.failed)
     lines.push(`  Not added: ${failure.name}: ${failure.message}`);
   lines.push(`Next: presets deploy "${result.preset.name}" --agent <key>`);
-  return { value: result, text: lines.join("\n"), exitCode: result.failed.length > 0 ? 1 : 0 };
+  return { value: result, text: lines.join("\n"), exitCode: exitCodeFor(result.failed.length > 0) };
 }
 
 export const presetExportCommand: CommandSpec = {

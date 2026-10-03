@@ -12,6 +12,7 @@ import { flagBoolean } from "../args";
 import { plural } from "../output";
 import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const REASON_MANAGED = "already managed";
 const REASON_LIBRARY_DIFFERS =
@@ -100,7 +101,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
   return {
     value: { dryRun: false, agent: agent.key, adopted, skipped, failed },
     text: lines.join("\n"),
-    exitCode: failed.length > 0 ? 1 : 0,
+    exitCode: exitCodeFor(failed.length > 0),
   };
 }
 

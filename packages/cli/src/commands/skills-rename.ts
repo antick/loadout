@@ -2,6 +2,7 @@ import type { RenameResult } from "@loadout/shared";
 import { flagBoolean } from "../args";
 import { DRY_RUN_FLAG, limitPositionals, positional } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 function describe(result: RenameResult): string[] {
   const verb = result.dryRun ? "Would rename" : "Renamed";
@@ -29,7 +30,7 @@ async function rename({ core, args }: CommandContext): Promise<CommandResult> {
   return {
     value: result,
     text: describe(result).join("\n"),
-    exitCode: result.failed.length > 0 ? 1 : 0,
+    exitCode: exitCodeFor(result.failed.length > 0),
   };
 }
 

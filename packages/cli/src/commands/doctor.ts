@@ -4,6 +4,7 @@ import { flagBoolean } from "../args";
 import { plural } from "../output";
 import { limitPositionals } from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const ALL_FLAG = {
   name: "all",
@@ -54,7 +55,7 @@ async function doctor({ core, args }: CommandContext): Promise<CommandResult> {
   );
   if (error + warning === 0) lines.push("Everything looks healthy.");
   if (!all && info > 0) lines.push("Run with --all to list the rest.");
-  return { value: report, text: lines.join("\n"), exitCode: error > 0 ? 1 : 0 };
+  return { value: report, text: lines.join("\n"), exitCode: exitCodeFor(error > 0) };
 }
 
 export const doctorGroup: CommandGroup = {

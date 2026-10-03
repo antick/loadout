@@ -22,6 +22,7 @@ import {
   requireYes,
 } from "./support";
 import type { CommandContext, CommandGroup, CommandResult, CommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const REPLACE_FLAG = {
   name: "replace",
@@ -109,7 +110,7 @@ async function deploy(context: CommandContext): Promise<CommandResult> {
       lines.push(`${place.agentKey}: not deployed. ${reason}`);
     }
   }
-  return { value: item, text: lines.join("\n"), exitCode: failed > 0 ? 1 : 0 };
+  return { value: item, text: lines.join("\n"), exitCode: exitCodeFor(failed > 0) };
 }
 
 function removalText(result: ItemRemovalResult): string[] {

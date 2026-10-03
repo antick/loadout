@@ -2,6 +2,7 @@ import type { RepairReport } from "@loadout/shared";
 import { plural } from "../output";
 import { limitPositionals } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 /** Put back every recorded deployment that is missing or a broken link. */
 async function repair({ core, args }: CommandContext): Promise<CommandResult> {
@@ -19,7 +20,7 @@ async function repair({ core, args }: CommandContext): Promise<CommandResult> {
       `${plural(report.skippedAgents, "deployment")} of agents not installed or switched off left alone.`,
     );
   }
-  return { value: report, text: lines.join("\n"), exitCode: report.failed.length > 0 ? 1 : 0 };
+  return { value: report, text: lines.join("\n"), exitCode: exitCodeFor(report.failed.length > 0) };
 }
 
 export const repairCommand: CommandSpec = {
