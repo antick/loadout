@@ -7,6 +7,7 @@ import { INTERNAL_KEYS } from "../settings/store";
 import { canonicalPath, normalizeAbsolutePath } from "../util/fs";
 import { agentKeyFromName } from "../util/names";
 import type { AgentRegistry, CustomAgentRecord, ResolvedAgent } from "./registry";
+import { logRedeployProblems } from "../deploy/report-log";
 
 export interface AgentsServiceDeps {
   registry: AgentRegistry;
@@ -75,12 +76,7 @@ export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): 
     const after = registry.get(before.key);
     if (canonicalPath(before.skillsDir) === canonicalPath(after.skillsDir)) return;
     const report = await deploy.moveAgentDeployments(before.key, before.skillsDir, after.skillsDir);
-    for (const conflict of report.conflicts) {
-      ctx.log.warn(`Did not redeploy to ${conflict.path}: it ${conflict.reason}`);
-    }
-    for (const failure of report.failed) {
-      ctx.log.warn(`Could not move the deployment of ${failure.name}: ${failure.message}`);
-    }
+    logRedeployProblems(ctx.log, report, "move");
   }
 
   function defaultProjectDir(key: string): string | null {

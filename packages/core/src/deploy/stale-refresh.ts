@@ -1,5 +1,6 @@
 import type { CoreContext } from "../context";
 import type { DeployService } from "./service";
+import { logRedeployProblems } from "./report-log";
 
 /**
  * Keeps copied deployments in step with a library edited outside the app (by hand, an agent or
@@ -25,12 +26,7 @@ export function createStaleCopyRefresher(
   async function pass(): Promise<void> {
     try {
       const report = await deploy.refreshStaleCopies();
-      for (const conflict of report.conflicts) {
-        ctx.log.warn(`Deployed copy not refreshed: ${conflict.path} ${conflict.reason}`);
-      }
-      for (const failure of report.failed) {
-        ctx.log.warn(`Deployed copy of ${failure.name} not refreshed: ${failure.message}`);
-      }
+      logRedeployProblems(ctx.log, report, "refresh");
       for (const { skill, agent } of report.kept) {
         const key = `${skill}\n${agent}`;
         if (reportedKept.has(key)) continue;

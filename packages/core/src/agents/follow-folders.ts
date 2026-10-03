@@ -4,6 +4,7 @@ import type { DeployService } from "../deploy";
 import type { SkillStore } from "../skills/store";
 import { canonicalPath } from "../util/fs";
 import type { AgentRegistry } from "./registry";
+import { logRedeployProblems } from "../deploy/report-log";
 
 /** Deployments of one agent moved to where its folder is now. */
 export interface FolderMove {
@@ -45,12 +46,7 @@ export async function followMovedAgentFolders(
     // As recorded, for the log and the caller; the comparison above is on real paths.
     const from = dirname(rows[0]?.targetPath ?? "");
     const report = await deps.deploy.moveAgentDeployments(agent.key, from, agent.skillsDir);
-    for (const conflict of report.conflicts) {
-      ctx.log.warn(`Did not move a skill to ${conflict.path}: it ${conflict.reason}`);
-    }
-    for (const failure of report.failed) {
-      ctx.log.warn(`Could not move ${failure.name} for ${agent.displayName}: ${failure.message}`);
-    }
+    logRedeployProblems(ctx.log, report, "move");
     ctx.log.info(
       `${agent.displayName} now reads ${agent.skillsDir}: moved ${report.written} skills from ${from}`,
     );

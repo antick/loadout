@@ -29,6 +29,7 @@ import {
   describeLocalSkill,
   matchLibrarySkill,
 } from "./local-scan";
+import { logRedeployProblems } from "../deploy/report-log";
 
 /** What the global and the project workspaces both need to move content in and out of the library. */
 export interface LocalSyncDeps {
@@ -124,10 +125,7 @@ export async function pushLocalToLibrary(
   }
   // Copies deployed elsewhere were made from the old content.
   const refreshCopies = async (skill: Skill): Promise<void> => {
-    const report = await deploy.refreshCopies(skill);
-    for (const conflict of report.conflicts) {
-      ctx.log.warn(`Did not refresh ${conflict.path}: it ${conflict.reason}`);
-    }
+    logRedeployProblems(ctx.log, await deploy.refreshCopies(skill), "refresh");
   };
   // The library version it replaces goes to Recently removed, as any replaced skill does.
   return installReplacing(ctx, install.installIntoLibrary, { removed, refreshCopies }, match, {

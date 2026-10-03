@@ -47,6 +47,7 @@ import {
   remoteTargetOf,
   resolveRemoteRevision,
 } from "./source";
+import { logRedeployProblems } from "../deploy/report-log";
 
 export interface UpdaterDeps {
   store: SkillStore;
@@ -255,12 +256,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       }
 
       const report = await deps.refreshCopies(skill);
-      for (const conflict of report.conflicts) {
-        ctx.log.warn(`Deployed copy not refreshed: ${conflict.path} ${conflict.reason}`);
-      }
-      for (const failure of report.failed) {
-        ctx.log.warn(`Deployed copy of ${failure.name} not refreshed: ${failure.message}`);
-      }
+      logRedeployProblems(ctx.log, report, "refresh");
       return {
         skill: store.get(skill.id),
         contentChanged,

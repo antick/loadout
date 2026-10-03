@@ -32,6 +32,7 @@ import { createDuplicatesService } from "./duplicates";
 import { createListingService } from "./listing";
 import { createUsageService } from "./usage";
 import { createPublishService } from "./publish";
+import { logRedeployProblems } from "./deploy/report-log";
 
 export interface CoreCreateOptions extends CoreOptions {
   /** Proxy-aware fetch supplied by the host. Defaults to the global `fetch`. */
@@ -192,12 +193,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     history,
     refreshCopies: async (skill) => {
       const report = await deploy.refreshCopies(skill, { keepModified: true });
-      for (const conflict of report.conflicts) {
-        ctx.log.warn(`Deployed copy not refreshed: ${conflict.path} ${conflict.reason}`);
-      }
-      for (const failure of report.failed) {
-        ctx.log.warn(`Deployed copy of ${failure.name} not refreshed: ${failure.message}`);
-      }
+      logRedeployProblems(ctx.log, report, "refresh");
       return { written: report.written, kept: report.kept };
     },
   });
