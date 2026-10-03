@@ -1,5 +1,5 @@
 /**
- * DEV ONLY. Backup, settings, agents and system handlers for the in-memory preview bridge in
+ * DEV ONLY. Backup, settings and system handlers for the in-memory preview bridge in
  * `dev-mock.ts`, so the Backup, Settings and Dashboard pages can be tried in a plain browser.
  *
  * Scenarios come from the page URL (before the `#`): `?backup=fresh|noremote|unrelated|nogit|
@@ -19,14 +19,12 @@ import {
   type BackupStage,
   type BackupStatus,
   CLI_BINARY_NAME,
-  type CustomAgentInput,
   type DataScope,
   type ErrorCode,
   type ErrorDetails,
   type RepairReport,
   formatTimestampCompact,
   type GithubConnectResult,
-  isWslPath,
   type LibraryLocation,
   type Settings,
   type Skill,
@@ -35,6 +33,7 @@ import {
   type SecretFinding,
   type SyncOutcome,
 } from "@loadout/shared";
+import { createAgentsMockHandlers } from "@/lib/dev-mock-agents";
 import { createBackupSyncMockHandlers } from "@/lib/dev-mock-backup-sync";
 import {
   HOME,
@@ -171,7 +170,6 @@ let repairReport: RepairReport | null =
     : cleanRepair();
 
 export function createSystemMockHandlers(ctx: SystemMockContext): MockHandlers {
-  const { agents } = ctx;
   let status = initialStatus();
   let snapshots = status.isRepo ? seedSnapshots() : [];
   let conflicts: BackupConflict[] =
@@ -236,14 +234,6 @@ export function createSystemMockHandlers(ctx: SystemMockContext): MockHandlers {
       repoPrivate: !repoName.includes("public"),
       remoteHasContent: repoName.includes("existing"),
     };
-  };
-
-  const patchAgent = (key: string, patch: Partial<AgentInfo>): void => {
-    const index = agents.findIndex((agent) => agent.key === key);
-    const current = agents[index];
-    if (!current) ctx.fail("NOT_FOUND", `There is no agent "${key}".`);
-    agents[index] = { ...current, ...patch };
-    ctx.emitChanged("agents");
   };
 
   return {
@@ -392,54 +382,7 @@ export function createSystemMockHandlers(ctx: SystemMockContext): MockHandlers {
     "backup.githubDeviceAvailable": () =>
       params.get("device") === "1" || ctx.getSettings().githubClientId !== "",
 
-    "agents.list": () => [...agents],
-    "agents.setEnabled": (key: string, enabled: boolean) => patchAgent(key, { enabled }),
-    "agents.setAllEnabled": (enabled: boolean) => {
-      agents.splice(0, agents.length, ...agents.map((agent) => ({ ...agent, enabled })));
-      ctx.emitChanged("agents");
-    },
-    "agents.setOrder": (keys: string[]) => {
-      const rank = new Map(keys.map((key, index) => [key, index]));
-      agents.sort((a, b) => (rank.get(a.key) ?? keys.length) - (rank.get(b.key) ?? keys.length));
-    },
-    "agents.addCustom": (input: CustomAgentInput) => {
-      const path = input.skillsDir;
-      // Windows accepts WSL folders (`\\wsl.localhost\…`) as absolute paths too.
-      if (!path.startsWith("/") && !path.startsWith("~") && !isWslPath(path)) {
-        ctx.fail("INVALID_INPUT", "Skills path must be absolute (or start with ~/).");
-      }
-      const created: AgentInfo = {
-        key: input.displayName.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
-        displayName: input.displayName,
-        category: "coding",
-        installed: true,
-        enabled: true,
-        isCustom: true,
-        skillsDir: input.skillsDir.replace(/^~/, HOME),
-        hasPathOverride: false,
-        projectSkillsDir: input.projectSkillsDir ?? null,
-        hasProjectPathOverride: false,
-        sharesDirWith: [],
-        alsoReads: [],
-        homeEnv: null,
-        reload: null,
-        detection: { reason: "custom", path: null },
-      };
-      agents.push(created);
-      ctx.emitChanged("agents");
-      return created;
-    },
-    "agents.removeCustom": (key: string) => {
-      agents.splice(0, agents.length, ...agents.filter((agent) => agent.key !== key));
-      ctx.emitChanged("agents");
-    },
-    "agents.setSkillsDir": (key: string, path: string) =>
-      patchAgent(key, { skillsDir: path.replace(/^~/, HOME), hasPathOverride: true }),
-    "agents.resetSkillsDir": (key: string) => patchAgent(key, { hasPathOverride: false }),
-    "agents.setProjectSkillsDir": (key: string, path: string | null) =>
-      patchAgent(key, { projectSkillsDir: path, hasProjectPathOverride: path !== null }),
-    "agents.resetProjectSkillsDir": (key: string) =>
-      patchAgent(key, { hasProjectPathOverride: false }),
+    ...createAgentsMockHandlers(ctx),
 
     "system.libraryLocation": () => location,
     "system.setLibraryPath": (path: string | null) => {
