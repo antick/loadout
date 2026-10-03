@@ -1,10 +1,14 @@
 import {
+  CLOSE_ACTIONS,
   type CloseActionSetting,
+  DEPLOY_MODES,
   type DeployMode,
   EDITOR_NAMES,
   PALETTES,
   type PaletteSetting,
   SYSTEM_EDITOR,
+  TEXT_SIZES,
+  THEMES,
   isEditorId,
 } from "@loadout/shared";
 import { Monitor, Moon, Sun } from "lucide-react";
@@ -20,7 +24,6 @@ import { useSetSetting } from "@/hooks/mutations/settings";
 import { useEditors } from "@/hooks/queries/app";
 import { useSettings } from "@/hooks/queries/settings";
 import { LANGUAGES } from "@/lib/i18n";
-import { CLOSE_ACTIONS, DEPLOY_MODES, TEXT_SIZE_OPTIONS, THEME_OPTIONS } from "./constants";
 import { PalettePreview } from "./PalettePreview";
 import { UsagePanel } from "./UsagePanel";
 
@@ -124,11 +127,11 @@ export function GeneralSection(): ReactNode {
               value={settings.theme}
               aria-label={t("settings.general.appearance.theme")}
               onValueChange={(next) => {
-                const theme = THEME_OPTIONS.find((option) => option === next);
+                const theme = THEMES.find((option) => option === next);
                 if (theme) setSetting.mutate({ key: "theme", value: theme });
               }}
             >
-              {THEME_OPTIONS.map((option) => {
+              {THEMES.map((option) => {
                 const Icon = THEME_ICONS[option];
                 return (
                   <ToggleGroupItem key={option} value={option} className="gap-1.5 px-2.5">
@@ -147,7 +150,7 @@ export function GeneralSection(): ReactNode {
             <OptionSelect
               id={textSizeId}
               value={settings.textSize}
-              options={TEXT_SIZE_OPTIONS}
+              options={TEXT_SIZES}
               labelOf={(size) => t(`settings.general.appearance.textSizes.${size}`)}
               onChange={(value) => setSetting.mutate({ key: "textSize", value })}
               className="w-36"

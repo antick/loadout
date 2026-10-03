@@ -70,7 +70,8 @@ export type UpdateStatus =
   | "local_only"
   | "source_missing";
 
-export type DeployMode = "symlink" | "copy";
+export const DEPLOY_MODES = ["symlink", "copy"] as const;
+export type DeployMode = (typeof DEPLOY_MODES)[number];
 
 /** One deployed copy or symlink of a library skill inside an agent's global folder. */
 export interface Deployment {

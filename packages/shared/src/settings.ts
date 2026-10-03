@@ -3,19 +3,27 @@ import {
   LISTING_WINDOW_CHOICES,
   type ListingWindow,
 } from "./skill-listing";
-import type { DeployMode } from "./types";
+import { DEPLOY_MODES, type DeployMode } from "./types";
 
-export type ThemeSetting = "light" | "dark" | "system";
+/** Each list is the one place its values are written; the type comes from it. Order is as shown. */
+export const THEMES = ["system", "light", "dark"] as const;
+export type ThemeSetting = (typeof THEMES)[number];
 /** Colour palettes, each with a light and a dark version. Order is the order shown. */
 export const PALETTES = ["flight", "blueprint", "risograph", "iris"] as const;
 export type PaletteSetting = (typeof PALETTES)[number];
-export type TextSizeSetting = "small" | "default" | "large" | "xlarge";
-export type LanguageSetting = "en" | "hi";
+export const TEXT_SIZES = ["small", "default", "large", "xlarge"] as const;
+export type TextSizeSetting = (typeof TEXT_SIZES)[number];
+export const LANGUAGE_CODES = ["en", "hi"] as const;
+export type LanguageSetting = (typeof LANGUAGE_CODES)[number];
 /** "ask" shows the close-or-minimise prompt. */
-export type CloseActionSetting = "ask" | "hide" | "quit";
-export type AutoUpdateInterval = "off" | "1h" | "6h" | "24h";
-export type FirstRunChoice = "" | "fresh" | "restored";
-export type AgentControlPrompt = "" | "dismissed" | "installed";
+export const CLOSE_ACTIONS = ["ask", "hide", "quit"] as const;
+export type CloseActionSetting = (typeof CLOSE_ACTIONS)[number];
+export const AUTO_UPDATE_INTERVALS = ["off", "1h", "6h", "24h"] as const;
+export type AutoUpdateInterval = (typeof AUTO_UPDATE_INTERVALS)[number];
+export const FIRST_RUN_CHOICES = ["", "fresh", "restored"] as const;
+export type FirstRunChoice = (typeof FIRST_RUN_CHOICES)[number];
+export const AGENT_CONTROL_PROMPTS = ["", "dismissed", "installed"] as const;
+export type AgentControlPrompt = (typeof AGENT_CONTROL_PROMPTS)[number];
 
 /** Every user-facing setting, with its value type. Stored as JSON strings in the settings table. */
 export interface Settings {
@@ -107,15 +115,15 @@ export const PROXY_URL_PATTERN = /^(https?|socks5):\/\//i;
  * from an older or newer version) is refused on save and read back as the default.
  */
 export const SETTING_CHOICES: Partial<Record<SettingKey, readonly string[]>> = {
-  deployMode: ["symlink", "copy"],
-  theme: ["light", "dark", "system"],
+  deployMode: DEPLOY_MODES,
+  theme: THEMES,
   palette: PALETTES,
-  textSize: ["small", "default", "large", "xlarge"],
-  language: ["en", "hi"],
-  closeAction: ["ask", "hide", "quit"],
-  autoUpdateInterval: ["off", "1h", "6h", "24h"],
-  backupFirstRunPrompt: ["", "fresh", "restored"],
-  agentControlPrompt: ["", "dismissed", "installed"],
+  textSize: TEXT_SIZES,
+  language: LANGUAGE_CODES,
+  closeAction: CLOSE_ACTIONS,
+  autoUpdateInterval: AUTO_UPDATE_INTERVALS,
+  backupFirstRunPrompt: FIRST_RUN_CHOICES,
+  agentControlPrompt: AGENT_CONTROL_PROMPTS,
   skillListingWindow: LISTING_WINDOW_CHOICES,
 };
 

@@ -1,4 +1,4 @@
-import { formatRelative } from "@loadout/shared";
+import { AUTO_UPDATE_INTERVALS, formatRelative } from "@loadout/shared";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionSelect } from "@/components/OptionSelect";
@@ -7,7 +7,7 @@ import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSettings } from "@/hooks/queries/settings";
-import { AUTO_UPDATE_INTERVALS, UPDATE_CHECK_TTL_OPTIONS } from "./constants";
+import { UPDATE_CHECK_TTL_OPTIONS } from "./constants";
 
 /** How often skills are checked against their sources, and whether updates install themselves. */
 export function UpdatesSection(): ReactNode {
