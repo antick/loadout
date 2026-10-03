@@ -7,6 +7,7 @@ import {
   type SkillTrait,
   checkSkillDocument,
   skillIssue,
+  errorMessage,
 } from "@loadout/shared";
 import { canonicalPath, isInside, lstatOrNull } from "../util/fs";
 import { readFrontmatter } from "./metadata";
@@ -91,7 +92,7 @@ export function createSkillInspector(inspect = inspectSkillFacts): SkillInspecto
         facts = inspect(skill.libraryPath);
       } catch (error) {
         // One unreadable skill must never stop the whole library from listing.
-        const reason = error instanceof Error ? error.message : String(error);
+        const reason = errorMessage(error);
         facts = {
           issues: [skillIssue("frontmatter_invalid", { reason }, 1)],
           manualOnly: false,

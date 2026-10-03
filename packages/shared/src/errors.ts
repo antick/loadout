@@ -72,6 +72,11 @@ export interface ErrorShape {
 export type ApiResponse<T> = { ok: true; value: T } | { ok: false; error: ErrorShape };
 
 /** Thrown on the calling side (renderer, CLI) when a call fails. */
+/** The message of anything thrown, an `Error` or not. */
+export function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export class ApiError extends Error {
   readonly code: ErrorCode;
   readonly details: ErrorDetails | undefined;

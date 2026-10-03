@@ -15,6 +15,7 @@ import {
   type RemoveAllDataOptions,
   UPDATE_FEED_PUBLIC_KEY,
   UPDATE_FEED_URL,
+  errorMessage,
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
 import { createCrashHandlers } from "./crash";
@@ -440,8 +441,7 @@ if (!app.requestSingleInstanceLock()) {
     } catch (error) {
       // No window and no core: without this the process would linger, invisible, holding the
       // single-instance lock (a database from a newer version, a corrupt or locked database).
-      const message = error instanceof Error ? error.message : String(error);
-      dialog.showErrorBox(`${APP_NAME} could not start`, message);
+      dialog.showErrorBox(`${APP_NAME} could not start`, errorMessage(error));
       app.exit(1);
     }
   });

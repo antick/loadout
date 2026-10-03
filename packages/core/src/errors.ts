@@ -1,4 +1,10 @@
-import type { ErrorCode, ErrorDetails, ErrorShape, TargetConflict } from "@loadout/shared";
+import {
+  type ErrorCode,
+  type ErrorDetails,
+  type ErrorShape,
+  type TargetConflict,
+  errorMessage,
+} from "@loadout/shared";
 
 /** The one error type core throws on purpose. Anything else is a bug and surfaces as INTERNAL. */
 export class AppError extends Error {
@@ -33,9 +39,7 @@ export function isAppError(error: unknown, code?: ErrorCode): error is AppError 
   return error instanceof AppError && (code === undefined || error.code === code);
 }
 
-export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
+export { errorMessage };
 
 /** Serialise any thrown value for IPC or CLI output. */
 export function toErrorShape(error: unknown): ErrorShape {

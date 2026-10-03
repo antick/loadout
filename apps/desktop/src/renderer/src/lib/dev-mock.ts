@@ -15,6 +15,7 @@ import {
   type PresetInput,
   type RemoveSkillsResult,
   type Skill,
+  errorMessage,
 } from "@loadout/shared";
 import {
   deployment,
@@ -460,7 +461,7 @@ export function installDevMock(): void {
               ok: false,
               error: {
                 code,
-                message: error instanceof Error ? error.message : String(error),
+                message: errorMessage(error),
                 details,
               },
             });

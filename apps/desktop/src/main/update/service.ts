@@ -10,6 +10,7 @@ import {
   type UpdateFeedFile,
   isNewerVersion,
   parseUpdateFeed,
+  errorMessage,
 } from "@loadout/shared";
 import {
   UPDATE_EXIT_WAIT_SECONDS,
@@ -76,10 +77,6 @@ export interface UpdateService {
   download(): Promise<AppUpdateStatus>;
   cancel(): AppUpdateStatus;
   install(): Promise<void>;
-}
-
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 async function readJson<T>(path: string): Promise<T | null> {
@@ -202,7 +199,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       feed = parseUpdateFeed(JSON.parse(new TextDecoder().decode(bytes)), deps.feedUrl);
       feedCopy = { bytes, signature };
     } catch (error) {
-      return set({ phase: before === "ready" ? "ready" : "error", error: message(error) });
+      return set({ phase: before === "ready" ? "ready" : "error", error: errorMessage(error) });
     }
     const releaseUrl = feed.releaseUrl ?? RELEASES_URL;
     const checkedAt = Date.now();
@@ -279,7 +276,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       // What arrived stays in the folder, so the next download continues it.
       if (controller.signal.aborted) return set({ phase: "available", progress: null });
       deps.log.warn(`Update ${version} download failed`, error);
-      return set({ phase: "error", progress: null, error: message(error) });
+      return set({ phase: "error", progress: null, error: errorMessage(error) });
     } finally {
       if (abort === controller) abort = null;
     }
@@ -316,7 +313,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     ready = null;
     if (saved.archive) await rm(dirname(saved.archive), { recursive: true, force: true });
     await rm(readyFile, { force: true });
-    set({ phase: "available", error: message(error) });
+    set({ phase: "available", error: errorMessage(error) });
     throw error;
   }
 

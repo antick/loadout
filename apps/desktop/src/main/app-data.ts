@@ -1,6 +1,6 @@
 import { cpSync, existsSync, readdirSync, readlinkSync, rmSync, rmdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { LIBRARY_CONFIG_FILE } from "@loadout/shared";
+import { LIBRARY_CONFIG_FILE, errorMessage } from "@loadout/shared";
 import { SECRETS_FILE, SINGLETON_LOCK_FILE, WEB_STORAGE_DIR, WINDOW_STATE_FILE } from "./constants";
 
 /**
@@ -18,9 +18,6 @@ export interface AppDataMove {
   failed: { name: string; message: string }[];
 }
 
-const messageOf = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
 /** Copy what the new folder is missing. Never overwrites anything already there. */
 export function adoptAppData(from: string, to: string): AppDataMove {
   const move: AppDataMove = { copied: [], failed: [] };
@@ -33,7 +30,7 @@ export function adoptAppData(from: string, to: string): AppDataMove {
       cpSync(source, target, { recursive: true });
       move.copied.push(name);
     } catch (error) {
-      move.failed.push({ name, message: messageOf(error) });
+      move.failed.push({ name, message: errorMessage(error) });
     }
   }
   return move;

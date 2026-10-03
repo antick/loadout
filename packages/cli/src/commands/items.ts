@@ -1,4 +1,4 @@
-import { isAppError } from "@loadout/core";
+import { errorMessage } from "@loadout/core";
 import type { ItemRemovalResult, LibraryItem } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { plural, table } from "../output";
@@ -106,7 +106,7 @@ async function deploy(context: CommandContext): Promise<CommandResult> {
       lines.push(`${place.agentKey}: ${preview.path}`, ...warningLines(preview.warnings));
     } catch (error) {
       failed += 1;
-      const reason = isAppError(error) || error instanceof Error ? error.message : String(error);
+      const reason = errorMessage(error);
       lines.push(`${place.agentKey}: not deployed. ${reason}`);
     }
   }

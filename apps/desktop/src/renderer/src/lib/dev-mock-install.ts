@@ -23,6 +23,7 @@ import {
   type Skill,
   type SourceType,
   skillTrait,
+  errorMessage,
 } from "@loadout/shared";
 import { commandSource, guessSource } from "@/features/install/source-guess";
 import { HOME, LIBRARY } from "@/lib/dev-mock-data";
@@ -456,7 +457,7 @@ export function createInstallMockHandlers(ctx: InstallMockContext): MockHandlers
         } catch (error) {
           result.errors.push({
             name: group.name,
-            message: error instanceof Error ? error.message : String(error),
+            message: errorMessage(error),
           });
         }
       }
