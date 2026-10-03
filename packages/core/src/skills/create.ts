@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import {
   type CreateSkillInput,
   NEW_SKILL_DOCUMENT,
@@ -11,6 +11,7 @@ import {
   newSkillDescriptionProblem,
   newSkillDocument,
   newSkillNameProblem,
+  takenSkillNames,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { exists, invalid } from "../errors";
@@ -54,16 +55,20 @@ export function checkNewSkill(input: CreateSkillInput): CreateSkillInput {
 }
 
 /**
- * Whether `name` is taken in the library, by a skill's name or by any folder. Compared without
- * case, so a skill never lands next to one whose name differs only in case.
+ * Whether `name` is taken in the library: by a skill's name, its folder, or any other folder
+ * there, compared without case. `except` is the skill being renamed: its own do not count.
  */
-function isSkillNameTaken(ctx: CoreContext, store: SkillStore, name: string): boolean {
+export function isLibraryNameTaken(
+  store: SkillStore,
+  skillsDir: string,
+  name: string,
+  except?: Skill,
+): boolean {
   const wanted = name.toLowerCase();
-  const names = store
-    .list()
-    .flatMap((skill) => [skill.name.toLowerCase(), basename(skill.libraryPath).toLowerCase()]);
-  const folders = readDirSafe(ctx.paths.skillsDir).map((entry) => entry.name.toLowerCase());
-  return names.includes(wanted) || folders.includes(wanted);
+  if (takenSkillNames(store.list(), except?.id).has(wanted)) return true;
+  return readDirSafe(skillsDir).some(
+    (entry) => entry.name !== except?.dirName && entry.name.toLowerCase() === wanted,
+  );
 }
 
 /**
@@ -79,7 +84,7 @@ export async function createSkill(
 ): Promise<Skill> {
   const checked = checkNewSkill(input);
   const { name } = checked;
-  if (isSkillNameTaken(ctx, store, name)) {
+  if (isLibraryNameTaken(store, ctx.paths.skillsDir, name)) {
     throw exists(`The library already has a skill or folder named ${name}.`);
   }
 

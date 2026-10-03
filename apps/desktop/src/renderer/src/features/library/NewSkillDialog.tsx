@@ -6,11 +6,11 @@ import {
   isNewSkillTemplate,
   SKILL_DESCRIPTION_MAX,
   SKILL_NAME_MAX,
-  type Skill,
   newSkillDescriptionProblem,
   newSkillNameProblem,
   skillAuthoringPrompt,
   toSkillNameInput,
+  takenSkillNames,
 } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { ClipboardCopy } from "lucide-react";
@@ -51,13 +51,6 @@ export interface NewSkillDialogProps {
   projectId?: string | null;
 }
 
-/** Library names and folder names, lower-cased: a new skill may match neither. */
-function takenNames(skills: readonly Skill[] | undefined): Set<string> {
-  return new Set(
-    (skills ?? []).flatMap((skill) => [skill.name.toLowerCase(), skill.dirName.toLowerCase()]),
-  );
-}
-
 /** The form lives in its own component so every opening starts empty. */
 function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "open">): ReactNode {
   const { t } = useTranslation();
@@ -87,7 +80,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   /** Which button sent the form, so its own spinner turns. */
   const [sentWithPrompt, setSentWithPrompt] = useState(false);
 
-  const libraryNames = useMemo(() => takenNames(skills), [skills]);
+  const libraryNames = useMemo(() => takenSkillNames(skills ?? []), [skills]);
   const taken = project ? place.taken : libraryNames;
   const trimmedName = name.trim();
   const trimmedDescription = description.trim();

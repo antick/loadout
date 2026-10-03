@@ -4,6 +4,7 @@ import {
   type Skill,
   newSkillNameProblem,
   toSkillNameInput,
+  takenSkillNames,
 } from "@loadout/shared";
 import { FolderSymlink, Info, TriangleAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
@@ -79,15 +80,7 @@ function RenameSkillForm({
   const { data: skills } = useSkills();
   const [name, setName] = useState(skill.dirName);
 
-  const taken = useMemo(
-    () =>
-      new Set(
-        (skills ?? []).flatMap((other) =>
-          other.id === skill.id ? [] : [other.name.toLowerCase(), other.dirName.toLowerCase()],
-        ),
-      ),
-    [skills, skill.id],
-  );
+  const taken = useMemo(() => takenSkillNames(skills ?? [], skill.id), [skills, skill.id]);
   const trimmed = name.trim();
   const unchanged = trimmed === skill.dirName && trimmed === skill.name;
   const problem =

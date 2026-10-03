@@ -11,6 +11,7 @@ import { hashDir } from "../util/hash";
 import { checkSkillName } from "./create";
 import { readSkillDocument, setFrontmatterName } from "./metadata";
 import type { SkillStore } from "./store";
+import { isLibraryNameTaken } from "./create";
 
 export interface RenameDeps {
   store: SkillStore;
@@ -39,21 +40,6 @@ function projectEntries(folders: readonly string[], skill: Skill): ProjectEntrie
     }
   }
   return found;
-}
-
-/** Another skill or any folder in the library already uses the name (case aside). */
-function nameTaken(store: SkillStore, skill: Skill, name: string): boolean {
-  const wanted = name.toLowerCase();
-  const others = store
-    .list()
-    .flatMap((other) =>
-      other.id === skill.id ? [] : [other.name.toLowerCase(), other.dirName.toLowerCase()],
-    );
-  const folders = readDirSafe(dirname(skill.libraryPath))
-    .map((entry) => entry.name)
-    .filter((entry) => entry !== skill.dirName)
-    .map((entry) => entry.toLowerCase());
-  return others.includes(wanted) || folders.includes(wanted);
 }
 
 /**
@@ -124,7 +110,7 @@ export async function renameSkill(
   return ctx.lock.run(`rename ${store.get(skillId).name}`, async () => {
     const skill = store.get(skillId);
     const from = skill.name;
-    if (nameTaken(store, skill, name)) {
+    if (isLibraryNameTaken(store, dirname(skill.libraryPath), name, skill)) {
       throw exists(`The library already has a skill or folder named ${name}.`);
     }
     const to = join(dirname(skill.libraryPath), name);

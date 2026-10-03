@@ -5,6 +5,7 @@ import {
   newSkillTemplateBody,
 } from "./new-skill-templates";
 import { SKILL_DESCRIPTION_MAX, SKILL_NAME_MAX } from "./skill-checks";
+import type { Skill } from "./types";
 
 /**
  * A skill written from scratch. The name follows the Agent Skills format strictly (a new skill has
@@ -74,4 +75,19 @@ export function newSkillDocument(input: CreateSkillInput): string {
     ...(body.length > 0 ? ["", ...body] : []),
     "",
   ].join("\n");
+}
+
+/**
+ * Names a new or renamed skill may not take: every skill's name and folder, lower-cased, since
+ * two skills must never differ only in case. `exceptId` is the skill being renamed.
+ */
+export function takenSkillNames(
+  skills: readonly Pick<Skill, "id" | "name" | "dirName">[],
+  exceptId?: string,
+): Set<string> {
+  return new Set(
+    skills.flatMap((skill) =>
+      skill.id === exceptId ? [] : [skill.name.toLowerCase(), skill.dirName.toLowerCase()],
+    ),
+  );
 }
