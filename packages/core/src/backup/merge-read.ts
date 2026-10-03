@@ -110,6 +110,30 @@ function parseJson<T>(text: string): T | null {
   }
 }
 
+/** A skill's metadata as read from git; null unless it is whole and belongs to `id`. */
+function usableSkillMeta(raw: string, id: string): PortableSkill | null {
+  const meta = parseJson<PortableSkill>(raw);
+  const usable =
+    meta !== null &&
+    meta.id === id &&
+    isSafeSkillPath(meta.path) &&
+    Array.isArray(meta.tags) &&
+    typeof meta.source === "object" &&
+    meta.source !== null;
+  return usable ? meta : null;
+}
+
+/** One skill's metadata in `commit`; null when it is not there or not usable. */
+export async function skillMetadataAt(
+  env: BackupEnv,
+  commit: string,
+  id: string,
+): Promise<PortableSkill | null> {
+  const file = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${id}${JSON_SUFFIX}`;
+  const result = await env.git.probe(["show", `${commit}:${file}`]);
+  return result.code === 0 ? usableSkillMeta(result.stdout, id) : null;
+}
+
 export async function readCommit(env: BackupEnv, commit: string): Promise<CommitSnapshot> {
   const [entries, items] = await Promise.all([
     topLevelEntries(env, commit),
@@ -138,16 +162,9 @@ export async function readCommit(env: BackupEnv, commit: string): Promise<Commit
     const id = path.slice(prefix.length, -JSON_SUFFIX.length);
     if (!SAFE_ID.test(id)) continue;
     if (prefix === skillPrefix) {
-      const meta = parseJson<PortableSkill>(raw);
-      const usable =
-        meta !== null &&
-        meta.id === id &&
-        isSafeSkillPath(meta.path) &&
-        Array.isArray(meta.tags) &&
-        typeof meta.source === "object" &&
-        meta.source !== null;
+      const meta = usableSkillMeta(raw, id);
       // Reported separately from "not there": a broken file must never read as a deleted skill.
-      if (!usable) unreadable.add(id);
+      if (!meta) unreadable.add(id);
       else skills.set(id, { path: meta.path, treeHash: entries.get(meta.path) ?? null, meta });
     } else {
       const preset = parseJson<PortablePreset>(raw);

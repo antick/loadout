@@ -8,7 +8,6 @@ import type {
   SyncSkillDiff,
 } from "@loadout/shared";
 import { notFound } from "../errors";
-import type { PortableSkill } from "../skills/portable";
 import { diffTrees } from "../updates/diff";
 import { ensureDir, removePath } from "../util/fs";
 import { findConflict } from "./conflict-store";
@@ -16,6 +15,7 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR, isSafeSkillPath } from "./env";
 import { createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
 import { manyDeletes, planSides, readSides } from "./merge-input";
+import { skillMetadataAt } from "./merge-read";
 import { reportStage, withStages } from "./progress";
 import { type SkillPlan, type SkillVersions, sameSkill } from "./merge-plan";
 import { assertRepo, isRepo, originUrl, requireBranch, resolveCommit, upstreamRef } from "./repo";
@@ -197,22 +197,6 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
 }
 
 /** The other device's metadata for a skill at a commit, when it is there and sane. */
-async function metadataAt(
-  env: BackupEnv,
-  commit: string,
-  id: string,
-): Promise<PortableSkill | null> {
-  const file = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${id}.json`;
-  const result = await env.git.probe(["show", `${commit}:${file}`]);
-  if (result.code !== 0) return null;
-  try {
-    const meta = JSON.parse(result.stdout) as PortableSkill;
-    return meta.id === id && isSafeSkillPath(meta.path) ? meta : null;
-  } catch {
-    return null;
-  }
-}
-
 /** Files that exist here but stay out of the backup are not part of any change. */
 async function dropLeftOut(
   env: BackupEnv,
@@ -265,7 +249,7 @@ export async function previewDiff(
   assertRepo(env);
   const commit = await resolveCommit(env, remoteCommit);
   if (!commit) throw notFound("That remote state is no longer here. Review the sync again.");
-  const meta = await metadataAt(env, commit, skillId);
+  const meta = await skillMetadataAt(env, commit, skillId);
   const local = localFolderOf(env, skillId);
   if (!meta && !local) throw notFound("That skill is neither here nor on the remote.");
   return {

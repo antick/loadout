@@ -9,6 +9,7 @@ import { firstFreeName } from "../util/names";
 import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
+import { skillMetadataAt } from "./merge-read";
 import { type SetAsideFolder, carryIgnored, putBackFolder, setAsideFolder } from "./ignored";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 import { tagSnapshot } from "./snapshots";
@@ -42,18 +43,8 @@ function metadataFile(env: BackupEnv, skillId: string): string {
 }
 
 /** The other device's metadata for the skill at the conflicting commit, when it can be read. */
-async function remoteMetadata(
-  env: BackupEnv,
-  conflict: BackupConflict,
-): Promise<PortableSkill | null> {
-  const file = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${conflict.skillKey}.json`;
-  const result = await env.git.probe(["show", `${conflict.theirsCommit}:${file}`]);
-  if (result.code !== 0) return null;
-  try {
-    return JSON.parse(result.stdout) as PortableSkill;
-  } catch {
-    return null;
-  }
+function remoteMetadata(env: BackupEnv, conflict: BackupConflict): Promise<PortableSkill | null> {
+  return skillMetadataAt(env, conflict.theirsCommit, conflict.skillKey);
 }
 
 /** Check the remote version out into a scratch folder and hand back where it is. */
