@@ -3,12 +3,11 @@ import {
   LISTING_AGENT_KEY,
   LISTING_WINDOW_CHOICES,
   LISTING_WINDOWS,
-  type ListingWindow,
   type ListingBudgetSource,
   type SkillListingReport,
   formatNumber,
 } from "@loadout/shared";
-import { UsageError, flagBoolean, flagString } from "../args";
+import { flagBoolean, flagChoice } from "../args";
 import { plural, table } from "../output";
 import { limitPositionals } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
@@ -80,13 +79,10 @@ function render(report: SkillListingReport, all: boolean): string {
 
 async function listing({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
-  const window = flagString(args, WINDOW_FLAG.name);
-  if (window !== undefined && !LISTING_WINDOW_CHOICES.includes(window as ListingWindow)) {
-    throw new UsageError(`--window must be one of: ${LISTING_WINDOW_CHOICES.join(", ")}.`);
-  }
+  const window = flagChoice(args, WINDOW_FLAG.name, LISTING_WINDOW_CHOICES);
   const report = await core.api.listing.report(
     LISTING_AGENT_KEY,
-    window === undefined ? undefined : { window: window as ListingWindow },
+    window === undefined ? undefined : { window },
   );
   if (!report) {
     return {

@@ -7,7 +7,7 @@ import {
   type ItemWarning,
   isItemKind,
 } from "@loadout/shared";
-import { UsageError, flagList, flagString } from "../args";
+import { UsageError, flagChoice, flagList, flagString } from "../args";
 import { resolveUserPath } from "./support";
 import type { CommandContext } from "./types";
 
@@ -28,10 +28,7 @@ export const PROJECT_FLAG = {
 } as const;
 
 export function kindFlag(context: Pick<CommandContext, "args">): ItemKind | undefined {
-  const kind = flagString(context.args, KIND_FLAG.name);
-  if (kind === undefined) return undefined;
-  if (!isItemKind(kind)) throw new UsageError(`Pick one of: ${ITEM_KINDS.join(", ")}.`);
-  return kind;
+  return flagChoice(context.args, KIND_FLAG.name, ITEM_KINDS);
 }
 
 /**

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   UsageError,
   flagBoolean,
+  flagChoice,
   flagInteger,
   flagList,
   flagString,
@@ -52,6 +53,15 @@ describe("argument parser", () => {
     expect(flagInteger(parseArgs([], specs), "limit")).toBeUndefined();
     expect(() => flagInteger(parseArgs(["--limit", "0"], specs), "limit")).toThrow(UsageError);
     expect(() => flagInteger(parseArgs(["--limit", "x"], specs), "limit")).toThrow(UsageError);
+  });
+
+  it("reads a choice, and names the choices when the value is not one", () => {
+    const choices = ["a", "b"] as const;
+    expect(flagChoice(parseArgs(["--message", "b"], specs), "message", choices)).toBe("b");
+    expect(flagChoice(parseArgs([], specs), "message", choices)).toBeUndefined();
+    expect(() => flagChoice(parseArgs(["--message", "c"], specs), "message", choices)).toThrow(
+      "--message must be one of: a, b.",
+    );
   });
 
   it("finds the command path around global options", () => {

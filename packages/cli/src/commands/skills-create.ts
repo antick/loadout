@@ -2,10 +2,9 @@ import {
   DEFAULT_NEW_SKILL_TEMPLATE,
   NEW_SKILL_DOCUMENT,
   NEW_SKILL_TEMPLATES,
-  isNewSkillTemplate,
   skillAuthoringPrompt,
 } from "@loadout/shared";
-import { UsageError, flagBoolean, flagString } from "../args";
+import { UsageError, flagBoolean, flagChoice, flagString } from "../args";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const DESCRIPTION_FLAG = {
@@ -35,12 +34,7 @@ async function createSkill(context: CommandContext): Promise<CommandResult> {
   if (!name || extra.length > 0) throw new UsageError("Give exactly one name for the new skill.");
   const description = flagString(args, DESCRIPTION_FLAG.name);
   if (!description) throw new UsageError(`--${DESCRIPTION_FLAG.name} <text> is required.`);
-  const template = flagString(args, TEMPLATE_FLAG.name);
-  if (template !== undefined && !isNewSkillTemplate(template)) {
-    throw new UsageError(
-      `--${TEMPLATE_FLAG.name} takes one of: ${NEW_SKILL_TEMPLATES.join(", ")}.`,
-    );
-  }
+  const template = flagChoice(args, TEMPLATE_FLAG.name, NEW_SKILL_TEMPLATES);
 
   const skill = await core.api.skills.create({ name, description, template });
   if (flagBoolean(args, PROMPT_FLAG.name)) {

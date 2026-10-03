@@ -12,7 +12,7 @@ import {
   formatCount,
   formatDateTime,
 } from "@loadout/shared";
-import { UsageError, flagBoolean, flagInteger, flagString } from "../args";
+import { UsageError, flagBoolean, flagChoice, flagInteger } from "../args";
 import { plural, table } from "../output";
 import { NOT_DEPLOYED_HINT } from "./skills-install";
 import { ACCEPT_RISK_FLAG, positionalsFrom } from "./support";
@@ -25,11 +25,13 @@ const LIMIT_FLAG = {
   description: `How many results to list (default ${MARKET_SEARCH_DEFAULT_LIMIT}).`,
 } as const;
 
+const DEFAULT_PROVIDER: MarketProvider = "skills_sh";
+
 const ON_FLAG = {
   name: "on",
   type: "string",
   value: "marketplace",
-  description: `Which marketplace to search: ${MARKET_PROVIDERS.join(" or ")} (default skills_sh).`,
+  description: `Which marketplace to search: ${MARKET_PROVIDERS.join(" or ")} (default ${DEFAULT_PROVIDER}).`,
 } as const;
 
 const PROVIDER_NAMES: Record<MarketProvider, string> = {
@@ -131,9 +133,7 @@ function pickedText(picked: PickedInstall): string {
 async function search(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const query = positionalsFrom(args, 0, "search words").join(" ");
-  const on = flagString(args, ON_FLAG.name) ?? "skills_sh";
-  const provider = MARKET_PROVIDERS.find((entry) => entry === on);
-  if (!provider) throw new UsageError(`--on must be one of: ${MARKET_PROVIDERS.join(", ")}.`);
+  const provider = flagChoice(args, ON_FLAG.name, MARKET_PROVIDERS) ?? DEFAULT_PROVIDER;
   const name = PROVIDER_NAMES[provider];
   const listing = await core.api.market.search(query, flagInteger(args, LIMIT_FLAG.name), provider);
   const picked = await pickAndInstall(context, listing, `${name} results for "${query}"`);

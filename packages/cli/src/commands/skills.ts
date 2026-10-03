@@ -8,7 +8,7 @@ import {
   matchesSkillQuery,
   runsCode,
 } from "@loadout/shared";
-import { UsageError, flagBoolean, flagList, flagString } from "../args";
+import { flagBoolean, flagChoice, flagList, flagString } from "../args";
 import { fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
@@ -115,12 +115,9 @@ function checksOf(skill: Skill): string {
 async function list({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
   const tags = flagList(args, TAG_FLAG.name).map((tag) => tag.toLowerCase());
-  const source = flagString(args, SOURCE_FLAG.name);
+  const source = flagChoice(args, SOURCE_FLAG.name, SOURCE_TYPES);
   const query = flagString(args, QUERY_FLAG.name) ?? "";
   const favorites = flagBoolean(args, FAVORITES_FLAG.name);
-  if (source !== undefined && !SOURCE_TYPES.some((type) => type === source)) {
-    throw new UsageError(`--source must be one of: ${SOURCE_TYPES.join(", ")}.`);
-  }
   const value = (await core.api.skills.list()).filter(
     (skill) =>
       matchesSkillQuery(skill, query) &&

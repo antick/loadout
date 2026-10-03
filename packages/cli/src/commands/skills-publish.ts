@@ -7,7 +7,7 @@ import {
   type PublishSkillPlan,
   repositoryLabel,
 } from "@loadout/shared";
-import { UsageError, flagBoolean, flagString } from "../args";
+import { UsageError, flagBoolean, flagChoice, flagString } from "../args";
 import { plural, table } from "../output";
 import { DRY_RUN_FLAG, YES_FLAG, requireYes, resolveSkills } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
@@ -97,12 +97,7 @@ function describeResult(result: PublishResult): string {
 }
 
 function layerOf(context: CommandContext): PublishLayer | undefined {
-  const layer = flagString(context.args, LAYER_FLAG.name);
-  if (layer === undefined) return undefined;
-  if (!PUBLISH_LAYERS.includes(layer as PublishLayer)) {
-    throw new UsageError(`--layer must be one of: ${PUBLISH_LAYERS.join(", ")}.`);
-  }
-  return layer as PublishLayer;
+  return flagChoice(context.args, LAYER_FLAG.name, PUBLISH_LAYERS);
 }
 
 /** Copy chosen library skills into another Git repository, so others can install them. */

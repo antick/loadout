@@ -104,6 +104,21 @@ export function flagList(args: ParsedArgs, name: string): string[] {
   return Array.isArray(value) ? value : [];
 }
 
+/** A flag that takes one of `choices`; undefined when it is not given, a usage error otherwise. */
+export function flagChoice<T extends string>(
+  args: ParsedArgs,
+  name: string,
+  choices: readonly T[],
+): T | undefined {
+  const value = flagString(args, name);
+  if (value === undefined) return undefined;
+  const choice = choices.find((candidate) => candidate === value);
+  if (choice === undefined) {
+    throw new UsageError(`--${name} must be one of: ${choices.join(", ")}.`);
+  }
+  return choice;
+}
+
 export function flagInteger(args: ParsedArgs, name: string): number | undefined {
   const text = flagString(args, name);
   if (text === undefined) return undefined;
