@@ -45,6 +45,14 @@
 | `agents/`            | `registry.ts` resolves built-in + custom agents; `service.ts` implements `AgentsApi`                 |
 | `deploy/`            | `engine.ts` ownership rules + symlink/copy; `service.ts` implements `DeployApi`                      |
 | `install/`           | Local, archive, Git (source parsing, clone cache, repo scan), cancel registry → `InstallApi`         |
+| `scan/`              | "Scan this machine": skills already in agent folders, matched against the library, imported          |
+| `safety/`            | Built-in safety rules, the SkillSpector runner, kept reports, the check before every install         |
+| `duplicates/`        | Possible duplicates: same files, alike text or names; merge one into the other, dismiss a pair       |
+| `items/`             | Subagents, commands and rules: library files converted to each agent's format and deployed           |
+| `instructions/`      | Agents' instruction files (`CLAUDE.md`, `AGENTS.md`...), globally and per project                    |
+| `skills-file/`       | A project's `skills.toml` and `skills-lock.json`: plan, safety check, apply, unapply                 |
+| `listing/`           | What Claude Code's skill listing costs in context, against its budget                                |
+| `health/`            | `loadout doctor`: one report of everything that needs a look                                         |
 | `market/`            | Marketplace boards and search → `MarketApi`                                                          |
 | `sources/`           | Skills repositories gained since last seen: per-repository state, check, auto-add                    |
 | `origin/`            | Finding and linking the source of skills without one: local evidence, marketplace, compare           |
@@ -73,11 +81,11 @@ only place services are constructed, so dependencies are explicit and there are 
 
 ## Desktop layout (`apps/desktop/src`)
 
-| Path        | Owns                                                                                        |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| `main/`     | Window, IPC bridge, tray, close behaviour, file watcher, schedulers, update check, keychain |
-| `preload/`  | Exposes `window.loadout` = `{ invoke, on }`, nothing else                                   |
-| `renderer/` | React app. `routes/` is file based (TanStack Router). `lib/api.ts` is the typed proxy.      |
+| Path        | Owns                                                                                          |
+| ----------- | --------------------------------------------------------------------------------------------- |
+| `main/`     | Window, IPC bridge, tray, close behaviour, file watcher, update check, keychain, crash notice |
+| `preload/`  | Exposes `window.loadout` = `{ invoke, on, pathForFile }`, nothing else                        |
+| `renderer/` | React app. `routes/` is file based (TanStack Router). `lib/api.ts` is the typed proxy.        |
 
 Renderer data flow: TanStack Query for every read, keyed by namespace. The main process emits
 `data:changed { scope }`; `lib/events.ts` turns that into query invalidation. Mutations toast
