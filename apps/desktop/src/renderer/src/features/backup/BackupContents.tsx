@@ -6,6 +6,7 @@ import { InlineNotice } from "@/components/InlineNotice";
 import { Panel } from "@/components/Panel";
 import { useBackupSizeReport } from "@/hooks/queries/backup-page";
 import { MAX_LISTED_OVERSIZED } from "./constants";
+import { SECTION_LABEL } from "@/lib/styles";
 
 const INCLUDED = ["skills", "metadata", "presets"] as const;
 const EXCLUDED = ["credentials", "settings", "deployments", "paths", "junk"] as const;
@@ -36,9 +37,7 @@ export function BackupContents(): ReactNode {
           </li>
         ))}
       </ul>
-      <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-        {t("backupPage.contents.neverTitle")}
-      </p>
+      <p className={SECTION_LABEL}>{t("backupPage.contents.neverTitle")}</p>
       <ul className="flex flex-col gap-1.5 text-sm text-muted-foreground">
         {EXCLUDED.map((item) => (
           <li key={item} className="flex items-start gap-2">

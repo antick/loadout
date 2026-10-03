@@ -17,6 +17,8 @@ import { AddCustomAgentForm } from "./AddCustomAgentForm";
 import { AgentCard } from "./AgentCard";
 import { groupAgents, mergeGroupOrder } from "./agent-groups";
 import { AGENT_GROUP_IDS, type AgentGroupId } from "./constants";
+import { SECTION_LABEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 const SKELETON_CARDS = 4;
 /** Groups that start collapsed: the long list of agents that are not on this machine. */
@@ -153,7 +155,12 @@ export function AgentsSection(): ReactNode {
               className="group/agents flex flex-col gap-2"
             >
               <div className="flex min-h-8 items-center justify-between gap-3">
-                <CollapsibleTrigger className="flex items-center gap-1.5 rounded text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                <CollapsibleTrigger
+                  className={cn(
+                    SECTION_LABEL,
+                    "flex items-center gap-1.5 rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  )}
+                >
                   <ChevronRight className="size-3.5 transition-transform duration-150 group-data-[state=open]/agents:rotate-90" />
                   {t(`settings.agents.group.${groupId}`)}
                   <span className="tabular-nums">{members.length}</span>

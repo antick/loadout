@@ -10,6 +10,7 @@ import { useAppInfo } from "@/hooks/queries/app";
 import { compactHome } from "@/lib/paths";
 import { editLink, instructionLocation, locationKey } from "@/lib/skill-location";
 import { cn } from "@/lib/utils";
+import { SECTION_LABEL } from "@/lib/styles";
 
 export interface InstructionFilesSectionProps {
   /** Undefined while loading; the section stays hidden until there is a file to show. */
@@ -40,9 +41,7 @@ export function InstructionFilesSection({
 
   return (
     <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed px-3 py-2">
-      <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-        {t("instructions.label")}
-      </h2>
+      <h2 className={SECTION_LABEL}>{t("instructions.label")}</h2>
       <ul className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
         {files.map((file) => {
           const key = locationKey(instructionLocation(file));

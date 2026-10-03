@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SECTION_LABEL } from "@/lib/styles";
 
 /** One agent folder that can be ticked; merged agents sharing a folder are one chip. */
 export interface AgentTargetChip {
@@ -70,9 +71,7 @@ export function AgentTargetChips({
 
   return (
     <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
-      <span className="mr-1 text-xs font-medium tracking-wider text-muted-foreground uppercase">
-        {label}
-      </span>
+      <span className={cn(SECTION_LABEL, "mr-1")}>{label}</span>
       {chips.map((chip) => {
         const on = selected.has(chip.key);
         return (

@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { cn } from "@/lib/utils";
+import { SECTION_LABEL } from "@/lib/styles";
 
 export interface BatchDeployDialogProps {
   open: boolean;
@@ -112,9 +113,7 @@ function BatchDeployForm({
       </DialogHeader>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          {t("batchDeploy.agents")}
-        </p>
+        <p className={SECTION_LABEL}>{t("batchDeploy.agents")}</p>
         <Button
           type="button"
           variant="ghost"

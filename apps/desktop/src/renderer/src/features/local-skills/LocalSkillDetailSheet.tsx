@@ -22,6 +22,7 @@ import { editLink } from "@/lib/skill-location";
 import { DuplicatesNotice } from "./DuplicatesNotice";
 import type { LocalSkillView } from "./local-skill-view";
 import { LocalSkillMeta } from "./LocalSkillMeta";
+import { SECTION_LABEL } from "@/lib/styles";
 
 export interface LocalSkillDetailSheetProps {
   /** The entry to show; null closes the sheet. */
@@ -41,8 +42,6 @@ export interface LocalSkillDetailSheetProps {
   /** Extra sections between the header and the files, e.g. per-agent switches. */
   children?: ReactNode;
 }
-
-const SECTION_LABEL_CLASS = "text-xs font-medium tracking-wider text-muted-foreground uppercase";
 
 /** Which tab to land on: the difference when there is one to look at, else the local copy. */
 function defaultTab(item: LocalSkillView): DocumentTab {
@@ -102,7 +101,7 @@ export function LocalSkillDetailSheet({
               {children}
 
               <section className="flex flex-col gap-2">
-                <h3 className={SECTION_LABEL_CLASS}>{t("localSkills.detail.files")}</h3>
+                <h3 className={SECTION_LABEL}>{t("localSkills.detail.files")}</h3>
                 {document.isPending ? (
                   <Skeleton className="h-5 w-48" />
                 ) : files.length === 0 ? (
@@ -132,7 +131,7 @@ export function LocalSkillDetailSheet({
               </section>
 
               <section className="flex flex-col gap-2">
-                <h3 className={SECTION_LABEL_CLASS}>
+                <h3 className={SECTION_LABEL}>
                   {document.data?.filename ?? t("localSkills.detail.document")}
                 </h3>
                 {document.error ? (

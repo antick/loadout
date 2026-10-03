@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSetting } from "@/hooks/queries/settings";
 import { toastSuccess } from "@/lib/toast";
+import { SECTION_LABEL } from "@/lib/styles";
 
 const APPLIES_TO = ["market", "sources", "github", "updates"] as const;
 
@@ -72,9 +73,7 @@ export function NetworkSection(): ReactNode {
     <Panel title={t("settings.network.title")} description={t("settings.network.description")}>
       <ProxyForm key={saved} saved={saved} />
       <div className="border-t pt-3">
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          {t("settings.network.appliesTitle")}
-        </p>
+        <p className={SECTION_LABEL}>{t("settings.network.appliesTitle")}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
           {APPLIES_TO.map((item) => (
             <li key={item}>{t(`settings.network.applies.${item}`)}</li>

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { SECTION_LABEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 /** Each guarantee Loadout keeps about your files; the text lives under `help.safety.<id>`. */
 const NOTES: readonly { id: string; icon: LucideIcon }[] = [
@@ -25,7 +27,7 @@ export function SafetyNotes(): ReactNode {
   const { t } = useTranslation();
   return (
     <section>
-      <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+      <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
         <ShieldCheck className="size-3.5" />
         {t("help.safety.title")}
       </h3>

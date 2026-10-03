@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useSetBackupIgnoreRules } from "@/hooks/mutations/backup-sync";
 import { useBackupIgnoreRules } from "@/hooks/queries/backup-sync";
 import { backupErrorText } from "@/lib/backup-errors";
+import { SECTION_LABEL } from "@/lib/styles";
 
 const toText = (lines: readonly string[]): string => lines.join("\n");
 
@@ -28,9 +29,7 @@ export function IgnoreRulesCard({ enabled }: { enabled: boolean }): ReactNode {
   return (
     <Panel title={t("backupSync.ignore.title")} description={t("backupSync.ignore.description")}>
       <div className="flex flex-col gap-1.5">
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          {t("backupSync.ignore.defaults")}
-        </p>
+        <p className={SECTION_LABEL}>{t("backupSync.ignore.defaults")}</p>
         <ul className="flex flex-wrap gap-1">
           {rules.data.defaults.map((pattern) => (
             <li
@@ -44,10 +43,7 @@ export function IgnoreRulesCard({ enabled }: { enabled: boolean }): ReactNode {
         </ul>
       </div>
       <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor={fieldId}
-          className="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-        >
+        <label htmlFor={fieldId} className={SECTION_LABEL}>
           {t("backupSync.ignore.custom")}
         </label>
         <Textarea

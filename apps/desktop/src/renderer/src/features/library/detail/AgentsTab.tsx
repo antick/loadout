@@ -27,6 +27,8 @@ import {
 } from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
 import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
+import { SECTION_LABEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 interface AgentRowProps {
   agent: AgentInfo;
@@ -210,7 +212,12 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
 
       {unavailable.length > 0 ? (
         <Collapsible open={showUnavailable} onOpenChange={setShowUnavailable}>
-          <CollapsibleTrigger className="group/unavailable flex items-center gap-1.5 rounded text-xs font-medium tracking-wider text-muted-foreground uppercase hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+          <CollapsibleTrigger
+            className={cn(
+              SECTION_LABEL,
+              "group/unavailable flex items-center gap-1.5 rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            )}
+          >
             <ChevronRight className="size-3.5 transition-transform duration-150 group-data-[state=open]/unavailable:rotate-90" />
             {t("library.agents.unavailable", { count: unavailable.length })}
           </CollapsibleTrigger>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { PresetBar, type PresetBarProps } from "@/components/PresetBar";
+import { SECTION_LABEL } from "@/lib/styles";
 
 export interface PresetBarSectionProps extends Omit<PresetBarProps, "className"> {
   /** Says what the pills act on, e.g. "Applies to the 4 agents below". */
@@ -21,9 +22,7 @@ export function PresetBarSection({ hint, ...bar }: PresetBarSectionProps): React
 
   return (
     <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed px-3 py-2">
-      <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-        {t("presetBar.label")}
-      </h2>
+      <h2 className={SECTION_LABEL}>{t("presetBar.label")}</h2>
       <PresetBar {...bar} className="flex-1" />
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </section>

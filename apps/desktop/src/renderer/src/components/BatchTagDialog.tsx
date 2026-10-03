@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useSetSkillTags } from "@/hooks/mutations/skills";
 import { useAllTags } from "@/hooks/queries/skills";
 import { toastSuccess } from "@/lib/toast";
+import { SECTION_LABEL } from "@/lib/styles";
 
 export interface BatchTagDialogProps {
   open: boolean;
@@ -95,9 +96,7 @@ function BatchTagForm({
       </DialogHeader>
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          {t("tags.current")}
-        </p>
+        <p className={SECTION_LABEL}>{t("tags.current")}</p>
         {current.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("tags.noneYet")}</p>
         ) : (
@@ -123,9 +122,7 @@ function BatchTagForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          {t("tags.add")}
-        </p>
+        <p className={SECTION_LABEL}>{t("tags.add")}</p>
         {adding.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {adding.map((tag) => (

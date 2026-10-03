@@ -14,6 +14,7 @@ import { MatrixCell } from "@/features/library/matrix/MatrixCell";
 import { agentColumnCoverage, matrixCellState } from "@/features/library/matrix/matrix-state";
 import { useDeploySkill, useSetBlocked, useUndeploySkill } from "@/hooks/mutations/deploy";
 import { cn } from "@/lib/utils";
+import { SECTION_LABEL } from "@/lib/styles";
 
 export interface LibraryMatrixProps {
   skills: readonly Skill[];
@@ -111,9 +112,7 @@ export function LibraryMatrix({
                   scope="col"
                   className={cn(STICKY_HEAD, STICKY_SKILL, "z-30 px-3 py-2 text-left")}
                 >
-                  <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                    {t("library.matrix.skill")}
-                  </span>
+                  <span className={SECTION_LABEL}>{t("library.matrix.skill")}</span>
                 </th>
                 {columns.map(({ agent, coverage }) => (
                   <th

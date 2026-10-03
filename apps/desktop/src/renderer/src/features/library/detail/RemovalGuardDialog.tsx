@@ -16,6 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAgents } from "@/hooks/queries/agents";
+import { SECTION_LABEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 /** `PendingRemoval.location` of files inside the library copy; anything else is an agent key. */
 const LIBRARY_LOCATION = "library";
@@ -90,7 +92,7 @@ export function RemovalGuardDialog({
         <div className="flex max-h-72 flex-col gap-3 overflow-y-auto">
           {edits.length > 0 ? (
             <section className="flex flex-col gap-1.5">
-              <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+              <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
                 <PencilLine className="size-3.5" />
                 {t("library.removalGuard.edits")}
                 <span className="tabular-nums opacity-70">{edits.length}</span>
@@ -109,7 +111,7 @@ export function RemovalGuardDialog({
             const agent = location === LIBRARY_LOCATION ? undefined : agentOf(location);
             return (
               <section key={location} className="flex flex-col gap-1.5">
-                <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
                   {location === LIBRARY_LOCATION ? (
                     <Library className="size-3.5" />
                   ) : (

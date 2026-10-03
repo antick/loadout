@@ -19,6 +19,7 @@ import {
   variantFor,
 } from "./project-skill-groups";
 import { pendingTargetId, type ProjectSkillActions } from "./use-project-skill-actions";
+import { SECTION_LABEL } from "@/lib/styles";
 
 export interface ProjectSkillDetailProps {
   project: Project;
@@ -30,7 +31,6 @@ export interface ProjectSkillDetailProps {
 }
 
 const ENABLED_SWITCH_ID = "project-skill-enabled";
-const SECTION_LABEL_CLASS = "text-xs font-medium tracking-wider text-muted-foreground uppercase";
 
 /** Detail sheet of one project skill: switch, per-agent copies, files and the document tabs. */
 export function ProjectSkillDetail({
@@ -94,7 +94,7 @@ export function ProjectSkillDetail({
 
       {group ? (
         <section className="flex flex-col gap-2">
-          <h3 className={SECTION_LABEL_CLASS}>{t("projectPage.detail.agents")}</h3>
+          <h3 className={SECTION_LABEL}>{t("projectPage.detail.agents")}</h3>
           <ul className="flex flex-col divide-y rounded-lg border">
             {listed.map((target) => {
               const variant = variantFor(group, target.key);

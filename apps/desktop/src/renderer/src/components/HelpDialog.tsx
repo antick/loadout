@@ -24,6 +24,8 @@ import { SafetyNotes } from "@/components/SafetyNotes";
 import { Kbd } from "@/components/ui/kbd";
 import { useAppInfo } from "@/hooks/queries/app";
 import { type ShortcutId, shortcutLabel } from "@/lib/shortcuts";
+import { SECTION_LABEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 /** Quick-start sections; the text lives under `help.sections.<id>` in the locale file. */
 const SECTIONS: readonly { id: string; icon: LucideIcon }[] = [
@@ -97,7 +99,7 @@ export function HelpDialog({
           ))}
         </div>
         <section>
-          <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+          <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
             <Route className="size-3.5" />
             {t("help.workflowsTitle")}
           </h3>
@@ -121,7 +123,7 @@ export function HelpDialog({
         </section>
         <SafetyNotes />
         <section>
-          <h3 className="flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+          <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
             <Keyboard className="size-3.5" />
             {t("help.shortcutsTitle")}
           </h3>
