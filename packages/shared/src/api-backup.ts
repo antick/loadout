@@ -46,7 +46,6 @@ export interface BackupApi {
   /** This computer's version of a conflicting skill against the other device's. */
   conflictDiff(skillKey: string): Promise<SyncSkillDiff>;
   snapshots(limit?: number): Promise<Snapshot[]>;
-  createSnapshot(): Promise<string>;
   /** Returns the safety snapshot taken before restoring. */
   restore(tag: string): Promise<string>;
   conflicts(): Promise<BackupConflict[]>;

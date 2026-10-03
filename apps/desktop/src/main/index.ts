@@ -299,7 +299,6 @@ function start(): void {
     app: createAppApi({
       window: () => mainWindow,
       quit,
-      hideToTray,
       removeAllData,
       updates: createUpdates(core.ctx.log, core.ctx.paths.logsDir),
       // The shell's PATH wins here: a Dock launch has a bare one without the editors on it.

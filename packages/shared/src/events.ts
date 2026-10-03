@@ -47,19 +47,6 @@ export type DataScope =
 
 export type AppEventName = keyof AppEvents;
 
-export const APP_EVENT_NAMES = [
-  "data:changed",
-  "install:progress",
-  "updates:auto-ran",
-  "backup:auto-completed",
-  "backup:progress",
-  "window:close-requested",
-  "app:navigate",
-  "library:missing",
-  "app-update:status",
-  "deploy:repaired",
-] as const satisfies readonly AppEventName[];
-
 export const IPC_INVOKE_CHANNEL = "loadout:invoke";
 export const IPC_EVENT_CHANNEL = "loadout:event";
 

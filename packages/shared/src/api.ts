@@ -116,7 +116,6 @@ export interface SkillsApi {
   /** Write a new skill into the library from a name and description. ALREADY_EXISTS when taken. */
   create(input: CreateSkillInput): Promise<Skill>;
   document(skillId: string): Promise<SkillDocument>;
-  remove(skillId: string): Promise<void>;
   removeMany(skillIds: string[]): Promise<RemoveSkillsResult>;
   allTags(): Promise<string[]>;
   setTags(skillId: string, tags: string[]): Promise<void>;

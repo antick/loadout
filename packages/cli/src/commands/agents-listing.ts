@@ -1,4 +1,5 @@
 import {
+  DEFAULT_LISTING_WINDOW,
   LISTING_AGENT_KEY,
   LISTING_WINDOW_CHOICES,
   LISTING_WINDOWS,
@@ -22,7 +23,7 @@ const WINDOW_FLAG = {
   name: "window",
   type: "string",
   value: "window",
-  description: `Context window to assume: ${LISTING_WINDOW_CHOICES.join(" or ")}. Default: the saved setting (200k).`,
+  description: `Context window to assume: ${LISTING_WINDOW_CHOICES.join(" or ")}. Default: the saved setting (${DEFAULT_LISTING_WINDOW}).`,
 } as const;
 
 /** Skills listed when `--all` is not given. */

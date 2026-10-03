@@ -46,7 +46,6 @@ export interface AppApi {
    */
   installUpdate(): Promise<void>;
   quit(): Promise<void>;
-  hideToTray(): Promise<void>;
   restart(): Promise<void>;
   /** Empty the app's own cache (Chromium's HTTP, code and GPU caches). */
   clearAppCache(): Promise<void>;

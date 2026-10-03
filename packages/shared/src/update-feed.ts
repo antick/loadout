@@ -1,5 +1,3 @@
-import { isNewerVersion } from "./version";
-
 /**
  * `URL` is a global in Node and in browsers, the only places this runs; this package is compiled
  * without either's types. Only what the checks below read.
@@ -94,9 +92,4 @@ export function parseUpdateFeed(raw: unknown, feedUrl: string): UpdateFeed {
       ? raw.releaseUrl
       : null;
   return { version: raw.version, releaseUrl, files };
-}
-
-/** True when the feed offers a later version than the running one. */
-export function feedIsNewer(feed: UpdateFeed, currentVersion: string): boolean {
-  return isNewerVersion(feed.version, currentVersion);
 }

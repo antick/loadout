@@ -10,7 +10,6 @@ import type { UpdateService } from "./update/service";
 export interface AppApiDeps {
   window(): BrowserWindow | null;
   quit(): void;
-  hideToTray(): void;
   resolveClose(action: "hide" | "quit", remember: boolean): void;
   /** Clean agent folders, close the library, start the clean-up process and exit. */
   removeAllData(options: RemoveAllDataOptions): Promise<void>;
@@ -75,7 +74,6 @@ export function createAppApi(deps: AppApiDeps): AppApi {
     cancelUpdate: async () => deps.updates.cancel(),
     installUpdate: () => deps.updates.install(),
     quit: async () => deps.quit(),
-    hideToTray: async () => deps.hideToTray(),
     restart: async () => {
       app.relaunch();
       deps.quit();

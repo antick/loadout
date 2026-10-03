@@ -1,4 +1,8 @@
-import { LISTING_WINDOW_CHOICES, type ListingWindow } from "./skill-listing";
+import {
+  DEFAULT_LISTING_WINDOW,
+  LISTING_WINDOW_CHOICES,
+  type ListingWindow,
+} from "./skill-listing";
 import type { DeployMode } from "./types";
 
 export type ThemeSetting = "light" | "dark" | "system";
@@ -76,7 +80,7 @@ export const DEFAULT_SETTINGS: Settings = {
   safetyScanOnInstall: true,
   safetyScannerPath: "",
   usageTracking: false,
-  skillListingWindow: "200k",
+  skillListingWindow: DEFAULT_LISTING_WINDOW,
   defaultEditor: "",
 };
 

@@ -162,7 +162,8 @@ describe("backup push check", () => {
     await a.api.sync();
     // A snapshot commits locally without the key check: the key is now in unpushed history.
     a.addSkill("leaky", { body: `Use ${GITHUB_TOKEN} to call the API.` });
-    await a.api.createSnapshot();
+    a.git("add", "--all");
+    a.git("commit", "--quiet", "-m", "backup: snapshot");
 
     // Still in the file: cleaning would only commit it again.
     await expect(a.api.cleanUpUnpushed()).rejects.toMatchObject({ code: "SECRETS_FOUND" });

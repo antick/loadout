@@ -151,7 +151,7 @@ describe("duplicates in a library", () => {
     const copy = await install("pdf-helper", GUIDE);
     expect((await core.api.duplicates.find()).pairs).toHaveLength(1);
     expect((await core.api.duplicates.find()).pairs).toHaveLength(1);
-    await core.api.skills.remove(copy.id);
+    await core.api.skills.removeMany([copy.id]);
     expect((await core.api.duplicates.find()).pairs).toEqual([]);
   });
 
@@ -159,7 +159,7 @@ describe("duplicates in a library", () => {
     const a = await install("pdf-tools", GUIDE);
     const b = await install("pdf-helper", GUIDE);
     await core.api.duplicates.dismiss(a.id, b.id);
-    await core.api.skills.remove(b.id);
+    await core.api.skills.removeMany([b.id]);
     expect((await core.api.duplicates.find()).dismissedCount).toBe(0);
   });
 

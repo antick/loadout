@@ -91,11 +91,6 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       };
     },
 
-    remove: async (skillId) => {
-      await removeOne(skillId);
-      ctx.touched("skills", "presets");
-    },
-
     removeMany: async (skillIds): Promise<RemoveSkillsResult> => {
       const result: RemoveSkillsResult = { succeeded: 0, failed: [], removedIds: [] };
       for (const skillId of skillIds) {
