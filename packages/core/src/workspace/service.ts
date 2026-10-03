@@ -10,7 +10,7 @@ import {
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
-import { rowsAtPath, samePath } from "../deploy/evidence";
+import { repointSources, rowsAtPath, samePath } from "../deploy/evidence";
 import { errorMessage, exists, invalid, notFound } from "../errors";
 import type { SkillStore } from "../skills/store";
 import {
@@ -30,7 +30,6 @@ import {
   pushLocalToLibrary,
   readLocalDocument,
   replaceLocalFromLibrary,
-  repointSources,
   requireLocalSkill,
   toLocalSkill,
 } from "./local-actions";

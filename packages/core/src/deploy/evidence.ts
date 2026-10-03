@@ -1,6 +1,6 @@
-import { basename } from "node:path";
+import { basename, isAbsolute } from "node:path";
 import type { DeployMode, Skill } from "@loadout/shared";
-import type { DeploymentRecord } from "../skills/store";
+import type { DeploymentRecord, SkillStore } from "../skills/store";
 import { lstatOrNull, targetIdentity } from "../util/fs";
 import { hashDir } from "../util/hash";
 import type { OwnershipPolicy, TargetState } from "./engine";
@@ -55,4 +55,16 @@ export function isCurrent(
     rows.length > 0 &&
     rows.every((row) => row.mode === "copy" && row.sourceHash === skill.contentHash)
   );
+}
+
+/**
+ * A skill whose recorded source is a folder that is about to be replaced (or removed) would lose
+ * its source, or end up pointing at a link to itself. Its library copy becomes the source.
+ */
+export function repointSources(store: SkillStore, localPath: string): void {
+  for (const skill of store.list()) {
+    const ref = skill.sourceRef;
+    if (!ref || !isAbsolute(ref) || !samePath(ref, localPath)) continue;
+    store.update(skill.id, { sourceRef: skill.libraryPath });
+  }
 }

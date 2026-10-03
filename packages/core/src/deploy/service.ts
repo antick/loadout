@@ -1,4 +1,3 @@
-import { isAbsolute } from "node:path";
 import type { BatchFailure, DeployApi, Skill, TargetConflict } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
@@ -8,7 +7,7 @@ import type { RemovedStore } from "../storage/removed";
 import { canonicalPath, lstatOrNull, targetIdentity } from "../util/fs";
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { type BatchApply, createBatchApply } from "./batch";
-import { copyWasEdited, rowsAtPath, samePath } from "./evidence";
+import { copyWasEdited, repointSources, rowsAtPath } from "./evidence";
 import { type DeployPair, createDeployOperations } from "./operations";
 
 export interface DeployServiceDeps {
@@ -147,15 +146,6 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
     });
     if (dropped > 0) ctx.touched("skills");
     return dropped;
-  }
-
-  /** A local source that is about to become a link into the library would point at itself. */
-  function repointSources(targetPath: string): void {
-    for (const other of store.list()) {
-      const ref = other.sourceRef;
-      if (!ref || !isAbsolute(ref) || !samePath(ref, targetPath)) continue;
-      store.update(other.id, { sourceRef: other.libraryPath });
-    }
   }
 
   /** See `DeployService.refreshCopies`. */
@@ -305,7 +295,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
     adopt: async (skill, agent) => {
       const pair = ops.pairFor(skill, agent);
       await ctx.lock.run(`adopt ${skill.name}`, async () => {
-        repointSources(pair.targetPath);
+        repointSources(store, pair.targetPath);
         // Whatever other skill was recorded here is about to be replaced on the user's word.
         for (const row of rowsAtPath(store.deployments(), pair.targetPath)) {
           if (row.skillId !== skill.id) store.deleteDeployment(row.skillId, row.agentKey);

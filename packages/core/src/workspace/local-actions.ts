@@ -1,9 +1,8 @@
-import { isAbsolute, relative } from "node:path";
+import { relative } from "node:path";
 import type { LocalSkill, Skill, SkillDocument } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { writeTarget } from "../deploy";
-import { samePath } from "../deploy/evidence";
 import { invalid, notFound } from "../errors";
 import type { InstallIntoLibrary } from "../install/library";
 import { installReplacing } from "../install/replace";
@@ -191,16 +190,4 @@ export async function replaceLocalFromLibrary(
     await replaceDirAtomic(skill.libraryPath, localPath, differs ? { keepReplaced } : {});
     return keptId;
   });
-}
-
-/**
- * A skill whose recorded source is a folder that is about to be replaced (or removed) would lose
- * its source, or end up pointing at a link to itself. Its library copy becomes the source.
- */
-export function repointSources(store: SkillStore, localPath: string): void {
-  for (const skill of store.list()) {
-    const ref = skill.sourceRef;
-    if (!ref || !isAbsolute(ref) || !samePath(ref, localPath)) continue;
-    store.update(skill.id, { sourceRef: skill.libraryPath });
-  }
 }
