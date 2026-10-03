@@ -6,6 +6,7 @@ import { ARCHIVE_EXTENSIONS, EXPORT_EXTENSION } from "./constants";
 import { createEditorOpener } from "./editors";
 import { revealInFileManager } from "./reveal";
 import type { UpdateService } from "./update/service";
+import { isWebUrl } from "./links";
 
 export interface AppApiDeps {
   window(): BrowserWindow | null;
@@ -61,7 +62,7 @@ export function createAppApi(deps: AppApiDeps): AppApi {
       return result.canceled || !result.filePath ? null : result.filePath;
     },
     openExternal: async (url) => {
-      if (!/^https?:\/\//i.test(url)) throw new Error("Only web links can be opened");
+      if (!isWebUrl(url)) throw new Error("Only web links can be opened");
       await shell.openExternal(url);
     },
     revealPath: revealInFileManager,

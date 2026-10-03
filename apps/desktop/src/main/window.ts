@@ -12,6 +12,7 @@ import {
   WINDOW_STATE_FILE,
 } from "./constants";
 import { writeFileAtomicSync } from "./files";
+import { isWebUrl } from "./links";
 
 const RENDERER_ENTRY = join(import.meta.dirname, "../renderer/index.html");
 
@@ -98,13 +99,13 @@ export function createMainWindow(icon: string): BrowserWindow {
 
   // Links never navigate the app window; they open in the user's browser.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//.test(url)) void shell.openExternal(url);
+    if (isWebUrl(url)) void shell.openExternal(url);
     return { action: "deny" };
   });
   win.webContents.on("will-navigate", (event, url) => {
     if (url !== win.webContents.getURL()) {
       event.preventDefault();
-      if (/^https?:\/\//.test(url)) void shell.openExternal(url);
+      if (isWebUrl(url)) void shell.openExternal(url);
     }
   });
 
