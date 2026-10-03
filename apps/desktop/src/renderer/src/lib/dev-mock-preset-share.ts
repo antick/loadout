@@ -2,10 +2,8 @@
  * DEV ONLY. Preset export and import for the browser preview: exporting pretends to write the
  * file; any file or link imports a small "Web kit" preset of two library skills and one new one.
  */
-import type { Preset, PresetImportPlan, PresetImportResult, Skill } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
-type Handlers = Record<string, Handler>;
+import type { PresetImportPlan, PresetImportResult } from "@loadout/shared";
+import { type MockHandlers, callMock } from "@/lib/dev-mock-types";
 
 const READ_MS = 500;
 const IMPORTED_NAME = "Web kit";
@@ -13,18 +11,11 @@ const NEW_SKILL = "pdf-tools";
 
 const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Calls another mock handler, as the real import calls the presets API. */
-function call<T>(handlers: Handlers, channel: string, ...args: unknown[]): Promise<T> {
-  const handler = handlers[channel] as ((...values: unknown[]) => T | Promise<T>) | undefined;
-  if (!handler) throw new Error(`No mock for ${channel}`);
-  return Promise.resolve(handler(...args));
-}
-
-export function createPresetShareMockHandlers(home: string, handlers: Handlers): Handlers {
+export function createPresetShareMockHandlers(home: string, handlers: MockHandlers): MockHandlers {
   async function plan(): Promise<PresetImportPlan> {
     await wait(READ_MS);
-    const skills = await call<Skill[]>(handlers, "skills.list");
-    const presets = await call<Preset[]>(handlers, "presets.list");
+    const skills = await callMock(handlers, "skills.list");
+    const presets = await callMock(handlers, "presets.list");
     return {
       name: IMPORTED_NAME,
       description: "Frontend skills the team shares.",
@@ -59,30 +50,26 @@ export function createPresetShareMockHandlers(home: string, handlers: Handlers):
   return {
     "app.pickFile": () => `${home}/Downloads/web-kit.loadout-preset.json`,
     "presets.exportFile": async (id: string, path: string) => {
-      const presets = await call<Preset[]>(handlers, "presets.list");
+      const presets = await callMock(handlers, "presets.list");
       const preset = presets.find((entry) => entry.id === id);
       return { path, skills: preset?.skillIds.length ?? 0, embedded: 1, nameOnly: [] };
     },
     "presets.previewImport": () => plan(),
     "presets.importFile": async (_input: string, options: { name?: string } = {}) => {
       const found = await plan();
-      const presets = await call<Preset[]>(handlers, "presets.list");
+      const presets = await callMock(handlers, "presets.list");
       const names = new Set(presets.map((preset) => preset.name));
       let name = options.name?.trim() || found.name;
       for (let number = 2; names.has(name); number += 1) name = `${found.name} ${number}`;
-      const preset = await call<Preset>(handlers, "presets.create", {
+      const preset = await callMock(handlers, "presets.create", {
         name,
         description: found.description,
       });
       const reused = found.skills.filter((skill) => skill.librarySkillId);
-      await call(
-        handlers,
-        "presets.addSkills",
-        preset.id,
-        reused.map((skill) => skill.librarySkillId),
-      );
+      const reusedIds = reused.flatMap((skill) => skill.librarySkillId ?? []);
+      await callMock(handlers, "presets.addSkills", preset.id, reusedIds);
       const result: PresetImportResult = {
-        preset: { ...preset, skillIds: reused.flatMap((skill) => skill.librarySkillId ?? []) },
+        preset: { ...preset, skillIds: reusedIds },
         installed: [],
         reused: reused.map((skill) => skill.name),
         failed: [

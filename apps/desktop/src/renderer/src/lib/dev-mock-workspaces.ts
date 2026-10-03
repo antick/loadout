@@ -36,6 +36,7 @@ import {
   seedProjectCopies,
   seedUnmanaged,
 } from "@/lib/dev-mock-workspace-seed";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 export interface WorkspaceMockContext {
   getSkills(): Skill[];
@@ -59,9 +60,7 @@ const DISABLED_SUFFIX = "-disabled";
 const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, ms));
 
-export function createWorkspaceMockHandlers(
-  ctx: WorkspaceMockContext,
-): Record<string, (...args: never[]) => unknown> {
+export function createWorkspaceMockHandlers(ctx: WorkspaceMockContext): MockHandlers {
   const deployedStatus = seedDeployedStatus();
   // Folders the app did not put there.
   let unmanaged: Copy[] = seedUnmanaged();

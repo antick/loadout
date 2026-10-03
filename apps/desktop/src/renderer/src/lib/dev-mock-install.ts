@@ -42,6 +42,7 @@ import {
   requested,
 } from "@/lib/dev-mock-install-data";
 import { createMarketMockHandlers } from "@/lib/dev-mock-market";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 export interface InstallMockContext {
   getSkills(): Skill[];
@@ -68,9 +69,7 @@ function baseName(path: string): string {
   );
 }
 
-export function createInstallMockHandlers(
-  ctx: InstallMockContext,
-): Record<string, (...args: never[]) => unknown> {
+export function createInstallMockHandlers(ctx: InstallMockContext): MockHandlers {
   const cancelled = new Set<string>();
   const running = new Set<string>();
   const importedFingerprints = new Set<string>(["commit-messages"]);

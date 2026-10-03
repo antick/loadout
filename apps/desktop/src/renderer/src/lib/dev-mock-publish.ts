@@ -17,13 +17,12 @@ import {
   type PublishTarget,
   type Skill,
 } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 const MOCK_BRANCH = "main";
 const MOCK_COMMIT = "9f3c2a71b0d4e8a65c1f7d2b3e4a5968c7d0e1f2";
 
-export function createPublishMockHandlers(getSkills: () => Skill[]): Record<string, Handler> {
+export function createPublishMockHandlers(getSkills: () => Skill[]): MockHandlers {
   let saved: PublishTarget | null = null;
 
   function planFor(input: PublishInput): PublishPlan {

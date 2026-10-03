@@ -12,6 +12,7 @@ import {
   canLinkSource,
   repositoryLabel,
 } from "@loadout/shared";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 export interface OriginMockContext {
   getSkills(): Skill[];
@@ -72,7 +73,7 @@ const FOUND: Record<string, SourceCandidate[]> = {
   ],
 };
 
-export function createOriginMockHandlers(ctx: OriginMockContext): Record<string, unknown> {
+export function createOriginMockHandlers(ctx: OriginMockContext): MockHandlers {
   function find(skillId: string): Skill {
     const found = ctx.getSkills().find((skill) => skill.id === skillId);
     if (!found) ctx.fail("NOT_FOUND", `There is no skill "${skillId}".`);

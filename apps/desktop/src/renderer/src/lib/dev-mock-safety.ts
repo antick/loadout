@@ -15,8 +15,12 @@ import type {
   SkillsFileApplyOptions,
   SkillsFilePlan,
 } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
+import {
+  type MockChannel,
+  type MockHandler,
+  type MockHandlers,
+  handlerFor,
+} from "@/lib/dev-mock-types";
 
 export interface SafetyMockContext {
   home: string;
@@ -95,10 +99,7 @@ function baseName(path: string): string {
   return path.split(/[\\/]/).findLast(Boolean) ?? path;
 }
 
-export function withSafetyMocks(
-  ctx: SafetyMockContext,
-  handlers: Record<string, Handler>,
-): Record<string, Handler> {
+export function withSafetyMocks(ctx: SafetyMockContext, handlers: MockHandlers): MockHandlers {
   const records = new Map<string, SafetyRecord>();
   const planFile = handlers["skillsFile.plan"];
   const applyFile = handlers["skillsFile.apply"];
@@ -126,20 +127,20 @@ export function withSafetyMocks(
     ctx.fail("UNSAFE", `The safety check flagged ${name}.`, { flagged });
   }
 
-  function gated(
-    channel: string,
+  function gated<C extends MockChannel>(
+    channel: C,
     nameOf: (...args: never[]) => string,
     optionsAt: number,
-  ): Handler {
-    const original = handlers[channel];
-    return async (...args: never[]) => {
+  ): MockHandler<C> {
+    const original = handlerFor(handlers, channel);
+    return (async (...args: never[]) => {
       await wait(SCAN_MS);
       gate(nameOf(...args), args[optionsAt] as InstallOptions | undefined);
       const result = await original?.(...args);
       const installed = result as Skill | undefined;
       if (installed?.id) scanOne(installed);
       return result;
-    };
+    }) as MockHandler<C>;
   }
 
   return {
@@ -176,14 +177,15 @@ export function withSafetyMocks(
     "install.fromPath": gated("install.fromPath", (path: string) => baseName(path), 2),
     // `skills.toml` checks every skill it would write, before writing any.
     "skillsFile.apply": async (dir: string, options?: SkillsFileApplyOptions) => {
-      const plan = (await planFile?.(dir as never)) as SkillsFilePlan;
+      const plan = (await planFile?.(dir)) as SkillsFilePlan;
       const flagged: FlaggedSkill[] = plan.entries
         .filter((entry) => entry.action !== "same" && entry.skill.startsWith(FLAGGED_PREFIX))
         .map((entry) => ({ name: entry.skill, report: FLAGGED_REPORT }));
       if (flagged.length > 0 && !options?.acceptRisk) {
         ctx.fail("UNSAFE", `The safety check flagged ${flagged.length} skills.`, { flagged });
       }
-      return applyFile?.(dir as never, options as never);
+      if (!applyFile) return ctx.fail("UNSUPPORTED", "The preview has no skills.toml data.");
+      return applyFile(dir, options);
     },
   };
 }

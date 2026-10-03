@@ -7,34 +7,23 @@ import {
   LISTING_MAX_DESCRIPTION_CHARS,
   type ListingReportOptions,
   type ListingSkillInput,
-  type LocalSkill,
-  type PluginSkill,
   type Settings,
   listingBudgetOf,
   listingEntryOf,
   summarizeListing,
 } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
-type Handlers = Record<string, Handler>;
-
-/** Calls another mock handler, as the real service calls the other services. */
-function call<T>(handlers: Handlers, channel: string, ...args: unknown[]): Promise<T> {
-  const handler = handlers[channel] as ((...values: unknown[]) => T | Promise<T>) | undefined;
-  if (!handler) throw new Error(`No mock for ${channel}`);
-  return Promise.resolve(handler(...args));
-}
+import { type MockHandlers, callMock } from "@/lib/dev-mock-types";
 
 export function createListingMockHandlers(
   getSettings: () => Settings,
-  handlers: Handlers,
-): Handlers {
+  handlers: MockHandlers,
+): MockHandlers {
   return {
     "listing.report": async (agentKey: string, options?: ListingReportOptions) => {
       if (agentKey !== LISTING_AGENT_KEY) return null;
       const window = options?.window ?? getSettings().skillListingWindow;
-      const folder = await call<LocalSkill[]>(handlers, "workspace.list", agentKey);
-      const plugins = await call<PluginSkill[]>(handlers, "workspace.plugins", agentKey);
+      const folder = await callMock(handlers, "workspace.list", agentKey);
+      const plugins = await callMock(handlers, "workspace.plugins", agentKey);
       const base = { whenToUse: "", manualOnly: false, override: null };
       const inputs: ListingSkillInput[] = [
         ...folder.map((skill) => ({

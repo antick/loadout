@@ -4,17 +4,13 @@
  * the real one goes through the other services.
  */
 import {
-  type ApplyResult,
   type DuplicateMergeResult,
   type DuplicatePair,
   type DuplicatesReport,
-  type Preset,
   type Skill,
   duplicatePairKey,
 } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
-type Handlers = Record<string, Handler>;
+import { type MockHandlers, callMock } from "@/lib/dev-mock-types";
 
 const SHARED_WORDS_MIN = 0.5;
 const WORD_MIN_LENGTH = 4;
@@ -30,14 +26,10 @@ function overlap(left: Set<string>, right: Set<string>): number {
   return all === 0 ? 0 : shared / all;
 }
 
-/** Calls another mock handler, as the real merge calls the other services. */
-function call<T>(handlers: Handlers, channel: string, ...args: unknown[]): Promise<T> {
-  const handler = handlers[channel] as ((...values: unknown[]) => T | Promise<T>) | undefined;
-  if (!handler) throw new Error(`No mock for ${channel}`);
-  return Promise.resolve(handler(...args));
-}
-
-export function createSimilarMockHandlers(getSkills: () => Skill[], handlers: Handlers): Handlers {
+export function createSimilarMockHandlers(
+  getSkills: () => Skill[],
+  handlers: MockHandlers,
+): MockHandlers {
   const dismissed = new Set<string>();
 
   function pairs(): DuplicatePair[] {
@@ -82,7 +74,7 @@ export function createSimilarMockHandlers(getSkills: () => Skill[], handlers: Ha
       const remove = skills.find((skill) => skill.id === removeId);
       if (!keep || !remove) throw new Error("There is no such skill.");
       const tags = remove.tags.filter((tag) => !keep.tags.includes(tag));
-      const presets = await call<Preset[]>(handlers, "presets.list");
+      const presets = await callMock(handlers, "presets.list");
       const joining = presets.filter(
         (preset) => preset.skillIds.includes(removeId) && !preset.skillIds.includes(keepId),
       );
@@ -103,15 +95,14 @@ export function createSimilarMockHandlers(getSkills: () => Skill[], handlers: Ha
       };
       if (options?.dryRun === true) return result;
       if (tags.length > 0) {
-        await call(handlers, "skills.setTags", keepId, [...keep.tags, ...tags]);
+        await callMock(handlers, "skills.setTags", keepId, [...keep.tags, ...tags]);
       }
-      for (const preset of joining) await call(handlers, "presets.addSkills", preset.id, [keepId]);
+      for (const preset of joining)
+        await callMock(handlers, "presets.addSkills", preset.id, [keepId]);
       if (deployedTo.length > 0) {
-        await call<ApplyResult>(handlers, "deploy.apply", [keepId], deployedTo, "add");
+        await callMock(handlers, "deploy.apply", [keepId], deployedTo, "add");
       }
-      const removed = await call<{ removedIds: string[] }>(handlers, "skills.removeMany", [
-        removeId,
-      ]);
+      const removed = await callMock(handlers, "skills.removeMany", [removeId]);
       return { ...result, removedEntryId: removed.removedIds[0] ?? null };
     },
   };

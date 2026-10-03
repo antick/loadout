@@ -1,9 +1,8 @@
 /** DEV ONLY. `items.*` for the browser preview: an empty library of subagents, commands, rules. */
 import type { FoundItem, ItemImportResult, ItemPlace, LibraryItem } from "@loadout/shared";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
-type Handler = (...args: never[]) => unknown;
-
-export function createItemsMockHandlers(): Record<string, Handler> {
+export function createItemsMockHandlers(): MockHandlers {
   return {
     "items.list": (): LibraryItem[] => [],
     "items.places": (): ItemPlace[] => [],

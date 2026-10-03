@@ -6,6 +6,7 @@
 import {
   type ApiResponse,
   type AppEventName,
+  type AppInfo,
   APP_NAME,
   type DataScope,
   type ErrorCode,
@@ -22,8 +23,6 @@ import {
   SAMPLE_DOCUMENT,
   SEED_AGENTS,
   SEED_APP_UPDATE,
-  SEED_BACKUP_STATUS,
-  SEED_LIBRARY_LOCATION,
   SEED_PRESETS,
   SEED_PROJECT_SUGGESTIONS,
   SEED_PROJECTS,
@@ -48,6 +47,7 @@ import { createStorageMockHandlers, recordRemoved } from "@/lib/dev-mock-storage
 import { createLibraryMockHandlers } from "@/lib/dev-mock-library";
 import { createWorkspaceMockHandlers } from "@/lib/dev-mock-workspaces";
 import { createSystemMockHandlers } from "@/lib/dev-mock-system";
+import { type MockHandlers, handlerFor } from "@/lib/dev-mock-types";
 
 const LATENCY_MS = 120;
 
@@ -90,22 +90,27 @@ function setDeployed(skillId: string, agentKey: string, on: boolean): boolean {
   return true;
 }
 
-function withPresetIds(list: Skill[]): Skill[] {
-  return list.map((entry) => ({
+function withPresetIdsOf(entry: Skill): Skill {
+  return {
     ...entry,
     presetIds: presets
       .filter((preset) => preset.skillIds.includes(entry.id))
       .map((preset) => preset.id),
-  }));
+  };
+}
+
+function withPresetIds(list: Skill[]): Skill[] {
+  return list.map(withPresetIdsOf);
 }
 
 // `never[]` accepts handlers with any parameter list; arguments arrive untyped over the fake bridge.
-const handlers: Record<string, (...args: never[]) => unknown> = {
+const handlers: MockHandlers = {
   // `?platform=win32` previews Windows-only hints such as the WSL folder note.
   "app.info": () => ({
     name: APP_NAME,
     version: "0.1.0-dev",
-    platform: new URLSearchParams(window.location.search).get("platform") ?? "darwin",
+    platform: (new URLSearchParams(window.location.search).get("platform") ??
+      "darwin") as AppInfo["platform"],
     homeDir: HOME,
   }),
   "app.updateStatus": () => SEED_APP_UPDATE,
@@ -123,9 +128,8 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     { id: "cursor", name: "Cursor" },
   ],
 
-  "agents.list": () => agents,
   "skills.list": () => withPresetIds(skills),
-  "skills.get": (skillId: string) => withPresetIds([findSkill(skillId)])[0],
+  "skills.get": (skillId: string) => withPresetIdsOf(findSkill(skillId)),
   "skills.document": (skillId: string) => {
     const found = findSkill(skillId);
     return {
@@ -230,7 +234,9 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
         : entry,
     );
     emitChanged("presets");
-    return presets.find((entry) => entry.id === id);
+    const updated = presets.find((entry) => entry.id === id);
+    if (!updated) throw new MockError("NOT_FOUND", `There is no preset "${id}".`);
+    return updated;
   },
   "presets.remove": (id: string) => {
     presets = presets.filter((entry) => entry.id !== id);
@@ -262,14 +268,6 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     );
   },
 
-  "workspace.counts": (agentKeys: string[]) =>
-    Object.fromEntries(
-      agentKeys.map((key) => [
-        key,
-        skills.filter((entry) => entry.deployments.some((d) => d.agentKey === key)).length,
-      ]),
-    ),
-
   // "Save as" answers with the suggested name in Downloads; the export pretends to write it.
   "app.pickSavePath": (defaultName: string) => `${HOME}/Downloads/${defaultName}`,
   "skills.exportArchive": (skillIds: string[], destPath: string) => ({
@@ -277,11 +275,6 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
     skillCount: new Set(skillIds).size,
     bytes: 18_432 * new Set(skillIds).size,
   }),
-
-  "system.libraryLocation": () => SEED_LIBRARY_LOCATION,
-  "system.lastCrash": () => null,
-  "backup.status": () => SEED_BACKUP_STATUS,
-  "backup.sync": () => ({ committed: true, merge: null, pushed: true, snapshot: null }),
 };
 
 Object.assign(handlers, createQuietMockHandlers());
@@ -305,7 +298,7 @@ Object.assign(
 );
 
 // Registered after the install handlers: it takes over `install.cancel` for update keys only.
-const cancelInstall = handlers["install.cancel"] as ((key: string) => unknown) | undefined;
+const cancelInstall = handlers["install.cancel"];
 Object.assign(
   handlers,
   createLibraryMockHandlers({
@@ -329,7 +322,7 @@ Object.assign(
     fail: (code, message) => {
       throw new MockError(code, message);
     },
-    cancelElsewhere: (key) => cancelInstall?.(key) ?? false,
+    cancelElsewhere: (key) => Boolean(cancelInstall?.(key)),
   }),
 );
 
@@ -443,7 +436,7 @@ export function installDevMock(): void {
       new Promise<ApiResponse<unknown>>((resolve) => {
         // Async so handlers that take a while (installs with progress) can return a promise.
         window.setTimeout(async () => {
-          const handler = handlers[channel];
+          const handler = handlerFor(handlers, channel);
           try {
             if (!handler)
               throw new MockError("UNSUPPORTED", `The preview has no data for "${channel}".`);

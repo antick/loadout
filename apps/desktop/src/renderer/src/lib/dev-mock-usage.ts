@@ -3,8 +3,7 @@
  * turned on, so the library sorts, the detail line and the dashboard card have something to show.
  */
 import type { DataScope, Skill, SkillUsage, UsageReport } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 const READ_MS = 900;
 const HOUR = 60 * 60 * 1000;
@@ -24,7 +23,7 @@ export function createUsageMockHandlers(
   home: string,
   getSkills: () => Skill[],
   emitChanged: (...scope: DataScope[]) => void,
-): Record<string, Handler> {
+): MockHandlers {
   let enabled = false;
   let scannedAt: number | null = null;
 

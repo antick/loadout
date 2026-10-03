@@ -44,6 +44,7 @@ import {
   SEED_BACKUP_STATUS,
   SEED_LIBRARY_LOCATION,
 } from "@/lib/dev-mock-data";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 export interface SystemMockContext {
   getSkills(): Skill[];
@@ -169,9 +170,7 @@ let repairReport: RepairReport | null =
       }
     : cleanRepair();
 
-export function createSystemMockHandlers(
-  ctx: SystemMockContext,
-): Record<string, (...args: never[]) => unknown> {
+export function createSystemMockHandlers(ctx: SystemMockContext): MockHandlers {
   const { agents } = ctx;
   let status = initialStatus();
   let snapshots = status.isRepo ? seedSnapshots() : [];
@@ -492,7 +491,9 @@ export function createSystemMockHandlers(
     "system.setupAgentControl": () => {
       agentControl = { ...agentControl, installed: true, skillId: AGENT_CONTROL_SKILL_NAME };
       ctx.emitChanged("settings");
-      return ctx.getSkills()[0];
+      const installed = ctx.getSkills()[0];
+      if (!installed) return ctx.fail("NOT_FOUND", "The preview library has no skills.");
+      return installed;
     },
     "system.dismissAgentControl": () => {
       agentControl = { ...agentControl, dismissed: true };

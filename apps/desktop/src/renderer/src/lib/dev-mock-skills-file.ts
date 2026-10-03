@@ -9,8 +9,7 @@ import {
   type SkillsFilePlan,
   type SkillsFileResult,
 } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 const FETCH_MS = 700;
 const MOCK_REVISION = "4f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39";
@@ -23,7 +22,7 @@ const AGENT_DIRS: Record<string, string> = {
 
 const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function createSkillsFileMockHandlers(): Record<string, Handler> {
+export function createSkillsFileMockHandlers(): MockHandlers {
   const files = new Map<string, SkillsFileInfo>();
 
   function planFor(info: SkillsFileInfo, nothing: boolean): SkillsFilePlan {

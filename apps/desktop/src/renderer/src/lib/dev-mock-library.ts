@@ -27,6 +27,7 @@ import type {
 import { cleanSkillNote } from "@loadout/shared";
 import { emptyApplyResult, HOME } from "@/lib/dev-mock-data";
 import { createOriginMockHandlers } from "@/lib/dev-mock-origin";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 export interface LibraryMockContext {
   getSkills(): Skill[];
@@ -41,7 +42,7 @@ export interface LibraryMockContext {
   emitAutoRan(payload: AppEvents["updates:auto-ran"]): void;
   fail(code: ErrorCode, message: string): never;
   /** `install.cancel` of the other mock modules, for keys this module does not own. */
-  cancelElsewhere(key: string): unknown;
+  cancelElsewhere(key: string): boolean;
 }
 
 const STEP_MS = 450;
@@ -90,9 +91,7 @@ function removalsFor(skill: Skill, round: number): PendingRemoval[] {
   return removals;
 }
 
-export function createLibraryMockHandlers(
-  ctx: LibraryMockContext,
-): Record<string, (...args: never[]) => unknown> {
+export function createLibraryMockHandlers(ctx: LibraryMockContext): MockHandlers {
   const running = new Set<string>();
   const cancelled = new Set<string>();
   const approvalRounds = new Map<string, number>();

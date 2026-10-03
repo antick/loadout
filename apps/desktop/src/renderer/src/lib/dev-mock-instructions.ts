@@ -16,8 +16,12 @@ import {
   type SkillFileEntry,
   type SkillLocation,
 } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
+import {
+  type MockChannel,
+  type MockHandler,
+  type MockHandlers,
+  handlerFor,
+} from "@/lib/dev-mock-types";
 
 export interface InstructionsMockContext {
   home: string;
@@ -47,8 +51,8 @@ function hashOf(content: string): string {
 /** Wrap the editor mock so instruction-file locations are answered here. */
 export function withInstructionMocks(
   ctx: InstructionsMockContext,
-  editor: Record<string, Handler>,
-): Record<string, Handler> {
+  editor: MockHandlers,
+): MockHandlers {
   const files = seedFiles(ctx.home, ctx.getProjects());
 
   function rootOf(projectId: string | null): string {
@@ -109,17 +113,23 @@ export function withInstructionMocks(
     };
   }
 
-  const route =
-    (name: string, own: (location: InstructionLocation, ...rest: never[]) => unknown): Handler =>
-    (...args: never[]) => {
+  /** An editor channel: instruction files are answered here, everything else by `editor`. */
+  const route = <C extends MockChannel>(
+    name: C,
+    own: (location: InstructionLocation, ...rest: never[]) => unknown,
+  ): MockHandler<C> =>
+    ((...args: never[]) => {
       const [location, ...rest] = args as unknown as [SkillLocation, ...never[]];
-      return isInstructions(location) ? own(location, ...rest) : editor[name]?.(...args);
-    };
+      return isInstructions(location)
+        ? own(location, ...rest)
+        : handlerFor(editor, name)?.(...args);
+    }) as MockHandler<C>;
 
   return {
     ...editor,
     "instructions.list": (projectId: string | null) => list(projectId ?? null),
-    "instructions.create": (location: InstructionLocation) => {
+    "instructions.create": (location: SkillLocation) => {
+      if (!isInstructions(location)) return ctx.fail("INVALID_INPUT", "Not an instruction file.");
       const file = find(location);
       if (!file.exists) files.set(file.path, "");
       return find(location);

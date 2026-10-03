@@ -14,6 +14,7 @@ import type {
   SyncPreviewItem,
   SyncSkillDiff,
 } from "@loadout/shared";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 export interface BackupSyncMockContext {
   /** Throw the bridge's error type so the code reaches the renderer. */
@@ -102,9 +103,7 @@ const DEFAULT_IGNORES = [
   "*.log",
 ];
 
-export function createBackupSyncMockHandlers(
-  ctx: BackupSyncMockContext,
-): Record<string, (...args: never[]) => unknown> {
+export function createBackupSyncMockHandlers(ctx: BackupSyncMockContext): MockHandlers {
   let custom: string[] = ["outputs/"];
   const rules = (): BackupIgnoreRules => ({ defaults: DEFAULT_IGNORES, custom });
 

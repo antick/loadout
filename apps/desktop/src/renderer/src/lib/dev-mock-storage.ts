@@ -10,8 +10,7 @@ import {
   type StorageEntry,
   type StorageReport,
 } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 const MB = 1024 * 1024;
 const SEED_BYTES: Record<StorageArea, number> = {
@@ -77,7 +76,7 @@ export function recordRemoved(
   return id;
 }
 
-export function createStorageMockHandlers(home: string): Record<string, Handler> {
+export function createStorageMockHandlers(home: string): MockHandlers {
   const base = `${home}/.loadout`;
   const bytes = { ...SEED_BYTES };
 

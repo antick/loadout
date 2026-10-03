@@ -1,26 +1,40 @@
-/** DEV ONLY. Calls that only need to succeed, and lists that are empty in the preview. */
-
-type Handler = (...args: never[]) => unknown;
+/** DEV ONLY. Calls that only need to succeed, and ones the preview cannot do. */
+import type { MockChannel, MockHandlers } from "@/lib/dev-mock-types";
 
 const SUCCEED = [
+  "app.quit",
   "app.revealPath",
   "app.openInEditor",
   "app.resolveClose",
   "skills.reveal",
   "projects.reveal",
   "system.clearLastCrash",
-] as const;
+] as const satisfies readonly MockChannel[];
 
-const EMPTY_LISTS = [
-  "projects.skills",
-  "projects.targets",
-  "workspace.list",
-  "system.activity",
-] as const;
+/** Answered with a plain "not in the preview", so a screen says why instead of breaking. */
+const DESKTOP_ONLY = [
+  "items.create",
+  "items.preview",
+  "items.get",
+  "items.save",
+  "items.remove",
+  "items.deploy",
+  "items.undeploy",
+  "projects.createSkill",
+] as const satisfies readonly MockChannel[];
 
-export function createQuietMockHandlers(): Record<string, Handler> {
+const NOT_IN_PREVIEW = "The browser preview cannot do this; try it in the desktop app.";
+
+export function createQuietMockHandlers(): MockHandlers {
   return {
     ...Object.fromEntries(SUCCEED.map((channel) => [channel, () => undefined])),
-    ...Object.fromEntries(EMPTY_LISTS.map((channel) => [channel, () => []])),
+    ...Object.fromEntries(
+      DESKTOP_ONLY.map((channel) => [
+        channel,
+        () => {
+          throw new Error(NOT_IN_PREVIEW);
+        },
+      ]),
+    ),
   };
 }

@@ -4,8 +4,7 @@
  */
 import type { DataScope, ProjectSuggestions, Skill } from "@loadout/shared";
 import { cleanSuggestPatterns } from "@loadout/shared";
-
-type Handler = (...args: never[]) => unknown;
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 const TECHNOLOGIES = ["TypeScript", "JavaScript", "React", "Docker"];
 const WORDS: Record<string, string> = {
@@ -17,7 +16,7 @@ const WORDS: Record<string, string> = {
 export function createSuggestMockHandlers(
   skills: { get: () => Skill[]; set: (next: Skill[]) => void },
   emitChanged: (...scope: DataScope[]) => void,
-): Record<string, Handler> {
+): MockHandlers {
   const getSkills = skills.get;
   const dismissed = new Map<string, Set<string>>();
   const hiddenIn = (projectId: string): Set<string> => {
@@ -65,7 +64,9 @@ export function createSuggestMockHandlers(
         getSkills().map((skill) => (skill.id === skillId ? { ...skill, suggestFor } : skill)),
       );
       emitChanged("skills");
-      return getSkills().find((skill) => skill.id === skillId);
+      const updated = getSkills().find((skill) => skill.id === skillId);
+      if (!updated) throw new Error(`There is no skill "${skillId}".`);
+      return updated;
     },
   };
 }

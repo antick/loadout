@@ -15,6 +15,7 @@ import {
   clawhubSkillUrl,
 } from "@loadout/shared";
 import type { InstallMockContext } from "@/lib/dev-mock-install";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 const BOARD_SIZE = 60;
 const DETAIL_DELAY_MS = 600;
@@ -162,9 +163,7 @@ const CLAWHUB_BOARD_ORDER: Record<MarketBoard, (index: number) => number> = {
   all_time: (index) => index,
 };
 
-export function createMarketMockHandlers(
-  ctx: InstallMockContext,
-): Record<string, (...args: never[]) => unknown> {
+export function createMarketMockHandlers(ctx: InstallMockContext): MockHandlers {
   function withInstalled(entries: Omit<MarketSkill, "installed">[]): MarketSkill[] {
     const installed = new Set(
       ctx

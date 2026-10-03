@@ -1,8 +1,7 @@
 /** DEV ONLY. Deploying, undeploying and blocking for the browser preview. */
 import type { ApplyOptions, ApplyResult, DataScope, ErrorCode, Skill } from "@loadout/shared";
 import { emptyApplyResult } from "@/lib/dev-mock-data";
-
-type Handler = (...args: never[]) => unknown;
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 /** The skill the preview pretends has an unmanaged folder in the way. */
 const CONFLICTING_SKILL = "release-notes";
@@ -16,7 +15,7 @@ export interface DeployMockDeps {
   fail: (code: ErrorCode, message: string) => never;
 }
 
-export function createDeployMockHandlers(deps: DeployMockDeps): Record<string, Handler> {
+export function createDeployMockHandlers(deps: DeployMockDeps): MockHandlers {
   const { getSkills, setSkills, setDeployed, emitChanged, fail } = deps;
   const find = (skillId: string): Skill => {
     const found = getSkills().find((entry) => entry.id === skillId);

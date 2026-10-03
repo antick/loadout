@@ -14,6 +14,7 @@ import type {
   SkillFileVersion,
   SkillLocation,
 } from "@loadout/shared";
+import type { MockHandlers } from "@/lib/dev-mock-types";
 
 export interface EditorMockContext {
   getSkills(): Skill[];
@@ -75,9 +76,7 @@ function pathsOf(folder: MockFolder): string[] {
   return [...new Set([...files, ...parents, ...folder.folders])];
 }
 
-export function createEditorMockHandlers(
-  ctx: EditorMockContext,
-): Record<string, (...args: never[]) => unknown> {
+export function createEditorMockHandlers(ctx: EditorMockContext): MockHandlers {
   const skillFolders = new Map<string, MockFolder>();
   const versions = new Map<string, { id: string; savedAt: number; content: string }[]>();
 
