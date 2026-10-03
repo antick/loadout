@@ -8,6 +8,7 @@ import {
   behaviourFieldsIn,
   isManualOnly,
   traitsFromFrontmatter,
+  FRONTMATTER_BLOCK,
 } from "@loadout/shared";
 import { parse, parseDocument, stringify } from "yaml";
 import { isInside, canonicalPath, readDirSafe, statOrNull } from "../util/fs";
@@ -139,7 +140,6 @@ export function readSkillDocument(
   }
 }
 
-const FRONTMATTER_BLOCK = /^(\uFEFF?\s*---[ \t]*(\r?\n))([\s\S]*?)(\r?\n---[ \t]*(?:\r?\n|$))/;
 /** A `name:` whose value sits on its own line, not a `|` or `>` block. */
 const NAME_LINE = /^name[ \t]*:[ \t]*(?![|>])[^\r\n]*$/m;
 const NAME_KEY = /^name[ \t]*:/m;

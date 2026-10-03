@@ -1,4 +1,5 @@
 import { isMap, parseDocument, stringify } from "yaml";
+import { FRONTMATTER_BLOCK } from "./frontmatter";
 
 /**
  * Reading and writing the two file shapes items come in: Markdown with YAML frontmatter, and the
@@ -12,15 +13,13 @@ export interface MarkdownDocument {
   body: string;
 }
 
-const FRONTMATTER = /^\uFEFF?\s*---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
-
 /** Split a Markdown file. Frontmatter that is not a YAML map is treated as having none. */
 export function parseMarkdown(text: string): MarkdownDocument {
   const normalized = text.replace(/\r\n/g, "\n");
-  const match = FRONTMATTER.exec(normalized);
+  const match = FRONTMATTER_BLOCK.exec(normalized);
   if (!match) return { fields: {}, body: normalized.replace(/^\uFEFF/, "") };
   const body = normalized.slice(match[0].length);
-  const document = parseDocument(match[1] ?? "");
+  const document = parseDocument(match[3] ?? "");
   if (document.errors.length > 0 || !isMap(document.contents)) return { fields: {}, body };
   const value: unknown = document.toJS();
   return { fields: (value ?? {}) as Record<string, unknown>, body };

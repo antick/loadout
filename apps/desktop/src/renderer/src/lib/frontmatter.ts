@@ -1,3 +1,5 @@
+import { FRONTMATTER_BLOCK } from "@loadout/shared";
+
 export interface FrontmatterEntry {
   key: string;
   value: string;
@@ -8,7 +10,6 @@ export interface ParsedDocument {
   body: string;
 }
 
-const FRONTMATTER_PATTERN = /^﻿?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 const KEY_LINE_PATTERN = /^([A-Za-z0-9_.-]+):\s*(.*)$/;
 const BLOCK_SCALAR_MARKERS = new Set(["|", ">", "|-", ">-", "|+", ">+"]);
 
@@ -26,11 +27,11 @@ function unquote(value: string): string {
  * become entries and indented or list lines are folded into the key above them.
  */
 export function parseFrontmatter(source: string): ParsedDocument {
-  const match = FRONTMATTER_PATTERN.exec(source);
+  const match = FRONTMATTER_BLOCK.exec(source);
   if (!match) return { entries: [], body: source };
 
   const entries: FrontmatterEntry[] = [];
-  for (const line of (match[1] ?? "").split(/\r?\n/)) {
+  for (const line of (match[3] ?? "").split(/\r?\n/)) {
     if (!line.trim() || line.trimStart().startsWith("#")) continue;
     const keyLine = /^\s/.test(line) ? null : KEY_LINE_PATTERN.exec(line);
     if (keyLine) {

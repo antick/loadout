@@ -1,4 +1,5 @@
 import { isMap, isScalar, parseDocument } from "yaml";
+import { FRONTMATTER_BLOCK } from "./frontmatter";
 
 /**
  * Checks of a skill against the Agent Skills format (agentskills.io/specification). Pure, so the
@@ -113,7 +114,6 @@ export function hasSkillErrors(issues: readonly SkillIssue[]): boolean {
   return issues.some((issue) => issue.severity === "error");
 }
 
-const FRONTMATTER_PATTERN = /^﻿?\s*---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const FENCE_PATTERN = /^(\s*)(`{3,}|~{3,})/;
 const INLINE_CODE_PATTERN = /`[^`]*`/g;
@@ -221,7 +221,7 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     return { issues: [skillIssue("document_missing")], references: [], referenceLines: {} };
   }
   const issues: SkillIssue[] = [];
-  const match = FRONTMATTER_PATTERN.exec(content);
+  const match = FRONTMATTER_BLOCK.exec(content);
   const bodyStart = match ? match[0].length : 0;
   const bodyLine = lineAt(content, bodyStart);
 
@@ -256,7 +256,7 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     return { issues, references, referenceLines };
   }
 
-  const source = match[1] ?? "";
+  const source = match[3] ?? "";
   // Where the frontmatter text starts in the document: after the opening `---` line.
   const sourceStart = source ? match[0].indexOf(source) : bodyStart;
   // Untrusted text: an alias bomb or anything else the parser throws on is a broken frontmatter,

@@ -3,6 +3,7 @@ import {
   type MarketAudit,
   type MarketAuditStatus,
   type MarketSkillDetail,
+  FRONTMATTER_BLOCK,
 } from "@loadout/shared";
 import { invalid, isAppError } from "../errors";
 import type { Download } from "../install/download";
@@ -100,7 +101,7 @@ function documentCandidates(paths: readonly string[], skillId: string): Document
 
 /** The `name` in a document's frontmatter, or null. */
 function frontmatterName(content: string): string | null {
-  const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)?.[1] ?? "";
+  const block = FRONTMATTER_BLOCK.exec(content)?.[3] ?? "";
   const name = /^name:\s*["']?([^"'\r\n]+?)["']?\s*$/m.exec(block)?.[1];
   return name?.trim() || null;
 }

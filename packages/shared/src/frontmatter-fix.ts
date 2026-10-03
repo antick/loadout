@@ -1,5 +1,6 @@
 import { isMap, parseDocument, stringify } from "yaml";
 import { SKILL_DESCRIPTION_MAX, type SkillIssue, type SkillIssueCode } from "./skill-checks";
+import { FRONTMATTER_BLOCK } from "./frontmatter";
 
 /**
  * Fill in what a SKILL.md needs before agents can use it: frontmatter with a `name` and a
@@ -15,7 +16,6 @@ export interface FrontmatterFix {
   addedDescription: string | null;
 }
 
-const FRONTMATTER_BLOCK = /^(\uFEFF?\s*---[ \t]*(\r?\n))([\s\S]*?)(\r?\n---[ \t]*(?:\r?\n|$))/;
 const EMPTY_FRONTMATTER = /^(\uFEFF?\s*---[ \t]*(\r?\n))(---[ \t]*(?:\r?\n|$))/;
 const FENCE_LINE = /^\s*(`{3,}|~{3,})/;
 const HEADING_LINE = /^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$/;
