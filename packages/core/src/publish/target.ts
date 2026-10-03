@@ -83,7 +83,7 @@ function isBackupRepository(ctx: CoreContext, remote: ParsedRemote): boolean {
   }
 }
 
-export function checkBranchName(branch: string | null | undefined): string | null {
+function checkBranchName(branch: string | null | undefined): string | null {
   const name = branch?.trim();
   if (!name) return null;
   if (

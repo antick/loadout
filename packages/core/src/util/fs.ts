@@ -22,9 +22,9 @@ import { SKILL_MARKER_FILES } from "@loadout/shared";
 import { invalid } from "../errors";
 
 /** Names never copied into or out of the library. */
-export const COPY_SKIP_NAMES: ReadonlySet<string> = new Set([".git", ".DS_Store"]);
+const COPY_SKIP_NAMES: ReadonlySet<string> = new Set([".git", ".DS_Store"]);
 
-export function expandHome(input: string): string {
+function expandHome(input: string): string {
   const path = input.trim();
   if (path === "~") return homedir();
   if (path.startsWith("~/") || path.startsWith("~\\")) return join(homedir(), path.slice(2));
@@ -37,12 +37,6 @@ export function normalizeAbsolutePath(input: string, label = "Path"): string {
   if (!expanded) throw invalid(`${label} is required`);
   if (!isAbsolute(expanded)) throw invalid(`${label} must be absolute (or start with ~/)`);
   return normalize(expanded);
-}
-
-/** Replace the home directory prefix with `~` for display. */
-export function compactHome(path: string): string {
-  const home = homedir();
-  return path === home || path.startsWith(home + sep) ? `~${path.slice(home.length)}` : path;
 }
 
 export function lstatOrNull(path: string): Stats | null {

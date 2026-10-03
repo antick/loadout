@@ -66,7 +66,7 @@ export async function aheadBehind(
   return { ahead: ahead || 0, behind: behind || 0 };
 }
 
-export async function isDirty(env: BackupEnv): Promise<boolean> {
+async function isDirty(env: BackupEnv): Promise<boolean> {
   return (await env.git.text(["status", "--porcelain"])) !== "";
 }
 

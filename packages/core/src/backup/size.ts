@@ -76,7 +76,7 @@ async function trackedTopLevel(env: BackupEnv): Promise<Set<string>> {
   return new Set(result.stdout.split("\0").filter(Boolean));
 }
 
-export async function findOversized(
+async function findOversized(
   env: BackupEnv,
 ): Promise<{ oversized: OversizedSkill[]; totalBytes: number }> {
   const { skills, totalBytes } = measureSkills(env);
@@ -89,7 +89,7 @@ export async function findOversized(
   return { oversized, totalBytes };
 }
 
-export function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
+function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
   if (excluded.length === 0) return [];
   const lines = [BLOCK_START];
   for (const skill of excluded) {

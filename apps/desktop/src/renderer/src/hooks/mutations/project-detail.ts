@@ -54,7 +54,7 @@ export interface SetEnabledInput extends ProjectSkillRef {
 }
 
 /** Project skills changed on disk; a push also changes the library. */
-export function invalidateProject(queryClient: QueryClient, withLibrary = false): void {
+function invalidateProject(queryClient: QueryClient, withLibrary = false): void {
   void queryClient.invalidateQueries({ queryKey: keys.projects.root });
   if (withLibrary) void queryClient.invalidateQueries({ queryKey: keys.skills.root });
 }

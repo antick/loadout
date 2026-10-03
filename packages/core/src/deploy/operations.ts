@@ -18,7 +18,7 @@ import {
 } from "./engine";
 import { copyWasEdited, isCurrent, policyFromRows, rowsAtPath, samePath } from "./evidence";
 
-export const REASON_OTHER_SKILL = "already holds a different skill's deployment";
+const REASON_OTHER_SKILL = "already holds a different skill's deployment";
 
 /** One skill going to one agent's folder. `agentName` is only for the activity history. */
 export interface DeployPair {

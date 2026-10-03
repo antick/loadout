@@ -50,7 +50,7 @@ fi
  * is an update and `--force-run` starts the app once it is done. Paths arrive through the
  * environment, so nothing needs quoting.
  */
-export const WINDOWS_INSTALL_SCRIPT = [
+const WINDOWS_INSTALL_SCRIPT = [
   "$ErrorActionPreference = 'SilentlyContinue'",
   "Wait-Process -Id ([int]$env:LOADOUT_UPDATE_PID) -Timeout ([int]$env:LOADOUT_UPDATE_WAIT)",
   "Start-Process -FilePath $env:LOADOUT_UPDATE_INSTALLER -ArgumentList '--updated','/S','--force-run'",

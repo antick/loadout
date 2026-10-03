@@ -28,7 +28,7 @@ export type Download = (url: string, options?: DownloadOptions) => Promise<Buffe
 
 const DOWNLOAD_TIMEOUT_MS = 300_000;
 /** Big enough for any skill repository; small enough that a wrong link cannot fill the memory. */
-export const MAX_DOWNLOAD_BYTES = 256 * 1024 * 1024;
+const MAX_DOWNLOAD_BYTES = 256 * 1024 * 1024;
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;

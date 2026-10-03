@@ -76,7 +76,7 @@ async function readFromPreview(
 }
 
 /** One line for stderr when the check found anything; stdout stays the document alone. */
-export function safetyNotice(name: string, report: SafetyReport | null): string | undefined {
+function safetyNotice(name: string, report: SafetyReport | null): string | undefined {
   if (!report || report.verdict === "safe") return undefined;
   const found = report.findings.length;
   return `Safety check on ${name}: ${report.recommendation}, risk ${report.score}/100, ${plural(found, "finding")}. Run with --json to read them.`;

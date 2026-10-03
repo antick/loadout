@@ -65,7 +65,7 @@ interface Finding {
 }
 
 /** True while the last check still counts, so an unforced check can be skipped. */
-export function isFresh(skill: Skill, ttlMinutes: number, now: number): boolean {
+function isFresh(skill: Skill, ttlMinutes: number, now: number): boolean {
   if (!SETTLED.has(skill.updateStatus) || skill.lastCheckedAt === null) return false;
   return now - skill.lastCheckedAt < ttlMinutes * MS_PER_MINUTE;
 }

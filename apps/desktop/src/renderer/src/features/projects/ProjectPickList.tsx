@@ -101,7 +101,7 @@ export function ProjectPickList({
 }
 
 /** "2 added · 1 already linked · 0 failed", for the toast and the notice. */
-export function useSummarizeAdded(): (result: AddScannedResult) => string {
+function useSummarizeAdded(): (result: AddScannedResult) => string {
   const { t } = useTranslation();
   return (result) =>
     [

@@ -85,14 +85,14 @@ const REMOVE_FLAG = {
 const agentsOf = (skill: Skill): string => skill.deployments.map((d) => d.agentKey).join(", ");
 
 /** Next to a skill's name when agents only run it on request. */
-export const MANUAL_ONLY_MARK = "[manual]";
+const MANUAL_ONLY_MARK = "[manual]";
 const MANUAL_ONLY_TEXT = "manual only: agents run it when you call it (disable-model-invocation)";
 
 /** Next to a skill's name when it ships scripts, hooks or MCP servers (`skills show` says which). */
-export const RUNS_CODE_MARK = "[code]";
+const RUNS_CODE_MARK = "[code]";
 
 /** Next to a skill's name when it is a favorite. */
-export const FAVORITE_MARK = "[fav]";
+const FAVORITE_MARK = "[fav]";
 
 const nameCell = (skill: Skill): string =>
   [

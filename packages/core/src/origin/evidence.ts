@@ -91,7 +91,7 @@ function gitDirOf(folder: string): string | null {
  * The Git checkout holding `folder`, looking upwards but never at `homeDir` or above it: a home
  * folder kept in Git (dotfiles) holds copies of skills, not where they came from.
  */
-export function findCheckout(folder: string, homeDir: string): Checkout | null {
+function findCheckout(folder: string, homeDir: string): Checkout | null {
   const home = canonicalPath(homeDir);
   let current = canonicalPath(folder);
   // `home` inside `current`: we reached the home folder or climbed past it.

@@ -11,7 +11,7 @@ import { LIBRARY_LOCATION, listRemovedPaths, listReplacedEdits, sortRemovals } f
  * changed or added since, in the app's editor, another editor, by an agent or by hand. Empty
  * when that is not known (skills installed before it was recorded).
  */
-export function changedSinceInstall(store: SkillStore, skill: Skill): string[] {
+function changedSinceInstall(store: SkillStore, skill: Skill): string[] {
   const snapshot = store.installed(skill.id);
   if (!snapshot) return [];
   return Object.entries(fileDigests(skill.libraryPath))
@@ -23,7 +23,7 @@ export function changedSinceInstall(store: SkillStore, skill: Skill): string[] {
  * Everything the replacement would delete: from the library when its content changes, and from
  * every copy deployment that will be rebuilt. Agents sharing one folder are listed once.
  */
-export function pendingRemovals(
+function pendingRemovals(
   store: SkillStore,
   fresh: Skill,
   sourceDir: string | null,

@@ -20,8 +20,8 @@ export interface ExtractedArchive {
 /** Archives Loadout writes (export) as well as reads. */
 export const ZIP_EXTENSIONS: readonly string[] = [".zip", ".skill"];
 /** Read only. `.tar.gz` comes before `.tar` so the longest match wins. */
-export const TAR_EXTENSIONS: readonly string[] = [".tar.gz", ".tgz", ".tar"];
-export const ARCHIVE_EXTENSIONS: readonly string[] = [...ZIP_EXTENSIONS, ...TAR_EXTENSIONS];
+const TAR_EXTENSIONS: readonly string[] = [".tar.gz", ".tgz", ".tar"];
+const ARCHIVE_EXTENSIONS: readonly string[] = [...ZIP_EXTENSIONS, ...TAR_EXTENSIONS];
 const EXTRACT_DIR_PREFIX = `${APP_SLUG}-archive-`;
 const FALLBACK_ARCHIVE_NAME = "archive";
 const SKILL_SEARCH_DEPTH = 4;
@@ -203,7 +203,7 @@ export async function unpackArchiveFile(archivePath: string): Promise<UnpackedAr
 }
 
 /** Every skill folder inside an unpacked archive, one per skill. */
-export function archiveSkillDirs(root: string): string[] {
+function archiveSkillDirs(root: string): string[] {
   return preferNeutralCopies(root, findSkillDirs(root, { maxDepth: SKILL_SEARCH_DEPTH }));
 }
 

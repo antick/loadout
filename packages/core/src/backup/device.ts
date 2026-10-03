@@ -16,7 +16,7 @@ const LAST_CONTROL_CODE = 0x1f;
 const DELETE_CODE = 0x7f;
 
 /** Drop control characters and angle brackets (git rejects them in identities), collapse spaces. */
-export function sanitizeDeviceName(input: string): string {
+function sanitizeDeviceName(input: string): string {
   let cleaned = "";
   for (const ch of input) {
     const code = ch.codePointAt(0) ?? 0;

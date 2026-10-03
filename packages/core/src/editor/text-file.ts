@@ -51,7 +51,7 @@ export function looksBinary(bytes: Uint8Array): boolean {
 }
 
 /** The ending most lines use. A file without line breaks counts as LF. */
-export function detectLineEnding(text: string): LineEnding {
+function detectLineEnding(text: string): LineEnding {
   const crlf = text.split(CRLF).length - 1;
   const lf = text.split(LF).length - 1 - crlf;
   return crlf > lf ? "crlf" : "lf";
@@ -73,7 +73,7 @@ export function decodeText(bytes: Uint8Array): DecodedText | null {
 }
 
 /** Every CRLF and lone CR becomes LF, which is what the editor works with. */
-export function normalizeLineBreaks(text: string): string {
+function normalizeLineBreaks(text: string): string {
   return text.replace(/\r\n?/g, LF);
 }
 

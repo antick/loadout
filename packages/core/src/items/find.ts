@@ -46,7 +46,7 @@ interface ItemFolder {
 }
 
 /** An item name from a file name: lowercase, with anything else turned into hyphens. */
-export function itemNameFrom(stem: string): string | null {
+function itemNameFrom(stem: string): string | null {
   const name = stem
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-")

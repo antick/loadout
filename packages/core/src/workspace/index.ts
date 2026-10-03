@@ -1,13 +1,4 @@
-export {
-  type LocalOwner,
-  type LocalSyncDeps,
-  pushLocalToLibrary,
-  readLocalDocument,
-  replaceLocalFromLibrary,
-  repointSources,
-  requireLocalSkill,
-  toLocalSkill,
-} from "./local-actions";
+export { type LocalOwner, type LocalSyncDeps } from "./local-actions";
 export {
   type BrokenDir,
   type LibraryIndex,
@@ -28,5 +19,4 @@ export {
   type WorkspaceService,
   type WorkspaceServiceDeps,
   createWorkspaceService,
-  sortByAttention,
 } from "./service";

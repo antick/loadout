@@ -4,4 +4,4 @@ export {
   type PublishService,
   createPublishService,
 } from "./service";
-export { type ClawhubPublisher, clawhubTopicsOf, createClawhubPublisher } from "./clawhub";
+export { type ClawhubPublisher, clawhubTopicsOf } from "./clawhub";

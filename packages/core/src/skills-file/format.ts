@@ -131,7 +131,7 @@ function isLockedFolder(value: unknown): value is LockedFolder {
 }
 
 /** The lock next to `skills.toml`; null when there is none. Entries that do not read are dropped. */
-export function readLock(path: string): SkillsLock | null {
+function readLock(path: string): SkillsLock | null {
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(path, "utf8"));

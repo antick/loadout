@@ -63,7 +63,7 @@ interface ScanRoot {
  * the installed agents that read it, or under the first one that does when none is installed.
  * Extra folders are always flat.
  */
-export function scanRoots(agents: readonly ResolvedAgent[]): ScanRoot[] {
+function scanRoots(agents: readonly ResolvedAgent[]): ScanRoot[] {
   const roots: ScanRoot[] = [];
   const owned = new Set<string>();
   for (const agent of agents) {

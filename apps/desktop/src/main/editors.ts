@@ -124,7 +124,7 @@ export function describeEditors(located: ReadonlyMap<EditorId, EditorLaunch>): D
 }
 
 /** Start `launch` for `path`, detached, so the editor outlives the app. */
-export function startEditor(launch: EditorLaunch, path: string): Promise<void> {
+function startEditor(launch: EditorLaunch, path: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(launch.command, [...launch.args, path], {
       detached: true,

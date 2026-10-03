@@ -13,7 +13,7 @@ export interface RemovalJob {
 }
 
 /** How long the clean-up waits for the app to exit before deleting anyway. */
-export const EXIT_WAIT_MS = 30_000;
+const EXIT_WAIT_MS = 30_000;
 
 /**
  * The keychain item "Remove all data" deletes, on macOS only. A development build is named like

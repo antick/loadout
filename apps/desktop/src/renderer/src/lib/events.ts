@@ -78,7 +78,7 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
 };
 
 /** Invalidate everything that depends on the given data scopes. */
-export function invalidateScopes(queryClient: QueryClient, scopes: readonly DataScope[]): void {
+function invalidateScopes(queryClient: QueryClient, scopes: readonly DataScope[]): void {
   const seen = new Set<string>();
   for (const scope of scopes) {
     for (const queryKey of SCOPE_KEYS[scope] ?? []) {

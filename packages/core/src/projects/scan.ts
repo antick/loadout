@@ -98,7 +98,7 @@ export function listProjectSkills(targets: ResolvedTarget[], library: LibraryInd
 }
 
 /** The status of a skill with several copies is the one that most needs attention. */
-export function worstStatus(variants: readonly { syncStatus: SyncStatus }[]): SyncStatus {
+function worstStatus(variants: readonly { syncStatus: SyncStatus }[]): SyncStatus {
   return variants.reduce<SyncStatus>(
     (worst, variant) =>
       SYNC_STATUS_SEVERITY[variant.syncStatus] > SYNC_STATUS_SEVERITY[worst]
@@ -108,7 +108,7 @@ export function worstStatus(variants: readonly { syncStatus: SyncStatus }[]): Sy
   );
 }
 
-export function groupSkills(skills: LocalSkill[]): Map<string, LocalSkill[]> {
+function groupSkills(skills: LocalSkill[]): Map<string, LocalSkill[]> {
   const groups = new Map<string, LocalSkill[]>();
   for (const skill of skills) {
     const key = groupKey(skill.relativePath);

@@ -161,7 +161,7 @@ export function parseWellKnownIndex(raw: unknown, indexUrl: string): WellKnownEn
 }
 
 /** Download and read one index; null when there is none at that address. */
-export async function readWellKnownIndex(
+async function readWellKnownIndex(
   download: Download,
   indexUrl: string,
   signal?: AbortSignal,

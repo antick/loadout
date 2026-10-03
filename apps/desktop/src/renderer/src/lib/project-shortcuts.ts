@@ -1,9 +1,9 @@
 import type { Project } from "@loadout/shared";
 
 /** How many recently used projects the sidebar lists above the full list. */
-export const FREQUENT_PROJECT_COUNT = 3;
+const FREQUENT_PROJECT_COUNT = 3;
 /** With this many projects or fewer the whole list fits, and Frequent would only repeat it. */
-export const FREQUENT_MIN_PROJECTS = 6;
+const FREQUENT_MIN_PROJECTS = 6;
 
 /** Pinned projects, in the user's project order. */
 export function pinnedProjects(projects: readonly Project[]): Project[] {

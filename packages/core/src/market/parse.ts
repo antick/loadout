@@ -32,7 +32,7 @@ function count(value: unknown): number {
 }
 
 /** One entry from any of the shapes the site has used, or null when it is not a skill. */
-export function toMarketEntry(value: unknown): MarketEntry | null {
+function toMarketEntry(value: unknown): MarketEntry | null {
   if (!isRecord(value)) return null;
   const source = text(value.source);
   if (!source || !SOURCE_SHAPE.test(source)) return null;
@@ -44,7 +44,7 @@ export function toMarketEntry(value: unknown): MarketEntry | null {
 }
 
 /** Keep the first entry per `source/skillId`, preserving the site's ranking order. */
-export function dedupeEntries(entries: MarketEntry[]): MarketEntry[] {
+function dedupeEntries(entries: MarketEntry[]): MarketEntry[] {
   const seen = new Set<string>();
   return entries.filter((entry) => {
     const id = `${entry.source}/${entry.skillId}`;

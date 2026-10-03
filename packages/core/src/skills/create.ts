@@ -57,7 +57,7 @@ export function checkNewSkill(input: CreateSkillInput): CreateSkillInput {
  * Whether `name` is taken in the library, by a skill's name or by any folder. Compared without
  * case, so a skill never lands next to one whose name differs only in case.
  */
-export function isSkillNameTaken(ctx: CoreContext, store: SkillStore, name: string): boolean {
+function isSkillNameTaken(ctx: CoreContext, store: SkillStore, name: string): boolean {
   const wanted = name.toLowerCase();
   const names = store
     .list()

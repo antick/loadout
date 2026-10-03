@@ -7,7 +7,7 @@ import { keys } from "@/lib/query-keys";
 import { toastError } from "@/lib/toast";
 
 /** A candidate the user picked, reduced to what linking needs. */
-export function choiceOf(candidate: SourceCandidate): SourceChoice {
+function choiceOf(candidate: SourceCandidate): SourceChoice {
   const { url, branch, subpath, marketRef, evidence } = candidate;
   return { url, branch, subpath, marketRef, evidence };
 }

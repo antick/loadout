@@ -1,7 +1,7 @@
 import { CLAWHUB_NAME, type Skill, type SkillSourceIdentity, skillSourceOf } from "@loadout/shared";
 
 /** Skills without a shared source (made here, imported from a folder) go under this key. */
-export const NO_SOURCE_GROUP = "__none__";
+const NO_SOURCE_GROUP = "__none__";
 
 export interface LibraryGroup {
   key: string;

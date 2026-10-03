@@ -3,7 +3,6 @@ export {
   type CliPublisher,
   type LauncherInput,
   type LauncherPlatform,
-  createCliPublisher,
   posixLauncher,
   windowsLauncher,
 } from "./cli-publish";

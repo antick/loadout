@@ -25,9 +25,9 @@ export type OwnershipPolicy =
   | { kind: "recorded"; mode: DeployMode }
   | { kind: "user_confirmed" };
 
-export const REASON_UNMANAGED = `is not managed by ${APP_NAME}`;
-export const REASON_MISMATCH = "does not match its recorded deployment";
-export const REASON_IRREPLACEABLE = "cannot be replaced";
+const REASON_UNMANAGED = `is not managed by ${APP_NAME}`;
+const REASON_MISMATCH = "does not match its recorded deployment";
+const REASON_IRREPLACEABLE = "cannot be replaced";
 
 /** Error codes that mean "this link is a directory entry", seen for junctions on Windows. */
 const UNLINK_AS_DIR_CODES: ReadonlySet<string> = new Set(["EPERM", "EISDIR"]);

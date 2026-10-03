@@ -8,7 +8,7 @@ import { readProjectFiles } from "./project-files";
 export { firstMatch } from "./glob";
 
 /** Skills the user said are not for the project. */
-export function dismissedSuggestions(ctx: CoreContext, projectId: string): string[] {
+function dismissedSuggestions(ctx: CoreContext, projectId: string): string[] {
   return ctx.settings.getRaw<string[]>(INTERNAL_KEYS.projectSuggestionsDismissed(projectId), []);
 }
 

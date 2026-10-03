@@ -8,7 +8,7 @@ export {
   AUTO_TICK_MS,
   createAutoUpdater,
 } from "./auto";
-export { type CheckOptions, type Checker, createChecker, isFresh } from "./check";
+export { type CheckOptions, type Checker } from "./check";
 export { MAX_DIFF_TEXT_BYTES, diffTrees } from "./diff";
 export type { LockMode } from "./locking";
 export {
@@ -16,8 +16,7 @@ export {
   approvalToken,
   isApproved,
   listRemovedPaths,
-  listReplacedEdits,
   sortRemovals,
 } from "./removals";
-export { type RemoteTarget, isRemoteSource, remoteTargetOf, sourceLabel } from "./source";
-export { type UpdateOptions, type Updater, createUpdater, updateCancelKey } from "./update";
+export { type RemoteTarget, isRemoteSource } from "./source";
+export { type UpdateOptions, type Updater, updateCancelKey } from "./update";

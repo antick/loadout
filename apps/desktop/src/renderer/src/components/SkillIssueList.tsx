@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 /** One problem in the app's words; the core's English `message` is for the CLI. */
-export function useIssueText(): (issue: SkillIssue) => string {
+function useIssueText(): (issue: SkillIssue) => string {
   const { t } = useTranslation();
   return (issue) =>
     t(`checks.code.${issue.code}`, { ...issue.params, defaultValue: issue.message });

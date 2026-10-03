@@ -57,7 +57,7 @@ const MAX_SKILL_FILE_BYTES = 2 * 1024 * 1024;
 const SITE_CONCURRENCY = 4;
 
 /** Folder name for a lone `SKILL.md`: the folder it sits in on the web, else `skill`. */
-export function skillFileFolderName(link: string): string {
+function skillFileFolderName(link: string): string {
   let segments: string[] = [];
   try {
     segments = decodeURIComponent(new URL(link).pathname).split("/").filter(Boolean);
@@ -77,7 +77,7 @@ export async function skillFileFolder(link: string, data: Buffer): Promise<Fetch
 }
 
 /** Download with every hop watched; says which other site, if any, the file finally came from. */
-export async function downloadWatched(
+async function downloadWatched(
   download: Download,
   link: string,
   options: DownloadOptions,

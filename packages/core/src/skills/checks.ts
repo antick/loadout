@@ -68,7 +68,7 @@ export function inspectSkillFolder(dir: string): SkillIssue[] {
 }
 
 /** Every check of one skill folder plus the frontmatter flags shown next to it. */
-export function inspectSkillFacts(dir: string): SkillFacts {
+function inspectSkillFacts(dir: string): SkillFacts {
   const frontmatter = readFrontmatter(dir);
   return {
     issues: inspectSkillFolder(dir),

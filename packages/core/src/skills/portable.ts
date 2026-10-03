@@ -102,12 +102,12 @@ export function isSafeRelativePath(path: unknown): path is string {
 }
 
 /** Edited paths from a file that may come from another device; anything unsafe is dropped. */
-export function readEditedFiles(value: unknown): string[] {
+function readEditedFiles(value: unknown): string[] {
   return Array.isArray(value) ? [...new Set(value.filter(isSafeRelativePath))].sort() : [];
 }
 
 /** Suggest-for patterns from a file that may come from another device; unusable ones dropped. */
-export function readSuggestFor(value: unknown): string[] {
+function readSuggestFor(value: unknown): string[] {
   return Array.isArray(value) ? cleanSuggestPatterns(value).sort() : [];
 }
 
@@ -117,7 +117,7 @@ export function readBlockedAgents(value: unknown): string[] {
 }
 
 /** The note from a file that may come from another device: trimmed and capped, or null. */
-export function readNote(value: unknown): string | null {
+function readNote(value: unknown): string | null {
   return cleanSkillNote(value);
 }
 
@@ -127,7 +127,7 @@ export function readFavoritedAt(value: unknown): number | null {
 }
 
 /** A metadata file may only name a plain folder directly inside the skills folder. */
-export function isSafeLibraryDirName(name: unknown): name is string {
+function isSafeLibraryDirName(name: unknown): name is string {
   return (
     typeof name === "string" &&
     name.length > 0 &&

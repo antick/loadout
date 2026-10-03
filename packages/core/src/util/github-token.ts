@@ -32,7 +32,7 @@ const FOUND_TTL_MS = 10 * 60_000;
 /** How long "no token" stands before looking again, e.g. after `gh auth login`. */
 const MISSING_TTL_MS = 60_000;
 /** Holds the token for the helper below; git passes its environment on to helpers. */
-export const TOKEN_ENV = "LOADOUT_GITHUB_TOKEN";
+const TOKEN_ENV = "LOADOUT_GITHUB_TOKEN";
 /** User name sent with a token. GitHub accepts any non-empty name next to one. */
 const TOKEN_USER = "x-access-token";
 /** Only answers `get`, so a rejected token is never "erased" from anywhere. */
@@ -114,8 +114,3 @@ export function createGitHubSignIn(
     },
   };
 }
-
-export const noGitHubSignIn: GitHubSignIn = {
-  origin: async () => null,
-  gitEnvironment: async () => ({}),
-};

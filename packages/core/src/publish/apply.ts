@@ -13,7 +13,7 @@ const EXECUTABLE_MODE = 0o755;
 const MESSAGE_NAMES_SHOWN = 4;
 
 /** `Add pdf`, `Update pdf and docx`, `Add a; update b, c and 2 more`. */
-export function commitMessage(plans: readonly PublishSkillPlan[]): string {
+function commitMessage(plans: readonly PublishSkillPlan[]): string {
   const list = (names: string[]): string => {
     const shown = names.slice(0, MESSAGE_NAMES_SHOWN);
     const rest = names.length - shown.length;

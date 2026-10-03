@@ -10,11 +10,7 @@ import { SECRETS_FILE, SINGLETON_LOCK_FILE, WEB_STORAGE_DIR, WINDOW_STATE_FILE }
  */
 
 /** What the old folder holds that the app still needs; the rest is Chromium cache. */
-export const CARRIED_ENTRIES: readonly string[] = [
-  SECRETS_FILE,
-  WINDOW_STATE_FILE,
-  WEB_STORAGE_DIR,
-];
+const CARRIED_ENTRIES: readonly string[] = [SECRETS_FILE, WINDOW_STATE_FILE, WEB_STORAGE_DIR];
 
 export interface AppDataMove {
   /** Entries copied into the new folder. */

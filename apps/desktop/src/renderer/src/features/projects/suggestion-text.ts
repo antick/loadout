@@ -2,7 +2,7 @@ import type { SkillSuggestion, SuggestionReason } from "@loadout/shared";
 import type { TFunction } from "i18next";
 
 /** "For React", "Has Cargo.toml", "Mentions Docker": why one skill fits. */
-export function reasonText(t: TFunction, reason: SuggestionReason): string {
+function reasonText(t: TFunction, reason: SuggestionReason): string {
   if (reason.kind === "pattern") {
     return reason.pattern === reason.match
       ? t("projectPage.suggestedSkills.reason.has", { path: reason.match })

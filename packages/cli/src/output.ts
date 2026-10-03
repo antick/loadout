@@ -54,7 +54,7 @@ export function plural(count: number, noun: string): string {
  * Text mode can carry names and descriptions a repository wrote, so control characters are shown
  * as spaces. JSON escapes them itself.
  */
-export function printResult(io: CliIo, json: boolean, value: unknown, text: string): void {
+function printResult(io: CliIo, json: boolean, value: unknown, text: string): void {
   io.stdout(`${json ? JSON.stringify(value ?? null) : terminalSafe(text)}\n`);
 }
 

@@ -40,12 +40,12 @@ import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
  * source preview so all three agree on what "the source" of a skill is.
  */
 
-export const MISSING_SOURCE_REF = "Local skill is missing its original source path";
+const MISSING_SOURCE_REF = "Local skill is missing its original source path";
 export const SOURCE_PATH_GONE = "Original source path no longer exists";
 /** Revision label of a source that is a folder on this machine. */
-export const WORKSPACE_REVISION = "workspace";
+const WORKSPACE_REVISION = "workspace";
 /** Revision label of an archive link: whatever the link serves right now. */
-export const LINK_REVISION = "latest";
+const LINK_REVISION = "latest";
 
 const REMOTE_TYPES: ReadonlySet<SourceType> = new Set(["git", "marketplace", "clawhub"]);
 const SOURCE_LABELS: Record<SourceType, string> = {

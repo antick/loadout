@@ -43,7 +43,7 @@ function encodePath(path: string): string {
 }
 
 /** Audits from the marketplace's answer; entries without a provider are left out. */
-export function parseAudits(body: unknown, pageUrl: string): MarketAudit[] {
+function parseAudits(body: unknown, pageUrl: string): MarketAudit[] {
   const list = isRecord(body) && Array.isArray(body.audits) ? body.audits : [];
   return list.flatMap((entry): MarketAudit[] => {
     if (!isRecord(entry)) return [];
@@ -85,7 +85,7 @@ function folderOf(path: string): string {
 }
 
 /** Candidate `SKILL.md` paths for `skillId` among a repository's files. */
-export function documentCandidates(paths: readonly string[], skillId: string): DocumentCandidates {
+function documentCandidates(paths: readonly string[], skillId: string): DocumentCandidates {
   const documents = paths.filter((path) => path.split("/").at(-1)?.toLowerCase() === SKILL_FILE);
   const id = skillId.toLowerCase();
   const named = documents.filter((path) => folderOf(path) === id).sort(byLength);
@@ -99,7 +99,7 @@ export function documentCandidates(paths: readonly string[], skillId: string): D
 }
 
 /** The `name` in a document's frontmatter, or null. */
-export function frontmatterName(content: string): string | null {
+function frontmatterName(content: string): string | null {
   const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)?.[1] ?? "";
   const name = /^name:\s*["']?([^"'\r\n]+?)["']?\s*$/m.exec(block)?.[1];
   return name?.trim() || null;

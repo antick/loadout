@@ -1,4 +1,3 @@
 export { type OriginDeps, type OriginFinder, createOriginFinder } from "./service";
 export { textSimilarity } from "./similarity";
-export { type SourceLead, gitFolderLead, linkLeads, remoteUrlOf } from "./evidence";
-export { lockFileLead, lockFilePaths } from "./lock";
+export { type SourceLead, linkLeads, remoteUrlOf } from "./evidence";

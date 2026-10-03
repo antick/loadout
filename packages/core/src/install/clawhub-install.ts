@@ -30,7 +30,7 @@ export interface ClawhubInstallerDeps {
 }
 
 /** Progress and cancel key of a ClawHub install, as the app names it. */
-export function clawhubTaskKey(owner: string, slug: string): string {
+function clawhubTaskKey(owner: string, slug: string): string {
   return `clawhub:${owner}/${slug}`;
 }
 

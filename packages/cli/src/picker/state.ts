@@ -56,7 +56,7 @@ export type PickerStep =
 
 export const NOTHING_TICKED = "Tick at least one skill, or press Esc to cancel.";
 /** Lines one Page Up / Page Down moves. */
-export const PAGE_LINES = 10;
+const PAGE_LINES = 10;
 const PRINTABLE = /^[\p{L}\p{N}\p{P}\p{S} ]$/u;
 
 export function createPickerState(request: PickRequest): PickerState {

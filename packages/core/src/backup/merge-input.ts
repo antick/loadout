@@ -40,7 +40,7 @@ export interface PlannedMerge {
   plan: MergePlan;
 }
 
-export function collect<T>(
+function collect<T>(
   sides: { base: Map<string, T>; ours: Map<string, T>; theirs: Map<string, T> },
   skip: (key: string) => boolean = () => false,
 ): Map<string, { base?: T; ours?: T; theirs?: T }> {
@@ -120,7 +120,7 @@ export function planSides(
 }
 
 /** Skills here that the merge would take out because another device deleted them. */
-export function departingSkills(planned: PlannedMerge): string[] {
+function departingSkills(planned: PlannedMerge): string[] {
   return planned.plan.skills
     .filter((item) => item.outcome === "deleted" && planned.skills.get(item.id)?.ours)
     .map((item) => item.id);

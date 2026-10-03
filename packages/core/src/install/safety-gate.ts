@@ -8,7 +8,7 @@ import type { InstallIntoLibrary, InstallRequest } from "./library";
 export type SafetyGate = Pick<SafetyService, "check" | "remember">;
 
 /** What a batch import says about a skill the safety check flagged. */
-export const FLAGGED_IN_BATCH =
+const FLAGGED_IN_BATCH =
   "Flagged by the safety check, so it was not imported. Import it on its own to read the findings.";
 
 /** The name a skill is checked under: the one it is given, else its frontmatter name. */

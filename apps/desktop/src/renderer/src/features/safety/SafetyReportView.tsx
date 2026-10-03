@@ -12,12 +12,12 @@ import { useTranslation } from "react-i18next";
 import { StatusBadge, type StatusTone } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
-export const VERDICT_TONES: Record<SafetyVerdict, StatusTone> = {
+const VERDICT_TONES: Record<SafetyVerdict, StatusTone> = {
   safe: "success",
   caution: "warning",
   unsafe: "danger",
 };
-export const VERDICT_ICONS = {
+const VERDICT_ICONS = {
   safe: ShieldCheck,
   caution: ShieldQuestion,
   unsafe: ShieldAlert,

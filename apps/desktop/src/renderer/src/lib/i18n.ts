@@ -3,7 +3,7 @@ import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "@/locales/en.json";
 
-export const FALLBACK_LANGUAGE: LanguageSetting = "en";
+const FALLBACK_LANGUAGE: LanguageSetting = "en";
 
 /** Languages the UI ships. To add one: drop `<code>.json` in `locales/`, add it here and below. */
 export const LANGUAGES: readonly { code: LanguageSetting; label: string }[] = [

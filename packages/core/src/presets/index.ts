@@ -5,4 +5,4 @@ export {
   createPresetsService,
 } from "./service";
 export { createPresetSharing } from "./share";
-export { type PresetFields, PresetStore } from "./store";
+export { type PresetFields } from "./store";

@@ -18,7 +18,7 @@ import type { StoredItem } from "./library";
 import type { ItemPlacement } from "./placement";
 
 /** Added to a file Loadout replaced on request: kept beside it, read by no agent. */
-export const REPLACED_SUFFIX = ".loadout-old";
+const REPLACED_SUFFIX = ".loadout-old";
 
 /** What is at a target path, by the hash of its text. */
 type FileAtTarget = { kind: "absent" } | { kind: "file"; hash: string } | { kind: "other" };

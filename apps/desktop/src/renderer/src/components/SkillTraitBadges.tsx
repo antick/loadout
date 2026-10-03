@@ -19,7 +19,7 @@ const TRAIT_ICONS: Record<SkillTraitCode, LucideIcon> = {
 };
 
 /** One trait in the app's words; the core's English `message` is for the CLI. */
-export function useTraitText(): (trait: SkillTrait) => string {
+function useTraitText(): (trait: SkillTrait) => string {
   const { t } = useTranslation();
   return (trait) => {
     const extra = Number(trait.params.count ?? 0) - TRAIT_EXAMPLES_MAX;

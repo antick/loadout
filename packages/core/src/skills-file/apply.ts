@@ -24,7 +24,7 @@ const BLOCK_END = `# <<< ${APP_NAME}`;
  * Rewrite our marked block in `.gitignore`: the folders written, or no block at all when `folders`
  * is empty. Lines outside the block are never touched.
  */
-export function updateGitignore(root: string, folders: readonly string[]): void {
+function updateGitignore(root: string, folders: readonly string[]): void {
   const path = join(root, GITIGNORE);
   const text = statOrNull(path)?.isFile() ? readFileSync(path, "utf8") : "";
   const eol = text.includes("\r\n") ? "\r\n" : "\n";

@@ -24,7 +24,7 @@ export type BatchApply = (
   options?: ApplyOptions,
 ) => Promise<ApplyResult>;
 
-export const REASON_TWO_SKILLS = "is claimed by two different skills";
+const REASON_TWO_SKILLS = "is claimed by two different skills";
 const MISSING_SKILL_MESSAGE = "This skill is no longer in the library";
 
 const emptyResult = (): ApplyResult => ({

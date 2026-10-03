@@ -48,11 +48,11 @@ export interface UsageLookup {
   byId: ReadonlyMap<string, SkillUsage>;
 }
 
-export const NO_USAGE: UsageLookup = { enabled: false, byId: new Map() };
+const NO_USAGE: UsageLookup = { enabled: false, byId: new Map() };
 
 /** The last safety report of each skill by id; a report that still holds and is not "safe". */
 export type SafetyLookup = ReadonlyMap<string, SafetyRecord>;
-export const NO_SAFETY: SafetyLookup = new Map();
+const NO_SAFETY: SafetyLookup = new Map();
 
 export function isSafetyFlagged(skill: Pick<Skill, "id">, safety: SafetyLookup): boolean {
   const record = safety.get(skill.id);
@@ -97,7 +97,7 @@ export function needsAttention(skill: Skill): boolean {
 
 /** Agent keys that can take skills right now; "on every agent" is measured against these. */
 export type AgentKeys = ReadonlySet<string>;
-export const NO_AGENTS: AgentKeys = new Set();
+const NO_AGENTS: AgentKeys = new Set();
 
 /**
  * Every agent that can take the skill has it. Agents it is blocked for do not count against it,

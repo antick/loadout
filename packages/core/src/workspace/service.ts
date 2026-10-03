@@ -70,7 +70,7 @@ const STATUS_ORDER: readonly SyncStatus[] = [
 
 const scanOptions = (agent: ResolvedAgent): ScanOptions => ({ recursive: agent.recursiveScan });
 
-export function sortByAttention(skills: LocalSkill[]): LocalSkill[] {
+function sortByAttention(skills: LocalSkill[]): LocalSkill[] {
   return [...skills].sort(
     (a, b) =>
       STATUS_ORDER.indexOf(a.syncStatus) - STATUS_ORDER.indexOf(b.syncStatus) ||

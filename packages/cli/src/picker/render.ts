@@ -38,7 +38,7 @@ export const PLAIN_STYLES: Styles = {
   warn: same,
 };
 
-export const KEY_HELP = "↑↓ move · space tick · a all/none · / filter · enter install · esc cancel";
+const KEY_HELP = "↑↓ move · space tick · a all/none · / filter · enter install · esc cancel";
 const FILTER_HELP = "Type to filter · enter keep · esc clear";
 const CURSOR = "❯";
 const TOP_FOLDER = "(top level)";

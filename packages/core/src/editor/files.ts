@@ -64,7 +64,7 @@ export function segmentsOf(path: string): string[] {
 }
 
 /** Resolve a file of the folder, refusing anything outside it, links and ignored names. */
-export function locate(folder: EditableFolder, path: unknown): LocatedFile {
+function locate(folder: EditableFolder, path: unknown): LocatedFile {
   if (typeof path !== "string" || !path.trim()) throw invalid("A file path is required");
   const segments = segmentsOf(path);
   const relative = segments.join("/");
@@ -122,7 +122,7 @@ function readLocated(file: LocatedFile): Buffer {
   return readFileSync(file.absolute);
 }
 
-export function changedOnDisk(path: string, currentHash: string): AppError {
+function changedOnDisk(path: string, currentHash: string): AppError {
   return new AppError(
     "CHANGED_ON_DISK",
     `${path} changed on disk after you opened it. Reload it, or save again to overwrite it.`,
@@ -155,7 +155,7 @@ export function mainDocumentOf(dir: string): string | null {
 }
 
 /** Every content file of the folder, main document first. */
-export function listFiles(dir: string, edited: ReadonlySet<string> = new Set()): SkillFileEntry[] {
+function listFiles(dir: string, edited: ReadonlySet<string> = new Set()): SkillFileEntry[] {
   const main = mainDocumentOf(dir);
   const entries = listContentFiles(dir).map((file): SkillFileEntry => ({
     path: file.relativePath,

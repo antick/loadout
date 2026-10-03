@@ -4,7 +4,7 @@ import type { ProjectFiles } from "./project-files";
 import { TECHS, type Tech } from "./tech";
 
 /** Technologies the project shows, in table order. */
-export function detectTechs(files: ProjectFiles): Tech[] {
+function detectTechs(files: ProjectFiles): Tech[] {
   return TECHS.filter(
     (tech) =>
       (tech.packages ?? []).some((name) => files.packages.has(name.toLowerCase())) ||
