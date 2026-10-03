@@ -11,16 +11,13 @@ import { reloadHintForAvailable } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 import { toastApplyResult, toastError, toastSuccess } from "@/lib/toast";
+import { type CacheSnapshot, patchCached, restoreCached } from "@/lib/optimistic";
 
 export interface PresetSkillsInput {
   preset: Preset;
   skillIds: string[];
   /** Skip the success toast, e.g. for a checkbox that already shows the new state. */
   silent?: boolean;
-}
-
-interface PresetListContext {
-  previous?: Preset[];
 }
 
 /** Membership shows up on presets and on each skill's `presetIds`. */
@@ -30,21 +27,16 @@ function invalidateMembership(queryClient: QueryClient): void {
 }
 
 /** Replace one preset's skill ids in the cached list before the backend answers. */
-async function patchPresetSkills(
+function patchPresetSkills(
   queryClient: QueryClient,
   presetId: string,
   next: (skillIds: string[]) => string[],
-): Promise<PresetListContext> {
-  await queryClient.cancelQueries({ queryKey: keys.presets.all });
-  const previous = queryClient.getQueryData<Preset[]>(keys.presets.all);
-  if (!previous) return {};
-  queryClient.setQueryData<Preset[]>(
-    keys.presets.all,
-    previous.map((preset) =>
+): Promise<CacheSnapshot> {
+  return patchCached<Preset[]>(queryClient, keys.presets.all, (presets) =>
+    presets.map((preset) =>
       preset.id === presetId ? { ...preset, skillIds: next(preset.skillIds) } : preset,
     ),
   );
-  return { previous };
 }
 
 /** Add skills to a preset. Nothing is deployed: a preset is only a named set. */
@@ -68,7 +60,7 @@ export function useRemoveSkillsFromPreset(): UseMutationResult<
   void,
   unknown,
   PresetSkillsInput,
-  PresetListContext
+  CacheSnapshot
 > {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -84,7 +76,7 @@ export function useRemoveSkillsFromPreset(): UseMutationResult<
       toastSuccess(t("presetPage.skillsRemoved", { count: skillIds.length, name: preset.name }));
     },
     onError: (error, _input, context) => {
-      if (context?.previous) queryClient.setQueryData(keys.presets.all, context.previous);
+      restoreCached(queryClient, context);
       toastError(error, "presetPage.errors.removeSkills");
     },
     onSettled: () => invalidateMembership(queryClient),
@@ -96,14 +88,14 @@ export function useReorderPresetSkills(): UseMutationResult<
   void,
   unknown,
   { presetId: string; skillIds: string[] },
-  PresetListContext
+  CacheSnapshot
 > {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ presetId, skillIds }) => api.presets.reorderSkills(presetId, skillIds),
     onMutate: ({ presetId, skillIds }) => patchPresetSkills(queryClient, presetId, () => skillIds),
     onError: (error, _input, context) => {
-      if (context?.previous) queryClient.setQueryData(keys.presets.all, context.previous);
+      restoreCached(queryClient, context);
       toastError(error, "errors.reorder");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.presets.root }),
@@ -122,30 +114,21 @@ export function useSetPresetToggle(): UseMutationResult<
   void,
   unknown,
   SetPresetToggleInput,
-  { previous?: PresetAgentToggle[] }
+  CacheSnapshot
 > {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ presetId, skillId, agentKey, enabled }: SetPresetToggleInput) =>
       api.presets.setToggle(presetId, skillId, agentKey, enabled),
-    onMutate: async ({ presetId, skillId, agentKey, enabled }) => {
-      const queryKey = keys.presets.toggles(presetId, skillId);
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<PresetAgentToggle[]>(queryKey);
-      if (previous) {
-        queryClient.setQueryData<PresetAgentToggle[]>(
-          queryKey,
-          previous.map((toggle) =>
-            toggle.agentKey === agentKey ? { ...toggle, enabled } : toggle,
-          ),
-        );
-      }
-      return { previous };
-    },
-    onError: (error, { presetId, skillId }, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(keys.presets.toggles(presetId, skillId), context.previous);
-      }
+    onMutate: ({ presetId, skillId, agentKey, enabled }) =>
+      patchCached<PresetAgentToggle[]>(
+        queryClient,
+        keys.presets.toggles(presetId, skillId),
+        (toggles) =>
+          toggles.map((toggle) => (toggle.agentKey === agentKey ? { ...toggle, enabled } : toggle)),
+      ),
+    onError: (error, _input, context) => {
+      restoreCached(queryClient, context);
       toastError(error, "presetPage.errors.toggle");
     },
     onSettled: (_result, _error, { presetId, skillId }) =>

@@ -16,6 +16,7 @@ import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
 
 export interface SetSkillTagsInput {
   skillId: string;
@@ -56,25 +57,15 @@ export interface SetFavoriteInput {
   favorite: boolean;
 }
 
-interface FavoriteContext {
-  previous?: Skill[];
-}
-
-/** Flip the star in the cached skill list before the backend answers. */
-async function flipFavorite(
+/** Flip the star wherever the skill is cached, before the backend answers. */
+function flipFavorite(
   queryClient: QueryClient,
   { skillId, favorite }: SetFavoriteInput,
-): Promise<FavoriteContext> {
-  await queryClient.cancelQueries({ queryKey: keys.skills.all });
-  const previous = queryClient.getQueryData<Skill[]>(keys.skills.all);
-  if (!previous) return {};
-  queryClient.setQueryData<Skill[]>(
-    keys.skills.all,
-    previous.map((skill) =>
-      skill.id === skillId ? { ...skill, favoritedAt: favorite ? Date.now() : null } : skill,
-    ),
-  );
-  return { previous };
+): Promise<CacheSnapshot> {
+  return patchCachedSkill(queryClient, skillId, (skill) => ({
+    ...skill,
+    favoritedAt: favorite ? Date.now() : null,
+  }));
 }
 
 /** Make a skill a favourite or take that back; the star flips at once and rolls back on failure. */
@@ -82,7 +73,7 @@ export function useSetFavorite(): UseMutationResult<
   Skill,
   unknown,
   SetFavoriteInput,
-  FavoriteContext
+  CacheSnapshot
 > {
   const queryClient = useQueryClient();
   return useMutation({
@@ -90,7 +81,7 @@ export function useSetFavorite(): UseMutationResult<
       api.skills.setFavorite(skillId, favorite),
     onMutate: (input) => flipFavorite(queryClient, input),
     onError: (error, _input, context) => {
-      if (context?.previous) queryClient.setQueryData(keys.skills.all, context.previous);
+      restoreCached(queryClient, context);
       toastError(error, "library.favorites.errors.save");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
