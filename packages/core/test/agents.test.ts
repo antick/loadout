@@ -4,19 +4,9 @@ import { join } from "node:path";
 import { AGENT_PRIORITY_ORDER, BUILT_IN_AGENTS } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AgentRegistry, normalizeProjectDir } from "../src/agents";
-import { AppError } from "../src/errors";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
-import { writeFile } from "./helpers";
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
-}
+import { writeFile, rejection } from "./helpers";
 
 describe("agents service", () => {
   let world: DeployWorld;

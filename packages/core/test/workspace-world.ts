@@ -1,7 +1,5 @@
 import { lstatSync, readFileSync, utimesSync } from "node:fs";
 import { join } from "node:path";
-import { expect } from "vitest";
-import { AppError } from "../src/errors";
 import { installIntoLibrary } from "../src/install/library";
 import { type PresetsService, createPresetsService } from "../src/presets";
 import { type ProjectsService, createProjectsService } from "../src/projects";
@@ -42,14 +40,7 @@ export function setContentMtime(skillDir: string, mtimeMs: number): void {
 }
 
 /** The `AppError` a call is expected to fail with. */
-export async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
-}
+export { rejection } from "./helpers";
 
 export const isLink = (path: string): boolean => lstatSync(path).isSymbolicLink();
 export const skillText = (dir: string): string => readFileSync(join(dir, "SKILL.md"), "utf8");

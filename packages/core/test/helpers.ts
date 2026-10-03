@@ -1,7 +1,9 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { expect } from "vitest";
 import { type ContextBundle, createContext } from "../src/create-context";
+import { AppError } from "../src/errors";
 import { silentLogger } from "../src/log";
 
 /** A throwaway folder, removed by the returned cleanup. */
@@ -70,4 +72,14 @@ export function createTestWorld(): TestWorld {
       temp.cleanup();
     },
   };
+}
+
+/** The `AppError` a promise rejects with; fails the test when it resolves or throws anything else. */
+export async function rejection(promise: Promise<unknown>): Promise<AppError> {
+  const error = await promise.then(
+    () => null,
+    (thrown: unknown) => thrown,
+  );
+  expect(error).toBeInstanceOf(AppError);
+  return error as AppError;
 }

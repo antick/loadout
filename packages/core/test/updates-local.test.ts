@@ -2,10 +2,9 @@ import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node
 import { join } from "node:path";
 import { MARKETPLACE_NAME, type Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AppError } from "../src/errors";
 import { LIBRARY_LOCATION, MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates";
 import { hashDir } from "../src/util/hash";
-import { makeSkill, writeFile } from "./helpers";
+import { makeSkill, writeFile, rejection } from "./helpers";
 import { commitAll, leftoverCheckouts, writeZip } from "./install-fixtures";
 import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -22,15 +21,6 @@ beforeEach(() => {
 afterEach(() => world.restore());
 
 const installLocal = (): Promise<Skill> => world.install.api.fromPath(sourceDir);
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
-}
 
 describe("check of local sources", () => {
   it("compares the source folder with the library", async () => {

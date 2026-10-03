@@ -2,12 +2,11 @@ import { cpSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { MarketListing, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AppError } from "../src/errors";
 import { createOriginFinder, linkLeads, remoteUrlOf, textSimilarity } from "../src/origin";
 import { gitFolderLead } from "../src/origin/evidence";
 import { lockFileLead, lockFilePaths } from "../src/origin/lock";
 import { hashDir } from "../src/util/hash";
-import { makeSkill, writeFile } from "./helpers";
+import { makeSkill, writeFile, rejection } from "./helpers";
 import { commitAll, git, initRepo } from "./install-fixtures";
 import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -38,15 +37,6 @@ function importedPdf(options: { body?: string; sourceRef?: string | null } = {})
 }
 
 const upstreamDocument = (): string => readFileSync(pdfInRemote("SKILL.md"), "utf8");
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
-}
 
 describe("evidence", () => {
   it("reads the origin remote of a Git config, else the first remote", () => {

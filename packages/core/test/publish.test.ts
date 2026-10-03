@@ -2,12 +2,11 @@ import { existsSync, mkdirSync, readFileSync, statSync, symlinkSync, writeFileSy
 import { join } from "node:path";
 import type { PublishInput, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AppError } from "../src/errors";
 import { type PublishHooks, type PublishService, createPublishService } from "../src/publish";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import { hashDir } from "../src/util/hash";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
-import { writeFile } from "./helpers";
+import { writeFile, rejection } from "./helpers";
 import { commitAll, git, initRepo, redirectGithubTo } from "./install-fixtures";
 
 /** A token-shaped string the key check recognises and does not take for a documentation example. */
@@ -57,15 +56,6 @@ const commits = (repo = remote, branch = "main"): string[] =>
 
 function publishInput(skills: Skill[], extra: Partial<PublishInput> = {}): PublishInput {
   return { skillIds: skills.map((skill) => skill.id), repo: remote, ...extra };
-}
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
 }
 
 beforeEach(() => {

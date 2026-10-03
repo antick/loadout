@@ -1,9 +1,9 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppError, cancelled } from "../src/errors";
+import { cancelled } from "../src/errors";
 import { LIBRARY_LOCATION, updateCancelKey } from "../src/updates";
-import { makeSkill, writeFile } from "./helpers";
+import { makeSkill, writeFile, rejection } from "./helpers";
 import { commitAll, git, leftoverCheckouts } from "./install-fixtures";
 import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -24,15 +24,6 @@ function changePdfUpstream(content = "echo pdf v2\n"): string {
 function dropNotesUpstream(): string {
   rmSync(pdfInRemote("notes"), { recursive: true });
   return commitAll(world.remote, "pdf: drop notes");
-}
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
 }
 
 describe("check", () => {

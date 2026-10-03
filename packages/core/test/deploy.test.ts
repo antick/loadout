@@ -10,24 +10,14 @@ import {
   removeTarget,
   writeTarget,
 } from "../src/deploy";
-import { AppError } from "../src/errors";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
-import { makeSkill, tempDir, writeFile } from "./helpers";
+import { makeSkill, tempDir, writeFile, rejection } from "./helpers";
 
 const UNMANAGED = `is not managed by ${APP_NAME}`;
 const MISMATCH = "does not match its recorded deployment";
 const IRREPLACEABLE = "cannot be replaced";
 
 const isLink = (path: string): boolean => lstatSync(path).isSymbolicLink();
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
-}
 
 const recorded = (mode: DeployMode): OwnershipPolicy => ({ kind: "recorded", mode });
 

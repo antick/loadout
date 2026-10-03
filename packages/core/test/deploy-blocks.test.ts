@@ -2,11 +2,11 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { planSkill } from "../src/backup/merge-plan";
-import { AppError } from "../src/errors";
 import { blockedFindings } from "../src/health/blocked";
 import { readBlockedAgents } from "../src/skills/portable";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { skillRecord } from "./skill-records";
+import { rejection } from "./helpers";
 
 let world: DeployWorld;
 const claudeTarget = (dirName: string): string => join(world.home, ".claude", "skills", dirName);
@@ -17,15 +17,6 @@ beforeEach(() => {
   world.installAgents(".claude", ".cline");
 });
 afterEach(() => world.cleanup());
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
-}
 
 describe("blocking a skill for an agent", () => {
   it("removes what Loadout deployed there and keeps the other agents", async () => {

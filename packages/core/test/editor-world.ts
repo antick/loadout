@@ -1,7 +1,5 @@
 import type { SkillLocation } from "@loadout/shared";
-import { expect } from "vitest";
 import { type EditorService, createEditorService, createFileHistory } from "../src/editor";
-import { AppError } from "../src/errors";
 import { createInstructionFinder } from "../src/instructions";
 import { ProjectStore } from "../src/projects/store";
 import { type SkillsService, createSkillsService } from "../src/skills/service";
@@ -45,11 +43,4 @@ export function createEditorWorld(): EditorWorld {
 export const libraryLocation = (skillId: string): SkillLocation => ({ kind: "library", skillId });
 
 /** The AppError a call was refused with. */
-export async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  const error = await promise.then(
-    () => null,
-    (thrown: unknown) => thrown,
-  );
-  expect(error).toBeInstanceOf(AppError);
-  return error as AppError;
-}
+export { rejection } from "./helpers";

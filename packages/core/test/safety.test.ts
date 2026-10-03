@@ -2,7 +2,6 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "n
 import { join } from "node:path";
 import type { SafetyReport } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AppError } from "../src/errors";
 import {
   type SafetyService,
   createSafetyService,
@@ -10,7 +9,7 @@ import {
   parseReport,
   runScanner,
 } from "../src/safety";
-import { type TestWorld, createTestWorld, makeSkill } from "./helpers";
+import { type TestWorld, createTestWorld, makeSkill, rejection } from "./helpers";
 import {
   type InstallHarness,
   commitAll,
@@ -117,16 +116,6 @@ afterEach(() => {
   restoreTmp();
   world.cleanup();
 });
-
-async function rejection(promise: Promise<unknown>): Promise<AppError> {
-  try {
-    await promise;
-  } catch (error) {
-    if (error instanceof AppError) return error;
-    throw error;
-  }
-  throw new Error("expected a rejection");
-}
 
 describe("reading SkillSpector reports", () => {
   it("turns the scanner's JSON into a report, worst findings first", () => {
