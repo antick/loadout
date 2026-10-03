@@ -13,9 +13,6 @@
       "done": "Fixed the frontmatter of {{name}}",
       "failed": "Couldn't save the fix"
     },
-    "allGood": "No problems found.",
-    "errors_one": "{{count}} error",
-    "errors_other": "{{count}} errors",
     "warnings_one": "{{count}} warning",
     "warnings_other": "{{count}} warnings",
     "badge": "Needs fixing",

@@ -15,7 +15,6 @@
       "toggle": "Could not change usage tracking."
     },
     "detail": {
-      "title": "Use",
       "runs_one": "{{count}} run",
       "runs_other": "{{count}} runs",
       "recent_one": "{{count}} in the last {{days}} days",

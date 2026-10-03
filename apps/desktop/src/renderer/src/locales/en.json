@@ -16,8 +16,6 @@
     "openInDefaultApp": "Open in default app",
     "undo": "Undo",
     "close": "Close",
-    "more": "More",
-    "sidebar": "Sidebar",
     "toggleSidebar": "Toggle sidebar",
     "resizeHint": "Drag to resize. Double-click to reset.",
     "moveUp": "Move up",
@@ -49,11 +47,9 @@
   "nav": {
     "dashboard": "Dashboard",
     "library": "Library",
-    "install": "Install",
     "agents": "Agents",
     "allAgents": "All agents",
     "assistants": "Assistants",
-    "presets": "Presets",
     "projects": "Projects",
     "backup": "Backup",
     "settings": "Settings",
@@ -62,8 +58,7 @@
   "shell": {
     "toggleSidebar": "Toggle sidebar",
     "searchTrigger": "Search or run a command",
-    "version": "v{{version}}",
-    "placeholder": "This screen is on its way."
+    "version": "v{{version}}"
   },
   "source": {
     "local": "Local",
@@ -208,7 +203,6 @@
   "projects": {
     "link": "Link project",
     "linkTitle": "Link a project",
-    "linkDescription": "Choose a project folder to manage the skills inside it.",
     "remove": "Remove project",
     "pin": "Pin to the top",
     "unpin": "Unpin",

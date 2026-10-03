@@ -1,6 +1,5 @@
 {
   "settings": {
-    "navLabel": "Settings sections",
     "sections": {
       "agents": {
         "title": "Agents",
