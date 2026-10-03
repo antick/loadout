@@ -2,6 +2,7 @@ export * from "./agents";
 export * from "./api";
 export * from "./api-app";
 export * from "./api-backup";
+export * from "./api-install";
 export * from "./constants";
 export * from "./errors";
 export * from "./events";
