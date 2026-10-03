@@ -40,6 +40,8 @@ export interface MergeResult {
   committed: boolean;
   /** The library now holds something it did not hold before. */
   changed: boolean;
+  /** The remote-tracking commit merged from; null when there is none yet. */
+  upstream: string | null;
 }
 
 const UP_TO_DATE: MergeSummary = {
@@ -269,6 +271,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     summary: { ...UP_TO_DATE, pendingTotal: countConflicts(env.ctx.db) },
     committed,
     changed: false,
+    upstream: theirs,
   });
   if (!ours || !theirs || ours === theirs) return idle();
 
@@ -295,7 +298,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
       pendingTotal: countConflicts(env.ctx.db),
     };
     await env.reconcile(true);
-    return { summary, committed, changed: true };
+    return { summary, committed, changed: true, upstream: theirs };
   }
 
   const planned = planSides(env, sides, new Set(review?.keep ?? []));
@@ -376,5 +379,6 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     },
     committed,
     changed: true,
+    upstream: theirs,
   };
 }

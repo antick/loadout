@@ -16,8 +16,6 @@ import {
   commitLibrary,
   originUrl,
   requireBranch,
-  resolveCommit,
-  upstreamRef,
 } from "./repo";
 import { scanForPush, scanUncommittedChanges, secretsFound } from "./secrets";
 import { refreshIgnoreFile } from "./size";
@@ -48,8 +46,12 @@ function combine(earlier: MergeSummary | null, later: MergeSummary): MergeSummar
 /** Download the remote's state. The only thing it changes locally are remote-tracking refs. */
 export async function fetchRemote(env: BackupEnv): Promise<void> {
   assertRepo(env);
-  if (!(await originUrl(env))) return;
-  await env.git.run(["fetch", "--prune", REMOTE_NAME], { network: true });
+  if (await originUrl(env)) await fetchOrigin(env);
+}
+
+/** `fetchRemote` for a caller that already knows there is a remote. */
+function fetchOrigin(env: BackupEnv): Promise<void> {
+  return env.git.run(["fetch", "--prune", REMOTE_NAME], { network: true }).then(() => undefined);
 }
 
 /** Fetch, then merge what arrived. */
@@ -81,7 +83,9 @@ async function runSync(
   // A key caught before it is committed can still simply be removed; once committed, it would
   // travel with the history even after removal. Without a remote nothing leaves the computer.
   reportStage(env, "preparing");
-  if (await originUrl(env)) {
+  // Asked once: every git call costs a process, and a sync makes dozens.
+  const hasRemote = (await originUrl(env)) !== null;
+  if (hasRemote) {
     // The ignore list first: a skill back under the size limit stops being ignored now, and must
     // be checked before the commit takes it in.
     await lock.run("backup ignore list", () => refreshIgnoreFile(env));
@@ -104,13 +108,13 @@ async function runSync(
   // snapshotted still deserves a restore point the first time the user backs up.
   const needsSnapshot = async (): Promise<boolean> => changed || !(await snapshotAtHead(env));
 
-  if (!(await originUrl(env))) {
+  if (!hasRemote) {
     if (await needsSnapshot()) snapshot = await takeSnapshot();
   } else {
     const branch = await requireBranch(env);
     for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
       reportStage(env, "downloading");
-      await fetchRemote(env);
+      await fetchOrigin(env);
       reportStage(env, "merging");
       const result = await lock.run("backup merge", () =>
         whileMerging(env, () => mergeRemote(env, review)),
@@ -120,9 +124,8 @@ async function runSync(
       changed ||= result.committed || result.changed;
       if (await needsSnapshot()) snapshot = await takeSnapshot();
 
-      const upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
       const { ahead } = await aheadBehind(env, branch);
-      if (upstream && ahead === 0) break;
+      if (result.upstream && ahead === 0) break;
 
       // Everything this push sends, commits made while there was no remote included.
       const secrets = await scanForPush(env, branch);
