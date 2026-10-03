@@ -1,5 +1,5 @@
 import { isAbsolute } from "node:path";
-import { APP_NAME } from "@loadout/shared";
+import { APP_NAME, redactUrl } from "@loadout/shared";
 import type { SecretStore } from "../context";
 import { AppError, invalid } from "../errors";
 
@@ -24,7 +24,7 @@ const SCP_LIKE_PATTERN = /^[\w.-]+@([\w.-]+):.+$/;
 const HTTP_PATTERN = /^https?:\/\//i;
 const SSH_PATTERN = /^ssh:\/\//i;
 const FILE_PATTERN = /^file:\/\//i;
-const URL_CREDENTIALS_PATTERN = /([a-z][a-z0-9+.-]*:\/\/)[^/\s@]+@/gi;
+const MASKED_CREDENTIALS = "***@";
 
 export type RemoteKind = "http" | "ssh" | "local";
 
@@ -202,7 +202,7 @@ export async function authEnvironment(
   };
 }
 
-/** Hide `user:password@` in anything shown or logged. */
+/** Hide `user:password@` in anything shown or logged, keeping a mark that there were some. */
 export function maskUrlCredentials(text: string): string {
-  return text.replace(URL_CREDENTIALS_PATTERN, "$1***@");
+  return redactUrl(text, MASKED_CREDENTIALS);
 }

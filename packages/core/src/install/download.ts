@@ -1,7 +1,8 @@
 import { setTimeout as sleep } from "node:timers/promises";
-import { APP_SLUG, formatBytes } from "@loadout/shared";
+
+import { APP_SLUG, formatBytes, redactUrl } from "@loadout/shared";
+
 import { AppError, cancelled, errorMessage, invalid, notFound } from "../errors";
-import { redactUrl } from "./git-source";
 
 export interface DownloadOptions {
   signal?: AbortSignal;

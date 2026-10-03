@@ -317,8 +317,3 @@ export function repoNameFromUrl(url: string): string {
   const normalized = normalizeRepoUrl(url);
   return normalized.slice(Math.max(normalized.lastIndexOf("/"), normalized.lastIndexOf(":")) + 1);
 }
-
-/** Hide `user:token@` so credentials never reach a message or the log. */
-export function redactUrl(url: string): string {
-  return url.replace(/\b([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/gi, "$1");
-}

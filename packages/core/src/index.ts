@@ -17,7 +17,6 @@ export { diffTrees } from "./updates/diff";
 export { checkHealth } from "./health/doctor";
 export { canonicalPath, isInside } from "./util/fs";
 export { previewLibrary } from "./install/fetched-preview";
-export { redactUrl } from "./install/git-source";
 export { parseSkillsCommand } from "./install/skills-command";
 export { readSkillIdentity } from "./skills/metadata";
 export { skillTraits } from "./skills/traits";

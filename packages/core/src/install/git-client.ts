@@ -1,13 +1,23 @@
 import { randomUUID } from "node:crypto";
+
 import { existsSync, renameSync, utimesSync } from "node:fs";
+
 import { mkdtemp } from "node:fs/promises";
+
 import { tmpdir } from "node:os";
+
 import { join, relative } from "node:path";
-import { APP_SLUG, type ErrorCode } from "@loadout/shared";
+
+import { APP_SLUG, type ErrorCode, redactUrl } from "@loadout/shared";
+
 import type { CoreContext } from "../context";
+
 import { AppError, cancelled, invalid, isAppError } from "../errors";
+
 import { type ExecResult, exec } from "../util/exec";
+
 import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
+
 import {
   copyDir,
   dirSize,
@@ -19,8 +29,11 @@ import {
   statOrNull,
   toPosix,
 } from "../util/fs";
+
 import { sha256Hex } from "../util/hash";
+
 import { trySanitizeSkillName } from "../util/names";
+
 import {
   DEFAULT_REF,
   HEADS_PREFIX,
@@ -30,9 +43,12 @@ import {
   refCandidates,
   refLists,
 } from "./git-refs";
-import { type RemoteRefs, normalizeRepoUrl, redactUrl, repoNameFromUrl } from "./git-source";
+
+import { type RemoteRefs, normalizeRepoUrl, repoNameFromUrl } from "./git-source";
 import { MANIFEST_PATTERNS, applyWorkingTree, folderPattern } from "./git-sparse";
+
 import { gitFailure } from "./git-errors";
+
 import { type FolderTrees, readFolderTrees } from "./git-trees";
 
 export interface CheckoutOptions {

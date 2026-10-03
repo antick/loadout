@@ -1,5 +1,5 @@
+import { redactUrl } from "@loadout/shared";
 import { AppError } from "../errors";
-import { redactUrl } from "./git-source";
 
 /** How a failed git call is told apart: no network, no access, or anything else. */
 

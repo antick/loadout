@@ -1,10 +1,18 @@
+import { redactUrl } from "@loadout/shared";
 import { basename, join } from "node:path";
+
 import type { ActivityKind, Skill, SourceType, UpdateStatus } from "@loadout/shared";
+
 import type { CoreContext } from "../context";
+
 import { errorMessage, invalid } from "../errors";
+
 import { readSkillIdentity } from "../skills/metadata";
+
 import { fixNumberedName, hashAsLibraryCopy } from "../skills/numbered-name";
+
 import type { SkillStore } from "../skills/store";
+
 import {
   canonicalPath,
   isDirectory,
@@ -13,9 +21,10 @@ import {
   readDirSafe,
   replaceDirAtomic,
 } from "../util/fs";
+
 import { fileDigests, hashDir } from "../util/hash";
+
 import { firstFreeName, sanitizeSkillName } from "../util/names";
-import { redactUrl } from "./git-source";
 
 /** Where the installed skill came from; written to its row as is. */
 export interface InstallRecord {

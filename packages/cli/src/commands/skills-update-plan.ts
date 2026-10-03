@@ -1,11 +1,7 @@
-import {
-  type Core,
-  LIBRARY_LOCATION,
-  errorMessage,
-  isRemoteSource,
-  redactUrl,
-} from "@loadout/core";
+import { redactUrl } from "@loadout/shared";
+import { type Core, LIBRARY_LOCATION, errorMessage, isRemoteSource } from "@loadout/core";
 import type { FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
+
 import { plural } from "../output";
 
 /** What `skills update --dry-run` found for one skill. Nothing is written. */

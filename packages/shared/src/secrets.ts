@@ -32,3 +32,14 @@ export interface SecretFinding {
    */
   committed: boolean;
 }
+
+/** `scheme://user:password@` at the start of an address: the credentials Git URLs can carry. */
+const URL_CREDENTIALS = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/@]+@/gi;
+
+/**
+ * Every URL in `text` without the credentials it carries (`https://host/...`), or with `mask`
+ * standing in for them (`***@`), so an address can be shown or logged.
+ */
+export function redactUrl(text: string, mask = ""): string {
+  return text.replace(URL_CREDENTIALS, `$1${mask}`);
+}

@@ -1,12 +1,22 @@
+import { redactUrl } from "@loadout/shared";
 import { renameSync } from "node:fs";
+
 import { mkdtemp } from "node:fs/promises";
+
 import { tmpdir } from "node:os";
+
 import { join } from "node:path";
+
 import { AppError, cancelled, isAppError } from "../errors";
+
 import { ensureDir, readDirSafe, removePath } from "../util/fs";
+
 import { trySanitizeSkillName } from "../util/names";
+
 import { unpackArchive } from "./archive";
+
 import { type Download, percentReporter } from "./download";
+
 import {
   CLONE_DIR_PREFIX,
   type Checkout,
@@ -14,8 +24,10 @@ import {
   type RemoteOptions,
   WHOLE_CHECKOUT,
 } from "./git-client";
+
 import { pickRevision, refCandidates, refLists } from "./git-refs";
-import { type RemoteRefs, normalizeRepoUrl, redactUrl, repoNameFromUrl } from "./git-source";
+
+import { type RemoteRefs, normalizeRepoUrl, repoNameFromUrl } from "./git-source";
 
 /**
  * Git over plain HTTPS, for computers without Git. Refs come from the smart HTTP advertisement

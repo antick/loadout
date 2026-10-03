@@ -1,8 +1,13 @@
+import { redactUrl } from "@loadout/shared";
 import { readFileSync } from "node:fs";
+
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+
 import type { SourceEvidence } from "@loadout/shared";
-import { redactUrl, validateGitInput } from "../install";
+
+import { validateGitInput } from "../install";
 import { readSkillDocument } from "../skills/metadata";
+
 import { canonicalPath, isDirectory, isInside, statOrNull, toPosix } from "../util/fs";
 
 /**

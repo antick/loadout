@@ -1,4 +1,5 @@
 import type { Skill } from "./types";
+import { redactUrl } from "./secrets";
 
 /**
  * The places skills came from, grouped from the skills themselves: a Git repository (installed
@@ -59,7 +60,6 @@ export interface SourceCheckResult {
 
 const ARCHIVE_SUFFIXES = [".zip", ".skill", ".tar.gz", ".tgz", ".tar"] as const;
 const GIT_SUFFIX = /\.git$/i;
-const CREDENTIALS = /\b([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/gi;
 /** `git@host:owner/repo`. */
 const SCP_STYLE = /^[^@\s]+@([^:\s]+):(.+)$/;
 const GITHUB_HOST = "github.com";
@@ -67,8 +67,6 @@ const PROBLEM_STATUSES: ReadonlySet<Skill["updateStatus"]> = new Set(["error", "
 
 /** `scheme://[user@]host[:port]/path`: the host and path of an address. */
 const ADDRESS = /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/\s]+@)?([^/:?#\s]+)(?::\d+)?([^?#\s]*)/i;
-
-const redact = (url: string): string => url.replace(CREDENTIALS, "$1");
 
 /** Host (lower case) and path of an address; null when the text is not one. */
 function hostAndPath(url: string): { host: string; path: string } | null {
@@ -122,7 +120,7 @@ export function skillSourceOf(skill: Skill): SkillSourceIdentity | null {
       key: repositorySourceKey(url, branch),
       kind: "repository",
       label: repositoryLabel(url),
-      location: redact(url),
+      location: redactUrl(url),
       branch,
       viaMarketplace: skill.sourceType === "marketplace",
       browse: { kind: "git", target: branch ? `${url}#${branch}` : url },
@@ -148,7 +146,7 @@ export function skillSourceOf(skill: Skill): SkillSourceIdentity | null {
       key: ref,
       kind: "link",
       label,
-      location: redact(ref),
+      location: redactUrl(ref),
       branch: null,
       viaMarketplace: false,
       browse: { kind: "git", target: ref },

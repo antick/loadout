@@ -1,10 +1,10 @@
+import { redactUrl } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
 import {
   marketSourceToUrl,
   normalizeRepoUrl,
   parseGitSource,
-  redactUrl,
   repoNameFromUrl,
   resolveTreeRef,
   validateGitInput,

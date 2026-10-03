@@ -1,8 +1,13 @@
+import { redactUrl } from "@loadout/shared";
 import { readFileSync, statSync } from "node:fs";
+
 import { dirname, join } from "node:path";
-import { redactUrl, validateGitInput } from "../install";
+
+import { validateGitInput } from "../install";
 import type { EnvReader } from "../context";
+
 import type { SourceLead } from "./evidence";
+
 import { toPosix } from "../util/fs";
 
 /**

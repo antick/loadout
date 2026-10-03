@@ -3,21 +3,31 @@ import {
   type SourceMatchKind,
   SOURCE_SIMILAR_RATIO,
   repositoryLabel,
+  redactUrl,
 } from "@loadout/shared";
+
 import { isAppError, notFound } from "../errors";
-import { type GitClient, parseGitSource, redactUrl, resolveTreeRef } from "../install";
+
+import { type GitClient, parseGitSource, resolveTreeRef } from "../install";
 import type { InstalledSnapshot } from "../skills/store";
+
 import { readSkillDocument } from "../skills/metadata";
+
 import { hashAsLibraryCopy, libraryCopyOverrides } from "../skills/numbered-name";
+
 import { diffTrees } from "../updates/diff";
+
 import {
   type OpenedSource,
   type RemoteTarget,
   openRemoteSource,
   resolveRemoteRevision,
 } from "../updates/source";
+
 import { fileDigests, hashDir, sha256Hex } from "../util/hash";
+
 import type { SourceLead } from "./evidence";
+
 import { textSimilarity } from "./similarity";
 
 /** The library side of a comparison: the skill as it is on disk right now. */

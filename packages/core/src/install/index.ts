@@ -15,7 +15,6 @@ export {
   marketSourceToUrl,
   normalizeRepoUrl,
   parseGitSource,
-  redactUrl,
   resolveTreeRef,
   validateGitInput,
 } from "./git-source";

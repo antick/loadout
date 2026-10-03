@@ -1,21 +1,32 @@
 import { relative } from "node:path";
+
 import {
   type GitPreview,
   type LibraryNameEntry,
   NO_REQUESTED_AGENTS,
   type RepoSkillPreview,
   type Skill,
+  redactUrl,
 } from "@loadout/shared";
+
 import type { CoreContext } from "../context";
+
 import { cancelled } from "../errors";
+
 import type { SkillStore } from "../skills/store";
+
 import { readDirSafe, toPosix } from "../util/fs";
+
 import { listArchiveSkills } from "./archive";
-import { redactUrl } from "./git-source";
+
 import type { CancelRegistry } from "./cancel";
+
 import type { InstallRecord } from "./library";
+
 import { type PreviewSessions, emitProgress } from "./preview-sessions";
+
 import type { FoundSkill } from "./repo-scan";
+
 import { matchRequested } from "./requested";
 
 /** A folder fetched into a temp place: an unpacked archive, a downloaded file, a site's skills. */
