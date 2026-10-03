@@ -8,12 +8,8 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import {
-  useCancelPreview,
-  useConfirmGit,
-  usePreviewArchive,
-  usePreviewGit,
-} from "@/hooks/mutations/install";
+import { usePreviewChoice } from "@/features/install/use-preview-choice";
+import { useCancelPreview, usePreviewArchive, usePreviewGit } from "@/hooks/mutations/install";
 
 export interface BrowseSource {
   /** The source being fetched, so its button can show a spinner. */
@@ -34,10 +30,9 @@ export function useBrowseSource(): BrowseSource {
   const { t } = useTranslation();
   const previewGit = usePreviewGit();
   const previewArchive = usePreviewArchive();
-  const confirmGit = useConfirmGit();
   const cancelPreview = useCancelPreview();
+  const choice = usePreviewChoice();
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [preview, setPreview] = useState<GitPreview | null>(null);
 
   const browse = async (source: SkillSource, tick?: readonly string[]): Promise<void> => {
     if (busyKey || !source.browse) return;
@@ -52,7 +47,7 @@ export function useBrowseSource(): BrowseSource {
       if (tick) {
         const wanted = new Set(tick);
         const selected = result.skills.filter((skill) => wanted.has(skill.name));
-        setPreview({ ...result, selected: selected.map((skill) => skill.relPath) });
+        choice.show({ ...result, selected: selected.map((skill) => skill.relPath) });
         return;
       }
       const outcomes = planInstallNames(
@@ -65,7 +60,7 @@ export function useBrowseSource(): BrowseSource {
         toast.info(t("sources.nothingNew", { source: source.label, count: result.skills.length }));
         return;
       }
-      setPreview(result);
+      choice.show(result);
     } finally {
       setBusyKey(null);
     }
@@ -73,16 +68,9 @@ export function useBrowseSource(): BrowseSource {
 
   return {
     busyKey,
-    preview,
+    preview: choice.preview,
     browse,
-    dismiss: (dismissed) => {
-      cancelPreview.mutate(dismissed.previewId);
-      setPreview(null);
-    },
-    confirm: (confirmed, items, options) => {
-      // Confirming spends the checkout whether or not it works, so the dialog closes at once.
-      setPreview(null);
-      void confirmGit(confirmed, items, options);
-    },
+    dismiss: choice.dismiss,
+    confirm: (confirmed, items, options) => void choice.confirm(confirmed, items, options),
   };
 }

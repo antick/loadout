@@ -24,7 +24,8 @@ import {
 } from "@/features/install/source-guess";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useCancelPreview, useConfirmGit, usePreviewGit } from "@/hooks/mutations/install";
+import { usePreviewChoice } from "@/features/install/use-preview-choice";
+import { useCancelPreview, usePreviewGit } from "@/hooks/mutations/install";
 import { useDiagnostics } from "@/hooks/queries/app";
 
 /**
@@ -90,14 +91,13 @@ function githubSignInText(origin: GitHubSignInOrigin | null, t: TFunction): stri
 export function GitTab(): ReactNode {
   const { t } = useTranslation();
   const previewGit = usePreviewGit();
-  const confirmGit = useConfirmGit();
   const cancelPreview = useCancelPreview();
+  const choice = usePreviewChoice();
   const { task, cancel } = useInstallTask();
 
   const [url, setUrl] = useState("");
   /** The URL last sent, which is also the key its progress is reported under. */
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
-  const [preview, setPreview] = useState<GitPreview | null>(null);
   const [emptyRepo, setEmptyRepo] = useState<Pick<GitPreview, "kind" | "repoUrl"> | null>(null);
   const InputIcon = commandSource(url) ? COMMAND_ICON : SOURCE_KIND_ICONS[guessSource(url)];
 
@@ -126,12 +126,7 @@ export function GitTab(): ReactNode {
       if (mounted.current) setEmptyRepo({ kind: result.kind, repoUrl: result.repoUrl });
       return;
     }
-    setPreview(result);
-  };
-
-  const dismiss = (dismissed: GitPreview): void => {
-    cancelPreview.mutate(dismissed.previewId);
-    setPreview(null);
+    choice.show(result);
   };
 
   const confirm = async (
@@ -139,9 +134,7 @@ export function GitTab(): ReactNode {
     items: InstallSelection[],
     options: ConfirmOptions,
   ): Promise<void> => {
-    // Confirming consumes the checkout whether or not it works, so the dialog closes right away.
-    setPreview(null);
-    const installed = await confirmGit(confirmed, items, options);
+    const installed = await choice.confirm(confirmed, items, options);
     if (installed && mounted.current) setUrl("");
   };
 
@@ -216,8 +209,8 @@ export function GitTab(): ReactNode {
       <GitAccessNote />
 
       <GitPreviewDialog
-        preview={preview}
-        onDismiss={dismiss}
+        preview={choice.preview}
+        onDismiss={choice.dismiss}
         onConfirm={(confirmed, items, options) => void confirm(confirmed, items, options)}
       />
     </div>

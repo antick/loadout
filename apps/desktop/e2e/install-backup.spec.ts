@@ -69,6 +69,25 @@ test("a name in use can replace the library skill instead", async ({ page }) => 
   await expect(dialog.getByText(/release-notes is taken by a skill/)).toBeVisible();
 });
 
+test("closing the import list keeps the address; importing clears it", async ({ page }) => {
+  await openApp(page, "/install");
+  const content = main(page);
+  await content.getByRole("tab", { name: "Git or link" }).click();
+  const field = content.getByLabel("Repository, site or link");
+  await field.fill("acme/skills");
+  await content.getByRole("button", { name: "Preview" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("heading", { name: "5 skills found" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(field).toHaveValue("acme/skills");
+
+  await content.getByRole("button", { name: "Preview" }).click();
+  await dialog.getByRole("button", { name: /Import selected/ }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(field).toHaveValue("");
+});
+
 test("the Backup page lists what is held back and backs it up anyway", async ({ page }) => {
   await openApp(page, "/backup");
   const content = main(page);
