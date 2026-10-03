@@ -21,7 +21,7 @@ import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
 import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
 import { useDeployToAgent, useRefreshWorkspace } from "@/hooks/mutations/workspace";
-import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
+import { isAgentAvailable, useAgents, useAgentNames } from "@/hooks/queries/agents";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useSkills } from "@/hooks/queries/skills";
 import {
@@ -49,6 +49,7 @@ const VIEW_MODE_SCOPE = "agent-workspace";
 export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNode {
   const { t } = useTranslation();
   const agents = useAgents();
+  const names = useAgentNames();
   const library = useSkills();
   const workspace = useWorkspaceSkills(agentKey);
   const broken = useBrokenFolders(agentKey);
@@ -108,7 +109,6 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
     return skill ? <LinkBadge skill={skill} /> : null;
   };
   const selectedSkills = selection.selectedIds.flatMap((id) => skillsByPath.get(id) ?? []);
-  const names = new Map((agents.data ?? []).map((entry) => [entry.key, entry.displayName]));
 
   const onRefresh = async (): Promise<void> => {
     setRefreshing(true);

@@ -9,7 +9,12 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { CARD_GRID_CLASS, CardGridSkeleton } from "@/components/LinkCard";
 import { PageSection } from "@/components/PageSection";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isAgentAvailable, useAgents, useWorkspaceCounts } from "@/hooks/queries/agents";
+import {
+  isAgentAvailable,
+  useAgents,
+  useWorkspaceCounts,
+  useAgentNames,
+} from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
 import { AgentCard } from "./AgentCard";
 import { AgentPresetBar } from "./AgentPresetBar";
@@ -48,10 +53,7 @@ export function AgentsOverviewPage({
   const listedKeys = useMemo(() => listed.map((agent) => agent.key), [listed]);
   const counts = useWorkspaceCounts(listedKeys);
 
-  const names = useMemo(
-    () => new Map((agents.data ?? []).map((agent) => [agent.key, agent.displayName])),
-    [agents.data],
-  );
+  const names = useAgentNames();
 
   /** Real on-disk count; when the scan fails, the number of library skills deployed there. */
   const countFor = (agent: AgentInfo): number | undefined => {

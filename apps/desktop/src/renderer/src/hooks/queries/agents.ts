@@ -1,6 +1,6 @@
 import type { AgentCategory, AgentInfo } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
@@ -15,6 +15,15 @@ export function useAgents(): UseQueryResult<AgentInfo[]> {
 }
 
 /** Installed and enabled agents, optionally limited to one category. */
+/** Every agent's display name by its key, for labelling deployments and shared folders. */
+export function useAgentNames(): ReadonlyMap<string, string> {
+  const agents = useAgents();
+  return useMemo(
+    () => new Map((agents.data ?? []).map((agent) => [agent.key, agent.displayName])),
+    [agents.data],
+  );
+}
+
 export function useAvailableAgents(category?: AgentCategory): UseQueryResult<AgentInfo[]> {
   const select = useCallback(
     (agents: AgentInfo[]) =>

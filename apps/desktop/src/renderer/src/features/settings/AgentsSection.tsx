@@ -9,7 +9,7 @@ import { SortableList } from "@/components/SortableList";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useSetAgentOrder, useSetAllAgentsEnabled } from "@/hooks/mutations/settings-page";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgents, useAgentNames } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
 import { matchesQuery, moveId } from "@/lib/utils";
 import { AddCustomAgentForm } from "./AddCustomAgentForm";
@@ -52,10 +52,7 @@ export function AgentsSection(): ReactNode {
 
   const list = useMemo(() => agents.data ?? [], [agents.data]);
   const groups = useMemo(() => groupAgents(list), [list]);
-  const namesByKey = useMemo(
-    () => new Map(list.map((agent) => [agent.key, agent.displayName])),
-    [list],
-  );
+  const namesByKey = useAgentNames();
   const deployedCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const skill of skills.data ?? []) {
