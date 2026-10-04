@@ -165,7 +165,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - `loadout` CLI for everything above, with `--json`, `--dry-run` and `--yes`.
 - `--yes` only for what can not be given back (permanent deletes, rollbacks, pushes, overwritten files); usage lines come from each command's options.
 - Keyboard picker when an install finds several skills.
-- `--dry-run` for install, update and `git sync` shows what would change.
+- `--dry-run` for install, update and `git sync` shows what would change; it refuses exactly what the real run refuses.
 - `loadout doctor`: one report of everything that needs a look, including sources not checked for a month and archives that are gone.
 - `skills search <words>` (skills.sh, or ClawHub with `--on clawhub`); in a terminal, tick results to install them.
 - `skills use <source>` prints a skill's `SKILL.md` without installing it, safety-checked: `skills use owner/repo@pdf | claude`.

@@ -156,11 +156,12 @@ async function planUpdates(context: CommandContext, one: Skill | null): Promise<
 async function update(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const one = target(context);
-  if (flagBoolean(args, DRY_RUN_FLAG.name)) return planUpdates(context, one);
   // Accepting findings is a choice about one skill whose findings were read, never a batch.
+  // Checked before the dry run splits off, so a preview refuses what the real run refuses.
   if (!one && flagBoolean(args, ACCEPT_RISK_FLAG.name)) {
     throw new UsageError(`--${ACCEPT_RISK_FLAG.name} works on one skill at a time, not --all.`);
   }
+  if (flagBoolean(args, DRY_RUN_FLAG.name)) return planUpdates(context, one);
   if (one) {
     const value = updateView(await updateOne(context, one.id));
     const lines = value.applied

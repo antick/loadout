@@ -5,9 +5,15 @@ import {
   type DuplicateReason,
   formatSimilarity,
 } from "@loadout/shared";
-import { UsageError, flagBoolean, flagString } from "../args";
+import { type FlagSpec, UsageError, flagBoolean, flagString } from "../args";
 import { plural, table } from "../output";
-import { DRY_RUN_FLAG, YES_FLAG, limitPositionals, positional, requireYes } from "./support";
+import {
+  DRY_RUN_FLAG,
+  REQUIRED_YES_FLAG,
+  limitPositionals,
+  positional,
+  requireYes,
+} from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const ALL_FLAG = {
@@ -110,9 +116,9 @@ async function merge(context: CommandContext): Promise<CommandResult> {
   const removeRef = flagString(args, REMOVE_FLAG.name);
   if (!keepRef || !removeRef)
     throw new UsageError("Name both skills: --keep <ref> --remove <ref>.");
-  requireYes(args, "remove a skill from the library");
   const keep = core.store.resolve(keepRef);
   const remove = core.store.resolve(removeRef);
+  requireYes(args, `remove ${remove.name} from the library`);
   const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
   const result = await core.api.duplicates.merge(keep.id, remove.id, { dryRun });
   return { value: result, text: describeMerge(core, result, dryRun) };
@@ -123,13 +129,33 @@ const ACTIONS: Record<string, (context: CommandContext) => Promise<CommandResult
   dismiss: (context) => dismiss(context, true),
   restore: (context) => dismiss(context, false),
 };
+const DUPLICATES_FLAGS: readonly FlagSpec[] = [
+  ALL_FLAG,
+  KEEP_FLAG,
+  REMOVE_FLAG,
+  DRY_RUN_FLAG,
+  REQUIRED_YES_FLAG,
+];
+/** The flags each action uses: any other one given is refused, never quietly ignored. */
+const ACTION_FLAGS: Record<string, readonly FlagSpec[]> = {
+  list: [ALL_FLAG],
+  merge: [KEEP_FLAG, REMOVE_FLAG, DRY_RUN_FLAG, REQUIRED_YES_FLAG],
+  dismiss: [],
+  restore: [],
+};
 
 /** `skills duplicates [merge|dismiss|restore]`: list pairs that may be one skill, and act on them. */
 async function duplicates(context: CommandContext): Promise<CommandResult> {
   const action = context.args.positionals[0];
-  if (action === undefined) return list(context);
-  const run = ACTIONS[action];
+  const run = action === undefined ? list : ACTIONS[action];
   if (!run) throw new UsageError(`Unknown action "${action}". Use merge, dismiss or restore.`);
+  const allowed = ACTION_FLAGS[action ?? "list"] ?? [];
+  const stray = DUPLICATES_FLAGS.find(
+    (flag) => context.args.flags[flag.name] !== undefined && !allowed.includes(flag),
+  );
+  if (stray) {
+    throw new UsageError(`--${stray.name} does not go with ${action ?? "the list of pairs"}.`);
+  }
   return run(context);
 }
 
@@ -138,7 +164,7 @@ export const duplicatesCommand: CommandSpec = {
   summary: "Find skills that look like one skill installed twice",
   usage:
     "[--all | merge --keep <ref> --remove <ref> (--dry-run | --yes) | dismiss <ref> <ref> | restore <ref> <ref>]",
-  flags: [ALL_FLAG, KEEP_FLAG, REMOVE_FLAG, DRY_RUN_FLAG, YES_FLAG],
+  flags: DUPLICATES_FLAGS,
   notes: [
     "Lists pairs whose files are the same, whose SKILL.md is mostly the same text, or whose names and descriptions are alike. Nothing is removed by itself.",
     "merge moves the removed skill's tags, presets and agents to the kept one first, and removes nothing if that fails. The removed skill goes to Recently removed.",

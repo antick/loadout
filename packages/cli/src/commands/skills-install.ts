@@ -225,14 +225,15 @@ async function installFromPreview(
 async function installFromPath(context: CommandContext, path: string): Promise<Installed> {
   const { core, args } = context;
   const name = flagString(args, NAME_FLAG.name);
-  const replace = flagBoolean(args, REPLACE_FLAG.name);
   if (isArchivePath(path)) {
     const preview = await core.api.install.previewArchive(path);
-    // Replacing goes through the preview, which knows which library skill holds the name.
-    if (preview.skills.length > 1 || replace) return installFromPreview(context, preview);
+    // Replacing goes through the preview, which knows which library skill holds the name; a
+    // named --skill too, so it is checked against the archive exactly as the dry run checks it.
+    const picked = flagList(args, SKILL_FLAG.name).length > 0;
+    if (preview.skills.length > 1 || flagBoolean(args, REPLACE_FLAG.name) || picked) {
+      return installFromPreview(context, preview);
+    }
     await core.api.install.cancelPreview(preview.previewId);
-  } else if (replace) {
-    throw new UsageError(REPLACE_FOLDER);
   }
   const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
   return {
@@ -242,25 +243,43 @@ async function installFromPath(context: CommandContext, path: string): Promise<I
   };
 }
 
+/** Flags that pick from or rename what a source holds, which a single named skill does not take. */
+const PICKING_FLAGS = [NAME_FLAG, SKILL_FLAG, ALL_FLAG, REPLACE_FLAG] as const;
+
+/**
+ * Refuse flags this kind of source can not use, once, before the dry run and the real run part
+ * ways: a flag that is quietly ignored would make the preview and the install disagree.
+ */
+function checkFlags(args: CommandContext["args"], source: InstallSource): void {
+  const given = (flag: (typeof PICKING_FLAGS)[number]): boolean =>
+    args.flags[flag.name] !== undefined;
+  const named =
+    source.kind === "market"
+      ? "owner/repo@skill"
+      : source.kind === "clawhub"
+        ? "@owner/slug"
+        : null;
+  const unusable = named ? PICKING_FLAGS.find(given) : undefined;
+  if (named && unusable) throw new UsageError(`--${unusable.name} is not supported for ${named}.`);
+  if (source.kind !== "path" || isArchivePath(source.path)) return;
+  if (given(REPLACE_FLAG)) throw new UsageError(REPLACE_FOLDER);
+  if (given(SKILL_FLAG) || given(ALL_FLAG)) {
+    throw new UsageError("--skill and --all pick from a repository or an archive, not a folder.");
+  }
+}
+
 /** `--dry-run`: fetch and list what would be added, under which names; install nothing. */
 async function plan(context: CommandContext, source: InstallSource): Promise<InstallPlan> {
   const { core, args, cwd } = context;
-  const name = flagString(args, NAME_FLAG.name);
   if (source.kind === "clawhub") {
     return planMarket(core, source.owner, source.slug, "clawhub");
   }
-  if (source.kind === "market") {
-    if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
-    return planMarket(core, source.source, source.skillId);
-  }
+  if (source.kind === "market") return planMarket(core, source.source, source.skillId);
   if (source.kind === "git") {
     return planFromPreview(context, await core.api.install.previewGit(source.url));
   }
   const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
-  if (!isArchivePath(path)) {
-    if (flagBoolean(args, REPLACE_FLAG.name)) throw new UsageError(REPLACE_FOLDER);
-    return planFolder(core, path, name);
-  }
+  if (!isArchivePath(path)) return planFolder(core, path, flagString(args, NAME_FLAG.name));
   return planFromPreview(context, await core.api.install.previewArchive(path));
 }
 
@@ -268,22 +287,20 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const { core, args, cwd } = context;
   limitPositionals(args, 1);
   const source = classifySource(positional(args, 0, "what to install"));
+  checkFlags(args, source);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     const value = await plan(context, source);
     return { value, text: planText(value) };
   }
-  const name = flagString(args, NAME_FLAG.name);
   let result: Installed;
   if (source.kind === "path") {
     result = await installFromPath(context, resolveUserPath(source.path, cwd, core.ctx.homeDir));
   } else if (source.kind === "market") {
-    if (name !== undefined) throw new UsageError("--name is not supported for owner/repo@skill.");
     const skill = await core.api.install.fromMarket(source.source, source.skillId, {
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });
     result = { skills: [skill], asked: [], replaced: [] };
   } else if (source.kind === "clawhub") {
-    if (name !== undefined) throw new UsageError("--name is not supported for @owner/slug.");
     const skill = await core.api.install.fromClawhub(source.owner, source.slug, {
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });

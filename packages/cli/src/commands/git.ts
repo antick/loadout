@@ -166,10 +166,11 @@ async function versions({ core, args }: CommandContext): Promise<CommandResult> 
 async function restore({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
   const tag = positional(args, 0, "the version to restore (see `git versions`)");
+  // The same check for the dry run and the real one, so both fail alike on a typo.
+  const known = (await core.api.backup.snapshots()).some((snapshot) => snapshot.tag === tag);
+  if (!known) throw notFound(`No version called ${tag}.`);
   requireYes(args, `switch the whole library back to ${tag}`);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-    const known = (await core.api.backup.snapshots()).some((snapshot) => snapshot.tag === tag);
-    if (!known) throw notFound(`No version called ${tag}.`);
     return {
       value: { dryRun: true, tag },
       text: `Would restore the library to ${tag}, after saving the current state as a safety version. Nothing was changed.`,

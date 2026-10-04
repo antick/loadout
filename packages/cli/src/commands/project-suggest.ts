@@ -48,6 +48,14 @@ function reasonText(reason: SuggestionReason): string {
 async function suggest(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   limitPositionals(args, 0);
+  const add = flagBoolean(args, ADD_FLAG.name);
+  const agents = flagList(args, AGENT_FLAG.name);
+  // Checked before anything is read: an option that would be ignored is a mistake to point out.
+  if (add && agents.length === 0) {
+    throw new UsageError(`--${ADD_FLAG.name} needs at least one --agent.`);
+  }
+  if (!add && agents.length > 0)
+    throw new UsageError(`--agent only works with --${ADD_FLAG.name}.`);
   const project = await projectAt(context);
   const found: ProjectSuggestions = await core.api.projects.suggestSkills(project.id);
   const skills = new Map((await core.api.skills.list()).map((skill) => [skill.id, skill]));
@@ -70,11 +78,7 @@ async function suggest(context: CommandContext): Promise<CommandResult> {
     lines.push(`Not suggested here, by your choice: ${found.dismissed.map(nameOf).join(", ")}`);
   }
 
-  if (!flagBoolean(args, ADD_FLAG.name)) {
-    return { value: found, text: lines.join("\n") };
-  }
-  const agents = flagList(args, AGENT_FLAG.name);
-  if (agents.length === 0) throw new UsageError(`--${ADD_FLAG.name} needs at least one --agent.`);
+  if (!add) return { value: found, text: lines.join("\n") };
   const strong = found.suggestions.filter((s) => s.strength === "strong");
   const added: string[] = [];
   for (const suggestion of strong) {

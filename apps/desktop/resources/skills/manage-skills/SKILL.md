@@ -205,7 +205,8 @@ Undeploying, `project unapply` and `project prune` need no `--yes`: what they ta
 Recently removed or comes back with one command. Still preview them when the user did not ask
 for exactly that.
 
-1. Run the command with `--dry-run` first and read what it would do.
+1. Run the command with `--dry-run` first and read what it would do. A dry run checks the
+   arguments exactly like the real run, so if it fails, the real run would fail the same way.
 2. Tell the user what will be removed or replaced, unless they already asked for exactly that.
 3. Run it again with `--yes`.
 

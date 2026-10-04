@@ -1,6 +1,6 @@
-import { errorMessage } from "@loadout/core";
+import { errorMessage, notFound } from "@loadout/core";
 import type { ItemRemovalResult, LibraryItem } from "@loadout/shared";
-import { UsageError, flagBoolean } from "../args";
+import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural, table } from "../output";
 import { convertCommand, findCommand, importCommand } from "./items-import";
 import {
@@ -55,8 +55,13 @@ async function show(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const ref = await resolveItem(core, positional(args, 0, "an item, like subagent/reviewer"));
   limitPositionals(args, 1);
-  const agent = args.flags[AGENT_FLAG.name];
-  const agentKey = Array.isArray(agent) ? agent[0] : undefined;
+  const agents = flagList(args, AGENT_FLAG.name);
+  // Never quietly drop what was asked for: one agent's file is shown, in its project if named.
+  if (agents.length > 1) throw new UsageError("Name one --agent to see its file.");
+  if (agents.length === 0 && flagString(args, PROJECT_FLAG.name) !== undefined) {
+    throw new UsageError("--project needs --agent: it picks where that agent's file goes.");
+  }
+  const [agentKey] = agents;
   if (agentKey === undefined) {
     const item = await core.api.items.get(ref);
     return { value: item, text: item.content.trimEnd() };
@@ -140,8 +145,11 @@ async function remove(context: CommandContext): Promise<CommandResult> {
   const ref = await resolveItem(core, positional(args, 0, "an item"));
   limitPositionals(args, 1);
   const item = (await core.api.items.list(ref.kind)).find((each) => each.name === ref.name);
+  // Missing for the dry run exactly as for the real one, which fails on it too.
+  if (!item) throw notFound(`No ${refText(ref)} in the library.`);
+  requireYes(args, `delete ${refText(ref)} from the library and from every agent folder`);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-    const files = item?.deployments.map((d) => d.path) ?? [];
+    const files = item.deployments.map((d) => d.path);
     return {
       value: { dryRun: true, ref, files },
       text: [
@@ -150,7 +158,6 @@ async function remove(context: CommandContext): Promise<CommandResult> {
       ].join("\n"),
     };
   }
-  requireYes(args, `delete ${refText(ref)} from the library and from every agent folder`);
   const result = await core.api.items.remove(ref);
   return { value: result, text: [`Deleted ${refText(ref)}.`, ...removalText(result)].join("\n") };
 }

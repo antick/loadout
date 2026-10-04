@@ -109,9 +109,6 @@ async function publish(context: CommandContext): Promise<CommandResult> {
   const saved = await core.api.publish.defaults();
   const repo = flagString(args, REPO_FLAG.name) ?? saved?.repo;
   if (!repo) throw new UsageError(`--${REPO_FLAG.name} <address> is required.`);
-  const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
-  if (!dryRun) requireYes(args, `push skills to ${repositoryLabel(repo)}`);
-
   const skills = all ? await core.api.skills.list() : resolveSkills(core, refs);
   const explicitRepo = flagString(args, REPO_FLAG.name) !== undefined;
   const input = {
@@ -122,7 +119,9 @@ async function publish(context: CommandContext): Promise<CommandResult> {
     layer: layerOf(context) ?? (explicitRepo ? undefined : saved?.layer),
     allowSecrets: flagBoolean(args, ALLOW_SECRETS_FLAG.name),
   };
-  if (dryRun) {
+  // Asked once the input is known good, so a typo is reported before a missing --yes.
+  requireYes(args, `push skills to ${repositoryLabel(repo)}`);
+  if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     const plan = await core.api.publish.preview(input);
     return { value: plan, text: `${describePlan(plan)}\nNothing was changed.` };
   }

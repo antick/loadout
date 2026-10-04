@@ -1,5 +1,5 @@
 import { lstatSync } from "node:fs";
-import { errorMessage, targetConflict } from "@loadout/core";
+import { targetConflict } from "@loadout/core";
 import {
   REMOVED_KEEP_DAYS,
   SOURCE_TYPES,
@@ -232,39 +232,28 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
 }
 
 async function remove({ core, args }: CommandContext): Promise<CommandResult> {
-  const refs = positionalsFrom(args, 0, "a skill to remove");
+  // Resolve everything before deleting anything: one bad reference stops the whole request, the
+  // dry run included, so a preview never promises what the real run would refuse.
+  const skills = resolveSkills(core, positionalsFrom(args, 0, "a skill to remove"));
   requireYes(
     args,
-    `delete ${plural(refs.length, "skill")} from the library and undeploy them everywhere`,
+    `delete ${plural(skills.length, "skill")} from the library and undeploy them everywhere`,
   );
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-    const wouldRemove: { id: string; name: string; deployedTo: string[] }[] = [];
-    const failed: { name: string; message: string }[] = [];
-    for (const ref of refs) {
-      try {
-        const skill = core.store.resolve(ref);
-        if (wouldRemove.some((entry) => entry.id === skill.id)) continue;
-        wouldRemove.push({
-          id: skill.id,
-          name: skill.name,
-          deployedTo: skill.deployments.map((d) => d.agentKey),
-        });
-      } catch (error) {
-        failed.push({ name: ref, message: errorMessage(error) });
-      }
-    }
+    const wouldRemove = skills.map((skill) => ({
+      id: skill.id,
+      name: skill.name,
+      deployedTo: skill.deployments.map((d) => d.agentKey),
+    }));
     const lines = [
       `Would remove ${plural(wouldRemove.length, "skill")}. Nothing was changed.`,
       ...wouldRemove.map(
         (s) =>
           `  ${s.name}${s.deployedTo.length ? ` (deployed to ${s.deployedTo.join(", ")})` : ""}`,
       ),
-      ...failed.map((failure) => `  not found: ${failure.name}`),
     ];
-    return { value: { dryRun: true, wouldRemove, failed }, text: lines.join("\n") };
+    return { value: { dryRun: true, wouldRemove, failed: [] }, text: lines.join("\n") };
   }
-  // Resolve everything before deleting anything: one bad reference stops the whole request.
-  const skills = resolveSkills(core, refs);
   const result = await core.api.skills.removeMany(skills.map((skill) => skill.id));
   const lines = [`Removed ${plural(result.succeeded, "skill")}.`];
   if (result.removedIds.length > 0) {

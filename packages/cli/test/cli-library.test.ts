@@ -106,10 +106,12 @@ describe("git backup", () => {
     expect((await cli("git", "versions", "--limit", "5", "--json")).json()).toEqual([]);
     expect((await cli("git", "versions", "--limit", "many", "--json")).code).toBe(EXIT_USAGE);
 
-    expect((await cli("git", "restore", "sometag", "--json")).code).toBe(EXIT_USAGE);
-    expect((await cli("git", "restore", "sometag", "--dry-run", "--json")).json()).toMatchObject({
-      code: "NOT_FOUND",
-    });
+    // An unknown version fails alike with and without --dry-run or --yes.
+    for (const extra of [[], ["--dry-run"], ["--yes"]]) {
+      const run = await cli("git", "restore", "sometag", ...extra, "--json");
+      expect(run.code, extra.join(" ")).toBe(EXIT_FAILED);
+      expect(run.json()).toMatchObject({ code: "NOT_FOUND" });
+    }
   });
 });
 

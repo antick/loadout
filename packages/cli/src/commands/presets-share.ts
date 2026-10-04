@@ -82,7 +82,17 @@ async function importPreset(context: CommandContext): Promise<CommandResult> {
   const raw = positional(args, 0, "a preset file or an https link");
   const input = WEB_LINK.test(raw) ? raw : resolveUserPath(raw, cwd, core.ctx.homeDir);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-    const plan = await core.api.presets.previewImport(input);
+    const found = await core.api.presets.previewImport(input);
+    // The preview reads the file's name; --name gives the preset another, as the real run does.
+    const name = flagString(args, NAME_FLAG.name)?.trim();
+    const presets = name ? await core.api.presets.list() : [];
+    const plan = name
+      ? {
+          ...found,
+          name,
+          nameTaken: presets.some((preset) => preset.name.toLowerCase() === name.toLowerCase()),
+        }
+      : found;
     return {
       value: { dryRun: true, plan },
       text: `Dry run: nothing was installed.\n${planText(plan)}`,

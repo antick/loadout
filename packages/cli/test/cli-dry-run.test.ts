@@ -118,3 +118,73 @@ describe("skills update --dry-run", () => {
     expect(run.stdout).toContain("gone: could not read its source");
   });
 });
+
+describe("a dry run checks its input like the real run", () => {
+  it("refuses install flags a source can not use, before fetching anything", async () => {
+    const folder = writeSkill(box.root, "pdf");
+    const cases = [
+      ["acme/skills@pdf", "--skill", "pdf"],
+      ["acme/skills@pdf", "--all"],
+      ["acme/skills@pdf", "--replace"],
+      ["@acme/pdf", "--name", "mine"],
+      ["@acme/pdf", "--replace"],
+      [folder, "--all"],
+      [folder, "--skill", "pdf"],
+      [folder, "--replace"],
+    ];
+    for (const argv of cases) {
+      for (const dry of [["--dry-run"], []]) {
+        const run = await box.cli("skills", "install", ...argv, ...dry);
+        expect(run.code, [...argv, ...dry].join(" ")).toBe(2);
+      }
+    }
+    expect(await names()).toEqual([]);
+  });
+
+  it("checks --skill against a one-skill archive in both runs", async () => {
+    const maker = createSandbox();
+    await maker.cli("skills", "install", writeSkill(maker.root, "solo"));
+    const zip = join(maker.root, "solo.zip");
+    await maker.cli("skills", "export", "solo", "--out", zip);
+    try {
+      for (const dry of [["--dry-run"], []]) {
+        const run = await box.cli("skills", "install", zip, "--skill", "ghost", ...dry, "--json");
+        expect(run.code, dry.join(" ")).toBe(1);
+        expect(run.json()).toMatchObject({ code: "NOT_FOUND" });
+      }
+      expect(await names()).toEqual([]);
+    } finally {
+      maker.cleanup();
+    }
+  });
+
+  it("refuses the same options and missing things as the real run", async () => {
+    await box.cli("skills", "install", writeSkill(box.root, "notes"));
+    for (const dry of [["--dry-run"], []]) {
+      for (const argv of [
+        ["skills", "update", "--all", "--accept-risk"],
+        ["skills", "duplicates", "--keep", "notes"],
+      ]) {
+        expect((await box.cli(...argv, ...dry)).code, [...argv, ...dry].join(" ")).toBe(2);
+      }
+    }
+    expect((await box.cli("skills", "duplicates", "dismiss", "notes", "x", "--all")).code).toBe(2);
+    for (const dry of [["--dry-run"], ["--yes"]]) {
+      const run = await box.cli("items", "remove", "rule/ghost", ...dry, "--json");
+      expect(run.code, dry.join(" ")).toBe(1);
+      expect(run.json()).toMatchObject({ code: "NOT_FOUND" });
+    }
+    expect((await box.cli("project", "suggest", "--agent", "claude_code")).code).toBe(2);
+    expect((await box.cli("items", "show", "rule/ghost", "--project", ".")).code).toBe(2);
+  });
+
+  it("shows the name --name gives an imported preset", async () => {
+    await box.cli("presets", "create", "Kit");
+    const file = join(box.root, "kit.json");
+    await box.cli("presets", "export", "Kit", "--out", file);
+    const plan = await box.cli("presets", "import", file, "--name", "Other", "--dry-run", "--json");
+    expect(plan.json()).toMatchObject({ plan: { name: "Other", nameTaken: false } });
+    const taken = await box.cli("presets", "import", file, "--name", "kit", "--dry-run", "--json");
+    expect(taken.json()).toMatchObject({ plan: { name: "kit", nameTaken: true } });
+  });
+});

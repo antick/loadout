@@ -84,9 +84,8 @@ async function create({ core, args }: CommandContext): Promise<CommandResult> {
 
 async function remove({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
-  const ref = positional(args, 0, PRESET_LABEL);
-  requireYes(args, `delete the preset "${ref}"`);
-  const preset = await resolvePreset(core, ref);
+  const preset = await resolvePreset(core, positional(args, 0, PRESET_LABEL));
+  requireYes(args, `delete the preset "${preset.name}"`);
   const view = { id: preset.id, name: preset.name, skillCount: preset.skillIds.length };
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     return {

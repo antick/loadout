@@ -117,7 +117,7 @@ describe("skills: install, deploy, status, remove", () => {
     expect(refused.code).toBe(EXIT_USAGE);
     expect(refused.json()).toMatchObject({ ok: false, code: "INVALID_INPUT" });
 
-    const dry = await cli("skills", "remove", "alpha", "ghost", "--dry-run", "--json");
+    const dry = await cli("skills", "remove", "alpha", "--dry-run", "--json");
     expect(dry.code).toBe(EXIT_OK);
     const body = dry.json<{
       dryRun: boolean;
@@ -126,8 +126,14 @@ describe("skills: install, deploy, status, remove", () => {
     }>();
     expect(body.dryRun).toBe(true);
     expect(body.wouldRemove).toMatchObject([{ name: "alpha", deployedTo: [AGENT] }]);
-    expect(body.failed.map((f) => f.name)).toEqual(["ghost"]);
+    expect(body.failed).toEqual([]);
     expect(existsSync(join(libraryDir(), "alpha", "SKILL.md"))).toBe(true);
+    // A bad reference fails the dry run exactly as it fails the real one, --yes or not.
+    for (const extra of [["--dry-run"], [], ["--yes"]]) {
+      const typo = await cli("skills", "remove", "alpha", "ghost", ...extra, "--json");
+      expect(typo.code, extra.join(" ")).toBe(EXIT_FAILED);
+      expect(typo.json()).toMatchObject({ code: "NOT_FOUND" });
+    }
     expect(lstatSync(join(agentSkillsDir(), "alpha")).isSymbolicLink()).toBe(true);
 
     // A real run with one bad reference removes nothing at all.
