@@ -12,6 +12,15 @@ const POLL_MS = 50;
  */
 const UNREADABLE_STALE_MS = 60_000;
 
+export interface RepoLockOptions {
+  /** How long `run` waits for another process before giving up. */
+  waitMs?: number;
+  /** What the BUSY error says is busy. */
+  subject?: string;
+}
+
+const DEFAULT_SUBJECT = "The skill library";
+
 interface LockInfo {
   pid: number;
   host: string;
@@ -35,6 +44,8 @@ export function processAlive(pid: number): boolean {
  */
 export class RepoLock {
   readonly #path: string;
+  readonly #waitMs: number;
+  readonly #subject: string;
   /**
    * The hold a call chain runs in. Work the holder schedules (a timer, a promise left running)
    * carries it too, so it only counts while that hold is still the current one.
@@ -46,8 +57,21 @@ export class RepoLock {
   #ownStartedAt: number | null = null;
   #queue: Promise<unknown> = Promise.resolve();
 
-  constructor(path: string) {
+  constructor(path: string, options: RepoLockOptions = {}) {
     this.#path = path;
+    this.#waitMs = options.waitMs ?? WAIT_MS;
+    this.#subject = options.subject ?? DEFAULT_SUBJECT;
+  }
+
+  /** Another process holds the lock right now (a lock it left behind does not count). */
+  heldElsewhere(): boolean {
+    if (this.#current !== null) return false;
+    try {
+      statSync(this.#path);
+    } catch {
+      return false;
+    }
+    return !this.#abandoned(this.#readHolder());
   }
 
   #readHolder(): LockInfo | null {
@@ -135,17 +159,17 @@ export class RepoLock {
     }
   }
 
-  /** Run `fn` holding the lock, waiting up to 20 s for another process to finish. */
+  /** Run `fn` holding the lock, waiting (20 s unless set) for another process to finish. */
   async run<T>(operation: string, fn: () => Promise<T> | T): Promise<T> {
     if (this.#inside()) return fn();
     const task = this.#queue.then(async () => {
-      const deadline = Date.now() + WAIT_MS;
+      const deadline = Date.now() + this.#waitMs;
       while (!this.#tryAcquire(operation)) {
         if (Date.now() > deadline) {
           const holder = this.#readHolder();
           throw new AppError(
             "BUSY",
-            `The skill library is busy: ${holder?.operation ?? "another operation"}`,
+            `${this.#subject} is busy: ${holder?.operation ?? "another operation"}`,
           );
         }
         await sleep(POLL_MS);

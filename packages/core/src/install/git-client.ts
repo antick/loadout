@@ -18,19 +18,7 @@ import { type ExecResult, exec } from "../util/exec";
 
 import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
 
-import {
-  copyDir,
-  dirSize,
-  ensureDir,
-  isDirectory,
-  isInside,
-  readDirSafe,
-  removePath,
-  statOrNull,
-  toPosix,
-} from "../util/fs";
-
-import { sha256Hex } from "../util/hash";
+import { copyDir, ensureDir, isDirectory, isInside, removePath, toPosix } from "../util/fs";
 
 import { trySanitizeSkillName } from "../util/names";
 
@@ -44,6 +32,7 @@ import {
   refLists,
 } from "./git-refs";
 
+import { PARTIAL_MARK, createCloneCache } from "./clone-cache";
 import { type RemoteRefs, normalizeRepoUrl, repoNameFromUrl } from "./git-source";
 import { MANIFEST_PATTERNS, applyWorkingTree, folderPattern } from "./git-sparse";
 
@@ -131,8 +120,6 @@ const GIT_TIMEOUT_MS = 300_000;
 const CLONE_FILTER = "--filter=blob:limit=256k";
 const CACHE_LIMIT_BYTES = 1024 * 1024 * 1024;
 const REPOS_DIR_NAME = "repos";
-const SLOT_HEX_LENGTH = 16;
-const PARTIAL_MARK = ".partial-";
 const FALLBACK_REPO_NAME = "repository";
 /** Prefix of every temporary working copy we hand out. */
 export const CLONE_DIR_PREFIX = `${APP_SLUG}-clone-`;
@@ -171,8 +158,8 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
   const reposDir = join(ctx.paths.cacheDir, REPOS_DIR_NAME);
   const cacheLimit = config.cacheLimitBytes ?? CACHE_LIMIT_BYTES;
   const binary = config.binary ?? GIT;
-  /** Tail of the work queued per slot. A slot present here is in use. */
-  const queues = new Map<string, Promise<unknown>>();
+  // A clone can take as long as git is given, so a second checkout of it waits that long.
+  const cache = createCloneCache(reposDir, cacheLimit, GIT_TIMEOUT_MS);
 
   async function run(
     args: string[],
@@ -214,58 +201,6 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     const result = await run(args, call);
     if (result.code !== 0) throw gitFailure(action, result.stderr);
     return result;
-  }
-
-  function slotFor(url: string): string {
-    return join(reposDir, sha256Hex(normalizeRepoUrl(url)).slice(0, SLOT_HEX_LENGTH));
-  }
-
-  /** One checkout per slot at a time inside this process. */
-  async function withSlot<T>(slot: string, fn: () => Promise<T>): Promise<T> {
-    const previous = queues.get(slot) ?? Promise.resolve();
-    const task = previous.then(fn);
-    const settled = task.catch(() => undefined);
-    queues.set(slot, settled);
-    try {
-      return await task;
-    } finally {
-      if (queues.get(slot) === settled) queues.delete(slot);
-    }
-  }
-
-  /** Drop least-recently-used slots until the cache fits its budget again. */
-  async function prune(keep: string): Promise<void> {
-    const slots: { path: string; size: number; usedAt: number }[] = [];
-    for (const entry of readDirSafe(reposDir)) {
-      const path = join(reposDir, entry.name);
-      if (!entry.isDirectory() || path === keep || queues.has(path)) continue;
-      if (entry.name.includes(PARTIAL_MARK)) {
-        // Leftover of an interrupted clone, unless the slot it belongs to is being cloned now.
-        const owner = join(reposDir, entry.name.split(PARTIAL_MARK)[0] ?? "");
-        if (owner === keep || !queues.has(owner)) await removePath(path);
-        continue;
-      }
-      slots.push({ path, size: dirSize(path), usedAt: statOrNull(path)?.mtimeMs ?? 0 });
-    }
-    let total = slots.reduce((sum, slot) => sum + slot.size, 0);
-    for (const slot of slots.sort((a, b) => a.usedAt - b.usedAt)) {
-      if (total <= cacheLimit) break;
-      await removePath(slot.path);
-      total -= slot.size;
-    }
-  }
-
-  async function clearCache(): Promise<number> {
-    let freed = 0;
-    for (const entry of readDirSafe(reposDir)) {
-      const path = join(reposDir, entry.name);
-      const owner = join(reposDir, entry.name.split(PARTIAL_MARK)[0] ?? "");
-      if (queues.has(path) || queues.has(owner)) continue;
-      const size = entry.isDirectory() ? dirSize(path) : (statOrNull(path)?.size ?? 0);
-      await removePath(path);
-      freed += size;
-    }
-    return freed;
   }
 
   async function fetchInto(
@@ -346,7 +281,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
       }
     }
     await removePath(slot);
-    await prune(slot);
+    await cache.prune(slot);
     await cloneFresh(slot, url, options);
   }
 
@@ -382,7 +317,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
   }
 
   return {
-    clearCache,
+    clearCache: cache.clear,
     gitVersion: async () => {
       try {
         const result = await run(["--version"], {});
@@ -416,8 +351,8 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     },
 
     checkout: async (url, checkoutOptions = {}) => {
-      const slot = slotFor(url);
-      const { dir, revision, partial, cleanup } = await withSlot(slot, async () => {
+      const slot = cache.slotFor(url);
+      const { dir, revision, partial, cleanup } = await cache.withSlot(slot, async () => {
         if (checkoutOptions.signal?.aborted) throw cancelled();
         await prepareSlot(slot, url, checkoutOptions);
         const pinned = await pinRevision(slot, url, checkoutOptions);
@@ -456,7 +391,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
           if (!isInside(dir, path)) throw invalid(`Not inside the checkout: ${path}`);
           return toPosix(relative(dir, path));
         });
-        await withSlot(slot, async () => {
+        await cache.withSlot(slot, async () => {
           // Another checkout of this repository may have moved the cache on since.
           await pinRevision(slot, url, { revision });
           // The repository root is a skill: nothing less than every file will do.
