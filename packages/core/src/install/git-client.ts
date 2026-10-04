@@ -14,9 +14,11 @@ import type { CoreContext } from "../context";
 
 import { AppError, cancelled, invalid, isAppError } from "../errors";
 
-import { type ExecResult, exec } from "../util/exec";
+import type { ExecResult } from "../util/exec";
 
-import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
+import { GIT_TIMEOUT_MS, runGit } from "../util/git";
+
+import { gitFailure } from "../util/git-errors";
 
 import { copyDir, ensureDir, isDirectory, isInside, removePath, toPosix } from "../util/fs";
 
@@ -35,8 +37,6 @@ import {
 import { PARTIAL_MARK, createCloneCache } from "./clone-cache";
 import { type RemoteRefs, normalizeRepoUrl, repoNameFromUrl } from "./git-source";
 import { MANIFEST_PATTERNS, applyWorkingTree, folderPattern } from "./git-sparse";
-
-import { gitFailure } from "./git-errors";
 
 import { type FolderTrees, readFolderTrees } from "./git-trees";
 
@@ -106,10 +106,6 @@ export interface GitClientOptions {
   binary?: string;
 }
 
-/** Transports Git may use for skills; `file` covers local repositories. */
-const GIT_TRANSPORTS = "https:http:ssh:git:file";
-const GIT = "git";
-const GIT_TIMEOUT_MS = 300_000;
 /**
  * Files bigger than this come later, only when a checkout needs them. Skill documents and text
  * arrive with the clone, so a typical skill repository is complete in one trip; big files
@@ -151,13 +147,10 @@ function isHopeless(error: unknown): boolean {
   return error instanceof AppError && KEEP_CACHE_CODES.has(error.code);
 }
 
-export { gitFailure };
-
 /** System git with a shared clone cache. All network calls honour the proxy setting. */
 export function createGitClient(ctx: CoreContext, config: GitClientOptions = {}): GitClient {
   const reposDir = join(ctx.paths.cacheDir, REPOS_DIR_NAME);
   const cacheLimit = config.cacheLimitBytes ?? CACHE_LIMIT_BYTES;
-  const binary = config.binary ?? GIT;
   // A clone can take as long as git is given, so a second checkout of it waits that long.
   const cache = createCloneCache(reposDir, cacheLimit, GIT_TIMEOUT_MS);
 
@@ -165,32 +158,13 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     args: string[],
     call: { network?: boolean; cwd?: string; signal?: AbortSignal; onLine?: (l: string) => void },
   ): Promise<ExecResult> {
-    const proxy = call.network ? ctx.settings.proxy() : null;
-    // Config flags only count when they come before the subcommand.
-    const flags = configFlags([...BYTE_EXACT_CONFIG, ...proxyConfig(proxy)]);
-    try {
-      return await exec(binary, [...flags, ...args], {
-        cwd: call.cwd,
-        // Never block on a credential prompt; keep messages in English so they can be classified.
-        // Only real transports: no `<helper>::` remote helpers from a stored or restored URL.
-        env: {
-          ...process.env,
-          GIT_TERMINAL_PROMPT: "0",
-          LC_ALL: "C",
-          GIT_ALLOW_PROTOCOL: GIT_TRANSPORTS,
-          // A token the computer already has, asked only after the user's own helpers.
-          ...(call.network ? await ctx.github.gitEnvironment(process.env) : {}),
-        },
-        timeoutMs: GIT_TIMEOUT_MS,
-        signal: call.signal,
-        onStderrLine: call.onLine,
-      });
-    } catch (error) {
-      if (isAppError(error, "UNSUPPORTED")) {
-        throw new AppError("GIT_MISSING", "Git is not installed or not on PATH.");
-      }
-      throw error;
-    }
+    return runGit(args, {
+      binary: config.binary,
+      network: call.network ? { proxy: ctx.settings.proxy(), github: ctx.github } : undefined,
+      cwd: call.cwd,
+      signal: call.signal,
+      onStderrLine: call.onLine,
+    });
   }
 
   async function runOk(

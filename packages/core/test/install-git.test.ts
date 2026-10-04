@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { planInstallNames } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createGitClient, gitFailure } from "../src/install/git-client";
+import { createGitClient } from "../src/install/git-client";
+import { gitFailure } from "../src/util/git-errors";
 import { createRemovedStore } from "../src/storage/removed";
 import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
 import {

@@ -1,68 +1,28 @@
-import type { ErrorCode } from "@loadout/shared";
 import type { SecretStore } from "../context";
-import { AppError, isAppError } from "../errors";
-import { type ExecResult, exec } from "../util/exec";
-import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "../util/git-config";
+import { AppError } from "../errors";
+import type { ExecResult } from "../util/exec";
+import { runGit } from "../util/git";
+import { type GitErrorCode, classifyGitError, gitOutputLines } from "../util/git-errors";
 import type { GitHubSignIn } from "../util/github-token";
 import { authEnvironment, maskUrlCredentials } from "./credentials";
 import { deviceEmail } from "./device";
 
-/** The one place the backup feature talks to the system `git`. */
+/** The one place the backup feature talks to the system `git` (through `util/git`). */
 
-const GIT_BINARY = "git";
-const GIT_TIMEOUT_MS = 300_000;
 const MAX_DETAIL_LENGTH = 600;
 /**
- * Settings forced on every call so a backup behaves the same on every device:
- * bytes are stored as they are, paths are printed verbatim, and an unattended commit never stops
- * to ask for a signing passphrase.
+ * Settings on top of the shared safe ones, so a backup behaves the same on every device: paths
+ * are printed verbatim, and an unattended commit never stops to ask for a signing passphrase.
  */
-const FIXED_CONFIG = [
-  ...BYTE_EXACT_CONFIG,
+const BACKUP_CONFIG = [
   "core.quotepath=false",
   "commit.gpgsign=false",
   "tag.gpgsign=false",
   "advice.detachedHead=false",
-  // Nothing in the repository's own config may run a program: not a file-system monitor, not a
-  // hook. The library folder takes in third-party skills, so its .git is not trusted blindly.
-  "core.fsmonitor=false",
-  "core.hooksPath=/dev/null",
-  // A backup remote is not trusted either: refuse objects that name `..`, `.git` or a path that
-  // only looks harmless on a case-folding (macOS) or NTFS (Windows) disk.
+  // A backup remote is not trusted blindly: refuse objects that name `..` or `.git`. Installs
+  // leave this off, as some public repositories carry harmless old objects it would refuse.
   "transfer.fsckObjects=true",
-  "core.protectHFS=true",
-  "core.protectNTFS=true",
 ] as const;
-const SSH_NOISE = /^(warning: permanently added|\*\* |debug\d:)/i;
-
-export type GitErrorCode = Extract<
-  ErrorCode,
-  | "GIT"
-  | "GIT_AUTH"
-  | "NETWORK"
-  | "GIT_UNRELATED"
-  | "GIT_REJECTED"
-  | "GIT_NO_UPSTREAM"
-  | "SYNC_CONFLICT"
-  | "GIT_NOT_REPO"
->;
-
-/**
- * First match wins, so the specific causes come before the broad "conflict" rule: git's hints
- * for other failures can mention that word too.
- */
-const ERROR_RULES: readonly (readonly [GitErrorCode, RegExp])[] = [
-  [
-    "NETWORK",
-    /connection refused|could not resolve host|failed to connect|connection timed out|network is unreachable|unable to access .*(timed out|ssl|tls)/i,
-  ],
-  ["GIT_AUTH", /authentication failed|permission denied|could not read username|http 40[13]\b/i],
-  ["GIT_UNRELATED", /unrelated histories|refusing to merge/i],
-  ["GIT_REJECTED", /\[rejected\]|non-fast-forward|fetch first|failed to push some refs/i],
-  ["GIT_NO_UPSTREAM", /no upstream|has no upstream branch/i],
-  ["SYNC_CONFLICT", /conflict/i],
-  ["GIT_NOT_REPO", /not a git repository/i],
-];
 
 const ERROR_TEXT: Record<GitErrorCode, string> = {
   NETWORK: "Could not reach the backup remote. Check your internet connection and proxy setting.",
@@ -77,15 +37,9 @@ const ERROR_TEXT: Record<GitErrorCode, string> = {
   GIT: "Git could not finish the operation.",
 };
 
-export function classifyGitError(output: string): GitErrorCode {
-  for (const [code, pattern] of ERROR_RULES) if (pattern.test(output)) return code;
-  return "GIT";
-}
-
 /** Strip SSH chatter and credentials from git's output before it is shown or logged. */
 export function cleanGitOutput(output: string): string {
-  const lines = output.split(/\r?\n/).filter((line) => line.trim() && !SSH_NOISE.test(line.trim()));
-  return maskUrlCredentials(lines.join("\n")).slice(0, MAX_DETAIL_LENGTH);
+  return maskUrlCredentials(gitOutputLines(output).join("\n")).slice(0, MAX_DETAIL_LENGTH);
 }
 
 export function gitError(output: string, fallback: GitErrorCode = "GIT"): AppError {
@@ -134,47 +88,23 @@ export function createGit(deps: GitDeps): Git {
   let availability: Promise<boolean> | null = null;
 
   async function probe(args: string[], options: GitCallOptions = {}): Promise<ExecResult> {
-    const config: string[] = [...FIXED_CONFIG];
     const device = deps.deviceName();
-    config.push(`user.name=${device}`, `user.email=${deviceEmail(device)}`);
-    let authEnv: Record<string, string> = {};
-    if (options.network) {
-      config.push(...proxyConfig(deps.proxy()));
-      authEnv = await authEnvironment(deps.secrets, options.remoteUrl ?? deps.remoteUrl());
+    return runGit(args, {
+      config: [...BACKUP_CONFIG, `user.name=${device}`, `user.email=${deviceEmail(device)}`],
+      globalArgs: options.globalArgs,
       // A saved token is sent outright; otherwise the computer's own is git's last helper.
-      if (Object.keys(authEnv).length === 0 && deps.github) {
-        authEnv = await deps.github.gitEnvironment({ ...process.env, ...options.env });
-      }
-    }
-    const fullArgs = [...configFlags(config), ...(options.globalArgs ?? []), ...args];
-    try {
-      return await exec(GIT_BINARY, fullArgs, {
-        cwd: options.cwd ?? deps.repoDir,
-        env: {
-          ...process.env,
-          // Never block on a prompt nobody can see, and keep messages in English so
-          // `classifyGitError` recognises them.
-          GIT_TERMINAL_PROMPT: "0",
-          LC_ALL: "C",
-          // Reads such as `status` must not take `index.lock`: a sync committing at the same
-          // moment would find it and stop, taking it for an interrupted operation.
-          GIT_OPTIONAL_LOCKS: "0",
-          ...authEnv,
-          ...options.env,
-        },
-        timeoutMs: GIT_TIMEOUT_MS,
-        signal: options.signal,
-        input: options.input,
-      });
-    } catch (error) {
-      if (isAppError(error, "UNSUPPORTED")) {
-        throw new AppError(
-          "GIT_MISSING",
-          "Git is not installed on this computer. Install Git and try again.",
-        );
-      }
-      throw error;
-    }
+      network: options.network
+        ? {
+            proxy: deps.proxy(),
+            auth: await authEnvironment(deps.secrets, options.remoteUrl ?? deps.remoteUrl()),
+            github: deps.github,
+          }
+        : undefined,
+      cwd: options.cwd ?? deps.repoDir,
+      env: options.env,
+      signal: options.signal,
+      input: options.input,
+    });
   }
 
   async function run(args: string[], options?: GitCallOptions): Promise<ExecResult> {

@@ -6,7 +6,8 @@ import {
   parseRemoteUrl,
   tokenKey,
 } from "../src/backup/credentials";
-import { classifyGitError, cleanGitOutput, createGit, gitError } from "../src/backup/git";
+import { cleanGitOutput, createGit, gitError } from "../src/backup/git";
+import { classifyGitError } from "../src/util/git-errors";
 import {
   type SkillSide,
   type SkillVersions,
