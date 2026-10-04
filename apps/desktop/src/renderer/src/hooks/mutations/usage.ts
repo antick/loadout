@@ -26,6 +26,5 @@ export function useSetUsageTracking(): UseMutationResult<UsageReport, unknown, b
       );
     },
     onError: (error) => toastError(error, "usage.errors.toggle"),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.settings.root }),
   });
 }

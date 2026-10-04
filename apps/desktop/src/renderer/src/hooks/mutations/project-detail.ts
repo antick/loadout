@@ -6,12 +6,7 @@ import type {
   PushToLibraryResult,
   SkillVersion,
 } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { reloadHintFor } from "@/lib/agent-reload";
@@ -53,12 +48,6 @@ export interface SetEnabledInput extends ProjectSkillRef {
   enabled: boolean;
 }
 
-/** Project skills changed on disk; a push also changes the library. */
-function invalidateProject(queryClient: QueryClient, withLibrary = false): void {
-  void queryClient.invalidateQueries({ queryKey: keys.projects.root });
-  if (withLibrary) void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-}
-
 /** Refetch one project's skills and targets, plus the project list (the Refresh button). */
 export function useRefreshProject(): (projectId: string) => Promise<void> {
   const queryClient = useQueryClient();
@@ -73,7 +62,6 @@ export function useRefreshProject(): (projectId: string) => Promise<void> {
 
 /** Copy one library skill into a project for the given targets. */
 export function useExportSkill(): UseMutationResult<void, unknown, ExportSkillInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ skillId, projectId, agentKeys }: ExportSkillInput) =>
@@ -85,7 +73,6 @@ export function useExportSkill(): UseMutationResult<void, unknown, ExportSkillIn
           : t("projectPage.toast.exported", { name }),
       ),
     onError: (error) => toastError(error, "projectPage.errors.export"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -102,12 +89,10 @@ export function useCreateProjectSkill(): UseMutationResult<
   unknown,
   CreateProjectSkillInput
 > {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ projectId, skill, agentKeys }: CreateProjectSkillInput) =>
       api.projects.createSkill(projectId, skill, agentKeys),
     onError: (error) => toastError(error, "library.create.error"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -117,21 +102,18 @@ export function useDeleteProjectSkill(): UseMutationResult<
   unknown,
   DeleteProjectSkillInput
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ projectId, relativePath, agentKey }: DeleteProjectSkillInput) =>
       api.projects.deleteSkill(projectId, relativePath, agentKey),
     onSuccess: (removedIds, { name, targetName }) =>
       toastWithUndo(
-        queryClient,
         targetName
           ? t("projectPage.toast.removedFrom", { name, target: targetName })
           : t("projectPage.toast.deleted", { name }),
         removedIds,
       ),
     onError: (error) => toastError(error, "projectPage.errors.delete"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -147,7 +129,6 @@ export interface PushToLibraryInput extends ProjectSkillRef {
 export function usePushToLibrary(
   onChooseVersion?: (ref: ProjectSkillRef, versions: SkillVersion[]) => void,
 ): UseMutationResult<PushToLibraryResult, unknown, PushToLibraryInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ projectId, relativePath, options }: PushToLibraryInput) =>
@@ -163,36 +144,31 @@ export function usePushToLibrary(
       } else if (result.realignFailed > 0) {
         toast.warning(t("projectPage.toast.pushed", { name }), {
           description: t("projectPage.toast.realignFailed", { count: result.realignFailed }),
-          action: undoAction(queryClient, result.removedIds),
+          action: undoAction(result.removedIds),
         });
-      } else toastWithUndo(queryClient, t("projectPage.toast.pushed", { name }), result.removedIds);
+      } else toastWithUndo(t("projectPage.toast.pushed", { name }), result.removedIds);
     },
     onError: (error) => toastError(error, "projectPage.errors.push"),
-    onSettled: () => invalidateProject(queryClient, true),
   });
 }
 
 /** Replace every copy of a project skill with the library version. */
 export function usePullFromLibrary(): UseMutationResult<string[], unknown, PullFromLibraryInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ projectId, relativePath }: PullFromLibraryInput) =>
       api.projects.pullFromLibrary(projectId, relativePath),
     onSuccess: (removedIds, { name, restore }) =>
       toastWithUndo(
-        queryClient,
         t(restore ? "projectPage.toast.restored" : "projectPage.toast.pulled", { name }),
         removedIds,
       ),
     onError: (error) => toastError(error, "projectPage.errors.pull"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
 /** Switch every copy of a project skill on or off. */
 export function useSetProjectSkillEnabled(): UseMutationResult<void, unknown, SetEnabledInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ projectId, relativePath, enabled }: SetEnabledInput) =>
@@ -202,7 +178,6 @@ export function useSetProjectSkillEnabled(): UseMutationResult<void, unknown, Se
         t(enabled ? "projectPage.toast.enabled" : "projectPage.toast.disabled", { name }),
       ),
     onError: (error) => toastError(error, "projectPage.errors.toggle"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -280,7 +255,6 @@ export function useExportSkills(): UseMutationResult<
       }
       return result;
     },
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -290,7 +264,6 @@ export function useDeleteVariants(): UseMutationResult<
   unknown,
   { projectId: string; jobs: readonly DeleteVariantJob[] }
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ projectId, jobs }) => {
@@ -307,12 +280,11 @@ export function useDeleteVariants(): UseMutationResult<
       toastBatchOutcome(
         t("projectPage.toast.removedCopies", { count: result.succeeded }),
         result.failed,
-        { action: undoAction(queryClient, removedIds) },
+        { action: undoAction(removedIds) },
       );
       return result;
     },
     onError: (error) => toastError(error, "projectPage.errors.delete"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -322,7 +294,6 @@ export function useDeleteProjectSkills(): UseMutationResult<
   unknown,
   ProjectSkillRef[]
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async (refs: ProjectSkillRef[]) => {
@@ -337,12 +308,11 @@ export function useDeleteProjectSkills(): UseMutationResult<
       toastBatchOutcome(
         t("projectPage.toast.deletedMany", { count: result.succeeded }),
         result.failed,
-        { action: undoAction(queryClient, removedIds) },
+        { action: undoAction(removedIds) },
       );
       return result;
     },
     onError: (error) => toastError(error, "projectPage.errors.delete"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -352,7 +322,6 @@ export function useSetProjectSkillsEnabled(): UseMutationResult<
   unknown,
   { refs: ProjectSkillRef[]; enabled: boolean }
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ refs, enabled }) =>
@@ -369,7 +338,6 @@ export function useSetProjectSkillsEnabled(): UseMutationResult<
         result.failed,
       ),
     onError: (error) => toastError(error, "projectPage.errors.toggle"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -379,7 +347,6 @@ export function usePullManyFromLibrary(): UseMutationResult<
   unknown,
   ProjectSkillRef[]
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async (refs: ProjectSkillRef[]) => {
@@ -394,12 +361,11 @@ export function usePullManyFromLibrary(): UseMutationResult<
       toastBatchOutcome(
         t("projectPage.toast.pulledMany", { count: result.succeeded }),
         result.failed,
-        { action: undoAction(queryClient, removedIds) },
+        { action: undoAction(removedIds) },
       );
       return result;
     },
     onError: (error) => toastError(error, "projectPage.errors.pull"),
-    onSettled: () => invalidateProject(queryClient),
   });
 }
 
@@ -409,7 +375,6 @@ export function usePushManyToLibrary(): UseMutationResult<
   unknown,
   ProjectSkillRef[]
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async (refs: ProjectSkillRef[]) => {
@@ -439,7 +404,6 @@ export function usePushManyToLibrary(): UseMutationResult<
     onSuccess: (outcome) => {
       if (outcome.updated > 0) {
         toastWithUndo(
-          queryClient,
           t("projectPage.toast.pushedMany", { count: outcome.updated }),
           outcome.removedIds,
         );
@@ -464,6 +428,5 @@ export function usePushManyToLibrary(): UseMutationResult<
       }
     },
     onError: (error) => toastError(error, "projectPage.errors.push"),
-    onSettled: () => invalidateProject(queryClient, true),
   });
 }

@@ -30,6 +30,5 @@ export function useSetSetting(): UseMutationResult<
       if (context?.previous) queryClient.setQueryData(keys.settings.all, context.previous);
       toastError(error, "errors.saveSetting");
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.settings.root }),
   });
 }

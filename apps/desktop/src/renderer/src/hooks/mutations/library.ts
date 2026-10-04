@@ -10,12 +10,7 @@ import {
   formatBytes,
   formatTimestampCompact,
 } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -46,12 +41,6 @@ export function updateProgressKey(skillId: string): string {
   return `update:${skillId}`;
 }
 
-function invalidateSkills(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-  void queryClient.invalidateQueries({ queryKey: keys.updates.root });
-  void queryClient.invalidateQueries({ queryKey: keys.workspace.root });
-}
-
 function describeFailures(failed: readonly { name: string; message: string }[]): string {
   return failed.map((failure) => `${failure.name}: ${failure.message}`).join("\n");
 }
@@ -60,17 +49,14 @@ const FAILURE_LIST_CLASS = "text-xs whitespace-pre-line break-words";
 
 /** Write a new skill into the library. The dialog that calls it words the success itself. */
 export function useCreateSkill(): UseMutationResult<Skill, unknown, CreateSkillInput> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateSkillInput) => api.skills.create(input),
     onError: (error) => toastError(error, "library.create.error"),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
 /** Look upstream for every skill that has a source. */
 export function useCheckAllUpdates(): UseMutationResult<BatchResult, unknown, void> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: () => api.updates.checkAll(true),
@@ -86,13 +72,11 @@ export function useCheckAllUpdates(): UseMutationResult<BatchResult, unknown, vo
       );
     },
     onError: (error) => toastError(error, "library.errors.check"),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
 /** Look upstream for one skill, ignoring the cached answer. */
 export function useCheckSkillUpdate(): UseMutationResult<Skill, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (skillId: string) => api.updates.check(skillId, true),
@@ -104,7 +88,6 @@ export function useCheckSkillUpdate(): UseMutationResult<Skill, unknown, string>
       toastSuccess(t(`updateStatus.${skill.updateStatus}`), skill.name);
     },
     onError: (error) => toastError(error, "library.errors.check"),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
@@ -114,7 +97,6 @@ export function useCheckSkills(): UseMutationResult<
   unknown,
   { skillIds: readonly string[]; label: string }
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ skillIds }) => {
@@ -138,13 +120,11 @@ export function useCheckSkills(): UseMutationResult<
       });
     },
     onError: (error) => toastError(error, "library.errors.check"),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
 /** Update several skills. Skills whose update would delete files are held back, never forced. */
 export function useUpdateSkills(): UseMutationResult<BatchUpdateResult, unknown, string[]> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (skillIds: string[]) => api.updates.updateMany(skillIds),
@@ -169,7 +149,6 @@ export function useUpdateSkills(): UseMutationResult<BatchUpdateResult, unknown,
       });
     },
     onError: (error) => toastError(error, "library.errors.update"),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
@@ -209,7 +188,6 @@ export function useRefreshSkill(): UseMutationResult<UpdateResult, unknown, Refr
     // What Compare showed is history now: the next update must not be held to it.
     onSuccess: (_result, { skillId }) =>
       queryClient.removeQueries({ queryKey: keys.updates.sourceDiff(skillId) }),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
@@ -223,19 +201,16 @@ export function useCancelInstall(): UseMutationResult<boolean, unknown, string> 
 
 /** Forget where a skill came from. The library copy stays as it is. */
 export function useDetachSkill(): UseMutationResult<Skill, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (skillId: string) => api.updates.detach(skillId),
     onSuccess: (skill) => toastSuccess(t("library.source.detached", { name: skill.name })),
     onError: (error) => toastError(error, "library.errors.detach"),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
 /** A skill whose source is gone: forget the source and mark it as the user's own. */
 export function useKeepSkillAsMine(): UseMutationResult<Skill, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (skillId: string) => api.updates.detach(skillId, { markAuthored: true }),
@@ -245,7 +220,6 @@ export function useKeepSkillAsMine(): UseMutationResult<Skill, unknown, string> 
         t("library.sourceGone.keptHint"),
       ),
     onError: (error) => toastError(error, "library.errors.detach"),
-    onSettled: () => invalidateSkills(queryClient),
   });
 }
 
@@ -317,7 +291,6 @@ export interface SkillProjectInput {
  * available project agent when nothing was remembered.
  */
 export function useExportSkillToProject(): UseMutationResult<void, unknown, SkillProjectInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ skill, project }: SkillProjectInput) => {
@@ -333,10 +306,6 @@ export function useExportSkillToProject(): UseMutationResult<void, unknown, Skil
     onSuccess: (_result, { skill, project }) =>
       toastSuccess(t("library.projects.added", { name: skill.name, project: project.name })),
     onError: (error) => toastError(error, "library.errors.exportToProject"),
-    onSettled: (_result, _error, { project }) => {
-      void queryClient.invalidateQueries({ queryKey: keys.projects.skills(project.id) });
-      void queryClient.invalidateQueries({ queryKey: keys.projects.all });
-    },
   });
 }
 
@@ -351,7 +320,6 @@ export function useRemoveSkillFromProject(): UseMutationResult<
   unknown,
   RemoveFromProjectInput
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ project, relativePaths }: RemoveFromProjectInput) => {
@@ -363,14 +331,9 @@ export function useRemoveSkillFromProject(): UseMutationResult<
     },
     onSuccess: (removedIds, { skill, project }) =>
       toastWithUndo(
-        queryClient,
         t("library.projects.removed", { name: skill.name, project: project.name }),
         removedIds,
       ),
     onError: (error) => toastError(error, "library.errors.removeFromProject"),
-    onSettled: (_result, _error, { project }) => {
-      void queryClient.invalidateQueries({ queryKey: keys.projects.skills(project.id) });
-      void queryClient.invalidateQueries({ queryKey: keys.projects.all });
-    },
   });
 }

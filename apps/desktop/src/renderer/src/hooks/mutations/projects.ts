@@ -8,13 +8,11 @@ import { sortByIds } from "@/lib/utils";
 
 /** Unlink a project. Nothing inside the project folder is deleted. */
 export function useRemoveProject(): UseMutationResult<void, unknown, Project> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (project: Project) => api.projects.remove(project.id),
     onSuccess: (_result, project) => toastSuccess(t("projects.removed", { name: project.name })),
     onError: (error) => toastError(error, "errors.removeProject"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.projects.root }),
   });
 }
 
@@ -38,7 +36,6 @@ export function useReorderProjects(): UseMutationResult<
       if (context?.previous) queryClient.setQueryData(keys.projects.all, context.previous);
       toastError(error, "errors.reorder");
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.projects.root }),
   });
 }
 
@@ -48,11 +45,9 @@ export function useSetProjectPinned(): UseMutationResult<
   unknown,
   { projectId: string; pinned: boolean }
 > {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ projectId, pinned }) => api.projects.setPinned(projectId, pinned),
     onError: (error) => toastError(error, "errors.pinProject"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.projects.all }),
   });
 }
 

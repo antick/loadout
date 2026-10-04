@@ -14,7 +14,6 @@ export interface SavePresetInput {
 
 /** Create a preset, or update it when `id` is given. */
 export function useSavePreset(): UseMutationResult<Preset, unknown, SavePresetInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ id, input }: SavePresetInput) =>
@@ -22,22 +21,16 @@ export function useSavePreset(): UseMutationResult<Preset, unknown, SavePresetIn
     onSuccess: (preset, { id }) =>
       toastSuccess(t(id ? "presets.updated" : "presets.created", { name: preset.name })),
     onError: (error) => toastError(error, "errors.savePreset"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.presets.root }),
   });
 }
 
 /** Delete a preset. Deployed skills stay where they are. */
 export function useRemovePreset(): UseMutationResult<void, unknown, Preset> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (preset: Preset) => api.presets.remove(preset.id),
     onSuccess: (_result, preset) => toastSuccess(t("presets.deleted", { name: preset.name })),
     onError: (error) => toastError(error, "errors.deletePreset"),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.presets.root });
-      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-    },
   });
 }
 
@@ -61,6 +54,5 @@ export function useReorderPresets(): UseMutationResult<
       if (context?.previous) queryClient.setQueryData(keys.presets.all, context.previous);
       toastError(error, "errors.reorder");
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.presets.root }),
   });
 }

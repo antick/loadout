@@ -89,10 +89,6 @@ export function useRepairDeployments(): UseMutationResult<RepairReport, unknown,
       }
     },
     onError: (error) => toastError(error),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.system.repair });
-      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-    },
   });
 }
 

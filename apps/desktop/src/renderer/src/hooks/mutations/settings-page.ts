@@ -18,13 +18,6 @@ import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-/** Switching or re-pointing an agent moves deployments, so skills and workspaces follow. */
-function invalidateAgents(queryClient: QueryClient): void {
-  for (const queryKey of [keys.agents.root, keys.skills.root, keys.workspace.root]) {
-    void queryClient.invalidateQueries({ queryKey });
-  }
-}
-
 /** Patch one agent in the cached list so switches answer at once. */
 function patchAgent(queryClient: QueryClient, key: string, patch: Partial<AgentInfo>): void {
   queryClient.setQueryData<AgentInfo[]>(keys.agents.all, (agents) =>
@@ -42,19 +35,16 @@ export function useSetAgentEnabled(): UseMutationResult<
     mutationFn: ({ key, enabled }) => api.agents.setEnabled(key, enabled),
     onMutate: ({ key, enabled }) => patchAgent(queryClient, key, { enabled }),
     onError: (error) => toastError(error, "settings.agents.errors.save"),
-    onSettled: () => invalidateAgents(queryClient),
   });
 }
 
 export function useSetAllAgentsEnabled(): UseMutationResult<void, unknown, boolean> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (enabled: boolean) => api.agents.setAllEnabled(enabled),
     onSuccess: (_result, enabled) =>
       toastSuccess(t(enabled ? "settings.agents.allEnabled" : "settings.agents.allDisabled")),
     onError: (error) => toastError(error, "settings.agents.errors.save"),
-    onSettled: () => invalidateAgents(queryClient),
   });
 }
 
@@ -85,30 +75,25 @@ export function useSetAgentOrder(): UseMutationResult<
       if (context?.previous) queryClient.setQueryData(keys.agents.all, context.previous);
       toastError(error, "errors.reorder");
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.agents.root }),
   });
 }
 
 /** Add a custom agent. The form shows the backend's validation message itself. */
 export function useAddCustomAgent(): UseMutationResult<AgentInfo, unknown, CustomAgentInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: CustomAgentInput) => api.agents.addCustom(input),
     onSuccess: (agent) => toastSuccess(t("settings.agents.added", { name: agent.displayName })),
-    onSettled: () => invalidateAgents(queryClient),
   });
 }
 
 export function useRemoveCustomAgent(): UseMutationResult<void, unknown, AgentInfo> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (agent: AgentInfo) => api.agents.removeCustom(agent.key),
     onSuccess: (_result, agent) =>
       toastSuccess(t("settings.agents.removed", { name: agent.displayName })),
     onError: (error) => toastError(error, "settings.agents.errors.remove"),
-    onSettled: () => invalidateAgents(queryClient),
   });
 }
 
@@ -125,7 +110,6 @@ export interface SetAgentPathInput {
 
 /** Change or reset where an agent keeps its skills, globally or inside projects. */
 export function useSetAgentPath(): UseMutationResult<void, unknown, SetAgentPathInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ key, kind, path, reset }: SetAgentPathInput) => {
@@ -139,7 +123,6 @@ export function useSetAgentPath(): UseMutationResult<void, unknown, SetAgentPath
     onSuccess: (_result, { reset }) =>
       toastSuccess(t(reset ? "settings.agents.pathReset" : "settings.agents.pathSaved")),
     onError: (error) => toastError(error, "settings.agents.errors.path"),
-    onSettled: () => invalidateAgents(queryClient),
   });
 }
 
@@ -150,7 +133,6 @@ export function useSetLibraryPath(): UseMutationResult<LibraryLocation, unknown,
     mutationFn: (path: string | null) => api.system.setLibraryPath(path),
     onSuccess: (location) => queryClient.setQueryData(keys.system.libraryLocation, location),
     onError: (error) => toastError(error, "settings.general.library.error"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.system.libraryLocation }),
   });
 }
 

@@ -7,12 +7,11 @@ import {
   type PresetImportResult,
   presetFileName,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { api } from "@/lib/api";
-import { keys } from "@/lib/query-keys";
 import { toastError } from "@/lib/toast";
 
 /** Save a preset as a file to share, chosen in a "Save as" dialog. Null when cancelled. */
@@ -64,7 +63,6 @@ export function useImportPreset(): UseMutationResult<
   { input: string; name?: string }
 > {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ input, name }) => {
       try {
@@ -95,9 +93,5 @@ export function useImportPreset(): UseMutationResult<
       });
     },
     onError: (error) => toastError(error, "presetShare.import.failed"),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.presets.root });
-      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-    },
   });
 }

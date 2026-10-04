@@ -110,7 +110,6 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
           setPending(null);
           // Replaced edits wait in Recently removed; Undo puts them back.
           toastWithUndo(
-            queryClient,
             t(result.contentChanged ? "library.refresh.done" : "library.refresh.unchanged", {
               name: result.skill.name,
             }),

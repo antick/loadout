@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { reloadHintFor } from "@/lib/agent-reload";
-import { keys } from "@/lib/query-keys";
 import { toastApplyResult, toastError } from "@/lib/toast";
 import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
 
@@ -62,14 +61,7 @@ function usePairMutation(
       restoreCached(queryClient, context);
       toastError(error, deployed ? "errors.deploy" : "errors.undeploy");
     },
-    onSettled: () => invalidateDeployments(queryClient),
   });
-}
-
-/** Refetch everything a deployment change shows up in: skills, agent workspaces, counts. */
-export function invalidateDeployments(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-  void queryClient.invalidateQueries({ queryKey: keys.workspace.root });
 }
 
 /** Deploy one skill to one agent; the badge flips immediately and rolls back on failure. */
@@ -95,12 +87,10 @@ export interface SetBlockedInput {
 
 /** Block or allow a skill for agents. Blocking also removes it from an agent it is deployed to. */
 export function useSetBlocked(): UseMutationResult<Skill, unknown, SetBlockedInput> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ skillId, agentKeys, blocked }: SetBlockedInput) =>
       api.deploy.setBlocked(skillId, agentKeys, blocked),
     onError: (error) => toastError(error, "errors.block"),
-    onSettled: () => invalidateDeployments(queryClient),
   });
 }
 
@@ -114,6 +104,5 @@ export function useApplySkills(): UseMutationResult<ApplyResult, unknown, ApplyS
       if (!silent) toastApplyResult(result, action, reloadHintFor(queryClient, agentKeys));
     },
     onError: (error) => toastError(error, "errors.apply"),
-    onSettled: () => invalidateDeployments(queryClient),
   });
 }

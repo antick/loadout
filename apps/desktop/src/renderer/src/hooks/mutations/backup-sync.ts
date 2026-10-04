@@ -7,7 +7,7 @@ import type {
 } from "@loadout/shared";
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { invalidateAfterBackup } from "@/hooks/mutations/backup-page";
+import { refreshAfterSync } from "@/hooks/mutations/backup-page";
 import { api } from "@/lib/api";
 import { toastBackupError } from "@/lib/backup-errors";
 import { toastSyncOutcome } from "@/lib/backup-toast";
@@ -24,7 +24,6 @@ export function useSetBackupIgnoreRules(): UseMutationResult<BackupIgnoreRules, 
       queryClient.setQueryData(keys.backup.ignore, rules);
       toastSuccess(t("backupSync.ignore.saved"));
     },
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.backup.status }),
   });
 }
 
@@ -49,18 +48,16 @@ export function useReviewedSync(): UseMutationResult<
   return useMutation({
     mutationFn: (review) => api.backup.sync(undefined, review),
     onSuccess: (outcome) => toastSyncOutcome(outcome, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
+    onSettled: () => refreshAfterSync(queryClient),
   });
 }
 
 /** Connect to a public GitHub repository after all, once the user agreed. */
 export function useGithubConfirmPublic(): UseMutationResult<GithubConnectResult, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (confirmId: string) => api.backup.githubConfirmPublic(confirmId),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.backup.root }),
   });
 }
 

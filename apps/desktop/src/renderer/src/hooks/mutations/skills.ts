@@ -13,7 +13,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
@@ -25,11 +24,9 @@ export interface SetSkillTagsInput {
 
 /** Replace one skill's tags. Silent on success: batch callers toast once for the whole set. */
 export function useSetSkillTags(): UseMutationResult<void, unknown, SetSkillTagsInput> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ skillId, tags }: SetSkillTagsInput) => api.skills.setTags(skillId, tags),
     onError: (error) => toastError(error, "errors.saveTags"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
   });
 }
 
@@ -41,14 +38,12 @@ export interface SetSkillNoteInput {
 
 /** Replace the user's note on one skill. */
 export function useSetSkillNote(): UseMutationResult<Skill, unknown, SetSkillNoteInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ skillId, note }: SetSkillNoteInput) => api.skills.setNote(skillId, note),
     onSuccess: (skill) =>
       toastSuccess(skill.note ? t("library.note.saved") : t("library.note.removed")),
     onError: (error) => toastError(error, "library.note.errors.save"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
   });
 }
 
@@ -84,7 +79,6 @@ export function useSetFavorite(): UseMutationResult<
       restoreCached(queryClient, context);
       toastError(error, "library.favorites.errors.save");
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
   });
 }
 
@@ -94,7 +88,6 @@ export function useRenameSkill(): UseMutationResult<
   unknown,
   { skillId: string; name: string }
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ skillId, name }) => api.skills.rename(skillId, name),
@@ -109,40 +102,31 @@ export function useRenameSkill(): UseMutationResult<
         });
     },
     onError: (error) => toastError(error, "library.rename.error"),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-      void queryClient.invalidateQueries({ queryKey: keys.projects.root });
-    },
   });
 }
 
 /** Rename a tag everywhere it is used. */
 export function useRenameTag(): UseMutationResult<void, unknown, { from: string; to: string }> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ from, to }) => api.skills.renameTag(from, to),
     onSuccess: (_result, { from, to }) => toastSuccess(t("tags.renamed", { from, to })),
     onError: (error) => toastError(error, "errors.saveTags"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
   });
 }
 
 /** Remove a tag from every skill. */
 export function useDeleteTag(): UseMutationResult<void, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (tag: string) => api.skills.deleteTag(tag),
     onSuccess: (_result, tag) => toastSuccess(t("tags.deleted", { tag })),
     onError: (error) => toastError(error, "errors.saveTags"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
   });
 }
 
 /** Remove skills from the library (and every agent they were deployed to). Toasts the counts. */
 export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown, string[]> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (skillIds: string[]) => api.skills.removeMany(skillIds),
@@ -153,7 +137,7 @@ export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown
         days: REMOVED_KEEP_DAYS,
       });
       if (result.failed.length === 0) {
-        toastWithUndo(queryClient, summary, result.removedIds, kept);
+        toastWithUndo(summary, result.removedIds, kept);
         return;
       }
       toast.warning(t("skills.removedWithFailures", { summary, count: result.failed.length }), {
@@ -161,13 +145,9 @@ export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown
           .map((failure) => `${failure.name}: ${failure.message}`)
           .join("\n"),
         descriptionClassName: "text-xs whitespace-pre-line",
-        action: undoAction(queryClient, result.removedIds),
+        action: undoAction(result.removedIds),
       });
     },
     onError: (error) => toastError(error, "errors.removeSkills"),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-      void queryClient.invalidateQueries({ queryKey: keys.workspace.root });
-    },
   });
 }

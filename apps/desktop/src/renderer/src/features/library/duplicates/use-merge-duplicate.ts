@@ -1,10 +1,8 @@
 import { REMOVED_KEEP_DAYS, type Skill } from "@loadout/shared";
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { api } from "@/lib/api";
-import { keys } from "@/lib/query-keys";
 import { toastWithUndo } from "@/lib/removed-undo";
 import { toastError } from "@/lib/toast";
 
@@ -23,7 +21,6 @@ export interface MergeDuplicate {
 export function useMergeDuplicate(): MergeDuplicate {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -62,7 +59,6 @@ export function useMergeDuplicate(): MergeDuplicate {
         if (!ok) return false;
         const result = await api.duplicates.merge(keep.id, remove.id);
         toastWithUndo(
-          queryClient,
           t("duplicates.merge.done", { keep: keep.name, remove: remove.name }),
           result.removedEntryId ? [result.removedEntryId] : [],
         );
@@ -72,12 +68,9 @@ export function useMergeDuplicate(): MergeDuplicate {
         return false;
       } finally {
         setBusy(false);
-        for (const queryKey of [keys.skills.root, keys.presets.root, keys.storage.root]) {
-          void queryClient.invalidateQueries({ queryKey });
-        }
       }
     },
-    [confirm, queryClient, t],
+    [confirm, t],
   );
 
   return { run, busy };

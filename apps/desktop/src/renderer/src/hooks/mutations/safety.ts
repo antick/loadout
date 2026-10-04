@@ -3,23 +3,20 @@ import {
   type SafetyRecord,
   type SafetyScanSummary,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { api } from "@/lib/api";
-import { keys } from "@/lib/query-keys";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 /** Scan one library skill now. */
 export function useScanSkill(): UseMutationResult<SafetyRecord, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (skillId: string) => api.safety.scanSkill(skillId),
     onSuccess: (record) => toastSuccess(t(`safety.scanned.${record.verdict}`)),
     onError: (error) => toastError(error, "safety.errors.scan"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.safety.root }),
   });
 }
 

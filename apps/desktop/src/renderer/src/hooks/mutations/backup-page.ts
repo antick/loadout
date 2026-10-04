@@ -8,7 +8,6 @@ import type {
 } from "@loadout/shared";
 import {
   type QueryClient,
-  type QueryKey,
   type UseMutationResult,
   useMutation,
   useQueryClient,
@@ -20,28 +19,19 @@ import { toastSyncOutcome } from "@/lib/backup-toast";
 import { keys } from "@/lib/query-keys";
 import { toastSuccess } from "@/lib/toast";
 
-/** A backup action can rewrite the whole library, so everything built from it is refetched. */
-export function invalidateAfterBackup(queryClient: QueryClient): void {
-  for (const queryKey of [keys.backup.root, keys.skills.root, keys.presets.root]) {
-    void queryClient.invalidateQueries({ queryKey });
-  }
-}
-
 /**
- * Refetch without making the mutation wait for it. A hook-level callback that returns a promise
- * holds back the per-call `onSuccess`; by then the refreshed status may already have unmounted the
- * caller (the Disconnect card, the remote form) and its callback would be dropped.
+ * A sync that fails part way can leave a commit or a merge behind, and `data:changed` only follows
+ * a finished one: refetch the backup status either way. Without making the mutation wait for it,
+ * so the refreshed status cannot unmount the caller before its own callbacks run.
  */
-function refresh(queryClient: QueryClient, queryKey: QueryKey): void {
-  void queryClient.invalidateQueries({ queryKey });
+export function refreshAfterSync(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: keys.backup.root });
 }
 
 /** Quietly look at the remote so "behind" is current. Failures (offline) are not worth a toast. */
 export function useFetchBackup(): UseMutationResult<void, unknown, void> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => api.backup.fetch(),
-    onSettled: () => refresh(queryClient, keys.backup.status),
   });
 }
 
@@ -78,49 +68,42 @@ export function useStartBackup(): UseMutationResult<StartBackupResult, unknown, 
       else toastSuccess(t(isRepo ? "backupPage.toast.remoteSaved" : "backupPage.toast.restored"));
     },
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
+    onSettled: () => refreshAfterSync(queryClient),
   });
 }
 
 /** Save the remote URL. Resolves to the URL as stored, with any credentials taken out. */
 export function useSetBackupRemote(): UseMutationResult<string, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (url: string) => api.backup.setRemote(url),
     onSuccess: () => toastSuccess(t("backupPage.toast.remoteSaved")),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => refresh(queryClient, keys.backup.root),
   });
 }
 
 /** Forget the remote and its stored credentials. Local history and the remote stay untouched. */
 export function useRemoveBackupRemote(): UseMutationResult<void, unknown, void> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: () => api.backup.removeRemote(),
     onSuccess: () => toastSuccess(t("backupPage.toast.disconnected")),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => refresh(queryClient, keys.backup.root),
   });
 }
 
 /** Recovery: download the remote backup again, keeping skills that only exist here. */
 export function useRecloneBackup(): UseMutationResult<void, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (url: string) => api.backup.reclone(url),
     onSuccess: () => toastSuccess(t("backupPage.toast.recloned")),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
   });
 }
 
 /** Switch the library to a snapshot. Toasts the safety snapshot taken just before. */
 export function useRestoreSnapshot(): UseMutationResult<string, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (tag: string) => api.backup.restore(tag),
@@ -130,7 +113,6 @@ export function useRestoreSnapshot(): UseMutationResult<string, unknown, string>
         t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
       ),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
   });
 }
 
@@ -145,7 +127,6 @@ export function useResolveBackupConflict(): UseMutationResult<
   unknown,
   ResolveConflictInput
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ conflict, action }: ResolveConflictInput) =>
@@ -156,7 +137,6 @@ export function useResolveBackupConflict(): UseMutationResult<
         t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
       ),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
   });
 }
 
@@ -171,7 +151,6 @@ export function useResolveBackupConflicts(): UseMutationResult<
   unknown,
   ResolveConflictsInput
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ conflicts, action }: ResolveConflictsInput) =>
@@ -185,19 +164,16 @@ export function useResolveBackupConflicts(): UseMutationResult<
         t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
       ),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
   });
 }
 
 /** Rename this machine for future backups. */
 export function useSetDeviceName(): UseMutationResult<string, unknown, string> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (name: string) => api.backup.setDeviceName(name),
     onSuccess: (saved) => toastSuccess(t("backupPage.toast.deviceRenamed", { name: saved })),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => refresh(queryClient, keys.backup.device),
   });
 }
 
@@ -212,7 +188,6 @@ export function useGithubConnect(): UseMutationResult<
   unknown,
   GithubTokenInput
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ token, repoName }: GithubTokenInput) =>
@@ -222,7 +197,6 @@ export function useGithubConnect(): UseMutationResult<
     gcTime: 0,
     // A public repository is not a failure: the caller asks the user about it.
     onError: (error) => (publicRepoDetails(error) ? undefined : toastBackupError(error, t)),
-    onSettled: () => refresh(queryClient, keys.backup.root),
   });
 }
 
@@ -242,23 +216,16 @@ export interface DevicePollInput {
 
 /** One poll of a running sign-in. The caller owns the timing and the error handling. */
 export function useGithubDevicePoll(): UseMutationResult<DeviceFlowPoll, unknown, DevicePollInput> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ deviceCode, repoName }: DevicePollInput) =>
       api.backup.githubDevicePoll(deviceCode, repoName),
-    onSuccess: (poll) => {
-      if (poll.status === "connected")
-        void queryClient.invalidateQueries({ queryKey: keys.backup.root });
-    },
   });
 }
 
 /** Clone a backup into an empty library (first run). Errors are shown by the caller, inline. */
 export function useRestoreFromRemote(): UseMutationResult<void, unknown, string> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (url: string) => api.backup.clone(url),
-    onSettled: () => invalidateAfterBackup(queryClient),
   });
 }
 
@@ -273,7 +240,7 @@ export function useAllowSecretsAndSync(): UseMutationResult<SyncOutcome, unknown
     },
     onSuccess: (outcome) => toastSyncOutcome(outcome, t),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
+    onSettled: () => refreshAfterSync(queryClient),
   });
 }
 
@@ -288,6 +255,6 @@ export function useCleanUpAndSync(): UseMutationResult<SyncOutcome, unknown, voi
     },
     onSuccess: (outcome) => toastSyncOutcome(outcome, t),
     onError: (error) => toastBackupError(error, t),
-    onSettled: () => invalidateAfterBackup(queryClient),
+    onSettled: () => refreshAfterSync(queryClient),
   });
 }

@@ -1,9 +1,8 @@
 import type { SourceCheckResult } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { keys } from "@/lib/query-keys";
 import { toastError } from "@/lib/toast";
 
 /**
@@ -15,7 +14,6 @@ export function useCheckSources(): UseMutationResult<
   unknown,
   readonly string[] | undefined
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (sourceKeys) => api.updates.checkSources(sourceKeys ? [...sourceKeys] : undefined),
@@ -32,10 +30,6 @@ export function useCheckSources(): UseMutationResult<
       if (found > 0) toast.info(t("sources.news.foundToast", { count: found }));
     },
     onError: (error) => toastError(error),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.updates.root });
-      void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-    },
   });
 }
 
@@ -45,10 +39,8 @@ export function useDismissSourceNews(): UseMutationResult<
   unknown,
   { sourceKey: string; paths?: string[] }
 > {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ sourceKey, paths }) => api.updates.dismissSourceNews(sourceKey, paths),
     onError: (error) => toastError(error),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.updates.news }),
   });
 }

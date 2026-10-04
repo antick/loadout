@@ -324,10 +324,12 @@ export function createSystemMockHandlers(ctx: SystemMockContext): MockHandlers {
     "backup.conflicts": () => conflicts,
     "backup.resolveConflict": (skillKey: string) => {
       conflicts = conflicts.filter((conflict) => conflict.skillKey !== skillKey);
+      ctx.emitChanged("skills", "presets", "backup", "items");
       return takeSnapshot("resolve conflict");
     },
     "backup.resolveConflicts": (skillKeys: string[]) => {
       conflicts = conflicts.filter((conflict) => !skillKeys.includes(conflict.skillKey));
+      ctx.emitChanged("skills", "presets", "backup", "items");
       return takeSnapshot("resolve conflicts");
     },
     "backup.sizeReport": () => ({

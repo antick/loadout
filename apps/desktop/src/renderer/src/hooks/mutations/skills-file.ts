@@ -75,9 +75,6 @@ export function useRunSkillsFile(): UseMutationResult<
       toast.warning(summary, { description: [removed, kept].filter(Boolean).join("\n") });
     },
     onError: (error) => toastError(error, "skillsFile.errors.apply"),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.skillsFile.root });
-      void queryClient.invalidateQueries({ queryKey: keys.projects.root });
-    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.skillsFile.root }),
   });
 }

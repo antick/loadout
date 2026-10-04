@@ -1,7 +1,6 @@
 import { ApiError, type BatchFailure, type Project } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { keys } from "@/lib/query-keys";
 import { errorMessage } from "@/lib/toast";
 
 export interface LinkedWorkspaceInput {
@@ -21,20 +20,16 @@ export interface AddScannedResult {
 
 /** Link one project folder. */
 export function useAddProject(): UseMutationResult<Project, unknown, string> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (path: string) => api.projects.add(path),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.projects.root }),
   });
 }
 
 /** Link a standalone skills folder as a workspace of its own. */
 export function useAddLinkedWorkspace(): UseMutationResult<Project, unknown, LinkedWorkspaceInput> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ name, path, disabledPath }: LinkedWorkspaceInput) =>
       api.projects.addLinked(name, path, disabledPath),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.projects.root }),
   });
 }
 
@@ -45,7 +40,6 @@ export function useScanProjects(): UseMutationResult<string[], unknown, string> 
 
 /** Link several scanned folders one after the other, telling duplicates from real failures. */
 export function useAddScannedProjects(): UseMutationResult<AddScannedResult, unknown, string[]> {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (paths: string[]) => {
       const result: AddScannedResult = { added: [], alreadyLinked: 0, failed: [] };
@@ -60,6 +54,5 @@ export function useAddScannedProjects(): UseMutationResult<AddScannedResult, unk
       }
       return result;
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.projects.root }),
   });
 }

@@ -9,7 +9,6 @@ import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/r
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
-import { invalidateAfterRestore } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 /** Empty one clearable area and say how much was freed. */
@@ -59,7 +58,6 @@ export function useRestoreRemoved(): UseMutationResult<
   unknown,
   RemovedFolder
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (entry: RemovedFolder) => api.storage.restoreRemoved(entry.id),
@@ -69,7 +67,6 @@ export function useRestoreRemoved(): UseMutationResult<
         result.displacedId ? t("settings.storage.removed.displacedNote") : undefined,
       ),
     onError: (error) => toastError(error, "settings.storage.removed.errors.restore"),
-    onSettled: () => invalidateAfterRestore(queryClient),
   });
 }
 

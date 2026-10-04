@@ -1,10 +1,5 @@
 import type { BatchResult, Skill } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
@@ -31,12 +26,6 @@ export interface DeployToAgentInput {
   skills: readonly { id: string; name: string }[];
 }
 
-/** An agent folder changed: refresh its list, the counts, and the library's deployment badges. */
-function invalidateWorkspace(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: keys.workspace.root });
-  void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-}
-
 /** Refetch one agent's folder and the per-agent counts (the Refresh button). */
 export function useRefreshWorkspace(): (agentKey: string) => Promise<void> {
   const queryClient = useQueryClient();
@@ -53,7 +42,6 @@ export function useRefreshWorkspace(): (agentKey: string) => Promise<void> {
 
 /** Copy a local skill into the library (new, or over its match); the app manages it afterwards. */
 export function useUploadLocalSkill(): UseMutationResult<Skill, unknown, LocalSkillRef> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
@@ -61,55 +49,47 @@ export function useUploadLocalSkill(): UseMutationResult<Skill, unknown, LocalSk
     onSuccess: (skill) =>
       toastSuccess(t("agents.toast.uploaded", { name: skill.name }), t("agents.toast.nowManaged")),
     onError: (error) => toastError(error, "agents.errors.upload"),
-    onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
 /** Replace the local folder with the library version; its own changes go to Recently removed. */
 export function usePullLocalSkill(): UseMutationResult<string[], unknown, LocalSkillRef> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
       api.workspace.pull(agentKey, relativePath),
     onSuccess: (removedIds, { name }) =>
-      toastWithUndo(queryClient, t("agents.toast.pulled", { name }), removedIds),
+      toastWithUndo(t("agents.toast.pulled", { name }), removedIds),
     onError: (error) => toastError(error, "agents.errors.pull"),
-    onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
 /** Delete a skill folder the app does not manage. It goes to Recently removed. */
 export function useDeleteLocalSkill(): UseMutationResult<string[], unknown, LocalSkillRef> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
       api.workspace.deleteLocal(agentKey, relativePath),
     onSuccess: (removedIds, { name }) =>
-      toastWithUndo(queryClient, t("agents.toast.deleted", { name }), removedIds),
+      toastWithUndo(t("agents.toast.deleted", { name }), removedIds),
     onError: (error) => toastError(error, "agents.errors.delete"),
-    onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
 /** Delete a folder the agent ignores (no SKILL.md, or a link to nothing). */
 export function useDeleteBrokenFolder(): UseMutationResult<string[], unknown, LocalSkillRef> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ agentKey, relativePath }: LocalSkillRef) =>
       api.workspace.deleteBroken(agentKey, relativePath),
     onSuccess: (removedIds, { name }) =>
-      toastWithUndo(queryClient, t("agents.toast.deleted", { name }), removedIds),
+      toastWithUndo(t("agents.toast.deleted", { name }), removedIds),
     onError: (error) => toastError(error, "agents.errors.deleteBroken"),
-    onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
 /** Delete several unmanaged skill folders, one after the other, and toast the counts. */
 export function useDeleteLocalSkills(): UseMutationResult<BatchResult, unknown, LocalSkillRef[]> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async (refs: LocalSkillRef[]) => {
@@ -122,24 +102,21 @@ export function useDeleteLocalSkills(): UseMutationResult<BatchResult, unknown, 
         },
       );
       toastBatchOutcome(t("agents.toast.deletedMany", { count: result.succeeded }), result.failed, {
-        action: undoAction(queryClient, removedIds),
+        action: undoAction(removedIds),
       });
       return result;
     },
     onError: (error) => toastError(error, "agents.errors.delete"),
-    onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
 /** Take a managed skill out of one agent. The library copy stays. */
 export function useRemoveFromAgent(): UseMutationResult<void, unknown, ManagedSkillRef> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ skillId, agentKey }: ManagedSkillRef) => api.deploy.undeploy(skillId, agentKey),
     onSuccess: (_result, { name }) => toastSuccess(t("agents.toast.removed", { name })),
     onError: (error) => toastError(error, "errors.undeploy"),
-    onSettled: () => invalidateWorkspace(queryClient),
   });
 }
 
@@ -165,6 +142,5 @@ export function useDeployToAgent(): UseMutationResult<BatchResult, unknown, Depl
       }
       return result;
     },
-    onSettled: () => invalidateWorkspace(queryClient),
   });
 }

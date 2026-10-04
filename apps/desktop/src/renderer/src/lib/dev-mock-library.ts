@@ -37,7 +37,7 @@ export interface LibraryMockContext {
   getAgents(): AgentInfo[];
   /** Deploy or remove one pair; false when it was already in the wanted state. */
   setDeployed(skillId: string, agentKey: string, on: boolean): boolean;
-  emitChanged(...scope: ("skills" | "presets")[]): void;
+  emitChanged(...scope: ("skills" | "presets" | "sources")[]): void;
   emitProgress(progress: InstallProgress): void;
   emitAutoRan(payload: AppEvents["updates:auto-ran"]): void;
   fail(code: ErrorCode, message: string): never;
@@ -278,6 +278,7 @@ export function createLibraryMockHandlers(ctx: LibraryMockContext): MockHandlers
         const skills = paths ? entry.skills.filter((skill) => !paths.includes(skill.path)) : [];
         return skills.length > 0 ? [{ ...entry, skills }] : [];
       });
+      ctx.emitChanged("sources");
     },
     "updates.check": async (skillId: string) => {
       await wait(STEP_MS);

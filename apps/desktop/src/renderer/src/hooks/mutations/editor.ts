@@ -4,12 +4,7 @@ import type {
   SkillFileChangeResult,
   SkillLocation,
 } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAgents } from "@/hooks/queries/agents";
@@ -21,13 +16,6 @@ import { toastError, toastSuccess } from "@/lib/toast";
 export interface SaveSkillFileVariables {
   location: SkillLocation;
   input: SaveSkillFileInput;
-}
-
-/** Everything an edit can change: the editor's lists and files, skills, instruction files. */
-function refetchEdited(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: keys.editor.root });
-  void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-  void queryClient.invalidateQueries({ queryKey: keys.instructions.root });
 }
 
 /**
@@ -50,7 +38,6 @@ export function useSaveSkillFile(): UseMutationResult<
       );
       if (result.skill) queryClient.setQueryData(keys.skills.detail(result.skill.id), result.skill);
     },
-    onSettled: () => refetchEdited(queryClient),
   });
 }
 
@@ -97,7 +84,6 @@ function useFileChange<Variables>(
       });
     },
     onError: (error) => toastError(error, errorKey),
-    onSettled: () => refetchEdited(queryClient),
   });
 }
 

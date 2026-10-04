@@ -6,7 +6,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { invalidateDeployments } from "@/hooks/mutations/deploy";
 import { reloadHintForAvailable } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -18,12 +17,6 @@ export interface PresetSkillsInput {
   skillIds: string[];
   /** Skip the success toast, e.g. for a checkbox that already shows the new state. */
   silent?: boolean;
-}
-
-/** Membership shows up on presets and on each skill's `presetIds`. */
-function invalidateMembership(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: keys.presets.root });
-  void queryClient.invalidateQueries({ queryKey: keys.skills.root });
 }
 
 /** Replace one preset's skill ids in the cached list before the backend answers. */
@@ -41,7 +34,6 @@ function patchPresetSkills(
 
 /** Add skills to a preset. Nothing is deployed: a preset is only a named set. */
 export function useAddSkillsToPreset(): UseMutationResult<void, unknown, PresetSkillsInput> {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ preset, skillIds }: PresetSkillsInput) =>
@@ -51,7 +43,6 @@ export function useAddSkillsToPreset(): UseMutationResult<void, unknown, PresetS
       toastSuccess(t("presetPage.skillsAdded", { count: skillIds.length, name: preset.name }));
     },
     onError: (error) => toastError(error, "presetPage.errors.addSkills"),
-    onSettled: () => invalidateMembership(queryClient),
   });
 }
 
@@ -79,7 +70,6 @@ export function useRemoveSkillsFromPreset(): UseMutationResult<
       restoreCached(queryClient, context);
       toastError(error, "presetPage.errors.removeSkills");
     },
-    onSettled: () => invalidateMembership(queryClient),
   });
 }
 
@@ -98,7 +88,6 @@ export function useReorderPresetSkills(): UseMutationResult<
       restoreCached(queryClient, context);
       toastError(error, "errors.reorder");
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.presets.root }),
   });
 }
 
@@ -131,8 +120,6 @@ export function useSetPresetToggle(): UseMutationResult<
       restoreCached(queryClient, context);
       toastError(error, "presetPage.errors.toggle");
     },
-    onSettled: (_result, _error, { presetId, skillId }) =>
-      queryClient.invalidateQueries({ queryKey: keys.presets.toggles(presetId, skillId) }),
   });
 }
 
@@ -143,6 +130,5 @@ export function useApplyPreset(): UseMutationResult<ApplyResult, unknown, Preset
     mutationFn: (preset: Preset) => api.presets.applyToDefault(preset.id),
     onSuccess: (result) => toastApplyResult(result, "add", reloadHintForAvailable(queryClient)),
     onError: (error) => toastError(error, "presetPage.errors.apply"),
-    onSettled: () => invalidateDeployments(queryClient),
   });
 }

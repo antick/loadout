@@ -1,23 +1,14 @@
 import type { Skill, SourceCandidate, SourceChoice, SourceSearch } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { keys } from "@/lib/query-keys";
 import { toastError } from "@/lib/toast";
 
 /** A candidate the user picked, reduced to what linking needs. */
 function choiceOf(candidate: SourceCandidate): SourceChoice {
   const { url, branch, subpath, marketRef, evidence } = candidate;
   return { url, branch, subpath, marketRef, evidence };
-}
-
-function useInvalidateSkills(): () => void {
-  const queryClient = useQueryClient();
-  return () => {
-    void queryClient.invalidateQueries({ queryKey: keys.skills.root });
-    void queryClient.invalidateQueries({ queryKey: keys.updates.root });
-  };
 }
 
 /** Look for where a skill without a source came from. Changes nothing; errors show in place. */
@@ -46,7 +37,6 @@ export interface AttachSourceInput {
 /** Make a skill follow the chosen repository from now on. */
 export function useAttachSource(): UseMutationResult<Skill, unknown, AttachSourceInput> {
   const { t } = useTranslation();
-  const invalidate = useInvalidateSkills();
   return useMutation({
     mutationFn: ({ skillId, candidate }) => api.updates.attachSource(skillId, choiceOf(candidate)),
     onSuccess: (skill, { candidate, announce = true }) => {
@@ -62,7 +52,6 @@ export function useAttachSource(): UseMutationResult<Skill, unknown, AttachSourc
     onError: (error, { announce = true }) => {
       if (announce) toastError(error);
     },
-    onSettled: invalidate,
   });
 }
 
@@ -73,7 +62,6 @@ export function useSetAuthored(): UseMutationResult<
   { skillId: string; authored: boolean; quiet?: boolean }
 > {
   const { t } = useTranslation();
-  const invalidate = useInvalidateSkills();
   const mutation = useMutation({
     mutationFn: ({ skillId, authored }: { skillId: string; authored: boolean; quiet?: boolean }) =>
       api.skills.setAuthored(skillId, authored),
@@ -90,7 +78,6 @@ export function useSetAuthored(): UseMutationResult<
       );
     },
     onError: (error) => toastError(error),
-    onSettled: invalidate,
   });
   return mutation;
 }

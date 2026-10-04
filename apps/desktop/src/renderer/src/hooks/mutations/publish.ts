@@ -25,10 +25,7 @@ export function usePublishSkills(): UseMutationResult<PublishResult, unknown, Pu
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input) => api.publish.publish(input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.publish.root });
-      void queryClient.invalidateQueries({ queryKey: keys.system.root });
-    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.publish.root }),
   });
 }
 
