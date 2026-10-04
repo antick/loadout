@@ -9,13 +9,14 @@ import {
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { PortableSkill } from "../skills/portable";
-import { copyDir, ensureDir, isSkillDir, readDirSafe, removePath } from "../util/fs";
+import { copyDir, ensureDir, isSkillDir, readDirSafe, removePath, statOrNull } from "../util/fs";
 import { hashDir, hashFile } from "../util/hash";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
 import { sanitizeRemoteUrl } from "./credentials";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME, SKILL_METADATA_SUBDIR } from "./env";
 import { isRepo } from "./repo";
+import { IGNORE_FILE } from "./size";
 
 /**
  * Adopt an existing backup. The remote is cloned next to the library first (the slow, fallible
@@ -96,8 +97,13 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
       continue;
     }
     if (!entry.isDirectory() || !isSkillDir(local)) {
-      // A plain file both sides have (`.gitignore`): the backup's wins, ours is regenerated.
-      if (entry.isDirectory()) carried.complete = false;
+      // A plain file both sides have: the backup's wins. `.gitignore` is regenerated; any other
+      // file that differs is only in the old library, which must then be kept.
+      const same =
+        entry.isFile() &&
+        statOrNull(incoming)?.isFile() === true &&
+        hashFile(local) === hashFile(incoming);
+      if (entry.isDirectory() || (entry.name !== IGNORE_FILE && !same)) carried.complete = false;
       continue;
     }
 

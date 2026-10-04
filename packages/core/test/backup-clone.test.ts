@@ -8,7 +8,7 @@ import {
   readdirSync,
   writeFileSync,
 } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { BACKUP_SKILL_LIMIT_BYTES } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tokenKey } from "../src/backup/credentials";
@@ -106,6 +106,40 @@ describe("backup clone, size rules and credentials", () => {
     await a.api.sync();
     expect(a.read("mine", "SKILL.md")).toContain("only on B");
     expect(a.skill("alpha-local")?.id).toBe(clash.id);
+  });
+
+  it("keeps the old library when a top-level file of its own differs from the backup's", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["alpha"]);
+    track(a);
+    writeFile(join(a.skillsDir, "README.md"), "The backup's readme\n");
+    await a.api.sync();
+    const b = track(createDevice(temp.dir, "B"));
+    writeFile(join(b.skillsDir, "README.md"), "B's own readme\n");
+    writeFile(join(b.skillsDir, ".gitignore"), "B's ignore lines\n");
+
+    await b.api.clone(remote);
+
+    expect(b.read("", "README.md")).toBe("The backup's readme\n");
+    const parent = dirname(b.skillsDir);
+    const aside = readdirSync(parent).filter((name) => name.startsWith("skills.backup-"));
+    expect(aside).toHaveLength(1);
+    expect(readFileSync(join(parent, aside[0] ?? "", "README.md"), "utf8")).toBe(
+      "B's own readme\n",
+    );
+  });
+
+  it("removes the old library when everything in it reached the new one", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["alpha"]);
+    track(a);
+    writeFile(join(a.skillsDir, "README.md"), "Same readme\n");
+    await a.api.sync();
+    const b = track(createDevice(temp.dir, "B"));
+    writeFile(join(b.skillsDir, "README.md"), "Same readme\n");
+
+    await b.api.clone(remote);
+
+    const parent = dirname(b.skillsDir);
+    expect(readdirSync(parent).filter((name) => name.startsWith("skills.backup-"))).toEqual([]);
   });
 
   it("does not index a folder outside the library named by cloned metadata", async () => {
