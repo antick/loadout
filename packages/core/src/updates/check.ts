@@ -2,7 +2,7 @@ import type { BatchResult, Skill, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
 import { errorMessage, isAppError } from "../errors";
-import type { Download, GitClient } from "../install";
+import type { Download, GitClient, GitInputOptions } from "../install";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
@@ -24,6 +24,8 @@ export interface CheckerDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
+  /** How stored repository URLs are read (`InstallService.gitInput`). */
+  gitInput?: GitInputOptions;
   /** The registry client, for ClawHub skills. */
   clawhub?: ClawhubClient;
 }
@@ -49,7 +51,6 @@ const SETTLED: ReadonlySet<UpdateStatus> = new Set([
   "local_only",
   "source_missing",
 ]);
-const UNRESOLVABLE = "unresolvable";
 const CHECK_FAILED = "Could not check for updates";
 const EOL_INSENSITIVE = { ignoreLineEndings: true } as const;
 
@@ -70,13 +71,15 @@ function isFresh(skill: Skill, ttlMinutes: number, now: number): boolean {
   return now - skill.lastCheckedAt < ttlMinutes * MS_PER_MINUTE;
 }
 
+/** What the skill points at, read again after a lookup: a different answer drops the result. */
 function guardOf(skill: Skill): string {
-  if (!isRemoteSource(skill)) return `local\n${skill.sourceRef ?? ""}`;
-  try {
-    return remoteKey(remoteTargetOf(skill));
-  } catch {
-    return UNRESOLVABLE;
-  }
+  return [
+    skill.sourceType,
+    skill.sourceUrl,
+    skill.sourceRef,
+    skill.sourceBranch,
+    skill.sourceSubpath,
+  ].join("\n");
 }
 
 function settled(skill: Skill, updateStatus: UpdateStatus, problem: string | null = null): Finding {
@@ -184,9 +187,12 @@ async function localFinding(
 }
 
 /** A row whose source cannot be understood is a failed check, not a crash. */
-function targetOrFailure(skill: Skill): RemoteTarget | { failure: string } {
+function targetOrFailure(
+  skill: Skill,
+  gitInput: GitInputOptions | undefined,
+): RemoteTarget | { failure: string } {
   try {
-    return remoteTargetOf(skill);
+    return remoteTargetOf(skill, gitInput);
   } catch (error) {
     return { failure: errorMessage(error) };
   }
@@ -221,7 +227,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
         round.downloads,
       );
     }
-    const target = targetOrFailure(skill);
+    const target = targetOrFailure(skill, deps.gitInput);
     if ("failure" in target) return remoteFinding(skill, target);
     const outcome = round.shared?.get(remoteKey(target)) ?? (await lookup(target));
     const question = folderQuestion(skill, target, outcome);
@@ -266,7 +272,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       // Many skills come from one repository: ask each (url, branch) once.
       const targets = new Map<string, RemoteTarget>();
       for (const skill of due.filter(isRemoteSource)) {
-        const target = targetOrFailure(skill);
+        const target = targetOrFailure(skill, deps.gitInput);
         if (!("failure" in target)) targets.set(remoteKey(target), target);
       }
       const outcomes = new Map<string, RemoteOutcome>();
@@ -280,7 +286,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       // Skills of one repository whose commit moved: one fetch of folder trees for all of them.
       const planned = due.flatMap((skill): FolderQuestion[] => {
         if (!isRemoteSource(skill)) return [];
-        const target = targetOrFailure(skill);
+        const target = targetOrFailure(skill, deps.gitInput);
         if ("failure" in target) return [];
         const outcome = outcomes.get(remoteKey(target));
         const question = outcome ? folderQuestion(skill, target, outcome) : null;

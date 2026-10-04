@@ -19,6 +19,7 @@ import { type Download, createDownload } from "./download";
 import { type GitClient, type GitClientOptions, createGitClient } from "./git-client";
 import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
+import type { GitInputOptions } from "./git-source";
 import { createHttpGit } from "./http-git";
 import { type InstallIntoLibrary, type InstallRecord, installIntoLibrary } from "./library";
 import type { SourceNewsStore } from "../sources/news-store";
@@ -58,6 +59,8 @@ export interface InstallService {
   git: GitClient;
   /** Shared by the updates service, which downloads archive links again to check them. */
   download: Download;
+  /** How stored repository URLs are read: local folders only when tests allow them. */
+  gitInput: GitInputOptions;
   /** Shared by the marketplace and the updates service: one ClawHub client for all. */
   clawhub: ClawhubClient;
   /** Shared so an update can be cancelled through `install.cancel("update:<skillId>")`. */
@@ -194,6 +197,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     api,
     git,
     download,
+    gitInput: { allowLocalPath: deps.allowLocalGitSources === true },
     clawhub,
     cancels,
     installIntoLibrary: install,

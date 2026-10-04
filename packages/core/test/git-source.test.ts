@@ -1,6 +1,8 @@
 import { redactUrl } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
+import { remoteTargetOf } from "../src/updates/source";
+import { skillRecord } from "./skill-records";
 import {
   marketSourceToUrl,
   normalizeRepoUrl,
@@ -188,6 +190,15 @@ describe("parseGitSource", () => {
     expect(validateGitInput("file:///tmp/fixture", { allowLocalPath: true })).toBe(
       "file:///tmp/fixture",
     );
+  });
+
+  it("refuses a local folder stored as a skill's source, as another device's backup may hold", () => {
+    for (const sourceUrl of ["/tmp/fixture", "file:///tmp/fixture"]) {
+      const skill = skillRecord("pdf", { sourceType: "git", sourceUrl });
+      expectInvalid(() => remoteTargetOf(skill));
+    }
+    const github = skillRecord("pdf", { sourceType: "git", sourceUrl: "https://github.com/a/b" });
+    expect(remoteTargetOf(github).url).toBe("https://github.com/a/b");
   });
 });
 

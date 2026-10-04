@@ -7,7 +7,7 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
-import type { GitClient, InstallIntoLibrary } from "../install";
+import type { GitClient, GitInputOptions, InstallIntoLibrary } from "../install";
 import { subpathOf } from "../install/fetched-preview";
 import { skillHoldingName } from "../install/replace";
 import { listRepoSkills } from "../install/repo-scan";
@@ -19,6 +19,8 @@ import type { RepositoryState, SourceNewsStore } from "./news-store";
 export interface SourceCheckerDeps {
   store: SkillStore;
   git: GitClient;
+  /** How stored repository URLs are read (`InstallService.gitInput`). */
+  gitInput?: GitInputOptions;
   install: InstallIntoLibrary;
   news: SourceNewsStore;
   safety?: SafetyGate;
@@ -114,7 +116,7 @@ export function createSourceChecker(ctx: CoreContext, deps: SourceCheckerDeps): 
   async function look(repository: Repository, result: SourceCheckResult): Promise<void> {
     const [first] = repository.skills;
     if (!first) return;
-    const target = remoteTargetOf(first);
+    const target = remoteTargetOf(first, deps.gitInput);
     const revision = await resolveRemoteRevision({ git }, target);
     const before = news.get(repository.key);
     if (before && before.revision === revision) {

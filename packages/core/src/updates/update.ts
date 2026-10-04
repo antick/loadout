@@ -21,6 +21,7 @@ import type {
   CancelRegistry,
   Download,
   GitClient,
+  GitInputOptions,
   InstallIntoLibrary,
   InstallRecord,
 } from "../install";
@@ -53,6 +54,8 @@ export interface UpdaterDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
+  /** How stored repository URLs are read (`InstallService.gitInput`). */
+  gitInput?: GitInputOptions;
   cancels: CancelRegistry;
   installIntoLibrary: InstallIntoLibrary;
   refreshCopies(skill: Skill): Promise<RedeployReport>;
@@ -312,7 +315,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     const handle = cancels.register(key);
     try {
       ctx.emit("install:progress", { key, phase: "cloning", name: skill.name });
-      const target = remoteTargetOf(skill);
+      const target = remoteTargetOf(skill, deps.gitInput);
       const revision = await resolveRemoteRevision(clients, target, handle.signal);
       if (options.expectedRevision && revision !== options.expectedRevision) {
         throw new AppError("CHANGED_ON_DISK", MOVED_SINCE_COMPARED);
@@ -334,7 +337,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           acceptRisk: options.acceptRisk,
           dryRun: options.dryRun,
           verify: (fresh) => {
-            const still = isRemoteSource(fresh) && remoteKey(remoteTargetOf(fresh));
+            const still = isRemoteSource(fresh) && remoteKey(remoteTargetOf(fresh, deps.gitInput));
             if (still !== remoteKey(target)) throw invalid(SOURCE_MOVED);
           },
           record: (fresh) => ({

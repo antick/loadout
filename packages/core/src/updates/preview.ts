@@ -1,5 +1,5 @@
 import type { Skill, SourceDiff, SourceDiffOptions, SourceDocument } from "@loadout/shared";
-import type { Download, GitClient } from "../install";
+import type { Download, GitClient, GitInputOptions } from "../install";
 import type { ClawhubClient } from "../market/clawhub";
 import { readSkillDocument } from "../skills/metadata";
 import { libraryCopyOverrides } from "../skills/numbered-name";
@@ -19,6 +19,8 @@ export interface SourcePreviewDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
+  /** How stored repository URLs are read (`InstallService.gitInput`). */
+  gitInput?: GitInputOptions;
   clawhub?: ClawhubClient;
 }
 
@@ -34,7 +36,7 @@ export function createSourcePreview(deps: SourcePreviewDeps): SourcePreview {
 
   async function open(skill: Skill): Promise<OpenedSource> {
     if (!isRemoteSource(skill)) return openLocalSource(skill, download);
-    const target = remoteTargetOf(skill);
+    const target = remoteTargetOf(skill, deps.gitInput);
     return openRemoteSource(clients, target, await resolveRemoteRevision(clients, target));
   }
 
