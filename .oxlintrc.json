@@ -25,7 +25,7 @@
   ],
   "overrides": [
     {
-      "files": ["**/components/ui/**", "**/hooks/use-mobile.ts"],
+      "files": ["**/components/ui/**"],
       "rules": {
         "jsx-a11y/prefer-tag-over-role": "off",
         "jsx-a11y/no-noninteractive-element-interactions": "off",

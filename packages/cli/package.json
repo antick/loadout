@@ -12,7 +12,7 @@
     "build:standalone": "node scripts/standalone.mjs",
     "start": "node build.mjs && node dist/loadout.mjs",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "pack:npm": "node build.mjs && node scripts/pack-npm.mjs"
   },
   "dependencies": {

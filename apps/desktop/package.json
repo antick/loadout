@@ -12,7 +12,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "test:ui": "playwright test",
     "package": "electron-builder --config electron-builder.yml",
     "postinstall": "install-electron && node scripts/name-dev-electron.mjs"
