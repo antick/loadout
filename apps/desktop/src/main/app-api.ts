@@ -32,6 +32,7 @@ export function createAppApi(deps: AppApiDeps): AppApi {
   const editors = createEditorOpener({
     detect: () => ({ platform: process.platform, homeDir: homedir(), env: deps.env() }),
     openPath: (path) => shell.openPath(path),
+    reveal: revealInFileManager,
   });
 
   return {

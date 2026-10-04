@@ -64,6 +64,32 @@ export const UPDATE_LOG_FILE = "update.log";
 export const ARCHIVE_EXTENSIONS = [
   ...new Set(ARCHIVE_SUFFIXES.map((suffix) => suffix.slice(suffix.lastIndexOf(".") + 1))),
 ];
+/**
+ * Files "Open in default app" hands to the system's default app. Anything else may be run by it
+ * (a `.command`, `.bat`, `.exe`, or a `.js` on Windows), so it is shown in its folder instead.
+ */
+export const DOCUMENT_EXTENSIONS: ReadonlySet<string> = new Set([
+  "md",
+  "markdown",
+  "mdx",
+  "txt",
+  "text",
+  "log",
+  "json",
+  "jsonc",
+  "yaml",
+  "yml",
+  "toml",
+  "ini",
+  "csv",
+  "tsv",
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "pdf",
+]);
 /** What "Export as .zip" saves. */
 export const EXPORT_EXTENSION = "zip";
 

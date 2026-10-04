@@ -66,13 +66,52 @@ describe("the editor opener", () => {
       detect: () => detect("linux", []),
       openPath: async (path) => {
         opened.push(path);
-        return path.endsWith("gone") ? "No such file" : "";
+        return path.endsWith("gone.md") ? "No such file" : "";
       },
+      reveal: async () => {},
+      isFile: (path) => (path.endsWith("gone.md") ? null : true),
     });
-    await opener.open("system", "/skills/pdf");
-    expect(opened).toEqual(["/skills/pdf"]);
-    await expect(opener.open("system", "/skills/gone")).rejects.toThrow("No such file");
+    await opener.open("system", "/skills/pdf/SKILL.md");
+    expect(opened).toEqual(["/skills/pdf/SKILL.md"]);
+    await expect(opener.open("system", "/skills/gone.md")).rejects.toThrow("No such file");
     await expect(opener.open("cursor", "/skills/pdf")).rejects.toThrow("Cursor was not found");
+  });
+
+  it("shows scripts, programs and folders in the file manager instead of running them", async () => {
+    const opened: string[] = [];
+    const revealed: string[] = [];
+    const folders = new Set(["/skills/pdf", "/skills/notes.md"]);
+    const opener = createEditorOpener({
+      detect: () => detect("win32", []),
+      openPath: async (path) => {
+        opened.push(path);
+        return "";
+      },
+      reveal: async (path) => {
+        revealed.push(path);
+      },
+      isFile: (path) => !folders.has(path),
+    });
+    for (const path of [
+      "/skills/pdf/scripts/run.command",
+      "/skills/pdf/scripts/setup.bat",
+      "/skills/pdf/tool.exe",
+      "/skills/pdf/scripts/fill.js",
+      "/skills/pdf",
+      "/skills/notes.md",
+    ]) {
+      await opener.open("system", path);
+    }
+    await opener.open("system", "/skills/pdf/REFERENCE.MD");
+    expect(revealed).toEqual([
+      "/skills/pdf/scripts/run.command",
+      "/skills/pdf/scripts/setup.bat",
+      "/skills/pdf/tool.exe",
+      "/skills/pdf/scripts/fill.js",
+      "/skills/pdf",
+      "/skills/notes.md",
+    ]);
+    expect(opened).toEqual(["/skills/pdf/REFERENCE.MD"]);
   });
 
   it("detects once and again only after a while", () => {
@@ -84,6 +123,7 @@ describe("the editor opener", () => {
         return detect("linux", ["/usr/bin/code"], { PATH: "/usr/bin" });
       },
       openPath: async () => "",
+      reveal: async () => {},
       now: () => time,
     });
     expect(opener.editors()).toEqual([{ id: "vscode", name: "Visual Studio Code" }]);

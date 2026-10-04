@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import { posix, win32 } from "node:path";
+import { existsSync, lstatSync } from "node:fs";
+import { extname, posix, win32 } from "node:path";
 import {
   type DetectedEditor,
   EDITOR_IDS,
@@ -9,7 +9,7 @@ import {
   type EditorId,
   SYSTEM_EDITOR,
 } from "@loadout/shared";
-import { EDITOR_DETECT_TTL_MS } from "./constants";
+import { DOCUMENT_EXTENSIONS, EDITOR_DETECT_TTL_MS } from "./constants";
 
 /** Where an editor lives per platform. Paths are relative to the folder named in the comment. */
 interface EditorSpec {
@@ -142,7 +142,25 @@ export interface EditorOpenerDeps {
   detect: () => DetectInput;
   /** Electron's `shell.openPath`: resolves to "" on success, else the reason. */
   openPath: (path: string) => Promise<string>;
+  /** Shows a path in the file manager without running it (`revealInFileManager`). */
+  reveal: (path: string) => Promise<void>;
+  /** Whether a path is a plain file, never a folder or a link. Defaults to `lstat`. */
+  isFile?: (path: string) => boolean | null;
   now?: () => number;
+}
+
+/** A plain file, `false` for anything else, `null` when it is gone or unreadable. */
+function lstatIsFile(path: string): boolean | null {
+  try {
+    return lstatSync(path).isFile();
+  } catch {
+    return null;
+  }
+}
+
+/** Only documents go to the default app: it would run a script, an app or an installer. */
+function isDocument(path: string): boolean {
+  return DOCUMENT_EXTENSIONS.has(extname(path).slice(1).toLowerCase());
 }
 
 export interface EditorOpener {
@@ -164,6 +182,11 @@ export function createEditorOpener(deps: EditorOpenerDeps): EditorOpener {
     editors: () => describeEditors(located()),
     open: async (editor, path) => {
       if (editor === SYSTEM_EDITOR) {
+        const file = (deps.isFile ?? lstatIsFile)(path);
+        if (file === false || (file === true && !isDocument(path))) {
+          await deps.reveal(path);
+          return;
+        }
         const failure = await deps.openPath(path);
         if (failure) throw new Error(failure);
         return;
