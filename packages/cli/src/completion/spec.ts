@@ -1,9 +1,4 @@
-import {
-  ITEM_KINDS,
-  LISTING_WINDOW_CHOICES,
-  NEW_SKILL_TEMPLATES,
-  SOURCE_TYPES,
-} from "@loadout/shared";
+import { LISTING_WINDOW_CHOICES, NEW_SKILL_TEMPLATES, SOURCE_TYPES } from "@loadout/shared";
 import type { FlagSpec } from "../args";
 import type { CommandGroup, CommandSpec } from "../commands/types";
 
@@ -60,7 +55,6 @@ const VALUE_KINDS: Readonly<Record<string, WordKind>> = {
 /** Fixed values of a flag, by its value placeholder (`--source <type>` in `skills list`). */
 const VALUE_CHOICES: Readonly<Record<string, readonly string[]>> = {
   type: SOURCE_TYPES,
-  kind: ITEM_KINDS,
   template: NEW_SKILL_TEMPLATES,
   window: LISTING_WINDOW_CHOICES,
 };

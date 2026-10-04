@@ -8,7 +8,7 @@ import { plural } from "../output";
 /**
  * When a command asks for --yes, the same rule for all of them:
  * - Needs --yes: deleting or overwriting something Loadout cannot give back as it was. A
- *   permanent delete (`removed delete`, `items remove`, `presets delete`), a library skill
+ *   permanent delete (`removed delete`, `presets delete`), a library skill
  *   removed with its deployments (`skills remove`, `skills duplicates merge`), every
  *   deployment of an agent (`agents disable`), the whole library rolled back (`git restore`), a
  *   push to another repository (`skills publish`), a file overwritten outside the library

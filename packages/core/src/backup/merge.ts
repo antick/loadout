@@ -1,11 +1,6 @@
 import { existsSync, readFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import {
-  type MergeSummary,
-  type MergedSkill,
-  type SyncReviewAnswer,
-  parseItemPath,
-} from "@loadout/shared";
+import { type MergeSummary, type MergedSkill, type SyncReviewAnswer } from "@loadout/shared";
 import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
 import { LIBRARY_PLACE, type LibraryRecord, libraryRecordOf } from "../storage/removed-library";
@@ -192,9 +187,8 @@ async function materialise(
     }
 
     for (const entry of plan.residual) {
-      // Read from another device's commit: only ever a direct child of the repository, or an
-      // item file inside the items folder.
-      if (!isPlainEntryName(entry.name) && !parseItemPath(entry.name)) continue;
+      // Read from another device's commit: only ever a direct child of the repository.
+      if (!isPlainEntryName(entry.name)) continue;
       await removePath(join(env.repoDir, entry.name));
       if (entry.action === "checkout") {
         await env.git.run(["checkout", theirs.commit, "--", entry.name], {

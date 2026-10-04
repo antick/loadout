@@ -55,6 +55,20 @@ describe("backup sync", () => {
     }
   });
 
+  it("keeps a folder of subagents, commands or rules from an older version as an ordinary entry", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["alpha"]);
+    track(a);
+    writeFile(join(a.skillsDir, ".loadout-items", "commands", "commit.md"), "Commit it\n");
+    expect(await a.api.sync()).toMatchObject({ pushed: true });
+
+    const b = track(await joinRemote(temp.dir, remote));
+    expect(b.read(".loadout-items", "commands/commit.md")).toBe("Commit it\n");
+    writeFile(join(b.skillsDir, ".loadout-items", "commands", "commit.md"), "Commit it now\n");
+    await b.api.sync();
+    await a.api.sync();
+    expect(a.read(".loadout-items", "commands/commit.md")).toBe("Commit it now\n");
+  });
+
   it("reports an uninitialised library and refuses to sync it", async () => {
     const a = track(createDevice(temp.dir, "A"));
     const status = await a.api.status();

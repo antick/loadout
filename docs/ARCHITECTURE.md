@@ -48,7 +48,6 @@
 | `scan/`              | "Scan this machine": skills already in agent folders, matched against the library, imported          |
 | `safety/`            | Built-in safety rules, the SkillSpector runner, kept reports, the check before every install         |
 | `duplicates/`        | Possible duplicates: same files, alike text or names; merge one into the other, dismiss a pair       |
-| `items/`             | Subagents, commands and rules: library files converted to each agent's format and deployed           |
 | `instructions/`      | Agents' instruction files (`CLAUDE.md`, `AGENTS.md`...), globally and per project                    |
 | `skills-file/`       | A project's `skills.toml` and `skills-lock.json`: plan, safety check, apply, unapply                 |
 | `listing/`           | What Claude Code's skill listing costs in context, against its budget                                |

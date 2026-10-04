@@ -27,7 +27,6 @@ import { createSystemService } from "./system";
 import { createSourceNewsStore } from "./sources";
 import { createUpdatesService } from "./updates";
 import { createWorkspaceService } from "./workspace";
-import { createItemsService } from "./items";
 import { createDuplicatesService } from "./duplicates";
 import { createListingService } from "./listing";
 import { createUsageService } from "./usage";
@@ -165,24 +164,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
   const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });
-  const items = createItemsService(ctx, {
-    registry,
-    projects: projects.projects,
-    git: install.git,
-  });
-  /** Items changed by a sync or by hand: their deployed files follow, unless edited there. */
-  const refreshItems = (): void => {
-    try {
-      let written = 0;
-      // Writes agent folders and records: only while nothing else works in the library.
-      ctx.lock.holdSync("refresh deployed items", () => {
-        written = items.refreshAll();
-      });
-      if (written > 0) ctx.touched("items");
-    } catch (error) {
-      ctx.log.warn("Could not refresh deployed subagents, commands and rules", error);
-    }
-  };
   const finder = createInstructionFinder({ registry, projects: projects.projects });
   const instructions = createInstructionsService(ctx, { finder });
   const editor = createEditorService(ctx, {
@@ -205,7 +186,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     afterContentChange: async () => {
       // Only copies now behind the library; one edited in the agent's folder is left alone.
       await deploy.refreshStaleCopies();
-      refreshItems();
     },
   });
   const system = createSystemService(ctx, { store, install, deploy, registry, repair });
@@ -254,7 +234,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     system: system.api,
     storage: storage.api,
     skillsFile: skillsFile.api,
-    items: items.api,
     usage: usage.api,
     duplicates: duplicates.api,
     publish: publish.api,
@@ -299,7 +278,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
         })
         .then(() => {
           staleCopies.request();
-          refreshItems();
           backup.auto.notifyChanged();
         })
         .catch((error: unknown) => {
@@ -320,7 +298,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const touched = ctx.touched;
   ctx.touched = (...scope) => {
     touched(...scope);
-    if (scope.includes("skills") || scope.includes("presets") || scope.includes("items")) {
+    if (scope.includes("skills") || scope.includes("presets")) {
       backup.auto.notifyChanged();
     }
   };

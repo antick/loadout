@@ -6,7 +6,6 @@ import {
   usageById,
 } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import { ITEM_KINDS } from "@loadout/shared";
 import {
   CircleDashed,
   CircleFadingArrowUp,
@@ -44,8 +43,6 @@ import type { LibrarySearch } from "@/routes/library";
 import { useSkills } from "@/hooks/queries/skills";
 import { useSafetyReports } from "@/hooks/queries/safety";
 import { useUsageReport } from "@/hooks/queries/usage";
-import { useAllItems } from "@/hooks/queries/items";
-import { KIND_ICONS } from "@/features/items/ItemsPage";
 import { SIDEBAR_RECENT_SKILLS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +107,6 @@ const VIEWS: readonly LibraryView[] = [
 export function LibraryPanel(): ReactNode {
   const { t } = useTranslation();
   const skills = useSkills();
-  const items = useAllItems();
   const usageReport = useUsageReport();
   const usage = useMemo(() => usageById(usageReport.data), [usageReport.data]);
   const usageEnabled = usageReport.data?.enabled === true;
@@ -153,27 +149,6 @@ export function LibraryPanel(): ReactNode {
                 icon={<Download />}
               />
             </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-
-      <SidebarGroup className="py-1">
-        <SidebarGroupLabel>{t("sidebar.library.agentFiles")}</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {ITEM_KINDS.map((kind) => {
-              const Icon = KIND_ICONS[kind];
-              return (
-                <SidebarMenuItem key={kind}>
-                  <SidebarNavItem
-                    link={{ to: "/items/$kind", params: { kind } }}
-                    label={t(`items.kinds.${kind}.title`)}
-                    icon={<Icon />}
-                    badge={items.data?.filter((item) => item.kind === kind).length}
-                  />
-                </SidebarMenuItem>
-              );
-            })}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

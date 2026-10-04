@@ -169,13 +169,7 @@ describe("a dry run checks its input like the real run", () => {
       }
     }
     expect((await box.cli("skills", "duplicates", "dismiss", "notes", "x", "--all")).code).toBe(2);
-    for (const dry of [["--dry-run"], ["--yes"]]) {
-      const run = await box.cli("items", "remove", "rule/ghost", ...dry, "--json");
-      expect(run.code, dry.join(" ")).toBe(1);
-      expect(run.json()).toMatchObject({ code: "NOT_FOUND" });
-    }
     expect((await box.cli("project", "suggest", "--agent", "claude_code")).code).toBe(2);
-    expect((await box.cli("items", "show", "rule/ghost", "--project", ".")).code).toBe(2);
   });
 
   it("shows the name --name gives an imported preset", async () => {

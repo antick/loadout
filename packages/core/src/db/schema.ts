@@ -191,4 +191,8 @@ export const MIGRATIONS: readonly string[] = [
   -- Another site a link's download moved to that the user agreed to at install, NULL when none.
   ALTER TABLE skills ADD COLUMN source_trusted_host TEXT;
   `,
+  `
+  -- Subagents, commands and rules are no longer managed: their files stay where they are.
+  DROP TABLE IF EXISTS item_deployments;
+  `,
 ];

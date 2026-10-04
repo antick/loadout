@@ -133,19 +133,6 @@ loadout skills tag <ref> --add writing --remove draft --json
 loadout skills note <ref> "Run before a release" --json   # the user's own note; --clear takes it off; skills list --query finds it
 loadout skills favorite <ref>… --json               # mark as favorites; --undo takes it back; skills list --favorites shows them
 
-# Subagents, slash commands and rules ("items"): one Markdown file each, converted per agent
-loadout items list --kind subagent --json
-loadout items find agents --json                     # items already in agents' own folders
-loadout items import agents --all --json              # copy them into the library
-loadout items import owner/repo --item command/commit --json
-loadout items create rule/style --json
-loadout items show subagent/reviewer --agent opencode --json   # the converted file, and what it left out
-loadout items deploy subagent/reviewer --agent claude_code --agent opencode --json
-loadout items deploy rule/style --agent cursor --project ./my-app --json   # into a project
-loadout items undeploy subagent/reviewer --agent opencode --json
-loadout items remove subagent/reviewer --yes --json
-loadout items convert ./reviewer.md --kind subagent --to opencode   # no library needed
-
 # Presets
 loadout presets list --json
 loadout presets create "Docs work" --description "Writing and review" --json
@@ -198,10 +185,10 @@ none, the command fails and lists them - pick with `--skill` or confirm `--all` 
 ## Destructive commands
 
 A command that deletes or overwrites something Loadout cannot give back as it was refuses
-to run without `--yes`: `skills remove`, `skills duplicates merge`, `items remove`,
-`presets delete`, `removed delete`, `git restore` and `skills publish`. So does
-`agents disable` when the agent has skills deployed, and an export (`skills export`,
-`presets export`, `items convert`) whose `--out` file already exists. `--json` never implies
+to run without `--yes`: `skills remove`, `skills duplicates merge`, `presets delete`,
+`removed delete`, `git restore` and `skills publish`. So does `agents disable` when the agent
+has skills deployed, and an export (`skills export`, `presets export`) whose `--out` file
+already exists. `--json` never implies
 it, and `--dry-run` never needs it.
 
 Undeploying, `project unapply` and `project prune` need no `--yes`: what they take away waits in

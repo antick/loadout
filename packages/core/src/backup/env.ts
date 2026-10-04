@@ -139,7 +139,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
       deps.portable.rebuild({ authoritative });
       adoptRevisions();
       await deps.afterContentChange();
-      ctx.touched("skills", "presets", "backup", "items");
+      ctx.touched("skills", "presets", "backup");
     },
   };
 }

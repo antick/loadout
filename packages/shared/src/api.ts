@@ -60,7 +60,6 @@ import type {
   PresetImportPlan,
   PresetImportResult,
 } from "./preset-share";
-import type { ItemsApi } from "./api-items";
 import type {
   AgentFolderSummary,
   ClearableArea,
@@ -364,7 +363,6 @@ export interface LoadoutApi {
   system: SystemApi;
   storage: StorageApi;
   skillsFile: SkillsFileApi;
-  items: ItemsApi;
   usage: UsageApi;
   duplicates: DuplicatesApi;
   publish: PublishApi;
@@ -399,7 +397,6 @@ const CORE_NAMESPACE_KEYS: Record<keyof CoreApi, true> = {
   system: true,
   storage: true,
   skillsFile: true,
-  items: true,
   usage: true,
   duplicates: true,
   publish: true,

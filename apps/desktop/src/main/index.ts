@@ -318,7 +318,7 @@ function start(): void {
         const reindexed = core?.background.libraryChangedOnDisk() ?? Promise.resolve();
         void reindexed.then(() => {
           send("data:changed", {
-            scope: ["skills", "agents", "presets", "projects", "backup", "items"],
+            scope: ["skills", "agents", "presets", "projects", "backup"],
           });
           tray?.refresh();
         });

@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { createCore, silentLogger } from "@loadout/core";
 import type { ProjectSuggestions } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EXIT_FAILED, EXIT_OK, EXIT_USAGE } from "../src/run";
@@ -19,14 +20,18 @@ async function install(name: string): Promise<void> {
   await cli("skills", "install", `./src/${name}`);
 }
 
-/** A project folder with a Cargo.toml and a React package.json, linked through an items deploy. */
+/** A project folder with a Cargo.toml and a React package.json, linked as the app links it. */
 async function linkedProject(): Promise<string> {
   const project = join(sandbox.root, "app");
   mkdirSync(project, { recursive: true });
   writeFileSync(join(project, "Cargo.toml"), "[package]\n");
   writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { react: "19" } }));
-  await cli("items", "create", "rule/style");
-  await cli("items", "deploy", "rule/style", "-a", "cursor", "--project", "./app");
+  const core = createCore({ homeDir: sandbox.home, logger: silentLogger, safetyScannerPath: null });
+  try {
+    await core.api.projects.add(project);
+  } finally {
+    core.close();
+  }
   return project;
 }
 

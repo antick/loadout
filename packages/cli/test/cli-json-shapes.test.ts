@@ -57,9 +57,6 @@ describe("--json on commands that take --dry-run", () => {
     expectRule("presets undeploy", await both("presets", "undeploy", "Kit"), ["removed", "failed"]);
     expectRule("presets delete", await both("presets", "delete", "Kit", "--yes"), []);
 
-    await box.cli("items", "create", "rule/style");
-    expectRule("items remove", await both("items", "remove", "rule/style", "--yes"), ["ref"]);
-
     expectRule("skills remove", await both("skills", "remove", "jots", "--yes"), ["failed"]);
     const [entry] = (await box.cli("removed", "list", "--json")).json<{ id: string }[]>();
     expectRule("removed delete", await both("removed", "delete", entry?.id ?? "", "--yes"), [

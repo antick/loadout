@@ -18,7 +18,6 @@ import { Route as SourcesRouteImport } from './routes/sources'
 import { Route as AgentsIndexRouteImport } from './routes/agents/index'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
 import { Route as InstructionsEditRouteImport } from './routes/instructions.edit'
-import { Route as ItemsKindRouteImport } from './routes/items.$kind'
 import { Route as PresetsIndexRouteImport } from './routes/presets/index'
 import { Route as PresetsPresetIdRouteImport } from './routes/presets/$presetId'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
@@ -72,11 +71,6 @@ const InstructionsEditRoute = InstructionsEditRouteImport.update({
   path: '/instructions/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ItemsKindRoute = ItemsKindRouteImport.update({
-  id: '/items/$kind',
-  path: '/items/$kind',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PresetsIndexRoute = PresetsIndexRouteImport.update({
   id: '/presets/',
   path: '/presets/',
@@ -122,7 +116,6 @@ export interface FileRoutesByFullPath {
   '/sources': typeof SourcesRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/instructions/edit': typeof InstructionsEditRoute
-  '/items/$kind': typeof ItemsKindRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents/': typeof AgentsIndexRoute
@@ -141,7 +134,6 @@ export interface FileRoutesByTo {
   '/sources': typeof SourcesRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/instructions/edit': typeof InstructionsEditRoute
-  '/items/$kind': typeof ItemsKindRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents': typeof AgentsIndexRoute
@@ -161,7 +153,6 @@ export interface FileRoutesById {
   '/sources': typeof SourcesRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/instructions/edit': typeof InstructionsEditRoute
-  '/items/$kind': typeof ItemsKindRoute
   '/presets/$presetId': typeof PresetsPresetIdRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/agents/': typeof AgentsIndexRoute
@@ -182,7 +173,6 @@ export interface FileRouteTypes {
     | '/sources'
     | '/agents/$agentKey'
     | '/instructions/edit'
-    | '/items/$kind'
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents/'
@@ -201,7 +191,6 @@ export interface FileRouteTypes {
     | '/sources'
     | '/agents/$agentKey'
     | '/instructions/edit'
-    | '/items/$kind'
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents'
@@ -220,7 +209,6 @@ export interface FileRouteTypes {
     | '/sources'
     | '/agents/$agentKey'
     | '/instructions/edit'
-    | '/items/$kind'
     | '/presets/$presetId'
     | '/projects/$projectId'
     | '/agents/'
@@ -240,7 +228,6 @@ export interface RootRouteChildren {
   SourcesRoute: typeof SourcesRoute
   AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
   InstructionsEditRoute: typeof InstructionsEditRoute
-  ItemsKindRoute: typeof ItemsKindRoute
   PresetsPresetIdRoute: typeof PresetsPresetIdRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
@@ -316,13 +303,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InstructionsEditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/items/$kind': {
-      id: '/items/$kind'
-      path: '/items/$kind'
-      fullPath: '/items/$kind'
-      preLoaderRoute: typeof ItemsKindRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/presets/': {
       id: '/presets/'
       path: '/presets'
@@ -384,7 +364,6 @@ const rootRouteChildren: RootRouteChildren = {
   SourcesRoute: SourcesRoute,
   AgentsAgentKeyRoute: AgentsAgentKeyRoute,
   InstructionsEditRoute: InstructionsEditRoute,
-  ItemsKindRoute: ItemsKindRoute,
   PresetsPresetIdRoute: PresetsPresetIdRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   AgentsIndexRoute: AgentsIndexRoute,

@@ -26,7 +26,6 @@
       "sources": "Sources",
       "install": "Install skills",
       "views": "Views",
-      "agentFiles": "Agent files",
       "view": {
         "favorites": "Favourites",
         "updates": "Updates available",

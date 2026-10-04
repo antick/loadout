@@ -2,7 +2,6 @@ import { basename, dirname, join } from "node:path";
 import type { Project, ProjectTarget, ProjectsApi, SkillDocument } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { exists, invalid, isAppError, notFound } from "../errors";
-import { ItemDeploymentStore } from "../items/deployments";
 import { INTERNAL_KEYS } from "../settings/store";
 import {
   canonicalPath,
@@ -65,7 +64,6 @@ export function createProjectsService(
 ): ProjectsService {
   const { store, registry } = deps;
   const projects = new ProjectStore(ctx.db);
-  const itemDeployments = new ItemDeploymentStore(ctx.db);
   const activity = new ProjectActivity(ctx.settings);
   const actions = createProjectActions(ctx, deps);
 
@@ -171,12 +169,10 @@ export function createProjectsService(
     remove: async (id) => {
       projects.get(id);
       projects.delete(id);
-      // Its subagents, commands and rules stay in the folder; Loadout stops managing them.
-      itemDeployments.deleteForProject(id);
       ctx.settings.deleteRaw(INTERNAL_KEYS.projectExportAgents(id));
       ctx.settings.deleteRaw(INTERNAL_KEYS.projectSuggestionsDismissed(id));
       activity.forget(id);
-      ctx.touched("projects", "items");
+      ctx.touched("projects");
     },
 
     reorder: async (ids) => {

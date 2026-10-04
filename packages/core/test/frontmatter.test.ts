@@ -1,4 +1,4 @@
-import { checkSkillDocument, parseMarkdown, splitFrontmatter, textField } from "@loadout/shared";
+import { checkSkillDocument, splitFrontmatter, textField } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { parseFrontmatter } from "../src/skills/metadata";
 
@@ -8,7 +8,6 @@ const NO_NAME = new Set(["name_missing", "frontmatter_missing", "frontmatter_inv
 const readers = {
   split: (text: string) => textField(splitFrontmatter(text).data, "name"),
   skill: (text: string) => parseFrontmatter(text).name,
-  item: (text: string) => textField(parseMarkdown(text).fields, "name"),
   check: (text: string) =>
     checkSkillDocument(text, "x").issues.some((issue) => NO_NAME.has(issue.code)) ? null : "named",
 };
@@ -22,7 +21,6 @@ describe("the shared frontmatter rules", () => {
     expect(names("---\nname: 2024\ndescription: d\n---\nBody\n")).toEqual({
       split: "2024",
       skill: "2024",
-      item: "2024",
       check: "named",
     });
   });
@@ -41,12 +39,11 @@ describe("the shared frontmatter rules", () => {
   it("treats a block that never closes as no frontmatter", () => {
     const text = "---\nname: a\nBody\n";
     expect(splitFrontmatter(text)).toEqual({ data: null, body: text, block: null });
-    expect(names(text)).toEqual({ split: null, skill: null, item: null, check: null });
+    expect(names(text)).toEqual({ split: null, skill: null, check: null });
   });
 
   it("reads an empty block as no fields, with the body after it", () => {
     expect(splitFrontmatter("---\n---\nBody\n")).toMatchObject({ data: {}, body: "Body\n" });
-    expect(parseMarkdown("---\n---\nBody\n")).toEqual({ fields: {}, body: "Body\n" });
     expect(splitFrontmatter("---\n# only a comment\n---\nBody\n").data).toEqual({});
   });
 
