@@ -108,7 +108,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
 export const adoptCommand: CommandSpec = {
   name: "adopt",
   summary: "Import every skill in an agent's folder and manage it from the library",
-  usage: "<dir> [--dry-run]",
+  usage: "<dir>",
   flags: [DRY_RUN_FLAG],
   notes: [
     "<dir> must be an agent's skills folder, e.g. ~/.claude/skills.",

@@ -61,7 +61,7 @@ async function createSkill(context: CommandContext): Promise<CommandResult> {
 export const createCommand: CommandSpec = {
   name: "create",
   summary: "Start a new skill in the library",
-  usage: "<name> --description <text> [--template <template>] [--prompt]",
+  usage: "<name> --description <text>",
   flags: [DESCRIPTION_FLAG, TEMPLATE_FLAG, PROMPT_FLAG],
   notes: [
     "The name uses lowercase letters, numbers and single hyphens; it is also the folder name.",

@@ -194,7 +194,7 @@ async function update(context: CommandContext): Promise<CommandResult> {
 export const checkCommand: CommandSpec = {
   name: "check",
   summary: "Ask upstream whether skills have updates",
-  usage: "[<ref> | --all] [--force]",
+  usage: "<ref> | --all",
   flags: [ALL_FLAG, FORCE_FLAG],
   run: check,
 };
@@ -202,7 +202,7 @@ export const checkCommand: CommandSpec = {
 export const updateCommand: CommandSpec = {
   name: "update",
   summary: "Bring skills up to date with their source",
-  usage: "[<ref> | --all] [--approve-removals] [--accept-risk] [--dry-run]",
+  usage: "<ref> | --all",
   flags: [ALL_FLAG, APPROVE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
     "--dry-run compares with the source and lists the files that would change, and whether the update would be held back; the library is not touched. With --all it checks for updates first (like `skills check --all`) and lists the skills the real run would update.",

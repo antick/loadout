@@ -2,7 +2,7 @@ import { notFound } from "@loadout/core";
 import { flagBoolean } from "../args";
 import { plural, table } from "../output";
 import { listingCommand } from "./agents-listing";
-import { DRY_RUN_FLAG, YES_FLAG, limitPositionals, positionalsFrom, requireYes } from "./support";
+import { DRY_RUN_FLAG, limitPositionals, positionalsFrom, requireYes, yesFlag } from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
 const INSTALLED_FLAG = {
@@ -10,6 +10,9 @@ const INSTALLED_FLAG = {
   type: "boolean",
   description: "Only agents found on this machine.",
 } as const;
+const DISABLE_YES_FLAG = yesFlag(
+  "Confirm removing the skills deployed to these agents. Needed only when there are any.",
+);
 
 async function list({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
@@ -88,7 +91,7 @@ export const agentsGroup: CommandGroup = {
     {
       name: "list",
       summary: "List known agents, their state and skills folder",
-      usage: "[--installed]",
+      usage: "",
       flags: [INSTALLED_FLAG],
       run: list,
     },
@@ -102,8 +105,8 @@ export const agentsGroup: CommandGroup = {
     {
       name: "disable",
       summary: "Switch agents off",
-      usage: "<key>… [--dry-run] [--yes]",
-      flags: [DRY_RUN_FLAG, YES_FLAG],
+      usage: "<key>…",
+      flags: [DRY_RUN_FLAG, DISABLE_YES_FLAG],
       notes: [
         "Disabling an agent also removes every skill this tool deployed to it, so it asks for --yes when it has any. Preview with --dry-run.",
       ],

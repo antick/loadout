@@ -5,7 +5,8 @@ import { fields, plural, table } from "../output";
 import {
   AGENT_FLAG,
   DRY_RUN_FLAG,
-  YES_FLAG,
+  LEGACY_YES_FLAG,
+  REQUIRED_YES_FLAG,
   describeApply,
   describeDryApply,
   emptyApply,
@@ -167,7 +168,6 @@ async function undeploy({ core, args }: CommandContext): Promise<CommandResult> 
           ),
         ];
   if (keys.length === 0) return finish(preset, emptyApply());
-  requireYes(args, `remove the skills of "${preset.name}" from ${keys.join(", ")}`);
   const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
   const value = await core.api.deploy.apply(preset.skillIds, keys, "remove", { dryRun });
   if (dryRun) {
@@ -191,15 +191,15 @@ export const presetsGroup: CommandGroup = {
     {
       name: "create",
       summary: "Create an empty preset",
-      usage: "<name> [--description <text>] [--icon <icon>]",
+      usage: "<name>",
       flags: [DESCRIPTION_FLAG, ICON_FLAG],
       run: create,
     },
     {
       name: "delete",
       summary: "Delete a preset (its skills stay in the library)",
-      usage: "<name> --yes [--dry-run]",
-      flags: [YES_FLAG, DRY_RUN_FLAG],
+      usage: "<name>",
+      flags: [DRY_RUN_FLAG, REQUIRED_YES_FLAG],
       run: remove,
     },
     {
@@ -219,7 +219,7 @@ export const presetsGroup: CommandGroup = {
     {
       name: "deploy",
       summary: "Deploy every skill of a preset",
-      usage: "<name> [--agent <key>…]",
+      usage: "<name>",
       flags: [AGENT_FLAG],
       notes: [
         "Without --agent: every installed, enabled agent. Per-agent switches set in the app are honoured.",
@@ -229,11 +229,11 @@ export const presetsGroup: CommandGroup = {
     {
       name: "undeploy",
       summary: "Remove a preset's skills from agents",
-      usage: "<name> [--agent <key>…] [--dry-run] [--yes]",
-      flags: [AGENT_FLAG, DRY_RUN_FLAG, YES_FLAG],
+      usage: "<name>",
+      flags: [AGENT_FLAG, DRY_RUN_FLAG, LEGACY_YES_FLAG],
       notes: [
         "Without --agent: every agent that currently holds one of its skills.",
-        "Removes skill folders from agents, so it asks for --yes. Preview with --dry-run.",
+        "Copies edited in an agent's folder go to Recently removed; `presets deploy` puts the rest back. Preview with --dry-run.",
       ],
       run: undeploy,
     },

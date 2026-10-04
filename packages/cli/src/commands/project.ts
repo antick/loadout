@@ -13,9 +13,8 @@ import {
   ACCEPT_RISK_FLAG,
   AGENT_FLAG,
   DRY_RUN_FLAG,
-  YES_FLAG,
+  LEGACY_YES_FLAG,
   limitPositionals,
-  requireYes,
   resolveUserPath,
 } from "./support";
 import { suggestCommand } from "./project-suggest";
@@ -118,7 +117,7 @@ function applyCommand(
   return {
     name,
     summary,
-    usage: "[--dir <path>] [--force] [--accept-risk] [--dry-run]",
+    usage: "",
     flags: [DIR_FLAG, ...extraFlags, FORCE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
     notes,
     run: async (context) => {
@@ -176,7 +175,6 @@ async function init(context: CommandContext): Promise<CommandResult> {
 async function unapply(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   limitPositionals(args, 0);
-  requireYes(args, `remove the skill folders ${SKILLS_FILE_NAME} wrote`);
   const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
   const result = await core.api.skillsFile.unapply(directory(context), {
     force: flagBoolean(args, FORCE_FLAG.name),
@@ -219,8 +217,8 @@ export const projectGroup: CommandGroup = {
     {
       name: "unapply",
       summary: "Remove every skill folder apply wrote",
-      usage: "--yes [--dir <path>] [--force] [--dry-run]",
-      flags: [DIR_FLAG, YES_FLAG, FORCE_FLAG, DRY_RUN_FLAG],
+      usage: "",
+      flags: [DIR_FLAG, FORCE_FLAG, DRY_RUN_FLAG, LEGACY_YES_FLAG],
       notes: ["Removed folders wait in Recently removed. The file and its lock stay."],
       run: unapply,
     },

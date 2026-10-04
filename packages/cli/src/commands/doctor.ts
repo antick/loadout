@@ -65,7 +65,7 @@ export const doctorGroup: CommandGroup = {
   standalone: {
     name: "doctor",
     summary: "Check the library, agent folders, updates, backup and safety in one report",
-    usage: "[--all]",
+    usage: "",
     flags: [ALL_FLAG],
     notes: [
       "Exit code 1 when anything is an error (a broken skill, a deployment missing on disk, a backup conflict, a skill the safety check flagged). Warnings and info do not fail it.",

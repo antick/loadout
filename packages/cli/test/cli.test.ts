@@ -348,16 +348,20 @@ describe("presets", () => {
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(true);
     expect(existsSync(join(agentSkillsDir(), "beta"))).toBe(true);
 
-    const refused = await cli("presets", "undeploy", "Writing", "--json");
-    expect(refused.code).toBe(EXIT_USAGE);
     expect(
       (await cli("presets", "undeploy", "Writing", "--dry-run", "--json")).json(),
     ).toMatchObject({ dryRun: true, removed: 2 });
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(true);
-    expect((await cli("presets", "undeploy", "Writing", "--yes", "--json")).json()).toMatchObject({
+    // `presets deploy` puts it all back, so undeploying needs no --yes.
+    expect((await cli("presets", "undeploy", "Writing", "--json")).json()).toMatchObject({
       removed: 2,
     });
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(false);
+    // Older scripts that still pass --yes keep working.
+    await cli("presets", "deploy", "Writing", "--agent", AGENT);
+    const legacy = await cli("presets", "undeploy", "Writing", "--yes", "--json");
+    expect(legacy.json()).toMatchObject({ removed: 2 });
+    expect((await cli("presets", "undeploy", "--help")).stdout).not.toContain("--yes");
 
     expect((await cli("presets", "deploy", "Writing", "--json")).json()).toMatchObject({
       added: 2,

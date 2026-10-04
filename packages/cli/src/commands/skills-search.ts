@@ -169,7 +169,7 @@ async function search(context: CommandContext): Promise<CommandResult> {
 export const searchCommand: CommandSpec = {
   name: "search",
   summary: `Search ${MARKETPLACE_NAME} or ${CLAWHUB_NAME} for skills to install`,
-  usage: "<words…> [--limit <n>] [--on <marketplace>] [--accept-risk]",
+  usage: "<words…>",
   flags: [LIMIT_FLAG, ON_FLAG, ACCEPT_RISK_FLAG],
   notes: [
     "Lists owner/repo@skill names (skills.sh) or @owner/slug names (ClawHub) in the marketplace's order.",

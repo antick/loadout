@@ -14,6 +14,13 @@ export interface FlagSpec {
   /** Placeholder shown in help for flags that take a value. */
   value?: string;
   description: string;
+  /**
+   * Must be given unless the flag named here is, e.g. `--yes` unless `--dry-run`. Usage shows the
+   * two as `(--dry-run | --yes)`.
+   */
+  requiredUnless?: string;
+  /** Still accepted, so older scripts keep working, but left out of help and completion. */
+  hidden?: boolean;
 }
 
 export type FlagValue = boolean | string | string[];

@@ -9,8 +9,10 @@ import { plural, table } from "../output";
 import {
   ACCEPT_RISK_FLAG,
   DRY_RUN_FLAG,
+  OVERWRITE_FLAG,
   limitPositionals,
   positional,
+  refuseOverwrite,
   resolvePreset,
   resolveUserPath,
 } from "./support";
@@ -48,11 +50,11 @@ async function exportPreset(context: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
   const preset = await resolvePreset(core, positional(args, 0, "a preset (name or id)"));
   const out = flagString(args, OUT_FLAG.name) ?? presetFileName(preset.name);
-  const result = await core.api.presets.exportFile(
-    preset.id,
-    resolveUserPath(out, cwd, core.ctx.homeDir),
-    { includeFiles: !flagBoolean(args, NO_FILES_FLAG.name) },
-  );
+  const path = resolveUserPath(out, cwd, core.ctx.homeDir);
+  refuseOverwrite(args, path);
+  const result = await core.api.presets.exportFile(preset.id, path, {
+    includeFiles: !flagBoolean(args, NO_FILES_FLAG.name),
+  });
   const lines = [`Wrote ${result.path}: ${plural(result.skills, "skill")}.`];
   if (result.embedded > 0)
     lines.push(`${plural(result.embedded, "skill")} without a source went in with its files.`);
@@ -104,8 +106,8 @@ async function importPreset(context: CommandContext): Promise<CommandResult> {
 export const presetExportCommand: CommandSpec = {
   name: "export",
   summary: "Write a preset to a file others can import",
-  usage: "<preset> [--out <file>] [--no-files]",
-  flags: [OUT_FLAG, NO_FILES_FLAG],
+  usage: "<preset>",
+  flags: [OUT_FLAG, NO_FILES_FLAG, OVERWRITE_FLAG],
   notes: [
     "Skills from a Git repository or a link are written by their source; others go in with their files, so the file installs them anywhere.",
   ],
@@ -115,7 +117,7 @@ export const presetExportCommand: CommandSpec = {
 export const presetImportCommand: CommandSpec = {
   name: "import",
   summary: "Create a preset from a file or link, installing the skills the library lacks",
-  usage: "<file | https link> [--name <text>] [--accept-risk] [--dry-run]",
+  usage: "<file | https link>",
   flags: [NAME_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
     "Skills the library has (same source, or same name) are used as they are. Every install goes through the safety check.",

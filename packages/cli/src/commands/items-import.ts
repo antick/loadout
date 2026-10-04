@@ -12,7 +12,14 @@ import {
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural, table } from "../output";
 import { KIND_FLAG, kindFlag, refText, warningLines } from "./items-support";
-import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
+import {
+  DRY_RUN_FLAG,
+  OVERWRITE_FLAG,
+  limitPositionals,
+  positional,
+  refuseOverwrite,
+  resolveUserPath,
+} from "./support";
 import type {
   CommandContext,
   CommandResult,
@@ -110,7 +117,7 @@ async function importItems(context: CommandContext): Promise<CommandResult> {
 export const findCommand: LibraryCommandSpec = {
   name: "find",
   summary: "Look for items in agents' folders, a folder or a Git repository",
-  usage: "<agents | folder | git-url> [--kind <kind>]",
+  usage: "<agents | folder | git-url>",
   flags: [KIND_FLAG],
   notes: [
     "`agents` looks in every installed agent's own folders, leaving out files Loadout wrote.",
@@ -121,7 +128,7 @@ export const findCommand: LibraryCommandSpec = {
 export const importCommand: LibraryCommandSpec = {
   name: "import",
   summary: "Copy found items into the library, in its format",
-  usage: "<agents | folder | git-url> (--item <kind/name>… | --all) [--replace] [--dry-run]",
+  usage: "<agents | folder | git-url> (--item <kind/name>… | --all)",
   flags: [ITEM_FLAG, ALL_FLAG, REPLACE_FLAG, KIND_FLAG, DRY_RUN_FLAG],
   run: importItems,
 };
@@ -173,6 +180,7 @@ async function convert(context: FreeCommandContext): Promise<CommandResult> {
   if (out === undefined)
     return { value: { content: exported.content, warnings }, text: exported.content.trimEnd() };
   const target = resolveUserPath(out, context.cwd, context.homeDir);
+  refuseOverwrite(args, target);
   writeFileSync(target, exported.content);
   return {
     value: { path: target, warnings },
@@ -183,8 +191,8 @@ async function convert(context: FreeCommandContext): Promise<CommandResult> {
 export const convertCommand: FreeCommandSpec = {
   name: "convert",
   summary: "Convert a subagent, command or rule file between agents' formats",
-  usage: "<file> --kind <kind> [--from <agent>] [--to <agent>] [--out <file>]",
-  flags: [KIND_FLAG, FROM_FLAG, TO_FLAG, OUT_FLAG],
+  usage: "<file> --kind <kind>",
+  flags: [KIND_FLAG, FROM_FLAG, TO_FLAG, OUT_FLAG, OVERWRITE_FLAG],
   notes: ["Needs no library. With --json, also lists what the conversion could not carry over."],
   runWithoutLibrary: convert,
 };

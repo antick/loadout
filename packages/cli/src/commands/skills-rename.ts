@@ -37,7 +37,7 @@ async function rename({ core, args }: CommandContext): Promise<CommandResult> {
 export const renameCommand: CommandSpec = {
   name: "rename",
   summary: "Give a skill a new name, everywhere it is deployed",
-  usage: "<ref> <new-name> [--dry-run]",
+  usage: "<ref> <new-name>",
   flags: [DRY_RUN_FLAG],
   notes: [
     "Renames the library folder and the name in SKILL.md, moves every deployment, and re-points links inside projects. Copies inside projects keep their old name.",

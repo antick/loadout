@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { EXIT_FAILED, EXIT_OK } from "../src/run";
+import { EXIT_FAILED, EXIT_OK, EXIT_USAGE } from "../src/run";
 import { type Sandbox, createSandbox, writeSkill } from "./harness";
 
 let alice: Sandbox;
@@ -29,6 +29,11 @@ describe("presets export and import", () => {
     const file = join(alice.root, "web-kit.loadout-preset.json");
     expect(existsSync(file)).toBe(true);
     expect(out.stdout).toContain("1 skill without a source went in with its files");
+    // The file is there now: writing over it needs --yes.
+    const again = await alice.cli("presets", "export", "Web kit");
+    expect(again.code).toBe(EXIT_USAGE);
+    expect(again.stderr).toContain("already exists");
+    expect((await alice.cli("presets", "export", "Web kit", "--yes")).code).toBe(EXIT_OK);
 
     const dry = await bob.cli("presets", "import", file, "--dry-run");
     expect(dry.stdout).toMatch(/notes\s+install from the file/);

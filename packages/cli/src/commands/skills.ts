@@ -33,7 +33,7 @@ import { validateCommand } from "./skills-validate";
 import {
   AGENT_FLAG,
   DRY_RUN_FLAG,
-  YES_FLAG,
+  REQUIRED_YES_FLAG,
   describeApply,
   describeDryApply,
   limitPositionals,
@@ -355,7 +355,7 @@ export const skillsGroup: CommandGroup = {
     {
       name: "list",
       summary: "List library skills",
-      usage: "[--query <text>] [--tag <tag>…] [--source <type>] [--favorites]",
+      usage: "",
       flags: [QUERY_FLAG, TAG_FLAG, SOURCE_FLAG, FAVORITES_FLAG],
       run: list,
     },
@@ -375,14 +375,14 @@ export const skillsGroup: CommandGroup = {
     {
       name: "remove",
       summary: "Delete skills from the library and undeploy them",
-      usage: "<ref>… --yes [--dry-run]",
-      flags: [YES_FLAG, DRY_RUN_FLAG],
+      usage: "<ref>…",
+      flags: [DRY_RUN_FLAG, REQUIRED_YES_FLAG],
       run: remove,
     },
     {
       name: "deploy",
       summary: "Make skills available to agents",
-      usage: "<ref>… | --all --agent <key>… [--skip-conflicts] [--dry-run]",
+      usage: "<ref>… | --all --agent <key>…",
       flags: [AGENT_FLAG, ALL_FLAG, SKIP_CONFLICTS_FLAG, DRY_RUN_FLAG],
       notes: [DEPLOY_NOTE, "Skills blocked for an agent are skipped and counted."],
       run: deployer("add"),
@@ -390,7 +390,7 @@ export const skillsGroup: CommandGroup = {
     {
       name: "undeploy",
       summary: "Take skills away from agents (the library keeps them)",
-      usage: "<ref>… --agent <key>… [--dry-run]",
+      usage: "<ref>… --agent <key>…",
       flags: [AGENT_FLAG, DRY_RUN_FLAG],
       run: deployer("remove"),
     },
@@ -412,7 +412,7 @@ export const skillsGroup: CommandGroup = {
     {
       name: "tag",
       summary: "Show or change a skill's tags",
-      usage: "<ref> [--add <tag>…] [--remove <tag>…]",
+      usage: "<ref>",
       flags: [ADD_FLAG, REMOVE_FLAG],
       run: editTags,
     },

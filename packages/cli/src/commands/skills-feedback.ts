@@ -84,7 +84,7 @@ async function feedback({ core, args }: CommandContext): Promise<CommandResult> 
 export const feedbackCommand: CommandSpec = {
   name: "feedback",
   summary: "Prepare a report on a skill that went wrong, for the repository it came from",
-  usage: "<ref> -m <text> [--proposal <text>]",
+  usage: "<ref> -m <text>",
   flags: [MESSAGE_FLAG, PROPOSAL_FLAG],
   notes: [
     "Prints the issue's title and text, and a link to the repository's new-issue page with them filled in (GitHub and GitLab). Nothing is sent and nothing is opened: read it, then follow the link yourself. Nothing from this computer, such as folder paths, is included.",

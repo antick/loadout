@@ -6,7 +6,7 @@ import { plural } from "../output";
 import { classifySource, selectSkills } from "./skills-install";
 import {
   ACCEPT_RISK_FLAG,
-  YES_FLAG,
+  yesFlag,
   limitPositionals,
   positional,
   resolveUserPath,
@@ -32,10 +32,9 @@ const USE_RISK_FLAG = {
   description: "Print a skill the safety check flags anyway. Read the findings first.",
 };
 
-const USE_YES_FLAG = {
-  ...YES_FLAG,
-  description: "Read from a download that moved to another site than the link names.",
-};
+const USE_YES_FLAG = yesFlag(
+  "Read from a download that moved to another site than the link names.",
+);
 
 /** The one skill a preview should give: named, the one the typed text asked for, or the only one. */
 function pickSkill(preview: GitPreview, wanted: string | undefined): RepoSkillPreview {
@@ -122,7 +121,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
 export const useCommand: CommandSpec = {
   name: "use",
   summary: "Print a skill's SKILL.md without installing it, to pipe into an agent",
-  usage: "<source> [--skill <name>] [--yes] [--accept-risk]",
+  usage: "<source>",
   flags: [SKILL_FLAG, USE_YES_FLAG, USE_RISK_FLAG],
   notes: [
     "Takes the same sources as `skills install`: ./folder, owner/repo@skill, owner/repo, a git",

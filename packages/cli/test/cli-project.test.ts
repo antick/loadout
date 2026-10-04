@@ -92,12 +92,16 @@ describe("project", () => {
     }
   });
 
-  it("unapply asks for --yes and removes what apply wrote", async () => {
+  it("unapply removes what apply wrote, into Recently removed, without --yes", async () => {
     await box.cli("project", "apply", "--dir", project);
-    expect((await box.cli("project", "unapply", "--dir", project)).code).toBe(2);
-    const gone = await box.cli("project", "unapply", "--dir", project, "--yes");
+    const gone = await box.cli("project", "unapply", "--dir", project);
+    expect(gone.code).toBe(0);
     expect(gone.stdout).toContain("removed 1");
     expect(existsSync(join(project, ".claude", "skills", "pdf"))).toBe(false);
+    expect((await box.cli("removed", "list")).stdout).toContain("pdf");
+    // Still accepted from older scripts.
+    await box.cli("project", "apply", "--dir", project);
+    expect((await box.cli("project", "unapply", "--dir", project, "--yes")).code).toBe(0);
   });
 
   it("init refuses to overwrite, and writes a file for a new project", async () => {

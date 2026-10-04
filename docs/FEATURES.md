@@ -163,6 +163,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 ## Command line
 
 - `loadout` CLI for everything above, with `--json`, `--dry-run` and `--yes`.
+- `--yes` only for what can not be given back (permanent deletes, rollbacks, pushes, overwritten files); usage lines come from each command's options.
 - Keyboard picker when an install finds several skills.
 - `--dry-run` for install, update and `git sync` shows what would change.
 - `loadout doctor`: one report of everything that needs a look, including sources not checked for a month and archives that are gone.

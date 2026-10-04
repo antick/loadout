@@ -2,7 +2,13 @@ import { notFound } from "@loadout/core";
 import { REMOVED_KEEP_DAYS, type RemovedFolder, formatBytes } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { table, when } from "../output";
-import { DRY_RUN_FLAG, YES_FLAG, limitPositionals, positional, requireYes } from "./support";
+import {
+  DRY_RUN_FLAG,
+  REQUIRED_YES_FLAG,
+  limitPositionals,
+  positional,
+  requireYes,
+} from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
 /** Shortest id prefix accepted, and the length `list` prints: like a short git hash. */
@@ -103,8 +109,8 @@ export const removedGroup: CommandGroup = {
     {
       name: "delete",
       summary: "Delete one for good",
-      usage: "<id> [--dry-run] [--yes]",
-      flags: [DRY_RUN_FLAG, YES_FLAG],
+      usage: "<id>",
+      flags: [DRY_RUN_FLAG, REQUIRED_YES_FLAG],
       run: remove,
     },
   ],

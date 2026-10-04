@@ -92,7 +92,7 @@ async function suggest(context: CommandContext): Promise<CommandResult> {
 export const suggestCommand: CommandSpec = {
   name: "suggest",
   summary: "Library skills that fit a linked project, from its files",
-  usage: "[--dir <path>] [--add --agent <key>…]",
+  usage: "[--add --agent <key>…]",
   flags: [DIR_FLAG, ADD_FLAG, AGENT_FLAG],
   notes: [
     "A skill fits when a file pattern set on it matches (skills suggest-for), or when it names a technology the project uses (React, Python, Docker…).",

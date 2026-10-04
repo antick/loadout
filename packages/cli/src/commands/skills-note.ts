@@ -26,7 +26,7 @@ async function note({ core, args }: CommandContext): Promise<CommandResult> {
 export const noteCommand: CommandSpec = {
   name: "note",
   summary: "Show, set or clear your own note on a skill",
-  usage: "<ref> [<text>] [--clear]",
+  usage: "<ref> [<text>]",
   flags: [CLEAR_FLAG],
   notes: [
     `Kept by Loadout and backed up with the tags, never written into SKILL.md. The search finds it. At most ${SKILL_NOTE_MAX_LENGTH} characters.`,

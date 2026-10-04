@@ -108,7 +108,7 @@ async function validate(context: FreeCommandContext): Promise<CommandResult> {
 export const validateCommand: FreeCommandSpec = {
   name: "validate",
   summary: "Check skills against the Agent Skills format",
-  usage: "[<ref> | <folder> | --all]",
+  usage: "<ref> | <folder> | --all",
   flags: [ALL_FLAG],
   notes: [
     "Errors (missing SKILL.md, frontmatter, name or description, or YAML that does not parse) exit with code 1. Warnings (naming rules, lengths, links to missing files) do not.",

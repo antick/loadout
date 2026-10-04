@@ -137,7 +137,7 @@ export const duplicatesCommand: CommandSpec = {
   name: "duplicates",
   summary: "Find skills that look like one skill installed twice",
   usage:
-    "[merge --keep <ref> --remove <ref> [--dry-run] --yes | dismiss <ref> <ref> | restore <ref> <ref>] [--all]",
+    "[--all | merge --keep <ref> --remove <ref> (--dry-run | --yes) | dismiss <ref> <ref> | restore <ref> <ref>]",
   flags: [ALL_FLAG, KEEP_FLAG, REMOVE_FLAG, DRY_RUN_FLAG, YES_FLAG],
   notes: [
     "Lists pairs whose files are the same, whose SKILL.md is mostly the same text, or whose names and descriptions are alike. Nothing is removed by itself.",

@@ -16,7 +16,7 @@ import {
 import {
   AGENT_FLAG,
   DRY_RUN_FLAG,
-  YES_FLAG,
+  REQUIRED_YES_FLAG,
   limitPositionals,
   positional,
   requireYes,
@@ -159,7 +159,7 @@ const itemCommands: CommandSpec[] = [
   {
     name: "list",
     summary: "Subagents, commands and rules in the library, and where they are deployed",
-    usage: "[--kind <kind>]",
+    usage: "",
     flags: [KIND_FLAG],
     run: list,
   },
@@ -181,7 +181,7 @@ const itemCommands: CommandSpec[] = [
   {
     name: "deploy",
     summary: "Write an item into agents' folders, converted for each",
-    usage: "<kind/name> --agent <key>… [--project <path>] [--replace]",
+    usage: "<kind/name> --agent <key>…",
     flags: [AGENT_FLAG, PROJECT_FLAG, REPLACE_FLAG],
     notes: ["A file Loadout did not write is never replaced, unless --replace."],
     run: deploy,
@@ -189,7 +189,7 @@ const itemCommands: CommandSpec[] = [
   {
     name: "undeploy",
     summary: "Take an item out of agents' folders",
-    usage: "<kind/name> --agent <key>… [--project <path>]",
+    usage: "<kind/name> --agent <key>…",
     flags: [AGENT_FLAG, PROJECT_FLAG],
     notes: ["A file changed in the agent's folder stays there."],
     run: undeploy,
@@ -197,8 +197,8 @@ const itemCommands: CommandSpec[] = [
   {
     name: "remove",
     summary: "Delete an item from the library and from every agent folder",
-    usage: "<kind/name> [--dry-run] [--yes]",
-    flags: [DRY_RUN_FLAG, YES_FLAG],
+    usage: "<kind/name>",
+    flags: [DRY_RUN_FLAG, REQUIRED_YES_FLAG],
     run: remove,
   },
   findCommand,

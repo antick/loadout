@@ -98,5 +98,20 @@ describe("items", () => {
     expect(run.code).toBe(EXIT_OK);
     expect(run.stdout).toContain("mode: subagent");
     expect(existsSync(join(sandbox.home, LIBRARY_DIR_NAME))).toBe(false);
+
+    // Written to a file that is there already: only with --yes.
+    const args = [
+      "items",
+      "convert",
+      "./reviewer.md",
+      "--kind",
+      "subagent",
+      "--out",
+      "./reviewer.md",
+    ];
+    const refused = await cli(...args);
+    expect(refused.code).toBe(EXIT_USAGE);
+    expect(readFileSync(join(sandbox.root, "reviewer.md"), "utf8")).toBe(REVIEWER);
+    expect((await cli(...args, "--yes")).code).toBe(EXIT_OK);
   });
 });

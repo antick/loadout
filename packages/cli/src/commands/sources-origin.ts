@@ -6,7 +6,7 @@ import {
 } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { plural, table } from "../output";
-import { YES_FLAG, limitPositionals, positional, positionalsFrom, resolveSkills } from "./support";
+import { limitPositionals, yesFlag, positional, positionalsFrom, resolveSkills } from "./support";
 import type { CommandContext, CommandResult, LibraryCommandSpec } from "./types";
 
 /**
@@ -19,6 +19,7 @@ const UNDO_FLAG = {
   type: "boolean",
   description: "Take the mark away again.",
 } as const;
+const LINK_YES_FLAG = yesFlag("Link it even when its files differ from the repository's.");
 
 const MATCH_TEXT: Record<SourceCandidate["match"], (candidate: SourceCandidate) => string> = {
   identical: () => "same files",
@@ -101,7 +102,7 @@ async function chooseCandidate(
       );
     }
   }
-  if (candidate.match !== "identical" && !flagBoolean(args, YES_FLAG.name)) {
+  if (candidate.match !== "identical" && !flagBoolean(args, LINK_YES_FLAG.name)) {
     throw new UsageError(
       `${skill.name} is not the same as ${whereOf(candidate)}: ${describeMatch(candidate)}` +
         `${candidate.changedFiles.length > 0 ? ` (${candidate.changedFiles.join(", ")})` : ""}. ` +
@@ -161,8 +162,8 @@ export const originCommands: readonly LibraryCommandSpec[] = [
   {
     name: "link",
     summary: "Make a skill without a source follow a repository",
-    usage: "<skill> [<repository>] [--yes]",
-    flags: [YES_FLAG],
+    usage: "<skill> [<repository>]",
+    flags: [LINK_YES_FLAG],
     notes: [
       "Without a repository, links the best match `sources find` shows. The skill's files",
       "stay as they are. A copy that differs needs --yes; it then shows an update, and",
@@ -173,7 +174,7 @@ export const originCommands: readonly LibraryCommandSpec[] = [
   {
     name: "mine",
     summary: "Mark skills as your own, so no source is looked for",
-    usage: "<skill>… [--undo]",
+    usage: "<skill>…",
     flags: [UNDO_FLAG],
     notes: [
       "A skill whose source no longer has it (Source missing) forgets that source first;",

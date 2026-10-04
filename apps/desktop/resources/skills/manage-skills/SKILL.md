@@ -149,7 +149,7 @@ loadout presets create "Docs work" --description "Writing and review" --json
 loadout presets add "Docs work" <ref> <ref> --json
 loadout presets deploy "Docs work" --agent claude_code --json   # no --agent = all enabled agents
 loadout presets undeploy "Docs work" --dry-run --json
-loadout presets undeploy "Docs work" --yes --json
+loadout presets undeploy "Docs work" --json        # presets deploy puts it back
 
 # See what an install or update would do before doing it
 loadout skills install owner/repo --all --dry-run --json   # names each skill would get
@@ -194,9 +194,16 @@ none, the command fails and lists them - pick with `--skill` or confirm `--all` 
 
 ## Destructive commands
 
-`skills remove`, `presets delete`, `presets undeploy`, `removed delete` and `git restore`
-refuse to run without `--yes`. So does `agents disable` when the agent has skills deployed.
-`--json` never implies it.
+A command that deletes or overwrites something Loadout can not give back as it was refuses
+to run without `--yes`: `skills remove`, `skills duplicates merge`, `items remove`,
+`presets delete`, `removed delete`, `git restore` and `skills publish`. So does
+`agents disable` when the agent has skills deployed, and an export (`skills export`,
+`presets export`, `items convert`) whose `--out` file already exists. `--json` never implies
+it, and `--dry-run` never needs it.
+
+Undeploying, `project unapply` and `project prune` need no `--yes`: what they take away waits in
+Recently removed or comes back with one command. Still preview them when the user did not ask
+for exactly that.
 
 1. Run the command with `--dry-run` first and read what it would do.
 2. Tell the user what will be removed or replaced, unless they already asked for exactly that.

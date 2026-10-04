@@ -10,7 +10,7 @@ import { fields, plural, table, when } from "../output";
 import {
   ALLOW_SECRETS_FLAG,
   DRY_RUN_FLAG,
-  YES_FLAG,
+  REQUIRED_YES_FLAG,
   limitPositionals,
   positional,
   requireYes,
@@ -198,7 +198,7 @@ export const gitGroup: CommandGroup = {
     {
       name: "sync",
       summary: "Save, merge what other devices pushed, and push",
-      usage: "[-m <message>] [--allow-secrets] [--allow-deletes] [--dry-run]",
+      usage: "",
       flags: [MESSAGE_FLAG, ALLOW_SECRETS_FLAG, ALLOW_DELETES_FLAG, DRY_RUN_FLAG],
       run: sync,
     },
@@ -212,15 +212,15 @@ export const gitGroup: CommandGroup = {
     {
       name: "versions",
       summary: "List restorable versions, newest first",
-      usage: "[--limit <n>]",
+      usage: "",
       flags: [LIMIT_FLAG],
       run: versions,
     },
     {
       name: "restore",
       summary: "Switch the library back to a version",
-      usage: "<tag> --yes [--dry-run]",
-      flags: [YES_FLAG, DRY_RUN_FLAG],
+      usage: "<tag>",
+      flags: [DRY_RUN_FLAG, REQUIRED_YES_FLAG],
       run: restore,
     },
   ],

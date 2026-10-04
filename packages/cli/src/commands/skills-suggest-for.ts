@@ -43,7 +43,7 @@ async function suggestFor({ core, args }: CommandContext): Promise<CommandResult
 export const suggestForCommand: CommandSpec = {
   name: "suggest-for",
   summary: "File patterns of projects a skill is suggested for",
-  usage: "<ref> [--add <pattern>…] [--remove <pattern>…] [--clear]",
+  usage: "<ref>",
   flags: [ADD_FLAG, REMOVE_FLAG, CLEAR_FLAG],
   notes: [
     "A pattern without a / matches a file or folder name anywhere in the project; one with a / matches from the top. * is anything but /, ** any folders.",

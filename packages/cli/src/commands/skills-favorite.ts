@@ -25,7 +25,7 @@ async function favorite({ core, args }: CommandContext): Promise<CommandResult> 
 export const favoriteCommand: CommandSpec = {
   name: "favorite",
   summary: "Mark skills as favorites, or take that back",
-  usage: "<ref>… [--undo]",
+  usage: "<ref>…",
   flags: [UNDO_FLAG],
   notes: ["Kept by Loadout and backed up with the tags. skills list --favorites shows them."],
   run: favorite,

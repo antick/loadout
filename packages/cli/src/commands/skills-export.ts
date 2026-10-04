@@ -1,8 +1,7 @@
-import { existsSync } from "node:fs";
 import { formatBytes } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString } from "../args";
 import { plural } from "../output";
-import { YES_FLAG, resolveSkills, resolveUserPath } from "./support";
+import { OVERWRITE_FLAG, refuseOverwrite, resolveSkills, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const OUT_FLAG = {
@@ -26,9 +25,7 @@ async function exportSkills(context: CommandContext): Promise<CommandResult> {
   const out = flagString(args, OUT_FLAG.name);
   if (!out) throw new UsageError(`--${OUT_FLAG.name} <file> is required.`);
   const path = resolveUserPath(out, cwd, core.ctx.homeDir);
-  if (existsSync(path) && !flagBoolean(args, YES_FLAG.name)) {
-    throw new UsageError(`${path} already exists. Add --yes to replace it.`);
-  }
+  refuseOverwrite(args, path);
 
   const skills = all ? await core.api.skills.list() : resolveSkills(core, refs);
   const value = await core.api.skills.exportArchive(
@@ -44,8 +41,8 @@ async function exportSkills(context: CommandContext): Promise<CommandResult> {
 export const exportCommand: CommandSpec = {
   name: "export",
   summary: "Pack skills into one .zip to share or back up",
-  usage: "<ref>… | --all --out <file> [--yes]",
-  flags: [OUT_FLAG, ALL_FLAG, YES_FLAG],
+  usage: "<ref>… | --all --out <file>",
+  flags: [OUT_FLAG, ALL_FLAG, OVERWRITE_FLAG],
   notes: [
     "Each skill is a folder in the archive. Install it again with: skills install ./file.zip",
   ],

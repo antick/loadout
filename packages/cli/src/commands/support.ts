@@ -1,15 +1,34 @@
+import { existsSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { type Core, type ResolvedAgent, invalid, notFound } from "@loadout/core";
 import type { ApplyResult, Preset, Skill } from "@loadout/shared";
 import { type FlagSpec, type ParsedArgs, UsageError, flagBoolean, flagList } from "../args";
 import { plural } from "../output";
 
+/**
+ * When a command asks for --yes, the same rule for all of them:
+ * - Needs --yes: deleting or overwriting something Loadout can not give back as it was. A
+ *   permanent delete (`removed delete`, `items remove`, `presets delete`), a library skill
+ *   removed with its deployments (`skills remove`, `skills duplicates merge`), every
+ *   deployment of an agent (`agents disable`), the whole library rolled back (`git restore`), a
+ *   push to another repository (`skills publish`), a file overwritten outside the library
+ *   (`--out` of an export).
+ * - No --yes: anything kept in Recently removed and restored as it was (`project unapply`,
+ *   `project prune`), undone by the opposite command (`skills undeploy`, `presets undeploy`,
+ *   `skills block`), or a field set again in one step (tags, notes, favourites).
+ * - A dry run never needs it, and --json never implies it.
+ * A few commands also take --yes to answer their own yes/no question that a script must answer
+ * on purpose (a download that moved to another site, a source that differs); they describe it.
+ */
 export const YES_FLAG: FlagSpec = {
   name: "yes",
   short: "y",
   type: "boolean",
-  description: "Confirm a destructive action. Never implied, not even by --json.",
+  description: "Confirm an action that can not be undone. Never implied, not even by --json.",
 };
+
+/** --yes with what it confirms on one command, so its help says what it really does. */
+export const yesFlag = (description: string): FlagSpec => ({ ...YES_FLAG, description });
 
 export const ACCEPT_RISK_FLAG: FlagSpec = {
   name: "accept-risk",
@@ -28,6 +47,27 @@ export const DRY_RUN_FLAG: FlagSpec = {
   type: "boolean",
   description: "Report what would happen and change nothing.",
 };
+
+/** --yes where the command always needs it, a dry run aside: usage shows `(--dry-run | --yes)`. */
+export const REQUIRED_YES_FLAG: FlagSpec = { ...YES_FLAG, requiredUnless: DRY_RUN_FLAG.name };
+
+/** --yes on a command that no longer needs it: accepted, so scripts that pass it keep working. */
+export const LEGACY_YES_FLAG: FlagSpec = {
+  ...YES_FLAG,
+  description:
+    "Not needed: what this removes waits in Recently removed or is put back in one step.",
+  hidden: true,
+};
+
+/** --yes on a command that writes a file: needed to replace one that is already there. */
+export const OVERWRITE_FLAG = yesFlag("Replace the file when it already exists.");
+
+/** Writing over a file outside the library has no way back, so it needs --yes. */
+export function refuseOverwrite(args: ParsedArgs, path: string): void {
+  if (existsSync(path) && !flagBoolean(args, OVERWRITE_FLAG.name)) {
+    throw new UsageError(`${path} already exists. Add --yes to replace it.`);
+  }
+}
 
 export const AGENT_FLAG: FlagSpec = {
   name: "agent",

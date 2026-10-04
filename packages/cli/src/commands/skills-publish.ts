@@ -9,7 +9,7 @@ import {
 } from "@loadout/shared";
 import { UsageError, flagBoolean, flagChoice, flagString } from "../args";
 import { plural, table } from "../output";
-import { DRY_RUN_FLAG, YES_FLAG, requireYes, resolveSkills } from "./support";
+import { DRY_RUN_FLAG, REQUIRED_YES_FLAG, requireYes, resolveSkills } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const REPO_FLAG = {
@@ -133,8 +133,16 @@ async function publish(context: CommandContext): Promise<CommandResult> {
 export const publishCommand: CommandSpec = {
   name: "publish",
   summary: "Copy skills into a Git repository others can install from",
-  usage: "<ref>… | --all --repo <address> [--branch <name>] [--layer <layer>] [--dry-run] --yes",
-  flags: [REPO_FLAG, BRANCH_FLAG, LAYER_FLAG, ALL_FLAG, ALLOW_SECRETS_FLAG, DRY_RUN_FLAG, YES_FLAG],
+  usage: "<ref>… | --all",
+  flags: [
+    REPO_FLAG,
+    BRANCH_FLAG,
+    LAYER_FLAG,
+    ALL_FLAG,
+    ALLOW_SECRETS_FLAG,
+    DRY_RUN_FLAG,
+    REQUIRED_YES_FLAG,
+  ],
   notes: [
     "Only the skill folders are copied: no tags, agents or backup data. Dependencies (node_modules), .env files, logs and links are left out.",
     "Anyone can then run: npx skills add <owner/repo> --skill <name>. The repository can be public or private.",

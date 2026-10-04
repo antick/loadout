@@ -40,7 +40,42 @@ function flagLabel(flag: FlagSpec): string {
 }
 
 const flagRows = (flags: readonly FlagSpec[]): string[] =>
-  columns(flags.map((flag) => [flagLabel(flag), flag.description] as const));
+  columns(
+    flags
+      .filter((flag) => !flag.hidden)
+      .map((flag) => [flagLabel(flag), flag.description] as const),
+  );
+
+/** `--agent <key>…`: how a flag is written in a usage line. */
+function flagUsage(flag: FlagSpec): string {
+  if (flag.type === "boolean") return `--${flag.name}`;
+  return `--${flag.name} <${flag.value ?? "value"}>${flag.type === "list" ? "…" : ""}`;
+}
+
+/** The usage text names the flag already, e.g. as part of `<ref>… | --all`, or as `-m`. */
+export function usageNames(usage: string, flag: FlagSpec): boolean {
+  const spellings = [`--${flag.name}`, ...(flag.short ? [`-${flag.short}`] : [])];
+  return spellings.some((spelling) => new RegExp(`(^|[^\\w-])${spelling}(?![\\w-])`).test(usage));
+}
+
+/**
+ * A command's whole usage line: its own text (arguments, and flags that only make sense together),
+ * then every other flag from its specs, so the line can not drift from what the command accepts.
+ */
+export function commandUsage(command: CommandSpec): string {
+  const visible = command.flags.filter((flag) => !flag.hidden);
+  const paired = new Set(visible.flatMap((flag) => flag.requiredUnless ?? []));
+  const parts = [command.usage];
+  for (const flag of visible) {
+    if (usageNames(command.usage, flag) || paired.has(flag.name)) continue;
+    parts.push(
+      flag.requiredUnless
+        ? `(--${flag.requiredUnless} | ${flagUsage(flag)})`
+        : `[${flagUsage(flag)}]`,
+    );
+  }
+  return parts.join(" ").trim();
+}
 
 export function rootHelp(groups: readonly CommandGroup[]): string {
   return [
@@ -67,7 +102,7 @@ export function groupHelp(group: CommandGroup): string {
     ...columns(
       group.commands
         .filter((c) => !c.hidden)
-        .map((c) => [`${c.name} ${c.usage}`.trim(), c.summary] as const),
+        .map((c) => [`${c.name} ${commandUsage(c)}`.trim(), c.summary] as const),
     ),
     "",
     `Run \`${CLI_BINARY_NAME} ${group.name} <command> --help\` for details.`,
@@ -82,9 +117,11 @@ export function commandHelp(group: CommandGroup, command: CommandSpec): string {
   const lines = [
     `${invocation} - ${command.summary}`,
     "",
-    `Usage: ${invocation} ${command.usage}`.trimEnd(),
+    `Usage: ${invocation} ${commandUsage(command)}`.trimEnd(),
   ];
-  if (command.flags.length > 0) lines.push("", "Options:", ...flagRows(command.flags));
+  if (command.flags.some((flag) => !flag.hidden)) {
+    lines.push("", "Options:", ...flagRows(command.flags));
+  }
   lines.push("", "Global options:", ...flagRows(GLOBAL_FLAGS));
   const notes = [...(command.notes ?? [])];
   if (command.usage.includes("<ref>")) notes.push(SKILL_REF_NOTE);

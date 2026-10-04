@@ -115,7 +115,7 @@ async function diff({ core, args }: CommandContext): Promise<CommandResult> {
 export const diffCommand: CommandSpec = {
   name: "diff",
   summary: "Show how a skill's copies, or its source, differ from the library",
-  usage: "<ref> [--agent <key>…] [--upstream]",
+  usage: "<ref>",
   flags: [AGENT_FLAG, UPSTREAM_FLAG],
   notes: [
     "Linked deployments are the library itself and always match. Copies are compared file by file; text files show a unified diff with the library first.",

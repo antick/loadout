@@ -100,7 +100,7 @@ async function usage(context: CommandContext): Promise<CommandResult> {
 export const usageCommand: CommandSpec = {
   name: "usage",
   summary: "How often agents ran each skill, from their session logs",
-  usage: "[--refresh] [--unused] [--enable | --disable]",
+  usage: "[--enable | --disable]",
   flags: [REFRESH_FLAG, UNUSED_FLAG, ENABLE_FLAG, DISABLE_FLAG],
   notes: [
     "Reads Claude Code's and Codex's session logs on this computer; only skill names, times and project folders are kept, and nothing is sent anywhere.",

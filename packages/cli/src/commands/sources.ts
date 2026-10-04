@@ -148,7 +148,7 @@ export const sourcesGroup: CommandGroup = {
     {
       name: "dismiss",
       summary: "Stop showing a repository's new skills",
-      usage: "<repository> [--path <path>…]",
+      usage: "<repository>",
       flags: [PATH_FLAG],
       run: dismiss,
     },
