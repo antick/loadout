@@ -1,6 +1,6 @@
 import type { GithubConnectResult } from "@loadout/shared";
 import { useTranslation } from "react-i18next";
-import { useStartBackup } from "@/hooks/mutations/backup-page";
+import { useStartBackup } from "@/features/backup/backup-mutations";
 import { toastSuccess } from "@/lib/toast";
 import { remoteWebUrl } from "./remote-url";
 

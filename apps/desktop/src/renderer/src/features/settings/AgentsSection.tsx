@@ -8,7 +8,7 @@ import { SearchInput } from "@/components/SearchInput";
 import { SortableList } from "@/components/SortableList";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useSetAgentOrder, useSetAllAgentsEnabled } from "@/hooks/mutations/settings-page";
+import { useSetAgentOrder, useSetAllAgentsEnabled } from "@/features/settings/settings-mutations";
 import { useAgents, useAgentNames } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
 import { matchesQuery, moveId } from "@/lib/utils";

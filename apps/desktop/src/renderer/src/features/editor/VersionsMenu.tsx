@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useEditorFileVersions } from "@/hooks/queries/editor";
+import { useEditorFileVersions } from "@/features/editor/editor-queries";
 
 export interface VersionsMenuProps {
   location: SkillLocation;

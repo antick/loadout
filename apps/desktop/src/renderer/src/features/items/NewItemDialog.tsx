@@ -13,7 +13,7 @@ import {
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useCreateItem } from "@/hooks/mutations/items";
+import { useCreateItem } from "@/features/items/item-mutations";
 
 export interface NewItemDialogProps {
   kind: ItemKind;

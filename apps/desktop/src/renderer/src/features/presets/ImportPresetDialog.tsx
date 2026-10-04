@@ -20,7 +20,7 @@ import {
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useImportPreset, usePreviewPresetImport } from "@/hooks/mutations/preset-share";
+import { useImportPreset, usePreviewPresetImport } from "@/features/presets/preset-mutations";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/toast";
 

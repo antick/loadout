@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppInfo } from "@/hooks/queries/app";
-import { useProjectSuggestions } from "@/hooks/queries/projects";
+import { useProjectSuggestions } from "@/features/projects/project-queries";
 import { compactHome } from "@/lib/paths";
 import { errorMessage } from "@/lib/toast";
 import type { AddProjectTabProps } from "./AddProjectFolderTab";

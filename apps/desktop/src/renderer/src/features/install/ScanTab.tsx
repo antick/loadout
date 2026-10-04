@@ -18,9 +18,9 @@ import {
   discoveredTaskKey,
   useImportAllDiscovered,
   useImportDiscovered,
-} from "@/hooks/mutations/install";
+} from "@/features/install/install-mutations";
 import { useAgents } from "@/hooks/queries/agents";
-import { useScanLocal } from "@/hooks/queries/install";
+import { useScanLocal } from "@/features/install/install-queries";
 import { Skeletons } from "@/components/Skeletons";
 
 const STATS_GRID_CLASS = "grid grid-cols-2 gap-3 lg:grid-cols-4";

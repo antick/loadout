@@ -12,7 +12,7 @@ import {
   usePullManyFromLibrary,
   usePushManyToLibrary,
   useSetProjectSkillsEnabled,
-} from "@/hooks/mutations/project-detail";
+} from "@/features/projects/project-skill-mutations";
 import { useSkills } from "@/hooks/queries/skills";
 import { type ProjectSkillGroup, projectSkillRules } from "./project-skill-groups";
 

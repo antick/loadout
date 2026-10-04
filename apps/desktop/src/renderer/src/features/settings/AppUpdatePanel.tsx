@@ -7,12 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import {
-  useCancelAppUpdate,
-  useCheckAppUpdate,
-  useDownloadAppUpdate,
-  useInstallAppUpdate,
-} from "@/hooks/mutations/app-update";
+import { useDownloadAppUpdate, useInstallAppUpdate } from "@/hooks/mutations/app-update";
+import { useCancelAppUpdate, useCheckAppUpdate } from "@/features/settings/settings-mutations";
 import { useAppInfo, useAppUpdate } from "@/hooks/queries/app";
 
 /** A newer version is known and this copy could fetch it. */

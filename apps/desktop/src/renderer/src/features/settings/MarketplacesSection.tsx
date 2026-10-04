@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useSetClawhubToken } from "@/hooks/mutations/publish";
+import { useSetClawhubToken } from "@/features/settings/settings-mutations";
 import { useClawhubAccount } from "@/hooks/queries/publish";
 
 /** The ClawHub token: who it signs in as, saving a new one, and taking it away. */

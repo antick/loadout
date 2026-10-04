@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useSetSkillNote } from "@/hooks/mutations/skills";
+import { useSetSkillNote } from "@/features/library/detail/skill-mutations";
 import { ownsEscape } from "@/lib/escape";
 
 /** Show the character count once the note is this close to the cap. */

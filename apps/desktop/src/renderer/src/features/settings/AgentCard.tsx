@@ -7,7 +7,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { IconButton } from "@/components/IconButton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Switch } from "@/components/ui/switch";
-import { useRemoveCustomAgent, useSetAgentEnabled } from "@/hooks/mutations/settings-page";
+import { useRemoveCustomAgent, useSetAgentEnabled } from "@/features/settings/settings-mutations";
 import { cn } from "@/lib/utils";
 import { AgentDetectionNote } from "./AgentDetectionNote";
 import { AgentPathField } from "./AgentPathField";

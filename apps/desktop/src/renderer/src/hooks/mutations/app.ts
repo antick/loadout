@@ -1,4 +1,4 @@
-import type { EditorChoice, RepairReport } from "@loadout/shared";
+import { type EditorChoice, type RepairReport } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -97,5 +97,12 @@ export function useDismissRepair(): UseMutationResult<void, unknown, void> {
     fn: () => api.system.dismissRepair(),
     error: GENERIC_ERROR_KEY,
     invalidate: [keys.system.repair],
+  });
+}
+
+export function useRestartApp(): UseMutationResult<void, unknown, void> {
+  return useApiMutation({
+    fn: () => api.app.restart(),
+    error: GENERIC_ERROR_KEY,
   });
 }

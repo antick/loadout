@@ -5,8 +5,8 @@ import { InlineNotice } from "@/components/InlineNotice";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useSetBackupIgnoreRules } from "@/hooks/mutations/backup-sync";
-import { useBackupIgnoreRules } from "@/hooks/queries/backup-sync";
+import { useSetBackupIgnoreRules } from "@/features/backup/backup-mutations";
+import { useBackupIgnoreRules } from "@/features/backup/backup-queries";
 import { backupErrorText } from "@/lib/backup-errors";
 import { SECTION_LABEL } from "@/lib/styles";
 

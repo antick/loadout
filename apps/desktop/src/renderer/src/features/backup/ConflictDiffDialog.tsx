@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useConflictDiff } from "@/hooks/queries/backup-sync";
+import { useConflictDiff } from "@/features/backup/backup-queries";
 import { SyncDiffView } from "./SyncDiffView";
 
 /** A conflicting skill here against the other device's version, before choosing one. */

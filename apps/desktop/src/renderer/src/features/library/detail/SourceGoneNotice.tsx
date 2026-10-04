@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useKeepSkillAsMine } from "@/hooks/mutations/library";
+import { useKeepSkillAsMine } from "@/features/library/detail/skill-mutations";
 
 export interface SourceGoneNoticeProps {
   skill: Skill;

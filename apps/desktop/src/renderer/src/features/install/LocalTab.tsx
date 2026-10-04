@@ -16,13 +16,12 @@ import { cn } from "@/lib/utils";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
+import { useCancelPreview, usePreviewArchive } from "@/hooks/mutations/install";
 import {
-  useCancelPreview,
   useImportFolder,
   useInstallFromPath,
   usePickArchive,
-  usePreviewArchive,
-} from "@/hooks/mutations/install";
+} from "@/features/install/install-mutations";
 import { usePickFolder } from "@/hooks/mutations/app";
 
 type SourceKind = "folder" | "archive";

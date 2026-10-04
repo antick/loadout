@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
-import { useResolveBackupConflict, useResolveBackupConflicts } from "@/hooks/mutations/backup-page";
+import {
+  useResolveBackupConflict,
+  useResolveBackupConflicts,
+} from "@/features/backup/backup-mutations";
 import { ConflictDiffDialog } from "./ConflictDiffDialog";
 import { SHORT_COMMIT_LENGTH } from "./constants";
 

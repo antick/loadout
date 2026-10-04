@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
 import { Panel } from "@/components/Panel";
-import { useBackupSizeReport } from "@/hooks/queries/backup-page";
+import { useBackupSizeReport } from "@/features/backup/backup-queries";
 import { MAX_LISTED_OVERSIZED } from "./constants";
 import { SECTION_LABEL } from "@/lib/styles";
 

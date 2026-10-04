@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { useRunSkillsFile } from "@/hooks/mutations/skills-file";
-import { type SkillsFileMode, useSkillsFilePlan } from "@/hooks/queries/skills-file";
+import { useRunSkillsFile } from "@/features/projects/skills-file-mutations";
+import { type SkillsFileMode, useSkillsFilePlan } from "@/features/projects/skills-file-queries";
 import { useLastDefined } from "@/hooks/use-last-defined";
 
 /** Characters of a commit shown next to a source. */

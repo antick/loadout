@@ -1,5 +1,5 @@
 import type { PresetAgentToggle } from "@loadout/shared";
-import { type UseQueryResult, useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 

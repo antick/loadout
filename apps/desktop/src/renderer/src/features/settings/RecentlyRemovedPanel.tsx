@@ -23,8 +23,8 @@ import {
   useDeleteRemoved,
   useRestoreRemoved,
   useRevealRemoved,
-} from "@/hooks/mutations/storage";
-import { useRemovedFolders } from "@/hooks/queries/storage";
+} from "@/features/settings/storage-mutations";
+import { useRemovedFolders } from "@/features/settings/storage-queries";
 import { Skeletons } from "@/components/Skeletons";
 
 const SKELETON_ROWS = 2;

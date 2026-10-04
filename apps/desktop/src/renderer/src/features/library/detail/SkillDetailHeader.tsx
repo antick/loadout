@@ -22,7 +22,7 @@ import { SkillTagsEditor } from "@/features/library/detail/SkillTagsEditor";
 import { SkillUsageSummary } from "@/features/library/detail/SkillUsageSummary";
 import { Spinner } from "@/components/ui/spinner";
 import { useOpenInEditor } from "@/hooks/mutations/app";
-import { useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
+import { useExportSkills, useRevealSkill } from "@/features/library/library-mutations";
 import { useDefaultEditor } from "@/hooks/use-default-editor";
 
 export interface SkillDetailHeaderProps {

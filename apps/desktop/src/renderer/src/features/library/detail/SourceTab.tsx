@@ -30,7 +30,8 @@ import type { SkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { FindSourceSection } from "@/features/origin/FindSourceSection";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { usePickFolder } from "@/hooks/mutations/app";
-import { useCheckSkillUpdate, useDetachSkill } from "@/hooks/mutations/library";
+import { useDetachSkill } from "@/features/library/detail/skill-mutations";
+import { useCheckSkillUpdate } from "@/features/library/library-mutations";
 import { installPhaseText } from "@/features/install/install-tasks";
 
 /** Characters of a revision shown; the full value stays in the tooltip. */

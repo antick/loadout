@@ -19,12 +19,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import {
-  useApplySkills,
-  useDeploySkill,
-  useSetBlocked,
-  useUndeploySkill,
-} from "@/hooks/mutations/deploy";
+import { useApplySkills, useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
+import { useSetBlocked } from "@/features/library/library-mutations";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
 import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
 import { SECTION_LABEL } from "@/lib/styles";

@@ -51,18 +51,6 @@ export function useSetProjectPinned(): UseMutationResult<
   });
 }
 
-/**
- * Count an open of a project page, for the sidebar's Frequent group. Silent: a count that could
- * not be saved is not worth telling anyone about.
- */
-export function useRecordProjectOpen(): UseMutationResult<void, unknown, string> {
-  return useApiMutation({
-    fn: (projectId: string) => api.projects.recordOpen(projectId),
-    error: false,
-    invalidate: [keys.projects.all],
-  });
-}
-
 /** Open the project folder in the OS file manager. */
 export function useRevealProject(): UseMutationResult<void, unknown, string> {
   return useApiMutation({

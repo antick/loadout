@@ -1,7 +1,8 @@
 import { ApiError, type BatchFailure, type Project } from "@loadout/shared";
-import type { UseMutationResult } from "@tanstack/react-query";
+import { type UseMutationResult } from "@tanstack/react-query";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
+import { keys } from "@/lib/query-keys";
 import { errorMessage } from "@/lib/toast";
 
 export interface LinkedWorkspaceInput {
@@ -58,5 +59,40 @@ export function useAddScannedProjects(): UseMutationResult<AddScannedResult, unk
       return result;
     },
     error: false,
+  });
+}
+
+export interface DismissSuggestionInput {
+  projectId: string;
+  /** Skill ids; one or several at once. */
+  skillIds: readonly string[];
+  dismissed: boolean;
+}
+
+/** Stop suggesting skills for a project, or start again. */
+export function useSetSuggestionDismissed(): UseMutationResult<
+  void,
+  unknown,
+  DismissSuggestionInput
+> {
+  return useApiMutation({
+    fn: async ({ projectId, skillIds, dismissed }: DismissSuggestionInput) => {
+      for (const skillId of skillIds) {
+        await api.projects.setSuggestionDismissed(projectId, skillId, dismissed);
+      }
+    },
+    error: "projectPage.suggestedSkills.errors.dismiss",
+  });
+}
+
+/**
+ * Count an open of a project page, for the sidebar's Frequent group. Silent: a count that could
+ * not be saved is not worth telling anyone about.
+ */
+export function useRecordProjectOpen(): UseMutationResult<void, unknown, string> {
+  return useApiMutation({
+    fn: (projectId: string) => api.projects.recordOpen(projectId),
+    error: false,
+    invalidate: [keys.projects.all],
   });
 }

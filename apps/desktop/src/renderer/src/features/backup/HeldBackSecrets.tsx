@@ -9,8 +9,8 @@ import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useRevealPath } from "@/hooks/mutations/app";
-import { useAllowSecretsAndSync, useCleanUpAndSync } from "@/hooks/mutations/backup-page";
-import { useBackupSecrets } from "@/hooks/queries/backup-page";
+import { useAllowSecretsAndSync, useCleanUpAndSync } from "@/features/backup/backup-mutations";
+import { useBackupSecrets } from "@/features/backup/backup-queries";
 
 export interface HeldBackSecretsProps {
   /** Only a backup with a remote sends anything anywhere. */

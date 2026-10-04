@@ -29,8 +29,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { hasUpdate } from "@/features/library/library-filters";
 import { PublishDialog } from "@/features/library/publish/PublishDialog";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
-import { useExportSkills, useUpdateSkills } from "@/hooks/mutations/library";
-import { useAddSkillsToPreset } from "@/hooks/mutations/preset-detail";
+import { useUpdateSkills } from "@/hooks/mutations/library";
+import { useExportSkills } from "@/features/library/library-mutations";
+import { useAddSkillsToPreset } from "@/hooks/mutations/preset-members";
 import { usePresets } from "@/hooks/queries/presets";
 
 export interface LibrarySelectionActionsProps {

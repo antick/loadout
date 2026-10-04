@@ -6,7 +6,7 @@ import { Panel } from "@/components/Panel";
 import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useStorageReport } from "@/hooks/queries/storage";
+import { useStorageReport } from "@/features/settings/storage-queries";
 import { clearStored, countStored } from "@/lib/interface-state";
 import { toastSuccess } from "@/lib/toast";
 import { LibraryLocationCard } from "./LibraryLocationCard";

@@ -6,7 +6,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { InlineNotice } from "@/components/InlineNotice";
 import { PathActions } from "@/components/PathActions";
 import { Button } from "@/components/ui/button";
-import { useDeleteBrokenFolder } from "@/hooks/mutations/workspace";
+import { useDeleteBrokenFolder } from "@/features/agents/workspace-mutations";
 import { useAppInfo } from "@/hooks/queries/app";
 import { compactHome } from "@/lib/paths";
 import { BROKEN_FOLDERS_SHOWN, brokenFolderProblem } from "./broken-folders";

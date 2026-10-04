@@ -15,7 +15,7 @@ import {
   updateProgressKey,
   useCancelInstall,
   useRefreshSkill,
-} from "@/hooks/mutations/library";
+} from "@/features/library/detail/skill-mutations";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { useAppEvent } from "@/lib/events";
 import { keys } from "@/lib/query-keys";

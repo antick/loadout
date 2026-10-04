@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { useRecloneBackup } from "@/hooks/mutations/backup-page";
+import { useRecloneBackup } from "@/features/backup/backup-mutations";
 
 export interface RecoveryDialogProps {
   open: boolean;

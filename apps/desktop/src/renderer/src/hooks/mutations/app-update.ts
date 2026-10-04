@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
 /** The update actions all answer with the new status; keep the cached one in step. */
-function useUpdateAction(
+export function useUpdateAction(
   action: () => Promise<AppUpdateStatus>,
   fallbackKey: string,
 ): UseMutationResult<AppUpdateStatus, unknown, void> {
@@ -17,18 +17,9 @@ function useUpdateAction(
   });
 }
 
-/** Look for a newer app version now. */
-export function useCheckAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
-  return useUpdateAction(() => api.app.checkUpdate(), "settings.about.updateFailed");
-}
-
 /** Download and verify the newer version. Progress arrives through the status query. */
 export function useDownloadAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
   return useUpdateAction(() => api.app.downloadUpdate(), "appUpdate.downloadFailed");
-}
-
-export function useCancelAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
-  return useUpdateAction(() => api.app.cancelUpdate(), "appUpdate.downloadFailed");
 }
 
 /** Quit and install the downloaded version (or open the Linux package in the system installer). */

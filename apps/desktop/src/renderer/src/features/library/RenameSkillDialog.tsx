@@ -22,9 +22,10 @@ import {
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useRenameSkill } from "@/hooks/mutations/skills";
+import { useRenameSkill } from "@/features/library/library-mutations";
 import { useAgents } from "@/hooks/queries/agents";
-import { useRenamePreview, useSkills } from "@/hooks/queries/skills";
+import { useSkills } from "@/hooks/queries/skills";
+import { useRenamePreview } from "@/features/library/library-queries";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { errorMessage } from "@/lib/toast";
 

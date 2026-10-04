@@ -10,7 +10,7 @@ import {
   useCreateSkillFolder,
   useDeleteSkillFile,
   useRenameSkillFile,
-} from "@/hooks/mutations/editor";
+} from "@/features/editor/editor-mutations";
 
 export interface FileActionsOptions {
   location: SkillLocation;

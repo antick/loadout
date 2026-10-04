@@ -1,5 +1,4 @@
 import type {
-  ClawhubAccount,
   ClawhubPublishInput,
   ClawhubPublishResult,
   PublishInput,
@@ -7,7 +6,6 @@ import type {
   PublishResult,
 } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -27,20 +25,6 @@ export function usePublishSkills(): UseMutationResult<PublishResult, unknown, Pu
     fn: (input) => api.publish.publish(input),
     error: false,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.publish.root }),
-  });
-}
-
-/** Save a ClawHub token once the registry confirms it; null forgets the saved one. */
-export function useSetClawhubToken(): UseMutationResult<ClawhubAccount, unknown, string | null> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: (token) => api.publish.setClawhubToken(token),
-    success: (account) =>
-      account.handle
-        ? t("settings.marketplaces.clawhub.saved", { handle: account.handle })
-        : t("settings.marketplaces.clawhub.forgotten"),
-    error: "settings.marketplaces.clawhub.errors.save",
-    invalidate: [keys.publish.root],
   });
 }
 

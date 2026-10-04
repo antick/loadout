@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { LocalSkillDetailSheet } from "@/features/local-skills/LocalSkillDetailSheet";
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
-import { useProjectDocument } from "@/hooks/queries/project-detail";
+import { useProjectDocument } from "@/features/projects/project-queries";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { cn } from "@/lib/utils";
 import {

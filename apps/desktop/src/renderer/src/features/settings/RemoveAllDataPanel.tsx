@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useRemoveAllData } from "@/hooks/mutations/storage";
-import { useAgentFolders } from "@/hooks/queries/storage";
+import { useRemoveAllData } from "@/features/settings/storage-mutations";
+import { useAgentFolders } from "@/features/settings/storage-queries";
 
 /** What happens to the skills Loadout put into agent folders. */
 type AgentFolderChoice = "keep" | "copies" | "none";

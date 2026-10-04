@@ -1,5 +1,5 @@
-import type { LocalSkill, ProjectTarget, SkillDocument } from "@loadout/shared";
-import { type UseQueryResult, useQuery } from "@tanstack/react-query";
+import type { LocalSkill, ProjectTarget } from "@loadout/shared";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
@@ -22,19 +22,6 @@ export function useProjectTargets(
     queryKey: keys.projects.targets(projectId ?? ""),
     queryFn: () => api.projects.targets(projectId ?? ""),
     enabled: Boolean(projectId),
-  });
-}
-
-/** The main document of one copy of a project skill. */
-export function useProjectDocument(
-  projectId: string | null | undefined,
-  relativePath: string | null | undefined,
-  agentKey: string | null | undefined,
-): UseQueryResult<SkillDocument> {
-  return useQuery({
-    queryKey: keys.projects.document(projectId ?? "", relativePath ?? "", agentKey ?? ""),
-    queryFn: () => api.projects.document(projectId ?? "", relativePath ?? "", agentKey ?? ""),
-    enabled: Boolean(projectId) && Boolean(relativePath) && Boolean(agentKey),
   });
 }
 

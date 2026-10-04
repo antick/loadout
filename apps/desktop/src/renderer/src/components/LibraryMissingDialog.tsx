@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useRestartApp } from "@/hooks/mutations/settings-page";
+import { useRestartApp } from "@/hooks/mutations/app";
 import { api } from "@/lib/api";
 import { useAppEvent } from "@/lib/events";
 

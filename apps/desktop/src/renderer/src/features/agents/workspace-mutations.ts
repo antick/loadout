@@ -1,8 +1,8 @@
 import type { BatchResult, Skill } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { reloadHintFor } from "@/lib/agent-reload";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";

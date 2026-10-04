@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { useAttachSource, useSetAuthored } from "@/hooks/mutations/origin";
+import { useAttachSource, useSetAuthored } from "@/features/origin/origin-mutations";
 import { errorMessage } from "@/lib/toast";
 import { SourceCandidateItem } from "./SourceCandidateItem";
 import { isExact } from "./source-candidate";

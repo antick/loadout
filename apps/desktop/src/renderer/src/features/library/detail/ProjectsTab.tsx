@@ -21,8 +21,14 @@ import { SyncStatusBadge } from "@/components/SyncStatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { useExportSkillToProject, useRemoveSkillFromProject } from "@/hooks/mutations/library";
-import { type ProjectSkillCopies, useSkillInProjects } from "@/hooks/queries/library";
+import {
+  useExportSkillToProject,
+  useRemoveSkillFromProject,
+} from "@/features/library/detail/skill-mutations";
+import {
+  type ProjectSkillCopies,
+  useSkillInProjects,
+} from "@/features/library/detail/skill-queries";
 import { useProjects } from "@/hooks/queries/projects";
 import { errorMessage } from "@/lib/toast";
 import { SuggestForSection } from "./SuggestForSection";

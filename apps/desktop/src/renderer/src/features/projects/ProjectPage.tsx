@@ -40,15 +40,15 @@ import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
 import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
-import { useRefreshProject } from "@/hooks/mutations/project-detail";
+import { useRefreshProject } from "@/features/projects/project-skill-mutations";
 import {
-  useRecordProjectOpen,
   useRemoveProject,
   useRevealProject,
   useSetProjectPinned,
 } from "@/hooks/mutations/projects";
+import { useRecordProjectOpen } from "@/features/projects/project-mutations";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
-import { useProjectSkills, useProjectTargets } from "@/hooks/queries/project-detail";
+import { useProjectSkills, useProjectTargets } from "@/hooks/queries/project-skills";
 import { useProjects } from "@/hooks/queries/projects";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";

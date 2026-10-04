@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { StatusBadge, type StatusTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { usePreviewDiff } from "@/hooks/queries/backup-sync";
+import { usePreviewDiff } from "@/features/backup/backup-queries";
 import { cn } from "@/lib/utils";
 import { SyncDiffView } from "./SyncDiffView";
 

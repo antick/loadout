@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useRemoveItem } from "@/hooks/mutations/items";
-import { useItem } from "@/hooks/queries/items";
+import { useRemoveItem } from "@/features/items/item-mutations";
+import { useItem } from "@/features/items/item-queries";
 import { ItemAgentsTab } from "./ItemAgentsTab";
 import { ItemEditTab } from "./ItemEditTab";
 

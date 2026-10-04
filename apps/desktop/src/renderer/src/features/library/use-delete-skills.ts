@@ -2,7 +2,7 @@ import { REMOVED_KEEP_DAYS, type Skill } from "@loadout/shared";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { useRemoveSkills } from "@/hooks/mutations/skills";
+import { useRemoveSkills } from "@/features/library/library-mutations";
 
 /**
  * Ask, then delete library skills. The confirm spells out everything that goes with them, and

@@ -9,8 +9,8 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useGithubConnect } from "@/hooks/mutations/backup-page";
-import { useGithubDeviceAvailable } from "@/hooks/queries/backup-page";
+import { useGithubConnect } from "@/features/backup/backup-mutations";
+import { useGithubDeviceAvailable } from "@/features/backup/backup-queries";
 import { GITHUB_NEW_TOKEN_URL, REPO_NAME_PATTERN } from "./constants";
 import { DeviceSignIn } from "./DeviceSignIn";
 import { useDeviceFlow } from "./use-device-flow";

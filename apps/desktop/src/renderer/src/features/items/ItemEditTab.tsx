@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { CodeEditor } from "@/features/editor/CodeEditor";
 import { languageFor } from "@/features/editor/code-languages";
-import { useSaveItem } from "@/hooks/mutations/items";
+import { useSaveItem } from "@/features/items/item-mutations";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const MARKDOWN = languageFor("item.md");

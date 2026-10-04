@@ -13,7 +13,7 @@ import {
   usePullFromLibrary,
   usePushToLibrary,
   useSetProjectSkillEnabled,
-} from "@/hooks/mutations/project-detail";
+} from "@/features/projects/project-skill-mutations";
 import { usePendingSet } from "@/hooks/use-pending-set";
 import { editLink } from "@/lib/skill-location";
 import type { VersionChoice } from "./PushVersionDialog";

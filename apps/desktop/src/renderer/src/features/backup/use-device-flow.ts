@@ -2,7 +2,7 @@ import { ApiError, type DeviceFlowStart, type GithubConnectResult } from "@loado
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useGithubDevicePoll, useGithubDeviceStart } from "@/hooks/mutations/backup-page";
+import { useGithubDevicePoll, useGithubDeviceStart } from "@/features/backup/backup-mutations";
 import { toastBackupError } from "@/lib/backup-errors";
 import { DEVICE_POLL_MIN_INTERVAL_S, DEVICE_POLL_SLOW_DOWN_S, MS_PER_SECOND } from "./constants";
 

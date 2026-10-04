@@ -15,7 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { type ProjectSkillRef, usePushToLibrary } from "@/hooks/mutations/project-detail";
+import {
+  type ProjectSkillRef,
+  usePushToLibrary,
+} from "@/features/projects/project-skill-mutations";
 
 export interface VersionChoice {
   ref: ProjectSkillRef;

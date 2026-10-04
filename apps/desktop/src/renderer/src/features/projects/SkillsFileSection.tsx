@@ -20,12 +20,12 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { SkillsFilePlanDialog } from "@/features/projects/SkillsFilePlanDialog";
 import { useRevealPath } from "@/hooks/mutations/app";
-import { useCreateSkillsFile } from "@/hooks/mutations/skills-file";
+import { useCreateSkillsFile } from "@/features/projects/skills-file-mutations";
 import {
   type SkillsFileMode,
   useSkillsFile,
   useSkillsFileSuggestion,
-} from "@/hooks/queries/skills-file";
+} from "@/features/projects/skills-file-queries";
 
 /** Offer to write `skills.toml` from what the project holds, after showing what it would list. */
 function CreateDialog({

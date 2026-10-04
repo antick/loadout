@@ -8,8 +8,8 @@ import {
 import type { UseMutationResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import type { SkillsFileMode } from "@/features/projects/skills-file-queries";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
-import type { SkillsFileMode } from "@/hooks/queries/skills-file";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";

@@ -8,7 +8,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { type AddScannedResult, useAddScannedProjects } from "@/hooks/mutations/add-project";
+import {
+  type AddScannedResult,
+  useAddScannedProjects,
+} from "@/features/projects/project-mutations";
 import { errorMessage } from "@/lib/toast";
 
 /**

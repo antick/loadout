@@ -14,7 +14,7 @@ import {
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useRestoreFromRemote } from "@/hooks/mutations/backup-page";
+import { useRestoreFromRemote } from "@/features/backup/backup-mutations";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useBackupStatus } from "@/hooks/queries/app";
 import { useSettings } from "@/hooks/queries/settings";

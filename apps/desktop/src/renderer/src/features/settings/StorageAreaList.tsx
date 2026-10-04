@@ -5,7 +5,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useClearAppCache, useClearStorage } from "@/hooks/mutations/storage";
+import { useClearAppCache, useClearStorage } from "@/features/settings/storage-mutations";
 
 export interface StorageAreaListProps {
   entries: readonly StorageEntry[];

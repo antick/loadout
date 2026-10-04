@@ -26,7 +26,7 @@ import { useInstallTask } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
 import { useCancelPreview, usePreviewGit } from "@/hooks/mutations/install";
-import { useDiagnostics } from "@/hooks/queries/app";
+import { useDiagnostics } from "@/features/install/install-queries";
 
 /**
  * What works without Git, or how private repositories work with it. Shown once the Git check has

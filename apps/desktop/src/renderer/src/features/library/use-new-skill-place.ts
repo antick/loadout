@@ -9,7 +9,7 @@ import {
   useLastExportAgents,
   useProjectSkills,
   useProjectTargets,
-} from "@/hooks/queries/project-detail";
+} from "@/hooks/queries/project-skills";
 import { useProjects } from "@/hooks/queries/projects";
 import { LIBRARY_PLACE, defaultChipKeys, placeTargets, takenInFolders } from "./new-skill-place";
 

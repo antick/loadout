@@ -7,7 +7,7 @@ import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
-import { useScanProjects } from "@/hooks/mutations/add-project";
+import { useScanProjects } from "@/features/projects/project-mutations";
 import { errorMessage } from "@/lib/toast";
 import type { AddProjectTabProps } from "./AddProjectFolderTab";
 import {

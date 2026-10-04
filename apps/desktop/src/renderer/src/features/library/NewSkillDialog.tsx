@@ -30,8 +30,8 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateSkill } from "@/hooks/mutations/library";
-import { useCreateProjectSkill } from "@/hooks/mutations/project-detail";
+import { useCreateSkill } from "@/features/library/library-mutations";
+import { useCreateProjectSkill } from "@/features/library/library-mutations";
 import { useAppInfo, useLibraryLocation } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
 import { api } from "@/lib/api";

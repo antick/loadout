@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
-import { useAddProject } from "@/hooks/mutations/add-project";
+import { useAddProject } from "@/features/projects/project-mutations";
 import { errorMessage } from "@/lib/toast";
 
 export interface AddProjectTabProps {

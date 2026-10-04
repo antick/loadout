@@ -22,8 +22,8 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { usePublishSkills, usePublishPreview } from "@/hooks/mutations/publish";
-import { usePublishDefaults } from "@/hooks/queries/publish";
+import { usePublishSkills, usePublishPreview } from "@/features/library/publish/publish-mutations";
+import { usePublishDefaults } from "@/features/library/publish/publish-queries";
 import { errorMessage } from "@/lib/toast";
 import { PublishPlanList } from "./PublishPlanList";
 import { PublishResultView } from "./PublishResultView";

@@ -8,7 +8,7 @@ import { Panel } from "@/components/Panel";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useClearLastCrash } from "@/hooks/mutations/app";
-import { useCopyDiagnostics, useExportLogs } from "@/hooks/mutations/settings-page";
+import { useCopyDiagnostics, useExportLogs } from "@/features/settings/settings-mutations";
 import { useLastCrash, useLibraryLocation } from "@/hooks/queries/app";
 import { useAppLinks } from "@/hooks/use-app-links";
 import { AppUpdatePanel } from "./AppUpdatePanel";

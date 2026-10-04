@@ -5,7 +5,7 @@ import { StatusDot } from "@/components/StatusDot";
 import { SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { groupProjectSkills } from "@/features/projects/project-skill-groups";
-import { useProjectSkills } from "@/hooks/queries/project-detail";
+import { useProjectSkills } from "@/hooks/queries/project-skills";
 
 /** The skills of one project, under its row in the sidebar. Loaded only while it is open. */
 export function ProjectSkillList({ projectId }: { projectId: string }): ReactNode {

@@ -1,10 +1,10 @@
-import type { ApplyResult, Deployment, Skill } from "@loadout/shared";
+import type { ApplyResult, Deployment } from "@loadout/shared";
 import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { api } from "@/lib/api";
 import { reloadHintFor } from "@/lib/agent-reload";
-import { toastApplyResult } from "@/lib/toast";
+import { api } from "@/lib/api";
 import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
+import { toastApplyResult } from "@/lib/toast";
 
 export interface DeployPairInput {
   skillId: string;
@@ -71,21 +71,6 @@ export function useUndeploySkill(): UseMutationResult<
   CacheSnapshot
 > {
   return usePairMutation(false);
-}
-
-export interface SetBlockedInput {
-  skillId: string;
-  agentKeys: string[];
-  blocked: boolean;
-}
-
-/** Block or allow a skill for agents. Blocking also removes it from an agent it is deployed to. */
-export function useSetBlocked(): UseMutationResult<Skill, unknown, SetBlockedInput> {
-  return useApiMutation({
-    fn: ({ skillId, agentKeys, blocked }: SetBlockedInput) =>
-      api.deploy.setBlocked(skillId, agentKeys, blocked),
-    error: "errors.block",
-  });
 }
 
 /** Add or remove many skill × agent pairs in one call and toast the counts. */

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AgentControlSetup } from "@/components/AgentControlSetup";
 import { IconButton } from "@/components/IconButton";
 import { Button } from "@/components/ui/button";
-import { useDismissAgentControl } from "@/hooks/mutations/dashboard";
+import { useDismissAgentControl } from "@/features/dashboard/dashboard-mutations";
 import { useAgentControlStatus } from "@/hooks/queries/dashboard";
 
 /** Suggests letting agents manage skills themselves. Gone once set up or dismissed. */

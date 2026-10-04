@@ -1,7 +1,5 @@
 import type {
   BatchResult,
-  CreateSkillInput,
-  ProjectCopyRef,
   PushToLibraryOptions,
   PushToLibraryResult,
   SkillVersion,
@@ -9,8 +7,8 @@ import type {
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { reloadHintFor } from "@/lib/agent-reload";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { describeFailures, runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
@@ -72,26 +70,6 @@ export function useExportSkill(): UseMutationResult<void, unknown, ExportSkillIn
         ? t("projectPage.toast.exportedTo", { name, target: targetName })
         : t("projectPage.toast.exported", { name }),
     error: "projectPage.errors.export",
-  });
-}
-
-export interface CreateProjectSkillInput {
-  projectId: string;
-  skill: CreateSkillInput;
-  /** Agents whose project folders get the new skill. */
-  agentKeys: string[];
-}
-
-/** Write a new skill straight into a project; resolves to the copy to open in the editor. */
-export function useCreateProjectSkill(): UseMutationResult<
-  ProjectCopyRef,
-  unknown,
-  CreateProjectSkillInput
-> {
-  return useApiMutation({
-    fn: ({ projectId, skill, agentKeys }: CreateProjectSkillInput) =>
-      api.projects.createSkill(projectId, skill, agentKeys),
-    error: "library.create.error",
   });
 }
 

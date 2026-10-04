@@ -5,13 +5,13 @@ import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useFetchBackup, useSetDeviceName } from "@/hooks/mutations/backup-page";
+import { useFetchBackup, useSetDeviceName } from "@/features/backup/backup-mutations";
 import { useBackupStatus } from "@/hooks/queries/app";
 import {
   useBackupConflicts,
   useBackupDeviceName,
   useBackupSnapshots,
-} from "@/hooks/queries/backup-page";
+} from "@/features/backup/backup-queries";
 import { useSkills } from "@/hooks/queries/skills";
 import { backupErrorText, isAuthError, isRecoverableError } from "@/lib/backup-errors";
 import { useAppEvent } from "@/lib/events";

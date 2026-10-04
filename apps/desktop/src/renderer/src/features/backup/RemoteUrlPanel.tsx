@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useSetBackupRemote } from "@/hooks/mutations/backup-page";
+import { useSetBackupRemote } from "@/features/backup/backup-mutations";
 
 export interface RemoteUrlPanelProps {
   /** The remote in use, already free of credentials. */

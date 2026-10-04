@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAvailableAgents } from "@/hooks/queries/agents";
-import { useItems } from "@/hooks/queries/items";
+import { useItems } from "@/features/items/item-queries";
 import { ImportItemsDialog } from "./ImportItemsDialog";
 import { ItemDetailSheet } from "./ItemDetailSheet";
 import { NewItemDialog } from "./NewItemDialog";

@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useItemPreview } from "@/hooks/queries/items";
+import { useItemPreview } from "@/features/items/item-queries";
 import { languageOfPath, useWarningText } from "./item-text";
 
 export interface ItemPreviewDialogProps {

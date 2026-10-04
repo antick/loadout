@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { WslFolderNote } from "@/components/WslFolderNote";
 import { usePickFolder } from "@/hooks/mutations/app";
-import { useAddCustomAgent } from "@/hooks/mutations/settings-page";
+import { useAddCustomAgent } from "@/features/settings/settings-mutations";
 import { errorMessage } from "@/lib/toast";
 
 /** Add an agent the app does not know: a name, its skills folder, optionally a project folder. */

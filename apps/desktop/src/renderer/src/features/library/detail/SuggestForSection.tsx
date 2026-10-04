@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSetSuggestFor } from "@/hooks/mutations/project-suggestions";
+import { useSetSuggestFor } from "@/features/library/detail/skill-mutations";
 
 /**
  * The file patterns of projects this skill is suggested for (`Cargo.toml`, `*.rs`). A project

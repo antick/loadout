@@ -2,7 +2,7 @@ import type { SyncPreview, SyncReviewAnswer } from "@loadout/shared";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { usePreviewSync, useReviewedSync } from "@/hooks/mutations/backup-sync";
+import { usePreviewSync, useReviewedSync } from "@/features/backup/backup-mutations";
 import { backupErrorText, needsReview, toastBackupError } from "@/lib/backup-errors";
 import { type SyncFlow, type SyncFlowCallbacks, SyncFlowContext } from "./sync-flow";
 import { SyncReviewDialog } from "./SyncReviewDialog";

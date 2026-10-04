@@ -10,7 +10,7 @@ import { PageSection } from "@/components/PageSection";
 import { PresetIcon } from "@/components/PresetIcon";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAddSkillsToPreset, useRemoveSkillsFromPreset } from "@/hooks/mutations/preset-detail";
+import { useAddSkillsToPreset, useRemoveSkillsFromPreset } from "@/hooks/mutations/preset-members";
 import { usePresets } from "@/hooks/queries/presets";
 
 /** Every preset with a checkbox: tick to put this skill in it. Membership never touches disk. */

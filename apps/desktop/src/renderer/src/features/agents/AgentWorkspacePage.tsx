@@ -20,7 +20,7 @@ import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
 import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
-import { useDeployToAgent, useRefreshWorkspace } from "@/hooks/mutations/workspace";
+import { useDeployToAgent, useRefreshWorkspace } from "@/features/agents/workspace-mutations";
 import { isAgentAvailable, useAgents, useAgentNames } from "@/hooks/queries/agents";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useSkills } from "@/hooks/queries/skills";
@@ -29,8 +29,8 @@ import {
   usePluginSkills,
   useWorkspaceDocument,
   useWorkspaceSkills,
-} from "@/hooks/queries/workspace";
-import { useSkillListing } from "@/hooks/queries/listing";
+} from "@/features/agents/workspace-queries";
+import { useSkillListing } from "@/features/agents/workspace-queries";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";

@@ -1,8 +1,8 @@
 import {
   type ClearableArea,
   formatBytes,
-  type RemovedFolder,
   type RemoveAllDataOptions,
+  type RemovedFolder,
   type RestoreRemovedResult,
 } from "@loadout/shared";
 import type { UseMutationResult } from "@tanstack/react-query";

@@ -11,7 +11,7 @@ import {
   usePullLocalSkill,
   useRemoveFromAgent,
   useUploadLocalSkill,
-} from "@/hooks/mutations/workspace";
+} from "@/features/agents/workspace-mutations";
 import { editLink } from "@/lib/skill-location";
 import { agentSkillRules } from "./agent-skill-rules";
 

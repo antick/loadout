@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { type StartBackupInput, useStartBackup } from "@/hooks/mutations/backup-page";
+import { type StartBackupInput, useStartBackup } from "@/features/backup/backup-mutations";
 
 export interface SetupDialogProps {
   /** The remote to set up against; null keeps the dialog closed. */

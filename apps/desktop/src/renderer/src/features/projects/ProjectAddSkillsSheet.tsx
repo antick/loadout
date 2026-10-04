@@ -4,8 +4,11 @@ import { type ReactNode, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AddFromLibrarySheet, type PickerRowInfo } from "@/components/AddFromLibrarySheet";
 import { Button } from "@/components/ui/button";
-import { useExportSkills, useSetLastExportAgents } from "@/hooks/mutations/project-detail";
-import { useLastExportAgents } from "@/hooks/queries/project-detail";
+import {
+  useExportSkills,
+  useSetLastExportAgents,
+} from "@/features/projects/project-skill-mutations";
+import { useLastExportAgents } from "@/hooks/queries/project-skills";
 import { useSkills } from "@/hooks/queries/skills";
 import {
   hasSkill,

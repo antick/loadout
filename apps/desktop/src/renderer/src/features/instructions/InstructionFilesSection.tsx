@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCreateInstructionFile } from "@/hooks/mutations/instructions";
+import { useCreateInstructionFile } from "@/features/instructions/instruction-mutations";
 import { useAppInfo } from "@/hooks/queries/app";
 import { compactHome } from "@/lib/paths";
 import { editLink, instructionLocation, locationKey } from "@/lib/skill-location";

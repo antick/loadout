@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { type PageCrumb, PageHeader } from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditorWorkspace } from "@/features/editor/EditorWorkspace";
-import { useEditTarget } from "@/hooks/queries/editor";
+import { useEditTarget } from "@/features/editor/editor-queries";
 import { useSkill } from "@/hooks/queries/skills";
 import { locationKey } from "@/lib/skill-location";
 

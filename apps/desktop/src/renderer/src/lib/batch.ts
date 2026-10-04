@@ -26,6 +26,9 @@ export async function runSequentially<T>(
   return { succeeded, failed };
 }
 
+/** Class of a toast description that lists failures, one per line. */
+export const FAILURE_LIST_CLASS = "text-xs whitespace-pre-line break-words";
+
 /** Failures as toast lines, capped so the toast stays readable. */
 export function describeFailures(failed: readonly BatchFailure[]): string {
   const lines = failed

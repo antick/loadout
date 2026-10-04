@@ -1,6 +1,8 @@
 import {
   type AgentInfo,
   APP_NAME,
+  type AppUpdateStatus,
+  type ClawhubAccount,
   type CustomAgentInput,
   formatDateTime,
   type LibraryLocation,
@@ -9,10 +11,20 @@ import {
 import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useUpdateAction } from "@/hooks/mutations/app-update";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
-import { GENERIC_ERROR_KEY, toastError } from "@/lib/toast";
+import { toastError } from "@/lib/toast";
+
+/** Look for a newer app version now. */
+export function useCheckAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
+  return useUpdateAction(() => api.app.checkUpdate(), "settings.about.updateFailed");
+}
+
+export function useCancelAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
+  return useUpdateAction(() => api.app.cancelUpdate(), "appUpdate.downloadFailed");
+}
 
 /** Patch one agent in the cached list so switches answer at once. */
 function patchAgent(queryClient: QueryClient, key: string, patch: Partial<AgentInfo>): void {
@@ -139,13 +151,6 @@ export function useRevealLibrary(): UseMutationResult<void, unknown, void> {
   });
 }
 
-export function useRestartApp(): UseMutationResult<void, unknown, void> {
-  return useApiMutation({
-    fn: () => api.app.restart(),
-    error: GENERIC_ERROR_KEY,
-  });
-}
-
 /** Write the logs to a zip file and offer to show it. */
 export function useExportLogs(): UseMutationResult<LogExport, unknown, void> {
   const { t } = useTranslation();
@@ -202,5 +207,19 @@ export function useCopyDiagnostics(): UseMutationResult<void, unknown, void> {
     },
     success: () => t("settings.about.diagnosticsCopied"),
     error: "errors.copy",
+  });
+}
+
+/** Save a ClawHub token once the registry confirms it; null forgets the saved one. */
+export function useSetClawhubToken(): UseMutationResult<ClawhubAccount, unknown, string | null> {
+  const { t } = useTranslation();
+  return useApiMutation({
+    fn: (token) => api.publish.setClawhubToken(token),
+    success: (account) =>
+      account.handle
+        ? t("settings.marketplaces.clawhub.saved", { handle: account.handle })
+        : t("settings.marketplaces.clawhub.forgotten"),
+    error: "settings.marketplaces.clawhub.errors.save",
+    invalidate: [keys.publish.root],
   });
 }

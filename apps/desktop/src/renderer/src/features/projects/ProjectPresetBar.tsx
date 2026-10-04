@@ -3,7 +3,7 @@ import { type ReactNode, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PresetBarSection } from "@/features/local-skills/PresetBarSection";
-import { useDeleteVariants, useExportSkills } from "@/hooks/mutations/project-detail";
+import { useDeleteVariants, useExportSkills } from "@/features/projects/project-skill-mutations";
 import { usePresets } from "@/hooks/queries/presets";
 import { useSkills } from "@/hooks/queries/skills";
 import type { SkillAgentPair } from "@/lib/preset-state";

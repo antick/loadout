@@ -8,7 +8,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useAddLinkedWorkspace } from "@/hooks/mutations/add-project";
+import { useAddLinkedWorkspace } from "@/features/projects/project-mutations";
 import { errorMessage } from "@/lib/toast";
 import type { AddProjectTabProps } from "./AddProjectFolderTab";
 

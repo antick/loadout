@@ -9,7 +9,7 @@ import { FileDiffList } from "@/components/FileDiffList";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSourceDiff, useSourceDocument } from "@/hooks/queries/library";
+import { useSourceDiff, useSourceDocument } from "@/features/library/detail/skill-queries";
 import { useSkillDocument } from "@/hooks/queries/skills";
 import { errorMessage } from "@/lib/toast";
 

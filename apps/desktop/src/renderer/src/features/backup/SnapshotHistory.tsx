@@ -8,8 +8,8 @@ import { ErrorState } from "@/components/ErrorState";
 import { PageSection } from "@/components/PageSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { useRestoreSnapshot } from "@/hooks/mutations/backup-page";
-import { useBackupSnapshots } from "@/hooks/queries/backup-page";
+import { useRestoreSnapshot } from "@/features/backup/backup-mutations";
+import { useBackupSnapshots } from "@/features/backup/backup-queries";
 import { SHORT_COMMIT_LENGTH } from "./constants";
 import { Skeletons } from "@/components/Skeletons";
 

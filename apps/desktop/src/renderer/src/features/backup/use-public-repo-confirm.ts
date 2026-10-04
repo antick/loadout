@@ -1,7 +1,7 @@
 import type { GithubConnectResult } from "@loadout/shared";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { useGithubConfirmPublic, useGithubDiscardPublic } from "@/hooks/mutations/backup-sync";
+import { useGithubConfirmPublic, useGithubDiscardPublic } from "@/features/backup/backup-mutations";
 import { publicRepoDetails } from "@/lib/backup-errors";
 
 /**

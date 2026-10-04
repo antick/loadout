@@ -19,7 +19,11 @@ import { useShell } from "@/components/layout/shell-context";
 import type { SkillAction } from "@/components/skill-action";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useOpenInEditor } from "@/hooks/mutations/app";
-import { useCheckSkillUpdate, useExportSkills, useRevealSkill } from "@/hooks/mutations/library";
+import {
+  useCheckSkillUpdate,
+  useExportSkills,
+  useRevealSkill,
+} from "@/features/library/library-mutations";
 import { useSetFavorite } from "@/hooks/mutations/skills";
 import { useDefaultEditor } from "@/hooks/use-default-editor";
 import { hasTrackedSource } from "@/lib/skill-source";

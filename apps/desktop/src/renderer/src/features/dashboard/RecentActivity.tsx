@@ -24,7 +24,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageSection } from "@/components/PageSection";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useActivity } from "@/hooks/queries/dashboard";
+import { useActivity } from "@/features/dashboard/dashboard-queries";
 import { cn } from "@/lib/utils";
 import { ACTIVITY_LIMIT } from "./constants";
 import { Skeletons } from "@/components/Skeletons";

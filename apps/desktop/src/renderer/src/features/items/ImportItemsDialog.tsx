@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import { useFindItems, useImportItems } from "@/hooks/mutations/items";
+import { useFindItems, useImportItems } from "@/features/items/item-mutations";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useWarningText } from "./item-text";
 

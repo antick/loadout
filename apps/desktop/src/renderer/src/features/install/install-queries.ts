@@ -1,4 +1,5 @@
 import type {
+  DiagnosticInfo,
   MarketBoard,
   MarketListing,
   MarketProvider,
@@ -6,9 +7,14 @@ import type {
   MarketSkillDetail,
   ScanResult,
 } from "@loadout/shared";
-import { type UseQueryResult, keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
+
+/** Versions and paths of this computer; `gitVersion` is null when Git is not installed. */
+export function useDiagnostics(): UseQueryResult<DiagnosticInfo> {
+  return useQuery({ queryKey: keys.system.diagnostics, queryFn: () => api.system.diagnostics() });
+}
 
 /** One marketplace leaderboard. The backend caches boards, so switching back is instant. */
 export function useMarketBoard(

@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { useSetPresetToggle } from "@/hooks/mutations/preset-detail";
-import { usePresetToggles } from "@/hooks/queries/preset-detail";
+import { useSetPresetToggle } from "@/features/presets/preset-mutations";
+import { usePresetToggles } from "@/features/presets/preset-queries";
 import { errorMessage } from "@/lib/toast";
 
 export interface PresetSkillTogglesProps {
