@@ -130,7 +130,11 @@ export function createFetchedPreviews(
       const previewId = await sessions.open({
         key,
         dirs: new Map(found.map((skill) => [skill.relPath, skill.dir])),
-        record: (dir) => options.record(subpathOf(fetched.root, dir)),
+        // The user confirms the other site before installing: updates may follow it there.
+        record: (dir) => ({
+          ...options.record(subpathOf(fetched.root, dir)),
+          sourceTrustedHost: redirectedTo,
+        }),
         cleanup: fetched.cleanup,
         redirectedTo,
       });

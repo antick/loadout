@@ -22,6 +22,7 @@ import {
   archiveLinkName,
   archiveSkillDir,
   crossSiteHost,
+  siteOf,
   extractArchive,
   fetchWellKnownSkill,
   isWellKnownIndexUrl,
@@ -198,13 +199,13 @@ export type DownloadCache = Map<string, Promise<Buffer>>;
 
 /**
  * At install the user saw where a link's download came from, and agreed to any other site. An
- * update asks no one, so it stays on that ground: a link that now leads to another site, or to
- * plain http, is refused before anything is fetched from there.
+ * update asks no one, so it stays on that ground: a link that now leads to a site the user did
+ * not agree to, or to plain http, is refused before anything is fetched from there.
  */
-function guardedRedirect(link: string): (to: string) => void {
+function guardedRedirect(link: string, trustedHost: string | null): (to: string) => void {
   return (to) => {
     const other = crossSiteHost(link, to);
-    if (other) {
+    if (other && (!trustedHost || siteOf(other) !== siteOf(trustedHost))) {
       throw invalid(
         `${redactUrl(link)} now leads to ${other}. Install it again from Install to trust that site.`,
       );
@@ -222,11 +223,12 @@ function cachedDownload(
   download: Download,
   link: string,
   subject: string,
+  trustedHost: string | null,
   cache?: DownloadCache,
 ): Promise<Buffer> {
   let pending = cache?.get(link);
   if (!pending) {
-    pending = download(link, { subject, onRedirect: guardedRedirect(link) });
+    pending = download(link, { subject, onRedirect: guardedRedirect(link, trustedHost) });
     cache?.set(link, pending);
   }
   return pending;
@@ -243,7 +245,13 @@ async function openSiteSource(
 ): Promise<OpenedSource> {
   const name = skill.sourceSubpath;
   if (!name) throw invalid("This skill does not record its name on the site it came from");
-  const data = await cachedDownload(download, indexUrl, "The skills index", cache);
+  const data = await cachedDownload(
+    download,
+    indexUrl,
+    "The skills index",
+    skill.sourceTrustedHost,
+    cache,
+  );
   let raw: unknown;
   try {
     raw = JSON.parse(data.toString("utf8"));
@@ -269,11 +277,12 @@ async function openSiteSource(
 async function openSkillFileSource(
   link: string,
   download: Download,
+  trustedHost: string | null,
   cache?: DownloadCache,
 ): Promise<OpenedSource> {
   const folder = await skillFileFolder(
     link,
-    await cachedDownload(download, link, "The file", cache),
+    await cachedDownload(download, link, "The file", trustedHost, cache),
   );
   return { dir: folder.root, revision: LINK_REVISION, subpath: null, cleanup: folder.cleanup };
 }
@@ -288,8 +297,10 @@ async function openLinkSource(
   if (isWellKnownIndexUrl(skill.sourceUrl)) {
     return openSiteSource(skill, skill.sourceUrl, download, cache);
   }
-  if (skillFileLink(link)) return openSkillFileSource(link, download, cache);
-  const pending = cachedDownload(download, link, "The archive", cache);
+  if (skillFileLink(link)) {
+    return openSkillFileSource(link, download, skill.sourceTrustedHost, cache);
+  }
+  const pending = cachedDownload(download, link, "The archive", skill.sourceTrustedHost, cache);
   const archive = await unpackArchive(await pending, archiveLinkName(link));
   try {
     return {

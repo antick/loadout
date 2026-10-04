@@ -155,6 +155,7 @@ export function createInstallMockHandlers(ctx: InstallMockContext): MockHandlers
       sourceUrl: null,
       sourceSubpath: null,
       sourceBranch: null,
+      sourceTrustedHost: null,
       sourceRevision: null,
       remoteRevision: null,
       updateStatus:

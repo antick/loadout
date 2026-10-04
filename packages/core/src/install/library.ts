@@ -33,6 +33,8 @@ export interface InstallRecord {
   sourceUrl?: string | null;
   sourceSubpath?: string | null;
   sourceBranch?: string | null;
+  /** Another site the download moved to, agreed to by the user. Left as it was when absent. */
+  sourceTrustedHost?: string | null;
   sourceRevision?: string | null;
   /** Defaults to `sourceRevision`: right after an install the library matches upstream. */
   remoteRevision?: string | null;
@@ -117,6 +119,9 @@ export async function installIntoLibrary(
         sourceUrl: record.sourceUrl ?? null,
         sourceSubpath: record.sourceSubpath ?? null,
         sourceBranch: record.sourceBranch ?? null,
+        ...(record.sourceTrustedHost === undefined
+          ? {}
+          : { sourceTrustedHost: record.sourceTrustedHost }),
         sourceRevision: record.sourceRevision ?? null,
         remoteRevision: record.remoteRevision ?? record.sourceRevision ?? null,
         contentHash: hashDir(destination),

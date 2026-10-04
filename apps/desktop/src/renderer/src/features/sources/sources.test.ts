@@ -17,6 +17,7 @@ function skill(id: string, extra: Partial<Skill>): Skill {
     sourceUrl: null,
     sourceSubpath: null,
     sourceBranch: null,
+    sourceTrustedHost: null,
     sourceRevision: null,
     remoteRevision: null,
     updateStatus: "up_to_date",

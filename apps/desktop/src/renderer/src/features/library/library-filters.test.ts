@@ -18,6 +18,7 @@ function skill(name: string, deployedTo: string[], blockedAgents: string[] = [])
     sourceUrl: null,
     sourceSubpath: null,
     sourceBranch: null,
+    sourceTrustedHost: null,
     sourceRevision: null,
     remoteRevision: null,
     updateStatus: "up_to_date",

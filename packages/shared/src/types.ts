@@ -97,6 +97,11 @@ export interface Skill {
   /** Folder of the skill inside its repository or archive; null when it is the root. */
   sourceSubpath: string | null;
   sourceBranch: string | null;
+  /**
+   * A link's download moved to another site and the user agreed to it at install: that host.
+   * Updates follow the link there, and to no other site.
+   */
+  sourceTrustedHost: string | null;
   /** Revision installed in the library. */
   sourceRevision: string | null;
   /** Latest revision seen upstream. */

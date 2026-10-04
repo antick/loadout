@@ -187,4 +187,8 @@ export const MIGRATIONS: readonly string[] = [
   -- When the user made the skill a favourite (epoch ms), NULL when it is not one.
   ALTER TABLE skills ADD COLUMN favorited_at INTEGER;
   `,
+  `
+  -- Another site a link's download moved to that the user agreed to at install, NULL when none.
+  ALTER TABLE skills ADD COLUMN source_trusted_host TEXT;
+  `,
 ];

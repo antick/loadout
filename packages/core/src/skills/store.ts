@@ -14,6 +14,7 @@ interface SkillRow {
   source_url: string | null;
   source_subpath: string | null;
   source_branch: string | null;
+  source_trusted_host: string | null;
   source_revision: string | null;
   remote_revision: string | null;
   library_path: string;
@@ -62,6 +63,7 @@ export interface NewSkill {
   sourceUrl?: string | null;
   sourceSubpath?: string | null;
   sourceBranch?: string | null;
+  sourceTrustedHost?: string | null;
   sourceRevision?: string | null;
   remoteRevision?: string | null;
   libraryPath: string;
@@ -87,6 +89,7 @@ export type SkillPatch = Partial<
     | "sourceUrl"
     | "sourceSubpath"
     | "sourceBranch"
+    | "sourceTrustedHost"
     | "sourceRevision"
     | "remoteRevision"
     | "libraryPath"
@@ -112,6 +115,7 @@ const PATCH_COLUMNS: Record<keyof SkillPatch, string> = {
   sourceUrl: "source_url",
   sourceSubpath: "source_subpath",
   sourceBranch: "source_branch",
+  sourceTrustedHost: "source_trusted_host",
   sourceRevision: "source_revision",
   remoteRevision: "remote_revision",
   libraryPath: "library_path",
@@ -231,6 +235,7 @@ export class SkillStore {
       sourceUrl: row.source_url,
       sourceSubpath: row.source_subpath,
       sourceBranch: row.source_branch,
+      sourceTrustedHost: row.source_trusted_host ?? null,
       sourceRevision: row.source_revision,
       remoteRevision: row.remote_revision,
       updateStatus: row.update_status as UpdateStatus,
@@ -320,8 +325,8 @@ export class SkillStore {
       `INSERT INTO skills(id, name, description, source_type, source_ref, source_url, source_subpath,
         source_branch, source_revision, remote_revision, library_path, content_hash, update_status,
         last_checked_at, created_at, updated_at, edited_files, authored, suggest_for, blocked_agents,
-        note, favorited_at)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        note, favorited_at, source_trusted_host)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       input.name,
       input.description,
@@ -344,6 +349,7 @@ export class SkillStore {
       encodeList(input.blockedAgents),
       input.note ?? null,
       input.favoritedAt ?? null,
+      input.sourceTrustedHost ?? null,
     );
     return this.get(id);
   }

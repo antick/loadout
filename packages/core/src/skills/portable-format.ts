@@ -1,0 +1,224 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import {
+  SOURCE_TYPES,
+  type Skill,
+  type SourceType,
+  cleanAgentKeys,
+  cleanSkillNote,
+  cleanSuggestPatterns,
+} from "@loadout/shared";
+import type { Logger } from "../log";
+import { readDirSafe } from "../util/fs";
+
+/**
+ * The format of the portable metadata files, and how they are read back. Files arrive from other
+ * devices, merges and hand edits, so every field is checked on the way in.
+ */
+
+export const MACHINE_LOCAL_SOURCES: ReadonlySet<SourceType> = new Set(["local", "import"]);
+
+export interface PortableSkill {
+  id: string;
+  /** Folder name inside the skills folder. */
+  path: string;
+  tags: string[];
+  source: {
+    type: SourceType;
+    ref?: string | null;
+    url?: string | null;
+    subpath?: string | null;
+    branch?: string | null;
+    revision?: string | null;
+    /** Another site a link's download moved to that the user agreed to. */
+    trustedHost?: string | null;
+  };
+  createdAt: number;
+  /** Files edited in the app since the skill came from its source. Left out when none. */
+  editedFiles?: string[];
+  /** The user wrote it, so no source is looked for. Left out when not. */
+  authored?: true;
+  /** File patterns of projects it is suggested for. Left out when none. */
+  suggestFor?: string[];
+  /** Keys of agents it must never be deployed to. Left out when none. */
+  blockedAgents?: string[];
+  /** The user's own note on the skill. Left out when none. */
+  note?: string;
+  /** When it became a favourite (epoch ms). Left out when it is not one. */
+  favoritedAt?: number;
+}
+
+export interface PortablePreset {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  sortOrder: number;
+  /** Skill ids in display order. */
+  skills: string[];
+  /** Only switches turned off are stored: skill id → agent keys. */
+  disabledAgents: Record<string, string[]>;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** A skill's portable metadata file, as it is written for the backup. */
+export function toPortableSkill(skill: Skill): PortableSkill {
+  const local = MACHINE_LOCAL_SOURCES.has(skill.sourceType);
+  return {
+    id: skill.id,
+    path: skill.dirName,
+    tags: [...skill.tags].sort(),
+    source: {
+      type: skill.sourceType,
+      ref: local ? undefined : skill.sourceRef,
+      url: skill.sourceUrl,
+      subpath: skill.sourceSubpath,
+      branch: skill.sourceBranch,
+      revision: skill.sourceRevision,
+      trustedHost: skill.sourceTrustedHost ?? undefined,
+    },
+    createdAt: skill.createdAt,
+    editedFiles: skill.editedFiles.length > 0 ? [...skill.editedFiles].sort() : undefined,
+    authored: skill.authored ? true : undefined,
+    suggestFor: skill.suggestFor.length > 0 ? [...skill.suggestFor].sort() : undefined,
+    blockedAgents: skill.blockedAgents.length > 0 ? [...skill.blockedAgents].sort() : undefined,
+    note: skill.note ?? undefined,
+    favoritedAt: skill.favoritedAt ?? undefined,
+  };
+}
+
+/** A relative, `/` separated path that stays inside the folder it is relative to. */
+export function isSafeRelativePath(path: unknown): path is string {
+  if (typeof path !== "string" || path.length === 0 || path.includes("\0")) return false;
+  if (path.startsWith("/") || path.includes("\\") || /^[A-Za-z]:/.test(path)) return false;
+  return path.split("/").every((segment) => segment !== "" && segment !== "." && segment !== "..");
+}
+
+/** Edited paths from a file that may come from another device; anything unsafe is dropped. */
+export function readEditedFiles(value: unknown): string[] {
+  return Array.isArray(value) ? [...new Set(value.filter(isSafeRelativePath))].sort() : [];
+}
+
+/** Suggest-for patterns from a file that may come from another device; unusable ones dropped. */
+export function readSuggestFor(value: unknown): string[] {
+  return Array.isArray(value) ? cleanSuggestPatterns(value).sort() : [];
+}
+
+/** Blocked agent keys from a file that may come from another device; bad ones dropped. */
+export function readBlockedAgents(value: unknown): string[] {
+  return Array.isArray(value) ? cleanAgentKeys(value) : [];
+}
+
+/** The note from a file that may come from another device: trimmed and capped, or null. */
+export function readNote(value: unknown): string | null {
+  return cleanSkillNote(value);
+}
+
+/** The favourite time from a file that may come from another device; anything odd is "not one". */
+export function readFavoritedAt(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+/** A metadata file may only name a plain folder directly inside the skills folder. */
+export function isSafeLibraryDirName(name: unknown): name is string {
+  return (
+    typeof name === "string" &&
+    name.length > 0 &&
+    name !== "." &&
+    name !== ".." &&
+    !name.startsWith(".") &&
+    !/[\\/\0]/.test(name)
+  );
+}
+
+const KNOWN_SOURCE_TYPES: ReadonlySet<unknown> = new Set(SOURCE_TYPES);
+
+type Json = Record<string, unknown>;
+
+function isObject(value: unknown): value is Json {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+}
+
+function timeOr(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/**
+ * A skill's metadata file as read from disk, where it may come from another device, a merge or a
+ * hand edit. Null when its id, folder or source type is unusable; odd optional fields are dropped.
+ */
+export function readPortableSkill(value: unknown): PortableSkill | null {
+  if (!isObject(value) || typeof value.id !== "string" || !isSafeLibraryDirName(value.path)) {
+    return null;
+  }
+  const source = isObject(value.source) ? value.source : null;
+  if (!source || !KNOWN_SOURCE_TYPES.has(source.type)) return null;
+  return {
+    ...value,
+    id: value.id,
+    path: value.path,
+    tags: strings(value.tags),
+    source: {
+      type: source.type as SourceType,
+      ref: textOrNull(source.ref),
+      url: textOrNull(source.url),
+      subpath: textOrNull(source.subpath),
+      branch: textOrNull(source.branch),
+      revision: textOrNull(source.revision),
+      trustedHost: textOrNull(source.trustedHost),
+    },
+    createdAt: timeOr(value.createdAt, Date.now()),
+  };
+}
+
+/** A preset's metadata file as read from disk; null when its id or name is unusable. */
+export function readPortablePreset(value: unknown): PortablePreset | null {
+  if (!isObject(value) || typeof value.id !== "string" || typeof value.name !== "string") {
+    return null;
+  }
+  const disabledAgents: Record<string, string[]> = {};
+  if (isObject(value.disabledAgents)) {
+    for (const [skillId, keys] of Object.entries(value.disabledAgents)) {
+      disabledAgents[skillId] = strings(keys);
+    }
+  }
+  const createdAt = timeOr(value.createdAt, Date.now());
+  return {
+    id: value.id,
+    name: value.name,
+    description: textOrNull(value.description),
+    icon: textOrNull(value.icon),
+    sortOrder: timeOr(value.sortOrder, 0),
+    skills: strings(value.skills),
+    disabledAgents,
+    createdAt,
+    updatedAt: timeOr(value.updatedAt, createdAt),
+  };
+}
+
+/** Every metadata file in `dir` that `read` accepts; the rest are skipped and logged. */
+export function readJsonDir<T>(dir: string, read: (value: unknown) => T | null, log: Logger): T[] {
+  const items: T[] = [];
+  for (const entry of readDirSafe(dir)) {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+    let item: T | null = null;
+    try {
+      item = read(JSON.parse(readFileSync(join(dir, entry.name), "utf8")));
+    } catch {
+      // Not JSON: handled as unusable below.
+    }
+    // A half-merged or hand-edited file is skipped rather than failing the whole rebuild.
+    if (item) items.push(item);
+    else log.warn(`Skipped unreadable metadata file: ${join(dir, entry.name)}`);
+  }
+  return items;
+}

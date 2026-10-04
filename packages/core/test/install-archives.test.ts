@@ -164,6 +164,34 @@ describe("archive links", () => {
     );
   });
 
+  it("updates through the other site the user agreed to at install, and no further", async () => {
+    const mirror = "https://mirror.example.org/helper.skill";
+    served.set(mirror, zip({ "SKILL.md": skillMd("helper") }));
+    redirects.set(SINGLE_LINK, mirror);
+    const preview = await world.install.api.previewGit(SINGLE_LINK);
+    expect(preview.redirectedTo).toBe("mirror.example.org");
+    const [helper] = await world.install.api.confirmGit(
+      preview.previewId,
+      [{ relPath: preview.skills[0]?.relPath ?? "", name: "" }],
+      { acceptRedirect: true },
+    );
+    if (!helper) throw new Error("fixture not installed");
+    expect(world.store.get(helper.id).sourceTrustedHost).toBe("mirror.example.org");
+
+    served.set(mirror, zip({ "SKILL.md": skillMd("helper", "Version two.") }));
+    expect((await world.updates.api.check(helper.id, true)).updateStatus).toBe("update_available");
+    await world.updates.api.reimport(helper.id);
+    expect(readFileSync(join(helper.libraryPath, "SKILL.md"), "utf8")).toContain("Version two.");
+    expect(world.store.get(helper.id).sourceTrustedHost).toBe("mirror.example.org");
+
+    const third = "https://cdn.other.net/helper.skill";
+    served.set(third, zip({ "SKILL.md": skillMd("helper", "Swapped.") }));
+    redirects.set(SINGLE_LINK, third);
+    await expect(world.updates.api.reimport(helper.id)).rejects.toThrow(
+      "now leads to cdn.other.net",
+    );
+  });
+
   it("marks a linked skill's source as missing when the link stops working", async () => {
     const preview = await world.install.api.previewGit(SINGLE_LINK);
     const [helper] = await world.install.api.confirmGit(preview.previewId, [

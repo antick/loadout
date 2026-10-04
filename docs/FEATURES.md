@@ -59,7 +59,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - The import list says what each skill will do: New, In library, Name in use (and its new name), Same name twice.
 - A name in use can instead replace the library skill, keeping its tags, presets and agents; the old version goes to Recently removed.
 - Skills grouped by folder with a tick-all per folder; a filter for sources with 8 or more skills.
-- A download that moves to another site needs your OK first.
+- A download that moves to another site needs your OK first; updates then go to that site and no other.
 - Marketplace (skills.sh): boards, search, audits and `SKILL.md` before installing; works offline from cache.
 - ClawHub as a second marketplace: boards, search, version and security scan before installing. `skills install @owner/slug`.
 - Scan this machine for skills already in agent folders and import them.

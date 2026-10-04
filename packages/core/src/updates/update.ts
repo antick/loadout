@@ -459,6 +459,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         sourceType: "local",
         sourceRef: null,
         sourceUrl: null,
+        sourceTrustedHost: null,
         sourceSubpath: null,
         sourceBranch: null,
         sourceRevision: null,
