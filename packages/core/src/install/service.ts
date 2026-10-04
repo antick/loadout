@@ -15,7 +15,7 @@ import {
 } from "../util/fs";
 import { extractArchive } from "./archive";
 import { CancelRegistry } from "./cancel";
-import { type Download, createDownload } from "./download";
+import { type Download, createRequest, downloadWith } from "./download";
 import { type GitClient, type GitClientOptions, createGitClient } from "./git-client";
 import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
@@ -75,7 +75,8 @@ const LOCAL_RECORD = { sourceType: "local", updateStatus: "local_only" } as cons
 
 export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps): InstallService {
   const { store, registry } = deps;
-  const download = createDownload(deps.fetchImpl);
+  const http = createRequest(deps.fetchImpl);
+  const download = downloadWith(http);
   // System Git when it is installed; public GitHub and GitLab repositories work without it.
   const git = withHttpFallback(createGitClient(ctx, deps.git), createHttpGit(download));
   const cancels = new CancelRegistry();
@@ -93,7 +94,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     previewTtlMs: deps.previewTtlMs,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
-  const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl, download });
+  const clawhub = deps.clawhub ?? createClawhubClient({ request: http });
   const clawhubDeps = {
     store,
     clawhub,

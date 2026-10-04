@@ -7,7 +7,7 @@ import {
   textField,
 } from "@loadout/shared";
 import { invalid, isAppError } from "../errors";
-import type { Download } from "../install/download";
+import { type Download, jsonOptions, readJson } from "../install/download";
 
 /**
  * What to read before installing a marketplace skill: the security audits the marketplace
@@ -22,7 +22,6 @@ const GITHUB_WEB = "https://github.com";
 const TREE_REF = "HEAD";
 const SKILL_FILE = "skill.md";
 const REQUEST_TIMEOUT_MS = 15_000;
-const MAX_JSON_BYTES = 8 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
 const SOURCE_SHAPE = /^[\w.-]+\/[\w.-]+$/;
 const SKILL_ID_SHAPE = /^[\w.:-]+$/;
@@ -115,12 +114,7 @@ export function createMarketDetail(
   const { download } = deps;
 
   async function json(url: string): Promise<unknown> {
-    const data = await download(url, {
-      accept: "application/json",
-      maxBytes: MAX_JSON_BYTES,
-      timeoutMs: REQUEST_TIMEOUT_MS,
-    });
-    return JSON.parse(data.toString("utf8"));
+    return readJson(await download(url, jsonOptions({ timeoutMs: REQUEST_TIMEOUT_MS })), url);
   }
 
   async function audits(source: string, skillId: string, pageUrl: string) {

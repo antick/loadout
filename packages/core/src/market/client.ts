@@ -1,5 +1,4 @@
 import {
-  APP_SLUG,
   CLAWHUB_NAME,
   MARKETPLACE_NAME,
   MARKET_SEARCH_DEFAULT_LIMIT,
@@ -12,8 +11,14 @@ import {
   type MarketSkillDetail,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { AppError, errorMessage, invalid, isAppError } from "../errors";
-import { createDownload } from "../install/download";
+import { AppError, invalid, isAppError } from "../errors";
+import {
+  MAX_ANSWER_BYTES,
+  createRequest,
+  downloadWith,
+  jsonOptions,
+  readJson,
+} from "../install/download";
 import type { SkillStore } from "../skills/store";
 import { type ClawhubClient, type ClawhubEntry, createClawhubClient } from "./clawhub";
 import { createMarketDetail } from "./detail";
@@ -61,28 +66,11 @@ interface CacheRow {
 
 export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): MarketService {
   const { store } = deps;
-  const fetchDetail = createMarketDetail({ download: createDownload(deps.fetchImpl) });
-  const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl });
-
-  async function request(url: string, accept: string): Promise<Response> {
-    const fetchImpl = deps.fetchImpl ?? fetch;
-    let response: Response;
-    try {
-      response = await fetchImpl(url, {
-        headers: { "User-Agent": APP_SLUG, Accept: accept },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "TimeoutError") {
-        throw new AppError("TIMEOUT", `${MARKETPLACE_NAME} did not answer in time`);
-      }
-      throw new AppError("NETWORK", `Could not reach ${MARKETPLACE_NAME}: ${errorMessage(error)}`);
-    }
-    if (!response.ok) {
-      throw new AppError("NETWORK", `${MARKETPLACE_NAME} answered with HTTP ${response.status}`);
-    }
-    return response;
-  }
+  const request = createRequest(deps.fetchImpl);
+  const fetchDetail = createMarketDetail({ download: downloadWith(request) });
+  const clawhub = deps.clawhub ?? createClawhubClient({ request });
+  /** Every marketplace call: its name in messages, and a short timeout. */
+  const marketplace = { label: MARKETPLACE_NAME, timeoutMs: REQUEST_TIMEOUT_MS } as const;
 
   function readCache<T = MarketEntry[]>(
     key: string,
@@ -194,8 +182,13 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
   async function fetchBoard(board: MarketBoard): Promise<MarketEntry[]> {
     const path = BOARD_PATHS[board];
     if (!path) throw invalid(`Unknown marketplace board: ${board}`);
-    const response = await request(`${MARKETPLACE_URL}${path}`, "text/html");
-    const entries = parseBoardHtml(await response.text());
+    const page = await request(`${MARKETPLACE_URL}${path}`, {
+      ...marketplace,
+      accept: "text/html",
+      maxBytes: MAX_ANSWER_BYTES,
+      subject: "The listing",
+    });
+    const entries = parseBoardHtml(page.body.toString("utf8"));
     if (entries.length === 0) {
       // An empty board means the page changed shape, not that the marketplace is empty.
       throw new AppError("NETWORK", `The ${MARKETPLACE_NAME} listing could not be read`);
@@ -246,13 +239,8 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
       const url = `${MARKETPLACE_URL}${SEARCH_PATH}?q=${encodeURIComponent(q)}&limit=${capped}`;
       const key = `${SEARCH_CACHE_PREFIX}${capped}:${q.toLowerCase()}`;
       try {
-        const response = await request(url, "application/json");
-        let body: unknown;
-        try {
-          body = await response.json();
-        } catch {
-          throw new AppError("NETWORK", `The ${MARKETPLACE_NAME} search answer could not be read`);
-        }
+        const answer = await request(url, jsonOptions({ ...marketplace, subject: "The search" }));
+        const body = readJson(answer.body, MARKETPLACE_NAME);
         const entries = parseSearchResponse(body).slice(0, capped);
         writeCache(key, entries);
         pruneSearches();

@@ -1,5 +1,4 @@
 import {
-  APP_SLUG,
   CLAWHUB_API_URL,
   CLAWHUB_NAME,
   type MarketAudit,
@@ -9,8 +8,15 @@ import {
   clawhubMarketId,
   clawhubSkillUrl,
 } from "@loadout/shared";
-import { AppError, errorMessage, invalid, notFound } from "../errors";
-import { type Download, createDownload } from "../install/download";
+import { AppError, invalid, notFound } from "../errors";
+import {
+  type HttpAnswer,
+  type HttpRequest,
+  createRequest,
+  downloadWith,
+  jsonOptions,
+  readJson,
+} from "../install/download";
 
 /**
  * The ClawHub registry (clawhub.ai): public read endpoints, no token. Skills are versioned and
@@ -72,9 +78,28 @@ export interface ClawhubClient {
 
 export interface ClawhubClientDeps {
   fetchImpl?: typeof fetch;
-  /** Zips come through the shared downloader: size cap, cancel and timeout. */
-  download?: Download;
+  /**
+   * Every call goes through the shared requester: size caps, timeouts, cancelling, one retry
+   * when the registry is busy, and the same error mapping as any download.
+   */
+  request?: HttpRequest;
 }
+
+const HTTP_OK_MIN = 200;
+const HTTP_OK_MAX = 299;
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
+const HTTP_NOT_FOUND = 404;
+const HTTP_CONFLICT = 409;
+const HTTP_TOO_MANY = 429;
+/** Statuses the registry explains in its own answer; the rest are mapped like any download. */
+const READ_STATUSES: ReadonlySet<number> = new Set([
+  HTTP_UNAUTHORIZED,
+  HTTP_NOT_FOUND,
+  HTTP_CONFLICT,
+  HTTP_TOO_MANY,
+]);
+const isOk = (status: number): boolean => status >= HTTP_OK_MIN && status <= HTTP_OK_MAX;
 
 /** The first bytes of a zip file. */
 const ZIP_MAGIC = Buffer.from("PK\x03\x04", "latin1");
@@ -136,57 +161,40 @@ function query(params: Record<string, string | null | undefined>): string {
 }
 
 export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient {
-  const fetchImpl = deps.fetchImpl ?? fetch;
-  const download = deps.download ?? createDownload(fetchImpl);
+  const request = deps.request ?? createRequest(deps.fetchImpl);
+  const download = downloadWith(request);
 
-  async function request(
+  async function call(
     path: string,
-    accept: string,
-    timeoutMs = REQUEST_TIMEOUT_MS,
-    init: { token?: string; method?: string; body?: FormData } = {},
-  ) {
-    let response: Response;
-    try {
-      response = await fetchImpl(`${CLAWHUB_API_URL}${path}`, {
-        method: init.method ?? "GET",
+    init: { token?: string; method?: string; body?: FormData; timeoutMs?: number } = {},
+  ): Promise<HttpAnswer> {
+    return request(
+      `${CLAWHUB_API_URL}${path}`,
+      jsonOptions({
+        label: CLAWHUB_NAME,
+        subject: "The skill",
+        method: init.method,
         body: init.body,
-        headers: {
-          "User-Agent": APP_SLUG,
-          Accept: accept,
-          ...(init.token ? { Authorization: `Bearer ${init.token}` } : {}),
-        },
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "TimeoutError") {
-        throw new AppError("TIMEOUT", `${CLAWHUB_NAME} did not answer in time`);
-      }
-      throw new AppError("NETWORK", `Could not reach ${CLAWHUB_NAME}: ${errorMessage(error)}`);
-    }
-    return response;
+        headers: init.token ? { Authorization: `Bearer ${init.token}` } : undefined,
+        timeoutMs: init.timeoutMs ?? REQUEST_TIMEOUT_MS,
+        // A publish reads every answer itself; reads only the ones the registry explains.
+        answers: init.method ? () => true : (status) => READ_STATUSES.has(status),
+      }),
+    );
   }
 
   async function json(
     path: string,
-    init: { token?: string; method?: string; body?: FormData } = {},
+    init: { token?: string } = {},
   ): Promise<{ status: number; body: Json }> {
-    const response = await request(path, "application/json", REQUEST_TIMEOUT_MS, init);
-    let body: Json = {};
-    try {
-      body = asObject(await response.json());
-    } catch {
-      if (response.ok)
-        throw new AppError("NETWORK", `The ${CLAWHUB_NAME} answer could not be read`);
-    }
-    if (response.status === 401) throw invalid(`${CLAWHUB_NAME} refused the token`);
-    if (response.status === 404) throw notFound(asText(body.message) ?? `Not on ${CLAWHUB_NAME}`);
-    if (response.status === 429) {
+    const { status, body: data } = await call(path, init);
+    const body = asObject(readJson(data, CLAWHUB_NAME, !isOk(status)));
+    if (status === HTTP_UNAUTHORIZED) throw invalid(`${CLAWHUB_NAME} refused the token`);
+    if (status === HTTP_NOT_FOUND) throw notFound(asText(body.message) ?? `Not on ${CLAWHUB_NAME}`);
+    if (status === HTTP_TOO_MANY) {
       throw new AppError("NETWORK", `${CLAWHUB_NAME} is rate limiting requests; try again later`);
     }
-    if (!response.ok && response.status !== 409) {
-      throw new AppError("NETWORK", `${CLAWHUB_NAME} answered with HTTP ${response.status}`);
-    }
-    return { status: response.status, body };
+    return { status, body };
   }
 
   async function detail(owner: string | null, slug: string): Promise<ClawhubDetail> {
@@ -320,27 +328,26 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
       for (const file of files) {
         form.append("files", new Blob([new Uint8Array(file.data)]), file.path);
       }
-      const response = await request("/skills", "application/json", PUBLISH_TIMEOUT_MS, {
+      const { status, body: data } = await call("/skills", {
         token,
         method: "POST",
         body: form,
+        timeoutMs: PUBLISH_TIMEOUT_MS,
       });
-      if (response.status === 401 || response.status === 403) {
+      if (status === HTTP_UNAUTHORIZED || status === HTTP_FORBIDDEN) {
         throw invalid(`${CLAWHUB_NAME} refused the token, or it may not publish under that handle`);
       }
-      if (response.status === 429) {
+      if (status === HTTP_TOO_MANY) {
         throw new AppError(
           "NETWORK",
           `${CLAWHUB_NAME} is rate limiting publishes; try again later`,
         );
       }
-      if (!response.ok) {
-        const text = (await response.text().catch(() => "")).trim();
-        throw invalid(
-          `${CLAWHUB_NAME} did not accept the version: ${text || `HTTP ${response.status}`}`,
-        );
+      if (!isOk(status)) {
+        const text = data.toString("utf8").trim();
+        throw invalid(`${CLAWHUB_NAME} did not accept the version: ${text || `HTTP ${status}`}`);
       }
-      const body = asObject(await response.json().catch(() => ({})));
+      const body = asObject(readJson(data, CLAWHUB_NAME, true));
       return { status: asText(body.publicationStatus) === "pending" ? "pending" : "published" };
     },
 

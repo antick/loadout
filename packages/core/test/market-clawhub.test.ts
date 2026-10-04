@@ -262,3 +262,19 @@ describe("ClawHub downloads", () => {
     });
   });
 });
+
+describe("ClawHub requests", () => {
+  it("reads the registry's own explanations, and never sends a publish twice", async () => {
+    const { client, calls } = clientFor(async (url) =>
+      url.includes("/whoami")
+        ? json({ message: "bad token" }, 401)
+        : new Response("busy", { status: 503 }),
+    );
+    await expect(client.whoami("t")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(client.publish("t", { slug: SLUG }, [])).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("busy"),
+    });
+    expect(calls.filter((url) => url.endsWith("/skills"))).toHaveLength(1);
+  });
+});

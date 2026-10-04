@@ -27,9 +27,31 @@ export interface DownloadOptions {
 /** Fetch a URL into memory, with a size cap, a timeout, cancelling and progress. */
 export type Download = (url: string, options?: DownloadOptions) => Promise<Buffer>;
 
+export interface RequestOptions extends DownloadOptions {
+  /** `GET` by default. Only a `GET` is asked again when the server is busy. */
+  method?: string;
+  body?: RequestInit["body"];
+  headers?: Record<string, string>;
+  /** Statuses the caller reads itself: handed back with their body instead of thrown. */
+  answers?: (status: number) => boolean;
+}
+
+export interface HttpAnswer {
+  status: number;
+  body: Buffer;
+}
+
+/** A `Download` that can also send, and hands back the statuses its caller asks for. */
+export type HttpRequest = (url: string, options?: RequestOptions) => Promise<HttpAnswer>;
+
 const DOWNLOAD_TIMEOUT_MS = 300_000;
 /** Big enough for any skill repository; small enough that a wrong link cannot fill the memory. */
 const MAX_DOWNLOAD_BYTES = 256 * 1024 * 1024;
+/** Cap for an API answer or a listing page: generous, and still nothing like a repository. */
+export const MAX_ANSWER_BYTES = 8 * 1024 * 1024;
+const JSON_TYPE = "application/json";
+const RETRIED_METHOD = "GET";
+const TIMEOUT_ERROR = "TimeoutError";
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;
@@ -102,6 +124,14 @@ async function readBody(
   return Buffer.concat(chunks);
 }
 
+/**
+ * Drop a body that will not be read. Not awaited: cancelling one branch of a cloned body only
+ * settles once every branch is cancelled, which may be never.
+ */
+function discard(response: Response): void {
+  response.body?.cancel().catch(() => undefined);
+}
+
 function isRedirect(response: Response): boolean {
   return response.status >= REDIRECT_MIN && response.status <= REDIRECT_MAX;
 }
@@ -118,12 +148,13 @@ function redirectTarget(response: Response, from: string, shown: string): string
 }
 
 /**
- * Downloads through `fetchImpl`: the desktop app passes a proxy-aware one, the CLI the built-in
+ * Requests through `fetchImpl`: the desktop app passes a proxy-aware one, the CLI the built-in
  * `fetch`. Errors are AppErrors with the URL's credentials removed.
  */
-export function createDownload(fetchImpl: typeof fetch = fetch): Download {
+export function createRequest(fetchImpl: typeof fetch = fetch): HttpRequest {
   return async (url, options = {}) => {
     const { signal, onProgress, accept } = options;
+    const method = options.method ?? RETRIED_METHOD;
     const limit = options.maxBytes ?? MAX_DOWNLOAD_BYTES;
     const shown = redactUrl(options.label ?? url);
     if (signal?.aborted) throw cancelled();
@@ -131,7 +162,13 @@ export function createDownload(fetchImpl: typeof fetch = fetch): Download {
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
     const fetchOnce = (address: string): Promise<Response> =>
       fetchImpl(address, {
-        headers: { "User-Agent": APP_SLUG, ...(accept ? { Accept: accept } : {}) },
+        method,
+        body: options.body,
+        headers: {
+          "User-Agent": APP_SLUG,
+          ...(accept ? { Accept: accept } : {}),
+          ...options.headers,
+        },
         redirect: options.onRedirect ? "manual" : "follow",
         signal: combined,
       });
@@ -141,7 +178,7 @@ export function createDownload(fetchImpl: typeof fetch = fetch): Download {
       for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
         const response = await fetchOnce(address);
         if (!isRedirect(response)) return response;
-        await response.body?.cancel().catch(() => undefined);
+        discard(response);
         address = redirectTarget(response, address, shown);
         options.onRedirect(address);
       }
@@ -149,10 +186,13 @@ export function createDownload(fetchImpl: typeof fetch = fetch): Download {
     };
     try {
       let response = await request();
-      if (RETRY_STATUSES.has(response.status)) {
-        await response.body?.cancel().catch(() => undefined);
+      if (RETRY_STATUSES.has(response.status) && method === RETRIED_METHOD) {
+        discard(response);
         await sleep(RETRY_DELAY_MS, undefined, { signal: combined });
         response = await request();
+      }
+      if (options.answers?.(response.status)) {
+        return { status: response.status, body: await readBody(response, limit, onProgress) };
       }
       if (HIDDEN_STATUSES.has(response.status)) {
         // Hosts answer 404 for private repositories too, so never claim it does not exist.
@@ -163,12 +203,39 @@ export function createDownload(fetchImpl: typeof fetch = fetch): Download {
       if (!response.ok) {
         throw new AppError("NETWORK", `${shown} answered with HTTP ${response.status}`);
       }
-      return await readBody(response, limit, onProgress);
+      return { status: response.status, body: await readBody(response, limit, onProgress) };
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (signal?.aborted) throw cancelled();
-      if (timeout.aborted) throw new AppError("TIMEOUT", `${shown} did not finish in time`);
-      throw new AppError("NETWORK", `Could not download ${shown}: ${errorMessage(error)}`);
+      // A fetch with its own deadline (a proxy-aware one) times out the same way.
+      if (timeout.aborted || (error instanceof Error && error.name === TIMEOUT_ERROR)) {
+        throw new AppError("TIMEOUT", `${shown} did not finish in time`);
+      }
+      throw new AppError("NETWORK", `Could not reach ${shown}: ${errorMessage(error)}`);
     }
   };
+}
+
+/** Downloads through `request`, for callers that only want the body. */
+export function downloadWith(request: HttpRequest): Download {
+  return async (url, options) => (await request(url, options)).body;
+}
+
+export function createDownload(fetchImpl: typeof fetch = fetch): Download {
+  return downloadWith(createRequest(fetchImpl));
+}
+
+/** Options for an API call answered in JSON: that `Accept` and the JSON size cap. */
+export function jsonOptions(options: RequestOptions = {}): RequestOptions {
+  return { accept: JSON_TYPE, maxBytes: MAX_ANSWER_BYTES, ...options };
+}
+
+/** A JSON answer's value; null when `lenient` and it is not JSON, else a NETWORK error. */
+export function readJson(body: Buffer, shown: string, lenient = false): unknown {
+  try {
+    return JSON.parse(body.toString("utf8")) as unknown;
+  } catch {
+    if (lenient) return null;
+    throw new AppError("NETWORK", `The answer from ${redactUrl(shown)} could not be read`);
+  }
 }

@@ -167,12 +167,12 @@ describe("marketplace service", () => {
   });
 
   it("reports HTTP errors and unreadable pages as network failures, without caching them", async () => {
-    let body: Response = new Response("nope", { status: 503 });
+    let body: Response = new Response("nope", { status: 500 });
     const { fetchImpl, calls } = fakeFetch(() => body.clone());
     const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
     await expect(market.api.board("hot")).rejects.toMatchObject({
       code: "NETWORK",
-      message: expect.stringContaining("503"),
+      message: expect.stringContaining("500"),
     });
     body = html("<html>redesigned</html>");
     await expect(market.api.board("hot")).rejects.toMatchObject({ code: "NETWORK" });
@@ -187,6 +187,29 @@ describe("marketplace service", () => {
     });
     const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
     await expect(market.api.board("hot")).rejects.toMatchObject({ code: "TIMEOUT" });
+  });
+
+  it("asks a busy marketplace once more and refuses an oversized answer, like any download", async () => {
+    let busy = true;
+    const { fetchImpl, calls } = fakeFetch(() => {
+      if (!busy) return json({ skills: [PDF] });
+      busy = false;
+      return new Response("busy", { status: 503 });
+    });
+    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    expect((await market.api.search("pdf")).skills).toHaveLength(1);
+    expect(calls).toHaveLength(2);
+
+    const huge = fakeFetch(
+      () => new Response("{}", { headers: { "content-length": String(64 * 1024 * 1024) } }),
+    );
+    const capped = createMarketService(world.ctx, {
+      store: world.store,
+      fetchImpl: huge.fetchImpl,
+    });
+    await expect(capped.api.search("docx")).rejects.toMatchObject({
+      message: expect.stringContaining("larger than"),
+    });
   });
 
   it("searches with an encoded query and a capped limit", async () => {
