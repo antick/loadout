@@ -86,7 +86,7 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     skills: () => store.list(),
     checkAll: checker.checkAll,
     update: updater.update,
-    checkSources: () => sources.check(),
+    checkSources: (known) => sources.check(undefined, known),
   });
 
   const api: UpdatesApi = {

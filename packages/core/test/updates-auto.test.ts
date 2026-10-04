@@ -172,6 +172,7 @@ describe("auto-updater schedule", () => {
   });
 
   it("stops half way without recording the round", async () => {
+    world.ctx.settings.set("autoUpdateApply", true);
     skills = [fakeSkill("alpha"), fakeSkill("beta")];
     const auto = createAutoUpdater(world.ctx, target);
     const pending = auto.runNow();
@@ -179,7 +180,8 @@ describe("auto-updater schedule", () => {
     auto.stop();
     await vi.advanceTimersByTimeAsync(AUTO_SKILL_PAUSE_MS);
     await pending;
-    expect(calls).toHaveLength(1);
+    // The check, and the first update; the second waited out its pause and stopped.
+    expect(calls.map((call) => call.split(":")[0])).toEqual(["checkAll", "update"]);
     expect(events).toEqual([]);
     expect(world.ctx.settings.get("autoUpdateLastRunAt")).toBe(0);
   });
@@ -208,8 +210,8 @@ describe("auto-updater round over real services", () => {
     const before = world.lookups();
     const summary = await world.updates.auto.runNow();
     expect(summary).toMatchObject({ updated: 1, available: 2, failed: 0 });
-    // One lookup checks both skills of the repository; then one per update tried, one for news.
-    expect(world.lookups() - before).toBe(4);
+    // One lookup checks both skills of the repository; the updates and the news use its answer.
+    expect(world.lookups() - before).toBe(1);
     expect(world.ctx.settings.get("autoUpdateLastRunAt")).toBe(summary.ranAt);
     expect(world.install.events.filter(({ event }) => event === "updates:auto-ran")).toEqual([
       { event: "updates:auto-ran", payload: summary },

@@ -9,6 +9,7 @@ import {
 import type { CoreContext } from "../context";
 import { isAppError } from "../errors";
 import { pause } from "../util/async";
+import type { KnownRevision } from "../sources";
 import type { LockMode } from "./locking";
 import { isRemoteSource } from "./source";
 import type { UpdateOptions } from "./update";
@@ -22,7 +23,7 @@ import type { UpdateOptions } from "./update";
 
 export const AUTO_FIRST_TICK_MS = 60_000;
 export const AUTO_TICK_MS = 15 * 60_000;
-/** Breathing room between skills, so a round never hammers a host or the disk. */
+/** Breathing room before each update a round applies, so it never hammers a host or the disk. */
 export const AUTO_SKILL_PAUSE_MS = 200;
 
 export type AutoRunSummary = AppEvents["updates:auto-ran"];
@@ -34,7 +35,7 @@ export interface AutoUpdateTarget {
   checkAll(force: boolean, options: { lockMode: LockMode }): Promise<BatchResult>;
   update(skillId: string, approval: null, options: UpdateOptions): Promise<UpdateResult>;
   /** Look for skills repositories gained; adds them when that setting is on. */
-  checkSources(): Promise<SourceCheckResult>;
+  checkSources(known: KnownRevision): Promise<SourceCheckResult>;
 }
 
 export interface AutoUpdater {
@@ -73,13 +74,18 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
   }
 
   /** What the check found for `checked`, and the update when applying is on. */
-  async function visit(checked: Skill, apply: boolean): Promise<Visit> {
+  async function visit(checked: Skill, apply: boolean, known: KnownRevision): Promise<Visit> {
     if (checked.updateStatus === "error") return "failed";
     if (checked.updateStatus !== "update_available") return "none";
     // Local sources are only reported: copying someone's working folder is their call.
     if (!apply || !isRemoteSource(checked)) return "available";
+    await pause(AUTO_SKILL_PAUSE_MS);
+    if (abortRound) return "none";
     try {
-      const outcome = await target.update(checked.id, null, BACKGROUND);
+      const outcome = await target.update(checked.id, null, {
+        ...BACKGROUND,
+        knownRevision: known(checked),
+      });
       if (outcome.pendingRemovals.length > 0) return "available";
       return outcome.contentChanged ? "updated" : "none";
     } catch (error) {
@@ -99,6 +105,14 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
       added: 0,
     };
     const apply = ctx.settings.get("autoUpdateApply");
+    // What this round's check found is used as it is: each repository is asked once a round.
+    const checkedFrom = Date.now();
+    const known: KnownRevision = (skill) =>
+      skill.lastCheckedAt !== null &&
+      skill.lastCheckedAt >= checkedFrom &&
+      skill.updateStatus !== "error"
+        ? skill.remoteRevision
+        : null;
     try {
       // A skill the library was too busy to check keeps its last answer for this round.
       await target.checkAll(true, BACKGROUND);
@@ -106,15 +120,15 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
       ctx.log.warn("Automatic update check failed", error);
     }
     for (const skill of target.skills().filter(isTracked)) {
-      await pause(AUTO_SKILL_PAUSE_MS);
       // Stopped half way: leave the last-run time alone so the next launch finishes the job.
       if (abortRound) return summary;
-      const outcome = await visit(skill, apply);
+      const outcome = await visit(skill, apply, known);
       if (outcome !== "none") summary[outcome] += 1;
     }
+    if (abortRound) return summary;
     try {
       // A repository that cannot be reached already failed its skills' checks above.
-      const sources = await target.checkSources();
+      const sources = await target.checkSources(known);
       summary.added = sources.added.length;
       for (const failure of sources.failed) {
         ctx.log.warn(`Looking for new skills in ${failure.name} failed: ${failure.message}`);

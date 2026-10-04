@@ -76,6 +76,8 @@ export interface UpdateOptions {
    * is installed: the user never saw what the newer revision changes.
    */
   expectedRevision?: string | null;
+  /** The upstream revision a check found moments ago: installed without asking the remote. */
+  knownRevision?: string | null;
   /** Only say what it would hold back: see `RefreshOptions.dryRun`. */
   dryRun?: boolean;
 }
@@ -316,7 +318,8 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     try {
       ctx.emit("install:progress", { key, phase: "cloning", name: skill.name });
       const target = remoteTargetOf(skill, deps.gitInput);
-      const revision = await resolveRemoteRevision(clients, target, handle.signal);
+      const revision =
+        options.knownRevision ?? (await resolveRemoteRevision(clients, target, handle.signal));
       if (options.expectedRevision && revision !== options.expectedRevision) {
         throw new AppError("CHANGED_ON_DISK", MOVED_SINCE_COMPARED);
       }

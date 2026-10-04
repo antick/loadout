@@ -28,8 +28,12 @@ export interface SourceCheckerDeps {
 
 export interface SourceChecker {
   news(): SourceNews[];
-  check(sourceKeys?: readonly string[]): Promise<SourceCheckResult>;
+  /** `known`: the upstream revision a check made moments ago, so it is not asked for again. */
+  check(sourceKeys?: readonly string[], known?: KnownRevision): Promise<SourceCheckResult>;
 }
+
+/** The revision of a skill's upstream that is already known, or null to ask the remote. */
+export type KnownRevision = (skill: Skill) => string | null;
 
 /** One repository the library has skills from. */
 interface Repository {
@@ -113,11 +117,15 @@ export function createSourceChecker(ctx: CoreContext, deps: SourceCheckerDeps): 
     return added;
   }
 
-  async function look(repository: Repository, result: SourceCheckResult): Promise<void> {
+  async function look(
+    repository: Repository,
+    result: SourceCheckResult,
+    known?: KnownRevision,
+  ): Promise<void> {
     const [first] = repository.skills;
     if (!first) return;
     const target = remoteTargetOf(first, deps.gitInput);
-    const revision = await resolveRemoteRevision({ git }, target);
+    const revision = known?.(first) ?? (await resolveRemoteRevision({ git }, target));
     const before = news.get(repository.key);
     if (before && before.revision === revision) {
       news.set(repository.key, { ...before, checkedAt: Date.now() });
@@ -176,13 +184,13 @@ export function createSourceChecker(ctx: CoreContext, deps: SourceCheckerDeps): 
   return {
     news: currentNews,
 
-    check: async (sourceKeys) => {
+    check: async (sourceKeys, known) => {
       const wanted = sourceKeys ? new Set(sourceKeys) : null;
       const result: SourceCheckResult = { news: [], added: [], failed: [] };
       for (const repository of repositories(store.list())) {
         if (wanted && !wanted.has(repository.key)) continue;
         try {
-          await look(repository, result);
+          await look(repository, result, known);
         } catch (error) {
           result.failed.push({ name: repository.label, message: errorMessage(error) });
         }
