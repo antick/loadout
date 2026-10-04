@@ -1,14 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "pnpm install --frozen-lockfile --filter @loadout/landing...",
   "buildCommand": "pnpm exec turbo run build --filter=@loadout/landing",
   "outputDirectory": "apps/landing/dist",
-  "build": {
-    "env": {
-      "ELECTRON_SKIP_BINARY_DOWNLOAD": "1"
-    }
-  },
   "git": {
     "deploymentEnabled": {
       "**": false,

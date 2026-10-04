@@ -13,16 +13,49 @@ permissions:
   contents: read
 
 jobs:
-  check:
-    name: Check (${{ matrix.os }})
+  # Lint, formatting and types read only the source, which is the same on every OS: once is enough.
+  static:
+    name: Lint, format and typecheck
+    # Ubuntu is pinned: `ubuntu-latest` moves to a new release on its own, which changes the build
+    # without a commit here. Move this (and the other jobs) by hand when the time comes.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm (version from package.json)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format
+        run: pnpm run format:check
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+  test:
+    name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         # File handling (links, junctions, copies, locks, line endings, path separators) differs
-        # on each, so every one runs the full check.
-        # Ubuntu is pinned: `ubuntu-latest` moves to a new release on its own, which changes the
-        # build without a commit here. Move this by hand when the time comes.
+        # on each, so every one runs the tests.
         os: [ubuntu-24.04, macos-latest, windows-latest]
     env:
       # Tests make Git commits; name them without touching the runner's Git config.
@@ -48,15 +81,54 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Lint, format, typecheck and test
-        run: pnpm check
+      # On CI the packages run side by side, each on every core (scripts/test.mjs).
+      - name: Test
+        run: pnpm test
 
-      # The UI tests click through the renderer's browser preview (in-memory data, no Electron),
-      # so one OS is enough.
+  # The UI tests click through the renderer's browser preview (in-memory data, no Electron), so
+  # one OS is enough.
+  ui:
+    name: UI tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm (version from package.json)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./apps/desktop/package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+
+      # The browser is about 100 MB; it changes only with the Playwright version.
+      - name: Cache Chromium
+        id: browser-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Chromium for the UI tests
-        if: runner.os == 'Linux'
+        if: steps.browser-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @loadout/desktop exec playwright install --with-deps --only-shell chromium
 
+      # The cache holds the browser only; the system libraries it needs are installed every time.
+      - name: Install Chromium's system libraries
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @loadout/desktop exec playwright install-deps chromium
+
       - name: UI tests
-        if: runner.os == 'Linux'
         run: pnpm --filter @loadout/desktop test:ui

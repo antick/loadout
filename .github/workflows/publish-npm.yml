@@ -20,6 +20,7 @@ jobs:
   publish:
     name: Publish @antick/loadout
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       # Trusted publishing and provenance: npm checks this workflow's signed identity.

@@ -30,6 +30,7 @@ jobs:
   version:
     name: Read the version
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       tag: ${{ steps.version.outputs.tag }}
     steps:
@@ -53,6 +54,7 @@ jobs:
     name: Build (${{ matrix.name }})
     needs: version
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -88,8 +90,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # The app and what it bundles (the CLI); the landing page is Vercel's to build.
       - name: Build the CLI and the app
-        run: pnpm build
+        run: pnpm exec turbo run build --filter=@loadout/desktop...
 
       - name: Package installers
         working-directory: apps/desktop
@@ -123,6 +126,7 @@ jobs:
     name: Draft release
     needs: [version, build]
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: write
       # Build provenance: signed with this workflow's identity, stored by GitHub.

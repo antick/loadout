@@ -5,8 +5,8 @@ rules it follows, is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Before you open a pull request
 
-1. Run `pnpm check`. It runs the linter, the format check, the type check and every test, and CI
-   runs the same on Linux, macOS and Windows.
+1. Run `pnpm check`. It runs the linter, the format check, the type check and every test. CI runs
+   the same checks on Linux and the tests on Linux, macOS and Windows.
 2. Add a test for what you changed. CLI commands are tested through `packages/cli/test/harness.ts`,
    which runs them in-process against a throwaway home folder.
 3. Keep `docs/FEATURES.md` current: one short line per feature.
