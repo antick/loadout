@@ -159,7 +159,10 @@ async function remove(context: CommandContext): Promise<CommandResult> {
     };
   }
   const result = await core.api.items.remove(ref);
-  return { value: result, text: [`Deleted ${refText(ref)}.`, ...removalText(result)].join("\n") };
+  return {
+    value: { dryRun: false, ref, ...result },
+    text: [`Deleted ${refText(ref)}.`, ...removalText(result)].join("\n"),
+  };
 }
 
 const itemCommands: CommandSpec[] = [

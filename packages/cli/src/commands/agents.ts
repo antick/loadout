@@ -45,42 +45,50 @@ function switcher(enabled: boolean) {
     // Check every key first: a typo must not leave half of the request applied.
     const unknown = keys.find((key) => !before.has(key));
     if (unknown !== undefined) throw notFound(`Unknown agent: ${unknown}`);
-    if (!enabled) {
-      const losing = deployedTo(
-        core,
-        keys.filter((key) => before.get(key)?.enabled),
+    const agents = keys.map((key) => ({
+      agent: key,
+      enabled,
+      changed: before.get(key)?.enabled !== enabled,
+    }));
+    const changedCount = agents.filter((entry) => entry.changed).length;
+    const state = enabled ? "enabled" : "disabled";
+    const summary = `${plural(changedCount, "agent")} ${state}, ${keys.length - changedCount} already ${state}.`;
+    const apply = async (): Promise<void> => {
+      for (const entry of agents) {
+        if (entry.changed) await core.api.agents.setEnabled(entry.agent, enabled);
+      }
+    };
+    if (enabled) {
+      await apply();
+      return { value: { agents }, text: summary };
+    }
+    const losing = deployedTo(
+      core,
+      keys.filter((key) => before.get(key)?.enabled),
+    );
+    const count = [...losing.values()].reduce((sum, names) => sum + names.length, 0);
+    if (count > 0) {
+      requireYes(
+        args,
+        `remove ${plural(count, "deployed skill")} from ${[...losing.keys()].join(", ")}`,
       );
-      const count = [...losing.values()].reduce((sum, names) => sum + names.length, 0);
-      if (count > 0) {
-        requireYes(
-          args,
-          `remove ${plural(count, "deployed skill")} from ${[...losing.keys()].join(", ")}`,
-        );
-      }
-      // A dry run never writes, whether or not the agents have anything deployed.
-      if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-        const lines = [...losing].map(([agent, names]) => `  ${agent}: ${names.join(", ")}`);
-        return {
-          value: { dryRun: true, wouldRemove: Object.fromEntries(losing) },
-          text: [
-            count > 0
-              ? `Would remove ${plural(count, "deployed skill")}:`
-              : "Would remove no deployed skills.",
-            ...lines,
-            "Nothing was changed.",
-          ].join("\n"),
-        };
-      }
     }
-    const value = [];
-    for (const key of keys) {
-      const changed = before.get(key)?.enabled !== enabled;
-      if (changed) await core.api.agents.setEnabled(key, enabled);
-      value.push({ agent: key, enabled, changed });
+    // A dry run never writes, whether or not the agents have anything deployed.
+    if (flagBoolean(args, DRY_RUN_FLAG.name)) {
+      const lines = [...losing].map(([agent, names]) => `  ${agent}: ${names.join(", ")}`);
+      return {
+        value: { dryRun: true, agents, wouldRemove: Object.fromEntries(losing) },
+        text: [
+          count > 0
+            ? `Would remove ${plural(count, "deployed skill")}:`
+            : "Would remove no deployed skills.",
+          ...lines,
+          "Nothing was changed.",
+        ].join("\n"),
+      };
     }
-    const changedCount = value.filter((entry) => entry.changed).length;
-    const text = `${plural(changedCount, "agent")} ${enabled ? "enabled" : "disabled"}, ${keys.length - changedCount} already ${enabled ? "enabled" : "disabled"}.`;
-    return { value, text };
+    await apply();
+    return { value: { dryRun: false, agents, removed: Object.fromEntries(losing) }, text: summary };
   };
 }
 

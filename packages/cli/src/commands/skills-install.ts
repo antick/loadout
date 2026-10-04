@@ -325,7 +325,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
     );
   }
   lines.push(NOT_DEPLOYED_HINT);
-  return { value: { installed }, text: lines.join("\n") };
+  return { value: { dryRun: false, installed }, text: lines.join("\n") };
 }
 
 export const installCommand: CommandSpec = {

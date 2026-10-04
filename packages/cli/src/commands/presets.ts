@@ -166,13 +166,16 @@ async function undeploy({ core, args }: CommandContext): Promise<CommandResult> 
             ),
           ),
         ];
-  if (keys.length === 0) return finish(preset, emptyApply());
   const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
-  const value = await core.api.deploy.apply(preset.skillIds, keys, "remove", { dryRun });
+  const value =
+    keys.length === 0
+      ? emptyApply()
+      : await core.api.deploy.apply(preset.skillIds, keys, "remove", { dryRun });
   if (dryRun) {
     return { value: { dryRun, ...value }, text: `${preset.name}: ${describeDryApply(value)}` };
   }
-  return finish(preset, value);
+  const done = finish(preset, value);
+  return { ...done, value: { dryRun, ...value } };
 }
 
 export const presetsGroup: CommandGroup = {

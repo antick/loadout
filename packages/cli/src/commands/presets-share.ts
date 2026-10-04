@@ -110,7 +110,11 @@ async function importPreset(context: CommandContext): Promise<CommandResult> {
   for (const failure of result.failed)
     lines.push(`  Not added: ${failure.name}: ${failure.message}`);
   lines.push(`Next: presets deploy "${result.preset.name}" --agent <key>`);
-  return { value: result, text: lines.join("\n"), exitCode: exitCodeFor(result.failed.length > 0) };
+  return {
+    value: { dryRun: false, ...result },
+    text: lines.join("\n"),
+    exitCode: exitCodeFor(result.failed.length > 0),
+  };
 }
 
 export const presetExportCommand: CommandSpec = {

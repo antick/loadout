@@ -32,7 +32,9 @@ ls -l ~/.loadout/bin/loadout ~/.loadout/bin/.version
 | Neither exists          | Try `loadout --version` from `PATH`. If that fails too, Loadout is not installed and this skill does not apply - tell the user. |
 
 Always pass `--json`. Success prints one JSON value on stdout with exit code 0. Add `--help`
-after any group or command to see its exact arguments.
+after any group or command to see its exact arguments. A command that takes `--dry-run` prints
+an object on both runs, with `"dryRun": true` on the dry run and `"dryRun": false` on the real
+one; a fact both runs report has the same key in both.
 
 ## Three separate things
 
@@ -113,10 +115,11 @@ loadout skills update <ref> --json
 loadout skills update --all --json
 
 # Safety check: built-in rules always; SkillSpector when the user has it installed; exit code 1 when one is unsafe or could not be checked
+# Both print { scanned, unsafe, caution, failed, records }: records are this run's reports
 loadout skills scan <ref> --json
 loadout skills scan --all --json
 
-# Format checks (Agent Skills rules); exit code 1 when a skill has an error
+# Format checks (Agent Skills rules); exit code 1 when a skill has an error; all print { skills: [{ issues }] }
 loadout skills validate <ref> --json
 loadout skills validate --all --json
 loadout skills validate ./path/to/skills --json   # a folder, no library needed

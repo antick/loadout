@@ -139,7 +139,7 @@ function applyCommand(
       }
       const result = await core.api.skillsFile.apply(dir, options);
       // Keeping a folder changed by hand is a safety stop, not a failure.
-      return { value: result, text: resultText(result) };
+      return { value: { dryRun: false, ...result }, text: resultText(result) };
     },
   };
 }
@@ -181,7 +181,7 @@ async function unapply(context: CommandContext): Promise<CommandResult> {
     dryRun,
   });
   const text = dryRun ? planText(result.plan, "Dry run: nothing was removed.") : resultText(result);
-  return { value: result, text };
+  return { value: { dryRun, ...result }, text };
 }
 
 export const projectGroup: CommandGroup = {

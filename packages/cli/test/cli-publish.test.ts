@@ -59,9 +59,10 @@ describe("skills publish", () => {
     expect(dry.stdout).toContain("new");
     expect(dry.stdout).toContain("Nothing was changed.");
     expect(git(remote, "branch", "--list")).toBe("");
-    const plan = (
+    const { dryRun, plan } = (
       await sandbox.cli("skills", "publish", "pdf", "--repo", remote, "--dry-run", "--json")
-    ).json<PublishPlan>();
+    ).json<{ dryRun: boolean; plan: PublishPlan }>();
+    expect(dryRun).toBe(true);
     expect(plan.skills[0]).toMatchObject({ name: "pdf", status: "new" });
   });
 
@@ -75,7 +76,9 @@ describe("skills publish", () => {
     // No --repo: the last one is used.
     const again = await sandbox.cli("skills", "publish", "--all", "--yes", "--json");
     expect(again.code).toBe(EXIT_OK);
-    const result = again.json<PublishResult>();
+    const result = again.json<PublishResult & { dryRun: boolean }>();
+    expect(result.dryRun).toBe(false);
+    expect(result.plan.skills.map((skill) => skill.name).sort()).toEqual(["docx", "pdf"]);
     expect(result.commit).toBeNull();
     expect(result.unchanged.sort()).toEqual(["docx", "pdf"]);
   });

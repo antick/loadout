@@ -121,7 +121,7 @@ async function merge(context: CommandContext): Promise<CommandResult> {
   requireYes(args, `remove ${remove.name} from the library`);
   const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
   const result = await core.api.duplicates.merge(keep.id, remove.id, { dryRun });
-  return { value: result, text: describeMerge(core, result, dryRun) };
+  return { value: { dryRun, ...result }, text: describeMerge(core, result, dryRun) };
 }
 
 const ACTIONS: Record<string, (context: CommandContext) => Promise<CommandResult>> = {

@@ -209,9 +209,17 @@ describe("skills validate", () => {
 
     const one = await cli("skills", "validate", "good", "--json");
     expect(one.code).toBe(EXIT_OK);
-    expect(one.json<{ issues: { code: string }[] }>().issues).toMatchObject([
-      { code: "broken_reference", severity: "warning" },
+    // One skill, --all and a folder all print `{ skills: [...] }`.
+    expect(one.json<{ skills: { name: string; issues: unknown[] }[] }>().skills).toMatchObject([
+      { name: "good", issues: [{ code: "broken_reference", severity: "warning" }] },
     ]);
+    const every = await cli("skills", "validate", "--all", "--json");
+    expect(
+      every
+        .json<{ skills: { name: string }[] }>()
+        .skills.map((s) => s.name)
+        .sort(),
+    ).toEqual(["bad", "good"]);
 
     const all = await cli("skills", "validate", "--all");
     expect(all.code).toBe(EXIT_FAILED);
@@ -281,21 +289,28 @@ describe("agents", () => {
 
     // Nothing deployed: a dry run still changes nothing.
     const empty = await cli("agents", "disable", AGENT, "--dry-run", "--json");
-    expect(empty.json()).toEqual({ dryRun: true, wouldRemove: {} });
+    expect(empty.json()).toEqual({
+      dryRun: true,
+      agents: [{ agent: AGENT, enabled: false, changed: true }],
+      wouldRemove: {},
+    });
     const stillOn = (await cli("agents", "list", "--json")).json<
       { key: string; enabled: boolean }[]
     >();
     expect(stillOn.find((a) => a.key === AGENT)?.enabled).toBe(true);
 
-    expect((await cli("agents", "disable", AGENT, "--json")).json()).toEqual([
-      { agent: AGENT, enabled: false, changed: true },
-    ]);
-    expect((await cli("agents", "disable", AGENT, "--json")).json()).toEqual([
-      { agent: AGENT, enabled: false, changed: false },
-    ]);
-    expect((await cli("agents", "enable", AGENT, "--json")).json()).toEqual([
-      { agent: AGENT, enabled: true, changed: true },
-    ]);
+    // An object on both runs, with the same keys where they mean the same.
+    expect((await cli("agents", "disable", AGENT, "--json")).json()).toEqual({
+      dryRun: false,
+      agents: [{ agent: AGENT, enabled: false, changed: true }],
+      removed: {},
+    });
+    expect((await cli("agents", "disable", AGENT, "--json")).json()).toMatchObject({
+      agents: [{ agent: AGENT, enabled: false, changed: false }],
+    });
+    expect((await cli("agents", "enable", AGENT, "--json")).json()).toEqual({
+      agents: [{ agent: AGENT, enabled: true, changed: true }],
+    });
 
     // With skills deployed, disabling takes them away: it asks first.
     writeSkill(join(root, "src"), "alpha");
@@ -303,11 +318,13 @@ describe("agents", () => {
     await cli("skills", "deploy", "alpha", "--agent", AGENT);
     expect((await cli("agents", "disable", AGENT, "--json")).code).toBe(EXIT_USAGE);
     const dry = await cli("agents", "disable", AGENT, "--dry-run", "--json");
-    expect(dry.json()).toEqual({ dryRun: true, wouldRemove: { [AGENT]: ["alpha"] } });
+    expect(dry.json()).toMatchObject({ dryRun: true, wouldRemove: { [AGENT]: ["alpha"] } });
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(true);
-    expect((await cli("agents", "disable", AGENT, "--yes", "--json")).json()).toEqual([
-      { agent: AGENT, enabled: false, changed: true },
-    ]);
+    expect((await cli("agents", "disable", AGENT, "--yes", "--json")).json()).toEqual({
+      dryRun: false,
+      agents: [{ agent: AGENT, enabled: false, changed: true }],
+      removed: { [AGENT]: ["alpha"] },
+    });
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(false);
     await cli("agents", "enable", AGENT);
 

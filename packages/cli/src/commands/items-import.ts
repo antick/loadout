@@ -111,7 +111,7 @@ async function importItems(context: CommandContext): Promise<CommandResult> {
   for (const item of picked) {
     if (item.warnings.length > 0) lines.push(`${refText(item)}:`, ...warningLines(item.warnings));
   }
-  return { value: result, text: lines.join("\n") };
+  return { value: { dryRun: false, ...result }, text: lines.join("\n") };
 }
 
 export const findCommand: LibraryCommandSpec = {

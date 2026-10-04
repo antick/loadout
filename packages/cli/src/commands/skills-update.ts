@@ -174,7 +174,7 @@ async function update(context: CommandContext): Promise<CommandResult> {
           ),
           `Run again with --${APPROVE_FLAG.name} to accept that.`,
         ];
-    return { value, text: lines.join("\n") };
+    return { value: { dryRun: false, ...value }, text: lines.join("\n") };
   }
 
   await core.api.updates.checkAll(false);
@@ -189,7 +189,11 @@ async function update(context: CommandContext): Promise<CommandResult> {
     );
   }
   for (const failure of value.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
-  return { value, text: lines.join("\n"), exitCode: exitCodeFor(value.failed.length > 0) };
+  return {
+    value: { dryRun: false, ...value },
+    text: lines.join("\n"),
+    exitCode: exitCodeFor(value.failed.length > 0),
+  };
 }
 
 export const checkCommand: CommandSpec = {

@@ -143,7 +143,7 @@ async function sync({ core, args }: CommandContext): Promise<CommandResult> {
     ...(value.merge ? describeMerge(value.merge) : []),
     value.pushed ? `Pushed${value.snapshot ? ` as ${value.snapshot}` : ""}.` : "Nothing to push.",
   ];
-  return { value, text: lines.join("\n") };
+  return { value: { dryRun: false, ...value }, text: lines.join("\n") };
 }
 
 async function pull({ core, args }: CommandContext): Promise<CommandResult> {
@@ -178,7 +178,7 @@ async function restore({ core, args }: CommandContext): Promise<CommandResult> {
   }
   const safety = await core.api.backup.restore(tag);
   return {
-    value: { dryRun: false, restored: tag, safetySnapshot: safety },
+    value: { dryRun: false, tag, restored: tag, safetySnapshot: safety },
     text: `Library restored to ${tag}. The state before that is kept as ${safety}.`,
   };
 }

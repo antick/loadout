@@ -123,10 +123,10 @@ async function publish(context: CommandContext): Promise<CommandResult> {
   requireYes(args, `push skills to ${repositoryLabel(repo)}`);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     const plan = await core.api.publish.preview(input);
-    return { value: plan, text: `${describePlan(plan)}\nNothing was changed.` };
+    return { value: { dryRun: true, plan }, text: `${describePlan(plan)}\nNothing was changed.` };
   }
   const result = await core.api.publish.publish(input);
-  return { value: result, text: describeResult(result) };
+  return { value: { dryRun: false, ...result }, text: describeResult(result) };
 }
 
 export const publishCommand: CommandSpec = {

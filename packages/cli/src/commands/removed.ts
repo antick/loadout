@@ -75,7 +75,7 @@ async function remove(context: CommandContext): Promise<CommandResult> {
   }
   await context.core.api.storage.deleteRemoved(entry.id);
   return {
-    value: { dryRun: false, deleted: entry.id },
+    value: { dryRun: false, entry, deleted: entry.id },
     text: `Deleted ${entry.name} for good.`,
   };
 }

@@ -163,6 +163,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 ## Command line
 
 - `loadout` CLI for everything above, with `--json`, `--dry-run` and `--yes`.
+- `--json` keeps one shape per command: with `--dry-run`, an object with `dryRun` on both runs; `skills scan` and `skills validate` alike for one skill or all.
 - `--yes` only for what can not be given back (permanent deletes, rollbacks, pushes, overwritten files); usage lines come from each command's options.
 - Keyboard picker when an install finds several skills.
 - `--dry-run` for install, update and `git sync` shows what would change; it refuses exactly what the real run refuses.
