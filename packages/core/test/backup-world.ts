@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import type { AppEvents, BackupApi, Skill } from "@loadout/shared";
 import { type BackupHooks, type BackupService, createBackupService } from "../src/backup";
@@ -32,15 +32,6 @@ export function memorySecrets(available = true): MemorySecrets {
       values.delete(key);
     },
   };
-}
-
-/** Keep the developer's own git settings (signing, hooks, default branch) out of the tests. */
-export function isolateGit(root: string): void {
-  const config = join(root, "gitconfig");
-  // Git's own background upkeep after commits and fetches is a process per call and tests nothing.
-  writeFileSync(config, "[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n");
-  process.env.GIT_CONFIG_GLOBAL = config;
-  process.env.GIT_CONFIG_NOSYSTEM = "1";
 }
 
 export function rawGit(cwd: string, ...args: string[]): string {

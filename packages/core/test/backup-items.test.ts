@@ -6,7 +6,6 @@ import {
   type Device,
   createBareRemote,
   createDevice,
-  isolateGit,
   joinRemote,
   seedRemote,
 } from "./backup-world";
@@ -39,7 +38,6 @@ describe("backup sync of items", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
   });
   afterEach(() => {
     for (const device of devices.splice(0)) device.close();

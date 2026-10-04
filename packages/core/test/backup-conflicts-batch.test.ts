@@ -1,6 +1,6 @@
 import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, isolateGit, joinRemote, seedRemote } from "./backup-world";
+import { type Device, joinRemote, seedRemote } from "./backup-world";
 import { tempDir } from "./helpers";
 
 describe("backup conflicts, several at once", () => {
@@ -13,7 +13,6 @@ describe("backup conflicts, several at once", () => {
   /** Both devices edit `alpha` and `beta`; A syncs first, then B, so B has two conflicts. */
   beforeEach(async () => {
     temp = tempDir();
-    isolateGit(temp.dir);
     const seeded = await seedRemote(temp.dir, ["alpha", "beta"]);
     a = seeded.a;
     b = await joinRemote(temp.dir, seeded.remote);

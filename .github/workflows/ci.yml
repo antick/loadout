@@ -57,12 +57,8 @@ jobs:
         # File handling (links, junctions, copies, locks, line endings, path separators) differs
         # on each, so every one runs the tests.
         os: [ubuntu-24.04, macos-latest, windows-latest]
-    env:
-      # Tests make Git commits; name them without touching the runner's Git config.
-      GIT_AUTHOR_NAME: Loadout CI
-      GIT_AUTHOR_EMAIL: ci@loadout.invalid
-      GIT_COMMITTER_NAME: Loadout CI
-      GIT_COMMITTER_EMAIL: ci@loadout.invalid
+    # No Git identity here: the tests give their commits one (packages/core/test/git-setup.ts),
+    # and GIT_AUTHOR_* variables would outrank the device names backup commits carry.
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

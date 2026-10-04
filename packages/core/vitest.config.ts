@@ -7,6 +7,8 @@ const TIMEOUT_MS = 30_000;
 export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
+    // Keeps the developer's own git config out of every test and gives commits a name.
+    setupFiles: ["test/git-setup.ts"],
     environment: "node",
     testTimeout: TIMEOUT_MS,
     hookTimeout: TIMEOUT_MS,

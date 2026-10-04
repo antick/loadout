@@ -1,7 +1,7 @@
 import { existsSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, isolateGit, joinRemote, seedRemote } from "./backup-world";
+import { type Device, joinRemote, seedRemote } from "./backup-world";
 import { tempDir } from "./helpers";
 
 /** A process id no process has: the note of a run that crashed. */
@@ -27,7 +27,6 @@ describe("a backup merge that did not finish", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
   });
   afterEach(() => {
     for (const device of devices.splice(0)) device.close();

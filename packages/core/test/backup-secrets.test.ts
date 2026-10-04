@@ -1,14 +1,7 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findSecrets } from "../src/backup/secrets";
-import {
-  type Device,
-  createBareRemote,
-  createDevice,
-  isolateGit,
-  joinRemote,
-  rawGit,
-} from "./backup-world";
+import { type Device, createBareRemote, createDevice, joinRemote, rawGit } from "./backup-world";
 import { tempDir, writeFile } from "./helpers";
 
 // Built at run time, so this file itself never holds anything that looks like a real key.
@@ -97,7 +90,6 @@ describe("backup push check", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
   });
   afterEach(() => {
     device?.close();

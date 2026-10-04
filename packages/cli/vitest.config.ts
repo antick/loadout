@@ -5,6 +5,8 @@ import { TEST_MAX_WORKERS } from "../../vitest.workers";
 export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
+    // The same git isolation as core's tests: the CLI runs core's git code.
+    setupFiles: ["../core/test/git-setup.ts"],
     environment: "node",
     testTimeout: 30_000,
     maxWorkers: TEST_MAX_WORKERS,

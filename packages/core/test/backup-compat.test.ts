@@ -3,14 +3,7 @@ import { basename, join } from "node:path";
 import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BACKUP_SCHEMA_VERSION, SCHEMA_FILE } from "../src/skills/portable";
-import {
-  type Device,
-  createBareRemote,
-  createDevice,
-  isolateGit,
-  joinRemote,
-  rawGit,
-} from "./backup-world";
+import { type Device, createBareRemote, createDevice, joinRemote, rawGit } from "./backup-world";
 import { tempDir, writeFile } from "./helpers";
 
 const HAND = ["-c", "user.name=Hand", "-c", "user.email=hand@example.com"];
@@ -29,7 +22,6 @@ describe("backup compatibility between app versions", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
   });
   afterEach(() => {
     for (const device of devices.splice(0)) device.close();

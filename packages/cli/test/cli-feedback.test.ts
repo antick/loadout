@@ -3,11 +3,12 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EXIT_USAGE } from "../src/run";
+import { redirectGithubTo } from "../../core/test/git-env";
 import { type Sandbox, createSandbox, writeSkill } from "./harness";
 
 let box: Sandbox;
 let repo: string;
-const saved = { ...process.env };
+let restoreEnv: () => void;
 
 const git = (...args: string[]): string =>
   execFileSync("git", args, { cwd: repo, encoding: "utf8" }).trim();
@@ -18,15 +19,7 @@ beforeEach(() => {
   repo = join(remotes, "acme", "skills.git");
   mkdirSync(repo, { recursive: true });
   // `https://github.com/…` is served from the folder above.
-  Object.assign(process.env, {
-    GIT_CONFIG_COUNT: "1",
-    GIT_CONFIG_KEY_0: `url.${remotes}/.insteadOf`,
-    GIT_CONFIG_VALUE_0: "https://github.com/",
-    GIT_AUTHOR_NAME: "Test",
-    GIT_AUTHOR_EMAIL: "test@example.invalid",
-    GIT_COMMITTER_NAME: "Test",
-    GIT_COMMITTER_EMAIL: "test@example.invalid",
-  });
+  restoreEnv = redirectGithubTo(remotes);
   git("init", "--quiet", "--initial-branch=main");
   writeSkill(join(repo, "skills"), "pdf");
   git("add", "--all");
@@ -34,7 +27,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  process.env = { ...saved };
+  restoreEnv();
   box.cleanup();
 });
 

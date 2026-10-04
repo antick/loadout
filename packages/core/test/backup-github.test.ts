@@ -4,7 +4,7 @@ import { APP_SLUG } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { GITHUB_TOKEN_KEY } from "../src/backup/credentials";
 import { INTERNAL_KEYS } from "../src/settings/store";
-import { type Device, createDevice, isolateGit, memorySecrets } from "./backup-world";
+import { type Device, createDevice, memorySecrets } from "./backup-world";
 import { tempDir } from "./helpers";
 
 interface Call {
@@ -54,7 +54,6 @@ describe("GitHub connect", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
   });
   afterEach(() => {
     device?.close();

@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
 import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, isolateGit, joinRemote, seedRemote } from "./backup-world";
+import { type Device, joinRemote, seedRemote } from "./backup-world";
 import { tempDir } from "./helpers";
 
 describe("backup conflicts", () => {
@@ -14,7 +14,6 @@ describe("backup conflicts", () => {
   /** Both devices edit `alpha`; A also edits `beta`. A syncs first, then B. */
   beforeEach(async () => {
     temp = tempDir();
-    isolateGit(temp.dir);
     const seeded = await seedRemote(temp.dir, ["alpha", "beta"]);
     a = seeded.a;
     b = await joinRemote(temp.dir, seeded.remote);

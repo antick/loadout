@@ -6,25 +6,17 @@ import type { AppEvents } from "@loadout/shared";
 import { AgentRegistry } from "../src/agents/registry";
 import { type InstallService, type InstallServiceDeps, createInstallService } from "../src/install";
 import { CLONE_DIR_PREFIX } from "../src/install/git-client";
+import { setEnv } from "./git-env";
 import type { TestWorld } from "./helpers";
+
+export { redirectGithubTo, setEnv } from "./git-env";
 
 const UNIX_HOST = 3;
 const MODE_SHIFT = 16;
-const GITHUB_PREFIX = "https://github.com/";
-
-/** Identity and isolation for fixture commits; never reads the developer's own git config. */
-const FIXTURE_GIT_ENV = {
-  GIT_AUTHOR_NAME: "Fixture",
-  GIT_AUTHOR_EMAIL: "fixture@example.invalid",
-  GIT_COMMITTER_NAME: "Fixture",
-  GIT_COMMITTER_EMAIL: "fixture@example.invalid",
-  GIT_CONFIG_NOSYSTEM: "1",
-};
 
 export function git(cwd: string, ...args: string[]): string {
   return execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false", ...args], {
     cwd,
-    env: { ...process.env, ...FIXTURE_GIT_ENV },
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
@@ -99,30 +91,6 @@ export function createInstallHarness(
           : [],
       ),
   };
-}
-
-/** Set environment variables for this process; returns the undo function. */
-export function setEnv(values: Record<string, string>): () => void {
-  const before = Object.keys(values).map((key) => [key, process.env[key]] as const);
-  Object.assign(process.env, values);
-  return () => {
-    for (const [key, value] of before) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
-    }
-  };
-}
-
-/**
- * Point `https://github.com/` at a local folder for every git process started from here, so
- * GitHub URLs (tree links, marketplace installs) clone a fixture instead of the network.
- */
-export function redirectGithubTo(remotesDir: string): () => void {
-  return setEnv({
-    GIT_CONFIG_COUNT: "1",
-    GIT_CONFIG_KEY_0: `url.${remotesDir}/.insteadOf`,
-    GIT_CONFIG_VALUE_0: GITHUB_PREFIX,
-  });
 }
 
 /** Send `os.tmpdir()` to a private folder so leftover temp checkouts can be counted. */

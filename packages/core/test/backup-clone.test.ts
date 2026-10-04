@@ -17,7 +17,6 @@ import {
   type Device,
   createBareRemote,
   createDevice,
-  isolateGit,
   joinRemote,
   memorySecrets,
   seedRemote,
@@ -41,7 +40,6 @@ describe("backup clone, size rules and credentials", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
   });
   afterEach(() => {
     for (const device of devices.splice(0)) device.close();

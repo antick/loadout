@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EXIT_FAILED, EXIT_OK } from "../src/run";
@@ -9,19 +9,12 @@ import { type Sandbox, createSandbox, writeSkill } from "./harness";
 const TOKEN = `ghp_${"a1B2c3D4e5".repeat(4)}`;
 
 let sandbox: Sandbox;
-const previousConfig = process.env.GIT_CONFIG_GLOBAL;
 
 beforeEach(() => {
   sandbox = createSandbox();
-  const config = join(sandbox.root, "gitconfig");
-  writeFileSync(config, "");
-  process.env.GIT_CONFIG_GLOBAL = config;
-  process.env.GIT_CONFIG_NOSYSTEM = "1";
 });
 
 afterEach(() => {
-  if (previousConfig === undefined) delete process.env.GIT_CONFIG_GLOBAL;
-  else process.env.GIT_CONFIG_GLOBAL = previousConfig;
   sandbox.cleanup();
 });
 

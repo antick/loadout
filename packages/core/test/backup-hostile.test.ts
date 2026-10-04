@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isPlainEntryName } from "../src/backup/merge-read";
-import { type Device, createBareRemote, createDevice, isolateGit, rawGit } from "./backup-world";
+import { type Device, createBareRemote, createDevice, rawGit } from "./backup-world";
 import { tempDir } from "./helpers";
 
 describe("a hostile backup remote", () => {
@@ -11,7 +11,6 @@ describe("a hostile backup remote", () => {
   let device: Device | null = null;
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
   });
   afterEach(() => {
     device?.close();

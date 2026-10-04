@@ -11,7 +11,6 @@ const TOKEN = `ghp_${"a1B2c3D4e5".repeat(4)}`;
 
 let sandbox: Sandbox;
 let remote: string;
-const saved = { global: process.env.GIT_CONFIG_GLOBAL, system: process.env.GIT_CONFIG_NOSYSTEM };
 
 const git = (cwd: string, ...args: string[]): string =>
   execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
@@ -25,10 +24,11 @@ async function install(name: string, body?: string): Promise<void> {
 
 beforeEach(async () => {
   sandbox = createSandbox();
-  const config = join(sandbox.root, "gitconfig");
-  writeFileSync(config, "[user]\n\tname = Ada\n\temail = ada@example.test\n");
-  process.env.GIT_CONFIG_GLOBAL = config;
-  process.env.GIT_CONFIG_NOSYSTEM = "1";
+  // The user's own Git identity, in the tests' global config (core/test/git-setup.ts).
+  writeFileSync(
+    process.env.GIT_CONFIG_GLOBAL ?? "",
+    "[user]\n\tname = Ada\n\temail = ada@example.test\n",
+  );
   remote = join(sandbox.root, "remote.git");
   mkdirSync(remote);
   git(remote, "init", "-q", "--bare", "--initial-branch=main");
@@ -37,13 +37,6 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  for (const [key, value] of [
-    ["GIT_CONFIG_GLOBAL", saved.global],
-    ["GIT_CONFIG_NOSYSTEM", saved.system],
-  ] as const) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
   sandbox.cleanup();
 });
 

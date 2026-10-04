@@ -3,12 +3,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SKILLS_FILE_NAME, SKILLS_LOCK_NAME } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { redirectGithubTo } from "../../core/test/git-env";
 import { type Sandbox, createSandbox, writeSkill } from "./harness";
 
-const GITHUB = "https://github.com/";
 let box: Sandbox;
 let project: string;
-let saved: Record<string, string | undefined>;
+let restoreEnv: () => void;
 
 function git(cwd: string, ...args: string[]): void {
   execFileSync("git", args, { cwd, stdio: "ignore" });
@@ -21,19 +21,11 @@ beforeEach(() => {
   const remote = join(remotes, "acme", "skills.git");
   mkdirSync(remote, { recursive: true });
   git(remote, "init", "-q", "-b", "main");
-  git(remote, "config", "user.email", "t@example.com");
-  git(remote, "config", "user.name", "Test");
   writeSkill(join(remote, "skills"), "pdf");
   writeSkill(join(remote, "skills"), "docx");
   git(remote, "add", "-A");
   git(remote, "commit", "-q", "-m", "initial");
-  const env = {
-    GIT_CONFIG_COUNT: "1",
-    GIT_CONFIG_KEY_0: `url.${remotes}/.insteadOf`,
-    GIT_CONFIG_VALUE_0: GITHUB,
-  };
-  saved = Object.fromEntries(Object.keys(env).map((key) => [key, process.env[key]]));
-  Object.assign(process.env, env);
+  restoreEnv = redirectGithubTo(remotes);
   project = join(box.root, "project");
   mkdirSync(project);
   writeFileSync(
@@ -43,10 +35,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  for (const [key, value] of Object.entries(saved)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
+  restoreEnv();
   box.cleanup();
 });
 

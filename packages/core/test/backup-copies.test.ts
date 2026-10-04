@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
-import { createBareRemote, isolateGit } from "./backup-world";
+import { createBareRemote } from "./backup-world";
 import { tempDir, createTestCore } from "./helpers";
 
 /** Two full cores (devices) sharing one remote, with copy-mode deployments on the second. */
@@ -23,7 +23,6 @@ describe("deployed copies after a sync", () => {
 
   beforeEach(() => {
     temp = tempDir();
-    isolateGit(temp.dir);
     a = open("A");
     b = open("B");
   });

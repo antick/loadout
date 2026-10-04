@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, isolateGit, joinRemote, seedRemote } from "./backup-world";
+import { type Device, joinRemote, seedRemote } from "./backup-world";
 import { tempDir } from "./helpers";
 
 async function remoteHead(device: Device): Promise<string> {
@@ -17,7 +17,6 @@ describe("backup deletes from other devices", () => {
 
   beforeEach(async () => {
     temp = tempDir();
-    isolateGit(temp.dir);
     const seeded = await seedRemote(temp.dir, ["alpha", "beta", "gamma"]);
     a = seeded.a;
     b = await joinRemote(temp.dir, seeded.remote);

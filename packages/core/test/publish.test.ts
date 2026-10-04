@@ -14,26 +14,15 @@ const FAKE_TOKEN = `ghp_${"aB3dE6gH9jK2mN5pQ8sT1vW4yZ7bC0eF3hJ6"}`;
 
 let world: DeployWorld;
 let remote: string;
-let restoreEnv: () => void;
 let hooks: PublishHooks;
 let service: PublishService;
 
-/** The user's own Git identity, as it would be in `~/.gitconfig`, and nothing from this machine. */
-function isolateGitConfig(root: string): () => void {
-  const config = join(root, "gitconfig");
-  writeFileSync(config, "[user]\n\tname = Ada Lovelace\n\temail = ada@example.test\n");
-  const saved = { global: process.env.GIT_CONFIG_GLOBAL, system: process.env.GIT_CONFIG_NOSYSTEM };
-  process.env.GIT_CONFIG_GLOBAL = config;
-  process.env.GIT_CONFIG_NOSYSTEM = "1";
-  return () => {
-    for (const [key, value] of [
-      ["GIT_CONFIG_GLOBAL", saved.global],
-      ["GIT_CONFIG_NOSYSTEM", saved.system],
-    ] as const) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
-    }
-  };
+/** The user's own Git identity, as it would be in `~/.gitconfig` (the tests' own, git-setup.ts). */
+function setUserIdentity(): void {
+  writeFileSync(
+    process.env.GIT_CONFIG_GLOBAL ?? "",
+    "[user]\n\tname = Ada Lovelace\n\temail = ada@example.test\n",
+  );
 }
 
 function bareRepo(name: string): string {
@@ -60,13 +49,12 @@ function publishInput(skills: Skill[], extra: Partial<PublishInput> = {}): Publi
 
 beforeEach(() => {
   world = createDeployWorld();
-  restoreEnv = isolateGitConfig(world.root);
+  setUserIdentity();
   remote = bareRepo("skills");
   hooks = {};
   service = createPublishService(world.ctx, { store: world.store, hooks });
 });
 afterEach(() => {
-  restoreEnv();
   world.cleanup();
 });
 
