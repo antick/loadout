@@ -12,7 +12,7 @@ import {
   Send,
   Trash2,
 } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BatchDeployDialog } from "@/components/BatchDeployDialog";
 import { EmptyState } from "@/components/EmptyState";
@@ -144,6 +144,18 @@ export function LibraryPage({
   );
   const showUsage = usage.enabled && (needsUsage(filters.sort) || needsUsage(filters.status));
   const all = skills.data;
+  // A skill removed while its panel is open (from the command line, or by a sync from another
+  // computer) closes the panel instead of leaving it on an error. Only once the list has shown
+  // the skill: one just installed may open before the list refetches.
+  const listedOpenId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openSkillId || !all) return;
+    if (all.some((skill) => skill.id === openSkillId)) listedOpenId.current = openSkillId;
+    else if (listedOpenId.current === openSkillId) {
+      listedOpenId.current = null;
+      onOpenSkill(null);
+    }
+  }, [all, openSkillId, onOpenSkill]);
   const availableAgents = useAvailableAgents();
   const availableKeys = useMemo(
     () => new Set((availableAgents.data ?? []).map((agent) => agent.key)),

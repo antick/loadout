@@ -106,3 +106,19 @@ test("a source card shows new skills, opens them ticked, and forgets them on req
   await source.getByRole("button", { name: "Not interested" }).click();
   await expect(source.getByText("2 new skills")).toHaveCount(0);
 });
+
+test("a skill removed elsewhere while its panel is open closes the panel", async ({ page }) => {
+  await openApp(page, "/library");
+  await main(page).getByRole("button", { name: "api-docs", exact: true }).click();
+  const panel = page.getByRole("dialog");
+  await expect(panel.getByRole("heading", { name: "api-docs" }).first()).toBeVisible();
+
+  // As the command line or a sync from another computer would.
+  await page.evaluate(`(async () => {
+    const { value: skills } = await window.loadout.invoke("skills.list", []);
+    const target = skills.find((skill) => skill.name === "api-docs");
+    await window.loadout.invoke("skills.removeMany", [[target.id]]);
+  })()`);
+
+  await expect(panel).toHaveCount(0);
+});
