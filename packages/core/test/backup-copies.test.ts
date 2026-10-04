@@ -17,7 +17,6 @@ describe("deployed copies after a sync", () => {
     mkdirSync(join(home, ".cursor"), { recursive: true });
     return createTestCore({
       homeDir: home,
-      configDir: join(temp.dir, `config-${name}`),
     });
   };
 

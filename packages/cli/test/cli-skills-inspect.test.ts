@@ -25,7 +25,6 @@ async function install(name: string, body?: string): Promise<void> {
 function useCopies(): void {
   const core = createCore({
     homeDir: sandbox.home,
-    configDir: join(sandbox.root, "config"),
     logger: silentLogger,
     safetyScannerPath: null,
   });

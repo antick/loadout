@@ -125,7 +125,6 @@ describe("published launcher", () => {
     async () => {
       const core = createCore({
         homeDir: home,
-        configDir: join(root, "config"),
         logger: silentLogger,
         safetyScannerPath: null,
         host: {

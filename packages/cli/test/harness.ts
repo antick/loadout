@@ -53,7 +53,6 @@ export function createSandbox(
       homeDir: home,
       coreOptions: {
         homeDir: home,
-        configDir: join(root, "config"),
         logger: silentLogger,
         safetyScannerPath: options.safetyScannerPath ?? null,
         builtinSafety: options.builtinSafety ?? false,

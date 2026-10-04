@@ -23,8 +23,6 @@ import { createGitHubSignIn } from "./util/github-token";
 
 export interface CoreOptions {
   homeDir?: string;
-  /** OS config folder override (tests). */
-  configDir?: string;
   /** Use this library folder instead of the saved location (CLI `--library`, tests). */
   baseDir?: string;
   /**
@@ -75,7 +73,6 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
   const home = options.homeDir ?? homedir();
   const resolved = resolveLibrary({
     homeDir: home,
-    configDir: options.configDir,
     baseDir: options.baseDir,
     migrate: options.migrateLibrary ?? !isAppRunning(home),
   });

@@ -21,7 +21,7 @@ export interface CliDeps {
   version: string;
   cwd: string;
   homeDir: string;
-  /** Extra options for every core this run opens (tests pin `homeDir` and `configDir`). */
+  /** Extra options for every core this run opens (tests pin `homeDir`). */
   coreOptions?: CoreCreateOptions;
   /** Keyboard picker; given only when both ends are an interactive terminal. */
   picker?: SkillPicker;
@@ -56,7 +56,6 @@ function helpFor(group: CommandGroup | undefined, command: CommandSpec | undefin
 function openExistingLibrary(deps: CliDeps, baseDir: string | undefined): Core | null {
   const { paths, unavailable } = resolveLibrary({
     homeDir: deps.coreOptions?.homeDir ?? deps.homeDir,
-    configDir: deps.coreOptions?.configDir,
     baseDir,
   });
   if (unavailable || !isLibraryDir(paths.baseDir)) return null;

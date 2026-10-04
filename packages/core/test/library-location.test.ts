@@ -14,17 +14,15 @@ import { tempDir, writeFile } from "./helpers";
 
 let temp: { dir: string; cleanup: () => void };
 let home: string;
-let configDir: string;
 
 beforeEach(() => {
   temp = tempDir();
   home = join(temp.dir, "home");
-  configDir = join(temp.dir, "config");
   mkdirSync(home, { recursive: true });
 });
 afterEach(() => temp.cleanup());
 
-const resolve = () => resolveLibrary({ homeDir: home, configDir, migrate: true });
+const resolve = () => resolveLibrary({ homeDir: home, migrate: true });
 const homeDir = () => join(home, ".loadout");
 const rmdirTree = (path: string): void => rmSync(path, { recursive: true, force: true });
 
@@ -73,7 +71,7 @@ describe("library location", () => {
     expect(missing).toMatchObject({ unavailable: true, paths: { baseDir: target } });
     let thrown: unknown = null;
     try {
-      createContext({ homeDir: home, configDir, migrateLibrary: true });
+      createContext({ homeDir: home, migrateLibrary: true });
     } catch (error) {
       thrown = error;
     }
@@ -133,7 +131,7 @@ describe("library location", () => {
     const target = join(temp.dir, "elsewhere");
     setLibraryPath(seedDefaultLibrary(), target);
 
-    const cli = resolveLibrary({ homeDir: home, configDir, migrate: false });
+    const cli = resolveLibrary({ homeDir: home, migrate: false });
     expect(cli.paths.baseDir).toBe(homeDir());
     expect(existsSync(join(homeDir(), "skills", "alpha", "SKILL.md"))).toBe(true);
     expect(existsSync(target)).toBe(false);
@@ -206,29 +204,4 @@ describe("library location", () => {
       }
     },
   );
-
-  it("adopts the location file older versions kept in the OS config folder", () => {
-    const target = join(temp.dir, "custom");
-    mkdirSync(join(target, "skills"), { recursive: true });
-    const legacy = join(configDir, "loadout", "library.json");
-    writeFile(legacy, JSON.stringify({ libraryPath: target, pendingMigrationFrom: null }));
-
-    const { paths } = resolve();
-    expect(paths.baseDir).toBe(target);
-    expect(existsSync(legacy)).toBe(false);
-    expect(existsSync(join(configDir, "loadout"))).toBe(false);
-    expect(existsSync(join(homeDir(), "library.json"))).toBe(true);
-  });
-
-  it("never lets an old location file replace the current one", () => {
-    const legacy = join(configDir, "loadout", "library.json");
-    writeFile(
-      legacy,
-      JSON.stringify({ libraryPath: join(temp.dir, "old"), pendingMigrationFrom: null }),
-    );
-    writeFile(join(homeDir(), "library.json"), JSON.stringify({ libraryPath: null }));
-
-    expect(resolve().paths.baseDir).toBe(homeDir());
-    expect(existsSync(legacy)).toBe(true);
-  });
 });

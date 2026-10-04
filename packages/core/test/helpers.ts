@@ -59,7 +59,6 @@ export function createTestWorld(): TestWorld {
   mkdirSync(home, { recursive: true });
   const bundle = createContext({
     homeDir: home,
-    configDir: join(temp.dir, "config"),
     baseDir: base,
     logger: silentLogger,
   });
@@ -91,7 +90,6 @@ export async function rejection(promise: Promise<unknown>): Promise<AppError> {
  */
 export function createTestCore(options: CoreCreateOptions & { homeDir: string }): Core {
   return createCore({
-    configDir: join(options.homeDir, "config"),
     logger: silentLogger,
     safetyScannerPath: null,
     ...options,

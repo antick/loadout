@@ -55,8 +55,6 @@ interface LocationConfig {
 
 export interface ResolveOptions {
   homeDir?: string;
-  /** OS config folder override (tests): where older versions kept the library location. */
-  configDir?: string;
   /** Use this base folder and skip the saved location entirely (CLI `--library`, tests). */
   baseDir?: string;
   /**
@@ -234,23 +232,6 @@ function migrate(source: string, target: string, defaultBaseDir: string, notes: 
   return true;
 }
 
-/** Older versions kept the location file in the OS config folder. Bring it home once. */
-function adoptLegacyConfig(legacyPath: string, configPath: string, notes: string[]): void {
-  if (existsSync(configPath) || !existsSync(legacyPath)) return;
-  try {
-    ensureDir(dirname(configPath));
-    moveEntrySync(legacyPath, configPath);
-    notes.push(`Moved the library location file from ${legacyPath} to ${configPath}`);
-    try {
-      rmdirSync(dirname(legacyPath));
-    } catch {
-      // Not empty: on macOS it is also the desktop app's old data folder, which cleans itself up.
-    }
-  } catch (error) {
-    notes.push(`Could not move the library location file: ${errorMessage(error)}`);
-  }
-}
-
 /** Work out where the library lives, finishing a pending move when one is queued. Never throws. */
 export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
   const home = options.homeDir ?? homedir();
@@ -267,9 +248,6 @@ export function resolveLibrary(options: ResolveOptions = {}): ResolvedLibrary {
       unavailable: false,
     };
   }
-
-  const legacyDir = options.configDir ?? osConfigDir(home);
-  adoptLegacyConfig(join(legacyDir, APP_SLUG, LIBRARY_CONFIG_FILE), configPath, notes);
 
   const config = readConfig(configPath, warnings, notes);
   let baseDir = defaultBaseDir;

@@ -34,7 +34,6 @@ beforeEach(() => {
   mkdirSync(join(home, ".gemini"), { recursive: true });
   core = createTestCore({
     homeDir: home,
-    configDir: join(temp.dir, "config"),
   });
 });
 

@@ -87,7 +87,6 @@ export function createDevice(root: string, name: string, options: DeviceOptions 
   const events: RecordedEvent[] = [];
   const bundle = createContext({
     homeDir: home,
-    configDir: join(root, `config-${name}`),
     baseDir: base,
     logger: silentLogger,
     secrets,
