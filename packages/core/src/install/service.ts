@@ -93,7 +93,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     previewTtlMs: deps.previewTtlMs,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
-  const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl });
+  const clawhub = deps.clawhub ?? createClawhubClient({ fetchImpl: deps.fetchImpl, download });
   const clawhubDeps = {
     store,
     clawhub,

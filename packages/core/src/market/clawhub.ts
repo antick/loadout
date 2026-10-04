@@ -10,6 +10,7 @@ import {
   clawhubSkillUrl,
 } from "@loadout/shared";
 import { AppError, errorMessage, invalid, notFound } from "../errors";
+import { type Download, createDownload } from "../install/download";
 
 /**
  * The ClawHub registry (clawhub.ai): public read endpoints, no token. Skills are versioned and
@@ -71,6 +72,23 @@ export interface ClawhubClient {
 
 export interface ClawhubClientDeps {
   fetchImpl?: typeof fetch;
+  /** Zips come through the shared downloader: size cap, cancel and timeout. */
+  download?: Download;
+}
+
+/** The first bytes of a zip file. */
+const ZIP_MAGIC = Buffer.from("PK\x03\x04", "latin1");
+const JSON_OPEN = "{".charCodeAt(0);
+
+/** The archive address in the registry's answer for a skill mirrored from GitHub, else null. */
+function handoffUrl(data: Buffer): string | null {
+  if (data.subarray(0, ZIP_MAGIC.length).equals(ZIP_MAGIC)) return null;
+  if (data.find((byte) => byte > 0x20) !== JSON_OPEN) return null;
+  try {
+    return asText(asObject(JSON.parse(data.toString("utf8"))).archiveUrl) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 /** `owner/slug` → both parts; refused when either is missing or odd. */
@@ -119,6 +137,7 @@ function query(params: Record<string, string | null | undefined>): string {
 
 export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient {
   const fetchImpl = deps.fetchImpl ?? fetch;
+  const download = deps.download ?? createDownload(fetchImpl);
 
   async function request(
     path: string,
@@ -326,31 +345,24 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
     },
 
     download: async (owner, slug, version, signal) => {
-      const path = `/download${query({ slug, ownerHandle: owner, version })}`;
-      const response = await request(
-        path,
-        "application/zip, application/json",
-        DOWNLOAD_TIMEOUT_MS,
+      const options = {
+        signal,
+        timeoutMs: DOWNLOAD_TIMEOUT_MS,
+        subject: `The ${CLAWHUB_NAME} skill`,
+        label: `${owner}/${slug}@${version}`,
+      };
+      const data = await download(
+        `${CLAWHUB_API_URL}/download${query({ slug, ownerHandle: owner, version })}`,
+        { ...options, accept: "application/zip, application/json" },
       );
-      if (response.status === 404)
-        throw notFound(`${owner}/${slug}@${version} is not on ${CLAWHUB_NAME}`);
-      if (!response.ok)
-        throw new AppError("NETWORK", `${CLAWHUB_NAME} answered with HTTP ${response.status}`);
-      const type = response.headers.get("content-type") ?? "";
-      if (type.includes("application/json")) {
-        // A skill mirrored from GitHub: the registry hands over an archive address instead.
-        const handoff = asObject(await response.json());
-        const archiveUrl = asText(handoff.archiveUrl);
-        if (!archiveUrl) throw new AppError("NETWORK", `${CLAWHUB_NAME} sent no download`);
-        const follow = await fetchImpl(archiveUrl, {
-          headers: { "User-Agent": APP_SLUG },
-          signal: signal ?? AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
-        });
-        if (!follow.ok)
-          throw new AppError("NETWORK", `The download answered with HTTP ${follow.status}`);
-        return Buffer.from(await follow.arrayBuffer());
+      const archiveUrl = handoffUrl(data);
+      if (archiveUrl === null) return data;
+      // A skill mirrored from GitHub: the registry hands over an archive address instead.
+      if (!archiveUrl) throw new AppError("NETWORK", `${CLAWHUB_NAME} sent no download`);
+      if (!URL.canParse(archiveUrl) || new URL(archiveUrl).protocol !== "https:") {
+        throw new AppError("NETWORK", `${CLAWHUB_NAME} sent a download address that is not https`);
       }
-      return Buffer.from(await response.arrayBuffer());
+      return download(archiveUrl, { ...options, label: undefined });
     },
   };
 }

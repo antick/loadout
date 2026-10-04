@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
+import { createClawhubClient } from "../src/market/clawhub";
 import { tempDir, createTestCore } from "./helpers";
 
 const OWNER = "pskoett";
@@ -195,6 +196,68 @@ describe("ClawHub as a marketplace", () => {
 
   it("refuses an odd reference", async () => {
     await expect(core.api.install.fromClawhub("a/b", "c")).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+  });
+});
+
+/** A ClawHub client whose every request gets `answer`, and the addresses it asked for. */
+function clientFor(answer: (url: string, init?: RequestInit) => Promise<Response>) {
+  const calls: string[] = [];
+  const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
+    calls.push(String(input));
+    return answer(String(input), init);
+  }) as typeof fetch;
+  return { client: createClawhubClient({ fetchImpl }), calls };
+}
+
+describe("ClawHub downloads", () => {
+  const archive = zip({ "SKILL.md": "---\nname: a\ndescription: b\n---\n" });
+
+  it("follows the registry's handoff to an https archive", async () => {
+    const { client, calls } = clientFor(async (url) =>
+      url.startsWith(API)
+        ? json({ archiveUrl: "https://codeload.github.com/a/b/zip/main" })
+        : new Response(archive),
+    );
+    expect(await client.download(OWNER, SLUG, "1.0.0")).toEqual(archive);
+    expect(calls.at(-1)).toBe("https://codeload.github.com/a/b/zip/main");
+  });
+
+  it("refuses a handoff to an address that is not https", async () => {
+    for (const archiveUrl of ["http://example.com/a.zip", "file:///etc/passwd", "not a url"]) {
+      const { client, calls } = clientFor(async () => json({ archiveUrl }));
+      await expect(client.download(OWNER, SLUG, "1.0.0")).rejects.toMatchObject({
+        code: "NETWORK",
+      });
+      expect(calls).toHaveLength(1);
+    }
+  });
+
+  it("stops when cancelled, even while the zip is arriving", async () => {
+    const controller = new AbortController();
+    const { client } = clientFor(
+      async (_url, init) =>
+        new Response(
+          new ReadableStream({
+            start(stream) {
+              stream.enqueue(archive.subarray(0, 4));
+              init?.signal?.addEventListener("abort", () => stream.error(init.signal?.reason));
+              controller.abort();
+            },
+          }),
+        ),
+    );
+    await expect(client.download(OWNER, SLUG, "1.0.0", controller.signal)).rejects.toMatchObject({
+      code: "CANCELLED",
+    });
+  });
+
+  it("refuses a zip larger than the download cap", async () => {
+    const { client } = clientFor(
+      async () => new Response(archive, { headers: { "content-length": String(1024 ** 4) } }),
+    );
+    await expect(client.download(OWNER, SLUG, "1.0.0")).rejects.toMatchObject({
       code: "INVALID_INPUT",
     });
   });
