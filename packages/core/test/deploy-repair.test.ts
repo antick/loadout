@@ -109,8 +109,7 @@ describe("repairing deployments", () => {
     const report = await createDeployRepair(world.ctx, {
       store: world.store,
       registry: {
-        available: () => [],
-        find: world.registry.find.bind(world.registry),
+        list: () => world.registry.list().map((agent) => Object.assign(agent, { enabled: false })),
       } as never,
       deploy: world.deploy,
     }).run();

@@ -146,6 +146,7 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
 
   function remove(refs: PairRef[]): ApplyResult {
     const result = emptyResult();
+    const names = new Map(registry.list().map((agent) => [agent.key, agent.displayName]));
     for (const ref of refs) {
       const row = store.deployment(ref.skillId, ref.agentKey);
       if (!row) {
@@ -153,7 +154,7 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
         continue;
       }
       try {
-        ops.undeployRow(row, registry.find(ref.agentKey)?.displayName);
+        ops.undeployRow(row, names.get(ref.agentKey));
         result.removed += 1;
       } catch (error) {
         const name = store.find(ref.skillId)?.name ?? ref.skillId;

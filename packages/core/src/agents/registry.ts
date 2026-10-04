@@ -37,6 +37,13 @@ export interface ResolvedAgent extends AgentInfo {
 
 const CONFIG_PREFIX = ".config/";
 
+/** Settings every agent is resolved against, read once per `list`. */
+interface ResolveSettings {
+  disabled: ReadonlySet<string>;
+  overrides: Record<string, string>;
+  projectOverrides: Record<string, string>;
+}
+
 /** `a\\b/` → `a/b`: project-relative folders compare as `/` separated, with no trailing slash. */
 function relativeDir(dir: string): string {
   return dir
@@ -115,9 +122,10 @@ export class AgentRegistry {
     return isAbsolute(value) ? { variable, value } : null;
   }
 
-  #resolveBuiltIn(definition: AgentDefinition, disabled: ReadonlySet<string>): ResolvedAgent {
-    const override = this.pathOverrides()[definition.key];
-    const projectOverride = this.projectPathOverrides()[definition.key];
+  #resolveBuiltIn(definition: AgentDefinition, settings: ResolveSettings): ResolvedAgent {
+    const override = settings.overrides[definition.key];
+    const projectOverride = settings.projectOverrides[definition.key];
+    const { disabled } = settings;
     const category: AgentCategory = definition.category ?? "coding";
     const envHome = this.#homeFromEnv(definition);
     const homeEnv = definition.homeEnv;
@@ -210,20 +218,28 @@ export class AgentRegistry {
     return ordered;
   }
 
-  /** Every agent, in display order. */
+  /**
+   * Every agent, in display order. Resolving touches the disk for each of them: a caller going
+   * through many rows resolves once and looks agents up in that list.
+   */
   list(): ResolvedAgent[] {
-    const disabled = this.disabledKeys();
+    const settings: ResolveSettings = {
+      disabled: this.disabledKeys(),
+      overrides: this.pathOverrides(),
+      projectOverrides: this.projectPathOverrides(),
+    };
     const agents = [
-      ...BUILT_IN_AGENTS.map((definition) => this.#resolveBuiltIn(definition, disabled)),
-      ...this.customAgents().map((record) => this.#resolveCustom(record, disabled)),
+      ...BUILT_IN_AGENTS.map((definition) => this.#resolveBuiltIn(definition, settings)),
+      ...this.customAgents().map((record) => this.#resolveCustom(record, settings.disabled)),
     ];
+    const dirs = new Map(agents.map((agent) => [agent.key, canonicalPath(agent.skillsDir)]));
     const byDir = new Map<string, string[]>();
     for (const agent of agents) {
-      const dir = canonicalPath(agent.skillsDir);
+      const dir = dirs.get(agent.key) as string;
       byDir.set(dir, [...(byDir.get(dir) ?? []), agent.key]);
     }
     for (const agent of agents) {
-      const sharing = byDir.get(canonicalPath(agent.skillsDir)) ?? [];
+      const sharing = byDir.get(dirs.get(agent.key) as string) ?? [];
       agent.sharesDirWith = sharing.filter((key) => key !== agent.key);
     }
     const byKey = new Map(agents.map((agent) => [agent.key, agent]));

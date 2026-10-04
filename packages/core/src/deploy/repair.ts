@@ -45,8 +45,12 @@ export function createDeployRepair(ctx: CoreContext, deps: DeployRepairDeps): De
   let last: RepairReport | null = null;
 
   async function run(): Promise<RepairReport> {
-    const available = new Set(deps.registry.available().map((agent) => agent.key));
-    const agentName = (key: string): string => deps.registry.find(key)?.displayName ?? key;
+    const agents = deps.registry.list();
+    const available = new Set(
+      agents.filter((agent) => agent.installed && agent.enabled).map((agent) => agent.key),
+    );
+    const names = new Map(agents.map((agent) => [agent.key, agent.displayName]));
+    const agentName = (key: string): string => names.get(key) ?? key;
     const repaired: RepairedDeployment[] = [];
     const failed: RepairFailure[] = [];
     let checked = 0;

@@ -76,11 +76,11 @@ export function withSharedFolderDuplicates(
 function agentsLoading(
   skill: LocalSkill,
   targets: readonly ResolvedTarget[],
-  registry: AgentRegistry,
+  byKey: ReadonlyMap<string, ResolvedAgent>,
 ): { agents: ResolvedAgent[]; target: ResolvedTarget | undefined } {
   const target = targets.find((candidate) => candidate.key === skill.agentKey);
   const agents = (target?.agentKeys ?? [skill.agentKey])
-    .flatMap((key) => registry.find(key) ?? [])
+    .flatMap((key) => byKey.get(key) ?? [])
     .filter((agent) => agent.installed);
   return { agents, target };
 }
@@ -98,6 +98,7 @@ export function withProjectDuplicates(
   projectPath: string,
 ): LocalSkill[] {
   const cache = new Map<string, Map<string, string>>();
+  const byKey = new Map(registry.list().map((agent) => [agent.key, agent]));
   const copiesAt = (root: string, recursive: boolean): Map<string, string> => {
     const key = `${recursive ? "r" : "f"}:${root}`;
     let copies = cache.get(key);
@@ -109,7 +110,7 @@ export function withProjectDuplicates(
   };
   return skills.map((skill) => {
     if (!skill.enabled) return skill;
-    const { agents, target } = agentsLoading(skill, targets, registry);
+    const { agents, target } = agentsLoading(skill, targets, byKey);
     const found: SkillDuplicate[] = [];
     const seen = new Set<string>();
     const add = (duplicate: SkillDuplicate): void => {

@@ -197,8 +197,9 @@ export function createWorkspaceService(
 
     counts: async (agentKeys) => {
       const counts: Record<string, number> = {};
+      const byKey = new Map(registry.list().map((agent) => [agent.key, agent]));
       for (const key of agentKeys) {
-        const agent = registry.find(key);
+        const agent = byKey.get(key);
         if (!agent) continue;
         // A folder we cannot read still has the skills we know we deployed there.
         counts[key] = isDirectory(agent.skillsDir)

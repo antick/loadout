@@ -116,7 +116,12 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
     return agent;
   }
 
-  const agentName = (agentKey: string): string => registry.find(agentKey)?.displayName ?? agentKey;
+  /** Display names by key, resolved once for an operation that goes through many rows. */
+  const agentNames = (): ((agentKey: string) => string) => {
+    const names = new Map(registry.list().map((agent) => [agent.key, agent.displayName]));
+    return (agentKey) => names.get(agentKey) ?? agentKey;
+  };
+  const agentName = (agentKey: string): string => agentNames()(agentKey);
 
   /** Try one pair and file the outcome; refusals and IO errors never stop the round. */
   async function attempt(pair: DeployPair, report: RedeployReport): Promise<void> {
@@ -133,10 +138,11 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
 
   async function removeRows(what: string, rows: () => DeploymentRecord[]): Promise<number> {
     const dropped = await ctx.lock.run(what, () => {
+      const nameOf = agentNames();
       let count = 0;
       for (const row of rows()) {
         try {
-          ops.undeployRow(row, agentName(row.agentKey));
+          ops.undeployRow(row, nameOf(row.agentKey));
           count += 1;
         } catch (error) {
           ctx.log.warn(`Could not remove ${row.targetPath}`, error);
@@ -158,6 +164,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       const copies = store
         .deployments()
         .filter((row) => row.skillId === skill.id && row.mode === "copy");
+      const nameOf = agentNames();
       for (const listed of copies) {
         // Agents sharing a folder: refreshing one realigns the others' rows, so read it again.
         const row = store.deployment(listed.skillId, listed.agentKey) ?? listed;
@@ -170,7 +177,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         const pair = {
           skill,
           agentKey: row.agentKey,
-          agentName: agentName(row.agentKey),
+          agentName: nameOf(row.agentKey),
           targetPath: row.targetPath,
         };
         await attempt(pair, report);
@@ -201,7 +208,9 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
 
     setBlocked: async (skillId, agentKeys, blocked) => {
       const wanted = [...new Set(agentKeys)];
-      for (const key of wanted) if (!registry.find(key)) throw invalid(`Unknown agent: ${key}`);
+      const known = new Set(registry.list().map((agent) => agent.key));
+      for (const key of wanted) if (!known.has(key)) throw invalid(`Unknown agent: ${key}`);
+      const nameOf = agentNames();
       const label = `${blocked ? "block" : "allow"} ${store.get(skillId).name}`;
       const skill = await ctx.lock.run(label, () => {
         const fresh = store.get(skillId);
@@ -209,7 +218,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
           // What Loadout put there goes first; a failure leaves the skill unblocked, not half done.
           for (const key of wanted) {
             const row = store.deployment(skillId, key);
-            if (row) ops.undeployRow(row, agentName(key));
+            if (row) ops.undeployRow(row, nameOf(key));
           }
         }
         const kept = fresh.blockedAgents.filter((key) => !wanted.includes(key));
@@ -277,6 +286,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
           })
           .map((row) => row.skillId),
       );
+      const nameOf = agentNames();
       for (const id of staleIds) {
         // Read the skill again: an earlier refresh or an outside change may have moved it on.
         const skill = store.find(id);
@@ -286,7 +296,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         total.conflicts.push(...report.conflicts);
         total.failed.push(...report.failed);
         for (const agentKey of report.kept) {
-          total.kept.push({ skill: skill.name, agent: agentName(agentKey) });
+          total.kept.push({ skill: skill.name, agent: nameOf(agentKey) });
         }
       }
       return total;
@@ -318,9 +328,10 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
 
     checkRename: (skill, renamed) => {
       const check: RenameCheck = { conflicts: [], editedCopies: [] };
+      const agents = new Map(registry.list().map((agent) => [agent.key, agent]));
       for (const row of store.deployments().filter((entry) => entry.skillId === skill.id)) {
         if (row.mode === "copy" && copyWasEdited(row)) check.editedCopies.push(row);
-        const agent = registry.find(row.agentKey);
+        const agent = agents.get(row.agentKey);
         if (!agent?.installed || !agent.enabled) continue;
         const refusal = ops.inspect(ops.pairFor(renamed, agent)).refusal;
         // The skill's own deployment under a name differing only in case is not in the way.
@@ -334,11 +345,15 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
     redeploy: async (skill, agentKeys) => {
       const report = emptyReport();
       await ctx.lock.run(`deploy ${skill.name}`, async () => {
+        const agents = new Map(registry.list().map((agent) => [agent.key, agent]));
         for (const key of new Set(agentKeys)) {
-          const agent = registry.find(key);
+          const agent = agents.get(key);
           if (agent?.installed && agent.enabled) await attempt(ops.pairFor(skill, agent), report);
           else
-            report.failed.push({ name: skill.name, message: `${agentName(key)} is not available` });
+            report.failed.push({
+              name: skill.name,
+              message: `${agent?.displayName ?? key} is not available`,
+            });
         }
       });
       ctx.touched("skills");
@@ -352,10 +367,11 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         const agent = registry.find(agentKey);
         const rows = store.deploymentsForAgent(agentKey);
         const available = agent !== null && agent.installed && agent.enabled;
+        const name = agent?.displayName ?? agentKey;
         for (const row of rows) {
           const skill = store.find(row.skillId);
           try {
-            ops.undeployRow(row, agentName(agentKey));
+            ops.undeployRow(row, name);
           } catch (error) {
             report.failed.push({ name: skill?.name ?? row.skillId, message: errorMessage(error) });
             continue;

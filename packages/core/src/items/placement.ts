@@ -38,9 +38,8 @@ export function createItemPlacement(deps: {
 }): ItemPlacement {
   const { registry, projects } = deps;
 
-  const agentFolder = (agentKey: string): string | null => {
-    const definition = BUILT_IN_AGENTS.find((agent) => agent.key === agentKey);
-    const agent = registry.find(agentKey);
+  const agentFolder = (agentKey: string, agent = registry.find(agentKey)): string | null => {
+    const definition = BUILT_IN_AGENTS.find((entry) => entry.key === agentKey);
     if (!definition || !agent) return null;
     if (agent.homeEnv && definition.homeEnv) {
       return join(agent.homeEnv.value, dirname(definition.homeEnv.skillsDir));
@@ -48,11 +47,12 @@ export function createItemPlacement(deps: {
     return registry.homePath(dirname(definition.skillsDir));
   };
 
-  const places = (kind: ItemKind): ItemPlace[] =>
-    itemTargetsOf(kind).flatMap((target) => {
-      const agent = registry.find(target.agentKey);
+  const places = (kind: ItemKind): ItemPlace[] => {
+    const agents = new Map(registry.list().map((agent) => [agent.key, agent]));
+    return itemTargetsOf(kind).flatMap((target) => {
+      const agent = agents.get(target.agentKey);
       if (!agent?.enabled) return [];
-      const folder = agentFolder(target.agentKey);
+      const folder = agentFolder(target.agentKey, agent);
       return [
         {
           agentKey: target.agentKey,
@@ -64,6 +64,7 @@ export function createItemPlacement(deps: {
         },
       ];
     });
+  };
 
   return {
     places,
@@ -75,7 +76,7 @@ export function createItemPlacement(deps: {
         throw unsupported(`${agent?.displayName ?? place.agentKey} does not read ${kind}s.`);
       }
       if (place.projectId === null) {
-        const folder = agentFolder(place.agentKey);
+        const folder = agentFolder(place.agentKey, agent);
         if (!target.globalDir || !folder) {
           throw unsupported(`${agent.displayName} reads ${kind}s only inside projects.`);
         }
