@@ -93,6 +93,27 @@ their outcome and rely on the same invalidation: `hooks/use-api-mutation.ts` toa
 only keys no scope covers. `hooks/` holds what several features share; a hook only one feature
 uses lives in `features/<x>/`.
 
+## Browser preview (`apps/desktop/dev-server`)
+
+The renderer in a plain browser, on the real core: for the UI tests (`e2e/`) and for trying the
+interface (`pnpm --filter @loadout/desktop dev:browser`). Electron never starts, and the renderer
+imports none of it.
+
+| Path                   | Owns                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| `plugin.ts`            | Vite plugin: injects the bridge, routes `/__loadout/*` to one session process per cookie   |
+| `browser/bridge.ts`    | `window.loadout` over `fetch` (`invoke`) and server-sent events (`on`)                     |
+| `session/main.ts`      | `createCore` on a temporary home; answers like the IPC bridge (`main/dispatch.ts`)         |
+| `session/world.ts`     | The temporary home; git, `HOME` and temp files pointed into it; the seed kept and restored |
+| `session/seed.ts`      | Writes the fixture folders and repositories, then fills the library through the API        |
+| `session/fixtures*.ts` | The seed as data: skills, agents, projects, presets, what the web answers                  |
+| `session/fetch.ts`     | The `fetchImpl` for skills.sh, ClawHub and the GitHub API                                  |
+| `session/scenarios.ts` | States tests ask for by name: another device syncing the backup, a broken deployment       |
+| `session/app-stub.ts`  | The Electron-only `app` namespace: fixed dialog answers, no shell, no updates              |
+
+Git addresses on `github.com` and `example.com` go to bare repositories inside the temporary
+home. Each Playwright worker has its own session; it goes back to the seed before every test.
+
 ## Library on disk
 
 Everything lives in one home data folder, `~/.loadout`. The library can be moved elsewhere in

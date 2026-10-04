@@ -158,10 +158,16 @@ loadout --help
 | `pnpm package` | Build installers into `apps/desktop/release`  |
 | `pnpm cli …`   | Run the CLI from source                       |
 
-`pnpm check` leaves out the UI tests, which click through the renderer's browser preview (its
-in-memory data, no Electron) in headless Chromium with Playwright. Run them with
-`pnpm --filter @loadout/desktop test:ui`, after installing the browser once with
-`pnpm --filter @loadout/desktop exec playwright install chromium`.
+To try the interface in a browser without touching your own library, run
+`pnpm --filter @loadout/desktop dev:browser` and open the address it prints. It serves the
+renderer on the real core, without Electron, on a temporary home folder seeded with skills,
+agents, projects, presets and a backup. Dialogs, the shell and app updates are stand-ins there.
+The temporary home is removed when the server stops.
+
+`pnpm check` leaves out the UI tests, which click through that browser preview in headless
+Chromium with Playwright, each worker on its own seeded home that goes back to the seed before
+every test. Run them with `pnpm --filter @loadout/desktop test:ui`, after installing the
+browser once with `pnpm --filter @loadout/desktop exec playwright install chromium`.
 
 ## Website
 
