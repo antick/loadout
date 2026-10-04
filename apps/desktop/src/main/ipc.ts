@@ -1,7 +1,6 @@
 import { type BrowserWindow, ipcMain } from "electron";
 import { toErrorShape } from "@loadout/core";
 import {
-  API_NAMESPACES,
   type ApiResponse,
   type AppEventName,
   type AppEvents,
@@ -9,8 +8,7 @@ import {
   IPC_INVOKE_CHANNEL,
   type LoadoutApi,
 } from "@loadout/shared";
-
-type Handler = (...args: unknown[]) => Promise<unknown>;
+import { callChannel } from "./dispatch";
 
 /** One IPC entry point: `namespace.method` is looked up on the API object and called. */
 export function registerIpc(
@@ -21,7 +19,6 @@ export function registerIpc(
   /** The page asking: only the app's own main frame may call the API. */
   isTrustedPage: (url: string) => boolean = () => true,
 ): void {
-  const namespaces = new Set<string>(API_NAMESPACES);
   ipcMain.handle(
     IPC_INVOKE_CHANNEL,
     async (event, channel: string, args: unknown[]): Promise<ApiResponse<unknown>> => {
@@ -30,16 +27,7 @@ export function registerIpc(
         if (!frame || frame.parent !== null || !isTrustedPage(frame.url)) {
           throw new Error(`Refused an API call from ${frame?.url ?? "an unknown page"}`);
         }
-        const [namespace, method] = channel.split(".");
-        if (!namespace || !method || !namespaces.has(namespace)) {
-          throw new Error(`Unknown API channel: ${channel}`);
-        }
-        const refusal = refuse(namespace);
-        if (refusal) throw refusal;
-        const group = api[namespace as keyof LoadoutApi] as unknown as Record<string, Handler>;
-        const handler = Object.hasOwn(group, method) ? group[method] : undefined;
-        if (typeof handler !== "function") throw new Error(`Unknown API channel: ${channel}`);
-        return { ok: true, value: await handler.apply(group, Array.isArray(args) ? args : []) };
+        return { ok: true, value: await callChannel(api, channel, args, refuse) };
       } catch (error) {
         const shape = toErrorShape(error);
         if (shape.code === "INTERNAL") onError(channel, error);
