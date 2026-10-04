@@ -35,6 +35,26 @@ describe("backup sync", () => {
     temp.cleanup();
   });
 
+  it("signs commits with the device name even when the shell sets a git identity", async () => {
+    const saved = { name: process.env.GIT_AUTHOR_NAME, committer: process.env.GIT_COMMITTER_NAME };
+    process.env.GIT_AUTHOR_NAME = "Someone Else";
+    process.env.GIT_COMMITTER_NAME = "Someone Else";
+    try {
+      const remote = createBareRemote(temp.dir);
+      const a = track(createDevice(temp.dir, "A"));
+      a.addSkill("alpha");
+      await a.api.init();
+      await a.api.setRemote(remote);
+      await a.api.sync();
+      expect(a.git("log", "-1", "--format=%an|%cn")).toBe("Device A|Device A");
+    } finally {
+      if (saved.name === undefined) delete process.env.GIT_AUTHOR_NAME;
+      else process.env.GIT_AUTHOR_NAME = saved.name;
+      if (saved.committer === undefined) delete process.env.GIT_COMMITTER_NAME;
+      else process.env.GIT_COMMITTER_NAME = saved.committer;
+    }
+  });
+
   it("reports an uninitialised library and refuses to sync it", async () => {
     const a = track(createDevice(temp.dir, "A"));
     const status = await a.api.status();

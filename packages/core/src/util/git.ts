@@ -40,6 +40,24 @@ export const SAFE_GIT_ENV = {
   GIT_OPTIONAL_LOCKS: "0",
 } as const;
 
+/**
+ * Identity variables a user's shell may set. They outrank `user.name` and `user.email`, so they
+ * would sign backup commits with the person's name instead of the device's: never passed on.
+ */
+const INHERITED_IDENTITY_ENV: readonly string[] = [
+  "GIT_AUTHOR_NAME",
+  "GIT_AUTHOR_EMAIL",
+  "GIT_COMMITTER_NAME",
+  "GIT_COMMITTER_EMAIL",
+];
+
+/** The process environment without the identity variables (see `INHERITED_IDENTITY_ENV`). */
+function inheritedEnvironment(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const name of INHERITED_IDENTITY_ENV) delete env[name];
+  return env;
+}
+
 export interface GitNetwork {
   proxy: string | null;
   /** Environment that sends a token saved for this remote; it wins over `github`. */
@@ -86,7 +104,7 @@ export async function runGit(args: string[], options: GitRunOptions = {}): Promi
     return await exec(options.binary ?? GIT_BINARY, fullArgs, {
       cwd: options.cwd,
       env: {
-        ...process.env,
+        ...inheritedEnvironment(),
         ...SAFE_GIT_ENV,
         ...(await networkEnvironment(options.network, options.env)),
         ...options.env,
