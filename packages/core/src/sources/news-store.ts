@@ -36,7 +36,8 @@ export function createSourceNewsStore(ctx: CoreContext): SourceNewsStore {
     ctx.settings.getRaw<Record<string, RepositoryState>>(INTERNAL_KEYS.sourceNews, {});
   const write = (all: Record<string, RepositoryState>): void => {
     ctx.settings.setRaw(INTERNAL_KEYS.sourceNews, all);
-    ctx.touched("skills");
+    // Not "skills": this is not library metadata, and must not push the automatic backup back.
+    ctx.touched("sources");
   };
 
   function forget(sourceKey: string, paths: readonly string[]): void {

@@ -116,4 +116,22 @@ describe("new skills in a repository", () => {
     const result = await world.updates.api.checkSources();
     expect(result.failed).toEqual([]);
   });
+
+  it("never counts as a library change: the automatic backup is not pushed back", async () => {
+    await world.installFromGit("pdf");
+    const scopes: string[] = [];
+    const touched = world.ctx.touched;
+    world.ctx.touched = (...scope) => {
+      scopes.push(...scope);
+      touched(...scope);
+    };
+    await world.updates.api.checkSources();
+    publish("xlsx");
+    await world.updates.api.checkSources();
+    await world.updates.api.dismissSourceNews(
+      (await world.updates.api.sourceNews())[0]?.sourceKey ?? "",
+    );
+    expect(scopes).toContain("sources");
+    expect(scopes).not.toContain("skills");
+  });
 });

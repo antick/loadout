@@ -75,6 +75,7 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   settings: [keys.settings.root, keys.system.root, keys.safety.root, keys.usage.root],
   safety: [keys.safety.root, keys.system.root],
   usage: [keys.usage.root],
+  sources: [keys.updates.news],
 };
 
 /** Invalidate everything that depends on the given data scopes. */

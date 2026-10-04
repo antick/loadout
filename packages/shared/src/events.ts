@@ -43,7 +43,9 @@ export type DataScope =
   /** Safety reports: kept apart from `skills` so a scan never counts as a library change. */
   | "safety"
   /** Skill usage read from agents' session logs. */
-  | "usage";
+  | "usage"
+  /** Skills repositories gained since last looked at: kept on this computer, never backed up. */
+  | "sources";
 
 export type AppEventName = keyof AppEvents;
 
