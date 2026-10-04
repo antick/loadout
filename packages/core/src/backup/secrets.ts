@@ -139,7 +139,6 @@ async function scanCommitted(env: BackupEnv, branch: string): Promise<SecretFind
   for (const text of [raw, ...mergeRaw]) {
     for (const [, , mode, , blob, , file] of text.matchAll(RAW_RECORD)) {
       if (!mode || !blob || !file || !FILE_MODES.has(mode) || onRemote.has(blob)) continue;
-      if (file.startsWith(`${env.metadataName}/`)) continue;
       blobs.set(`${blob}\0${file}`, blob);
     }
   }
@@ -186,8 +185,8 @@ async function scanFilesSince(env: BackupEnv, base: string | null): Promise<Secr
   const untracked = await required(env, ["ls-files", "-z", "--others", "--exclude-standard"]);
   const files = new Set([...changed.split("\0"), ...untracked.split("\0")].filter(Boolean));
   const findings: SecretFinding[] = [];
+  // The metadata folder is checked too: it holds the user's own words (skill notes).
   for (const file of files) {
-    if (file.startsWith(`${env.metadataName}/`)) continue;
     const path = join(env.repoDir, ...file.split("/"));
     const stat = statOrNull(path);
     if (!stat?.isFile() || stat.size > MAX_SCANNED_BYTES) continue;

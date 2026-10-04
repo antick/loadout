@@ -132,6 +132,23 @@ describe("backup push check", () => {
     expect(rawGit(remote, "ls-tree", "-r", "--name-only", "main")).toContain("leaky/SKILL.md");
   });
 
+  it("holds back a token pasted into a skill's note", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    const skill = a.addSkill("clean");
+    await a.api.init();
+    await a.api.setRemote(remote);
+    expect(await a.api.sync()).toMatchObject({ pushed: true });
+
+    a.store.update(skill.id, { note: `Call it with ${GITHUB_TOKEN}` });
+    await expect(a.api.sync()).rejects.toMatchObject({
+      code: "SECRETS_FOUND",
+      details: { secrets: [{ file: `.loadout/skills/${skill.id}.json`, kind: "github_token" }] },
+    });
+    expect(rawGit(remote, "log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
+  });
+
   it("still holds back a key that was committed before and removed since", async () => {
     const remote = createBareRemote(temp.dir);
     const a = createDevice(temp.dir, "A");
