@@ -207,6 +207,23 @@ describe("backup clone, size rules and credentials", () => {
     expect(tracked).toContain("notes/draft.tmp.md");
   });
 
+  it("counts only what the backup holds: a skill large because of node_modules stays in", async () => {
+    const a = track(createDevice(temp.dir, "A"));
+    a.addSkill("tool");
+    mkdirSync(join(a.skillsDir, "tool", "node_modules", "dep"), { recursive: true });
+    sparseFile(
+      join(a.skillsDir, "tool", "node_modules", "dep", "bundle.js"),
+      BACKUP_SKILL_LIMIT_BYTES + 1,
+    );
+    await a.api.init();
+
+    expect(readFileSync(join(a.skillsDir, ".gitignore"), "utf8")).not.toContain("/tool/");
+    expect(a.git("ls-files")).toContain("tool/SKILL.md");
+    const report = await a.api.sizeReport();
+    expect(report.oversized).toEqual([]);
+    expect(report.totalBytes).toBeLessThan(BACKUP_SKILL_LIMIT_BYTES);
+  });
+
   it("keeps an oversized skill out of the backup through the managed ignore block", async () => {
     const a = track(createDevice(temp.dir, "A"));
     a.addSkill("small");

@@ -52,14 +52,55 @@ function escapeIgnorePath(name: string): string {
   return name.replace(IGNORE_SPECIAL_CHARS, (ch) => `\\${ch}`);
 }
 
-function measureSkills(env: BackupEnv): { skills: MeasuredSkill[]; totalBytes: number } {
+/** Lines of the managed block in the ignore file as it is now. */
+function managedLines(env: BackupEnv): string[] {
+  const path = join(env.repoDir, IGNORE_FILE);
+  if (!existsSync(path)) return [];
+  const lines: string[] = [];
+  let insideBlock = false;
+  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
+    if (line.trim() === BLOCK_START) insideBlock = true;
+    else if (line.trim() === BLOCK_END) insideBlock = false;
+    else if (insideBlock && line.trim()) lines.push(line.trim());
+  }
+  return lines;
+}
+
+/**
+ * Bytes per top-level entry of what a backup would hold: files git tracks or would add, so
+ * `node_modules/`, `.env` and the user's own patterns never count. Skills kept out for their
+ * size alone are measured as if they were not, or they would shrink to nothing and come back.
+ */
+async function backedUpSizes(env: BackupEnv): Promise<Map<string, number> | null> {
+  // The standard lines count even before they are first written into the ignore file.
+  const overrides = [
+    ...BASE_IGNORE_LINES.map((line) => `--exclude=${line}`),
+    ...managedLines(env).map((line) => `--exclude=!${line}`),
+  ];
+  const result = await env.git.probe(["ls-files", "-z", "-co", "--exclude-standard", ...overrides]);
+  if (result.code !== 0) return null;
+  const sizes = new Map<string, number>();
+  for (const file of result.stdout.split("\0")) {
+    if (!file) continue;
+    const top = file.split("/", 1)[0] ?? file;
+    const bytes = statOrNull(join(env.repoDir, ...file.split("/")))?.size ?? 0;
+    sizes.set(top, (sizes.get(top) ?? 0) + bytes);
+  }
+  return sizes;
+}
+
+async function measureSkills(
+  env: BackupEnv,
+): Promise<{ skills: MeasuredSkill[]; totalBytes: number }> {
+  const sizes = await backedUpSizes(env);
   const skills: MeasuredSkill[] = [];
   let totalBytes = 0;
   for (const entry of readDirSafe(env.repoDir)) {
     if (entry.name === GIT_DIR) continue;
     const full = join(env.repoDir, entry.name);
     if (entry.isDirectory()) {
-      const bytes = dirSize(full);
+      // Before git is set up, every file counts.
+      const bytes = sizes ? (sizes.get(entry.name) ?? 0) : dirSize(full);
       totalBytes += bytes;
       if (!entry.name.startsWith(".")) skills.push({ name: entry.name, bytes });
     } else if (entry.isFile()) {
@@ -79,7 +120,7 @@ async function trackedTopLevel(env: BackupEnv): Promise<Set<string>> {
 async function findOversized(
   env: BackupEnv,
 ): Promise<{ oversized: OversizedSkill[]; totalBytes: number }> {
-  const { skills, totalBytes } = measureSkills(env);
+  const { skills, totalBytes } = await measureSkills(env);
   const large = skills.filter((skill) => skill.bytes > BACKUP_SKILL_LIMIT_BYTES);
   if (large.length === 0) return { oversized: [], totalBytes };
   const tracked = await trackedTopLevel(env);
