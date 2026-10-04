@@ -9,11 +9,10 @@ export interface SkillAgentBadgesProps {
   skill: Skill;
   /** Limit to these agents; defaults to every available agent. */
   agents?: readonly AgentInfo[];
-  className?: string;
 }
 
 /** `AgentBadgeRow` wired to a library skill: clicking a badge deploys or removes it right away. */
-export function SkillAgentBadges({ skill, agents, className }: SkillAgentBadgesProps): ReactNode {
+export function SkillAgentBadges({ skill, agents }: SkillAgentBadgesProps): ReactNode {
   const available = useAvailableAgents();
   const deploy = useDeploySkill();
   const undeploy = useUndeploySkill();
@@ -26,7 +25,6 @@ export function SkillAgentBadges({ skill, agents, className }: SkillAgentBadgesP
 
   return (
     <AgentBadgeRow
-      className={className}
       agents={agents ?? available.data ?? []}
       deployedKeys={deployedKeys}
       blockedKeys={blockedKeys}

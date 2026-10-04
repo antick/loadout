@@ -22,10 +22,6 @@ import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
-import { SkillAgentBadges } from "@/components/SkillAgentBadges";
-import { SkillCard } from "@/components/SkillCard";
-import { SkillRow } from "@/components/SkillRow";
-import { SkillUsageNote } from "@/components/SkillUsageNote";
 import { UsageReadStatus } from "@/components/UsageReadStatus";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,7 +30,10 @@ import { DuplicatesDialog } from "@/features/library/duplicates/DuplicatesDialog
 import { LibraryBanners } from "@/features/library/LibraryBanners";
 import { groupLibraryBySource } from "@/features/library/library-groups";
 import { LibraryGroups } from "@/features/library/LibraryGroups";
+import { LibrarySkillItem } from "@/features/library/LibrarySkillItem";
 import { LibraryMatrix } from "@/features/library/matrix/LibraryMatrix";
+import { SkillAgentBadges } from "@/features/library/SkillAgentBadges";
+import { SkillUsageNote } from "@/features/library/SkillUsageNote";
 import {
   DEFAULT_SORT_MODE,
   EMPTY_FILTERS,
@@ -195,13 +194,13 @@ export function LibraryPage({
     if (Object.keys(patch).length > 0) setRest((previous) => ({ ...previous, ...patch }));
   };
 
-  const Item = viewMode === "list" ? SkillRow : SkillCard;
   const total = all?.length ?? 0;
 
   const renderItem = (skill: Skill): ReactNode => (
-    <Item
+    <LibrarySkillItem
       key={skill.id}
       skill={skill}
+      layout={viewMode === "list" ? "list" : "grid"}
       current={skill.id === openSkillId}
       selecting={selection.active}
       selected={selection.isSelected(skill.id)}

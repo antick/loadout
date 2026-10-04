@@ -3,8 +3,7 @@ import type { SkillAction } from "@/components/skill-action";
 import type { Selection } from "@/hooks/use-selection";
 import type { ViewMode } from "@/lib/constants";
 import type { LocalSkillView } from "./local-skill-view";
-import { LocalSkillCard } from "./LocalSkillCard";
-import { LocalSkillRow } from "./LocalSkillRow";
+import { LocalSkillItem } from "./LocalSkillItem";
 
 export const LOCAL_SKILL_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-3";
 export const LOCAL_SKILL_LIST_CLASS = "flex flex-col gap-1.5";
@@ -35,13 +34,13 @@ export function LocalSkillCollection<T extends LocalSkillView>({
   renderFooter,
   menuActions,
 }: LocalSkillCollectionProps<T>): ReactNode {
-  const Item = viewMode === "grid" ? LocalSkillCard : LocalSkillRow;
   return (
     <div className={viewMode === "grid" ? LOCAL_SKILL_GRID_CLASS : LOCAL_SKILL_LIST_CLASS}>
       {items.map((item) => (
-        <Item
+        <LocalSkillItem
           key={item.id}
           item={item}
+          layout={viewMode}
           current={currentId === item.id}
           selecting={selection.active}
           selected={selection.isSelected(item.id)}

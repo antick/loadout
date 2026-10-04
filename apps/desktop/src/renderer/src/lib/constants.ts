@@ -77,6 +77,8 @@ export const TOAST_MAX_CONFLICT_PATHS = 4;
 export const AGENT_BADGE_MAX_VISIBLE = 6;
 /** Tags shown on a skill card before "+N". */
 export const SKILL_CARD_MAX_TAGS = 3;
+/** Tags shown on a skill row, where they share the line with the name. */
+export const SKILL_ROW_MAX_TAGS = 2;
 export const DIFF_CONTEXT_LINES = 3;
 export const COMMAND_PALETTE_MAX_SKILLS = 50;
 /** Pointer travel before a sidebar item starts dragging, so plain clicks still navigate. */
