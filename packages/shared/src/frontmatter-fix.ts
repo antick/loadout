@@ -1,6 +1,6 @@
-import { isMap, parseDocument, stringify } from "yaml";
+import { parseDocument, stringify } from "yaml";
 import { SKILL_DESCRIPTION_MAX, type SkillIssue, type SkillIssueCode } from "./skill-checks";
-import { FRONTMATTER_BLOCK } from "./frontmatter";
+import { findFrontmatter, parseFrontmatterYaml, textField } from "./frontmatter";
 
 /**
  * Fill in what a SKILL.md needs before agents can use it: frontmatter with a `name` and a
@@ -16,7 +16,6 @@ export interface FrontmatterFix {
   addedDescription: string | null;
 }
 
-const EMPTY_FRONTMATTER = /^(\uFEFF?\s*---[ \t]*(\r?\n))(---[ \t]*(?:\r?\n|$))/;
 const FENCE_LINE = /^\s*(`{3,}|~{3,})/;
 const HEADING_LINE = /^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$/;
 /** Lines that are not prose: lists, quotes, tables, HTML and rules. */
@@ -78,11 +77,6 @@ function valueLine(key: string): RegExp {
   return new RegExp(`^${key}[ \\t]*:[ \\t]*(?:""|''|~|null)?[ \\t]*$`, "m");
 }
 
-function textField(record: Record<string, unknown>, key: string): string | null {
-  const value = record[key];
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
 /**
  * Set one missing field: on its `key:` line when that is empty, else as a new line (the name
  * first, the description after the other fields). A key holding something else, such as a list,
@@ -115,8 +109,7 @@ function setField(
  * they are missing. Null when there is nothing to add, or when the frontmatter is not valid YAML.
  */
 export function fixFrontmatter(content: string, folderName: string): FrontmatterFix | null {
-  const empty = EMPTY_FRONTMATTER.exec(content);
-  const found = empty ?? FRONTMATTER_BLOCK.exec(content);
+  const found = findFrontmatter(content);
   if (!found) {
     const bom = content.startsWith(BOM) ? BOM : "";
     const rest = content.slice(bom.length);
@@ -131,19 +124,12 @@ export function fixFrontmatter(content: string, folderName: string): Frontmatter
     };
   }
 
-  // Before the fields, the fields, then the closing fence and the body.
-  const eol = found[2] ?? "\n";
-  const open = found[1] ?? "";
-  const body = empty ? "" : (found[3] ?? "");
-  const close = empty ? `${eol}${found[3] ?? ""}` : (found[4] ?? "");
-  const head = content.slice(0, found.index);
-  const after = content.slice(found.index + found[0].length);
+  // The opening fence, the fields, then the closing fence and the body.
+  const { eol, open, source: body, close } = found;
+  const after = content.slice(found.end);
 
-  const document = parseDocument(body);
-  if (document.errors.length > 0) return null;
-  const parsed: unknown = document.toJS();
-  if (parsed !== null && parsed !== undefined && !isMap(document.contents)) return null;
-  const record = (parsed ?? {}) as Record<string, unknown>;
+  const record = parseFrontmatterYaml(body).data;
+  if (!record) return null;
 
   const addedName = textField(record, "name") ? null : folderName;
   const addedDescription = textField(record, "description") ? null : describeFromBody(after);
@@ -157,7 +143,7 @@ export function fixFrontmatter(content: string, folderName: string): Frontmatter
     const field = { key: "description", value: addedDescription, first: false };
     next = setField(next, record, field, eol);
   }
-  return { content: `${head}${open}${next}${close}${after}`, addedName, addedDescription };
+  return { content: `${open}${next}${close}${after}`, addedName, addedDescription };
 }
 
 /** Problems `fixFrontmatter` can put right. */

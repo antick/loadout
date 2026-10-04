@@ -1,4 +1,4 @@
-import { FRONTMATTER_BLOCK } from "@loadout/shared";
+import { splitFrontmatter } from "@loadout/shared";
 
 export interface FrontmatterEntry {
   key: string;
@@ -10,44 +10,36 @@ export interface ParsedDocument {
   body: string;
 }
 
-const KEY_LINE_PATTERN = /^([A-Za-z0-9_.-]+):\s*(.*)$/;
-const BLOCK_SCALAR_MARKERS = new Set(["|", ">", "|-", ">-", "|+", ">+"]);
+const LIST_SEPARATOR = ", ";
+const BACKTICK_RUN = /`+/g;
+const MIN_FENCE = 3;
 
-function unquote(value: string): string {
-  const trimmed = value.trim();
-  const quoted =
-    trimmed.length >= 2 &&
-    ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-      (trimmed.startsWith("'") && trimmed.endsWith("'")));
-  return quoted ? trimmed.slice(1, -1) : trimmed;
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value) && value.every((item) => typeof item !== "object" || item === null)) {
+    return value.map(displayValue).join(LIST_SEPARATOR);
+  }
+  return JSON.stringify(value);
+}
+
+/** YAML shown as a code block, fenced so no backticks inside can close it early. */
+function yamlBlock(source: string): string {
+  const longest = Math.max(0, ...(source.match(BACKTICK_RUN) ?? []).map((run) => run.length));
+  const fence = "`".repeat(Math.max(MIN_FENCE, longest + 1));
+  return `${fence}yaml\n${source}\n${fence}\n\n`;
 }
 
 /**
- * Split a leading YAML frontmatter block off a Markdown document. Display-only: top-level keys
- * become entries and indented or list lines are folded into the key above them.
+ * Split a leading YAML frontmatter block off a Markdown document, by the shared rules
+ * (`splitFrontmatter`). Top-level keys become entries; frontmatter that does not parse is shown
+ * as it is, as YAML at the top of the body.
  */
 export function parseFrontmatter(source: string): ParsedDocument {
-  const match = FRONTMATTER_BLOCK.exec(source);
-  if (!match) return { entries: [], body: source };
-
-  const entries: FrontmatterEntry[] = [];
-  for (const line of (match[3] ?? "").split(/\r?\n/)) {
-    if (!line.trim() || line.trimStart().startsWith("#")) continue;
-    const keyLine = /^\s/.test(line) ? null : KEY_LINE_PATTERN.exec(line);
-    if (keyLine) {
-      const raw = keyLine[2] ?? "";
-      entries.push({
-        key: keyLine[1] ?? "",
-        value: BLOCK_SCALAR_MARKERS.has(raw.trim()) ? "" : unquote(raw),
-      });
-      continue;
-    }
-    const last = entries.at(-1);
-    if (!last) continue;
-    const piece = unquote(line.trim().replace(/^-\s+/, ""));
-    last.value = last.value
-      ? `${last.value}${line.trim().startsWith("-") ? ", " : " "}${piece}`
-      : piece;
-  }
-  return { entries, body: source.slice(match[0].length) };
+  const { data, body, block } = splitFrontmatter(source);
+  if (!block) return { entries: [], body: source };
+  if (!data) return { entries: [], body: `${yamlBlock(block.source)}${body}` };
+  const entries = Object.entries(data).map(([key, value]) => ({ key, value: displayValue(value) }));
+  return { entries, body };
 }

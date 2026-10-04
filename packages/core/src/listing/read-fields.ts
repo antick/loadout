@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { SKILL_MARKER_FILES, isManualOnly } from "@loadout/shared";
-import { splitFrontmatter } from "../skills/metadata";
+import { SKILL_MARKER_FILES, isManualOnly, splitFrontmatter, textField } from "@loadout/shared";
 
 /** What an agent reads from a skill's document to decide how to list it. */
 export interface ListingFields {
@@ -14,8 +13,6 @@ export interface ListingFields {
 }
 
 const NONE: ListingFields = { description: "", whenToUse: "", manualOnly: false };
-
-const text = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
 
 const firstLine = (body: string): string =>
   body
@@ -34,8 +31,8 @@ export function readListingFields(skillDir: string): ListingFields {
     }
     const { data, body } = splitFrontmatter(content);
     return {
-      description: text(data?.description) || firstLine(body),
-      whenToUse: text(data?.when_to_use),
+      description: textField(data, "description") ?? firstLine(body),
+      whenToUse: textField(data, "when_to_use") ?? "",
       manualOnly: data ? isManualOnly(data) : false,
     };
   }

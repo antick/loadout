@@ -1,5 +1,5 @@
-import { isMap, parseDocument, stringify } from "yaml";
-import { FRONTMATTER_BLOCK } from "./frontmatter";
+import { stringify } from "yaml";
+import { splitFrontmatter } from "./frontmatter";
 
 /**
  * Reading and writing the two file shapes items come in: Markdown with YAML frontmatter, and the
@@ -13,16 +13,11 @@ export interface MarkdownDocument {
   body: string;
 }
 
-/** Split a Markdown file. Frontmatter that is not a YAML map is treated as having none. */
+/** Split a Markdown file, with `\n` line endings. Broken frontmatter counts as none. */
 export function parseMarkdown(text: string): MarkdownDocument {
   const normalized = text.replace(/\r\n/g, "\n");
-  const match = FRONTMATTER_BLOCK.exec(normalized);
-  if (!match) return { fields: {}, body: normalized.replace(/^\uFEFF/, "") };
-  const body = normalized.slice(match[0].length);
-  const document = parseDocument(match[3] ?? "");
-  if (document.errors.length > 0 || !isMap(document.contents)) return { fields: {}, body };
-  const value: unknown = document.toJS();
-  return { fields: (value ?? {}) as Record<string, unknown>, body };
+  const { data, body, block } = splitFrontmatter(normalized);
+  return { fields: data ?? {}, body: block ? body : body.replace(/^\uFEFF/, "") };
 }
 
 /** Frontmatter (left out when there are no fields) and body, with `\n` line endings. */
@@ -32,13 +27,6 @@ export function formatMarkdown(fields: Record<string, unknown>, body: string): s
   if (kept.length === 0) return text;
   const yaml = stringify(Object.fromEntries(kept), { lineWidth: 0 }).trimEnd();
   return `---\n${yaml}\n---\n\n${text}`;
-}
-
-/** A frontmatter value as trimmed text, or null. */
-export function textField(fields: Record<string, unknown>, key: string): string | null {
-  const value = fields[key];
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 /** A list written as a YAML list or as one comma separated string. */

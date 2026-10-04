@@ -8,9 +8,11 @@ import {
   behaviourFieldsIn,
   isManualOnly,
   traitsFromFrontmatter,
-  FRONTMATTER_BLOCK,
+  findFrontmatter,
+  splitFrontmatter,
+  textField,
 } from "@loadout/shared";
-import { parse, parseDocument, stringify } from "yaml";
+import { parseDocument, stringify } from "yaml";
 import { isInside, canonicalPath, readDirSafe, statOrNull } from "../util/fs";
 import { inferSkillName } from "../util/names";
 
@@ -25,7 +27,6 @@ export interface SkillFrontmatter {
   behaviourFields: SkillBehaviourField[];
 }
 
-const FENCE = "---";
 const DOCUMENT_SEARCH_DEPTH = 4;
 const EMPTY: SkillFrontmatter = {
   name: null,
@@ -35,36 +36,13 @@ const EMPTY: SkillFrontmatter = {
   behaviourFields: [],
 };
 
-/**
- * The parsed frontmatter of a document and the text after it. `data` is null when there is no
- * frontmatter, it is not closed, it does not parse, or it is not a map. Never throws.
- */
-export function splitFrontmatter(text: string): {
-  data: Record<string, unknown> | null;
-  body: string;
-} {
-  const trimmed = text.trim();
-  if (!trimmed.startsWith(FENCE)) return { data: null, body: text };
-  const end = trimmed.indexOf(`\n${FENCE}`, FENCE.length);
-  if (end === -1) return { data: null, body: text };
-  const body = trimmed.slice(end + 1 + FENCE.length);
-  try {
-    const data: unknown = parse(trimmed.slice(FENCE.length, end));
-    if (typeof data !== "object" || data === null || Array.isArray(data))
-      return { data: null, body };
-    return { data: data as Record<string, unknown>, body };
-  } catch {
-    return { data: null, body };
-  }
-}
-
 /** Read `name`, `description` and the manual-only flag from YAML frontmatter. Never throws. */
 export function parseFrontmatter(text: string): SkillFrontmatter {
   const { data: record } = splitFrontmatter(text);
   if (!record) return EMPTY;
   return {
-    name: typeof record.name === "string" ? record.name.trim() || null : null,
-    description: typeof record.description === "string" ? record.description.trim() || null : null,
+    name: textField(record, "name"),
+    description: textField(record, "description"),
     manualOnly: isManualOnly(record),
     traits: traitsFromFrontmatter(record),
     behaviourFields: behaviourFieldsIn(record),
@@ -149,9 +127,9 @@ const NAME_KEY = /^name[ \t]*:/m;
  * byte-order mark stay as they were. A document without frontmatter comes back unchanged.
  */
 export function setFrontmatterName(content: string, name: string): string {
-  const match = FRONTMATTER_BLOCK.exec(content);
-  if (!match) return content;
-  const [whole, open = "", eol = "\n", body = "", close = ""] = match;
+  const block = findFrontmatter(content);
+  if (!block) return content;
+  const { open, eol, source: body, close } = block;
   // Quoted when YAML would read it as something else (`123`, `true`, `null`).
   const value = stringify(name).trimEnd();
   let next: string;
@@ -164,6 +142,5 @@ export function setFrontmatterName(content: string, name: string): string {
   } else {
     next = body ? `name: ${value}${eol}${body}` : `name: ${value}`;
   }
-  const start = match.index;
-  return `${content.slice(0, start)}${open}${next}${close}${content.slice(start + whole.length)}`;
+  return `${open}${next}${close}${content.slice(block.end)}`;
 }

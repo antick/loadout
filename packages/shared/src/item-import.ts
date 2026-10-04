@@ -1,10 +1,5 @@
-import {
-  formatMarkdown,
-  listField,
-  parseMarkdown,
-  parseTomlStrings,
-  textField,
-} from "./item-format";
+import { formatMarkdown, listField, parseMarkdown, parseTomlStrings } from "./item-format";
+import { textField } from "./frontmatter";
 import type { ItemFormat } from "./item-targets";
 import {
   CLAUDE_READ_ONLY_TOOLS,

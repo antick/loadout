@@ -1,5 +1,5 @@
-import { isMap, isScalar, parseDocument } from "yaml";
-import { FRONTMATTER_BLOCK } from "./frontmatter";
+import { isMap, isScalar } from "yaml";
+import { findFrontmatter, parseFrontmatterYaml, textField } from "./frontmatter";
 
 /**
  * Checks of a skill against the Agent Skills format (agentskills.io/specification). Pure, so the
@@ -126,13 +126,6 @@ const LINK_PATTERN = /!?\[[^\]\n]{0,1000}\]\(\s*<?([^)\s>]{1,2048})>?(?:\s+["'(]
 const MAX_LINK_LINE = 20_000;
 const SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:/i;
 
-/** A frontmatter value as trimmed text, or null when it is absent, empty or not text. */
-function text(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-}
-
 /** Normalise `./a/../b` style paths; null when the path climbs out of the skill folder. */
 function normalizeRelative(path: string): string | null {
   const segments: string[] = [];
@@ -221,8 +214,8 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     return { issues: [skillIssue("document_missing")], references: [], referenceLines: {} };
   }
   const issues: SkillIssue[] = [];
-  const match = FRONTMATTER_BLOCK.exec(content);
-  const bodyStart = match ? match[0].length : 0;
+  const block = findFrontmatter(content);
+  const bodyStart = block ? block.end : 0;
   const bodyLine = lineAt(content, bodyStart);
 
   // A final newline ends the last line; it does not start another one.
@@ -251,37 +244,24 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     issues.push(skillIssue("broken_reference", { path }, firstLine(path, true)));
   }
 
-  if (!match) {
+  if (!block) {
     issues.unshift(skillIssue("frontmatter_missing", {}, 1));
     return { issues, references, referenceLines };
   }
 
-  const source = match[3] ?? "";
-  // Where the frontmatter text starts in the document: after the opening `---` line.
-  const sourceStart = source ? match[0].indexOf(source) : bodyStart;
+  const { sourceStart } = block;
   // Untrusted text: an alias bomb or anything else the parser throws on is a broken frontmatter,
   // never an exception that would stop every check of the library.
-  let document: ReturnType<typeof parseDocument>;
-  let data: Record<string, unknown>;
-  try {
-    document = parseDocument(source, { prettyErrors: false });
-    const error = document.errors[0];
-    if (error || (document.contents !== null && !isMap(document.contents))) {
-      const reason = error ? error.message.split("\n")[0] : "it is not a list of key: value pairs";
-      const line = lineAt(content, sourceStart + (error?.pos[0] ?? 0));
-      issues.unshift(skillIssue("frontmatter_invalid", { reason: reason ?? "" }, line));
-      return { issues, references, referenceLines };
-    }
-    data = (document.toJS() ?? {}) as Record<string, unknown>;
-  } catch (thrown) {
-    const reason = thrown instanceof Error ? (thrown.message.split("\n")[0] ?? "") : "";
-    issues.unshift(skillIssue("frontmatter_invalid", { reason }, lineAt(content, sourceStart)));
+  const { data, document, error } = parseFrontmatterYaml(block.source);
+  if (!data) {
+    const line = lineAt(content, sourceStart + (error?.offset ?? 0));
+    issues.unshift(skillIssue("frontmatter_invalid", { reason: error?.reason ?? "" }, line));
     return { issues, references, referenceLines };
   }
 
   /** Line of a top-level frontmatter key; the opening `---` when the key is absent. */
   const keyLine = (key: string): number => {
-    if (!isMap(document.contents)) return 1;
+    if (!document || !isMap(document.contents)) return 1;
     const pair = document.contents.items.find(
       (item) => isScalar(item.key) && item.key.value === key,
     );
@@ -290,8 +270,8 @@ export function checkSkillDocument(content: string | null, folderName: string): 
   };
 
   // `name: 2024` is a name YAML reads as a number: judge it by its text, not as missing.
-  const name = text(typeof data.name === "number" ? String(data.name) : data.name);
-  const description = text(data.description);
+  const name = textField(data, "name");
+  const description = textField(data, "description");
   const head: SkillIssue[] = [];
   if (!name) head.push(skillIssue("name_missing", {}, keyLine("name")));
   if (!description) head.push(skillIssue("description_missing", {}, keyLine("description")));
@@ -323,7 +303,7 @@ export function checkSkillDocument(content: string | null, folderName: string): 
       ),
     );
   }
-  const compatibility = text(data.compatibility);
+  const compatibility = textField(data, "compatibility");
   if (compatibility && compatibility.length > SKILL_COMPATIBILITY_MAX) {
     head.push(
       skillIssue(

@@ -1,4 +1,5 @@
-import { formatMarkdown, formatToml, listField, parseMarkdown, textField } from "./item-format";
+import { textField } from "./frontmatter";
+import { formatMarkdown, formatToml, listField, parseMarkdown } from "./item-format";
 import type { ItemFormat } from "./item-targets";
 import type { ItemKind } from "./items";
 import {
