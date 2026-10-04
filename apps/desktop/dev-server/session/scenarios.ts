@@ -42,7 +42,6 @@ async function onOtherDevice(world: World, change: (api: CoreApi) => Promise<voi
   mkdirSync(home, { recursive: true });
   const other: Core = createCore({
     homeDir: home,
-    configDir: join(home, "config"),
     logger: silentLogger,
     secrets: fileSecrets({ ...world, secretsFile: join(home, "secrets.json") }),
     safetyScannerPath: null,

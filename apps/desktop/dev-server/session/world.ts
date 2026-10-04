@@ -23,7 +23,6 @@ export interface World {
   live: string;
   /** The fake home folder: agents' folders, projects, the library at `~/.loadout`. */
   home: string;
-  config: string;
   /** Bare Git repositories standing in for github.com and example.com. */
   remotes: string;
   secretsFile: string;
@@ -42,11 +41,10 @@ export function createWorld(session: string): World {
     root,
     live,
     home: join(live, "home"),
-    config: join(live, "config"),
     remotes: join(live, "remotes"),
     secretsFile: join(live, "secrets.json"),
   };
-  for (const dir of [world.home, world.config, world.remotes, join(live, "tmp")]) {
+  for (const dir of [world.home, world.remotes, join(live, "tmp")]) {
     mkdirSync(dir, { recursive: true });
   }
   isolateProcess(world);

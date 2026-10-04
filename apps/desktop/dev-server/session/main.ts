@@ -33,7 +33,6 @@ const running = new Set<Promise<unknown>>();
 function open(): void {
   core = createCore({
     homeDir: world.home,
-    configDir: world.config,
     secrets: fileSecrets(world),
     emit: (event, payload) => process.send?.({ event, payload }),
     fetchImpl: createFixtureFetch(world),

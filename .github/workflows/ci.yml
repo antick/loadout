@@ -81,7 +81,7 @@ jobs:
       - name: Test
         run: pnpm test
 
-  # The UI tests click through the renderer's browser preview (in-memory data, no Electron), so
+  # The UI tests click through the renderer's browser preview (real core on a temporary home, no Electron), so
   # one OS is enough.
   ui:
     name: UI tests
