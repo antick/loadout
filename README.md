@@ -170,7 +170,9 @@ static site. `pnpm --filter @loadout/landing run dev` serves it while you work o
 `pnpm exec turbo run build --filter=@loadout/landing` builds it. Vercel builds and
 serves it from `vercel.json`; links such as where installers are downloaded live in
 `apps/landing/src/lib/site.ts`. The agent list on the page comes from `@loadout/shared`, so it
-always matches the app.
+always matches the app. The direct download links are read from the newest release's
+`latest.json` at build time; the tests build with `astro build --mode offline`, which skips that
+and links to the release page, so they never wait on the network.
 
 ## Releases
 

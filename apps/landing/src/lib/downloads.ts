@@ -8,6 +8,8 @@ import { UPDATE_FEED_URL, type UpdateTarget, parseUpdateFeed } from "@loadout/sh
 
 /** How long the build waits for GitHub before it falls back to the release page. */
 const FETCH_TIMEOUT_MS = 10_000;
+/** `astro build --mode offline`, the tests' build: no network, links to the release page. */
+const OFFLINE_MODE = "offline";
 const MAC_DISK_IMAGE = ".dmg";
 const MAC_ARCHIVE = ".zip";
 
@@ -69,6 +71,7 @@ async function macDiskImage(download: Download): Promise<Download> {
 
 /** The installers of the newest release, grouped by system; null when they cannot be read. */
 export async function loadDownloads(): Promise<Downloads | null> {
+  if (import.meta.env.MODE === OFFLINE_MODE) return null;
   try {
     const response = await fetch(UPDATE_FEED_URL, {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),

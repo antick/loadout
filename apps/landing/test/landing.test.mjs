@@ -26,6 +26,8 @@ test("navigation, downloads, and disclosures work without client scripts", () =>
   assert.match(html, /class="skip-link"[^>]*href="#main"/);
   assert.match(html, /<main\b[^>]*id="main"[^>]*tabindex="-1"/);
   assert.match(html, /href="https:\/\/github.com\/antick\/loadout\/releases\/latest"/);
+  // The test build (`--mode offline`) never reads the live feed, so it links no installer file.
+  assert.doesNotMatch(html, /\/releases\/download\//);
   assert.match(html, /<details\b[^>]*>\s*<summary\b/);
   assert.doesNotMatch(html, /<script\b/, "This page should not require JavaScript");
   assert.match(html, /name="viewport" content="width=device-width, initial-scale=1"/);

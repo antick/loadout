@@ -9,7 +9,8 @@
     "dev": "astro dev --ignore-lock",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "astro build && node --test test/landing.test.mjs"
+    "test": "astro build --mode offline && node --test test/landing.test.mjs",
+    "typecheck": "astro sync && tsc -p tsconfig.json"
   },
   "dependencies": {
     "@loadout/shared": "workspace:*",
