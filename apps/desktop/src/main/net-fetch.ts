@@ -11,8 +11,34 @@ import { net } from "electron";
 export const appFetch = ((input: string | URL | Request, init?: RequestInit) => {
   const url = input instanceof Request ? input.url : String(input);
   if (init?.redirect !== "manual") return net.fetch(url, init);
-  return fetchManual(url, init);
+  return fetchManual((options) => net.request(options), url, init);
 }) as typeof fetch;
+
+/** The part of Electron's `ClientRequest` a manual fetch uses. */
+export interface ManualRequest {
+  setHeader(name: string, value: string): void;
+  write(chunk: string | Buffer): void;
+  end(): void;
+  abort(): void;
+  on(event: "redirect", listener: (status: number, method: string, location: string) => void): this;
+  on(event: "response", listener: (response: ManualResponse) => void): this;
+  on(event: "error", listener: (error: Error) => void): this;
+}
+
+/** The part of Electron's `IncomingMessage` a manual fetch uses. */
+export interface ManualResponse {
+  statusCode: number;
+  headers: Record<string, string | string[]>;
+  on(event: "data", listener: (chunk: Buffer) => void): this;
+  on(event: "end", listener: () => void): this;
+  on(event: "error", listener: (error: Error) => void): this;
+}
+
+export type OpenRequest = (options: {
+  url: string;
+  method: string;
+  redirect: "manual";
+}) => ManualRequest;
 
 function headerEntries(headers: RequestInit["headers"]): [string, string][] {
   return headers ? [...new Headers(headers).entries()] : [];
@@ -22,21 +48,37 @@ function abortError(): Error {
   return new DOMException("The request was aborted", "AbortError");
 }
 
-function fetchManual(url: string, init: RequestInit): Promise<Response> {
+/** A request body as bytes; only the kinds Loadout sends. */
+function bodyBytes(body: RequestInit["body"]): string | Buffer | null {
+  if (body === undefined || body === null) return null;
+  if (typeof body === "string") return body;
+  if (body instanceof ArrayBuffer) return Buffer.from(body);
+  if (ArrayBuffer.isView(body)) return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  throw new TypeError("A manual-redirect request can only send a string or bytes");
+}
+
+/**
+ * `fetch` with `redirect: "manual"` over `net.request`. The signal stays in force until the body
+ * has arrived: cancelling, or a timeout, also stops a download that already started.
+ */
+export function fetchManual(open: OpenRequest, url: string, init: RequestInit): Promise<Response> {
   return new Promise((resolve, reject) => {
     const { signal } = init;
     if (signal?.aborted) {
       reject(abortError());
       return;
     }
-    const request = net.request({ url, method: init.method ?? "GET", redirect: "manual" });
+    const body = bodyBytes(init.body);
+    const request = open({ url, method: init.method ?? "GET", redirect: "manual" });
     for (const [name, value] of headerEntries(init.headers)) request.setHeader(name, value);
-    const onAbort = (): void => {
+    // Before the answer: reject the fetch. After it: fail the body being read.
+    let onAbort = (): void => {
       request.abort();
       reject(abortError());
     };
-    signal?.addEventListener("abort", onAbort, { once: true });
-    const settle = (): void => signal?.removeEventListener("abort", onAbort);
+    const listener = (): void => onAbort();
+    signal?.addEventListener("abort", listener, { once: true });
+    const settle = (): void => signal?.removeEventListener("abort", listener);
 
     request.on("redirect", (status, _method, location) => {
       settle();
@@ -44,14 +86,24 @@ function fetchManual(url: string, init: RequestInit): Promise<Response> {
       resolve(new Response(null, { status, headers: { location } }));
     });
     request.on("response", (response) => {
-      settle();
-      const body = new ReadableStream<Uint8Array>({
+      const stream = new ReadableStream<Uint8Array>({
         start(controller) {
+          onAbort = () => {
+            request.abort();
+            controller.error(abortError());
+          };
           response.on("data", (chunk) => controller.enqueue(new Uint8Array(chunk)));
-          response.on("end", () => controller.close());
-          response.on("error", (error) => controller.error(error));
+          response.on("end", () => {
+            settle();
+            controller.close();
+          });
+          response.on("error", (error) => {
+            settle();
+            controller.error(error);
+          });
         },
         cancel() {
+          settle();
           request.abort();
         },
       });
@@ -59,12 +111,13 @@ function fetchManual(url: string, init: RequestInit): Promise<Response> {
       for (const [name, value] of Object.entries(response.headers)) {
         for (const one of Array.isArray(value) ? value : [value]) headers.append(name, one);
       }
-      resolve(new Response(body, { status: response.statusCode, headers }));
+      resolve(new Response(stream, { status: response.statusCode, headers }));
     });
     request.on("error", (error) => {
       settle();
       reject(error);
     });
+    if (body !== null) request.write(body);
     request.end();
   });
 }
