@@ -173,6 +173,22 @@ describe("deploying items", () => {
       ),
     ).rejects.toMatchObject({ code: "UNSUPPORTED" });
   });
+
+  it("stops managing a project's items once the project is unlinked, and leaves its files", async () => {
+    const projectDir = join(temp.dir, "app");
+    mkdirSync(projectDir, { recursive: true });
+    const project = await core.api.projects.add(projectDir);
+    const commit = { kind: "command", name: "commit" } as const;
+    await core.api.items.create(commit, "---\ndescription: Commit\n---\nCommit $ARGUMENTS\n");
+    await core.api.items.deploy(commit, { agentKey: "gemini_cli", projectId: project.id });
+    const file = join(projectDir, ".gemini", "commands", "commit.toml");
+
+    await core.api.projects.remove(project.id);
+
+    const [listed] = await core.api.items.list("command");
+    expect(listed?.deployments).toEqual([]);
+    expect(existsSync(file)).toBe(true);
+  });
 });
 
 describe("finding and importing items", () => {
