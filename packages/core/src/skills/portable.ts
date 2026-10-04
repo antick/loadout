@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { Skill, SourceType } from "@loadout/shared";
 import {
   APP_NAME,
+  SOURCE_TYPES,
   cleanAgentKeys,
   cleanSkillNote,
   cleanSuggestPatterns,
@@ -138,15 +139,92 @@ function isSafeLibraryDirName(name: unknown): name is string {
   );
 }
 
-function readJsonDir<T>(dir: string): T[] {
+const KNOWN_SOURCE_TYPES: ReadonlySet<unknown> = new Set(SOURCE_TYPES);
+
+type Json = Record<string, unknown>;
+
+function isObject(value: unknown): value is Json {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+}
+
+function timeOr(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/**
+ * A skill's metadata file as read from disk, where it may come from another device, a merge or a
+ * hand edit. Null when its id, folder or source type is unusable; odd optional fields are dropped.
+ */
+export function readPortableSkill(value: unknown): PortableSkill | null {
+  if (!isObject(value) || typeof value.id !== "string" || !isSafeLibraryDirName(value.path)) {
+    return null;
+  }
+  const source = isObject(value.source) ? value.source : null;
+  if (!source || !KNOWN_SOURCE_TYPES.has(source.type)) return null;
+  return {
+    ...value,
+    id: value.id,
+    path: value.path,
+    tags: strings(value.tags),
+    source: {
+      type: source.type as SourceType,
+      ref: textOrNull(source.ref),
+      url: textOrNull(source.url),
+      subpath: textOrNull(source.subpath),
+      branch: textOrNull(source.branch),
+      revision: textOrNull(source.revision),
+    },
+    createdAt: timeOr(value.createdAt, Date.now()),
+  };
+}
+
+/** A preset's metadata file as read from disk; null when its id or name is unusable. */
+export function readPortablePreset(value: unknown): PortablePreset | null {
+  if (!isObject(value) || typeof value.id !== "string" || typeof value.name !== "string") {
+    return null;
+  }
+  const disabledAgents: Record<string, string[]> = {};
+  if (isObject(value.disabledAgents)) {
+    for (const [skillId, keys] of Object.entries(value.disabledAgents)) {
+      disabledAgents[skillId] = strings(keys);
+    }
+  }
+  const createdAt = timeOr(value.createdAt, Date.now());
+  return {
+    id: value.id,
+    name: value.name,
+    description: textOrNull(value.description),
+    icon: textOrNull(value.icon),
+    sortOrder: timeOr(value.sortOrder, 0),
+    skills: strings(value.skills),
+    disabledAgents,
+    createdAt,
+    updatedAt: timeOr(value.updatedAt, createdAt),
+  };
+}
+
+/** Every metadata file in `dir` that `read` accepts; the rest are skipped and logged. */
+function readJsonDir<T>(dir: string, read: (value: unknown) => T | null, log: Logger): T[] {
   const items: T[] = [];
   for (const entry of readDirSafe(dir)) {
     if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+    let item: T | null = null;
     try {
-      items.push(JSON.parse(readFileSync(join(dir, entry.name), "utf8")) as T);
+      item = read(JSON.parse(readFileSync(join(dir, entry.name), "utf8")));
     } catch {
-      // A half-merged or hand-edited file is skipped rather than failing the whole rebuild.
+      // Not JSON: handled as unusable below.
     }
+    // A half-merged or hand-edited file is skipped rather than failing the whole rebuild.
+    if (item) items.push(item);
+    else log.warn(`Skipped unreadable metadata file: ${join(dir, entry.name)}`);
   }
   return items;
 }
@@ -301,15 +379,14 @@ export class PortableMetadata {
    * and skill folders nobody knows about are indexed as imported skills.
    */
   rebuild(options: { authoritative: boolean }): void {
-    const skillFiles = readJsonDir<PortableSkill>(this.#skillsMetaDir);
-    const presetFiles = readJsonDir<PortablePreset>(this.#presetsMetaDir);
+    const skillFiles = readJsonDir(this.#skillsMetaDir, readPortableSkill, this.#log);
+    const presetFiles = readJsonDir(this.#presetsMetaDir, readPortablePreset, this.#log);
     const hasMetadata = existsSync(join(this.#paths.metadataDir, "schema.json"));
 
     this.#db.transaction(() => {
       const seenSkillIds = new Set<string>();
       for (const file of skillFiles) {
-        // Files arrive through backups from other devices: never trust their paths.
-        if (!isSafeLibraryDirName(file.path) || typeof file.id !== "string") continue;
+        // Files arrive through backups from other devices: `readPortableSkill` checked them.
         const libraryPath = join(this.#paths.skillsDir, file.path);
         if (!isSkillDir(libraryPath)) continue;
         // The row it updated may carry another id (matched by folder): that id is seen too, or

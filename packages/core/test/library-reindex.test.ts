@@ -1,4 +1,4 @@
-import { mkdirSync, renameSync } from "node:fs";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -63,5 +63,42 @@ describe("re-indexing the library while another process works in it", () => {
       renameSync(aside, skillDir);
     });
     expect(core.store.find(skillId)?.deployments).toHaveLength(1);
+  });
+});
+
+describe("metadata files the app did not write", () => {
+  let temp: ReturnType<typeof tempDir>;
+  beforeEach(() => {
+    temp = tempDir();
+  });
+  afterEach(() => temp.cleanup());
+
+  it("skips a file with an odd shape instead of failing to open the library", async () => {
+    let core = createTestCore({ homeDir: temp.dir });
+    const kept = await core.api.skills.create({ name: "kept", description: "Test skill" });
+    const odd = await core.api.skills.create({ name: "odd", description: "Test skill" });
+    const skillsMeta = join(core.ctx.paths.metadataDir, "skills");
+    const presetsMeta = join(core.ctx.paths.metadataDir, "presets");
+    core.close();
+
+    // Hand edits and half-merged files: valid JSON, wrong shape.
+    writeFileSync(join(skillsMeta, `${odd.id}.json`), JSON.stringify({ id: odd.id, path: "odd" }));
+    writeFileSync(
+      join(skillsMeta, "tags.json"),
+      JSON.stringify({ id: "x", path: "kept", source: { type: "git" }, tags: "a,b" }),
+    );
+    writeFileSync(join(skillsMeta, "array.json"), "[1, 2]");
+    mkdirSync(presetsMeta, { recursive: true });
+    writeFileSync(join(presetsMeta, "nameless.json"), JSON.stringify({ id: "p", skills: 3 }));
+
+    core = createTestCore({ homeDir: temp.dir });
+    try {
+      const names = (await core.api.skills.list()).map((skill) => skill.name).sort();
+      expect(names).toEqual(["kept", "odd"]);
+      expect((await core.api.skills.get(kept.id)).tags).toEqual([]);
+      expect(await core.api.presets.list()).toEqual([]);
+    } finally {
+      core.close();
+    }
   });
 });

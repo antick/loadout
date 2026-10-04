@@ -109,7 +109,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
   function adoptRevisions(): void {
     for (const { file } of metadataFiles()) {
       const skill = typeof file.id === "string" ? deps.store.find(file.id) : null;
-      const revision = file.source?.revision ?? null;
+      const revision = typeof file.source?.revision === "string" ? file.source.revision : null;
       if (!skill || skill.sourceRevision === revision) continue;
       deps.store.update(skill.id, { sourceRevision: revision, updatedAt: skill.updatedAt });
     }
