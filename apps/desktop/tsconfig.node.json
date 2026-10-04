@@ -8,6 +8,8 @@
     "src/main",
     "src/preload",
     "test",
-    "e2e"
-  ]
+    "e2e",
+    "dev-server"
+  ],
+  "exclude": ["dev-server/browser"]
 }

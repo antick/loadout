@@ -1,6 +1,8 @@
-import { activityBar, expect, main, openApp, test, toasts } from "./app";
+import { activityBar, expect, main, openApp, setUp, test, toasts } from "./app";
 
 test("publish a skill to ClawHub from its menu", async ({ page }) => {
+  // A token is saved; ClawHub has code-review under @maria-dev up to 1.2.0.
+  await setUp(page, "clawhub-signed-in");
   await openApp(page, "/library");
   const content = main(page);
   await content
@@ -11,7 +13,7 @@ test("publish a skill to ClawHub from its menu", async ({ page }) => {
   await expect(dialog.getByText("Publishing as @maria-dev.")).toBeVisible();
   await expect(dialog.getByText("Latest published version: 1.2.0.")).toBeVisible();
   await expect(dialog.getByRole("textbox", { name: "Version", exact: true })).toHaveValue("1.2.1");
-  await expect(dialog.getByText("2 files, 7.3 kB")).toBeVisible();
+  await expect(dialog.getByText("2 files, 609 B")).toBeVisible();
   const publish = dialog.getByRole("button", { name: "Publish v1.2.1" });
   await expect(publish).toBeDisabled();
   await dialog.getByRole("checkbox").check();
@@ -22,9 +24,8 @@ test("publish a skill to ClawHub from its menu", async ({ page }) => {
 });
 
 test("the Marketplaces settings keep the ClawHub token", async ({ page }) => {
-  // The mock reads `?clawhub=none` from the page address; the section is picked from the sidebar.
-  await page.goto("/?clawhub=none#/settings");
-  await expect(activityBar(page)).toBeVisible();
+  // The seed has no token saved; the section is picked from the sidebar.
+  await openApp(page, "/settings");
   await activityBar(page).getByRole("button", { name: "Settings" }).click();
   await page.getByLabel("Settings sidebar").getByRole("link", { name: "Marketplaces" }).click();
   const content = main(page);

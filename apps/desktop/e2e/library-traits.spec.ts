@@ -1,5 +1,8 @@
 import { expect, main, openApp, test } from "./app";
 
+/** The seed's skills repository. */
+const SOURCE = "https://example.com/acme/skills";
+
 test("a skill that ships code says so in the library, its filter and its panel", async ({
   page,
 }) => {
@@ -18,16 +21,14 @@ test("a skill that ships code says so in the library, its filter and its panel",
   await expect(panel.getByText(/use tools without asking: Bash\(psql \*\), Read/)).toBeVisible();
 });
 
-test("the import list flags a skill that ships scripts before it is installed", async ({
-  page,
-}) => {
+test("the import list flags a skill that runs code before it is installed", async ({ page }) => {
   await openApp(page, "/install");
   const content = main(page);
   await content.getByRole("tab", { name: "Git or link" }).click();
-  await content.getByLabel("Repository, site or link").fill("acme/skills");
+  await content.getByLabel("Repository, site or link").fill(SOURCE);
   await content.getByRole("button", { name: "Preview" }).click();
 
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "5 skills found" })).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "6 skills found" })).toBeVisible();
   await expect(dialog.getByText("Runs code")).toHaveCount(1);
 });

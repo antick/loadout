@@ -9,6 +9,7 @@
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "node scripts/name-dev-electron.mjs && electron-vite dev --watch",
+    "dev:browser": "vite --config e2e/vite.config.ts",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",

@@ -1,11 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// UI tests click through the renderer in headless Chromium, on the in-memory preview bridge
-// (`src/renderer/src/lib/dev-mock.ts`). Electron never starts. Run: `pnpm test:ui`.
+// UI tests click through the renderer in headless Chromium, on the real core: the dev server
+// (`dev-server/plugin.ts`) runs it on a seeded temporary home per worker. Electron never starts.
+// Run: `pnpm test:ui`.
 const PORT = 5197;
 const BASE_URL = `http://localhost:${PORT}/`;
 const CI = Boolean(process.env.CI);
 const SERVER_START_TIMEOUT_MS = 120_000;
+const SERVER_STOP_TIMEOUT_MS = 10_000;
+// Real Git and real files behind every click: slower than the page alone, most of all on a busy
+// machine.
+const TEST_TIMEOUT_MS = 60_000;
+const EXPECT_TIMEOUT_MS = 15_000;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -13,6 +19,8 @@ export default defineConfig({
   forbidOnly: CI,
   retries: CI ? 1 : 0,
   reporter: CI ? [["github"], ["list"]] : "list",
+  timeout: TEST_TIMEOUT_MS,
+  expect: { timeout: EXPECT_TIMEOUT_MS },
   use: { baseURL: BASE_URL, trace: "retain-on-failure" },
   projects: [
     {
@@ -26,5 +34,7 @@ export default defineConfig({
     env: { LOADOUT_RENDERER_PORT: String(PORT) },
     reuseExistingServer: !CI,
     timeout: SERVER_START_TIMEOUT_MS,
+    // Asked to stop rather than killed, so each session removes its temporary home.
+    gracefulShutdown: { signal: "SIGTERM", timeout: SERVER_STOP_TIMEOUT_MS },
   },
 });

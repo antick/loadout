@@ -38,7 +38,8 @@ test("the command palette opens with the shortcut and jumps to a skill", async (
   await palette.getByRole("option", { name: "test-first" }).click();
   await expect(palette).toHaveCount(0);
 
-  await expect(page).toHaveURL(/#\/library\?skill=test-first$/);
+  // The address names the skill by its id.
+  await expect(page).toHaveURL(/#\/library\?skill=[\w-]+$/);
   const detail = page.getByRole("dialog");
   await expect(detail.getByRole("heading", { name: "test-first", level: 2 })).toBeVisible();
 });

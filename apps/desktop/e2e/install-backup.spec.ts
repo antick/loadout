@@ -1,5 +1,7 @@
 import { expect, main, openApp, test } from "./app";
 
+/** The seed's skills repository: code-review and sql-migrations came from it. */
+const SOURCE = "https://example.com/acme/skills";
 const INSTALL_TABS = ["Marketplace", "This computer", "Git or link", "Agent folders"];
 
 test("every Install tab opens", async ({ page }) => {
@@ -32,13 +34,13 @@ test("the import list says what each name will do and ticks a whole folder", asy
   await openApp(page, "/install");
   const content = main(page);
   await content.getByRole("tab", { name: "Git or link" }).click();
-  await content.getByLabel("Repository, site or link").fill("acme/skills");
+  await content.getByLabel("Repository, site or link").fill(SOURCE);
   await content.getByRole("button", { name: "Preview" }).click();
 
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "5 skills found" })).toBeVisible();
-  // `code-review` came from this source before; `release-notes` belongs to another skill.
-  await expect(dialog.getByText(/Already imported from this source/)).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "6 skills found" })).toBeVisible();
+  // code-review and sql-migrations came from this source before; release-notes is another skill.
+  await expect(dialog.getByText(/Already imported from this source/)).toHaveCount(2);
   await expect(dialog.getByText(/release-notes is taken by a skill/)).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Import selected (3)" })).toBeVisible();
 
@@ -53,7 +55,7 @@ test("a name in use can replace the library skill instead", async ({ page }) => 
   await openApp(page, "/install");
   const content = main(page);
   await content.getByRole("tab", { name: "Git or link" }).click();
-  await content.getByLabel("Repository, site or link").fill("acme/skills");
+  await content.getByLabel("Repository, site or link").fill(SOURCE);
   await content.getByRole("button", { name: "Preview" }).click();
 
   const dialog = page.getByRole("dialog");
@@ -74,13 +76,13 @@ test("closing the import list keeps the address; importing clears it", async ({ 
   const content = main(page);
   await content.getByRole("tab", { name: "Git or link" }).click();
   const field = content.getByLabel("Repository, site or link");
-  await field.fill("acme/skills");
+  await field.fill(SOURCE);
   await content.getByRole("button", { name: "Preview" }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "5 skills found" })).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "6 skills found" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  await expect(field).toHaveValue("acme/skills");
+  await expect(field).toHaveValue(SOURCE);
 
   await content.getByRole("button", { name: "Preview" }).click();
   await dialog.getByRole("button", { name: /Import selected/ }).click();
@@ -92,7 +94,8 @@ test("the Backup page lists what is held back and backs it up anyway", async ({ 
   await openApp(page, "/backup");
   const content = main(page);
   await expect(page.getByRole("heading", { name: "Backup", level: 1 })).toBeVisible();
-  await expect(content.getByRole("button", { name: "Sync now" })).toBeVisible();
+  // api-docs gained a file after the last backup, with a token pasted into it.
+  await expect(content.getByRole("button", { name: "Back up now" })).toBeVisible();
   await expect(content.getByRole("heading", { name: "History" })).toBeVisible();
 
   const heldBack = content.getByRole("heading", { name: "Held back from the backup" });

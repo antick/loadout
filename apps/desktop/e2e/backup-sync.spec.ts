@@ -1,15 +1,23 @@
-import { activityBar, expect, main, openApp, test } from "./app";
+import type { Page } from "@playwright/test";
+import { expect, main, openApp, setUp, test } from "./app";
 
 const SCREENSHOTS = process.env.LOADOUT_UI_SCREENSHOTS;
 
-test("Sync now shows what comes in first, with each skill's files", async ({ page }) => {
+/** Run a backup scenario (another device syncing the same backup), then open the Backup page. */
+async function openBackup(page: Page, scenario?: string): Promise<void> {
+  if (scenario) await setUp(page, scenario);
   await openApp(page, "/backup");
+}
+
+test("Sync now shows what comes in first, with each skill's files", async ({ page }) => {
+  // Work Laptop changed code-review, deleted old-notes and a preset; this computer tagged a skill.
+  await openBackup(page, "backup-incoming");
   await main(page).getByRole("button", { name: "Sync now" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Review the sync" });
   await expect(dialog.getByRole("heading", { name: "Coming in" })).toBeVisible();
   await expect(dialog.getByRole("heading", { name: "Going out from this computer" })).toBeVisible();
-  await expect(dialog.getByText("was review · from Work Laptop")).toBeVisible();
+  await expect(dialog.getByText("from Work Laptop").first()).toBeVisible();
   await expect(dialog.getByText("1 preset is updated from another device.")).toBeVisible();
 
   // Files of one skill, this computer against the other device.
@@ -29,8 +37,7 @@ test("Sync now shows what comes in first, with each skill's files", async ({ pag
 });
 
 test("many deletions get a warning and a keep-all", async ({ page }) => {
-  await page.goto("/?review=many#/backup");
-  await expect(activityBar(page)).toBeVisible();
+  await openBackup(page, "backup-many-deletions");
   await main(page).getByRole("button", { name: "Sync now" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Review the sync" });
@@ -44,8 +51,10 @@ test("many deletions get a warning and a keep-all", async ({ page }) => {
 });
 
 test("a conflict can be compared file by file before choosing", async ({ page }) => {
-  await openApp(page, "/backup");
-  await main(page).getByRole("button", { name: "Compare" }).first().click();
+  // Both computers changed release-notes and sql-helper between syncs.
+  await openBackup(page, "backup-conflicts");
+  const row = main(page).getByRole("listitem").filter({ hasText: "release-notes" });
+  await row.getByRole("button", { name: "Compare" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Compare “release-notes”" });
   await expect(dialog.getByText("SKILL.md")).toBeVisible();
@@ -56,7 +65,7 @@ test("a conflict can be compared file by file before choosing", async ({ page })
 });
 
 test("several conflicts take one choice for all, after a confirmation", async ({ page }) => {
-  await openApp(page, "/backup");
+  await openBackup(page, "backup-conflicts");
   const content = main(page);
   await expect(content.getByText("sql-helper")).toBeVisible();
   await content.getByRole("button", { name: "Use all remote" }).click();
@@ -70,8 +79,8 @@ test("several conflicts take one choice for all, after a confirmation", async ({
 test("a long review can be searched and filtered; keep-all answers for the rows shown", async ({
   page,
 }) => {
-  await page.goto("/?review=many#/backup");
-  await expect(activityBar(page)).toBeVisible();
+  // Work Laptop deleted six skills and changed commit-helper.
+  await openBackup(page, "backup-many-deletions");
   await main(page).getByRole("button", { name: "Sync now" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Review the sync" });
@@ -100,8 +109,7 @@ test("a long review can be searched and filtered; keep-all answers for the rows 
 test("the review says when the library changed meanwhile, and Recheck refreshes it", async ({
   page,
 }) => {
-  await page.goto("/?review=stale#/backup");
-  await expect(activityBar(page)).toBeVisible();
+  await openBackup(page, "backup-incoming");
   await main(page).getByRole("button", { name: "Sync now" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Review the sync" });
@@ -109,8 +117,15 @@ test("the review says when the library changed meanwhile, and Recheck refreshes 
   await expect(dialog.getByRole("heading", { name: "Coming in" })).toBeVisible();
   await expect(notice).toHaveCount(0);
 
-  // Anything that changes the library; the preview bridge answers it like the app would.
-  await page.evaluate('window.loadout.invoke("skills.renameTag", ["no-such-tag", "other"])');
+  // Anything that changes the library, as an editor would while the review is open.
+  await page.evaluate(`(async () => {
+    const { value: skills } = await window.loadout.invoke("skills.list", []);
+    const target = skills.find((skill) => skill.name === "release-notes");
+    await window.loadout.invoke("editor.createFile", [
+      { kind: "library", skillId: target.id },
+      "notes.md",
+    ]);
+  })()`);
   await expect(notice).toBeVisible();
   if (SCREENSHOTS) await page.screenshot({ path: `${SCREENSHOTS}/sync-review-stale.png` });
 
@@ -120,7 +135,7 @@ test("the review says when the library changed meanwhile, and Recheck refreshes 
 });
 
 test("own patterns are saved, and one that drops whole skills is refused", async ({ page }) => {
-  await openApp(page, "/backup");
+  await openBackup(page);
   const card = main(page)
     .locator("section")
     .filter({ has: page.getByRole("heading", { name: "Left out of the backup" }) });
@@ -141,8 +156,7 @@ test("own patterns are saved, and one that drops whole skills is refused", async
 });
 
 test("a sync with nothing coming in runs straight away and shows its stages", async ({ page }) => {
-  await page.goto("/?backup=uptodate#/backup");
-  await expect(activityBar(page)).toBeVisible();
+  await openBackup(page, "backup-up-to-date");
   const content = main(page);
   await content.getByRole("button", { name: "Back up again" }).click();
 
@@ -154,8 +168,7 @@ test("a sync with nothing coming in runs straight away and shows its stages", as
 });
 
 test("a public GitHub repository is only used after the user agrees", async ({ page }) => {
-  await page.goto("/?backup=noremote#/backup");
-  await expect(activityBar(page)).toBeVisible();
+  await openBackup(page, "backup-no-remote");
   const content = main(page);
   const repoName = content.getByLabel("Repository name");
   const connect = async (name: string): Promise<void> => {
@@ -174,5 +187,5 @@ test("a public GitHub repository is only used after the user agrees", async ({ p
 
   await connect("public-skills");
   await ask.getByRole("button", { name: "Use the public repository" }).click();
-  await expect(content.getByText("https://github.com/dev/public-skills.git").first()).toBeVisible();
+  await expect(page.getByText("Connected to github.com/dev/public-skills")).toBeVisible();
 });

@@ -5,23 +5,23 @@ test("Claude Code shows what its skill listing costs, and the window changes the
 }) => {
   await openApp(page, "/agents/claude_code");
   const content = main(page);
-  await expect(content.getByText("About 741 of 8,000 characters")).toBeVisible();
+  await expect(content.getByText("About 683 of 8,000 characters")).toBeVisible();
 
   await content.getByRole("button", { name: "Details" }).click();
   await expect(
     content.getByText("It fits. Claude Code shows every listed description in full."),
   ).toBeVisible();
   await expect(
-    content.getByText("10 with a description · 0 by name only · 0 hidden from the model"),
+    content.getByText("9 with a description · 0 by name only · 1 hidden from the model"),
   ).toBeVisible();
 
   await content.getByRole("combobox", { name: "Context window" }).click();
   await page.getByRole("option", { name: "1M tokens" }).click();
-  await expect(content.getByText("About 741 of 40,000 characters")).toBeVisible();
+  await expect(content.getByText("About 683 of 40,000 characters")).toBeVisible();
   // The card stays put while the new estimate is read.
   await expect(content.getByRole("button", { name: "Hide details" })).toBeVisible();
 
-  await content.getByRole("button", { name: "Show all 10 listed skills" }).click();
+  await content.getByRole("button", { name: "Show all 9 listed skills" }).click();
   await expect(content.getByRole("button", { name: "Show fewer" })).toBeVisible();
 });
 

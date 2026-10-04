@@ -8,16 +8,9 @@
       "port": 4399
     },
     {
-      "name": "desktop-mock",
+      "name": "desktop-browser",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "@loadout/desktop",
-        "exec",
-        "vite",
-        "--config",
-        "e2e/vite.config.ts"
-      ],
+      "runtimeArgs": ["--filter", "@loadout/desktop", "run", "dev:browser"],
       "port": 5199,
       "env": {
         "LOADOUT_RENDERER_PORT": "5199"

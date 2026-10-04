@@ -19,7 +19,7 @@ test("prepare a report on a skill for its source repository, and copy it", async
   await expect(preview).toContainText("code-review: It printed the diff before the summary.");
   await expect(preview).toContainText("### Proposed change to SKILL.md");
   await expect(preview).toContainText("- Skill: `code-review`");
-  await expect(preview).toContainText("- Installed revision: `4f2a9c1`");
+  await expect(preview).toContainText(/- Installed revision: `[0-9a-f]{7,}`/);
   // Nothing from this computer is in it.
   await expect(preview).not.toContainText("/.loadout/");
 
