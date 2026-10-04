@@ -13,7 +13,6 @@ export {
   type ListRefs,
   type RemoteRefs,
   marketSourceToUrl,
-  normalizeRepoUrl,
   parseGitSource,
   resolveTreeRef,
   validateGitInput,

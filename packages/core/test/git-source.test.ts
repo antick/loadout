@@ -1,11 +1,12 @@
-import { redactUrl } from "@loadout/shared";
+import { normalizeSourceUrl, redactUrl } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
-import { remoteTargetOf } from "../src/updates/source";
+import { createCloneCache } from "../src/install/clone-cache";
+import { remoteKey, remoteTargetOf } from "../src/updates/source";
 import { skillRecord } from "./skill-records";
 import {
   marketSourceToUrl,
-  normalizeRepoUrl,
+  trimRepoUrl,
   parseGitSource,
   repoNameFromUrl,
   resolveTreeRef,
@@ -266,12 +267,35 @@ describe("url helpers", () => {
     expectInvalid(() => marketSourceToUrl("../acme/skills"));
   });
 
-  it("normalises a URL for the cache key", () => {
-    expect(normalizeRepoUrl(" https://github.com/acme/skills.git/ ")).toBe(
+  it("knows one repository however its address is spelled", () => {
+    const spellings = [
+      "https://GitHub.com/acme/skills",
+      "https://github.com/acme/skills.git/",
+      "git@github.com:acme/skills.git",
+      "ssh://git@github.com:22/acme/skills",
+      "https://user:token@github.com/acme/skills",
+    ];
+    const cache = createCloneCache("/cache/repos", 1, 1);
+    for (const url of spellings) {
+      expect(normalizeSourceUrl(url)).toBe("github.com/acme/skills");
+      expect(cache.slotFor(url)).toBe(cache.slotFor(spellings[0] ?? ""));
+      expect(remoteKey({ kind: "git", url, branch: "main" })).toBe(
+        remoteKey({ kind: "git", url: spellings[0] ?? "", branch: "main" }),
+      );
+    }
+    // Paths keep their case: not every host, nor every disk, ignores it.
+    expect(normalizeSourceUrl("https://example.com/Team/Repo")).toBe("example.com/Team/Repo");
+    expect(cache.slotFor("https://github.com/acme/other")).not.toBe(
+      cache.slotFor(spellings[0] ?? ""),
+    );
+  });
+
+  it("trims a URL for naming", () => {
+    expect(trimRepoUrl(" https://github.com/acme/skills.git/ ")).toBe(
       "https://github.com/acme/skills",
     );
-    expect(normalizeRepoUrl("https://github.com/acme/skills")).toBe(
-      normalizeRepoUrl("https://github.com/acme/skills.git"),
+    expect(trimRepoUrl("https://github.com/acme/skills")).toBe(
+      trimRepoUrl("https://github.com/acme/skills.git"),
     );
     expect(repoNameFromUrl("git@github.com:acme/skills.git")).toBe("skills");
     expect(repoNameFromUrl("git@host:skills.git")).toBe("skills");

@@ -307,13 +307,16 @@ export function marketSourceToUrl(source: string): string {
   return githubCloneUrl(owner, repo);
 }
 
-/** Identity of a repository for the clone cache: trimmed, without a trailing `/` or `.git`. */
-export function normalizeRepoUrl(url: string): string {
+/**
+ * A clone URL trimmed, without a trailing `/` or `.git`: for naming, not comparing. Two spellings
+ * of one repository are told apart by `normalizeSourceUrl`.
+ */
+export function trimRepoUrl(url: string): string {
   return stripGitSuffix(url.trim().replace(/\/+$/, ""));
 }
 
 /** Last path segment of a clone URL without `.git`; names the working copy folder. */
 export function repoNameFromUrl(url: string): string {
-  const normalized = normalizeRepoUrl(url);
+  const normalized = trimRepoUrl(url);
   return normalized.slice(Math.max(normalized.lastIndexOf("/"), normalized.lastIndexOf(":")) + 1);
 }

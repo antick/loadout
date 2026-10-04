@@ -27,7 +27,7 @@ import {
 
 import { pickRevision, refCandidates, refLists } from "./git-refs";
 
-import { type RemoteRefs, normalizeRepoUrl, repoNameFromUrl } from "./git-source";
+import { type RemoteRefs, repoNameFromUrl, trimRepoUrl } from "./git-source";
 
 /**
  * Git over plain HTTPS, for computers without Git. Refs come from the smart HTTP advertisement
@@ -83,7 +83,7 @@ function parseHttpsRemote(url: string): { host: string; path: string } | null {
   }
   // Credentials in the URL mean a private repository: that is Git's job, not ours.
   if (parsed.protocol !== HTTPS || parsed.username || parsed.password) return null;
-  const path = normalizeRepoUrl(parsed.pathname).replace(/^\/+/, "");
+  const path = trimRepoUrl(parsed.pathname).replace(/^\/+/, "");
   if (path.split("/").filter(Boolean).length < 2) return null;
   return { host: parsed.host.toLowerCase(), path };
 }

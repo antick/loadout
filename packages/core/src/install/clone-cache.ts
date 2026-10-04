@@ -1,8 +1,8 @@
 import { join } from "node:path";
+import { normalizeSourceUrl } from "@loadout/shared";
 import { RepoLock } from "../lock";
 import { dirSize, ensureDir, readDirSafe, removePath, statOrNull } from "../util/fs";
 import { sha256Hex } from "../util/hash";
-import { normalizeRepoUrl } from "./git-source";
 
 /**
  * The clone cache (`cache/repos`): one slot per repository, shared by the app and the CLI. A slot
@@ -49,7 +49,7 @@ export function createCloneCache(reposDir: string, limitBytes: number, waitMs: n
     name.endsWith(LOCK_SUFFIX) ? null : join(reposDir, name.split(PARTIAL_MARK)[0] ?? "");
 
   return {
-    slotFor: (url) => join(reposDir, sha256Hex(normalizeRepoUrl(url)).slice(0, SLOT_HEX_LENGTH)),
+    slotFor: (url) => join(reposDir, sha256Hex(normalizeSourceUrl(url)).slice(0, SLOT_HEX_LENGTH)),
 
     withSlot: async (slot, fn) => {
       const previous = queues.get(slot) ?? Promise.resolve();

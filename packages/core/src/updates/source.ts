@@ -27,7 +27,6 @@ import {
   fetchWellKnownSkill,
   isWellKnownIndexUrl,
   marketSourceToUrl,
-  normalizeRepoUrl,
   parseGitSource,
   parseWellKnownIndex,
   type GitInputOptions,
@@ -42,7 +41,7 @@ import { openClawhubVersion } from "../install/clawhub-install";
 import { type ClawhubClient, parseClawhubRef } from "../market/clawhub";
 
 import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
-import { isArchivePath } from "@loadout/shared";
+import { isArchivePath, normalizeSourceUrl } from "@loadout/shared";
 
 /**
  * Where a library skill's upstream lives and how to open it. Shared by check, update and the
@@ -153,7 +152,7 @@ export function remoteTargetOf(skill: Skill, gitInput: GitInputOptions = {}): Re
 /** Identity of a remote lookup: skills sharing it share one network call. */
 export function remoteKey(target: Pick<RemoteTarget, "kind" | "url" | "branch">): string {
   if (target.kind === "clawhub") return `clawhub\n${target.url}`;
-  return `${normalizeRepoUrl(target.url)}\n${target.branch ?? ""}`;
+  return `${normalizeSourceUrl(target.url)}\n${target.branch ?? ""}`;
 }
 
 function requireClawhub(clients: RemoteClients): ClawhubClient {

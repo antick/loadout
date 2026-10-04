@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 
 import { join, relative } from "node:path";
 
-import { APP_SLUG, type ErrorCode, redactUrl } from "@loadout/shared";
+import { APP_SLUG, type ErrorCode, normalizeSourceUrl, redactUrl } from "@loadout/shared";
 
 import type { CoreContext } from "../context";
 
@@ -35,7 +35,7 @@ import {
 } from "./git-refs";
 
 import { PARTIAL_MARK, createCloneCache } from "./clone-cache";
-import { type RemoteRefs, normalizeRepoUrl, repoNameFromUrl } from "./git-source";
+import { type RemoteRefs, repoNameFromUrl } from "./git-source";
 import { MANIFEST_PATTERNS, applyWorkingTree, folderPattern } from "./git-sparse";
 
 import { type FolderTrees, readFolderTrees } from "./git-trees";
@@ -195,8 +195,15 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
     // The raw config value: `remote get-url` would apply the user's `insteadOf` rewrites and
     // never equal the URL we were given.
     const origin = await run(["config", "--get", "remote.origin.url"], { cwd: slot });
-    if (origin.code !== 0 || normalizeRepoUrl(origin.stdout) !== normalizeRepoUrl(url)) {
+    const cloned = origin.stdout.trim();
+    if (origin.code !== 0 || normalizeSourceUrl(cloned) !== normalizeSourceUrl(url)) {
       throw new AppError("GIT", "The cached clone belongs to a different repository.");
+    }
+    // The same repository spelled another way (ssh instead of https): fetch the way asked.
+    if (cloned !== url) {
+      await runOk("Failed to reuse the cached clone", ["config", "remote.origin.url", url], {
+        cwd: slot,
+      });
     }
     const action = `Failed to fetch ${redactUrl(url)}`;
     // Branch before tag, the same order `lsRemote` and `clone --branch` use.

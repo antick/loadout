@@ -76,13 +76,20 @@ function hostAndPath(url: string): { host: string; path: string } | null {
   return { host: match[1].toLowerCase(), path: match[2] ?? "" };
 }
 
-/** A clone URL in one spelling: no trailing slash or `.git`, host in lower case. */
+/**
+ * A clone URL in one spelling, and the one test of "same repository" everywhere (Sources page,
+ * install preview, update checks, clone cache, publish target): `host/path` with the scheme,
+ * user, password and port left out, `git@host:path` read as `host/path`, the host in lower case,
+ * no trailing slash or `.git`. The path keeps its case: some hosts and local folders tell
+ * `Repo` from `repo`. A local path stays as written, minus a trailing slash or `.git`.
+ */
 export function normalizeSourceUrl(url: string): string {
   const trimmed = url.trim().replace(/\/+$/, "").replace(GIT_SUFFIX, "");
-  const scp = SCP_STYLE.exec(trimmed);
-  if (scp?.[1] && scp[2]) return `${scp[1].toLowerCase()}/${scp[2]}`;
+  // A scheme first: `ssh://git@host:22/path` also looks like `user@host:path`.
   const parsed = hostAndPath(trimmed);
-  return parsed ? `${parsed.host}${parsed.path.replace(/\/+$/, "")}` : trimmed;
+  if (parsed) return `${parsed.host}${parsed.path.replace(/\/+$/, "")}`;
+  const scp = SCP_STYLE.exec(trimmed);
+  return scp?.[1] && scp[2] ? `${scp[1].toLowerCase()}/${scp[2]}` : trimmed;
 }
 
 /** `owner/repo` for GitHub, `host/owner/repo` elsewhere. */

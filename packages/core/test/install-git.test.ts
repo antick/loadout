@@ -404,6 +404,9 @@ describe("git client", () => {
     expect(second.revision).toBe(head);
     expect(existsSync(join(second.dir, "NEW.md"))).toBe(true);
     expect(cacheSlots()).toHaveLength(1);
+    // The slot now fetches from the address it was last asked for.
+    const slot = join(world.base, "cache", "repos", cacheSlots()[0] ?? "");
+    expect(git(slot, "config", "--get", "remote.origin.url").trim()).toBe(`${remote}/`);
 
     const tagged = await client.checkout(remote, { branch: "v1" });
     expect(tagged.revision).toBe(first.revision);

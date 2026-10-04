@@ -68,7 +68,7 @@ function identityOf(remote: ParsedRemote): string {
       : remote.cleanUrl;
     return realPathOf(path);
   }
-  return normalizeSourceUrl(remote.cleanUrl).toLowerCase();
+  return normalizeSourceUrl(remote.cleanUrl);
 }
 
 /** The saved backup address is the same repository as `remote`. */

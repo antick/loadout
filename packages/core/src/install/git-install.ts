@@ -19,12 +19,11 @@ import {
   type GitSource,
   isPlainUrl,
   marketSourceToUrl,
-  normalizeRepoUrl,
   parseGitSource,
   resolveTreeRef,
 } from "./git-source";
 import type { InstallIntoLibrary } from "./library";
-import { repositorySourceKey } from "@loadout/shared";
+import { normalizeSourceUrl, repositorySourceKey } from "@loadout/shared";
 import type { SourceNewsStore } from "../sources/news-store";
 import { type ReplaceDeps, installOver } from "./replace";
 import { type SafetyGate, installChecked } from "./safety-gate";
@@ -126,7 +125,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       const found = listRepoSkills(scanRoot, { libraryDir: ctx.paths.skillsDir });
       if (handle.signal.aborted) throw cancelled();
 
-      const repoIdentity = normalizeRepoUrl(source.cloneUrl);
+      const repoIdentity = normalizeSourceUrl(source.cloneUrl);
       const typedUrl = repoUrl.trim();
       const previewId = await sessions.open({
         key,
@@ -152,7 +151,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       });
       cleanup = null;
       const fromThisRepo = (s: Skill): boolean =>
-        s.sourceUrl !== null && normalizeRepoUrl(s.sourceUrl) === repoIdentity;
+        s.sourceUrl !== null && normalizeSourceUrl(s.sourceUrl) === repoIdentity;
       return {
         previewId,
         kind: "repository",
