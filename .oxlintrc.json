@@ -34,12 +34,6 @@
         "react/purity": "off",
         "eqeqeq": "off"
       }
-    },
-    {
-      "files": ["**/lib/dev-mock*.ts"],
-      "rules": {
-        "oxc/no-map-spread": "off"
-      }
     }
   ]
 }
