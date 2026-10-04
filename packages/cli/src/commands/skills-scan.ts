@@ -1,6 +1,7 @@
 import type { SafetyRecord } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { plural } from "../output";
+import { exitCodeFor } from "../exit-codes";
 import { resolveSkills } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
@@ -22,7 +23,10 @@ function line(name: string, record: SafetyRecord): string {
   return `${name}: ${record.verdict} (risk ${record.score}/100${detail}; ${engine})`;
 }
 
-/** Run the safety check on library skills: Loadout's rules, or SkillSpector when installed. */
+/**
+ * Run the safety check on library skills: Loadout's rules, or SkillSpector when installed. Exit code
+ * 1 when one comes back unsafe or could not be checked, like `validate` and `doctor` on errors.
+ */
 async function scan(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const all = flagBoolean(args, ALL_FLAG.name);
@@ -35,7 +39,11 @@ async function scan(context: CommandContext): Promise<CommandResult> {
       `Checked ${plural(value.scanned, "skill")}: ${value.unsafe} flagged, ${value.caution} to review.`,
       ...value.failed.map((failure) => `${failure.name}: ${failure.message}`),
     ];
-    return { value, text: lines.join("\n") };
+    return {
+      value,
+      text: lines.join("\n"),
+      exitCode: exitCodeFor(value.unsafe > 0 || value.failed.length > 0),
+    };
   }
   const skills = resolveSkills(core, args.positionals);
   const records: SafetyRecord[] = [];
@@ -45,6 +53,7 @@ async function scan(context: CommandContext): Promise<CommandResult> {
     text: records
       .map((record, index) => line(skills[index]?.name ?? record.skillId, record))
       .join("\n"),
+    exitCode: exitCodeFor(records.some((record) => record.verdict === "unsafe")),
   };
 }
 
@@ -57,6 +66,7 @@ export const scanCommand: CommandSpec = {
     "Loadout's own rules always run: destructive commands, code that phones home, prompt injection, credential theft. Static, no AI model.",
     "With NVIDIA SkillSpector installed (uv tool install git+https://github.com/NVIDIA/skillspector.git) its deeper checks run instead.",
     "Verdicts: safe, caution, unsafe.",
+    "Exit code 1 when a skill checked in this run is unsafe or could not be checked. Caution does not fail it.",
   ],
   run: scan,
 };

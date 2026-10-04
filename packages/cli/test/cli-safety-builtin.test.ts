@@ -26,11 +26,16 @@ describe("the built-in safety rules from the command line", () => {
     expect(stopped.stderr).toContain("HIGH Network exfiltration: scripts/setup.sh:1");
     expect((await sandbox.cli("skills", "install", evil, "--accept-risk")).code).toBe(EXIT_OK);
 
+    // An unsafe verdict fails the scan, like an error fails `validate` and `doctor`.
     const scan = await sandbox.cli("skills", "scan", "--all", "--force");
+    expect(scan.code).toBe(EXIT_FAILED);
     expect(scan.stdout).toContain("Checked 2 skills: 1 flagged, 0 to review.");
-    expect((await sandbox.cli("skills", "scan", "evil")).stdout).toContain(
+    const one = await sandbox.cli("skills", "scan", "evil");
+    expect(one.code).toBe(EXIT_FAILED);
+    expect(one.stdout).toContain(
       "evil: unsafe (risk 27/100, HIGH Network exfiltration in scripts/setup.sh; rules)",
     );
+    expect((await sandbox.cli("skills", "scan", "fine")).code).toBe(EXIT_OK);
     const doctor = await sandbox.cli("doctor");
     expect(doctor.code).toBe(EXIT_FAILED);
     expect(doctor.stdout).toContain("Flagged: risk 27/100");

@@ -117,7 +117,7 @@ function fakeScanner(dir: string): string {
   const path = join(dir, "skillspector");
   writeFileSync(
     path,
-    `#!/bin/sh\nif grep -q EVIL "$2/SKILL.md"; then echo '${flagged}'; exit 1; fi\necho '${clean}'\n`,
+    `#!/bin/sh\nif grep -q BROKEN "$2/SKILL.md"; then exit 2; fi\nif grep -q EVIL "$2/SKILL.md"; then echo '${flagged}'; exit 1; fi\necho '${clean}'\n`,
   );
   chmodSync(path, 0o755);
   return path;
@@ -151,10 +151,25 @@ describe.skipIf(process.platform === "win32")("skills scan and the safety check"
 
       expect((await sandbox.cli("skills", "install", evil, "--accept-risk")).code).toBe(EXIT_OK);
       const scan = await sandbox.cli("skills", "scan", "--all", "--force");
+      expect(scan.code).toBe(EXIT_FAILED);
       expect(scan.stdout).toContain("Checked 2 skills: 1 flagged, 0 to review.");
-      expect((await sandbox.cli("skills", "scan", "evil")).stdout).toContain(
+      const one = await sandbox.cli("skills", "scan", "evil");
+      expect(one.code).toBe(EXIT_FAILED);
+      expect(one.stdout).toContain(
         "evil: unsafe (risk 90/100, HIGH Prompt Injection in SKILL.md; SkillSpector)",
       );
+      expect((await sandbox.cli("skills", "scan", "fine")).code).toBe(EXIT_OK);
+
+      // A skill the scanner cannot check fails the run too, with nothing flagged.
+      await sandbox.cli("skills", "remove", "evil", "--yes");
+      const library = join(sandbox.libraryDir, "fine", "SKILL.md");
+      writeFileSync(library, `${readFileSync(library, "utf8")}\nBROKEN\n`);
+      const failed = await sandbox.cli("skills", "scan", "--all", "--force", "--json");
+      expect(failed.code).toBe(EXIT_FAILED);
+      expect(JSON.parse(failed.stdout)).toMatchObject({
+        unsafe: 0,
+        failed: [{ name: "fine" }],
+      });
       expect((await sandbox.cli("skills", "scan")).code).toBe(EXIT_USAGE);
     } finally {
       rmSync(scannerDir, { recursive: true, force: true });

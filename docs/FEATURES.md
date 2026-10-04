@@ -169,6 +169,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - `skills search <words>` (skills.sh, or ClawHub with `--on clawhub`); in a terminal, tick results to install them.
 - `skills use <source>` prints a skill's `SKILL.md` without installing it, safety-checked: `skills use owner/repo@pdf | claude`.
 - `loadout skills validate ./folder` checks every skill in a folder, and names used twice, without a library; for CI.
+- `skills scan` exits 1 when a skill comes back unsafe or could not be checked, like `validate` and `doctor` on errors.
 - Text from a repository is printed with escape sequences neutralised, so it cannot take over the terminal.
 - Tab completion: `eval "$(loadout completion bash)"` or `zsh`.
 - Published to `~/.loadout/bin` by the app; also on npm (`@antick/loadout`) and as standalone binaries.

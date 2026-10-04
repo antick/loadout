@@ -112,7 +112,7 @@ loadout skills check --all --json
 loadout skills update <ref> --json
 loadout skills update --all --json
 
-# Safety check: built-in rules always; SkillSpector when the user has it installed
+# Safety check: built-in rules always; SkillSpector when the user has it installed; exit code 1 when one is unsafe or could not be checked
 loadout skills scan <ref> --json
 loadout skills scan --all --json
 
