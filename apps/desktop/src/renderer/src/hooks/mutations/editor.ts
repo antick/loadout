@@ -4,14 +4,15 @@ import type {
   SkillFileChangeResult,
   SkillLocation,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAgents } from "@/hooks/queries/agents";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 import { locationKey } from "@/lib/skill-location";
-import { toastError, toastSuccess } from "@/lib/toast";
+import { toastSuccess } from "@/lib/toast";
 
 export interface SaveSkillFileVariables {
   location: SkillLocation;
@@ -28,9 +29,9 @@ export function useSaveSkillFile(): UseMutationResult<
   SaveSkillFileVariables
 > {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ location, input }: SaveSkillFileVariables) =>
-      api.editor.saveFile(location, input),
+  return useApiMutation({
+    fn: ({ location, input }: SaveSkillFileVariables) => api.editor.saveFile(location, input),
+    error: false,
     onSuccess: (result, { location }) => {
       queryClient.setQueryData(
         keys.editor.file(locationKey(location), result.file.path),
@@ -64,8 +65,8 @@ function useFileChange<Variables>(
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const agents = useAgents();
-  return useMutation({
-    mutationFn: run,
+  return useApiMutation({
+    fn: run,
     onSuccess: (result, variables) => {
       queryClient.setQueryData(keys.skills.detail(result.skill.id), result.skill);
       const title = done(result, variables);
@@ -83,7 +84,7 @@ function useFileChange<Variables>(
         }),
       });
     },
-    onError: (error) => toastError(error, errorKey),
+    error: errorKey,
   });
 }
 

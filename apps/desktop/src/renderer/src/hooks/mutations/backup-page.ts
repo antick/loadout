@@ -6,13 +6,9 @@ import type {
   GithubConnectResult,
   SyncOutcome,
 } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { publicRepoDetails, toastBackupError } from "@/lib/backup-errors";
 import { toastSyncOutcome } from "@/lib/backup-toast";
@@ -30,8 +26,9 @@ export function refreshAfterSync(queryClient: QueryClient): void {
 
 /** Quietly look at the remote so "behind" is current. Failures (offline) are not worth a toast. */
 export function useFetchBackup(): UseMutationResult<void, unknown, void> {
-  return useMutation({
-    mutationFn: () => api.backup.fetch(),
+  return useApiMutation({
+    fn: () => api.backup.fetch(),
+    error: false,
   });
 }
 
@@ -52,8 +49,8 @@ export interface StartBackupResult {
 export function useStartBackup(): UseMutationResult<StartBackupResult, unknown, StartBackupInput> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async ({ url, mode, isRepo }: StartBackupInput) => {
+  return useApiMutation({
+    fn: async ({ url, mode, isRepo }: StartBackupInput) => {
       if (mode === "restore") {
         if (isRepo) await api.backup.setRemote(url);
         else await api.backup.clone(url);
@@ -67,6 +64,7 @@ export function useStartBackup(): UseMutationResult<StartBackupResult, unknown, 
       if (outcome) toastSyncOutcome(outcome, t);
       else toastSuccess(t(isRepo ? "backupPage.toast.remoteSaved" : "backupPage.toast.restored"));
     },
+    error: false,
     onError: (error) => toastBackupError(error, t),
     onSettled: () => refreshAfterSync(queryClient),
   });
@@ -75,9 +73,10 @@ export function useStartBackup(): UseMutationResult<StartBackupResult, unknown, 
 /** Save the remote URL. Resolves to the URL as stored, with any credentials taken out. */
 export function useSetBackupRemote(): UseMutationResult<string, unknown, string> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (url: string) => api.backup.setRemote(url),
-    onSuccess: () => toastSuccess(t("backupPage.toast.remoteSaved")),
+  return useApiMutation({
+    fn: (url: string) => api.backup.setRemote(url),
+    success: () => t("backupPage.toast.remoteSaved"),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -85,9 +84,10 @@ export function useSetBackupRemote(): UseMutationResult<string, unknown, string>
 /** Forget the remote and its stored credentials. Local history and the remote stay untouched. */
 export function useRemoveBackupRemote(): UseMutationResult<void, unknown, void> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: () => api.backup.removeRemote(),
-    onSuccess: () => toastSuccess(t("backupPage.toast.disconnected")),
+  return useApiMutation({
+    fn: () => api.backup.removeRemote(),
+    success: () => t("backupPage.toast.disconnected"),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -95,9 +95,10 @@ export function useRemoveBackupRemote(): UseMutationResult<void, unknown, void> 
 /** Recovery: download the remote backup again, keeping skills that only exist here. */
 export function useRecloneBackup(): UseMutationResult<void, unknown, string> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (url: string) => api.backup.reclone(url),
-    onSuccess: () => toastSuccess(t("backupPage.toast.recloned")),
+  return useApiMutation({
+    fn: (url: string) => api.backup.reclone(url),
+    success: () => t("backupPage.toast.recloned"),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -105,13 +106,13 @@ export function useRecloneBackup(): UseMutationResult<void, unknown, string> {
 /** Switch the library to a snapshot. Toasts the safety snapshot taken just before. */
 export function useRestoreSnapshot(): UseMutationResult<string, unknown, string> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (tag: string) => api.backup.restore(tag),
-    onSuccess: (safetyTag) =>
-      toastSuccess(
-        t("backupPage.toast.restoredSnapshot"),
-        t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
-      ),
+  return useApiMutation({
+    fn: (tag: string) => api.backup.restore(tag),
+    success: (safetyTag) => ({
+      message: t("backupPage.toast.restoredSnapshot"),
+      description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
+    }),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -128,14 +129,14 @@ export function useResolveBackupConflict(): UseMutationResult<
   ResolveConflictInput
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ conflict, action }: ResolveConflictInput) =>
+  return useApiMutation({
+    fn: ({ conflict, action }: ResolveConflictInput) =>
       api.backup.resolveConflict(conflict.skillKey, action),
-    onSuccess: (safetyTag, { conflict, action }) =>
-      toastSuccess(
-        t(`backupPage.conflicts.resolved.${action}`, { name: conflict.skillName }),
-        t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
-      ),
+    success: (safetyTag, { conflict, action }) => ({
+      message: t(`backupPage.conflicts.resolved.${action}`, { name: conflict.skillName }),
+      description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
+    }),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -152,17 +153,17 @@ export function useResolveBackupConflicts(): UseMutationResult<
   ResolveConflictsInput
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ conflicts, action }: ResolveConflictsInput) =>
+  return useApiMutation({
+    fn: ({ conflicts, action }: ResolveConflictsInput) =>
       api.backup.resolveConflicts(
         conflicts.map((conflict) => conflict.skillKey),
         action,
       ),
-    onSuccess: (safetyTag, { conflicts, action }) =>
-      toastSuccess(
-        t(`backupPage.conflicts.resolvedAll.${action}`, { count: conflicts.length }),
-        t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
-      ),
+    success: (safetyTag, { conflicts, action }) => ({
+      message: t(`backupPage.conflicts.resolvedAll.${action}`, { count: conflicts.length }),
+      description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
+    }),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -170,9 +171,10 @@ export function useResolveBackupConflicts(): UseMutationResult<
 /** Rename this machine for future backups. */
 export function useSetDeviceName(): UseMutationResult<string, unknown, string> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (name: string) => api.backup.setDeviceName(name),
-    onSuccess: (saved) => toastSuccess(t("backupPage.toast.deviceRenamed", { name: saved })),
+  return useApiMutation({
+    fn: (name: string) => api.backup.setDeviceName(name),
+    success: (saved) => t("backupPage.toast.deviceRenamed", { name: saved }),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -189,13 +191,13 @@ export function useGithubConnect(): UseMutationResult<
   GithubTokenInput
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ token, repoName }: GithubTokenInput) =>
-      api.backup.githubConnect(token, repoName),
+  return useApiMutation({
+    fn: ({ token, repoName }: GithubTokenInput) => api.backup.githubConnect(token, repoName),
     // The token is part of this mutation's input: drop the finished mutation from the cache at
     // once instead of keeping it for minutes.
     gcTime: 0,
     // A public repository is not a failure: the caller asks the user about it.
+    error: false,
     onError: (error) => (publicRepoDetails(error) ? undefined : toastBackupError(error, t)),
   });
 }
@@ -203,8 +205,9 @@ export function useGithubConnect(): UseMutationResult<
 /** Begin "Sign in with GitHub": resolves to the code the user types on github.com. */
 export function useGithubDeviceStart(): UseMutationResult<DeviceFlowStart, unknown, void> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: () => api.backup.githubDeviceStart(),
+  return useApiMutation({
+    fn: () => api.backup.githubDeviceStart(),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
@@ -216,16 +219,18 @@ export interface DevicePollInput {
 
 /** One poll of a running sign-in. The caller owns the timing and the error handling. */
 export function useGithubDevicePoll(): UseMutationResult<DeviceFlowPoll, unknown, DevicePollInput> {
-  return useMutation({
-    mutationFn: ({ deviceCode, repoName }: DevicePollInput) =>
+  return useApiMutation({
+    fn: ({ deviceCode, repoName }: DevicePollInput) =>
       api.backup.githubDevicePoll(deviceCode, repoName),
+    error: false,
   });
 }
 
 /** Clone a backup into an empty library (first run). Errors are shown by the caller, inline. */
 export function useRestoreFromRemote(): UseMutationResult<void, unknown, string> {
-  return useMutation({
-    mutationFn: (url: string) => api.backup.clone(url),
+  return useApiMutation({
+    fn: (url: string) => api.backup.clone(url),
+    error: false,
   });
 }
 
@@ -233,12 +238,13 @@ export function useRestoreFromRemote(): UseMutationResult<void, unknown, string>
 export function useAllowSecretsAndSync(): UseMutationResult<SyncOutcome, unknown, string[]> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async (ids: string[]) => {
+  return useApiMutation({
+    fn: async (ids: string[]) => {
       await api.backup.allowSecrets(ids);
       return api.backup.sync();
     },
     onSuccess: (outcome) => toastSyncOutcome(outcome, t),
+    error: false,
     onError: (error) => toastBackupError(error, t),
     onSettled: () => refreshAfterSync(queryClient),
   });
@@ -248,12 +254,13 @@ export function useAllowSecretsAndSync(): UseMutationResult<SyncOutcome, unknown
 export function useCleanUpAndSync(): UseMutationResult<SyncOutcome, unknown, void> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async () => {
+  return useApiMutation({
+    fn: async () => {
       await api.backup.cleanUpUnpushed();
       return api.backup.sync();
     },
     onSuccess: (outcome) => toastSyncOutcome(outcome, t),
+    error: false,
     onError: (error) => toastBackupError(error, t),
     onSettled: () => refreshAfterSync(queryClient),
   });

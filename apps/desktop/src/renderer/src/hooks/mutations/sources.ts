@@ -1,9 +1,10 @@
 import type { SourceCheckResult } from "@loadout/shared";
-import { type UseMutationResult, useMutation } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
-import { toastError } from "@/lib/toast";
+import { GENERIC_ERROR_KEY } from "@/lib/toast";
 
 /**
  * Look for new skills in repositories: the ones named, or all. Quiet when there is nothing new;
@@ -15,8 +16,8 @@ export function useCheckSources(): UseMutationResult<
   readonly string[] | undefined
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (sourceKeys) => api.updates.checkSources(sourceKeys ? [...sourceKeys] : undefined),
+  return useApiMutation({
+    fn: (sourceKeys) => api.updates.checkSources(sourceKeys ? [...sourceKeys] : undefined),
     onSuccess: (result, sourceKeys) => {
       const asked = sourceKeys ? new Set(sourceKeys) : null;
       const found = result.news
@@ -29,7 +30,7 @@ export function useCheckSources(): UseMutationResult<
       }
       if (found > 0) toast.info(t("sources.news.foundToast", { count: found }));
     },
-    onError: (error) => toastError(error),
+    error: GENERIC_ERROR_KEY,
   });
 }
 
@@ -39,8 +40,8 @@ export function useDismissSourceNews(): UseMutationResult<
   unknown,
   { sourceKey: string; paths?: string[] }
 > {
-  return useMutation({
-    mutationFn: ({ sourceKey, paths }) => api.updates.dismissSourceNews(sourceKey, paths),
-    onError: (error) => toastError(error),
+  return useApiMutation({
+    fn: ({ sourceKey, paths }) => api.updates.dismissSourceNews(sourceKey, paths),
+    error: GENERIC_ERROR_KEY,
   });
 }

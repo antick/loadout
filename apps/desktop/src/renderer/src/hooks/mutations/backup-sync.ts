@@ -5,9 +5,10 @@ import type {
   SyncPreview,
   SyncReviewAnswer,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { refreshAfterSync } from "@/hooks/mutations/backup-page";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { toastBackupError } from "@/lib/backup-errors";
 import { toastSyncOutcome } from "@/lib/backup-toast";
@@ -18,8 +19,9 @@ import { toastSuccess } from "@/lib/toast";
 export function useSetBackupIgnoreRules(): UseMutationResult<BackupIgnoreRules, unknown, string[]> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (custom: string[]) => api.backup.setIgnoreRules(custom),
+  return useApiMutation({
+    fn: (custom: string[]) => api.backup.setIgnoreRules(custom),
+    error: false,
     onSuccess: (rules) => {
       queryClient.setQueryData(keys.backup.ignore, rules);
       toastSuccess(t("backupSync.ignore.saved"));
@@ -30,8 +32,9 @@ export function useSetBackupIgnoreRules(): UseMutationResult<BackupIgnoreRules, 
 /** Fetch and work out what a sync would do. Errors are shown by the caller. */
 export function usePreviewSync(): UseMutationResult<SyncPreview, unknown, void> {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => api.backup.preview(),
+  return useApiMutation({
+    fn: () => api.backup.preview(),
+    error: false,
     // The fetch moved the remote-tracking branch: "behind" may have changed.
     onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.backup.status }),
   });
@@ -45,8 +48,9 @@ export function useReviewedSync(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (review) => api.backup.sync(undefined, review),
+  return useApiMutation({
+    fn: (review) => api.backup.sync(undefined, review),
+    error: false,
     onSuccess: (outcome) => toastSyncOutcome(outcome, t),
     onSettled: () => refreshAfterSync(queryClient),
   });
@@ -55,15 +59,17 @@ export function useReviewedSync(): UseMutationResult<
 /** Connect to a public GitHub repository after all, once the user agreed. */
 export function useGithubConfirmPublic(): UseMutationResult<GithubConnectResult, unknown, string> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (confirmId: string) => api.backup.githubConfirmPublic(confirmId),
+  return useApiMutation({
+    fn: (confirmId: string) => api.backup.githubConfirmPublic(confirmId),
+    error: false,
     onError: (error) => toastBackupError(error, t),
   });
 }
 
 /** Forget a public-repository connect the user turned down. */
 export function useGithubDiscardPublic(): UseMutationResult<void, unknown, string> {
-  return useMutation({
-    mutationFn: (confirmId: string) => api.backup.githubDiscardPublic(confirmId),
+  return useApiMutation({
+    fn: (confirmId: string) => api.backup.githubDiscardPublic(confirmId),
+    error: false,
   });
 }

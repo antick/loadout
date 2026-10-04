@@ -17,8 +17,11 @@ function describeConflicts(conflicts: readonly TargetConflict[]): string {
   return shown.join("\n");
 }
 
+/** i18n key of the message for a failure that says nothing itself. */
+export const GENERIC_ERROR_KEY = "errors.generic";
+
 /** Readable message for anything thrown; `fallbackKey` is an i18n key used when there is none. */
-export function errorMessage(error: unknown, fallbackKey = "errors.generic"): string {
+export function errorMessage(error: unknown, fallbackKey = GENERIC_ERROR_KEY): string {
   if (error instanceof Error && error.message) return error.message;
   if (typeof error === "string" && error) return error;
   return i18n.t(fallbackKey);

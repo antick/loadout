@@ -1,5 +1,6 @@
 import { ApiError, type BatchFailure, type Project } from "@loadout/shared";
-import { type UseMutationResult, useMutation } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/toast";
 
@@ -20,28 +21,30 @@ export interface AddScannedResult {
 
 /** Link one project folder. */
 export function useAddProject(): UseMutationResult<Project, unknown, string> {
-  return useMutation({
-    mutationFn: (path: string) => api.projects.add(path),
+  return useApiMutation({
+    fn: (path: string) => api.projects.add(path),
+    error: false,
   });
 }
 
 /** Link a standalone skills folder as a workspace of its own. */
 export function useAddLinkedWorkspace(): UseMutationResult<Project, unknown, LinkedWorkspaceInput> {
-  return useMutation({
-    mutationFn: ({ name, path, disabledPath }: LinkedWorkspaceInput) =>
+  return useApiMutation({
+    fn: ({ name, path, disabledPath }: LinkedWorkspaceInput) =>
       api.projects.addLinked(name, path, disabledPath),
+    error: false,
   });
 }
 
 /** Look under a root folder for projects that already hold agent skills. */
 export function useScanProjects(): UseMutationResult<string[], unknown, string> {
-  return useMutation({ mutationFn: (root: string) => api.projects.scan(root) });
+  return useApiMutation({ fn: (root: string) => api.projects.scan(root), error: false });
 }
 
 /** Link several scanned folders one after the other, telling duplicates from real failures. */
 export function useAddScannedProjects(): UseMutationResult<AddScannedResult, unknown, string[]> {
-  return useMutation({
-    mutationFn: async (paths: string[]) => {
+  return useApiMutation({
+    fn: async (paths: string[]) => {
       const result: AddScannedResult = { added: [], alreadyLinked: 0, failed: [] };
       for (const path of paths) {
         try {
@@ -54,5 +57,6 @@ export function useAddScannedProjects(): UseMutationResult<AddScannedResult, unk
       }
       return result;
     },
+    error: false,
   });
 }

@@ -1,8 +1,8 @@
 import type { AppUpdateStatus } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
-import { toastError } from "@/lib/toast";
 
 /** The update actions all answer with the new status; keep the cached one in step. */
 function useUpdateAction(
@@ -10,10 +10,10 @@ function useUpdateAction(
   fallbackKey: string,
 ): UseMutationResult<AppUpdateStatus, unknown, void> {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: action,
+  return useApiMutation({
+    fn: action,
     onSuccess: (status) => queryClient.setQueryData(keys.app.update, status),
-    onError: (error) => toastError(error, fallbackKey),
+    error: fallbackKey,
   });
 }
 
@@ -33,8 +33,8 @@ export function useCancelAppUpdate(): UseMutationResult<AppUpdateStatus, unknown
 
 /** Quit and install the downloaded version (or open the Linux package in the system installer). */
 export function useInstallAppUpdate(): UseMutationResult<void, unknown, void> {
-  return useMutation({
-    mutationFn: () => api.app.installUpdate(),
-    onError: (error) => toastError(error, "appUpdate.installFailed"),
+  return useApiMutation({
+    fn: () => api.app.installUpdate(),
+    error: "appUpdate.installFailed",
   });
 }

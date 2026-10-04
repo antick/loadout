@@ -8,15 +8,16 @@ import type {
   ScanResult,
   Skill,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { InstallTaskSuccess } from "@/features/install/install-tasks";
 import { guessSource, hostOf } from "@/features/install/source-guess";
 import { useInstallTask } from "@/features/install/use-install-task";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
-import { toastError } from "@/lib/toast";
+import { GENERIC_ERROR_KEY } from "@/lib/toast";
 
 /** Task key of "import everything the scan found"; the backend reports no progress for it. */
 export const IMPORT_ALL_DISCOVERED_KEY = "scan:import-all";
@@ -169,9 +170,9 @@ export function usePreviewGit(): (repoUrl: string) => Promise<GitPreview | null>
  * caller shows a busy state, and a failure is toasted here.
  */
 export function usePreviewArchive(): UseMutationResult<GitPreview, unknown, string> {
-  return useMutation({
-    mutationFn: (archivePath: string) => api.install.previewArchive(archivePath),
-    onError: (error) => toastError(error, "install.errors.readArchive"),
+  return useApiMutation({
+    fn: (archivePath: string) => api.install.previewArchive(archivePath),
+    error: "install.errors.readArchive",
   });
 }
 
@@ -216,15 +217,18 @@ export function useConfirmGit(): (
 
 /** Native file picker limited to `.zip` and `.skill`. Resolves to null when the user cancels. */
 export function usePickArchive(): UseMutationResult<string | null, unknown, void> {
-  return useMutation({
-    mutationFn: () => api.app.pickArchive(),
-    onError: (error) => toastError(error),
+  return useApiMutation({
+    fn: () => api.app.pickArchive(),
+    error: GENERIC_ERROR_KEY,
   });
 }
 
 /** Throw a preview's checkout away. Never fails loudly: there is nothing the user could do. */
 export function useCancelPreview(): UseMutationResult<void, unknown, string> {
-  return useMutation({ mutationFn: (previewId: string) => api.install.cancelPreview(previewId) });
+  return useApiMutation({
+    fn: (previewId: string) => api.install.cancelPreview(previewId),
+    error: false,
+  });
 }
 
 /** Copy one discovered skill into the library. The agent's own folder is left as it is. */

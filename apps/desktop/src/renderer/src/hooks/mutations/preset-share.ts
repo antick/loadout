@@ -7,18 +7,19 @@ import {
   type PresetImportResult,
   presetFileName,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { toastError } from "@/lib/toast";
 
 /** Save a preset as a file to share, chosen in a "Save as" dialog. Null when cancelled. */
 export function useExportPreset(): UseMutationResult<PresetExportResult | null, unknown, Preset> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async (preset: Preset) => {
+  return useApiMutation({
+    fn: async (preset: Preset) => {
       const path = await api.app.pickSavePath(
         presetFileName(preset.name),
         t("presetShare.export.dialogTitle", { name: preset.name }),
@@ -42,14 +43,15 @@ export function useExportPreset(): UseMutationResult<PresetExportResult | null, 
         },
       });
     },
-    onError: (error) => toastError(error, "presetShare.export.failed"),
+    error: "presetShare.export.failed",
   });
 }
 
 /** Read a preset file or link and say what importing it would do. */
 export function usePreviewPresetImport(): UseMutationResult<PresetImportPlan, unknown, string> {
-  return useMutation({
-    mutationFn: (input: string) => api.presets.previewImport(input),
+  return useApiMutation({
+    fn: (input: string) => api.presets.previewImport(input),
+    error: false,
   });
 }
 
@@ -63,8 +65,8 @@ export function useImportPreset(): UseMutationResult<
   { input: string; name?: string }
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async ({ input, name }) => {
+  return useApiMutation({
+    fn: async ({ input, name }) => {
       try {
         return await api.presets.importFile(input, { name });
       } catch (error) {
@@ -92,6 +94,6 @@ export function useImportPreset(): UseMutationResult<
         descriptionClassName: "whitespace-pre-line",
       });
     },
-    onError: (error) => toastError(error, "presetShare.import.failed"),
+    error: "presetShare.import.failed",
   });
 }

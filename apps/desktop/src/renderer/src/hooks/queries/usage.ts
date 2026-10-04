@@ -2,11 +2,11 @@ import { type SkillUsage, USAGE_STALE_MS, type UsageReport, usageById } from "@l
 import {
   type UseQueryResult,
   useIsMutating,
-  useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
@@ -34,9 +34,11 @@ export function useSkillUsage(): SkillUsageView {
   const queryClient = useQueryClient();
   const report = useUsageReport();
   const scanning = useIsMutating({ mutationKey: keys.usage.scan }) > 0;
-  const scan = useMutation({
+  const scan = useApiMutation({
     mutationKey: keys.usage.scan,
-    mutationFn: () => api.usage.scan(),
+    fn: () => api.usage.scan(),
+    // A background read: a failure waits for the next visit, without a toast.
+    error: false,
     onSuccess: (next) => queryClient.setQueryData(keys.usage.report, next),
   });
   const { mutate } = scan;

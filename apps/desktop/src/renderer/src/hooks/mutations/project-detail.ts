@@ -6,15 +6,16 @@ import type {
   PushToLibraryResult,
   SkillVersion,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { reloadHintFor } from "@/lib/agent-reload";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { describeFailures, runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
-import { toastError, toastSuccess } from "@/lib/toast";
+import { toastSuccess } from "@/lib/toast";
 
 /** One logical skill of a project: every per-agent copy at this relative path. */
 export interface ProjectSkillRef {
@@ -63,16 +64,14 @@ export function useRefreshProject(): (projectId: string) => Promise<void> {
 /** Copy one library skill into a project for the given targets. */
 export function useExportSkill(): UseMutationResult<void, unknown, ExportSkillInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ skillId, projectId, agentKeys }: ExportSkillInput) =>
+  return useApiMutation({
+    fn: ({ skillId, projectId, agentKeys }: ExportSkillInput) =>
       api.projects.exportSkill(skillId, projectId, agentKeys),
-    onSuccess: (_result, { name, targetName }) =>
-      toastSuccess(
-        targetName
-          ? t("projectPage.toast.exportedTo", { name, target: targetName })
-          : t("projectPage.toast.exported", { name }),
-      ),
-    onError: (error) => toastError(error, "projectPage.errors.export"),
+    success: (_result, { name, targetName }) =>
+      targetName
+        ? t("projectPage.toast.exportedTo", { name, target: targetName })
+        : t("projectPage.toast.exported", { name }),
+    error: "projectPage.errors.export",
   });
 }
 
@@ -89,10 +88,10 @@ export function useCreateProjectSkill(): UseMutationResult<
   unknown,
   CreateProjectSkillInput
 > {
-  return useMutation({
-    mutationFn: ({ projectId, skill, agentKeys }: CreateProjectSkillInput) =>
+  return useApiMutation({
+    fn: ({ projectId, skill, agentKeys }: CreateProjectSkillInput) =>
       api.projects.createSkill(projectId, skill, agentKeys),
-    onError: (error) => toastError(error, "library.create.error"),
+    error: "library.create.error",
   });
 }
 
@@ -103,8 +102,8 @@ export function useDeleteProjectSkill(): UseMutationResult<
   DeleteProjectSkillInput
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ projectId, relativePath, agentKey }: DeleteProjectSkillInput) =>
+  return useApiMutation({
+    fn: ({ projectId, relativePath, agentKey }: DeleteProjectSkillInput) =>
       api.projects.deleteSkill(projectId, relativePath, agentKey),
     onSuccess: (removedIds, { name, targetName }) =>
       toastWithUndo(
@@ -113,7 +112,7 @@ export function useDeleteProjectSkill(): UseMutationResult<
           : t("projectPage.toast.deleted", { name }),
         removedIds,
       ),
-    onError: (error) => toastError(error, "projectPage.errors.delete"),
+    error: "projectPage.errors.delete",
   });
 }
 
@@ -130,8 +129,8 @@ export function usePushToLibrary(
   onChooseVersion?: (ref: ProjectSkillRef, versions: SkillVersion[]) => void,
 ): UseMutationResult<PushToLibraryResult, unknown, PushToLibraryInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ projectId, relativePath, options }: PushToLibraryInput) =>
+  return useApiMutation({
+    fn: ({ projectId, relativePath, options }: PushToLibraryInput) =>
       api.projects.pushToLibrary(projectId, relativePath, options),
     onSuccess: (result, { projectId, relativePath, name }) => {
       if (result.conflictingVariants > 0) {
@@ -148,36 +147,34 @@ export function usePushToLibrary(
         });
       } else toastWithUndo(t("projectPage.toast.pushed", { name }), result.removedIds);
     },
-    onError: (error) => toastError(error, "projectPage.errors.push"),
+    error: "projectPage.errors.push",
   });
 }
 
 /** Replace every copy of a project skill with the library version. */
 export function usePullFromLibrary(): UseMutationResult<string[], unknown, PullFromLibraryInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ projectId, relativePath }: PullFromLibraryInput) =>
+  return useApiMutation({
+    fn: ({ projectId, relativePath }: PullFromLibraryInput) =>
       api.projects.pullFromLibrary(projectId, relativePath),
     onSuccess: (removedIds, { name, restore }) =>
       toastWithUndo(
         t(restore ? "projectPage.toast.restored" : "projectPage.toast.pulled", { name }),
         removedIds,
       ),
-    onError: (error) => toastError(error, "projectPage.errors.pull"),
+    error: "projectPage.errors.pull",
   });
 }
 
 /** Switch every copy of a project skill on or off. */
 export function useSetProjectSkillEnabled(): UseMutationResult<void, unknown, SetEnabledInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ projectId, relativePath, enabled }: SetEnabledInput) =>
+  return useApiMutation({
+    fn: ({ projectId, relativePath, enabled }: SetEnabledInput) =>
       api.projects.setSkillEnabled(projectId, relativePath, enabled),
-    onSuccess: (_result, { name, enabled }) =>
-      toastSuccess(
-        t(enabled ? "projectPage.toast.enabled" : "projectPage.toast.disabled", { name }),
-      ),
-    onError: (error) => toastError(error, "projectPage.errors.toggle"),
+    success: (_result, { name, enabled }) =>
+      t(enabled ? "projectPage.toast.enabled" : "projectPage.toast.disabled", { name }),
+    error: "projectPage.errors.toggle",
   });
 }
 
@@ -187,17 +184,14 @@ export function useSetLastExportAgents(): UseMutationResult<
   unknown,
   { projectId: string; agentKeys: string[]; silent?: boolean }
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ projectId, agentKeys }) =>
-      api.projects.setLastExportAgents(projectId, agentKeys),
+  return useApiMutation({
+    fn: ({ projectId, agentKeys }) => api.projects.setLastExportAgents(projectId, agentKeys),
     onSuccess: (_result, { silent }) => {
       if (!silent) toastSuccess(t("projectPage.toast.defaultsSaved"));
     },
-    onError: (error) => toastError(error, "projectPage.errors.saveDefaults"),
-    onSettled: (_result, _error, { projectId }) =>
-      queryClient.invalidateQueries({ queryKey: keys.projects.lastExportAgents(projectId) }),
+    error: "projectPage.errors.saveDefaults",
+    invalidate: ({ projectId }) => [keys.projects.lastExportAgents(projectId)],
   });
 }
 
@@ -237,8 +231,8 @@ export function useExportSkills(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async ({ projectId, jobs }) => {
+  return useApiMutation({
+    fn: async ({ projectId, jobs }) => {
       const result = await runSequentially(
         jobs,
         (job) => job.name,
@@ -255,6 +249,7 @@ export function useExportSkills(): UseMutationResult<
       }
       return result;
     },
+    error: false,
   });
 }
 
@@ -265,8 +260,8 @@ export function useDeleteVariants(): UseMutationResult<
   { projectId: string; jobs: readonly DeleteVariantJob[] }
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async ({ projectId, jobs }) => {
+  return useApiMutation({
+    fn: async ({ projectId, jobs }) => {
       const removedIds: string[] = [];
       const result = await runSequentially(
         jobs,
@@ -284,7 +279,7 @@ export function useDeleteVariants(): UseMutationResult<
       );
       return result;
     },
-    onError: (error) => toastError(error, "projectPage.errors.delete"),
+    error: "projectPage.errors.delete",
   });
 }
 
@@ -295,8 +290,8 @@ export function useDeleteProjectSkills(): UseMutationResult<
   ProjectSkillRef[]
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async (refs: ProjectSkillRef[]) => {
+  return useApiMutation({
+    fn: async (refs: ProjectSkillRef[]) => {
       const removedIds: string[] = [];
       const result = await runSequentially(
         refs,
@@ -312,7 +307,7 @@ export function useDeleteProjectSkills(): UseMutationResult<
       );
       return result;
     },
-    onError: (error) => toastError(error, "projectPage.errors.delete"),
+    error: "projectPage.errors.delete",
   });
 }
 
@@ -323,8 +318,8 @@ export function useSetProjectSkillsEnabled(): UseMutationResult<
   { refs: ProjectSkillRef[]; enabled: boolean }
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ refs, enabled }) =>
+  return useApiMutation({
+    fn: ({ refs, enabled }) =>
       runSequentially(
         refs,
         (ref) => ref.name,
@@ -337,7 +332,7 @@ export function useSetProjectSkillsEnabled(): UseMutationResult<
         }),
         result.failed,
       ),
-    onError: (error) => toastError(error, "projectPage.errors.toggle"),
+    error: "projectPage.errors.toggle",
   });
 }
 
@@ -348,8 +343,8 @@ export function usePullManyFromLibrary(): UseMutationResult<
   ProjectSkillRef[]
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async (refs: ProjectSkillRef[]) => {
+  return useApiMutation({
+    fn: async (refs: ProjectSkillRef[]) => {
       const removedIds: string[] = [];
       const result = await runSequentially(
         refs,
@@ -365,7 +360,7 @@ export function usePullManyFromLibrary(): UseMutationResult<
       );
       return result;
     },
-    onError: (error) => toastError(error, "projectPage.errors.pull"),
+    error: "projectPage.errors.pull",
   });
 }
 
@@ -376,8 +371,8 @@ export function usePushManyToLibrary(): UseMutationResult<
   ProjectSkillRef[]
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async (refs: ProjectSkillRef[]) => {
+  return useApiMutation({
+    fn: async (refs: ProjectSkillRef[]) => {
       const outcome: BatchPushResult = {
         updated: 0,
         conflicting: [],
@@ -427,6 +422,6 @@ export function usePushManyToLibrary(): UseMutationResult<
         });
       }
     },
-    onError: (error) => toastError(error, "projectPage.errors.push"),
+    error: "projectPage.errors.push",
   });
 }

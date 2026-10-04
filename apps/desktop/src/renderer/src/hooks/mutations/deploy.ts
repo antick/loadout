@@ -1,13 +1,9 @@
 import type { ApplyResult, Deployment, Skill } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { reloadHintFor } from "@/lib/agent-reload";
-import { toastApplyResult, toastError } from "@/lib/toast";
+import { toastApplyResult } from "@/lib/toast";
 import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
 
 export interface DeployPairInput {
@@ -53,14 +49,12 @@ function usePairMutation(
   deployed: boolean,
 ): UseMutationResult<void, unknown, DeployPairInput, CacheSnapshot> {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ skillId, agentKey }: DeployPairInput) =>
+  return useApiMutation({
+    fn: ({ skillId, agentKey }: DeployPairInput) =>
       deployed ? api.deploy.deploy(skillId, agentKey) : api.deploy.undeploy(skillId, agentKey),
     onMutate: (input) => flipDeployment(queryClient, input, deployed),
-    onError: (error, _input, context) => {
-      restoreCached(queryClient, context);
-      toastError(error, deployed ? "errors.deploy" : "errors.undeploy");
-    },
+    error: deployed ? "errors.deploy" : "errors.undeploy",
+    onError: (_error, _input, context) => restoreCached(queryClient, context),
   });
 }
 
@@ -87,22 +81,22 @@ export interface SetBlockedInput {
 
 /** Block or allow a skill for agents. Blocking also removes it from an agent it is deployed to. */
 export function useSetBlocked(): UseMutationResult<Skill, unknown, SetBlockedInput> {
-  return useMutation({
-    mutationFn: ({ skillId, agentKeys, blocked }: SetBlockedInput) =>
+  return useApiMutation({
+    fn: ({ skillId, agentKeys, blocked }: SetBlockedInput) =>
       api.deploy.setBlocked(skillId, agentKeys, blocked),
-    onError: (error) => toastError(error, "errors.block"),
+    error: "errors.block",
   });
 }
 
 /** Add or remove many skill × agent pairs in one call and toast the counts. */
 export function useApplySkills(): UseMutationResult<ApplyResult, unknown, ApplySkillsInput> {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ skillIds, agentKeys, action, skipConflicts }: ApplySkillsInput) =>
+  return useApiMutation({
+    fn: ({ skillIds, agentKeys, action, skipConflicts }: ApplySkillsInput) =>
       api.deploy.apply(skillIds, agentKeys, action, skipConflicts ? { skipConflicts } : undefined),
     onSuccess: (result, { action, agentKeys, silent }) => {
       if (!silent) toastApplyResult(result, action, reloadHintFor(queryClient, agentKeys));
     },
-    onError: (error) => toastError(error, "errors.apply"),
+    error: "errors.apply",
   });
 }

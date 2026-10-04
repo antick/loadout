@@ -1,9 +1,10 @@
 import type { Skill, SourceCandidate, SourceChoice, SourceSearch } from "@loadout/shared";
-import { type UseMutationResult, useMutation } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
-import { toastError } from "@/lib/toast";
+import { GENERIC_ERROR_KEY, toastError } from "@/lib/toast";
 
 /** A candidate the user picked, reduced to what linking needs. */
 function choiceOf(candidate: SourceCandidate): SourceChoice {
@@ -13,7 +14,7 @@ function choiceOf(candidate: SourceCandidate): SourceChoice {
 
 /** Look for where a skill without a source came from. Changes nothing; errors show in place. */
 export function useFindSource(): UseMutationResult<SourceSearch, unknown, string> {
-  return useMutation({ mutationFn: (skillId: string) => api.updates.findSource(skillId) });
+  return useApiMutation({ fn: (skillId: string) => api.updates.findSource(skillId), error: false });
 }
 
 /** Compare a skill with a repository the user typed. Changes nothing; errors show in place. */
@@ -22,8 +23,9 @@ export function useLookUpSource(): UseMutationResult<
   unknown,
   { skillId: string; input: string }
 > {
-  return useMutation({
-    mutationFn: ({ skillId, input }) => api.updates.lookUpSource(skillId, input.trim()),
+  return useApiMutation({
+    fn: ({ skillId, input }) => api.updates.lookUpSource(skillId, input.trim()),
+    error: false,
   });
 }
 
@@ -37,8 +39,10 @@ export interface AttachSourceInput {
 /** Make a skill follow the chosen repository from now on. */
 export function useAttachSource(): UseMutationResult<Skill, unknown, AttachSourceInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ skillId, candidate }) => api.updates.attachSource(skillId, choiceOf(candidate)),
+  return useApiMutation({
+    fn: ({ skillId, candidate }) => api.updates.attachSource(skillId, choiceOf(candidate)),
+    // A batch sums up its failures once at the end.
+    error: false,
     onSuccess: (skill, { candidate, announce = true }) => {
       if (!announce) return;
       const differs = candidate.changedFiles.length;
@@ -62,8 +66,8 @@ export function useSetAuthored(): UseMutationResult<
   { skillId: string; authored: boolean; quiet?: boolean }
 > {
   const { t } = useTranslation();
-  const mutation = useMutation({
-    mutationFn: ({ skillId, authored }: { skillId: string; authored: boolean; quiet?: boolean }) =>
+  const mutation = useApiMutation({
+    fn: ({ skillId, authored }: { skillId: string; authored: boolean; quiet?: boolean }) =>
       api.skills.setAuthored(skillId, authored),
     onSuccess: (skill, { authored, quiet }) => {
       if (quiet) return;
@@ -77,7 +81,7 @@ export function useSetAuthored(): UseMutationResult<
         },
       );
     },
-    onError: (error) => toastError(error),
+    error: GENERIC_ERROR_KEY,
   });
   return mutation;
 }

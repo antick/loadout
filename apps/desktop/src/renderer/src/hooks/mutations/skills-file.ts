@@ -5,14 +5,15 @@ import {
   type SkillsFileInit,
   type SkillsFileResult,
 } from "@loadout/shared";
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import type { SkillsFileMode } from "@/hooks/queries/skills-file";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
-import { toastError, toastSuccess } from "@/lib/toast";
+import { toastSuccess } from "@/lib/toast";
 
 /** Write a new `skills.toml` in the project folder. */
 export function useCreateSkillsFile(): UseMutationResult<
@@ -20,13 +21,12 @@ export function useCreateSkillsFile(): UseMutationResult<
   unknown,
   { dir: string; init: SkillsFileInit }
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ dir, init }) => api.skillsFile.create(dir, init),
-    onSuccess: () => toastSuccess(t("skillsFile.created")),
-    onError: (error) => toastError(error, "skillsFile.errors.create"),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.skillsFile.root }),
+  return useApiMutation({
+    fn: ({ dir, init }) => api.skillsFile.create(dir, init),
+    success: () => t("skillsFile.created"),
+    error: "skillsFile.errors.create",
+    invalidate: [keys.skillsFile.root],
   });
 }
 
@@ -40,10 +40,9 @@ export function useRunSkillsFile(): UseMutationResult<
   unknown,
   { dir: string; mode: SkillsFileMode; options: SkillsFileApplyOptions }
 > {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async ({ dir, mode, options }) => {
+  return useApiMutation({
+    fn: async ({ dir, mode, options }) => {
       if (mode === "unapply") return api.skillsFile.unapply(dir, { force: options.force });
       const apply = { ...options, update: mode === "update" };
       try {
@@ -74,7 +73,7 @@ export function useRunSkillsFile(): UseMutationResult<
       const kept = t("skillsFile.keptNote", { folders: result.kept.join(", ") });
       toast.warning(summary, { description: [removed, kept].filter(Boolean).join("\n") });
     },
-    onError: (error) => toastError(error, "skillsFile.errors.apply"),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: keys.skillsFile.root }),
+    error: "skillsFile.errors.apply",
+    invalidate: [keys.skillsFile.root],
   });
 }

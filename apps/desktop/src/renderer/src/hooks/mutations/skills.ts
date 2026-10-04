@@ -4,17 +4,13 @@ import {
   type RenameResult,
   type Skill,
 } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
-import { toastError, toastSuccess } from "@/lib/toast";
+import { toastSuccess } from "@/lib/toast";
 import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
 
 export interface SetSkillTagsInput {
@@ -24,9 +20,9 @@ export interface SetSkillTagsInput {
 
 /** Replace one skill's tags. Silent on success: batch callers toast once for the whole set. */
 export function useSetSkillTags(): UseMutationResult<void, unknown, SetSkillTagsInput> {
-  return useMutation({
-    mutationFn: ({ skillId, tags }: SetSkillTagsInput) => api.skills.setTags(skillId, tags),
-    onError: (error) => toastError(error, "errors.saveTags"),
+  return useApiMutation({
+    fn: ({ skillId, tags }: SetSkillTagsInput) => api.skills.setTags(skillId, tags),
+    error: "errors.saveTags",
   });
 }
 
@@ -39,11 +35,10 @@ export interface SetSkillNoteInput {
 /** Replace the user's note on one skill. */
 export function useSetSkillNote(): UseMutationResult<Skill, unknown, SetSkillNoteInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ skillId, note }: SetSkillNoteInput) => api.skills.setNote(skillId, note),
-    onSuccess: (skill) =>
-      toastSuccess(skill.note ? t("library.note.saved") : t("library.note.removed")),
-    onError: (error) => toastError(error, "library.note.errors.save"),
+  return useApiMutation({
+    fn: ({ skillId, note }: SetSkillNoteInput) => api.skills.setNote(skillId, note),
+    success: (skill) => (skill.note ? t("library.note.saved") : t("library.note.removed")),
+    error: "library.note.errors.save",
   });
 }
 
@@ -71,14 +66,11 @@ export function useSetFavorite(): UseMutationResult<
   CacheSnapshot
 > {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ skillId, favorite }: SetFavoriteInput) =>
-      api.skills.setFavorite(skillId, favorite),
+  return useApiMutation({
+    fn: ({ skillId, favorite }: SetFavoriteInput) => api.skills.setFavorite(skillId, favorite),
     onMutate: (input) => flipFavorite(queryClient, input),
-    onError: (error, _input, context) => {
-      restoreCached(queryClient, context);
-      toastError(error, "library.favorites.errors.save");
-    },
+    error: "library.favorites.errors.save",
+    onError: (_error, _input, context) => restoreCached(queryClient, context),
   });
 }
 
@@ -89,8 +81,8 @@ export function useRenameSkill(): UseMutationResult<
   { skillId: string; name: string }
 > {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ skillId, name }) => api.skills.rename(skillId, name),
+  return useApiMutation({
+    fn: ({ skillId, name }) => api.skills.rename(skillId, name),
     onSuccess: (result) => {
       const title = t("library.rename.done", { from: result.from, to: result.to });
       if (result.failed.length === 0) toastSuccess(title);
@@ -101,35 +93,35 @@ export function useRenameSkill(): UseMutationResult<
           }),
         });
     },
-    onError: (error) => toastError(error, "library.rename.error"),
+    error: "library.rename.error",
   });
 }
 
 /** Rename a tag everywhere it is used. */
 export function useRenameTag(): UseMutationResult<void, unknown, { from: string; to: string }> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ from, to }) => api.skills.renameTag(from, to),
-    onSuccess: (_result, { from, to }) => toastSuccess(t("tags.renamed", { from, to })),
-    onError: (error) => toastError(error, "errors.saveTags"),
+  return useApiMutation({
+    fn: ({ from, to }) => api.skills.renameTag(from, to),
+    success: (_result, { from, to }) => t("tags.renamed", { from, to }),
+    error: "errors.saveTags",
   });
 }
 
 /** Remove a tag from every skill. */
 export function useDeleteTag(): UseMutationResult<void, unknown, string> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (tag: string) => api.skills.deleteTag(tag),
-    onSuccess: (_result, tag) => toastSuccess(t("tags.deleted", { tag })),
-    onError: (error) => toastError(error, "errors.saveTags"),
+  return useApiMutation({
+    fn: (tag: string) => api.skills.deleteTag(tag),
+    success: (_result, tag) => t("tags.deleted", { tag }),
+    error: "errors.saveTags",
   });
 }
 
 /** Remove skills from the library (and every agent they were deployed to). Toasts the counts. */
 export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown, string[]> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (skillIds: string[]) => api.skills.removeMany(skillIds),
+  return useApiMutation({
+    fn: (skillIds: string[]) => api.skills.removeMany(skillIds),
     onSuccess: (result) => {
       const summary = t("skills.removed", { count: result.succeeded });
       const kept = t("skills.removedKept", {
@@ -148,6 +140,6 @@ export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown
         action: undoAction(result.removedIds),
       });
     },
-    onError: (error) => toastError(error, "errors.removeSkills"),
+    error: "errors.removeSkills",
   });
 }

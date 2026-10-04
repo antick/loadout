@@ -1,7 +1,7 @@
-import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
-import { toastError } from "@/lib/toast";
 
 export interface DismissDuplicateInput {
   idA: string;
@@ -12,11 +12,10 @@ export interface DismissDuplicateInput {
 
 /** Say two skills are not the same skill, so they stop being listed, or take that back. */
 export function useDismissDuplicate(): UseMutationResult<void, unknown, DismissDuplicateInput> {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ idA, idB, dismissed }) =>
+  return useApiMutation({
+    fn: ({ idA, idB, dismissed }) =>
       dismissed ? api.duplicates.dismiss(idA, idB) : api.duplicates.undismiss(idA, idB),
-    onError: (error) => toastError(error, "duplicates.errors.dismiss"),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.skills.root }),
+    error: "duplicates.errors.dismiss",
+    invalidate: [keys.skills.root],
   });
 }

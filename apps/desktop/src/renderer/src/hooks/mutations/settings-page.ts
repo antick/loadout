@@ -6,17 +6,13 @@ import {
   type LibraryLocation,
   type LogExport,
 } from "@loadout/shared";
-import {
-  type QueryClient,
-  type UseMutationResult,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
-import { toastError, toastSuccess } from "@/lib/toast";
+import { GENERIC_ERROR_KEY, toastError } from "@/lib/toast";
 
 /** Patch one agent in the cached list so switches answer at once. */
 function patchAgent(queryClient: QueryClient, key: string, patch: Partial<AgentInfo>): void {
@@ -31,20 +27,20 @@ export function useSetAgentEnabled(): UseMutationResult<
   { key: string; enabled: boolean }
 > {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ key, enabled }) => api.agents.setEnabled(key, enabled),
+  return useApiMutation({
+    fn: ({ key, enabled }) => api.agents.setEnabled(key, enabled),
     onMutate: ({ key, enabled }) => patchAgent(queryClient, key, { enabled }),
-    onError: (error) => toastError(error, "settings.agents.errors.save"),
+    error: "settings.agents.errors.save",
   });
 }
 
 export function useSetAllAgentsEnabled(): UseMutationResult<void, unknown, boolean> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (enabled: boolean) => api.agents.setAllEnabled(enabled),
-    onSuccess: (_result, enabled) =>
-      toastSuccess(t(enabled ? "settings.agents.allEnabled" : "settings.agents.allDisabled")),
-    onError: (error) => toastError(error, "settings.agents.errors.save"),
+  return useApiMutation({
+    fn: (enabled: boolean) => api.agents.setAllEnabled(enabled),
+    success: (_result, enabled) =>
+      t(enabled ? "settings.agents.allEnabled" : "settings.agents.allDisabled"),
+    error: "settings.agents.errors.save",
   });
 }
 
@@ -56,8 +52,8 @@ export function useSetAgentOrder(): UseMutationResult<
   { previous?: AgentInfo[] }
 > {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (agentKeys: string[]) => api.agents.setOrder(agentKeys),
+  return useApiMutation({
+    fn: (agentKeys: string[]) => api.agents.setOrder(agentKeys),
     onMutate: async (agentKeys) => {
       await queryClient.cancelQueries({ queryKey: keys.agents.all });
       const previous = queryClient.getQueryData<AgentInfo[]>(keys.agents.all);
@@ -71,9 +67,9 @@ export function useSetAgentOrder(): UseMutationResult<
       }
       return { previous };
     },
-    onError: (error, _keys, context) => {
+    error: "errors.reorder",
+    onError: (_error, _keys, context) => {
       if (context?.previous) queryClient.setQueryData(keys.agents.all, context.previous);
-      toastError(error, "errors.reorder");
     },
   });
 }
@@ -81,19 +77,19 @@ export function useSetAgentOrder(): UseMutationResult<
 /** Add a custom agent. The form shows the backend's validation message itself. */
 export function useAddCustomAgent(): UseMutationResult<AgentInfo, unknown, CustomAgentInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (input: CustomAgentInput) => api.agents.addCustom(input),
-    onSuccess: (agent) => toastSuccess(t("settings.agents.added", { name: agent.displayName })),
+  return useApiMutation({
+    fn: (input: CustomAgentInput) => api.agents.addCustom(input),
+    error: false,
+    success: (agent) => t("settings.agents.added", { name: agent.displayName }),
   });
 }
 
 export function useRemoveCustomAgent(): UseMutationResult<void, unknown, AgentInfo> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: (agent: AgentInfo) => api.agents.removeCustom(agent.key),
-    onSuccess: (_result, agent) =>
-      toastSuccess(t("settings.agents.removed", { name: agent.displayName })),
-    onError: (error) => toastError(error, "settings.agents.errors.remove"),
+  return useApiMutation({
+    fn: (agent: AgentInfo) => api.agents.removeCustom(agent.key),
+    success: (_result, agent) => t("settings.agents.removed", { name: agent.displayName }),
+    error: "settings.agents.errors.remove",
   });
 }
 
@@ -111,8 +107,8 @@ export interface SetAgentPathInput {
 /** Change or reset where an agent keeps its skills, globally or inside projects. */
 export function useSetAgentPath(): UseMutationResult<void, unknown, SetAgentPathInput> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: ({ key, kind, path, reset }: SetAgentPathInput) => {
+  return useApiMutation({
+    fn: ({ key, kind, path, reset }: SetAgentPathInput) => {
       if (kind === "global") {
         return reset ? api.agents.resetSkillsDir(key) : api.agents.setSkillsDir(key, path ?? "");
       }
@@ -120,41 +116,41 @@ export function useSetAgentPath(): UseMutationResult<void, unknown, SetAgentPath
         ? api.agents.resetProjectSkillsDir(key)
         : api.agents.setProjectSkillsDir(key, path);
     },
-    onSuccess: (_result, { reset }) =>
-      toastSuccess(t(reset ? "settings.agents.pathReset" : "settings.agents.pathSaved")),
-    onError: (error) => toastError(error, "settings.agents.errors.path"),
+    success: (_result, { reset }) =>
+      t(reset ? "settings.agents.pathReset" : "settings.agents.pathSaved"),
+    error: "settings.agents.errors.path",
   });
 }
 
 /** Move the library (null = back to the default folder). Takes effect after a restart. */
 export function useSetLibraryPath(): UseMutationResult<LibraryLocation, unknown, string | null> {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (path: string | null) => api.system.setLibraryPath(path),
+  return useApiMutation({
+    fn: (path: string | null) => api.system.setLibraryPath(path),
     onSuccess: (location) => queryClient.setQueryData(keys.system.libraryLocation, location),
-    onError: (error) => toastError(error, "settings.general.library.error"),
+    error: "settings.general.library.error",
   });
 }
 
 export function useRevealLibrary(): UseMutationResult<void, unknown, void> {
-  return useMutation({
-    mutationFn: () => api.system.revealLibrary(),
-    onError: (error) => toastError(error, "errors.reveal"),
+  return useApiMutation({
+    fn: () => api.system.revealLibrary(),
+    error: "errors.reveal",
   });
 }
 
 export function useRestartApp(): UseMutationResult<void, unknown, void> {
-  return useMutation({
-    mutationFn: () => api.app.restart(),
-    onError: (error) => toastError(error),
+  return useApiMutation({
+    fn: () => api.app.restart(),
+    error: GENERIC_ERROR_KEY,
   });
 }
 
 /** Write the logs to a zip file and offer to show it. */
 export function useExportLogs(): UseMutationResult<LogExport, unknown, void> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: () => api.system.exportLogs(),
+  return useApiMutation({
+    fn: () => api.system.exportLogs(),
     onSuccess: (result) =>
       toast.success(t("settings.about.logsExported", { count: result.fileCount }), {
         description: result.zipPath,
@@ -164,7 +160,7 @@ export function useExportLogs(): UseMutationResult<LogExport, unknown, void> {
           onClick: () => void api.app.revealPath(result.zipPath).catch(toastError),
         },
       }),
-    onError: (error) => toastError(error, "settings.about.logsFailed"),
+    error: "settings.about.logsFailed",
   });
 }
 
@@ -176,8 +172,8 @@ const CODE_FENCE = "```";
  */
 export function useCopyDiagnostics(): UseMutationResult<void, unknown, void> {
   const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async () => {
+  return useApiMutation({
+    fn: async () => {
       const [info, log, crash, agents] = await Promise.all([
         api.system.diagnostics(),
         api.system.logExcerpt(),
@@ -204,7 +200,7 @@ export function useCopyDiagnostics(): UseMutationResult<void, unknown, void> {
       ];
       await api.app.copyText(lines.join("\n"));
     },
-    onSuccess: () => toastSuccess(t("settings.about.diagnosticsCopied")),
-    onError: (error) => toastError(error, "errors.copy"),
+    success: () => t("settings.about.diagnosticsCopied"),
+    error: "errors.copy",
   });
 }
