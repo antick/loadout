@@ -8,7 +8,7 @@
     "dev": "turbo run dev --filter=@loadout/desktop --continue=dependencies-successful",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test --concurrency=1",
+    "test": "node scripts/test.mjs",
     "lint": "oxlint --deny-warnings && node scripts/check-dashes.mjs",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
