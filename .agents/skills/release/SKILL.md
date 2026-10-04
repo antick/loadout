@@ -117,8 +117,20 @@ missing: stop and report.
 gh release edit "v<version>" --draft=false --latest
 ```
 
-Installed copies of the app offer the update within six hours; the landing page links to the
-latest release on its own.
+Installed copies of the app offer the update within six hours.
+
+The landing page does not update on its own: it reads the newest release when Vercel builds it,
+and the push in step 4 built it before this release was published. Publishing starts **Rebuild
+the landing page** (`.github/workflows/deploy-landing.yml`), which calls a Vercel deploy hook:
+
+```sh
+gh run list --workflow deploy-landing.yml --limit 1
+gh run watch <run-id> --exit-status               # a minute or two
+```
+
+Its run summary saying "No VERCEL_DEPLOY_HOOK_URL secret" means the hook is not set up: the page
+keeps offering the previous version until the next push to `main`. Tell the user, with the steps
+in "The landing page" below.
 
 ## 7. Watch the CLI reach npm
 
@@ -148,6 +160,21 @@ gh release view --json tagName,isDraft,url           # the new tag, isDraft fals
 pnpm view @antick/loadout version                     # the new version; the registry can lag a minute
 ```
 
-Report in a few lines: the version, the GitHub release URL, the npm package URL
+Report in a few lines: the version, the GitHub release URL, whether loadout.potion.sh was
+rebuilt, the npm package URL
 (`https://www.npmjs.com/package/@antick/loadout`), and that users update the CLI with
 `pnpm add -g @antick/loadout@latest`. List anything that failed or was skipped.
+
+## The landing page
+
+Rebuilding loadout.potion.sh after a release needs a Vercel deploy hook, stored as a GitHub
+secret. The user sets it up once:
+
+1. Go to https://vercel.com, open the project that serves loadout.potion.sh, then
+   **Settings** → **Git** → **Deploy Hooks**
+2. Name it `GitHub release`, branch `main`, click **Create Hook**, and copy the URL
+3. Go to https://github.com/antick/loadout/settings/secrets/actions and click
+   **New repository secret**
+4. Name `VERCEL_DEPLOY_HOOK_URL`, paste the URL as the secret, click **Add secret**
+
+Then rebuild the page for the release just published: `gh workflow run deploy-landing.yml`.

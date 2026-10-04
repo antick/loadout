@@ -1,0 +1,58 @@
+name: Rebuild the landing page
+
+# The landing page takes its version and installer links from the newest published release's
+# latest.json when Vercel builds it (apps/landing/src/lib/downloads.ts). Vercel builds on every
+# push to main, but a release is published after its push, so the page would offer the previous
+# version until the next push. Publishing a release therefore asks Vercel to build again, through
+# a deploy hook whose URL is the repository secret VERCEL_DEPLOY_HOOK_URL. Without the secret the
+# run says so and stops; nothing else waits on it. Run it by hand from the Actions tab to rebuild
+# the page at any time.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: Rebuild loadout.potion.sh
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check for the deploy hook
+        id: hook
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "::notice::No VERCEL_DEPLOY_HOOK_URL secret, so the landing page was not rebuilt."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The build reads the feed of the newest release; wait until GitHub serves this one's.
+      - name: Wait for the new release's feed
+        if: steps.hook.outputs.skip != 'true' && github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          feed="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/latest.json"
+          for attempt in $(seq 1 12); do
+            version="$(curl --fail --silent --location --max-time 20 "$feed" | jq -r .version || true)"
+            if [ "v${version}" = "$TAG" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "::warning::The newest release's feed still says ${version:-nothing}, not ${TAG#v}. Rebuilding anyway."
+
+      - name: Call the deploy hook
+        if: steps.hook.outputs.skip != 'true'
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          curl --fail --silent --show-error --max-time 30 --retry 3 --request POST "$HOOK_URL" > /dev/null
+          echo "::notice::Vercel is rebuilding the landing page."

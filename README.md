@@ -190,23 +190,13 @@ SHA-256) with `apps/desktop/scripts/update-feed.mjs`, and puts everything in a *
 
 ### Cut a release
 
-1. Set the new version in `apps/desktop/package.json` and commit it.
-2. Tag the commit with that version and push the tag, for example for 0.2.0:
+Every step, from picking the version to checking npm, is in the release skill,
+[.agents/skills/release/SKILL.md](.agents/skills/release/SKILL.md). Ask an agent to run it
+(`/release`), or follow it by hand.
 
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
-
-3. When the workflow finishes, open github.com/antick/loadout/releases, check the draft and click
-   **Publish release**.
-
-Publishing puts the release live. Every running copy of Loadout offers it within six hours, or
-right away through Settings → About → Check for updates. A draft is invisible to users and to
-the update check.
-
-A tag that doesn't match the version in `apps/desktop/package.json` stops the workflow. Don't
-mark a release as a pre-release: the update check only sees the newest full release.
+Publishing the draft puts the release live: running copies of Loadout offer it within six hours,
+and a draft is invisible to users and to the update check. Don't mark a release as a
+pre-release: the update check only sees the newest full release.
 
 The workflow signs `latest.json` with an ed25519 key (repository secret
 `UPDATE_FEED_SIGNING_KEY`) and uploads `latest.json.sig`. From 0.2.1 on, the app ignores a feed
@@ -220,6 +210,15 @@ key, which is impossible without it.
 Publishing a release also publishes the CLI of that tag to npm as `@antick/loadout`
 (`.github/workflows/publish-npm.yml`). No npm token is stored: npm trusts that workflow through
 trusted publishing. A failed run can be re-run from the Actions tab.
+
+### The landing page
+
+The landing page takes its version and installer links from the newest published release when
+it is built, and Vercel builds it on pushes to `main`, before the release is published. So
+publishing a release also has Vercel rebuild it through a deploy hook
+(`.github/workflows/deploy-landing.yml`, repository secret `VERCEL_DEPLOY_HOOK_URL`). Without the
+secret that run only leaves a notice, and the page offers the previous version until the next
+push to `main`.
 
 ### Test an update locally
 
