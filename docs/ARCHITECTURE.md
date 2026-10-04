@@ -89,7 +89,9 @@ only place services are constructed, so dependencies are explicit and there are 
 
 Renderer data flow: TanStack Query for every read, keyed by namespace. The main process emits
 `data:changed { scope }`; `lib/events.ts` turns that into query invalidation. Mutations toast
-their outcome and rely on the same invalidation.
+their outcome and rely on the same invalidation: `hooks/use-api-mutation.ts` toasts and refetches
+only keys no scope covers. `hooks/` holds what several features share; a hook only one feature
+uses lives in `features/<x>/`.
 
 ## Library on disk
 
