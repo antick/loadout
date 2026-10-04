@@ -7,8 +7,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { SafetyReportView } from "@/features/safety/SafetyReportView";
 import { useScanSkill } from "@/features/library/detail/skill-mutations";
+import { SafetyReportView } from "@/features/safety/SafetyReportView";
 import { useSafetyReports, useSafetyStatus } from "@/hooks/queries/safety";
 
 /** The skill's last safety report, and a button to check it (again). */

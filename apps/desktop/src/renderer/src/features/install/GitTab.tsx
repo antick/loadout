@@ -15,6 +15,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { GIT_DOWNLOAD_URL, GIT_URL_EXAMPLES } from "@/features/install/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
+import { useDiagnostics } from "@/features/install/install-queries";
 import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import {
   COMMAND_ICON,
@@ -26,7 +27,6 @@ import { useInstallTask } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
 import { useCancelPreview, usePreviewGit } from "@/hooks/mutations/install";
-import { useDiagnostics } from "@/features/install/install-queries";
 
 /**
  * What works without Git, or how private repositories work with it. Shown once the Git check has

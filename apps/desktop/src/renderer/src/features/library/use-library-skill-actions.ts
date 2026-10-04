@@ -17,13 +17,13 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useShell } from "@/components/layout/shell-context";
 import type { SkillAction } from "@/components/skill-action";
-import { useDeleteSkills } from "@/features/library/use-delete-skills";
-import { useOpenInEditor } from "@/hooks/mutations/app";
 import {
   useCheckSkillUpdate,
   useExportSkills,
   useRevealSkill,
 } from "@/features/library/library-mutations";
+import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { useOpenInEditor } from "@/hooks/mutations/app";
 import { useSetFavorite } from "@/hooks/mutations/skills";
 import { useDefaultEditor } from "@/hooks/use-default-editor";
 import { hasTrackedSource } from "@/lib/skill-source";

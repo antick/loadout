@@ -2,15 +2,15 @@ import type { SkillFileEntry, SkillLocation } from "@loadout/shared";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
-import type { FileActions } from "@/features/editor/EditorFileMenu";
-import type { FileNameDialogProps, NameRequest } from "@/features/editor/FileNameDialog";
-import { isWithin, movedPath, nameOf, takenPaths } from "@/features/editor/file-tree";
 import {
   useCreateSkillFile,
   useCreateSkillFolder,
   useDeleteSkillFile,
   useRenameSkillFile,
 } from "@/features/editor/editor-mutations";
+import type { FileActions } from "@/features/editor/EditorFileMenu";
+import type { FileNameDialogProps, NameRequest } from "@/features/editor/FileNameDialog";
+import { isWithin, movedPath, nameOf, takenPaths } from "@/features/editor/file-tree";
 
 export interface FileActionsOptions {
   location: SkillLocation;

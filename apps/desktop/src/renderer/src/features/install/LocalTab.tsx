@@ -12,16 +12,16 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
-import { cn } from "@/lib/utils";
-import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
-import { useInstallTask } from "@/features/install/use-install-task";
-import { usePreviewChoice } from "@/features/install/use-preview-choice";
-import { useCancelPreview, usePreviewArchive } from "@/hooks/mutations/install";
 import {
   useImportFolder,
   useInstallFromPath,
   usePickArchive,
 } from "@/features/install/install-mutations";
+import { cn } from "@/lib/utils";
+import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
+import { useInstallTask } from "@/features/install/use-install-task";
+import { usePreviewChoice } from "@/features/install/use-preview-choice";
+import { useCancelPreview, usePreviewArchive } from "@/hooks/mutations/install";
 import { usePickFolder } from "@/hooks/mutations/app";
 
 type SourceKind = "folder" | "archive";

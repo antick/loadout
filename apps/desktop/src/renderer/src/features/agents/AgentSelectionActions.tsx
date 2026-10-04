@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useDeleteLocalSkills } from "@/features/agents/workspace-mutations";
+import { useApplySkills } from "@/hooks/mutations/deploy";
 import { agentSkillRules } from "./agent-skill-rules";
 
 export interface AgentSelectionActionsProps {

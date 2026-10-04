@@ -13,10 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DuplicatePairCard } from "@/features/library/duplicates/DuplicatePairCard";
-import { useMergeDuplicate } from "@/features/library/duplicates/use-merge-duplicate";
 import { useDismissDuplicate } from "@/features/library/duplicates/duplicate-mutations";
 import { useDuplicates } from "@/features/library/duplicates/duplicate-queries";
+import { DuplicatePairCard } from "@/features/library/duplicates/DuplicatePairCard";
+import { useMergeDuplicate } from "@/features/library/duplicates/use-merge-duplicate";
 import { useSkills } from "@/hooks/queries/skills";
 
 export interface DuplicatesDialogProps {

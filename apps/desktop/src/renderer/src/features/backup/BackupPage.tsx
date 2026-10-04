@@ -4,14 +4,14 @@ import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { useOpenExternal } from "@/hooks/mutations/app";
 import { useFetchBackup, useSetDeviceName } from "@/features/backup/backup-mutations";
-import { useBackupStatus } from "@/hooks/queries/app";
 import {
   useBackupConflicts,
   useBackupDeviceName,
   useBackupSnapshots,
 } from "@/features/backup/backup-queries";
+import { useOpenExternal } from "@/hooks/mutations/app";
+import { useBackupStatus } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
 import { backupErrorText, isAuthError, isRecoverableError } from "@/lib/backup-errors";
 import { useAppEvent } from "@/lib/events";

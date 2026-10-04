@@ -7,9 +7,8 @@ import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePickFolder } from "@/hooks/mutations/app";
 import { useRevealLibrary, useSetLibraryPath } from "@/features/settings/settings-mutations";
-import { useRestartApp } from "@/hooks/mutations/app";
+import { usePickFolder, useRestartApp } from "@/hooks/mutations/app";
 import { useLibraryLocation } from "@/hooks/queries/app";
 
 /** Where the library lives. A new location only takes effect after a restart. */

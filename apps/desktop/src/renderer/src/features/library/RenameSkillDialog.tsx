@@ -23,9 +23,9 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useRenameSkill } from "@/features/library/library-mutations";
+import { useRenamePreview } from "@/features/library/library-queries";
 import { useAgents } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
-import { useRenamePreview } from "@/features/library/library-queries";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { errorMessage } from "@/lib/toast";
 

@@ -7,8 +7,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { type PageCrumb, PageHeader } from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EditorWorkspace } from "@/features/editor/EditorWorkspace";
 import { useEditTarget } from "@/features/editor/editor-queries";
+import { EditorWorkspace } from "@/features/editor/EditorWorkspace";
 import { useSkill } from "@/hooks/queries/skills";
 import { locationKey } from "@/lib/skill-location";
 

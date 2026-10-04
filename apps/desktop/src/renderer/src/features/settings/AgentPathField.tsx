@@ -5,8 +5,8 @@ import { IconButton } from "@/components/IconButton";
 import { PathText } from "@/components/PathText";
 import { Input } from "@/components/ui/input";
 import { WslFolderNote } from "@/components/WslFolderNote";
-import { usePickFolder } from "@/hooks/mutations/app";
 import { type AgentPathKind, useSetAgentPath } from "@/features/settings/settings-mutations";
+import { usePickFolder } from "@/hooks/mutations/app";
 
 export interface AgentPathFieldProps {
   agentKey: string;

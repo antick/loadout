@@ -26,12 +26,11 @@ import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { ReportProblemDialog } from "@/features/library/detail/ReportProblemDialog";
-import type { SkillRefresh } from "@/features/library/detail/use-skill-refresh";
-import { FindSourceSection } from "@/features/origin/FindSourceSection";
-import { useOpenExternal } from "@/hooks/mutations/app";
-import { usePickFolder } from "@/hooks/mutations/app";
 import { useDetachSkill } from "@/features/library/detail/skill-mutations";
+import type { SkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { useCheckSkillUpdate } from "@/features/library/library-mutations";
+import { FindSourceSection } from "@/features/origin/FindSourceSection";
+import { useOpenExternal, usePickFolder } from "@/hooks/mutations/app";
 import { installPhaseText } from "@/features/install/install-tasks";
 
 /** Characters of a revision shown; the full value stays in the tooltip. */

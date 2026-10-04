@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/ui/button";
-import { useOpenExternal } from "@/hooks/mutations/app";
 import { useRemoveBackupRemote } from "@/features/backup/backup-mutations";
 import { useGithubAuthMethod } from "@/features/backup/backup-queries";
+import { useOpenExternal } from "@/hooks/mutations/app";
 import { useSetting } from "@/hooks/queries/settings";
 import {
   GITHUB_AUTHORIZED_APPS_URL,

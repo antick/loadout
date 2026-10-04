@@ -19,13 +19,16 @@ import { Spinner } from "@/components/ui/spinner";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { FindSourcesDialog } from "@/features/origin/FindSourcesDialog";
+import {
+  useCheckSkills,
+  useCheckSources,
+  useDismissSourceNews,
+} from "@/features/sources/source-mutations";
+import { useSourceNews } from "@/features/sources/source-queries";
 import { SourceCard } from "@/features/sources/SourceCard";
 import { useBrowseSource } from "@/features/sources/use-browse-source";
 import { useCopyText } from "@/hooks/mutations/app";
 import { useUpdateSkills } from "@/hooks/mutations/library";
-import { useCheckSkills } from "@/features/sources/source-mutations";
-import { useCheckSources, useDismissSourceNews } from "@/features/sources/source-mutations";
-import { useSourceNews } from "@/features/sources/source-queries";
 import { useSkills } from "@/hooks/queries/skills";
 
 /** Cards of sources, one column when narrow, two when there is room. */

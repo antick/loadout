@@ -10,8 +10,8 @@ import { Panel } from "@/components/Panel";
 import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAgentControlStatus } from "@/hooks/queries/dashboard";
 import { useCliStatus } from "@/features/settings/settings-queries";
+import { useAgentControlStatus } from "@/hooks/queries/dashboard";
 
 /** Example invocations, keyed by their caption under `settings.cli.examples.*`. */
 const EXAMPLES = {

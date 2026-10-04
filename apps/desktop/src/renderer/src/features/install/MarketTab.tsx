@@ -42,13 +42,13 @@ import {
   MARKET_SKELETON_COUNT,
   SOURCE_FILTER_ALL,
 } from "@/features/install/constants";
+import { marketTaskKey, useInstallFromMarket } from "@/features/install/install-mutations";
+import { useMarketBoard, useMarketSearch } from "@/features/install/install-queries";
 import { filterBySource, marketSkillUrl, sourceOptions } from "@/features/install/market-filters";
 import { MarketDetailSheet } from "@/features/install/MarketDetailSheet";
 import { MarketSkillCard } from "@/features/install/MarketSkillCard";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { marketTaskKey, useInstallFromMarket } from "@/features/install/install-mutations";
-import { useMarketBoard, useMarketSearch } from "@/features/install/install-queries";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { cn } from "@/lib/utils";

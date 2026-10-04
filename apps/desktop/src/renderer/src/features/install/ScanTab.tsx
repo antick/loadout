@@ -12,15 +12,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { SCAN_SKELETON_COUNT, SCAN_STAT_COUNT } from "@/features/install/constants";
 import { DiscoveredSkillRow, type SkillVersionPlace } from "@/features/install/DiscoveredSkillRow";
-import { useInstallTask } from "@/features/install/use-install-task";
 import {
   IMPORT_ALL_DISCOVERED_KEY,
   discoveredTaskKey,
   useImportAllDiscovered,
   useImportDiscovered,
 } from "@/features/install/install-mutations";
-import { useAgents } from "@/hooks/queries/agents";
 import { useScanLocal } from "@/features/install/install-queries";
+import { useInstallTask } from "@/features/install/use-install-task";
+import { useAgents } from "@/hooks/queries/agents";
 import { Skeletons } from "@/components/Skeletons";
 
 const STATS_GRID_CLASS = "grid grid-cols-2 gap-3 lg:grid-cols-4";

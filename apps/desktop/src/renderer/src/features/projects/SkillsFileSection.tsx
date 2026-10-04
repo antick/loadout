@@ -18,14 +18,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
-import { SkillsFilePlanDialog } from "@/features/projects/SkillsFilePlanDialog";
-import { useRevealPath } from "@/hooks/mutations/app";
 import { useCreateSkillsFile } from "@/features/projects/skills-file-mutations";
 import {
   type SkillsFileMode,
   useSkillsFile,
   useSkillsFileSuggestion,
 } from "@/features/projects/skills-file-queries";
+import { SkillsFilePlanDialog } from "@/features/projects/SkillsFilePlanDialog";
+import { useRevealPath } from "@/hooks/mutations/app";
 
 /** Offer to write `skills.toml` from what the project holds, after showing what it would list. */
 function CreateDialog({
