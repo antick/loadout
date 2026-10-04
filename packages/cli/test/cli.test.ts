@@ -273,6 +273,14 @@ describe("agents", () => {
       installed.length,
     );
 
+    // Nothing deployed: a dry run still changes nothing.
+    const empty = await cli("agents", "disable", AGENT, "--dry-run", "--json");
+    expect(empty.json()).toEqual({ dryRun: true, wouldRemove: {} });
+    const stillOn = (await cli("agents", "list", "--json")).json<
+      { key: string; enabled: boolean }[]
+    >();
+    expect(stillOn.find((a) => a.key === AGENT)?.enabled).toBe(true);
+
     expect((await cli("agents", "disable", AGENT, "--json")).json()).toEqual([
       { agent: AGENT, enabled: false, changed: true },
     ]);

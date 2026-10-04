@@ -47,23 +47,26 @@ function switcher(enabled: boolean) {
         core,
         keys.filter((key) => before.get(key)?.enabled),
       );
-      if (losing.size > 0) {
-        const count = [...losing.values()].reduce((sum, names) => sum + names.length, 0);
+      const count = [...losing.values()].reduce((sum, names) => sum + names.length, 0);
+      if (count > 0) {
         requireYes(
           args,
           `remove ${plural(count, "deployed skill")} from ${[...losing.keys()].join(", ")}`,
         );
-        if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-          const lines = [...losing].map(([agent, names]) => `  ${agent}: ${names.join(", ")}`);
-          return {
-            value: { dryRun: true, wouldRemove: Object.fromEntries(losing) },
-            text: [
-              `Would remove ${plural(count, "deployed skill")}:`,
-              ...lines,
-              "Nothing was changed.",
-            ].join("\n"),
-          };
-        }
+      }
+      // A dry run never writes, whether or not the agents have anything deployed.
+      if (flagBoolean(args, DRY_RUN_FLAG.name)) {
+        const lines = [...losing].map(([agent, names]) => `  ${agent}: ${names.join(", ")}`);
+        return {
+          value: { dryRun: true, wouldRemove: Object.fromEntries(losing) },
+          text: [
+            count > 0
+              ? `Would remove ${plural(count, "deployed skill")}:`
+              : "Would remove no deployed skills.",
+            ...lines,
+            "Nothing was changed.",
+          ].join("\n"),
+        };
       }
     }
     const value = [];
