@@ -12,6 +12,7 @@ import { basename, dirname, join } from "node:path";
 import { BACKUP_SKILL_LIMIT_BYTES } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tokenKey } from "../src/backup/credentials";
+import { BASE_IGNORE_LINES } from "../src/backup/size";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import {
   type Device,
@@ -264,9 +265,7 @@ describe("backup clone, size rules and credentials", () => {
     await a.api.init();
 
     const ignore = readFileSync(join(a.skillsDir, ".gitignore"), "utf8");
-    expect(ignore).toContain(
-      ".DS_Store\nThumbs.db\n__pycache__/\n*.pyc\nnode_modules/\n.venv/\n.env\n*.log\n*.tmp.????????-????-????-????-????????????\n",
-    );
+    expect(ignore).toContain(`${BASE_IGNORE_LINES.join("\n")}\n`);
     expect(ignore).toContain("/big\\ \\[v2\\]/\n");
     expect(ignore).toContain(`/${basename(a.ctx.paths.metadataDir)}/skills/${big.id}.json\n`);
     const tracked = a.git("ls-files");

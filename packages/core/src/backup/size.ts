@@ -8,6 +8,7 @@ import {
   type SizeReport,
 } from "@loadout/shared";
 import { dirSize, readDirSafe, statOrNull, writeFileAtomic } from "../util/fs";
+import { LEFT_OUT_LINES } from "../util/left-out";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 
 /**
@@ -24,20 +25,11 @@ const GIT_DIR = ".git";
  */
 const ATOMIC_TEMP_PATTERN = "*.tmp.????????-????-????-????-????????????";
 /**
- * Left out of every backup, shown to the user as the defaults. Only names that are never skill
- * content: tool output, installed dependencies and local secrets. Files left out stay on this
+ * Left out of every backup, shown to the user as the defaults: what never leaves this computer
+ * (`util/left-out.ts`, the same list a published copy leaves out). Files left out stay on this
  * device through merges (see `ignored.ts`).
  */
-export const DEFAULT_IGNORE_LINES: readonly string[] = [
-  ".DS_Store",
-  "Thumbs.db",
-  "__pycache__/",
-  "*.pyc",
-  "node_modules/",
-  ".venv/",
-  ".env",
-  "*.log",
-];
+export const DEFAULT_IGNORE_LINES: readonly string[] = LEFT_OUT_LINES;
 export const BASE_IGNORE_LINES: readonly string[] = [...DEFAULT_IGNORE_LINES, ATOMIC_TEMP_PATTERN];
 const BLOCK_START = `# ${APP_SLUG}: skills over the backup size limit (managed, do not edit)`;
 const BLOCK_END = `# ${APP_SLUG}: end of managed block`;
@@ -144,7 +136,7 @@ function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
 }
 
 /** Everything in the file that is the user's own: not our block, not blank padding at the end. */
-export function userLines(current: string): string[] {
+function userLines(current: string): string[] {
   const kept: string[] = [];
   let insideBlock = false;
   for (const line of current.split(/\r?\n/)) {
@@ -156,13 +148,31 @@ export function userLines(current: string): string[] {
   return kept;
 }
 
-/** Make sure the standard ignore lines exist and the managed block matches today's sizes. */
+/** Drop blank lines at both ends; blank lines in between are the user's layout. */
+export function trimBlankEdges(lines: string[]): string[] {
+  let start = 0;
+  let end = lines.length;
+  while (start < end && lines[start]?.trim() === "") start += 1;
+  while (end > start && lines[end - 1]?.trim() === "") end -= 1;
+  return lines.slice(start, end);
+}
+
+/** The user's own lines of an ignore file: neither the standard ones nor the managed block. */
+export function customLines(text: string): string[] {
+  const base = new Set(BASE_IGNORE_LINES);
+  return trimBlankEdges(userLines(text).filter((line) => !base.has(line.trim())));
+}
+
+/**
+ * Make sure the standard ignore lines exist and the managed block matches today's sizes. The
+ * standard lines always come first, in their own order, so a line added in a newer version (and
+ * a `!` line among them) lands where it belongs and the user's own lines still have the last say.
+ */
 export async function refreshIgnoreFile(env: BackupEnv): Promise<void> {
   const path = join(env.repoDir, IGNORE_FILE);
   const current = existsSync(path) ? readFileSync(path, "utf8") : "";
-  const lines = userLines(current);
-  const present = new Set(lines.map((line) => line.trim()));
-  for (const wanted of BASE_IGNORE_LINES) if (!present.has(wanted)) lines.push(wanted);
+  const custom = customLines(current);
+  const lines = [...BASE_IGNORE_LINES, ...(custom.length > 0 ? ["", ...custom] : [])];
 
   const { oversized } = await findOversized(env);
   const block = managedBlock(

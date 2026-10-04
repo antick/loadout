@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Device, joinRemote, seedRemote } from "./backup-world";
+import { DEFAULT_IGNORE_LINES } from "../src/backup/size";
 import { tempDir, writeFile } from "./helpers";
 
 const ignoreFile = (device: Device): string =>
@@ -42,6 +43,26 @@ describe("backup ignore rules", () => {
     const files = tracked(a);
     expect(files).toContain("alpha/notes.md");
     expect(files.filter((file) => /node_modules|\.env|\.log$/.test(file))).toEqual([]);
+  });
+
+  it("gives a library set up by an older version the lines added since, keeping its own last", async () => {
+    // What a library backed up before `.env.*` and `venv/` joined the list holds.
+    const older = [".DS_Store", "node_modules/", ".venv/", ".env", "*.log", "", "outputs/", ""];
+    writeFile(join(a.skillsDir, ".gitignore"), older.join("\n"));
+    writeFile(join(a.skillsDir, "alpha", ".env.local"), "KEY=1");
+    writeFile(join(a.skillsDir, "alpha", ".env.example"), "KEY=");
+    writeFile(join(a.skillsDir, "alpha", "venv", "bin", "python"), "x");
+    a.editSkill("alpha", "edited");
+    await a.api.sync();
+
+    const lines = ignoreFile(a).split("\n");
+    expect(lines.slice(0, DEFAULT_IGNORE_LINES.length)).toEqual([...DEFAULT_IGNORE_LINES]);
+    expect(lines.filter((line) => line === ".env")).toHaveLength(1);
+    expect((await a.api.ignoreRules()).custom).toEqual(["outputs/"]);
+    const files = tracked(a);
+    expect(files).toContain("alpha/.env.example");
+    expect(files).not.toContain("alpha/.env.local");
+    expect(files.filter((file) => file.includes("venv/"))).toEqual([]);
   });
 
   it("saves the user's own patterns, keeps them apart from the defaults, and shares them", async () => {

@@ -13,8 +13,9 @@ import {
   BASE_IGNORE_LINES,
   DEFAULT_IGNORE_LINES,
   IGNORE_FILE,
+  customLines,
   refreshIgnoreFile,
-  userLines,
+  trimBlankEdges,
 } from "./size";
 
 /**
@@ -35,20 +36,6 @@ function ignoreFilePath(env: BackupEnv): string {
 function readIgnoreText(env: BackupEnv): string | null {
   const path = ignoreFilePath(env);
   return existsSync(path) ? readFileSync(path, "utf8") : null;
-}
-
-/** Drop blank lines at both ends; blank lines in between are the user's layout. */
-function trimBlankEdges(lines: string[]): string[] {
-  let start = 0;
-  let end = lines.length;
-  while (start < end && lines[start]?.trim() === "") start += 1;
-  while (end > start && lines[end - 1]?.trim() === "") end -= 1;
-  return lines.slice(start, end);
-}
-
-function customLines(text: string): string[] {
-  const base = new Set(BASE_IGNORE_LINES);
-  return trimBlankEdges(userLines(text).filter((line) => !base.has(line.trim())));
 }
 
 export function readIgnoreRules(env: BackupEnv): BackupIgnoreRules {

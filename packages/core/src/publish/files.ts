@@ -6,24 +6,15 @@ import { MAX_SCANNED_BYTES, findSecrets } from "../backup/secrets";
 import { AppError } from "../errors";
 import { lstatOrNull, readDirSafe } from "../util/fs";
 import { isIgnoredContentName } from "../util/hash";
+import { isLeftOut } from "../util/left-out";
 
 /**
- * The files of a skill folder that go into a published copy. Dependencies, local secrets, logs
- * and links stay behind: a repository other people read is not the place for them.
+ * The files of a skill folder that go into a published copy. What never leaves this computer
+ * (`util/left-out.ts`: dependencies, local secrets, logs) and links stay behind: a repository
+ * other people read is not the place for them.
  */
 
 const EXECUTABLE_BITS = 0o111;
-/** Folders never published. Their names are what the user sees as "left out". */
-const LEFT_OUT_DIRS: ReadonlySet<string> = new Set([
-  "node_modules",
-  ".venv",
-  "venv",
-  "__pycache__",
-]);
-const ENV_FILE = /^\.env(?:\..+)?$/i;
-/** `.env.example` documents the variables; it holds no values. */
-const ENV_TEMPLATE = /\.(?:example|sample|template)$/i;
-const LOG_FILE = /\.log$/i;
 
 export interface PublishFile {
   /** Path inside the skill folder, `/` separated. */
@@ -39,10 +30,6 @@ export interface CollectedFiles {
   leftOut: string[];
   /** The first file larger than {@link PUBLISH_MAX_FILE_BYTES}. */
   tooLarge: string | null;
-}
-
-function leftOutFile(name: string): boolean {
-  return (ENV_FILE.test(name) && !ENV_TEMPLATE.test(name)) || LOG_FILE.test(name);
 }
 
 const isExecutable = (mode: number): boolean =>
@@ -64,10 +51,10 @@ export function collectFiles(root: string): CollectedFiles {
       if (stat.isSymbolicLink()) {
         leftOut.push(relativePath);
       } else if (stat.isDirectory()) {
-        if (LEFT_OUT_DIRS.has(entry.name)) leftOut.push(`${relativePath}/`);
+        if (isLeftOut(entry.name, true)) leftOut.push(`${relativePath}/`);
         else walk(absolutePath, relativePath);
       } else if (stat.isFile()) {
-        if (leftOutFile(entry.name)) {
+        if (isLeftOut(entry.name, false)) {
           leftOut.push(relativePath);
           continue;
         }

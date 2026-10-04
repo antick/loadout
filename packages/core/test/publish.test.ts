@@ -85,15 +85,18 @@ describe("publish", () => {
     const pdf = world.addSkill("pdf", {
       "node_modules/dep/index.js": "x\n",
       ".env": "TOKEN=1\n",
+      ".env.local": "TOKEN=2\n",
       ".env.example": "TOKEN=\n",
+      "venv/bin/python": "x\n",
       "run.log": "log\n",
       "notes/keep.md": "keep\n",
     });
     symlinkSync("/etc/hosts", join(pdf.libraryPath, "link"));
     const plan = await service.api.preview(publishInput([pdf]));
-    expect(plan.skills[0]).toMatchObject({ status: "new", leftOutCount: 4 });
+    expect(plan.skills[0]).toMatchObject({ status: "new", leftOutCount: 6 });
     expect(plan.skills[0]?.leftOut).toEqual(
-      expect.arrayContaining(["node_modules/", ".env", "run.log", "link"]),
+      // Only the first few are named; the count has them all.
+      expect.arrayContaining(["node_modules/", ".env", ".env.local", "run.log", "link"]),
     );
 
     await service.api.publish(publishInput([pdf]));
