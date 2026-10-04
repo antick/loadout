@@ -10,13 +10,7 @@ import { type BackupEnv, REMOTE_NAME } from "./env";
 import { whileMerging } from "./interrupted";
 import { mergeRemote } from "./merge";
 import { reportStage, withStages } from "./progress";
-import {
-  aheadBehind,
-  assertRepo,
-  commitLibrary,
-  originUrl,
-  requireBranch,
-} from "./repo";
+import { aheadBehind, assertRepo, commitLibrary, originUrl, requireBranch } from "./repo";
 import { scanForPush, scanUncommittedChanges, secretsFound } from "./secrets";
 import { refreshIgnoreFile } from "./size";
 import { snapshotAtHead, tagSnapshot } from "./snapshots";
