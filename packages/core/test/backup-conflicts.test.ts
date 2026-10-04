@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
-import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Device, joinRemote, seedRemote } from "./backup-world";
 import { tempDir } from "./helpers";
@@ -79,7 +78,7 @@ describe("backup conflicts", () => {
     const head = b.git("rev-parse", "HEAD");
     const safety = await b.api.resolveConflict(alphaId, "keep_local");
 
-    expect(safety.startsWith(SNAPSHOT_TAG_PREFIX)).toBe(true);
+    expect(safety).toMatch(/^[0-9a-f]{12,}$/);
     expect(b.git("rev-parse", `${safety}^{commit}`)).toBe(head);
     expect(b.git("rev-parse", "HEAD")).toBe(head);
     expect(b.read("alpha")).toBe("B's version");

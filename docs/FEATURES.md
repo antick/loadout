@@ -156,7 +156,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - Shows what a running sync is doing: saving, downloading, merging, uploading.
 - A skill deleted on another device is kept in Recently removed; restoring it brings it back everywhere.
 - A sync that would delete many skills here stops and waits for you to review it.
-- Snapshots you can restore; automatic backup after changes.
+- Every backup, merge and restore is a version you can go back to (a commit, no tags); automatic backup after changes.
 - Blocks pushing anything that looks like a key or token.
 - `node_modules/`, `venv/`, `.env` and `.env.*` (not `.env.example`), logs and your own patterns stay out of the backup, and stay put when a sync updates the skill. Publishing leaves out the same list.
 

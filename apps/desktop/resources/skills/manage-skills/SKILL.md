@@ -188,7 +188,7 @@ loadout git status --json
 loadout git sync --dry-run --json                      # what would come in and go out
 loadout git sync -m "add pdf tools" --json
 loadout git versions --json
-loadout git restore <tag> --dry-run --json
+loadout git restore <version> --dry-run --json
 ```
 
 A folder source must start with `./`, `../`, `/` or `~/`. A bare `owner/repo` always means a

@@ -69,7 +69,6 @@
       "downloading": "Downloading from the remote…",
       "comparing": "Comparing with this computer…",
       "merging": "Merging skill by skill…",
-      "snapshot": "Taking a snapshot…",
       "uploading": "Uploading to the remote…"
     },
     "publicRepo": {

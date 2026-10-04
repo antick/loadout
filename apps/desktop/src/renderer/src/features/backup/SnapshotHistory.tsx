@@ -1,9 +1,4 @@
-import {
-  formatDateTime,
-  parseTimestampCompact,
-  SNAPSHOT_TAG_PREFIX,
-  type Snapshot,
-} from "@loadout/shared";
+import { formatDateTime, type Snapshot } from "@loadout/shared";
 import { History, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,20 +13,11 @@ import { useBackupSnapshots } from "@/hooks/queries/backup-page";
 import { SHORT_COMMIT_LENGTH } from "./constants";
 import { Skeletons } from "@/components/Skeletons";
 
-/** `YYYYMMDD-HHMMSS`, the part of a snapshot tag that says when it was taken. */
-const COMPACT_STAMP_LENGTH = 15;
 const SKELETON_ROWS = 3;
 
-/** When the snapshot was taken, read from its tag; the commit time when the tag is unusual. */
+/** When the snapshot was taken: the time of its commit. */
 function snapshotLabel(snapshot: Snapshot): string {
-  const stamp = snapshot.tag.startsWith(SNAPSHOT_TAG_PREFIX)
-    ? snapshot.tag.slice(
-        SNAPSHOT_TAG_PREFIX.length,
-        SNAPSHOT_TAG_PREFIX.length + COMPACT_STAMP_LENGTH,
-      )
-    : "";
-  const takenAt = parseTimestampCompact(stamp) ?? snapshot.createdAt;
-  return formatDateTime(takenAt) || snapshot.tag;
+  return formatDateTime(snapshot.createdAt) || snapshot.tag;
 }
 
 export interface SnapshotHistoryProps {

@@ -1,4 +1,3 @@
-import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Device, joinRemote, seedRemote } from "./backup-world";
 import { tempDir } from "./helpers";
@@ -37,7 +36,7 @@ describe("backup conflicts, several at once", () => {
     const head = b.git("rev-parse", "HEAD");
     const safety = await b.api.resolveConflicts([alphaId, betaId], "use_remote");
 
-    expect(safety.startsWith(SNAPSHOT_TAG_PREFIX)).toBe(true);
+    expect(safety).toMatch(/^[0-9a-f]{12,}$/);
     expect(b.git("rev-parse", `${safety}^{commit}`)).toBe(head);
     expect(b.git("rev-list", "--count", `${head}..HEAD`)).toBe("1");
     expect(b.git("log", "-1", "--format=%s")).toBe("resolve conflict: use remote (2 skills)");

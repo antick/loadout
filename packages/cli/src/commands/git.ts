@@ -220,7 +220,7 @@ export const gitGroup: CommandGroup = {
     {
       name: "restore",
       summary: "Switch the library back to a version",
-      usage: "<tag>",
+      usage: "<version>",
       flags: [DRY_RUN_FLAG, REQUIRED_YES_FLAG],
       run: restore,
     },

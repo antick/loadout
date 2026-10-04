@@ -13,11 +13,12 @@ import { reportStage, withStages } from "./progress";
 import { aheadBehind, assertRepo, commitLibrary, originUrl, requireBranch } from "./repo";
 import { scanForPush, scanUncommittedChanges, secretsFound } from "./secrets";
 import { refreshIgnoreFile } from "./size";
-import { snapshotAtHead, tagSnapshot } from "./snapshots";
+import { restorePointId } from "./snapshots";
 
 /**
- * "Back up now": commit → fetch → merge → snapshot → push, retried when another device pushed in
- * between. Disk work happens inside the library lock; the network calls never do.
+ * "Back up now": commit → fetch → merge → push, retried when another device pushed in between.
+ * Each commit on the branch is a restore point of its own (see `snapshots.ts`). Disk work happens
+ * inside the library lock; the network calls never do.
  */
 
 const MAX_PUSH_ATTEMPTS = 3;
@@ -91,20 +92,9 @@ async function runSync(
   let committed = await lock.run("backup commit", () => commitLibrary(env, text));
   let merge: MergeSummary | null = null;
   let changed = committed;
-  let snapshot: string | null = null;
   let pushed = false;
 
-  const takeSnapshot = (): Promise<string> => {
-    reportStage(env, "snapshot");
-    return lock.run("backup snapshot", () => tagSnapshot(env));
-  };
-  // A state that was committed earlier (for example by setting up the backup) but never
-  // snapshotted still deserves a restore point the first time the user backs up.
-  const needsSnapshot = async (): Promise<boolean> => changed || !(await snapshotAtHead(env));
-
-  if (!hasRemote) {
-    if (await needsSnapshot()) snapshot = await takeSnapshot();
-  } else {
+  if (hasRemote) {
     const branch = await requireBranch(env);
     for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
       reportStage(env, "downloading");
@@ -116,7 +106,6 @@ async function runSync(
       merge = combine(merge, result.summary);
       committed ||= result.committed;
       changed ||= result.committed || result.changed;
-      if (await needsSnapshot()) snapshot = await takeSnapshot();
 
       const { ahead } = await aheadBehind(env, branch);
       if (result.upstream && ahead === 0) break;
@@ -128,7 +117,7 @@ async function runSync(
       await env.hooks.beforePush?.(attempt);
       reportStage(env, "uploading");
       try {
-        await env.git.run(["push", "--follow-tags", "-u", REMOTE_NAME, branch], { network: true });
+        await env.git.run(["push", "-u", REMOTE_NAME, branch], { network: true });
         pushed = true;
         break;
       } catch (error) {
@@ -138,6 +127,8 @@ async function runSync(
     }
   }
 
+  // The restore point this sync made or sent; none when nothing changed.
+  const snapshot = changed || pushed ? await restorePointId(env, "HEAD") : null;
   if (pushed) settings.set("backupLastAutoError", "");
   // The "restored from" note describes the state until it is backed up again.
   settings.deleteRaw(INTERNAL_KEYS.backupRestoredFrom);

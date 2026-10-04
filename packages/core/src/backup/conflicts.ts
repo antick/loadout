@@ -12,11 +12,11 @@ import { type Stage, createStage, extractPaths } from "./extract";
 import { skillMetadataAt } from "./merge-read";
 import { type SetAsideFolder, carryIgnored, putBackFolder, setAsideFolder } from "./ignored";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
-import { tagSnapshot } from "./snapshots";
+import { safetyPoint } from "./snapshots";
 
 /**
- * The user's answer to a conflict. Whatever they pick, the state before it is committed and
- * tagged first, so the choice can always be undone from the snapshot list.
+ * The user's answer to a conflict. Whatever they pick, the state before it is committed first,
+ * so the choice can always be undone from the snapshot list.
  */
 
 const BEFORE_RESOLVE_MESSAGE = "backup: before resolving a conflict";
@@ -173,7 +173,7 @@ export async function resolveConflicts(
   }
 
   await commitLibrary(env, BEFORE_RESOLVE_MESSAGE);
-  const safety = await tagSnapshot(env);
+  const safety = await safetyPoint(env);
   const work: ChoiceWork = { created: [], replaced: [], cleanups: [] };
   const message =
     conflicts.length > 1
@@ -190,7 +190,7 @@ export async function resolveConflicts(
       // Take out what was moved in, put our folders back, then let git restore the safety point.
       for (const path of work.created) await removePath(path);
       for (const { aside } of work.replaced) putBackFolder(aside);
-      await env.git.probe(["reset", "--hard", `refs/tags/${safety}`]);
+      await env.git.probe(["reset", "--hard", safety]);
       throw error;
     }
     // Files kept out of the backup exist only here: they stay with the skill.

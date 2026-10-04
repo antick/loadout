@@ -60,14 +60,15 @@ describe("backup sync", () => {
       upstreamHealth: "no_remote",
     });
 
-    // Without a remote a sync is a local commit plus a snapshot.
+    // Without a remote a sync is a local commit, which is a restore point of its own.
     a.addSkill("beta");
     const changed = await a.api.status();
     expect(changed.hasChanges).toBe(true);
     expect(changed.changedSkillCount).toBe(1);
     const local = await a.api.sync();
     expect(local).toMatchObject({ committed: true, pushed: false, merge: null });
-    expect(local.snapshot).toMatch(new RegExp(`^${SNAPSHOT_TAG_PREFIX}\\d{8}-\\d{6}-[0-9a-f]{4}$`));
+    expect(local.snapshot).toMatch(/^[0-9a-f]{12,}$/);
+    expect(a.git("rev-parse", "HEAD").startsWith(local.snapshot ?? "-")).toBe(true);
 
     await a.api.setRemote(remote);
     expect((await a.api.status()).upstreamHealth).toBe("no_upstream");
@@ -75,19 +76,30 @@ describe("backup sync", () => {
     expect(outcome.pushed).toBe(true);
 
     expect(rawGit(remote, "rev-parse", "refs/heads/main")).toBe(a.git("rev-parse", "HEAD"));
-    expect(rawGit(remote, "tag", "--list")).toContain(local.snapshot);
+    // Restore points are commits: nothing else is pushed.
+    expect(rawGit(remote, "tag", "--list")).toBe("");
     const status = await a.api.status();
     expect(status).toMatchObject({ ahead: 0, behind: 0, upstreamHealth: "healthy" });
     expect(status.currentSnapshot).toBe(local.snapshot);
+    expect(outcome.snapshot).toBe(local.snapshot);
     expect(status.lastCommit).toBe("backup: sync skills library");
 
-    // Commits and tags carry the device name.
+    // Commits carry the device name; the history lists them newest first.
     expect(a.git("log", "-1", "--format=%an")).toBe("Device A");
     const snapshots = await a.api.snapshots();
     expect(snapshots[0]).toMatchObject({ tag: local.snapshot, device: "Device A" });
+    expect(snapshots.map((snapshot) => snapshot.message)).toEqual(
+      a.git("log", "--first-parent", "--format=%s").split("\n"),
+    );
+    expect(await a.api.snapshots(1)).toHaveLength(1);
 
-    // Nothing to do the second time.
+    // Nothing to do the second time. A tag an older version made stays where it is.
+    const oldTag = `${SNAPSHOT_TAG_PREFIX}20260901-000000-abcd`;
+    a.git("tag", oldTag);
+    a.git("push", "-q", "origin", oldTag);
     expect(await a.api.sync()).toMatchObject({ committed: false, pushed: false, snapshot: null });
+    expect(rawGit(remote, "tag", "--list")).toBe(oldTag);
+    expect(a.git("tag", "--list")).toBe(oldTag);
   });
 
   it("merges edits to different skills cleanly in both directions", async () => {
@@ -254,9 +266,8 @@ describe("backup sync", () => {
     const commitsBefore = Number(a.git("rev-list", "--count", "HEAD"));
 
     await expect(a.api.restore("v1.0")).rejects.toMatchObject({ code: "INVALID_INPUT" });
-    await expect(a.api.restore(`${SNAPSHOT_TAG_PREFIX}missing`)).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+    await expect(a.api.restore("--hard")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(a.api.restore("0123456789ab")).rejects.toMatchObject({ code: "NOT_FOUND" });
     const safety = await a.api.restore(first.snapshot ?? "");
 
     expect(a.read("alpha")).toBe("version one");
@@ -276,7 +287,7 @@ describe("backup sync", () => {
     expect(outcome.pushed).toBe(true);
     expect((await a.api.status()).restoredFrom).toBeNull();
     expect(a.ctx.settings.getRaw(INTERNAL_KEYS.backupRestoredFrom, null)).toBeNull();
-    expect(rawGit(remote, "tag", "--list")).toContain(safety);
+    expect(rawGit(remote, "rev-parse", "main").startsWith(a.git("rev-parse", "HEAD"))).toBe(true);
   });
 
   it("settles after a merge: devices do not trade commits for ever", async () => {

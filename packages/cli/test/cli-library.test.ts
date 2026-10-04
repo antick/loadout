@@ -103,7 +103,8 @@ describe("git backup", () => {
     const init = await cli("git", "init", "--json");
     expect(init.code, init.stderr).toBe(EXIT_OK);
     expect(init.json()).toMatchObject({ isRepo: true, upstreamHealth: "no_remote" });
-    expect((await cli("git", "versions", "--limit", "5", "--json")).json()).toEqual([]);
+    // Setting up the backup makes its first commit, the first version to go back to.
+    expect((await cli("git", "versions", "--limit", "5", "--json")).json()).toHaveLength(1);
     expect((await cli("git", "versions", "--limit", "many", "--json")).code).toBe(EXIT_USAGE);
 
     // An unknown version fails alike with and without --dry-run or --yes.

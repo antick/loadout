@@ -1,9 +1,10 @@
-import { type BackupStatus, SNAPSHOT_TAG_PREFIX, type UpstreamHealth } from "@loadout/shared";
+import type { BackupStatus, UpstreamHealth } from "@loadout/shared";
 import { INTERNAL_KEYS } from "../settings/store";
 import { newerAppVersion, schemaAt } from "./compat";
 import { maskUrlCredentials } from "./credentials";
 import type { BackupEnv } from "./env";
 import { aheadBehind, currentBranch, isRepo, originUrl, resolveCommit, upstreamRef } from "./repo";
+import { restorePointId } from "./snapshots";
 
 const MS_PER_SECOND = 1000;
 const FIELD_SEPARATOR = "\0";
@@ -68,19 +69,12 @@ export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
     };
   }
 
-  const [remote, branch, porcelain, lastCommit, snapshotTags] = await Promise.all([
+  const [remote, branch, porcelain, lastCommit, currentSnapshot] = await Promise.all([
     originUrl(env),
     currentBranch(env),
     env.git.run(["status", "--porcelain", "-z"]),
     env.git.probe(["log", "-1", "--format=%ct%x00%s"]),
-    env.git.probe([
-      "tag",
-      "--points-at",
-      "HEAD",
-      "--sort=-creatordate",
-      "--list",
-      `${SNAPSHOT_TAG_PREFIX}*`,
-    ]),
+    restorePointId(env, "HEAD"),
   ]);
   const counts = remote && branch ? await aheadBehind(env, branch) : { ahead: 0, behind: 0 };
   const [commitTime, ...subject] =
@@ -96,8 +90,7 @@ export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
     behind: counts.behind,
     lastCommit: commitTime ? subject.join(FIELD_SEPARATOR) : null,
     lastCommitAt: commitTime ? Number(commitTime) * MS_PER_SECOND : null,
-    currentSnapshot:
-      snapshotTags.code === 0 ? snapshotTags.stdout.split(/\r?\n/).find(Boolean) || null : null,
+    currentSnapshot,
     restoredFrom,
     upstreamHealth: await upstreamHealth(env, remote, branch),
     gitAvailable,

@@ -34,19 +34,10 @@ export function formatRelative(ms: number | null | undefined, now: number = Date
   return RELATIVE.format(Math.round(delta / DAY), "day");
 }
 
-/** `20260919-153045`, used in snapshot tags and export file names. UTC. */
+/** `20260919-153045`, used in file names. UTC. */
 export function formatTimestampCompact(ms: number): string {
   const iso = new Date(ms).toISOString();
   return `${iso.slice(0, 4)}${iso.slice(5, 7)}${iso.slice(8, 10)}-${iso.slice(11, 13)}${iso.slice(14, 16)}${iso.slice(17, 19)}`;
-}
-
-/** Inverse of {@link formatTimestampCompact}. Returns null when the text is not a compact stamp. */
-export function parseTimestampCompact(text: string): number | null {
-  const m = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(text);
-  if (!m) return null;
-  const [, y, mo, d, h, mi, s] = m;
-  const ms = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
-  return Number.isNaN(ms) ? null : ms;
 }
 
 const BYTE_UNITS = ["B", "KB", "MB", "GB", "TB"] as const;

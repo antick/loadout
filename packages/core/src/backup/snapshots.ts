@@ -1,5 +1,4 @@
-import { randomBytes } from "node:crypto";
-import { SNAPSHOT_TAG_PREFIX, type Snapshot, formatTimestampCompact } from "@loadout/shared";
+import type { Snapshot } from "@loadout/shared";
 import { invalid, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { assertReadable, schemaAt } from "./compat";
@@ -7,108 +6,101 @@ import type { BackupEnv } from "./env";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 
 /**
- * Snapshots are annotated tags: they carry the device name and a date of their own, and
- * `push --follow-tags` takes them along with the branch.
+ * Restore points are the branch's own commits, read with `git log --first-parent`: every backup,
+ * merge, restore and conflict choice is one, with the device that made it (the commit author) and
+ * its date. Nothing else is created or pushed for them. Tags older versions made stay where they
+ * are, on this computer and on the remote; nothing here ever deletes one.
  */
 
 export const DEFAULT_SNAPSHOT_LIMIT = 50;
-const SNAPSHOT_SUFFIX_BYTES = 2;
-const SHORT_COMMIT_LENGTH = 8;
+/** Fixed, so the same commit is always named the same way; git lengthens it only to stay unique. */
+const ID_LENGTH = 12;
 const MS_PER_SECOND = 1000;
 const FIELD_SEPARATOR = "\0";
-const RECORD_SEPARATOR = "";
+const RECORD_SEPARATOR = "\u0001";
+const LOG_FORMAT = ["%h", "%ct", "%an", "%s"].join("%x00");
+/** A commit id, whole or shortened as git prints it. Never a ref name or an option. */
+const COMMIT_ID = /^[0-9a-f]{7,64}$/i;
 const BEFORE_RESTORE_MESSAGE = "backup: before restore";
 const RESTORE_MESSAGE_PREFIX = "restore: ";
-const TAG_FORMAT = [
-  "%(refname:short)",
-  "%(*objectname)",
-  "%(objectname)",
-  "%(contents:subject)",
-  "%(creatordate:unix)",
-  "%(taggername)",
-  "%(authorname)",
-].join("%00");
 
-function newTagName(): string {
-  const suffix = randomBytes(SNAPSHOT_SUFFIX_BYTES).toString("hex");
-  return `${SNAPSHOT_TAG_PREFIX}${formatTimestampCompact(Date.now())}-${suffix}`;
-}
-
-/** The snapshot tag on the current commit, if it has one. */
-export async function snapshotAtHead(env: BackupEnv): Promise<string | null> {
-  const tags = await env.git.text([
-    "tag",
-    "--points-at",
-    "HEAD",
-    "--sort=-creatordate",
-    "--list",
-    `${SNAPSHOT_TAG_PREFIX}*`,
+/** The id of a commit as restore points name it; null when there is no such commit. */
+export async function restorePointId(env: BackupEnv, revision: string): Promise<string | null> {
+  const result = await env.git.probe([
+    "rev-parse",
+    "-q",
+    "--verify",
+    `--short=${ID_LENGTH}`,
+    `${revision}^{commit}`,
   ]);
-  return tags.split(/\r?\n/).find(Boolean) ?? null;
+  return result.code === 0 ? result.stdout.trim() || null : null;
 }
 
-/**
- * Tag the current commit. A commit that already has a snapshot keeps it, so a retried sync or a
- * safety point taken twice does not pile up tags for one state. Must run inside the library lock.
- */
-export async function tagSnapshot(env: BackupEnv): Promise<string> {
-  const existing = await snapshotAtHead(env);
-  if (existing) return existing;
-  const subject = await env.git.text(["log", "-1", "--format=%s"]);
-  const tag = newTagName();
-  await env.git.run(["tag", "-a", tag, "-m", subject || tag]);
-  return tag;
-}
-
+/** The newest restore points of the current branch, newest first. Empty before the first commit. */
 export async function listSnapshots(
   env: BackupEnv,
   limit = DEFAULT_SNAPSHOT_LIMIT,
 ): Promise<Snapshot[]> {
-  const output = await env.git.text([
-    "for-each-ref",
-    `--format=${TAG_FORMAT}%01`,
-    `refs/tags/${SNAPSHOT_TAG_PREFIX}*`,
+  const result = await env.git.probe([
+    "log",
+    "--first-parent",
+    `--abbrev=${ID_LENGTH}`,
+    `--max-count=${Math.max(1, limit)}`,
+    `--format=${LOG_FORMAT}%x01`,
+    "HEAD",
   ]);
+  if (result.code !== 0) return [];
   const snapshots: Snapshot[] = [];
-  for (const record of output.split(RECORD_SEPARATOR)) {
-    const [tag, peeled, object, message, created, tagger, author] = record
-      .replace(/^\s+/, "")
-      .split(FIELD_SEPARATOR);
-    if (!tag) continue;
+  for (const record of result.stdout.split(RECORD_SEPARATOR)) {
+    const [id, committed, author, subject] = record.replace(/^\s+/, "").split(FIELD_SEPARATOR);
+    if (!id) continue;
     snapshots.push({
-      tag,
-      commit: (peeled || object || "").slice(0, SHORT_COMMIT_LENGTH),
-      message: message ?? "",
-      createdAt: Number(created ?? 0) * MS_PER_SECOND,
-      device: tagger || author || "",
+      tag: id,
+      commit: id,
+      message: subject ?? "",
+      createdAt: Number(committed ?? 0) * MS_PER_SECOND,
+      device: author ?? "",
     });
   }
-  // Tag names start with a UTC timestamp, so they break ties between tags made in one second.
-  snapshots.sort((a, b) => b.createdAt - a.createdAt || (a.tag < b.tag ? 1 : -1));
-  return snapshots.slice(0, Math.max(1, limit));
+  return snapshots;
+}
+
+/** True when `commit` is in the current branch's history. */
+async function inHistory(env: BackupEnv, commit: string): Promise<boolean> {
+  const result = await env.git.probe(["merge-base", "--is-ancestor", commit, "HEAD"]);
+  return result.code === 0;
 }
 
 /**
- * Put the library back to how it was at `tag`. History is never rewritten: the current state is
- * committed and tagged first (the returned safety snapshot), then a new commit carries the old
+ * Put the library back to how it was at restore point `id`. History is never rewritten: the
+ * current state is committed first (the returned safety point), then a new commit carries the old
  * content forward. Must run inside the library lock.
  */
-export async function restoreSnapshot(env: BackupEnv, tag: string): Promise<string> {
-  if (!tag.startsWith(SNAPSHOT_TAG_PREFIX)) throw invalid(`"${tag}" is not a snapshot.`);
-  if (!(await resolveCommit(env, `refs/tags/${tag}`))) throw notFound(`Snapshot not found: ${tag}`);
-  assertReadable(await schemaAt(env, `refs/tags/${tag}`));
+export async function restoreSnapshot(env: BackupEnv, id: string): Promise<string> {
+  if (!COMMIT_ID.test(id)) throw invalid(`"${id}" is not a backup version.`);
+  const commit = await resolveCommit(env, id);
+  if (!commit || !(await inHistory(env, commit))) throw notFound(`Backup version not found: ${id}`);
+  assertReadable(await schemaAt(env, commit));
 
   await commitLibrary(env, BEFORE_RESTORE_MESSAGE);
-  const safety = await tagSnapshot(env);
+  const safety = await safetyPoint(env);
+  const restored = (await restorePointId(env, commit)) ?? id;
   try {
-    // Makes the index and the folder match the snapshot exactly, deletions included,
+    // Makes the index and the folder match the restore point exactly, deletions included,
     // without moving the branch.
-    await env.git.run(["read-tree", "--reset", "-u", `refs/tags/${tag}`]);
-    await commitStaged(env, `${RESTORE_MESSAGE_PREFIX}${tag}`);
+    await env.git.run(["read-tree", "--reset", "-u", commit]);
+    await commitStaged(env, `${RESTORE_MESSAGE_PREFIX}${restored}`);
   } catch (error) {
-    await env.git.probe(["reset", "--hard", `refs/tags/${safety}`]);
+    await env.git.probe(["reset", "--hard", safety]);
     throw error;
   }
-  env.ctx.settings.setRaw(INTERNAL_KEYS.backupRestoredFrom, tag);
+  env.ctx.settings.setRaw(INTERNAL_KEYS.backupRestoredFrom, restored);
   return safety;
+}
+
+/** The restore point a risky change can go back to: the commit the library is at now. */
+export async function safetyPoint(env: BackupEnv): Promise<string> {
+  const id = await restorePointId(env, "HEAD");
+  if (!id) throw notFound("The library has no backup to go back to yet.");
+  return id;
 }

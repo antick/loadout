@@ -19,6 +19,7 @@ export interface BackupStatus {
   behind: number;
   lastCommit: string | null;
   lastCommitAt: number | null;
+  /** The restore point the library is at: `Snapshot.tag` of its commit. */
   currentSnapshot: string | null;
   restoredFrom: string | null;
   upstreamHealth: UpstreamHealth;
@@ -27,7 +28,9 @@ export interface BackupStatus {
   newerAppVersion: string | null;
 }
 
+/** A restore point: one commit of the backup branch. */
 export interface Snapshot {
+  /** Its id, to restore it by: the commit, shortened (12 hex digits, more only when needed). */
   tag: string;
   commit: string;
   message: string;

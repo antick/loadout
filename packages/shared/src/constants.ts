@@ -77,6 +77,7 @@ export const AGENT_CONTROL_SKILL_NAME = "manage-skills";
 
 export const DEFAULT_BACKUP_REPO_NAME = `${APP_SLUG}-backup`;
 export const DEFAULT_BACKUP_COMMIT_MESSAGE = "backup: sync skills library";
+/** Prefix of the snapshot tags older versions made. None are made now; old ones stay. */
 export const SNAPSHOT_TAG_PREFIX = "lo-v-";
 
 export const BACKUP_SKILL_LIMIT_BYTES = 100 * 1024 * 1024;

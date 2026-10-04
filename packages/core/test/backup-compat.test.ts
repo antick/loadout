@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BACKUP_SCHEMA_VERSION, SCHEMA_FILE } from "../src/skills/portable";
 import { type Device, createBareRemote, createDevice, joinRemote, rawGit } from "./backup-world";
@@ -39,7 +38,7 @@ describe("backup compatibility between app versions", () => {
   }
 
   /** Push a commit by hand that says the backup uses a metadata format from the future. */
-  function pushFutureFormat(a: Device, remote: string, tag?: string): void {
+  function pushFutureFormat(a: Device, remote: string): void {
     const manual = join(temp.dir, "manual");
     rawGit(temp.dir, "clone", "-q", remote, manual);
     rawGit(manual, "checkout", "-q", "-B", "main", "origin/main");
@@ -50,8 +49,7 @@ describe("backup compatibility between app versions", () => {
     writeFile(join(manual, "alpha", "notes.md"), "future");
     rawGit(manual, "add", "-A");
     rawGit(manual, ...HAND, "commit", "-qm", "future format");
-    if (tag) rawGit(manual, ...HAND, "tag", "-a", tag, "-m", "future snapshot");
-    rawGit(manual, "push", "-q", "--follow-tags", "origin", "main");
+    rawGit(manual, "push", "-q", "origin", "main");
   }
 
   it("records the highest app version and reminds older computers to update", async () => {
@@ -94,8 +92,7 @@ describe("backup compatibility between app versions", () => {
 
   it("refuses to clone or restore a backup saved in a newer format", async () => {
     const { a, remote } = await seed("1.0.0");
-    const tag = `${SNAPSHOT_TAG_PREFIX}future`;
-    pushFutureFormat(a, remote, tag);
+    pushFutureFormat(a, remote);
 
     const c = track(createDevice(temp.dir, "C", { appVersion: "1.0.0" }));
     c.addSkill("gamma");
@@ -103,8 +100,17 @@ describe("backup compatibility between app versions", () => {
     expect(existsSync(join(c.skillsDir, ".git"))).toBe(false);
     expect(c.skill("gamma")).not.toBeNull();
 
-    a.git("fetch", "-q", "--tags", "origin");
-    await expect(a.api.restore(tag)).rejects.toMatchObject({ code: "BACKUP_TOO_NEW" });
-    expect(existsSync(join(a.skillsDir, "alpha", "notes.md"))).toBe(false);
+    // A newer app took this library to the future format; then the older one wrote over it.
+    a.git("fetch", "-q", "origin");
+    a.git("merge", "-q", "--ff-only", "origin/main");
+    const future = a.git("rev-parse", "HEAD");
+    writeFile(join(a.ctx.paths.metadataDir, SCHEMA_FILE), JSON.stringify({ schemaVersion: 1 }));
+    rawGit(a.skillsDir, "add", "-A");
+    rawGit(a.skillsDir, ...HAND, "commit", "-qm", "older app");
+    const head = a.git("rev-parse", "HEAD");
+    await expect(a.api.restore(future.slice(0, 12))).rejects.toMatchObject({
+      code: "BACKUP_TOO_NEW",
+    });
+    expect(a.git("rev-parse", "HEAD")).toBe(head);
   });
 });

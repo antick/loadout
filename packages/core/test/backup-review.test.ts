@@ -207,15 +207,7 @@ describe("backup sync review", () => {
     expect(stages(b)).toEqual(["downloading", "comparing", null]);
 
     await b.api.sync();
-    expect(stages(b)).toEqual([
-      "preparing",
-      "saving",
-      "downloading",
-      "merging",
-      "snapshot",
-      "uploading",
-      null,
-    ]);
+    expect(stages(b)).toEqual(["preparing", "saving", "downloading", "merging", "uploading", null]);
 
     await b.api.removeRemote();
     await b.api.setRemote(join(temp.dir, "missing.git"));

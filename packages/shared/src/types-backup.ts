@@ -79,7 +79,6 @@ export type BackupStage =
   | "downloading"
   | "comparing"
   | "merging"
-  | "snapshot"
   | "uploading";
 
 /** `stage` is null once the sync or review finished, whether it worked or not. */
