@@ -247,7 +247,7 @@ async function installFromPath(context: CommandContext, path: string): Promise<I
 const PICKING_FLAGS = [NAME_FLAG, SKILL_FLAG, ALL_FLAG, REPLACE_FLAG] as const;
 
 /**
- * Refuse flags this kind of source can not use, once, before the dry run and the real run part
+ * Refuse flags this kind of source cannot use, once, before the dry run and the real run part
  * ways: a flag that is quietly ignored would make the preview and the install disagree.
  */
 function checkFlags(args: CommandContext["args"], source: InstallSource): void {

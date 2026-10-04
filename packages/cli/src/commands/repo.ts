@@ -40,7 +40,7 @@ async function show({ core }: CommandContext): Promise<CommandResult> {
 /** Moving is always about the saved location, so it makes no sense for a one-off `--library`. */
 function refuseCustomLibrary(context: Pick<CommandContext, "customLibrary">): void {
   if (context.customLibrary) {
-    throw new UsageError("--library can not be combined with moving the saved library location.");
+    throw new UsageError("--library cannot be combined with moving the saved library location.");
   }
 }
 

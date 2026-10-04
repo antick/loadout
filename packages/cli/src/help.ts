@@ -60,7 +60,7 @@ export function usageNames(usage: string, flag: FlagSpec): boolean {
 
 /**
  * A command's whole usage line: its own text (arguments, and flags that only make sense together),
- * then every other flag from its specs, so the line can not drift from what the command accepts.
+ * then every other flag from its specs, so the line cannot drift from what the command accepts.
  */
 export function commandUsage(command: CommandSpec): string {
   const visible = command.flags.filter((flag) => !flag.hidden);

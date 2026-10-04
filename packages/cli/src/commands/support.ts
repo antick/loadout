@@ -7,7 +7,7 @@ import { plural } from "../output";
 
 /**
  * When a command asks for --yes, the same rule for all of them:
- * - Needs --yes: deleting or overwriting something Loadout can not give back as it was. A
+ * - Needs --yes: deleting or overwriting something Loadout cannot give back as it was. A
  *   permanent delete (`removed delete`, `items remove`, `presets delete`), a library skill
  *   removed with its deployments (`skills remove`, `skills duplicates merge`), every
  *   deployment of an agent (`agents disable`), the whole library rolled back (`git restore`), a
@@ -24,7 +24,7 @@ export const YES_FLAG: FlagSpec = {
   name: "yes",
   short: "y",
   type: "boolean",
-  description: "Confirm an action that can not be undone. Never implied, not even by --json.",
+  description: "Confirm an action that cannot be undone. Never implied, not even by --json.",
 };
 
 /** --yes with what it confirms on one command, so its help says what it really does. */

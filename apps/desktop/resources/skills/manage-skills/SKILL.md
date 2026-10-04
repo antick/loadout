@@ -197,7 +197,7 @@ none, the command fails and lists them - pick with `--skill` or confirm `--all` 
 
 ## Destructive commands
 
-A command that deletes or overwrites something Loadout can not give back as it was refuses
+A command that deletes or overwrites something Loadout cannot give back as it was refuses
 to run without `--yes`: `skills remove`, `skills duplicates merge`, `items remove`,
 `presets delete`, `removed delete`, `git restore` and `skills publish`. So does
 `agents disable` when the agent has skills deployed, and an export (`skills export`,

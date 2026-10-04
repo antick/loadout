@@ -120,7 +120,7 @@ describe("skills update --dry-run", () => {
 });
 
 describe("a dry run checks its input like the real run", () => {
-  it("refuses install flags a source can not use, before fetching anything", async () => {
+  it("refuses install flags a source cannot use, before fetching anything", async () => {
     const folder = writeSkill(box.root, "pdf");
     const cases = [
       ["acme/skills@pdf", "--skill", "pdf"],
