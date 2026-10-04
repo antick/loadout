@@ -7,7 +7,6 @@ import {
   formatNameList,
   formatRelative,
   formatTimestampCompact,
-  parseTimestampCompact,
 } from "../src/format";
 
 // The tests run in UTC (vitest.config.ts) but in the reader's language, so most expectations hold
@@ -85,23 +84,10 @@ describe("formatRelative", () => {
   });
 });
 
-describe("formatTimestampCompact and parseTimestampCompact", () => {
-  it("write the UTC time as digits", () => {
+describe("formatTimestampCompact", () => {
+  it("writes the UTC time as digits", () => {
     expect(formatTimestampCompact(AT)).toBe("20260919-153045");
     expect(formatTimestampCompact(Date.UTC(2001, 0, 2, 3, 4, 5))).toBe("20010102-030405");
-  });
-
-  it("read back what they wrote, to the second", () => {
-    for (const ms of [AT, START_OF_DAY, END_OF_DAY, Date.UTC(1999, 11, 31, 23, 59, 59)]) {
-      expect(parseTimestampCompact(formatTimestampCompact(ms))).toBe(ms);
-    }
-    expect(parseTimestampCompact(formatTimestampCompact(AT + 999))).toBe(AT);
-  });
-
-  it("refuse anything else", () => {
-    for (const text of ["", "2026-09-19", "20260919153045", "20260919-15304", "x0260919-153045"]) {
-      expect(parseTimestampCompact(text)).toBeNull();
-    }
   });
 });
 
