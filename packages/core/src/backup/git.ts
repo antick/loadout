@@ -156,6 +156,9 @@ export function createGit(deps: GitDeps): Git {
           // `classifyGitError` recognises them.
           GIT_TERMINAL_PROMPT: "0",
           LC_ALL: "C",
+          // Reads such as `status` must not take `index.lock`: a sync committing at the same
+          // moment would find it and stop, taking it for an interrupted operation.
+          GIT_OPTIONAL_LOCKS: "0",
           ...authEnv,
           ...options.env,
         },

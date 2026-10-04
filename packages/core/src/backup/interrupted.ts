@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "../errors";
 import { processAlive } from "../lock";
+import { statOrNull } from "../util/fs";
 import type { BackupEnv } from "./env";
 
 const GIT_DIR = ".git";
@@ -13,11 +15,27 @@ const INTERRUPTED_MARKERS = ["MERGE_HEAD", "index.lock", "rebase-merge", "rebase
  * safe to abort. Without the note it may be someone's work in a terminal: never touched.
  */
 const OWN_MERGE_NOTE = "loadout-merging";
+const INDEX_LOCK = "index.lock";
+/**
+ * A git command running right now (an editor's git view, a terminal) holds `index.lock` for a
+ * moment. A lock younger than this is waited for; an older one was left behind.
+ */
+const INDEX_LOCK_GRACE_MS = 5000;
+const INDEX_LOCK_POLL_MS = 100;
 
 const gitPath = (env: BackupEnv, name: string): string => join(env.repoDir, GIT_DIR, name);
 
 function leftoverMarker(env: BackupEnv): string | undefined {
   return INTERRUPTED_MARKERS.find((name) => existsSync(gitPath(env, name)));
+}
+
+/** Wait while `index.lock` is fresh: another git command is still running, not cut off. */
+async function waitForBusyIndex(env: BackupEnv): Promise<void> {
+  for (;;) {
+    const lock = statOrNull(gitPath(env, INDEX_LOCK));
+    if (!lock || Date.now() - lock.mtimeMs >= INDEX_LOCK_GRACE_MS) return;
+    await sleep(INDEX_LOCK_POLL_MS);
+  }
 }
 
 /** The note of a Loadout merge whose process is gone; false for anything else. */
@@ -32,7 +50,7 @@ function abandonedOwnMerge(env: BackupEnv): boolean {
 
 /** Undo what an unfinished merge left: the merge itself, and a lock its git process held. */
 async function abortOwnMerge(env: BackupEnv): Promise<void> {
-  rmSync(gitPath(env, "index.lock"), { force: true });
+  rmSync(gitPath(env, INDEX_LOCK), { force: true });
   if (existsSync(gitPath(env, "MERGE_HEAD"))) await env.git.probe(["merge", "--abort"]);
   rmSync(gitPath(env, OWN_MERGE_NOTE), { force: true });
 }
@@ -43,6 +61,7 @@ async function abortOwnMerge(env: BackupEnv): Promise<void> {
  * stops with an error that says what to do.
  */
 export async function recoverInterrupted(env: BackupEnv): Promise<void> {
+  await waitForBusyIndex(env);
   const marker = leftoverMarker(env);
   if (!marker) return;
   if (abandonedOwnMerge(env)) {
