@@ -53,6 +53,8 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
    */
   function plan(refs: PairRef[], result: ApplyResult): DeployPair[] {
     const agents = new Map(registry.available().map((agent) => [agent.key, agent]));
+    // Nothing is written while planning: one read of the rows serves every pair.
+    const known = store.deployments();
     const planned: DeployPair[] = [];
     const seen = new Set<string>();
     const missing = new Set<string>();
@@ -80,7 +82,7 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
       const pair = ops.pairFor(skill, agent);
       const row = store.deployment(skill.id, agent.key);
       const deployed = row !== null && samePath(row.targetPath, pair.targetPath);
-      if (deployed && ops.inspect(pair).current) {
+      if (deployed && ops.inspect(pair, undefined, known).current) {
         result.skipped += 1;
         continue;
       }
@@ -93,13 +95,14 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
   function findConflicts(planned: DeployPair[]): TargetConflict[] {
     const conflicts = new Map<string, TargetConflict>();
     const claimedBy = new Map<string, string>();
+    const known = store.deployments();
     for (const pair of planned) {
       const identity = targetIdentity(pair.targetPath);
       const claimant = claimedBy.get(identity) ?? pair.skill.id;
       claimedBy.set(identity, claimant);
       const refusal =
         claimant === pair.skill.id
-          ? ops.inspect(pair).refusal
+          ? ops.inspect(pair, undefined, known).refusal
           : { path: pair.targetPath, reason: REASON_TWO_SKILLS };
       if (refusal && !conflicts.has(identity)) conflicts.set(identity, refusal);
     }

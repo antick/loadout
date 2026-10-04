@@ -4,167 +4,25 @@ import type { DeployMode, Deployment, Skill, SourceType, UpdateStatus } from "@l
 import type { Database } from "../db/database";
 import { notFound } from "../errors";
 import type { SkillInspector } from "./checks";
+import {
+  type DeploymentRecord,
+  type DeploymentRow,
+  HYDRATE_BY_ID_MAX,
+  type InstalledSnapshot,
+  LIST_COLUMNS,
+  type NewSkill,
+  PATCH_COLUMNS,
+  type PresetRow,
+  type SkillPatch,
+  type SkillRow,
+  type TagRow,
+  append,
+  decodeList,
+  encodeList,
+  toDeployment,
+} from "./store-rows";
 
-interface SkillRow {
-  id: string;
-  name: string;
-  description: string | null;
-  source_type: string;
-  source_ref: string | null;
-  source_url: string | null;
-  source_subpath: string | null;
-  source_branch: string | null;
-  source_trusted_host: string | null;
-  source_revision: string | null;
-  remote_revision: string | null;
-  library_path: string;
-  content_hash: string | null;
-  update_status: string;
-  last_checked_at: number | null;
-  last_check_error: string | null;
-  created_at: number;
-  updated_at: number;
-  edited_files: string | null;
-  authored: number;
-  suggest_for: string | null;
-  blocked_agents: string | null;
-  note: string | null;
-  favorited_at: number | null;
-}
-
-interface DeploymentRow {
-  id: string;
-  skill_id: string;
-  agent_key: string;
-  target_path: string;
-  mode: string;
-  source_hash: string | null;
-  synced_at: number | null;
-}
-
-/** A deployment row including the library hash it was last synced from. */
-export interface DeploymentRecord extends Deployment {
-  sourceHash: string | null;
-}
-
-/** A skill's content right after it came from its source. */
-export interface InstalledSnapshot {
-  hash: string;
-  /** `/` separated path → SHA-256 of the file. */
-  files: Record<string, string>;
-}
-
-export interface NewSkill {
-  id?: string;
-  name: string;
-  description: string | null;
-  sourceType: SourceType;
-  sourceRef?: string | null;
-  sourceUrl?: string | null;
-  sourceSubpath?: string | null;
-  sourceBranch?: string | null;
-  sourceTrustedHost?: string | null;
-  sourceRevision?: string | null;
-  remoteRevision?: string | null;
-  libraryPath: string;
-  contentHash: string | null;
-  updateStatus: UpdateStatus;
-  createdAt?: number;
-  updatedAt?: number;
-  editedFiles?: string[];
-  authored?: boolean;
-  suggestFor?: string[];
-  blockedAgents?: string[];
-  note?: string | null;
-  favoritedAt?: number | null;
-}
-
-export type SkillPatch = Partial<
-  Pick<
-    Skill,
-    | "name"
-    | "description"
-    | "sourceType"
-    | "sourceRef"
-    | "sourceUrl"
-    | "sourceSubpath"
-    | "sourceBranch"
-    | "sourceTrustedHost"
-    | "sourceRevision"
-    | "remoteRevision"
-    | "libraryPath"
-    | "contentHash"
-    | "updateStatus"
-    | "lastCheckedAt"
-    | "lastCheckError"
-    | "updatedAt"
-    | "editedFiles"
-    | "authored"
-    | "suggestFor"
-    | "blockedAgents"
-    | "note"
-    | "favoritedAt"
-  >
->;
-
-const PATCH_COLUMNS: Record<keyof SkillPatch, string> = {
-  name: "name",
-  description: "description",
-  sourceType: "source_type",
-  sourceRef: "source_ref",
-  sourceUrl: "source_url",
-  sourceSubpath: "source_subpath",
-  sourceBranch: "source_branch",
-  sourceTrustedHost: "source_trusted_host",
-  sourceRevision: "source_revision",
-  remoteRevision: "remote_revision",
-  libraryPath: "library_path",
-  contentHash: "content_hash",
-  updateStatus: "update_status",
-  lastCheckedAt: "last_checked_at",
-  lastCheckError: "last_check_error",
-  updatedAt: "updated_at",
-  editedFiles: "edited_files",
-  authored: "authored",
-  suggestFor: "suggest_for",
-  blockedAgents: "blocked_agents",
-  note: "note",
-  favoritedAt: "favorited_at",
-};
-/** Patches whose value is a list of strings, stored as JSON. */
-const LIST_COLUMNS: ReadonlySet<keyof SkillPatch> = new Set([
-  "editedFiles",
-  "suggestFor",
-  "blockedAgents",
-]);
-
-/** Stored as a JSON array; an empty list is stored as NULL. */
-function encodeList(values: readonly string[] | null | undefined): string | null {
-  const clean = [...new Set(values ?? [])].sort();
-  return clean.length > 0 ? JSON.stringify(clean) : null;
-}
-
-function decodeList(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const value: unknown = JSON.parse(raw);
-    return Array.isArray(value) ? value.filter((entry) => typeof entry === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function toDeployment(row: DeploymentRow): DeploymentRecord {
-  return {
-    id: row.id,
-    skillId: row.skill_id,
-    agentKey: row.agent_key,
-    targetPath: row.target_path,
-    mode: row.mode as DeployMode,
-    syncedAt: row.synced_at,
-    sourceHash: row.source_hash,
-  };
-}
+export type { DeploymentRecord, InstalledSnapshot, NewSkill, SkillPatch } from "./store-rows";
 
 const NO_CHECKS: SkillInspector = {
   factsOf: () => ({ issues: [], manualOnly: false, traits: [], behaviourFields: [] }),
@@ -183,29 +41,43 @@ export class SkillStore {
     this.#inspector = inspector;
   }
 
+  /**
+   * Rows of a related table for the skills being read. A few skills (one `find`) read only
+   * their own rows; a long list reads the whole table at once.
+   */
+  #related<T>(select: string, column: string, ids: readonly string[], order = ""): T[] {
+    if (ids.length > HYDRATE_BY_ID_MAX) return this.#db.all<T>(`${select} ${order}`);
+    const where = `WHERE ${column} IN (${ids.map(() => "?").join(", ")})`;
+    return this.#db.all<T>(`${select} ${where} ${order}`, ...ids);
+  }
+
   #hydrate(rows: SkillRow[]): Skill[] {
     if (rows.length === 0) return [];
+    const ids = rows.map((row) => row.id);
     const deployments = new Map<string, Deployment[]>();
-    for (const row of this.#db.all<DeploymentRow>("SELECT * FROM deployments ORDER BY agent_key")) {
+    const deploymentRows = this.#related<DeploymentRow>(
+      "SELECT * FROM deployments",
+      "skill_id",
+      ids,
+      "ORDER BY agent_key",
+    );
+    for (const row of deploymentRows) {
       const { sourceHash: _sourceHash, ...deployment } = toDeployment(row);
-      deployments.set(row.skill_id, [...(deployments.get(row.skill_id) ?? []), deployment]);
+      append(deployments, row.skill_id, deployment);
     }
     const tags = new Map<string, string[]>();
-    for (const row of this.#db.all<{ skill_id: string; tag: string }>(
-      "SELECT skill_id, tag FROM skill_tags ORDER BY tag",
-    )) {
-      tags.set(row.skill_id, [...(tags.get(row.skill_id) ?? []), row.tag]);
+    const tagSql = "SELECT skill_id, tag FROM skill_tags";
+    for (const row of this.#related<TagRow>(tagSql, "skill_id", ids, "ORDER BY tag")) {
+      append(tags, row.skill_id, row.tag);
     }
     const presets = new Map<string, string[]>();
-    for (const row of this.#db.all<{ skill_id: string; preset_id: string }>(
-      "SELECT skill_id, preset_id FROM preset_skills",
-    )) {
-      presets.set(row.skill_id, [...(presets.get(row.skill_id) ?? []), row.preset_id]);
+    const presetSql = "SELECT skill_id, preset_id FROM preset_skills";
+    for (const row of this.#related<PresetRow>(presetSql, "skill_id", ids)) {
+      append(presets, row.skill_id, row.preset_id);
     }
+    const conflictSql = "SELECT skill_key FROM backup_conflicts";
     const conflicts = new Set(
-      this.#db
-        .all<{ skill_key: string }>("SELECT skill_key FROM backup_conflicts")
-        .map((r) => r.skill_key),
+      this.#related<{ skill_key: string }>(conflictSql, "skill_key", ids).map((r) => r.skill_key),
     );
     return rows.map((row) => this.#toSkill(row, { deployments, tags, presets, conflicts }));
   }

@@ -43,7 +43,8 @@ export type DeployOutcome = "written" | "unchanged";
 
 export interface DeployOperations {
   pairFor(skill: Skill, agent: ResolvedAgent, skillsDir?: string): DeployPair;
-  inspect(pair: DeployPair, policy?: OwnershipPolicy): TargetCheck;
+  /** `known`: every deployment row, read once by a caller that inspects many pairs. */
+  inspect(pair: DeployPair, policy?: OwnershipPolicy, known?: DeploymentRecord[]): TargetCheck;
   deployPair(pair: DeployPair, policy?: OwnershipPolicy): Promise<DeployOutcome>;
   undeployRow(row: DeploymentRecord, agentName?: string): boolean;
 }
@@ -81,9 +82,13 @@ export function createDeployOperations(
     return removed.setAside(edited.targetPath, { place, reason });
   }
 
-  function inspect(pair: DeployPair, forced?: OwnershipPolicy): TargetCheck {
+  function inspect(
+    pair: DeployPair,
+    forced?: OwnershipPolicy,
+    known?: DeploymentRecord[],
+  ): TargetCheck {
     const { skill, targetPath } = pair;
-    const rows = rowsAtPath(store.deployments(), targetPath);
+    const rows = rowsAtPath(known ?? store.deployments(), targetPath);
     const policy = forced ?? policyFromRows(rows);
     const state = classifyTarget(targetPath, skill.libraryPath);
     const mode = usableMode(targetPath, ctx.settings.get("deployMode"));
