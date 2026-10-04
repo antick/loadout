@@ -1,4 +1,10 @@
-import { type AgentInfo, type ProjectTarget, SOURCE_TYPES, type Skill } from "@loadout/shared";
+import {
+  type AgentInfo,
+  type ProjectTarget,
+  SOURCE_TYPES,
+  type Skill,
+  matchesSkillQuery,
+} from "@loadout/shared";
 import { Library } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,7 +44,7 @@ import { useAllTags, useSkills } from "@/hooks/queries/skills";
 import { agentColumnCoverage } from "@/features/library/matrix/matrix-state";
 import { useSelection } from "@/hooks/use-selection";
 import { matchesTagFilter } from "@/lib/tag-filter";
-import { cn, matchesQuery } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export type AddFromLibraryTarget =
   /** No agents involved (e.g. adding to a preset): the target row is hidden. */
@@ -162,7 +168,7 @@ export function AddFromLibrarySheet({
     () =>
       (skills.data ?? [])
         .filter((skill) => !exclude?.(skill))
-        .filter((skill) => matchesQuery(query, skill.name, skill.description))
+        .filter((skill) => matchesSkillQuery(skill, query))
         .filter((skill) => matchesTagFilter(skill.tags, tagFilter))
         .filter((skill) => source === SOURCE_FILTER_ALL || skill.sourceType === source)
         .map((skill) => ({ skill, info: infoFor(skill, agentKeys), note: featured?.get(skill.id) }))

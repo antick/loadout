@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { matchesTagFilter } from "@/lib/tag-filter";
-import { matchesQuery } from "@/lib/utils";
+import { matchesNamedQuery } from "@loadout/shared";
 import type { LocalSkillView } from "./local-skill-view";
 
 export interface LocalSkillFilters<T extends LocalSkillView> {
@@ -43,7 +43,7 @@ export function useLocalSkillFilters<T extends LocalSkillView>(
     () =>
       items.filter(
         (item) =>
-          matchesQuery(debouncedQuery, item.name, item.description, item.relativePath) &&
+          matchesNamedQuery(item.name, [item.description, item.relativePath], debouncedQuery) &&
           matchesTagFilter(item.tags, tagFilter) &&
           (extra ? extra(item) : true),
       ),

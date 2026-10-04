@@ -1,4 +1,4 @@
-import { matchesNameParts, matchesSkillQuery } from "@loadout/shared";
+import { matchesNameParts, matchesNamedQuery, matchesSkillQuery } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 
 const skill = (name: string, description = "", tags: string[] = []) => ({
@@ -47,5 +47,16 @@ describe("matchesSkillQuery", () => {
     expect(matchesSkillQuery(pdf, "files merge")).toBe(true);
     expect(matchesSkillQuery(pdf, "pdfm documents")).toBe(true);
     expect(matchesSkillQuery(pdf, "files spreadsheet")).toBe(false);
+  });
+});
+
+describe("matchesNamedQuery", () => {
+  it("searches any list of skills the way the library is searched", () => {
+    const folder = ["Fills in forms", ".claude/skills/pdf-form-filler"];
+    expect(matchesNamedQuery("pdf-form-filler", folder, "pff")).toBe(true);
+    expect(matchesNamedQuery("pdf-form-filler", folder, "forms pdf")).toBe(true);
+    expect(matchesNamedQuery("pdf-form-filler", folder, ".claude/skills")).toBe(true);
+    expect(matchesNamedQuery("pdf-form-filler", folder, "sheet")).toBe(false);
+    expect(matchesNamedQuery("pdf-form-filler", [null, undefined], "")).toBe(true);
   });
 });

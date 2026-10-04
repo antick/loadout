@@ -36,6 +36,7 @@ import { useAvailableAgents } from "@/hooks/queries/agents";
 import { usePresets } from "@/hooks/queries/presets";
 import { useProjects } from "@/hooks/queries/projects";
 import { useSkills } from "@/hooks/queries/skills";
+import { MATCHED_SKILL_VALUE, keepMatchedSkills } from "@/lib/command-filter";
 import { COMMAND_PALETTE_MAX_SKILLS } from "@/lib/constants";
 import { useShortcutLabel } from "@/hooks/use-shortcut-label";
 
@@ -85,6 +86,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
     <CommandDialog
       open={open}
       onOpenChange={changeOpen}
+      filter={keepMatchedSkills}
       title={t("palette.title")}
       description={t("palette.description")}
     >
@@ -159,9 +161,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
             {skillMatches.map((skill) => (
               <CommandItem
                 key={skill.id}
-                value={`skill ${skill.name} ${skill.tags.join(" ")} ${skill.id}`}
-                // Already matched above; the search as a keyword keeps the palette from hiding it.
-                keywords={[search]}
+                value={`${MATCHED_SKILL_VALUE}${skill.name} ${skill.id}`}
                 onSelect={() =>
                   run(() => void navigate({ to: "/library", search: { skill: skill.id } }))
                 }

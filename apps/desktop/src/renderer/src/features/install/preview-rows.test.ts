@@ -82,6 +82,9 @@ describe("preview list", () => {
     expect(filterPreviewRows(described, "EXTRA").map((r) => r.relPath)).toEqual(["extra/c"]);
     expect(filterPreviewRows(described, "pdf").map((r) => r.relPath)).toEqual(["misc/d"]);
     expect(filterPreviewRows(described, "  ")).toHaveLength(described.length);
+    // Like the library: words in any order, and the starts of the name's parts.
+    expect(filterPreviewRows([row("skills/pdf-form-filler")], "pff")).toHaveLength(1);
+    expect(filterPreviewRows([row("skills/release-notes")], "notes release")).toHaveLength(1);
   });
 
   it("starts with free names ticked, or with what the typed text named", () => {

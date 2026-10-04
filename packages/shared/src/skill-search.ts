@@ -29,26 +29,32 @@ export function matchesNameParts(name: string, word: string): boolean {
 }
 
 /**
- * The library search, shared by the app and the command line, ignoring case. A skill matches when
- * the whole text is anywhere in its name, description, tags, note or source; or when every word
- * of it is, each word either in one of those or made of the starts of the name's parts (`pdfm`
- * for `pdf-manipulation`). An empty query matches everything.
+ * How every list of skills is searched, ignoring case: the whole text anywhere in the name or one
+ * of `others`; or every word of it, each word either in one of those or made of the starts of the
+ * name's parts (`pdfm` for `pdf-manipulation`). An empty query matches everything.
  */
-export function matchesSkillQuery(skill: SearchableSkill, query: string): boolean {
+export function matchesNamedQuery(
+  name: string,
+  others: readonly (string | null | undefined)[],
+  query: string,
+): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
-  const fields = [
-    skill.name,
-    skill.description,
-    skill.tags.join(" "),
-    skill.sourceRef,
-    skill.sourceUrl,
-    skill.note,
-  ].flatMap((field) => (field ? [field.toLowerCase()] : []));
+  const fields = [name, ...others].flatMap((field) => (field ? [field.toLowerCase()] : []));
   if (fields.some((field) => field.includes(needle))) return true;
   return needle
     .split(WORDS)
-    .every(
-      (word) => fields.some((field) => field.includes(word)) || matchesNameParts(skill.name, word),
-    );
+    .every((word) => fields.some((field) => field.includes(word)) || matchesNameParts(name, word));
+}
+
+/**
+ * The library search, shared by the app and the command line: the name, description, tags, note
+ * and source of a library skill (see `matchesNamedQuery`).
+ */
+export function matchesSkillQuery(skill: SearchableSkill, query: string): boolean {
+  return matchesNamedQuery(
+    skill.name,
+    [skill.description, skill.tags.join(" "), skill.sourceRef, skill.sourceUrl, skill.note],
+    query,
+  );
 }

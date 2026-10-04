@@ -4,6 +4,7 @@
  */
 
 import type { InstallOutcome } from "./install-plan";
+import { matchesNamedQuery } from "./skill-search";
 import type { GitPreview, RepoSkillPreview } from "./types-install";
 
 /** Skills under one folder of the source, e.g. every skill in `skills/`. */
@@ -39,16 +40,12 @@ export function showsGroups(groups: readonly PreviewGroup[]): boolean {
   return groups.length > 1;
 }
 
-/** Rows with `query` in the name, folder or description, ignoring case, like the library search. */
+/** Rows matching `query` by name, folder or description, the way the library is searched. */
 export function filterPreviewRows(
   rows: readonly RepoSkillPreview[],
   query: string,
 ): RepoSkillPreview[] {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return [...rows];
-  return rows.filter((row) =>
-    [row.name, row.relPath, row.description].some((field) => field?.toLowerCase().includes(needle)),
-  );
+  return rows.filter((row) => matchesNamedQuery(row.name, [row.relPath, row.description], query));
 }
 
 /**

@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Package } from "lucide-react";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CommandDialog,
@@ -10,7 +10,9 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { matchesSkillQuery } from "@loadout/shared";
 import { useSkills } from "@/hooks/queries/skills";
+import { MATCHED_SKILL_VALUE, keepMatchedSkills } from "@/lib/command-filter";
 import { editLink } from "@/lib/skill-location";
 
 export interface SkillPickerProps {
@@ -23,31 +25,46 @@ export function SkillPicker({ open, onOpenChange }: SkillPickerProps): ReactNode
   const { t } = useTranslation();
   const navigate = useNavigate();
   const skills = useSkills();
+  const [search, setSearch] = useState("");
   const sorted = useMemo(
     () => [...(skills.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
     [skills.data],
   );
+  // The library's own search, as in the library and ⌘K: words in any order, name initials.
+  const matches = useMemo(
+    () => sorted.filter((skill) => matchesSkillQuery(skill, search)),
+    [sorted, search],
+  );
+  const changeOpen = (next: boolean): void => {
+    if (!next) setSearch("");
+    onOpenChange(next);
+  };
 
   return (
     <CommandDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={changeOpen}
+      filter={keepMatchedSkills}
       title={t("skillPicker.title")}
       description={t("skillPicker.description")}
     >
-      <CommandInput placeholder={t("skillPicker.placeholder")} />
+      <CommandInput
+        placeholder={t("skillPicker.placeholder")}
+        value={search}
+        onValueChange={setSearch}
+      />
       <CommandList>
         <CommandEmpty>
           {sorted.length === 0 ? t("skillPicker.noSkills") : t("skillPicker.empty")}
         </CommandEmpty>
-        {sorted.length > 0 ? (
+        {matches.length > 0 ? (
           <CommandGroup heading={t("skillPicker.heading")}>
-            {sorted.map((skill) => (
+            {matches.map((skill) => (
               <CommandItem
                 key={skill.id}
-                value={`${skill.name} ${skill.tags.join(" ")} ${skill.id}`}
+                value={`${MATCHED_SKILL_VALUE}${skill.name} ${skill.id}`}
                 onSelect={() => {
-                  onOpenChange(false);
+                  changeOpen(false);
                   void navigate(editLink({ kind: "library", skillId: skill.id }));
                 }}
               >
