@@ -74,7 +74,7 @@ Every feature in detail, current limitations and what still needs testing:
 
 ## Run locally
 
-1. Install Node.js 22.12 or newer and Git. Then let Node's Corepack provide the pnpm version
+1. Install Node.js 22.13 or newer and Git. Then let Node's Corepack provide the pnpm version
    pinned in the `packageManager` field of [package.json](package.json):
 
    ```bash

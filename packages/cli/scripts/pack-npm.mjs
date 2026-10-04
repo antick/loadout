@@ -18,12 +18,13 @@ const BUNDLE = "dist/loadout.mjs";
 const BUNDLE_NAME = "cli.mjs";
 const OUT_DIR = "dist/npm";
 const APP_PACKAGE = "../../apps/desktop/package.json";
+/** Holds the Node.js floor (`engines.node`) of the whole repository. */
+const ROOT_PACKAGE = "../../package.json";
 const LICENSE_FILE = "../../LICENSE";
 const REPOSITORY = "https://github.com/antick/loadout";
-/** `node:sqlite` works without a flag from here on. */
-const NODE_ENGINE = ">=22.13.0";
-
 const app = JSON.parse(readFileSync(APP_PACKAGE, "utf8"));
+/** `node:sqlite` works without a flag from 22.13 on; the root package.json says so once. */
+const NODE_ENGINE = JSON.parse(readFileSync(ROOT_PACKAGE, "utf8")).engines.node;
 const cli = JSON.parse(readFileSync("package.json", "utf8"));
 
 const manifest = {
