@@ -44,23 +44,30 @@ export function createWorld(session: string): World {
     remotes: join(live, "remotes"),
     secretsFile: join(live, "secrets.json"),
   };
-  for (const dir of [world.home, world.remotes, join(live, "tmp")]) {
-    mkdirSync(dir, { recursive: true });
-  }
+  emptyLive(world);
   isolateProcess(world);
   return world;
 }
 
-/** Git, temp files and the home folder of this process all point into the world. */
-function isolateProcess(world: World): void {
-  const gitConfig = join(world.live, "gitconfig");
+const gitConfigPath = (world: World): string => join(world.live, "gitconfig");
+
+/** `live` as a new world has it: empty home, remotes and temp folders, and the Git config. */
+export function emptyLive(world: World): void {
+  rmSync(world.live, { recursive: true, force: true });
+  for (const dir of [world.home, world.remotes, join(world.live, "tmp")]) {
+    mkdirSync(dir, { recursive: true });
+  }
   const rewrites = GIT_HOSTS.map(
     (host) => `[url "${join(world.remotes, host)}/"]\n\tinsteadOf = https://${host}/\n`,
   );
-  writeFileSync(gitConfig, GIT_QUIET + rewrites.join(""));
+  writeFileSync(gitConfigPath(world), GIT_QUIET + rewrites.join(""));
+}
+
+/** Git, temp files and the home folder of this process all point into the world. */
+function isolateProcess(world: World): void {
   Object.assign(process.env, {
     HOME: world.home,
-    GIT_CONFIG_GLOBAL: gitConfig,
+    GIT_CONFIG_GLOBAL: gitConfigPath(world),
     GIT_CONFIG_NOSYSTEM: "1",
     TMPDIR: join(world.live, "tmp"),
   });

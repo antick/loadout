@@ -9,9 +9,10 @@ import type { ApiResponse, LoadoutApi } from "@loadout/shared";
 import { callChannel } from "../../src/main/dispatch.ts";
 import { PREVIEW_VERSION, createAppStub } from "./app-stub.ts";
 import { createFixtureFetch } from "./fetch.ts";
+import { createLifecycle } from "./lifecycle.ts";
 import { runScenario } from "./scenarios.ts";
 import { seedFiles, seedLibrary } from "./seed.ts";
-import { createSnapshots, createWorld, fileSecrets, removeWorld } from "./world.ts";
+import { createSnapshots, createWorld, emptyLive, fileSecrets, removeWorld } from "./world.ts";
 
 interface Command {
   id: number;
@@ -51,6 +52,7 @@ function close(): void {
 }
 
 async function seed(): Promise<void> {
+  emptyLive(world);
   seedFiles(world);
   open();
   await seedLibrary(world, api as LoadoutApi);
@@ -59,23 +61,20 @@ async function seed(): Promise<void> {
   open();
 }
 
-async function reset(): Promise<void> {
+async function restore(): Promise<void> {
   await Promise.race([Promise.allSettled(running), delay(SETTLE_MS, null, { ref: false })]);
   close();
   await snapshots.restore();
   open();
 }
 
-let ready = seed();
-// Every call answers with this error too; logged once here so the terminal says why.
-ready.catch((error: unknown) => console.error("The preview session could not seed", error));
+const lifecycle = createLifecycle({ seed, restore, report: console.error });
 
 async function answer(command: Command): Promise<ApiResponse<unknown>> {
   try {
-    await ready;
+    await lifecycle.ready();
     if (command.kind === "reset") {
-      ready = reset();
-      await ready;
+      await lifecycle.reset();
       return { ok: true, value: null };
     }
     if (command.kind === "setup") {
