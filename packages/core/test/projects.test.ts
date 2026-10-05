@@ -52,7 +52,7 @@ describe("projects", () => {
   });
 
   describe("saving workspaces", () => {
-    it("adds an existing folder, prepares the default agent's folders, and lists it last", async () => {
+    it("adds an existing folder, prepares the default agent's folder, and lists it last", async () => {
       const first = await api().add(repo);
       expect(first).toMatchObject({
         name: "repo",
@@ -63,7 +63,8 @@ describe("projects", () => {
         missing: false,
       });
       expect(existsSync(claude)).toBe(true);
-      expect(existsSync(claudeOff)).toBe(true);
+      // The parking folder is made when a skill is first switched off, and goes once empty.
+      expect(existsSync(claudeOff)).toBe(false);
 
       const other = join(world.root, "work", "other");
       mkdirSync(other);
@@ -333,6 +334,10 @@ describe("projects", () => {
       expect(inLibrary.message).toContain("overlaps the Loadout library");
       const disabledOnAgent = await rejection(api().addLinked("X", skillsRoot, agentFolder));
       expect(disabledOnAgent.message).toContain("The disabled skills folder");
+      // A refused link leaves no sibling folder behind.
+      expect(existsSync(join(world.home, ".claude", "skills-disabled"))).toBe(false);
+      expect(existsSync(join(world.home, ".claude-disabled"))).toBe(false);
+      expect(existsSync(`${world.ctx.paths.skillsDir}-disabled`)).toBe(false);
 
       // The home folder as a project would make ~/.claude/skills a project folder.
       expect((await rejection(api().add(world.home))).message).toContain("overlaps");

@@ -7,8 +7,10 @@ import {
   canonicalPath,
   ensureDir,
   isDirectory,
+  lstatOrNull,
   normalizeAbsolutePath,
   pathsOverlap,
+  targetIdentity,
 } from "../util/fs";
 import { slugify } from "../util/names";
 import { withProjectDuplicates } from "../workspace/duplicates";
@@ -57,6 +59,19 @@ function requireFolder(input: string, label: string): string {
   return path;
 }
 
+/**
+ * Where a linked workspace parks switched-off skills: the folder given, which must exist, or a
+ * sibling of the skills folder, made only once every check has passed.
+ */
+function plannedDisabledRoot(
+  skillsRoot: string,
+  given: string | null | undefined,
+): { path: string; given: boolean } {
+  if (given?.trim()) return { path: requireFolder(given, "Disabled skills path"), given: true };
+  const sibling = join(dirname(skillsRoot), `${basename(skillsRoot)}${DISABLED_SUFFIX}`);
+  return { path: sibling, given: false };
+}
+
 /** Project workspaces (a repository with per-agent skills folders) and linked skills roots. */
 export function createProjectsService(
   ctx: CoreContext,
@@ -98,13 +113,8 @@ export function createProjectsService(
     };
   }
 
-  /** A given folder must exist; otherwise a sibling is made, and failing that there is none. */
-  function resolveDisabledRoot(
-    skillsRoot: string,
-    given: string | null | undefined,
-  ): string | null {
-    if (given?.trim()) return requireFolder(given, "Disabled skills path");
-    const sibling = join(dirname(skillsRoot), `${basename(skillsRoot)}${DISABLED_SUFFIX}`);
+  /** Make the sibling parking folder; when that fails, the workspace cannot switch skills off. */
+  function makeSibling(sibling: string): string | null {
     try {
       ensureDir(sibling);
       return sibling;
@@ -128,12 +138,10 @@ export function createProjectsService(
       const root = requireFolder(path, "Project path");
       refuseDuplicate(root);
       refuseProjectOverlap(ctx, registry, root);
-      // Every project starts with the default agent's folders, so there is somewhere to export to.
+      // Every project starts with the default agent's folder, so there is somewhere to export to.
+      // Its parking folder is made when a skill is first switched off, and removed once empty.
       const skillsDir = defaultProjectSkillsDir(registry);
-      if (skillsDir) {
-        ensureDir(join(root, skillsDir));
-        ensureDir(join(root, `${skillsDir}${DISABLED_SUFFIX}`));
-      }
+      if (skillsDir) ensureDir(join(root, skillsDir));
       const record = projects.insert({
         name: basename(root),
         path: root,
@@ -150,11 +158,15 @@ export function createProjectsService(
       if (!label) throw invalid("Workspace name is required");
       const root = requireFolder(path, "Skills path");
       refuseDuplicate(root);
-      const disabledRoot = resolveDisabledRoot(root, disabledPath);
-      if (disabledRoot && pathsOverlap(canonicalPath(root), canonicalPath(disabledRoot))) {
+      const planned = plannedDisabledRoot(root, disabledPath);
+      // A sibling not made yet is checked by its parent's real path, so links above it count.
+      const checked = lstatOrNull(planned.path) ? planned.path : targetIdentity(planned.path);
+      if (pathsOverlap(canonicalPath(root), canonicalPath(checked))) {
         throw invalid("The skills folder and the disabled skills folder must not overlap");
       }
-      refuseLinkedOverlap(ctx, registry, root, disabledRoot);
+      refuseLinkedOverlap(ctx, registry, root, checked);
+      // Only now, with every check passed: a refused link must leave nothing behind.
+      const disabledRoot = planned.given ? planned.path : makeSibling(planned.path);
       const record = projects.insert({
         name: label,
         path: root,
