@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import {
   FilePlus2,
   BookOpen,
@@ -50,20 +49,18 @@ export function HomePanel(): ReactNode {
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link to="/install" draggable={false}>
-                  <PackagePlus />
-                  <span>{t("sidebar.home.install")}</span>
-                </Link>
-              </SidebarMenuButton>
+              <SidebarNavItem
+                link={{ to: "/install" }}
+                label={t("sidebar.home.install")}
+                icon={<PackagePlus />}
+              />
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link to="/install" search={{ tab: "scan" }} draggable={false}>
-                  <ScanSearch />
-                  <span>{t("sidebar.home.scan")}</span>
-                </Link>
-              </SidebarMenuButton>
+              <SidebarNavItem
+                link={{ to: "/install", search: { tab: "scan" } }}
+                label={t("sidebar.home.scan")}
+                icon={<ScanSearch />}
+              />
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => shell.openNewSkill()}>
@@ -84,12 +81,11 @@ export function HomePanel(): ReactNode {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link to="/backup" draggable={false}>
-                  <CloudUpload />
-                  <span>{t("sidebar.home.backup")}</span>
-                </Link>
-              </SidebarMenuButton>
+              <SidebarNavItem
+                link={{ to: "/backup" }}
+                label={t("sidebar.home.backup")}
+                icon={<CloudUpload />}
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroupContent>

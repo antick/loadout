@@ -1,12 +1,12 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem";
 import { SidebarPanel } from "@/components/layout/sidebar/SidebarPanel";
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
@@ -33,12 +33,13 @@ export function SettingsPanel(): ReactNode {
               const Icon = SETTINGS_SECTION_ICONS[id];
               return (
                 <SidebarMenuItem key={id}>
-                  <SidebarMenuButton asChild isActive={current === id}>
-                    <Link to="/settings" search={{ section: id }} draggable={false}>
-                      <Icon />
-                      <span className="truncate">{t(`settings.sections.${id}.title`)}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  <SidebarNavItem
+                    link={{ to: "/settings", search: { section: id } }}
+                    label={t(`settings.sections.${id}.title`)}
+                    icon={<Icon />}
+                    // No section in the address means the default one.
+                    active={current === id}
+                  />
                 </SidebarMenuItem>
               );
             })}

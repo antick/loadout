@@ -5,7 +5,6 @@ import {
   isUnusedSkill,
   usageById,
 } from "@loadout/shared";
-import { Link } from "@tanstack/react-router";
 import {
   CircleDashed,
   CircleFadingArrowUp,
@@ -26,8 +25,6 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuBadge,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
@@ -161,15 +158,13 @@ export function LibraryPanel(): ReactNode {
               const count = view.count(all, usage, safety);
               return (
                 <SidebarMenuItem key={view.id}>
-                  <SidebarMenuButton asChild className={cn(count === 0 && "opacity-60")}>
-                    <Link to="/library" search={view.search} draggable={false}>
-                      {view.icon}
-                      <span className="truncate">{t(`sidebar.library.view.${view.id}`)}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                  {skills.data ? (
-                    <SidebarMenuBadge className="text-muted-foreground">{count}</SidebarMenuBadge>
-                  ) : null}
+                  <SidebarNavItem
+                    link={{ to: "/library", search: view.search }}
+                    label={t(`sidebar.library.view.${view.id}`)}
+                    icon={view.icon}
+                    badge={skills.data ? count : undefined}
+                    className={cn(count === 0 && "opacity-60")}
+                  />
                 </SidebarMenuItem>
               );
             })}
@@ -189,11 +184,12 @@ export function LibraryPanel(): ReactNode {
             ) : null}
             {recent.map((skill) => (
               <SidebarMenuItem key={skill.id}>
-                <SidebarMenuButton asChild size="sm">
-                  <Link to="/library" search={{ skill: skill.id }} draggable={false}>
-                    <span className="truncate">{skill.name}</span>
-                  </Link>
-                </SidebarMenuButton>
+                <SidebarNavItem
+                  link={{ to: "/library", search: { skill: skill.id } }}
+                  label={skill.name}
+                  icon={null}
+                  size="sm"
+                />
               </SidebarMenuItem>
             ))}
           </SidebarMenu>

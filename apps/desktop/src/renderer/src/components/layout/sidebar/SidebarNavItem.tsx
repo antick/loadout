@@ -16,6 +16,9 @@ export interface SidebarNavItemProps {
   indicator?: ReactNode;
   /** Active only on this exact path (not on child routes). */
   exact?: boolean;
+  /** Whether it is the current page, when matching the link is not enough (a default section). */
+  active?: boolean;
+  size?: "default" | "sm";
   /** `ContextMenuItem`s for a right-click menu. */
   contextMenu?: ReactNode;
   className?: string;
@@ -30,16 +33,18 @@ export function SidebarNavItem({
   badgeOnHover,
   indicator,
   exact,
+  active,
+  size,
   contextMenu,
   className,
 }: SidebarNavItemProps): ReactNode {
   const matchRoute = useMatchRoute();
-  const active = Boolean(
+  const matched = Boolean(
     matchRoute({ ...link, fuzzy: !exact } as Parameters<typeof matchRoute>[0]),
   );
 
   const button = (
-    <SidebarMenuButton asChild isActive={active} className={className}>
+    <SidebarMenuButton asChild isActive={active ?? matched} size={size} className={className}>
       <Link {...link} draggable={false}>
         {icon}
         <span className="flex min-w-0 items-center gap-1.5">

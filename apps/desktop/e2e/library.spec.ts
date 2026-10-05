@@ -172,3 +172,12 @@ test("the skill panel offers Compare only for a skill with a source", async ({ p
     "true",
   );
 });
+
+test("the sidebar marks the recently changed skill whose panel is open", async ({ page }) => {
+  await openApp(page, "/library");
+  await activityBar(page).getByRole("button", { name: "Library" }).click();
+  const recent = page.locator('a[href*="skill="]').first();
+  await expect(recent).toHaveAttribute("data-active", "false");
+  await recent.click();
+  await expect(recent).toHaveAttribute("data-active", "true");
+});
