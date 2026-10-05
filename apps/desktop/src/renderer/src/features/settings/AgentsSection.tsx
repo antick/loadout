@@ -185,14 +185,13 @@ export function AgentsSection(): ReactNode {
                         agent={agent}
                         deployedCount={deployedCounts.get(agent.key) ?? 0}
                         namesByKey={namesByKey}
-                        onMoveUp={
-                          canReorder && index > 0
-                            ? () => reorderGroup(moveId(memberKeys, agent.key, -1))
-                            : undefined
-                        }
-                        onMoveDown={
-                          canReorder && index < visible.length - 1
-                            ? () => reorderGroup(moveId(memberKeys, agent.key, 1))
+                        move={
+                          canReorder && visible.length > 1
+                            ? {
+                                index,
+                                total: visible.length,
+                                onMove: (step) => reorderGroup(moveId(memberKeys, agent.key, step)),
+                              }
                             : undefined
                         }
                       />

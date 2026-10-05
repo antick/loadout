@@ -10,6 +10,7 @@ import { SidebarPanel } from "@/components/layout/sidebar/SidebarPanel";
 import { useShell } from "@/components/layout/shell-context";
 import { SortableList } from "@/components/SortableList";
 import { StatusDot } from "@/components/StatusDot";
+import { MoveMenuItems } from "@/components/MoveItems";
 import { ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu";
 import {
   SidebarGroup,
@@ -203,18 +204,12 @@ export function ProjectsPanel(): ReactNode {
                         >
                           {t("common.reveal")}
                         </ContextMenuItem>
-                        <ContextMenuItem
-                          disabled={index === 0}
-                          onSelect={() => reorder.mutate(moveId(ids, project.id, -1))}
-                        >
-                          {t("common.moveUp")}
-                        </ContextMenuItem>
-                        <ContextMenuItem
-                          disabled={index === ids.length - 1}
-                          onSelect={() => reorder.mutate(moveId(ids, project.id, 1))}
-                        >
-                          {t("common.moveDown")}
-                        </ContextMenuItem>
+                        <MoveMenuItems
+                          index={index}
+                          total={ids.length}
+                          onMove={(step) => reorder.mutate(moveId(ids, project.id, step))}
+                          Item={ContextMenuItem}
+                        />
                         <ContextMenuSeparator />
                         <ContextMenuItem
                           variant="destructive"

@@ -176,8 +176,8 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
                   skill={skill}
                   agents={agents.data ?? []}
                   position={index + 1}
-                  isFirst={index === 0}
-                  isLast={index === members.length - 1}
+                  index={index}
+                  total={members.length}
                   onMove={(step) =>
                     reorder.mutate({
                       presetId: preset.id,

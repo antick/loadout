@@ -5,6 +5,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentBadgeRow } from "@/components/AgentBadgeRow";
 import { IconButton } from "@/components/IconButton";
+import { MoveMenuItems } from "@/components/MoveItems";
 import { SkillIndicators } from "@/components/SkillIndicators";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -22,8 +23,8 @@ export interface PresetSkillRowProps {
   /** Available agents, for the "where is it deployed now" summary. */
   agents: readonly AgentInfo[];
   position: number;
-  isFirst: boolean;
-  isLast: boolean;
+  index: number;
+  total: number;
   onMove: (step: -1 | 1) => void;
   onRemove: () => void;
 }
@@ -34,8 +35,8 @@ export function PresetSkillRow({
   skill,
   agents,
   position,
-  isFirst,
-  isLast,
+  index,
+  total,
   onMove,
   onRemove,
 }: PresetSkillRowProps): ReactNode {
@@ -96,12 +97,7 @@ export function PresetSkillRow({
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem disabled={isFirst} onSelect={() => onMove(-1)}>
-              {t("common.moveUp")}
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={isLast} onSelect={() => onMove(1)}>
-              {t("common.moveDown")}
-            </DropdownMenuItem>
+            <MoveMenuItems index={index} total={total} onMove={onMove} Item={DropdownMenuItem} />
           </DropdownMenuContent>
         </DropdownMenu>
         <IconButton

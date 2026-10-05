@@ -1,10 +1,11 @@
 import type { AgentInfo } from "@loadout/shared";
-import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { IconButton } from "@/components/IconButton";
+import { MoveButtons, type MoveItemsProps } from "@/components/MoveItems";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Switch } from "@/components/ui/switch";
 import { useRemoveCustomAgent, useSetAgentEnabled } from "@/features/settings/settings-mutations";
@@ -18,19 +19,12 @@ export interface AgentCardProps {
   deployedCount: number;
   /** Display names by key, to say who shares a folder. */
   namesByKey: ReadonlyMap<string, string>;
-  /** Keyboard alternative to dragging; undefined at the ends of the list or while filtering. */
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  /** Keyboard alternative to dragging; undefined while filtering or when alone in its group. */
+  move?: MoveItemsProps;
 }
 
 /** One agent in Settings: switch, badges and its two skill folders. */
-export function AgentCard({
-  agent,
-  deployedCount,
-  namesByKey,
-  onMoveUp,
-  onMoveDown,
-}: AgentCardProps): ReactNode {
+export function AgentCard({ agent, deployedCount, namesByKey, move }: AgentCardProps): ReactNode {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const setEnabled = useSetAgentEnabled();
@@ -94,24 +88,7 @@ export function AgentCard({
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
-          {onMoveUp || onMoveDown ? (
-            <>
-              <IconButton
-                size="icon-xs"
-                label={t("common.moveUp")}
-                icon={<ChevronUp />}
-                disabled={!onMoveUp}
-                onClick={onMoveUp}
-              />
-              <IconButton
-                size="icon-xs"
-                label={t("common.moveDown")}
-                icon={<ChevronDown />}
-                disabled={!onMoveDown}
-                onClick={onMoveDown}
-              />
-            </>
-          ) : null}
+          {move ? <MoveButtons {...move} /> : null}
           {agent.isCustom ? (
             <IconButton
               size="icon-xs"

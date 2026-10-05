@@ -9,6 +9,7 @@ import { SidebarPanel } from "@/components/layout/sidebar/SidebarPanel";
 import { useShell } from "@/components/layout/shell-context";
 import { PresetIcon } from "@/components/PresetIcon";
 import { SortableList } from "@/components/SortableList";
+import { MoveMenuItems } from "@/components/MoveItems";
 import { ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu";
 import {
   SidebarGroup,
@@ -75,18 +76,12 @@ export function PresetsPanel(): ReactNode {
                       <ContextMenuItem onSelect={() => shell.openPresetDialog(preset)}>
                         {t("presets.edit")}
                       </ContextMenuItem>
-                      <ContextMenuItem
-                        disabled={index === 0}
-                        onSelect={() => reorder.mutate(moveId(ids, preset.id, -1))}
-                      >
-                        {t("common.moveUp")}
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        disabled={index === ids.length - 1}
-                        onSelect={() => reorder.mutate(moveId(ids, preset.id, 1))}
-                      >
-                        {t("common.moveDown")}
-                      </ContextMenuItem>
+                      <MoveMenuItems
+                        index={index}
+                        total={ids.length}
+                        onMove={(step) => reorder.mutate(moveId(ids, preset.id, step))}
+                        Item={ContextMenuItem}
+                      />
                       <ContextMenuSeparator />
                       <ContextMenuItem
                         variant="destructive"
