@@ -6,8 +6,6 @@ import {
   buildSkillFeedback,
   canReportSkill,
   feedbackInputProblem,
-  feedbackTarget,
-  feedbackTitle,
 } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { skillRecord } from "./skill-records";
@@ -22,6 +20,11 @@ const fromGit = (url: string, extra = {}) =>
     libraryPath: "/Users/someone/.loadout/skills/code-review",
     ...extra,
   });
+
+const feedbackTarget = (skill: Parameters<typeof buildSkillFeedback>[0]) =>
+  buildSkillFeedback(skill, { happened: "x" }).target;
+const feedbackTitle = (name: string, happened: string): string =>
+  buildSkillFeedback(skillRecord(name), { happened }).title;
 
 describe("skill feedback: where a report goes", () => {
   it("is possible for skills from a repository, and only those", () => {

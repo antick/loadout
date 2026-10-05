@@ -53,7 +53,7 @@ function flagUsage(flag: FlagSpec): string {
 }
 
 /** The usage text names the flag already, e.g. as part of `<ref>… | --all`, or as `-m`. */
-export function usageNames(usage: string, flag: FlagSpec): boolean {
+function usageNames(usage: string, flag: FlagSpec): boolean {
   const spellings = [`--${flag.name}`, ...(flag.short ? [`-${flag.short}`] : [])];
   return spellings.some((spelling) => new RegExp(`(^|[^\\w-])${spelling}(?![\\w-])`).test(usage));
 }

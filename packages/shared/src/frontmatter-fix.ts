@@ -40,7 +40,7 @@ function clip(text: string): string {
  * A description taken from the document's body: its first paragraph of prose, else its first
  * heading, else a plain placeholder. Code blocks are skipped.
  */
-export function describeFromBody(body: string): string {
+function describeFromBody(body: string): string {
   let heading: string | null = null;
   let paragraph: string[] = [];
   let fence: string | null = null;

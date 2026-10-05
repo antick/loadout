@@ -91,7 +91,7 @@ export interface ListingSkillInput {
 }
 
 /** The text after the name: the description, then `when_to_use`, cut at `maxChars`. */
-export function listingText(
+function listingText(
   description: string,
   whenToUse: string,
   maxChars: number,
@@ -104,7 +104,7 @@ export function listingText(
 }
 
 /** How the agent will list `input`, given the `skillOverrides` entry (which wins) and its own field. */
-export function listingModeOf(input: ListingSkillInput): {
+function listingModeOf(input: ListingSkillInput): {
   mode: ListingMode;
   hiddenBy?: ListingHiddenBy;
 } {
@@ -140,10 +140,7 @@ export function listingEntryOf(input: ListingSkillInput, maxChars: number): List
 }
 
 /** Characters the listing may take for a context window, at the documented 1%. */
-export function defaultListingBudget(
-  window: ListingWindow,
-  fraction = LISTING_BUDGET_FRACTION,
-): number {
+function defaultListingBudget(window: ListingWindow, fraction = LISTING_BUDGET_FRACTION): number {
   return Math.floor(LISTING_WINDOWS[window] * fraction * LISTING_CHARS_PER_TOKEN);
 }
 

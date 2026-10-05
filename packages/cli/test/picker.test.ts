@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import type { LibraryNameEntry, RepoSkillPreview } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
-import { PLAIN_STYLES, renderPicker, scrollTop } from "../src/picker/render";
+import { PLAIN_STYLES, renderPicker } from "../src/picker/render";
 import {
   NOTHING_TICKED,
   type PickRequest,
@@ -141,9 +141,21 @@ describe("picker screen", () => {
   });
 
   it("scrolls so the cursor stays on screen", () => {
-    expect(scrollTop(0, 5, 10)).toBe(0);
-    expect(scrollTop(50, 100, 10)).toBe(45);
-    expect(scrollTop(99, 100, 10)).toBe(90);
+    const many = createPickerState({
+      ...REQUEST,
+      skills: Array.from({ length: 100 }, (_, index) => row(`s${index}`)),
+    });
+    // Ten list lines: the screen minus the title, help and summary lines.
+    const rows = 14;
+    const shown = (cursor: number): string[] =>
+      renderPicker({ ...many, cursor }, 90, rows, PLAIN_STYLES)
+        .filter((line) => /\[[ x]\] s\d+/.test(line))
+        .map((line) => line.replace(/^.*\[[ x]\] (s\d+).*$/, "$1"));
+    expect(shown(0)[0]).toBe("s0");
+    expect(shown(0)).toHaveLength(10);
+    expect(shown(50)[0]).toBe("s45");
+    expect(shown(99)[0]).toBe("s90");
+    expect(shown(99).at(-1)).toBe("s99");
   });
 });
 

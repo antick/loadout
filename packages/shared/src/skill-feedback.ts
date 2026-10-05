@@ -72,7 +72,7 @@ export function canReportSkill(skill: Pick<Skill, "sourceType" | "sourceUrl">): 
 }
 
 /** The public issue tracker of a skill's repository; null for any other host or shape of address. */
-export function feedbackTarget(
+function feedbackTarget(
   skill: Pick<Skill, "sourceType" | "sourceUrl">,
 ): SkillFeedbackTarget | null {
   if (!canReportSkill(skill) || !skill.sourceUrl) return null;
@@ -101,7 +101,7 @@ function clip(text: string, max: number): string {
 }
 
 /** `Skill name: first line of what happened`, short enough for an issue title. */
-export function feedbackTitle(skillName: string, happened: string): string {
+function feedbackTitle(skillName: string, happened: string): string {
   const first =
     happened
       .split(/\r?\n/)

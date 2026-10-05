@@ -11,7 +11,7 @@ const WORDS = /\s+/;
  * True when `word` is made of the starts of the name's parts, in order, skipping any: `pdfm`
  * finds `pdf-manipulation`, `rn` finds `release-notes`, `cr` finds `code-review`.
  */
-export function matchesNameParts(name: string, word: string): boolean {
+function matchesNameParts(name: string, word: string): boolean {
   const parts = name.toLowerCase().split(NAME_PARTS).filter(Boolean);
   const match = (at: number, from: number): boolean => {
     if (at === word.length) return true;

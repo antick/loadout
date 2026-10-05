@@ -6,6 +6,8 @@
  * Found from the frontmatter and the file list only. Nothing is read or run to decide.
  */
 
+import { isRecord } from "./is-record";
+
 export const SKILL_TRAIT_CODES = ["scripts", "hooks", "mcp", "tool_grants"] as const;
 export type SkillTraitCode = (typeof SKILL_TRAIT_CODES)[number];
 
@@ -126,7 +128,7 @@ function extensionOf(path: string): string {
 }
 
 /** A file an agent or a shell can run: a script by its extension, or anything else marked executable. */
-export function isRunnableFile(path: string, executable: boolean): boolean {
+function isRunnableFile(path: string, executable: boolean): boolean {
   const extension = extensionOf(path);
   if (SCRIPT_EXTENSIONS.has(extension)) return true;
   return executable && !DATA_EXTENSIONS.has(extension);
@@ -185,7 +187,7 @@ function splitTools(text: string): string[] {
 function namesIn(value: unknown): string {
   let names: string[] = [];
   if (Array.isArray(value)) names = value.map(String);
-  else if (typeof value === "object" && value !== null) names = Object.keys(value);
+  else if (isRecord(value)) names = Object.keys(value);
   else if (typeof value === "string") names = splitTools(value);
   const text = names.filter(Boolean).join(", ");
   return text.length > TRAIT_TEXT_MAX ? `${text.slice(0, TRAIT_TEXT_MAX)}…` : text;

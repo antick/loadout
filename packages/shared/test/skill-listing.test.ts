@@ -3,11 +3,8 @@ import {
   LISTING_MAX_DESCRIPTION_CHARS,
   type ListingSkillInput,
   biggestListed,
-  defaultListingBudget,
   listingBudgetOf,
   listingEntryOf,
-  listingModeOf,
-  listingText,
   summarizeListing,
 } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
@@ -25,18 +22,34 @@ function input(extra: Partial<ListingSkillInput> = {}): ListingSkillInput {
   };
 }
 
+/** The text after the name, as the entry's cost shows it: its length, and whether it was cut. */
+function listingText(
+  description: string,
+  whenToUse: string,
+  maxChars: number,
+): { length: number; cut: boolean } {
+  const entry = listingEntryOf(input({ description, whenToUse }), maxChars);
+  return { length: entry.chars - "review".length - LISTING_ENTRY_OVERHEAD, cut: entry.cut };
+}
+
+/** How the entry is listed: its mode, and what hid it. */
+function listingModeOf(skill: ListingSkillInput): { mode: string; hiddenBy?: string } {
+  const entry = listingEntryOf(skill, LISTING_MAX_DESCRIPTION_CHARS);
+  return entry.hiddenBy ? { mode: entry.mode, hiddenBy: entry.hiddenBy } : { mode: entry.mode };
+}
+
 describe("skill listing: text", () => {
   it("joins the description and when_to_use", () => {
     expect(listingText("Reviews code.", "Use for PRs.", 100)).toEqual({
-      text: "Reviews code. - Use for PRs.",
+      length: "Reviews code. - Use for PRs.".length,
       cut: false,
     });
-    expect(listingText("Only this.", "", 100).text).toBe("Only this.");
+    expect(listingText("Only this.", "", 100).length).toBe("Only this.".length);
   });
 
   it("cuts the combined text at the cap, and says so", () => {
-    const { text, cut } = listingText("a".repeat(2000), "b", LISTING_MAX_DESCRIPTION_CHARS);
-    expect(text).toHaveLength(LISTING_MAX_DESCRIPTION_CHARS);
+    const { length, cut } = listingText("a".repeat(2000), "b", LISTING_MAX_DESCRIPTION_CHARS);
+    expect(length).toBe(LISTING_MAX_DESCRIPTION_CHARS);
     expect(cut).toBe(true);
     expect(
       listingText("a".repeat(LISTING_MAX_DESCRIPTION_CHARS), "", LISTING_MAX_DESCRIPTION_CHARS).cut,
@@ -98,8 +111,8 @@ describe("skill listing: cost", () => {
 
 describe("skill listing: budget", () => {
   it("is 1% of the window at four characters a token", () => {
-    expect(defaultListingBudget("200k")).toBe(8000);
-    expect(defaultListingBudget("1m")).toBe(40000);
+    expect(listingBudgetOf("200k", {}).chars).toBe(8000);
+    expect(listingBudgetOf("1m", {}).chars).toBe(40000);
   });
 
   it("takes a fixed character count first, then a fraction, then the default", () => {

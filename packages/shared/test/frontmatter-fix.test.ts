@@ -1,9 +1,4 @@
-import {
-  checkSkillDocument,
-  describeFromBody,
-  fixFrontmatter,
-  hasSkillErrors,
-} from "@loadout/shared";
+import { checkSkillDocument, fixFrontmatter, hasSkillErrors } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 
 /** The fix must leave nothing the format checks call an error. */
@@ -80,7 +75,11 @@ describe("fixFrontmatter", () => {
   });
 });
 
-describe("describeFromBody", () => {
+/** The description the fix takes from a document without one. */
+const describeFromBody = (body: string): string =>
+  fixFrontmatter(body, "x")?.addedDescription ?? "";
+
+describe("the description taken from the body", () => {
   it("takes the first paragraph of prose, without markup", () => {
     const body =
       "# Title\n\n```sh\nnot this\n```\n\n- nor a list\n\nUse **this** [line](x.md)\nand this one.\n\nNot this.";

@@ -116,7 +116,7 @@ function summary(state: PickerState): string {
 }
 
 /** The first visible line, so the cursor stays on screen. */
-export function scrollTop(cursor: number, count: number, height: number): number {
+function scrollTop(cursor: number, count: number, height: number): number {
   if (count <= height) return 0;
   const top = Math.max(0, cursor - Math.floor(height / 2));
   return Math.min(top, count - height);

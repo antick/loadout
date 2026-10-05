@@ -3,7 +3,7 @@ import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "no
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { COMMAND_GROUPS } from "../src/commands";
-import { completionSpec, positionalsOf, valueKinds } from "../src/completion/spec";
+import { completionSpec, valueKinds } from "../src/completion/spec";
 import { GLOBAL_FLAGS } from "../src/help";
 import { AGENT, type Sandbox, createSandbox, writeSkill } from "./harness";
 
@@ -89,19 +89,25 @@ describe("completion", () => {
   });
 });
 
-describe("completion spec", () => {
-  const spec = completionSpec(COMMAND_GROUPS, GLOBAL_FLAGS);
+const spec = completionSpec(COMMAND_GROUPS, GLOBAL_FLAGS);
 
+/** What the spec read from a command's usage line. */
+const positionalsOf = (path: string) => {
+  const command = spec.byPath.get(path);
+  return command && { positionals: command.positionals, repeats: command.repeats };
+};
+
+describe("completion spec", () => {
   it("reads positionals from usage lines", () => {
-    expect(positionalsOf("presets", "<name> <ref>…")).toEqual({
+    // `presets add <name> <ref>…`
+    expect(positionalsOf("presets add")).toEqual({
       positionals: ["presets", "skills"],
       repeats: true,
     });
-    expect(positionalsOf("skills", "<ref>… --agent <key>… [--dry-run]")).toEqual({
-      positionals: ["skills"],
-      repeats: true,
-    });
-    expect(positionalsOf("repo", "")).toEqual({ positionals: [], repeats: false });
+    // `skills undeploy <ref>… --agent <key>…`
+    expect(positionalsOf("skills undeploy")).toEqual({ positionals: ["skills"], repeats: true });
+    // `repo show`, no arguments
+    expect(positionalsOf("repo show")).toEqual({ positionals: [], repeats: false });
   });
 
   it("knows what each command's options take, even when two commands share a spelling", () => {

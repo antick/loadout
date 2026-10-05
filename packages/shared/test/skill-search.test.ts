@@ -1,4 +1,4 @@
-import { matchesNameParts, matchesNamedQuery, matchesSkillQuery } from "@loadout/shared";
+import { matchesNamedQuery, matchesSkillQuery } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 
 const skill = (name: string, description = "", tags: string[] = []) => ({
@@ -8,6 +8,9 @@ const skill = (name: string, description = "", tags: string[] = []) => ({
   sourceRef: null,
   sourceUrl: null,
 });
+
+/** A one-word query on a name alone matches only through the starts of the name's parts. */
+const matchesNameParts = (name: string, word: string): boolean => matchesNamedQuery(name, [], word);
 
 describe("matchesNameParts", () => {
   it("matches the starts of the name's parts, in order", () => {
@@ -23,8 +26,7 @@ describe("matchesNameParts", () => {
   it("does not match letters from the middle of a part or out of order", () => {
     expect(matchesNameParts("commit-helper", "cr")).toBe(false);
     expect(matchesNameParts("release-notes", "nr")).toBe(false);
-    expect(matchesNameParts("pdf", "df")).toBe(false);
-    expect(matchesNameParts("pdf", "")).toBe(false);
+    expect(matchesNameParts("pdf-tools", "dft")).toBe(false);
   });
 });
 

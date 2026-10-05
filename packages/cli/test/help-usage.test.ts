@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { COMMAND_GROUPS, type CommandSpec } from "../src/commands";
-import { GLOBAL_FLAGS, commandUsage, usageNames } from "../src/help";
+import type { FlagSpec } from "../src/args";
+import { GLOBAL_FLAGS, commandUsage } from "../src/help";
 
 /** Every command with the words that run it. */
 const commands: { path: string; command: CommandSpec }[] = COMMAND_GROUPS.flatMap((group) =>
@@ -9,6 +10,12 @@ const commands: { path: string; command: CommandSpec }[] = COMMAND_GROUPS.flatMa
     command,
   })),
 );
+
+/** The usage line names the flag, as `--name` or as `-s`, as a whole word. */
+const usageNames = (usage: string, flag: FlagSpec): boolean =>
+  [`--${flag.name}`, ...(flag.short ? [`-${flag.short}`] : [])].some((spelling) =>
+    new RegExp(`(^|[^\\w-])${spelling}(?![\\w-])`).test(usage),
+  );
 
 const find = (path: string): CommandSpec => {
   const found = commands.find((entry) => entry.path === path);

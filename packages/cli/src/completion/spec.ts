@@ -91,7 +91,7 @@ function toFlag(flag: FlagSpec): CompletionFlag {
  * The positional arguments of a usage line such as `<name> <ref>… [--agent <key>…]`: the
  * `<…>` words before the first option or alternative.
  */
-export function positionalsOf(
+function positionalsOf(
   group: string,
   usage: string,
 ): { positionals: WordKind[]; repeats: boolean } {

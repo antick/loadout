@@ -1,6 +1,6 @@
 import { chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { isRunnableFile, runsCode, scriptsTrait, traitsFromFrontmatter } from "@loadout/shared";
+import { runsCode, scriptsTrait, traitsFromFrontmatter } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
 import { listRepoSkills } from "../src/install/repo-scan";
@@ -9,6 +9,9 @@ import { skillTraits } from "../src/skills/traits";
 import { makeSkill, tempDir, writeFile, createTestCore } from "./helpers";
 
 const codes = (traits: readonly { code: string }[]): string[] => traits.map((trait) => trait.code);
+
+const isRunnableFile = (path: string, executable: boolean): boolean =>
+  scriptsTrait([{ path, executable }]) !== null;
 
 describe("which files can run", () => {
   it("counts scripts by extension and other files only when they are marked executable", () => {
