@@ -1,12 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { safeStorage } from "electron";
-import type { SecretStore } from "@loadout/core";
-import { writeFileAtomicSync } from "./files";
+import { type SecretStore, writeFileAtomic } from "@loadout/core";
 
-/**
- * Credentials encrypted with the OS keychain (Keychain, DPAPI, libsecret) through Electron's
- * safeStorage. Only ciphertext reaches the disk.
- */
+/** Only the user may read the encrypted secrets file. */
+const SECRETS_FILE_MODE = 0o600;
+
 /**
  * Real encryption only. On Linux without a keyring, Electron falls back to `basic_text`, a fixed
  * key anyone can undo, while still calling encryption available: treat that as unavailable.
@@ -16,6 +14,10 @@ function encryptionUsable(): boolean {
   return process.platform !== "linux" || safeStorage.getSelectedStorageBackend() !== "basic_text";
 }
 
+/**
+ * Credentials encrypted with the OS keychain (Keychain, DPAPI, libsecret) through Electron's
+ * safeStorage. Only ciphertext reaches the disk.
+ */
 export function createSecretStore(filePath: string): SecretStore {
   const read = (): Record<string, string> => {
     if (!existsSync(filePath)) return {};
@@ -26,7 +28,7 @@ export function createSecretStore(filePath: string): SecretStore {
     }
   };
   const write = (data: Record<string, string>): void =>
-    writeFileAtomicSync(filePath, JSON.stringify(data, null, 2));
+    writeFileAtomic(filePath, JSON.stringify(data, null, 2), SECRETS_FILE_MODE);
 
   return {
     available: encryptionUsable,

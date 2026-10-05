@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { BrowserWindow, type Rectangle, app, screen, shell } from "electron";
+import { writeFileAtomic } from "@loadout/core";
 import { APP_NAME } from "@loadout/shared";
 import {
   TRAFFIC_LIGHT_POSITION,
@@ -11,7 +12,6 @@ import {
   WINDOW_MIN_WIDTH,
   WINDOW_STATE_FILE,
 } from "./constants";
-import { writeFileAtomicSync } from "./files";
 import { isWebUrl } from "./links";
 
 const RENDERER_ENTRY = join(import.meta.dirname, "../renderer/index.html");
@@ -63,7 +63,7 @@ function loadState(): WindowState | null {
 function saveState(win: BrowserWindow): void {
   try {
     const state: WindowState = { bounds: win.getNormalBounds(), maximized: win.isMaximized() };
-    writeFileAtomicSync(statePath(), JSON.stringify(state));
+    writeFileAtomic(statePath(), JSON.stringify(state));
   } catch {
     // Remembering the window size is a nicety.
   }
