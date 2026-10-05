@@ -1,23 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, joinRemote, seedRemote } from "./backup-world";
-import { tempDir } from "./helpers";
+import { beforeEach, describe, expect, it } from "vitest";
+import { type Device, useTwoDevices } from "./backup-world";
 
 describe("backup conflicts, several at once", () => {
-  let temp: ReturnType<typeof tempDir>;
-  let a: Device;
-  let b: Device;
-  let alphaId: string;
-  let betaId: string;
-
   /** Both devices edit `alpha` and `beta`; A syncs first, then B, so B has two conflicts. */
-  beforeEach(async () => {
-    temp = tempDir();
-    const seeded = await seedRemote(temp.dir, ["alpha", "beta"]);
-    a = seeded.a;
-    b = await joinRemote(temp.dir, seeded.remote);
-    alphaId = a.skill("alpha")?.id ?? "";
-    betaId = a.skill("beta")?.id ?? "";
-
+  const world = useTwoDevices(["alpha", "beta"], async (a, b) => {
     a.editSkill("alpha", "alpha from A");
     a.editSkill("beta", "beta from A");
     b.editSkill("alpha", "alpha from B");
@@ -25,10 +11,15 @@ describe("backup conflicts, several at once", () => {
     await a.api.sync();
     await b.api.sync();
   });
-  afterEach(() => {
-    a.close();
-    b.close();
-    temp.cleanup();
+  let a: Device;
+  let b: Device;
+  let alphaId: string;
+  let betaId: string;
+
+  beforeEach(() => {
+    ({ a, b } = world);
+    alphaId = a.skill("alpha")?.id ?? "";
+    betaId = a.skill("beta")?.id ?? "";
   });
 
   it("applies one choice to all of them behind one safety snapshot and one commit", async () => {

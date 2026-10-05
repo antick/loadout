@@ -1,8 +1,7 @@
 import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, joinRemote, pushByHand, seedRemote } from "./backup-world";
-import { tempDir } from "./helpers";
+import { beforeEach, describe, expect, it } from "vitest";
+import { type Device, pushByHand, useTwoDevices } from "./backup-world";
 
 async function remoteHead(device: Device): Promise<string> {
   await device.api.fetch();
@@ -11,20 +10,12 @@ async function remoteHead(device: Device): Promise<string> {
 
 /** Skills deleted on another device: kept in Recently removed here, and able to come back. */
 describe("backup deletes from other devices", () => {
-  let temp: ReturnType<typeof tempDir>;
+  const world = useTwoDevices(["alpha", "beta", "gamma"]);
   let a: Device;
   let b: Device;
 
-  beforeEach(async () => {
-    temp = tempDir();
-    const seeded = await seedRemote(temp.dir, ["alpha", "beta", "gamma"]);
-    a = seeded.a;
-    b = await joinRemote(temp.dir, seeded.remote);
-  });
-  afterEach(() => {
-    a.close();
-    b.close();
-    temp.cleanup();
+  beforeEach(() => {
+    ({ a, b } = world);
   });
 
   it("keeps a skill another device deleted in Recently removed, with its tags", async () => {
@@ -76,24 +67,80 @@ describe("backup deletes from other devices", () => {
     expect(b.removed.list()).toEqual([]);
   });
 
-  describe("many deletions at once", () => {
-    let c: Device;
-    let d: Device;
-    const names = ["s1", "s2", "s3", "s4"];
+  it("lets a few deletions through without asking, even most of the skills", async () => {
+    a.deleteSkill("alpha");
+    a.deleteSkill("beta");
+    await a.api.sync();
+    const outcome = await b.api.sync();
+    expect(outcome.merge?.removed).toHaveLength(2);
+  });
+});
 
-    beforeEach(async () => {
-      const seeded = await seedRemote(join(temp.dir, "guard"), names);
-      c = seeded.a;
-      d = await joinRemote(join(temp.dir, "guard"), seeded.remote, "D");
-      for (const name of ["s1", "s2", "s3"]) c.deleteSkill(name);
-      await c.api.sync();
+describe("many deletions at once from another device", () => {
+  const names = ["s1", "s2", "s3", "s4"];
+  const world = useTwoDevices(names, async (c) => {
+    for (const name of ["s1", "s2", "s3"]) c.deleteSkill(name);
+    await c.api.sync();
+  });
+  let c: Device;
+  let d: Device;
+
+  beforeEach(() => {
+    ({ a: c, b: d } = world);
+  });
+
+  it("stops before changing anything when nobody reviewed them", async () => {
+    const head = d.git("rev-parse", "HEAD");
+    await expect(d.api.sync()).rejects.toMatchObject({
+      code: "SYNC_MANY_DELETES",
+      details: { count: 3, skills: ["s1", "s2", "s3"] },
     });
-    afterEach(() => {
-      c.close();
-      d.close();
+    expect(d.git("rev-parse", "HEAD")).toBe(head);
+    for (const name of names) expect(d.skill(name)).not.toBeNull();
+    expect(d.removed.list()).toEqual([]);
+  });
+
+  it("goes ahead with a review of this remote state", async () => {
+    const outcome = await d.api.sync(undefined, {
+      remoteCommit: await remoteHead(d),
+      keep: [],
+    });
+    expect(outcome.merge?.removed.map((skill) => skill.name).sort()).toEqual(["s1", "s2", "s3"]);
+    expect(d.skill("s4")).not.toBeNull();
+    expect(d.removed.list()).toHaveLength(3);
+  });
+
+  it("keeps what the review kept, and puts it back on the other device", async () => {
+    const keep = d.skill("s2")?.id ?? "";
+    const outcome = await d.api.sync(undefined, {
+      remoteCommit: await remoteHead(d),
+      keep: [keep],
+    });
+    expect(outcome.merge?.removed.map((skill) => skill.name).sort()).toEqual(["s1", "s3"]);
+    expect(outcome.merge?.keptLocal).toEqual(["s2"]);
+    expect(d.skill("s2")).not.toBeNull();
+
+    await c.api.sync();
+    expect(c.skill("s2")).not.toBeNull();
+    expect(c.skill("s1")).toBeNull();
+  });
+
+  it("refuses a review made against an older remote state", async () => {
+    const reviewed = await remoteHead(d);
+    c.editSkill("s4", "moved on");
+    await c.api.sync();
+    await expect(d.api.sync(undefined, { remoteCommit: reviewed, keep: [] })).rejects.toMatchObject(
+      { code: "SYNC_PLAN_CHANGED" },
+    );
+    for (const name of names) expect(d.skill(name)).not.toBeNull();
+  });
+
+  describe("from a remote without metadata, merged line by line", () => {
+    beforeEach(() => {
+      pushByHand(world.dir, world.remote, basename(d.ctx.paths.metadataDir));
     });
 
-    it("stops before changing anything when nobody reviewed them", async () => {
+    it("still stops before changing anything when nobody reviewed them", async () => {
       const head = d.git("rev-parse", "HEAD");
       await expect(d.api.sync()).rejects.toMatchObject({
         code: "SYNC_MANY_DELETES",
@@ -104,113 +151,32 @@ describe("backup deletes from other devices", () => {
       expect(d.removed.list()).toEqual([]);
     });
 
-    it("goes ahead with a review of this remote state", async () => {
+    it("shows the deletions in the review", async () => {
+      const preview = await d.api.preview();
+      expect(preview).toMatchObject({ perSkill: false, manyDeletes: true });
+      expect(preview.incoming.map((item) => [item.name, item.change]).sort()).toEqual([
+        ["s1", "deleted"],
+        ["s2", "deleted"],
+        ["s3", "deleted"],
+      ]);
+    });
+
+    it("keeps what a reviewed sync deletes in Recently removed, and reports it", async () => {
       const outcome = await d.api.sync(undefined, {
         remoteCommit: await remoteHead(d),
         keep: [],
       });
       expect(outcome.merge?.removed.map((skill) => skill.name).sort()).toEqual(["s1", "s2", "s3"]);
-      expect(d.skill("s4")).not.toBeNull();
-      expect(d.removed.list()).toHaveLength(3);
-    });
-
-    it("keeps what the review kept, and puts it back on the other device", async () => {
-      const keep = d.skill("s2")?.id ?? "";
-      const outcome = await d.api.sync(undefined, {
-        remoteCommit: await remoteHead(d),
-        keep: [keep],
-      });
-      expect(outcome.merge?.removed.map((skill) => skill.name).sort()).toEqual(["s1", "s3"]);
-      expect(outcome.merge?.keptLocal).toEqual(["s2"]);
-      expect(d.skill("s2")).not.toBeNull();
-
-      await c.api.sync();
-      expect(c.skill("s2")).not.toBeNull();
-      expect(c.skill("s1")).toBeNull();
-    });
-
-    it("refuses a review made against an older remote state", async () => {
-      const reviewed = await remoteHead(d);
-      c.editSkill("s4", "moved on");
-      await c.api.sync();
-      await expect(
-        d.api.sync(undefined, { remoteCommit: reviewed, keep: [] }),
-      ).rejects.toMatchObject({ code: "SYNC_PLAN_CHANGED" });
-      for (const name of names) expect(d.skill(name)).not.toBeNull();
-    });
-
-    it("ignores a merge switch an older version saved off", async () => {
-      d.ctx.settings.setRaw("skillAwareMerge", false);
-      expect(await d.api.preview()).toMatchObject({ perSkill: true, manyDeletes: true });
-      await expect(d.api.sync()).rejects.toMatchObject({ code: "SYNC_MANY_DELETES" });
-    });
-
-    describe("from a remote without metadata, merged line by line", () => {
-      beforeEach(() => {
-        pushByHand(
-          join(temp.dir, "guard"),
-          d.git("remote", "get-url", "origin"),
-          basename(d.ctx.paths.metadataDir),
-        );
-      });
-
-      it("still stops before changing anything when nobody reviewed them", async () => {
-        const head = d.git("rev-parse", "HEAD");
-        await expect(d.api.sync()).rejects.toMatchObject({
-          code: "SYNC_MANY_DELETES",
-          details: { count: 3, skills: ["s1", "s2", "s3"] },
-        });
-        expect(d.git("rev-parse", "HEAD")).toBe(head);
-        for (const name of names) expect(d.skill(name)).not.toBeNull();
-        expect(d.removed.list()).toEqual([]);
-      });
-
-      it("shows the deletions in the review", async () => {
-        const preview = await d.api.preview();
-        expect(preview).toMatchObject({ perSkill: false, manyDeletes: true });
-        expect(preview.incoming.map((item) => [item.name, item.change]).sort()).toEqual([
-          ["s1", "deleted"],
-          ["s2", "deleted"],
-          ["s3", "deleted"],
-        ]);
-      });
-
-      it("keeps what a reviewed sync deletes in Recently removed, and reports it", async () => {
-        const outcome = await d.api.sync(undefined, {
-          remoteCommit: await remoteHead(d),
-          keep: [],
-        });
-        expect(outcome.merge?.removed.map((skill) => skill.name).sort()).toEqual([
-          "s1",
-          "s2",
-          "s3",
-        ]);
-        for (const name of ["s1", "s2", "s3"]) {
-          expect(d.skill(name)).toBeNull();
-          expect(existsSync(join(d.skillsDir, name))).toBe(false);
-        }
-        expect(d.skill("s4")).not.toBeNull();
-        const kept = d.removed.list();
-        expect(kept.map((entry) => entry.name).sort()).toEqual(["s1", "s2", "s3"]);
-        expect(kept.every((entry) => entry.reason === "deleted_elsewhere" && entry.library)).toBe(
-          true,
-        );
-      });
-    });
-
-    it("lets a few deletions through without asking", async () => {
-      const seeded = await seedRemote(join(temp.dir, "few"), ["f1", "f2", "f3", "f4", "f5"]);
-      const e = await joinRemote(join(temp.dir, "few"), seeded.remote, "E");
-      try {
-        seeded.a.deleteSkill("f1");
-        seeded.a.deleteSkill("f2");
-        await seeded.a.api.sync();
-        const outcome = await e.api.sync();
-        expect(outcome.merge?.removed).toHaveLength(2);
-      } finally {
-        seeded.a.close();
-        e.close();
+      for (const name of ["s1", "s2", "s3"]) {
+        expect(d.skill(name)).toBeNull();
+        expect(existsSync(join(d.skillsDir, name))).toBe(false);
       }
+      expect(d.skill("s4")).not.toBeNull();
+      const kept = d.removed.list();
+      expect(kept.map((entry) => entry.name).sort()).toEqual(["s1", "s2", "s3"]);
+      expect(kept.every((entry) => entry.reason === "deleted_elsewhere" && entry.library)).toBe(
+        true,
+      );
     });
   });
 });

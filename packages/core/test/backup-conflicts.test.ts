@@ -1,32 +1,23 @@
 import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, joinRemote, seedRemote } from "./backup-world";
-import { tempDir } from "./helpers";
+import { beforeEach, describe, expect, it } from "vitest";
+import { type Device, useTwoDevices } from "./backup-world";
 
 describe("backup conflicts", () => {
-  let temp: ReturnType<typeof tempDir>;
-  let a: Device;
-  let b: Device;
-  let alphaId: string;
-
   /** Both devices edit `alpha`; A also edits `beta`. A syncs first, then B. */
-  beforeEach(async () => {
-    temp = tempDir();
-    const seeded = await seedRemote(temp.dir, ["alpha", "beta"]);
-    a = seeded.a;
-    b = await joinRemote(temp.dir, seeded.remote);
-    alphaId = a.skill("alpha")?.id ?? "";
-
+  const world = useTwoDevices(["alpha", "beta"], async (a, b) => {
     a.editSkill("alpha", "A's version");
     a.editSkill("beta", "beta from A");
     b.editSkill("alpha", "B's version");
     await a.api.sync();
   });
-  afterEach(() => {
-    a.close();
-    b.close();
-    temp.cleanup();
+  let a: Device;
+  let b: Device;
+  let alphaId: string;
+
+  beforeEach(() => {
+    ({ a, b } = world);
+    alphaId = a.skill("alpha")?.id ?? "";
   });
 
   it("never blocks: keeps the local version, records the conflict, lands the rest", async () => {

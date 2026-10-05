@@ -1,7 +1,7 @@
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, joinRemote, seedRemote } from "./backup-world";
-import { tempDir, writeFile } from "./helpers";
+import { beforeEach, describe, expect, it } from "vitest";
+import { type Device, useTwoDevices } from "./backup-world";
+import { writeFile } from "./helpers";
 
 /**
  * HEAD, refs and the state of skill folders. The app's own metadata files may be written: a
@@ -22,20 +22,12 @@ const stages = (device: Device): (string | null)[] =>
 
 /** The sync review: what a sync would do, worked out without changing anything. */
 describe("backup sync review", () => {
-  let temp: ReturnType<typeof tempDir>;
+  const world = useTwoDevices(["alpha", "beta", "gamma", "delta"]);
   let a: Device;
   let b: Device;
 
-  beforeEach(async () => {
-    temp = tempDir();
-    const seeded = await seedRemote(temp.dir, ["alpha", "beta", "gamma", "delta"]);
-    a = seeded.a;
-    b = await joinRemote(temp.dir, seeded.remote);
-  });
-  afterEach(() => {
-    a.close();
-    b.close();
-    temp.cleanup();
+  beforeEach(() => {
+    ({ a, b } = world);
   });
 
   it("lists local changes going out and changes nothing", async () => {
@@ -210,7 +202,7 @@ describe("backup sync review", () => {
     expect(stages(b)).toEqual(["preparing", "saving", "downloading", "merging", "uploading", null]);
 
     await b.api.removeRemote();
-    await b.api.setRemote(join(temp.dir, "missing.git"));
+    await b.api.setRemote(join(world.dir, "missing.git"));
     await expect(b.api.sync()).rejects.toBeDefined();
     expect(stages(b).at(-1)).toBeNull();
   });

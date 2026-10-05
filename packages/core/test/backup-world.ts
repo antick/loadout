@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { AppEvents, BackupApi, Skill } from "@loadout/shared";
+import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { type BackupHooks, type BackupService, createBackupService } from "../src/backup";
 import type { SecretStore } from "../src/context";
 import { type ContextBundle, createContext } from "../src/create-context";
@@ -11,7 +12,7 @@ import { INTERNAL_KEYS } from "../src/settings/store";
 import { type RemovedStore, createRemovedStore } from "../src/storage/removed";
 import { removePathSync } from "../src/util/fs";
 import { hashDir } from "../src/util/hash";
-import { makeSkill, writeFile } from "./helpers";
+import { makeSkill, tempDir, writeFile } from "./helpers";
 
 /** Two or more "devices" (each a full library) sharing one bare remote on local disk. */
 
@@ -227,4 +228,96 @@ export async function joinRemote(
   const device = createDevice(root, name, options);
   await device.api.clone(remote);
   return device;
+}
+
+/** A fresh folder for each test of the calling `describe`; devices `track`ed in it close after. */
+export function useTempDevices(): {
+  readonly dir: string;
+  track: <T extends Device>(device: T) => T;
+} {
+  let temp: ReturnType<typeof tempDir> | null = null;
+  const devices: Device[] = [];
+  beforeEach(() => {
+    temp = tempDir();
+  });
+  afterEach(() => {
+    for (const device of devices.splice(0)) device.close();
+    temp?.cleanup();
+  });
+  return {
+    get dir() {
+      if (!temp) throw new Error("No test folder outside a test");
+      return temp.dir;
+    },
+    track: (device) => {
+      devices.push(device);
+      return device;
+    },
+  };
+}
+
+export interface TwoDevices {
+  /** The folder the devices and the remote are in: the same for every test. */
+  readonly dir: string;
+  readonly remote: string;
+  readonly a: Device;
+  readonly b: Device;
+}
+
+/**
+ * Device A seeded with `skills` and pushed, then device B that cloned the remote, as `prepare`
+ * left them, fresh for each test of the calling `describe`. Built once and copied back before
+ * each test, always to the same path, which the libraries' databases and git config hold:
+ * building runs dozens of git commands, copying none.
+ */
+export function useTwoDevices(
+  skills: readonly string[],
+  prepare: (a: Device, b: Device) => Promise<void> = async () => {},
+): TwoDevices {
+  let temp: ReturnType<typeof tempDir> | null = null;
+  let remote = "";
+  let devices: [Device, Device] | null = null;
+  const dir = (): string => {
+    if (!temp) throw new Error("No devices outside a test");
+    return join(temp.dir, "world");
+  };
+  const kept = (): string => join(dir(), "..", "kept");
+  const close = (): void => {
+    for (const device of devices ?? []) device.close();
+    devices = null;
+  };
+  beforeAll(async () => {
+    temp = tempDir();
+    const seeded = await seedRemote(dir(), [...skills]);
+    remote = seeded.remote;
+    devices = [seeded.a, await joinRemote(dir(), remote)];
+    await prepare(...devices);
+    close();
+    cpSync(dir(), kept(), { recursive: true });
+  });
+  beforeEach(() => {
+    rmSync(dir(), { recursive: true, force: true });
+    cpSync(kept(), dir(), { recursive: true });
+    devices = [createDevice(dir(), "A"), createDevice(dir(), "B")];
+  });
+  afterEach(close);
+  afterAll(() => temp?.cleanup());
+  const device = (index: 0 | 1): Device => {
+    if (!devices) throw new Error("No devices outside a test");
+    return devices[index];
+  };
+  return {
+    get dir() {
+      return dir();
+    },
+    get remote() {
+      return remote;
+    },
+    get a() {
+      return device(0);
+    },
+    get b() {
+      return device(1);
+    },
+  };
 }
