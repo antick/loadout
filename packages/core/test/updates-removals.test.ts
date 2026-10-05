@@ -165,6 +165,15 @@ describe("removal guard", () => {
     expect(second).toEqual({ updated: 0, unchanged: 1, heldBack: [], failed: [] });
   });
 
+  it("applies what it would hold back when the batch approves removals", async () => {
+    const pdf = await world.installFromGit("pdf");
+    dropNotesUpstream(world);
+
+    const result = await world.updates.api.updateMany([pdf.id], { approveRemovals: true });
+    expect(result).toEqual({ updated: 1, unchanged: 0, heldBack: [], failed: [] });
+    expect(existsSync(join(pdf.libraryPath, "notes", "old.md"))).toBe(false);
+  });
+
   it("updates to what a check just found without asking the remote again", async () => {
     const pdf = await world.installFromGit("pdf");
     changePdfUpstream(world);

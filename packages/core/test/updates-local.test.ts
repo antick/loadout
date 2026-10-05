@@ -89,6 +89,14 @@ describe("check of local sources", () => {
     expect(result.contentChanged).toBe(true);
     expect(readFileSync(join(skill.libraryPath, "data.txt"), "utf8")).toBe("v2");
   });
+
+  it("re-imports when asked to update", async () => {
+    const skill = await installLocal();
+    writeFile(join(sourceDir, "scripts", "run.sh"), "echo two\n");
+    const result = await world.updates.api.update(skill.id);
+    expect(result).toMatchObject({ contentChanged: true, pendingRemovals: [] });
+    expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo two\n");
+  });
 });
 
 describe("edits made outside the app", () => {

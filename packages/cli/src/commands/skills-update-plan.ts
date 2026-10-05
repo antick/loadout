@@ -40,11 +40,6 @@ export interface UpdatePlan {
 /** Characters of a revision shown in the text. */
 const FILES_SHOWN = 8;
 
-/** A skill with somewhere to update from: a repository, the marketplace, a folder or an archive. */
-export function hasUpdateSource(skill: Skill): boolean {
-  return isRemoteSource(skill) || skill.sourceRef !== null;
-}
-
 /** "Git (https://github.com/acme/skills)": the kind of source and where it is. */
 function whereFrom(skill: Skill, label: string): string {
   const ref = skill.sourceUrl ?? skill.sourceRef;
@@ -66,9 +61,7 @@ const heldBackPath = (removal: PendingRemoval): string =>
 export async function planUpdate(core: Core, skill: Skill): Promise<UpdatePlanRow> {
   const empty = { added: [], modified: [], removed: [], heldBack: [] };
   try {
-    const dry = isRemoteSource(skill)
-      ? await core.api.updates.update(skill.id, null, { dryRun: true })
-      : await core.api.updates.reimport(skill.id, null, { dryRun: true });
+    const dry = await core.api.updates.update(skill.id, null, { dryRun: true });
     const diff = dry.sourceDiff;
     if (!diff) throw unsupported("This skill's source cannot be compared");
     const removed = pathsWith(diff.entries, "removed");

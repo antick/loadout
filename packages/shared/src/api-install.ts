@@ -104,6 +104,8 @@ export interface UpdateManyOptions {
    * upstream is updated to the revision it found, without asking the remote again.
    */
   checkedSince?: number;
+  /** Go ahead even where an update deletes files or replaces edits; held back otherwise. */
+  approveRemovals?: boolean;
 }
 
 export interface UpdatesApi {
@@ -112,6 +114,7 @@ export interface UpdatesApi {
   /**
    * The new version goes through the safety check first: flagged, it throws UNSAFE with the
    * findings and nothing changes, unless `options.acceptRisk` (the user said update anyway).
+   * A skill from a folder, archive or archive link is re-imported (see `reimport`).
    */
   update(
     skillId: string,

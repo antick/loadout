@@ -1,11 +1,9 @@
-import { errorMessage, isRemoteSource } from "@loadout/core";
-import type { BatchUpdateResult, Skill, UpdateResult } from "@loadout/shared";
+import type { Skill, UpdateResult } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { failureLines, fields, plural, when } from "../output";
 import {
   type UpdatePlan,
   checkFailureLines,
-  hasUpdateSource,
   planUpdate,
   updatePlanText,
 } from "./skills-update-plan";
@@ -104,40 +102,12 @@ const updateView = (result: UpdateResult) => ({
   applied: result.pendingRemovals.length === 0,
 });
 
-/**
- * Update from a repository, or re-import a folder, archive or archive link: the same choice
- * `updateMany` makes.
- */
 async function updateOne(context: CommandContext, skillId: string): Promise<UpdateResult> {
   const { core, args } = context;
-  const remote = isRemoteSource(core.store.get(skillId));
   const options = { acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name) };
-  const refresh = (approval?: string | null): Promise<UpdateResult> =>
-    remote
-      ? core.api.updates.update(skillId, approval, options)
-      : core.api.updates.reimport(skillId, approval, options);
-  const first = await refresh();
+  const first = await core.api.updates.update(skillId, null, options);
   if (first.pendingRemovals.length === 0 || !flagBoolean(args, APPROVE_FLAG.name)) return first;
-  return refresh(first.approval);
-}
-
-/** `updateMany` has no way to approve removals, so an approved bulk run goes skill by skill. */
-async function updateEachApproved(
-  context: CommandContext,
-  skills: readonly Skill[],
-): Promise<BatchUpdateResult> {
-  const result: BatchUpdateResult = { updated: 0, unchanged: 0, heldBack: [], failed: [] };
-  for (const skill of skills) {
-    try {
-      const outcome = await updateOne(context, skill.id);
-      if (outcome.pendingRemovals.length > 0) result.heldBack.push(skill.name);
-      else if (outcome.contentChanged) result.updated += 1;
-      else result.unchanged += 1;
-    } catch (error) {
-      result.failed.push({ name: skill.name, message: errorMessage(error) });
-    }
-  }
-  return result;
+  return core.api.updates.update(skillId, first.approval, options);
 }
 
 /** `--dry-run`: compare with the source, list what would change and what would be held back. */
@@ -150,7 +120,7 @@ async function planUpdates(context: CommandContext, one: Skill | null): Promise<
     // Asked to update everything: look upstream now, never at an answer kept from earlier.
     value.failed = (await core.api.updates.checkAll(true)).failed;
     skills = (await core.api.skills.list()).filter(
-      (skill) => hasUpdateSource(skill) && skill.updateStatus === "update_available",
+      (skill) => skill.updateStatus === "update_available",
     );
   }
   for (const skill of skills) value.skills.push(await planUpdate(core, skill));
@@ -190,12 +160,10 @@ async function update(context: CommandContext): Promise<CommandResult> {
   const checkedSince = Date.now();
   const checked = await core.api.updates.checkAll(true);
   const due = (await core.api.skills.list()).filter((s) => s.updateStatus === "update_available");
-  const updated = flagBoolean(args, APPROVE_FLAG.name)
-    ? await updateEachApproved(context, due)
-    : await core.api.updates.updateMany(
-        due.map((skill) => skill.id),
-        { checkedSince },
-      );
+  const updated = await core.api.updates.updateMany(
+    due.map((skill) => skill.id),
+    { checkedSince, approveRemovals: flagBoolean(args, APPROVE_FLAG.name) },
+  );
   const value = { ...updated, failed: [...checked.failed, ...updated.failed] };
   const lines = [`${plural(value.updated, "skill")} updated, ${value.unchanged} unchanged.`];
   if (value.heldBack.length > 0) {

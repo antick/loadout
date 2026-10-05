@@ -321,7 +321,11 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     options: UpdateOptions = {},
   ): Promise<UpdateResult> {
     const skill = store.get(skillId);
-    if (!isRemoteSource(skill)) throw unsupported(CANNOT_REFRESH);
+    if (!isRemoteSource(skill)) {
+      // A folder, archive or archive link gives its new version by being imported again.
+      if (!skill.sourceRef) throw unsupported(CANNOT_REFRESH);
+      return reimport(skillId, approval, options);
+    }
     const key = updateCancelKey(skillId);
     const handle = cancels.register(key);
     try {
@@ -478,10 +482,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     updateMany: (skillIds, options) =>
       updateEach(
         store,
-        {
-          update: (skillId, knownRevision) => update(skillId, null, { knownRevision }),
-          reimport: (skillId) => reimport(skillId),
-        },
+        (skillId, approval, knownRevision) => update(skillId, approval, { knownRevision }),
         skillIds,
         options,
       ),
