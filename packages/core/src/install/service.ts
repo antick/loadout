@@ -63,6 +63,19 @@ export interface InstallService {
 
 const LOCAL_RECORD = { sourceType: "local", updateStatus: "local_only" } as const;
 
+/**
+ * The skill folder a folder install takes, or why it cannot: the install and its dry run
+ * (`skills install <folder> --dry-run`) refuse the same things. Archives go through
+ * `previewArchive`, which lists what they hold before installing.
+ */
+export function requireSkillFolder(sourcePath: string): string {
+  const path = normalizeAbsolutePath(sourcePath, "Source path");
+  const stat = statOrNull(path);
+  if (!stat) throw notFound(`Nothing found at ${path}`);
+  if (!stat.isDirectory()) throw invalid(`Not a folder: ${path}`);
+  if (!isSkillDir(path)) throw invalid(`No SKILL.md found in ${path}`);
+  return path;
+}
 export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps): InstallService {
   const { store, registry, clawhub } = deps;
   const download = downloadWith(deps.request);
@@ -97,12 +110,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     name?: string,
     options: InstallOptions = {},
   ): Promise<Skill> {
-    const path = normalizeAbsolutePath(sourcePath, "Source path");
-    const stat = statOrNull(path);
-    if (!stat) throw notFound(`Nothing found at ${path}`);
-    // Archives go through `previewArchive`, which lists what they hold before installing.
-    if (!stat.isDirectory()) throw invalid(`Not a folder: ${path}`);
-    if (!isSkillDir(path)) throw invalid(`No SKILL.md found in ${path}`);
+    const path = requireSkillFolder(sourcePath);
     return installChecked(
       install,
       deps.safety,

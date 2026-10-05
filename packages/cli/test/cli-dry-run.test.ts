@@ -1,4 +1,4 @@
-import { rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -163,6 +163,18 @@ describe("a dry run checks its input like the real run", () => {
         const run = await box.cli("skills", "install", ...argv, ...dry);
         expect(run.code, [...argv, ...dry].join(" ")).toBe(2);
       }
+    }
+    expect(await names()).toEqual([]);
+  });
+
+  it("refuses a folder without SKILL.md in both runs", async () => {
+    const empty = join(box.root, "not-a-skill");
+    mkdirSync(empty);
+    writeFileSync(join(empty, "README.md"), "no skill here\n");
+    for (const dry of [["--dry-run"], []]) {
+      const run = await box.cli("skills", "install", empty, ...dry, "--json");
+      expect(run.code, dry.join(" ")).toBe(1);
+      expect(run.json()).toMatchObject({ code: "INVALID_INPUT" });
     }
     expect(await names()).toEqual([]);
   });

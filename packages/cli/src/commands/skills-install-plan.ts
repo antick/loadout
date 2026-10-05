@@ -1,5 +1,10 @@
-import { statSync } from "node:fs";
-import { type Core, invalid, previewLibrary, readSkillIdentity, skillTraits } from "@loadout/core";
+import {
+  type Core,
+  previewLibrary,
+  readSkillIdentity,
+  requireSkillFolder,
+  skillTraits,
+} from "@loadout/core";
 import {
   type GitPreview,
   type InstallOutcome,
@@ -76,10 +81,8 @@ export function planPreview(preview: GitPreview, items: readonly InstallSelectio
 }
 
 /** The plan for one folder on this computer, installed as a whole. */
-export function planFolder(core: Core, path: string, name: string | undefined): InstallPlan {
-  if (!statSync(path, { throwIfNoEntry: false })?.isDirectory()) {
-    throw invalid(`Not a folder: ${path}`);
-  }
+export function planFolder(core: Core, source: string, name: string | undefined): InstallPlan {
+  const path = requireSkillFolder(source);
   const identity = readSkillIdentity(path);
   const chosen = name?.trim() || identity.name;
   const library = previewLibrary(
