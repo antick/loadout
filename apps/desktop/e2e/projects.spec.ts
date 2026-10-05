@@ -66,3 +66,23 @@ test("a picked folder lists the projects under it, or is linked as a new one", a
   await dialog.getByRole("button", { name: "Link this folder" }).click();
   await expect(toasts(page).getByText("Linked “new-project”")).toBeVisible();
 });
+
+test("updating the library from the selection asks which copy when they differ", async ({
+  page,
+}) => {
+  await setUp(page, "project-copies-differ");
+  await openApp(page, "/projects");
+  await main(page)
+    .getByRole("link", { name: "Open project “billing-api”" })
+    .click({ position: { x: 12, y: 12 } });
+  const content = main(page);
+  await page.getByRole("button", { name: "Select", exact: true }).click();
+  await content.getByRole("checkbox", { name: "Select code-review" }).check();
+  await page
+    .getByRole("toolbar", { name: "Selection actions" })
+    .getByRole("button", { name: "Update library (1)" })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Which copy of “code-review” goes to the library?" }),
+  ).toBeVisible();
+});

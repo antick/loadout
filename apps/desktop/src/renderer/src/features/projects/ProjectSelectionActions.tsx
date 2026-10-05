@@ -1,4 +1,4 @@
-import type { Project } from "@loadout/shared";
+import type { Project, SkillVersion } from "@loadout/shared";
 import { ArrowDownToLine, ArrowUpFromLine, Eye, EyeOff, Tags, Trash2 } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,8 @@ export interface ProjectSelectionActionsProps {
   project: Project;
   selected: readonly ProjectSkillGroup[];
   onDone: () => void;
+  /** One skill whose copies differ: ask which one the library gets, as its card's action does. */
+  onChooseVersion: (ref: ProjectSkillRef, versions: SkillVersion[]) => void;
 }
 
 /** Batch actions for the selected project skills. Each button counts only the skills it applies to. */
@@ -27,13 +29,14 @@ export function ProjectSelectionActions({
   project,
   selected,
   onDone,
+  onChooseVersion,
 }: ProjectSelectionActionsProps): ReactNode {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const library = useSkills();
   const setEnabled = useSetProjectSkillsEnabled();
   const pullMany = usePullFromLibrary();
-  const pushMany = usePushToLibrary();
+  const pushMany = usePushToLibrary(onChooseVersion);
   const deleteMany = useDeleteProjectSkills();
   const [tagging, setTagging] = useState(false);
 

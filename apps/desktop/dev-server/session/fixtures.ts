@@ -187,6 +187,14 @@ export const PROJECTS: {
 export const MISSING_PROJECT = "legacy-tools";
 export const PROJECTS_DIR = "code";
 
+/** A project skill in two agent folders, each copy edited its own way. */
+export const DIFFERING_PROJECT_COPIES = {
+  project: "billing-api",
+  skill: "code-review",
+  agent: "cursor",
+  dirs: [".claude/skills", ".cursor/skills"],
+};
+
 /** A project's `skills.toml` someone broke by hand: a table header left open. */
 export const BROKEN_SKILLS_FILE = {
   project: "shop-web",

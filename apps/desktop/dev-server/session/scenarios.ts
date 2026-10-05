@@ -15,6 +15,7 @@ import {
   BROKEN_SKILLS_FILE,
   CLAWHUB_TOKEN,
   CONFLICTING,
+  DIFFERING_PROJECT_COPIES,
   MANY_DELETED,
   OTHER_DEVICE_NAME,
   PROJECTS_DIR,
@@ -124,6 +125,20 @@ const SCENARIOS: Record<string, Scenario> = {
   },
 
   "clawhub-signed-in": (_world, api) => api.publish.setClawhubToken(CLAWHUB_TOKEN),
+
+  /** billing-api's code-review in a second agent folder too, both copies changed by hand. */
+  "project-copies-differ": async (world, api) => {
+    const { project, skill, agent, dirs } = DIFFERING_PROJECT_COPIES;
+    const projectId = (await api.projects.list()).find((entry) => entry.name === project)?.id;
+    if (!projectId) throw new Error(`There is no project called ${project}`);
+    await api.projects.exportSkill((await skillNamed(api, skill)).id, projectId, [agent]);
+    for (const dir of dirs) {
+      // Replaced rather than written through: an export may be a link into the library.
+      const target = join(world.home, PROJECTS_DIR, project, dir, skill);
+      rmSync(target, { recursive: true, force: true });
+      writeFiles(target, { "SKILL.md": document(skill, `Changed by hand in ${dir}.`) });
+    }
+  },
 
   /** A `skills.toml` in shop-web that is not valid TOML. */
   "skills-file-broken": async (world) => {

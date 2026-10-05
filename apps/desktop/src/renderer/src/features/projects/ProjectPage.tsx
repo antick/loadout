@@ -290,6 +290,7 @@ function ProjectWorkspace({
               project={project}
               selected={selectedGroups}
               onDone={selection.exit}
+              onChooseVersion={actions.chooseVersion}
             />
           </SelectionToolbar>
 

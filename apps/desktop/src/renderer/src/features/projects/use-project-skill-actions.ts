@@ -40,6 +40,8 @@ export interface ProjectSkillActions {
   pendingTargets: ReadonlySet<string>;
   /** A skill whose copies differ, waiting for the user to pick the one the library gets. */
   versionChoice: VersionChoice | null;
+  /** Ask which copy the library gets; for other places that push, such as the batch toolbar. */
+  chooseVersion(ref: ProjectSkillRef, versions: SkillVersion[]): void;
   closeVersionChoice(): void;
 }
 
@@ -53,11 +55,10 @@ export function useProjectSkillActions(
   const navigate = useNavigate();
   // `mutate` is stable across renders; the mutation objects are not.
   const [versionChoice, setVersionChoice] = useState<VersionChoice | null>(null);
-  const { mutate: push } = usePushToLibrary(
-    useCallback((ref: ProjectSkillRef, versions: SkillVersion[]) => {
-      setVersionChoice({ ref, versions });
-    }, []),
-  );
+  const chooseVersion = useCallback((ref: ProjectSkillRef, versions: SkillVersion[]) => {
+    setVersionChoice({ ref, versions });
+  }, []);
+  const { mutate: push } = usePushToLibrary(chooseVersion);
   const { mutate: pull } = usePullFromLibrary();
   const { mutate: setEnabled } = useSetProjectSkillsEnabled();
   // `mutateAsync`, not per-call callbacks: TanStack Query only calls those for the latest call of
@@ -260,6 +261,7 @@ export function useProjectSkillActions(
     toggleTarget: (group, target) => void toggleTarget(group, target),
     pendingTargets,
     versionChoice,
+    chooseVersion,
     closeVersionChoice: () => setVersionChoice(null),
   };
 }
