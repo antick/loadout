@@ -1,10 +1,8 @@
-import { type Skill, fieldNotesFor } from "@loadout/shared";
+import { MANUAL_ONLY_KEY, type Skill, fieldNotesFor } from "@loadout/shared";
 import { Info } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-const MANUAL_ONLY_FIELD = "disable-model-invocation";
 
 export interface AgentFieldNoteProps {
   skill: Pick<Skill, "behaviorFields">;
@@ -39,7 +37,7 @@ export function AgentFieldNote({ skill, agentKey, agentName }: AgentFieldNotePro
             agent: agentName,
           })}
         </p>
-        {notes.some((note) => note.field === MANUAL_ONLY_FIELD) ? (
+        {notes.some((note) => note.field === MANUAL_ONLY_KEY) ? (
           <p className="mt-1">{t("fieldNotes.manualOnly")}</p>
         ) : null}
       </TooltipContent>
