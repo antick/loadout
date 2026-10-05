@@ -1,7 +1,6 @@
 import type {
   ApplyResult,
   Preset,
-  PresetApplyOptions,
   PresetRemoveOptions,
   PresetAgentToggle,
   PresetInput,
