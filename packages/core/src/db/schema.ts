@@ -195,4 +195,8 @@ export const MIGRATIONS: readonly string[] = [
   -- Subagents, commands and rules are no longer managed: their files stay where they are.
   DROP TABLE IF EXISTS item_deployments;
   `,
+  `
+  -- Merging is always per skill now: the switch that turned it off is gone.
+  DELETE FROM settings WHERE key = 'skillAwareMerge';
+  `,
 ];
