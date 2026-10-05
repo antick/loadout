@@ -4,7 +4,7 @@
 //   node apps/desktop/scripts/update-feed.mjs <folder> --version 0.2.0 --repo owner/name
 //
 // The file names come from `artifactName` in electron-builder.yml. The keys match
-// `UpdateTarget` in src/main/update/feed.ts.
+// `UpdateTarget` in packages/shared/src/update-feed.ts.
 import { createHash } from "node:crypto";
 import { createReadStream, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
