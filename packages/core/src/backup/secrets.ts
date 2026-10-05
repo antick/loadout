@@ -95,13 +95,15 @@ async function scanCommitted(env: BackupEnv, branch: string): Promise<SecretFind
   return findings;
 }
 
+function unreadable(file: string | undefined): AppError {
+  return new AppError("GIT", `Could not read ${file ?? "a file"} from the backup.`);
+}
+
 /** The contents of these blobs, from one git process; every one must be there. */
 async function readBlobs(
   env: BackupEnv,
   entries: readonly { blob: string; file: string }[],
 ): Promise<Buffer[]> {
-  const unreadable = (file: string | undefined): AppError =>
-    new AppError("GIT", `Could not read ${file ?? "a file"} from the backup.`);
   const result = await env.git.probe(["cat-file", "--batch"], {
     input: batchInput(entries.map(({ blob }) => blob)),
     encoding: "buffer",
