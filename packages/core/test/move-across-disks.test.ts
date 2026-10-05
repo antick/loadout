@@ -17,6 +17,7 @@ import { type StorageService, createStorageService } from "../src/storage";
 import { moveEntrySync } from "../src/util/fs";
 import { makeSkill } from "./helpers";
 import { type WorkspaceWorld, createWorkspaceWorld, skillText } from "./workspace-world";
+import { createRequest } from "../src/install/download";
 import { createClawhubClient } from "../src/market/clawhub";
 import { createPublishService } from "../src/publish";
 
@@ -149,7 +150,7 @@ describe("Recently removed on another disk", () => {
       removed: world.removed,
       publish: createPublishService(world.ctx, {
         store: world.store,
-        clawhub: createClawhubClient(),
+        clawhub: createClawhubClient(createRequest()),
       }),
     });
     disk.crossDisk = true;

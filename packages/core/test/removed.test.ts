@@ -26,6 +26,7 @@ import {
   setContentMtime,
   skillText,
 } from "./workspace-world";
+import { createRequest } from "../src/install/download";
 import { createClawhubClient } from "../src/market/clawhub";
 import { createPublishService } from "../src/publish";
 
@@ -49,7 +50,7 @@ describe("recently removed", () => {
       removed: world.removed,
       publish: createPublishService(world.ctx, {
         store: world.store,
-        clawhub: createClawhubClient(),
+        clawhub: createClawhubClient(createRequest()),
       }),
     });
   });

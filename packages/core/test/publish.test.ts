@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { PublishInput, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createRequest } from "../src/install/download";
 import { createClawhubClient } from "../src/market/clawhub";
 import { type PublishHooks, type PublishService, createPublishService } from "../src/publish";
 import { PUBLISH_ERROR_TEXT } from "../src/publish/checkout";
@@ -59,7 +60,7 @@ beforeEach(() => {
   service = createPublishService(world.ctx, {
     store: world.store,
     hooks,
-    clawhub: createClawhubClient(),
+    clawhub: createClawhubClient(createRequest()),
   });
 });
 afterEach(() => {

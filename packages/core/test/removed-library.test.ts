@@ -8,6 +8,7 @@ import { createGitClient } from "../src/install/git-client";
 import { type StorageService, createStorageService } from "../src/storage";
 import { makeSkill } from "./helpers";
 import { type WorkspaceWorld, createWorkspaceWorld, rejection, skillText } from "./workspace-world";
+import { createRequest } from "../src/install/download";
 import { createClawhubClient } from "../src/market/clawhub";
 import { createPublishService } from "../src/publish";
 
@@ -36,7 +37,7 @@ describe("deleting a library skill", () => {
       removed: world.removed,
       publish: createPublishService(world.ctx, {
         store: world.store,
-        clawhub: createClawhubClient(),
+        clawhub: createClawhubClient(createRequest()),
       }),
     });
   });

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { APP_SLUG, MARKETPLACE_URL } from "@loadout/shared";
+import { createRequest, downloadWith } from "../src/install/download";
 import { type MarketService, createMarketService } from "../src/market/client";
 import { createClawhubClient } from "../src/market/clawhub";
 import { parseBoardHtml, parseSearchResponse } from "../src/market/parse";
@@ -7,8 +8,13 @@ import { type TestWorld, createTestWorld } from "./helpers";
 
 /** The marketplace of `world`, every request answered by `fetchImpl`. */
 function marketOver(world: TestWorld, fetchImpl: typeof fetch): MarketService {
-  const clawhub = createClawhubClient({ fetchImpl });
-  return createMarketService(world.ctx, { store: world.store, fetchImpl, clawhub });
+  const request = createRequest(fetchImpl);
+  const clawhub = createClawhubClient(request);
+  return createMarketService(world.ctx, {
+    store: world.store,
+    download: downloadWith(request),
+    clawhub,
+  });
 }
 
 const PDF = { source: "acme/skills", skillId: "pdf", name: "PDF Tools", installs: 1200 };

@@ -2,13 +2,13 @@ import { rmSync } from "node:fs";
 import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
 import type { GitClient } from "../src/install";
-import type { InstallServiceDeps } from "../src/install/service";
 import { createSourceNewsStore } from "../src/sources/news-store";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { makeSkill, passingSafety, writeFile } from "./helpers";
 import {
   type InstallHarness,
+  type InstallHarnessDeps,
   commitAll,
   createInstallHarness,
   initRepo,
@@ -42,7 +42,7 @@ export interface UpdatesWorld extends DeployWorld {
  * Deploy + install + updates wired as `createCore` wires them, over a local fixture repository.
  * `installDeps` reaches the install service, e.g. a fake `fetchImpl` for downloads.
  */
-export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}): UpdatesWorld {
+export function createUpdatesWorld(installDeps: InstallHarnessDeps = {}): UpdatesWorld {
   const world = createDeployWorld();
   world.installAgents(".claude");
   const tmp = join(world.root, "tmp");

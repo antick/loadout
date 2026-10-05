@@ -4,12 +4,15 @@ import { join } from "node:path";
 import { type Zippable, strToU8, zipSync } from "fflate";
 import type { AppEvents, InstallApi, Skill } from "@loadout/shared";
 import { AgentRegistry } from "../src/agents/registry";
+import { createRequest } from "../src/install/download";
 import {
   type InstallService,
   type InstallServiceDeps,
   createInstallService,
 } from "../src/install/service";
 import { CLONE_DIR_PREFIX } from "../src/install/git-client";
+import { createClawhubClient } from "../src/market/clawhub";
+import { createScanService } from "../src/scan/service";
 import { createSourceNewsStore } from "../src/sources";
 import { createRemovedStore } from "../src/storage";
 import { setEnv } from "./git-env";
@@ -67,9 +70,16 @@ export interface CapturedEvent {
   payload: AppEvents[keyof AppEvents];
 }
 
-export interface InstallHarness extends InstallService {
+export interface InstallHarness extends Omit<InstallService, "api"> {
+  /** The whole install API, the scan of this machine included, as `createCore` assembles it. */
+  api: InstallApi;
   events: CapturedEvent[];
   progressFor(key: string): string[];
+}
+
+export interface InstallHarnessDeps extends Partial<InstallServiceDeps> {
+  /** A fake web, for downloads and the ClawHub registry. */
+  fetchImpl?: typeof fetch;
 }
 
 /**
@@ -78,25 +88,42 @@ export interface InstallHarness extends InstallService {
  */
 export function createInstallHarness(
   world: TestWorld,
-  deps: Partial<InstallServiceDeps> = {},
+  deps: InstallHarnessDeps = {},
 ): InstallHarness {
   const events: CapturedEvent[] = [];
   world.ctx.emit = (event, payload) => {
     events.push({ event, payload });
   };
+  const { fetchImpl, ...overrides } = deps;
+  const request = overrides.request ?? createRequest(fetchImpl);
+  const registry = new AgentRegistry(world.ctx);
   const service = createInstallService(world.ctx, {
     store: world.store,
-    registry: new AgentRegistry(world.ctx),
+    registry,
+    request,
+    clawhub: createClawhubClient(request),
     safety: passingSafety,
     replace: {
       removed: createRemovedStore(world.ctx, { store: world.store }),
       refreshCopies: async () => undefined,
     },
     sourceNews: createSourceNewsStore(world.ctx),
-    ...deps,
+    ...overrides,
+  });
+  const scan = createScanService(world.ctx, {
+    store: world.store,
+    registry: overrides.registry ?? registry,
+    install: service.installIntoLibrary,
+    safety: overrides.safety ?? passingSafety,
   });
   return {
     ...service,
+    api: {
+      ...service.api,
+      scanLocal: scan.scanLocal,
+      importDiscovered: scan.importDiscovered,
+      importAllDiscovered: scan.importAllDiscovered,
+    },
     events,
     progressFor: (key) =>
       events.flatMap(({ event, payload }) =>

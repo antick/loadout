@@ -3,7 +3,7 @@ import type { BatchImportResult, InstallApi, InstallOptions, Skill } from "@load
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, notFound } from "../errors";
-import { createScanService } from "../scan/service";
+import type { ScanService } from "../scan/service";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import {
@@ -14,7 +14,7 @@ import {
   statOrNull,
 } from "../util/fs";
 import { CancelRegistry } from "./cancel";
-import { type Download, createRequest, downloadWith } from "./download";
+import { type Download, type HttpRequest, downloadWith } from "./download";
 import { type GitClient, createGitClient } from "./git-client";
 import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
@@ -23,30 +23,30 @@ import { type InstallIntoLibrary, installIntoLibrary } from "./library";
 import type { SourceNewsStore } from "../sources/news-store";
 import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
-import { type ClawhubClient, createClawhubClient } from "../market/clawhub";
+import type { ClawhubClient } from "../market/clawhub";
 import { createClawhubInstaller, createClawhubReader } from "./clawhub-install";
 import { readFolderSkill } from "./read-skill";
 
 export interface InstallServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
-  /**
-   * HTTP client for downloads (Git-less repositories, archive links). The built-in `fetch`
-   * ignores the proxy setting, so the desktop app injects a proxy-aware one; tests a fake.
-   */
-  fetchImpl?: typeof fetch;
+  /** HTTP client for downloads (Git-less repositories, archive links), proxy-aware in the app. */
+  request: HttpRequest;
+  /** The ClawHub registry, on the same HTTP client. */
+  clawhub: ClawhubClient;
   /** Safety checks before every install. */
   safety: SafetyGate;
   /** Recently removed and deployed copies, for an import that replaces a library skill. */
   replace: ReplaceDeps;
   /** Which skills of each repository were already offered. */
   sourceNews: Pick<SourceNewsStore, "markSeen">;
-  /** Called after a skill found in an agent's folder is imported, with the folder it came from. */
-  onImported?: (skill: Skill, sourcePath: string) => void;
 }
 
+/** `InstallApi` without the scan of this machine, which `core.ts` adds from the scan service. */
+export type InstallApiWithoutScan = Omit<InstallApi, keyof ScanService>;
+
 export interface InstallService {
-  api: InstallApi;
+  api: InstallApiWithoutScan;
   /** Shared by the updates service, which clones and checks the same repositories. */
   git: GitClient;
   /** Shared by the updates service, which downloads archive links again to check them. */
@@ -64,9 +64,8 @@ export interface InstallService {
 const LOCAL_RECORD = { sourceType: "local", updateStatus: "local_only" } as const;
 
 export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps): InstallService {
-  const { store, registry } = deps;
-  const http = createRequest(deps.fetchImpl);
-  const download = downloadWith(http);
+  const { store, registry, clawhub } = deps;
+  const download = downloadWith(deps.request);
   // System Git when it is installed; public GitHub and GitLab repositories work without it.
   const git = withHttpFallback(createGitClient(ctx), createHttpGit(download));
   const cancels = new CancelRegistry();
@@ -82,7 +81,6 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     sourceNews: deps.sourceNews,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
-  const clawhub = createClawhubClient({ request: http });
   const clawhubDeps = {
     store,
     clawhub,
@@ -93,13 +91,6 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
   };
   const fromClawhub = createClawhubInstaller(ctx, clawhubDeps);
   const readClawhubSkill = createClawhubReader(ctx, clawhubDeps);
-  const scan = createScanService(ctx, {
-    store,
-    registry,
-    install,
-    safety: deps.safety,
-    onImported: deps.onImported,
-  });
 
   async function fromPath(
     sourcePath: string,
@@ -156,7 +147,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     return result;
   }
 
-  const api: InstallApi = {
+  const api: InstallApiWithoutScan = {
     fromPath,
     importFolder,
     previewGit: gitInstaller.previewGit,
@@ -169,9 +160,6 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     fromMarket: gitInstaller.fromMarket,
     fromClawhub,
     cancel: async (key) => cancels.cancel(key),
-    scanLocal: scan.scanLocal,
-    importDiscovered: scan.importDiscovered,
-    importAllDiscovered: scan.importAllDiscovered,
   };
 
   return {

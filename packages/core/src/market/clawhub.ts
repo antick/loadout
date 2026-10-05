@@ -1,23 +1,30 @@
 import {
+  API_TIMEOUT_MS,
   CLAWHUB_API_URL,
   CLAWHUB_NAME,
+  HTTP_CONFLICT,
+  HTTP_FORBIDDEN,
+  HTTP_NOT_FOUND,
+  HTTP_UNAUTHORIZED,
   type MarketAudit,
   type MarketBoard,
   type MarketSkill,
+  SECOND_MS,
   clawhubMarketId,
   clawhubSkillUrl,
+  formatTimestampIso,
 } from "@loadout/shared";
 import { AppError, invalid, notFound } from "../errors";
+import { isZip } from "../install/archive";
 import {
   type HttpAnswer,
   type HttpRequest,
-  API_TIMEOUT_MS,
-  createRequest,
   downloadWith,
   jsonOptions,
   readJson,
 } from "../install/download";
 import type { MarketDetailParts } from "./detail";
+import { type Json, asNumber, asObject, asText } from "./json";
 
 /**
  * The ClawHub registry (clawhub.ai): public read endpoints, no token. Skills are versioned and
@@ -25,8 +32,8 @@ import type { MarketDetailParts } from "./detail";
  * is always named `owner/slug`.
  */
 
-const DOWNLOAD_TIMEOUT_MS = 60_000;
-const PUBLISH_TIMEOUT_MS = 120_000;
+const DOWNLOAD_TIMEOUT_MS = 60 * SECOND_MS;
+const PUBLISH_TIMEOUT_MS = 120 * SECOND_MS;
 const LIST_LIMIT = 50;
 /** Sort each board asks the registry for. */
 const BOARD_SORTS: Partial<Record<MarketBoard, string>> = {
@@ -36,13 +43,6 @@ const BOARD_SORTS: Partial<Record<MarketBoard, string>> = {
 };
 /** ClawHub's own files inside a download, not part of the skill. */
 export const CLAWHUB_META_FILES: ReadonlySet<string> = new Set(["_meta.json"]);
-
-type Json = Record<string, unknown>;
-const asObject = (value: unknown): Json =>
-  value && typeof value === "object" && !Array.isArray(value) ? (value as Json) : {};
-const asText = (value: unknown): string | null => (typeof value === "string" ? value : null);
-const asNumber = (value: unknown): number | null =>
-  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 /** A published skill as the registry lists it. */
 export type ClawhubEntry = Omit<MarketSkill, "installed">;
@@ -76,21 +76,8 @@ export interface ClawhubClient {
   ): Promise<{ status: "published" | "pending" }>;
 }
 
-export interface ClawhubClientDeps {
-  fetchImpl?: typeof fetch;
-  /**
-   * Every call goes through the shared requester: size caps, timeouts, cancelling, one retry
-   * when the registry is busy, and the same error mapping as any download.
-   */
-  request?: HttpRequest;
-}
-
 const HTTP_OK_MIN = 200;
 const HTTP_OK_MAX = 299;
-const HTTP_UNAUTHORIZED = 401;
-const HTTP_FORBIDDEN = 403;
-const HTTP_NOT_FOUND = 404;
-const HTTP_CONFLICT = 409;
 const HTTP_TOO_MANY = 429;
 /** Statuses the registry explains in its own answer; the rest are mapped like any download. */
 const READ_STATUSES: ReadonlySet<number> = new Set([
@@ -101,13 +88,11 @@ const READ_STATUSES: ReadonlySet<number> = new Set([
 ]);
 const isOk = (status: number): boolean => status >= HTTP_OK_MIN && status <= HTTP_OK_MAX;
 
-/** The first bytes of a zip file. */
-const ZIP_MAGIC = Buffer.from("PK\x03\x04", "latin1");
 const JSON_OPEN = "{".charCodeAt(0);
 
 /** The archive address in the registry's answer for a skill mirrored from GitHub, else null. */
 function handoffUrl(data: Buffer): string | null {
-  if (data.subarray(0, ZIP_MAGIC.length).equals(ZIP_MAGIC)) return null;
+  if (isZip(data)) return null;
   if (data.find((byte) => byte > 0x20) !== JSON_OPEN) return null;
   try {
     return asText(asObject(JSON.parse(data.toString("utf8"))).archiveUrl) ?? "";
@@ -160,8 +145,11 @@ function query(params: Record<string, string | null | undefined>): string {
   return text ? `?${text}` : "";
 }
 
-export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient {
-  const request = deps.request ?? createRequest(deps.fetchImpl);
+/**
+ * Every call goes through the shared requester: size caps, timeouts, cancelling, one retry when
+ * the registry is busy, and the same error mapping as any download.
+ */
+export function createClawhubClient(request: HttpRequest): ClawhubClient {
   const download = downloadWith(request);
 
   async function call(
@@ -199,7 +187,7 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
 
   async function detail(owner: string | null, slug: string): Promise<ClawhubDetail> {
     const { status, body } = await json(`/skills/${encodeURIComponent(slug)}${query({ owner })}`);
-    if (status === 409) {
+    if (status === HTTP_CONFLICT) {
       // Several publishers use the slug: without a chosen one, the registry's first (most used).
       const matches = Array.isArray(body.matches) ? body.matches : [];
       const first = asText(asObject(matches[0]).ownerHandle);
@@ -278,7 +266,7 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
               : (SCAN_STATUSES[(status ?? "").toLowerCase()] ?? "unknown"),
           summary: analysis ? (analysis.split(/\r?\n/).find((line) => line.trim()) ?? null) : null,
           riskLevel: status ? status.toUpperCase() : null,
-          auditedAt: checkedAt ? new Date(checkedAt).toISOString() : null,
+          auditedAt: checkedAt ? formatTimestampIso(checkedAt) : null,
           url: clawhubSkillUrl(owner, slug),
         };
         return [audit];

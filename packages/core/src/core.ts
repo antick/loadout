@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import type { CoreApi, SettingsApi } from "@loadout/shared";
+import type { CoreApi, InstallApi, InstructionsApi, SettingsApi } from "@loadout/shared";
 import { type FolderMove, followMovedAgentFolders } from "./agents/follow-folders";
 import { AgentRegistry } from "./agents/registry";
 import { createAgentsService } from "./agents";
@@ -14,9 +14,11 @@ import {
 } from "./deploy";
 import { createEditorService, createFileHistory } from "./editor";
 import { createSafetyService } from "./safety";
-import { createInstallService } from "./install";
-import { createInstructionFinder, createInstructionsService } from "./instructions";
+import { createInstallService, createRequest } from "./install";
+import { createInstructionFinder } from "./instructions";
 import { createMarketService } from "./market";
+import { createClawhubClient } from "./market/clawhub";
+import { createScanService } from "./scan/service";
 import { createPresetSharing, createPresetsService } from "./presets";
 import { createProjectsService } from "./projects";
 import { createSkillsService } from "./skills/service";
@@ -120,17 +122,33 @@ export function createCore(options: CoreCreateOptions = {}): Core {
             options.safetyScannerPath ? { path: options.safetyScannerPath, version: null } : null,
   });
   const sourceNews = createSourceNewsStore(ctx);
+  // One HTTP client for every web call: the desktop app passes a proxy-aware `fetch`.
+  const request = createRequest(options.fetchImpl);
+  const clawhub = createClawhubClient(request);
   const install = createInstallService(ctx, {
     store,
     registry,
-    fetchImpl: options.fetchImpl,
+    request,
+    clawhub,
     safety,
     replace: { removed, refreshCopies: deploy.refreshCopies },
     sourceNews,
+  });
+  const scan = createScanService(ctx, {
+    store,
+    registry,
+    install: install.installIntoLibrary,
+    safety,
     // Updates are wired further down; an import only happens once everything is built.
     onImported: (skill, sourcePath) =>
       ctx.lock.outside(() => void updates.origin.linkIfExact(skill.id, sourcePath)),
   });
+  const installApi: InstallApi = {
+    ...install.api,
+    scanLocal: scan.scanLocal,
+    importDiscovered: scan.importDiscovered,
+    importAllDiscovered: scan.importAllDiscovered,
+  };
   const skills = createSkillsService(ctx, {
     store,
     removeDeployments: deploy.removeAllForSkill,
@@ -140,11 +158,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     rename: { deploy, projectSkillFolders: () => projects.skillFolders() },
     removed,
   });
-  const market = createMarketService(ctx, {
-    store,
-    fetchImpl: options.fetchImpl,
-    clawhub: install.clawhub,
-  });
+  const market = createMarketService(ctx, { store, download: install.download, clawhub });
   const updates = createUpdatesService(ctx, {
     store,
     install,
@@ -160,7 +174,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     presets: presets.presets,
     api: presets.api,
     registry,
-    install: install.api,
+    install: installApi,
     installIntoLibrary: install.installIntoLibrary,
     download: install.download,
     safety,
@@ -168,7 +182,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
   const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });
   const finder = createInstructionFinder({ registry, projects: projects.projects });
-  const instructions = createInstructionsService(ctx, { finder });
   const editor = createEditorService(ctx, {
     store,
     registry,
@@ -207,9 +220,14 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     api: { skills: skills.api, presets: { ...presets.api, ...presetSharing }, deploy: deploy.api },
   });
 
-  const publish = createPublishService(ctx, { store, clawhub: install.clawhub });
+  const publish = createPublishService(ctx, { store, clawhub });
   const storage = createStorageService(ctx, { deploy, store, git: install.git, removed, publish });
   const listing = createListingService(ctx, { registry, workspace: workspace.api });
+
+  // Listing is all the instructions API does; editing goes through `editor`.
+  const instructions: InstructionsApi = {
+    list: async (projectId) => finder.list(projectId ?? null),
+  };
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),
@@ -223,9 +241,9 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     agents: agents.api,
     skills: skills.api,
     editor: editor.api,
-    instructions: instructions.api,
+    instructions,
     deploy: deploy.api,
-    install: install.api,
+    install: installApi,
     market: market.api,
     safety: safety.api,
     updates: updates.api,

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
+import { createRequest } from "../src/install/download";
 import { createClawhubClient } from "../src/market/clawhub";
 import { tempDir, createTestCore } from "./helpers";
 
@@ -226,7 +227,7 @@ function clientFor(answer: (url: string, init?: RequestInit) => Promise<Response
     calls.push(String(input));
     return answer(String(input), init);
   }) as typeof fetch;
-  return { client: createClawhubClient({ fetchImpl }), calls };
+  return { client: createClawhubClient(createRequest(fetchImpl)), calls };
 }
 
 describe("ClawHub downloads", () => {

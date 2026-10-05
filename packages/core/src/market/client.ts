@@ -1,8 +1,10 @@
 import {
+  API_TIMEOUT_MS,
   CLAWHUB_NAME,
   MARKETPLACE_NAME,
   MARKET_SEARCH_DEFAULT_LIMIT,
   MARKETPLACE_URL,
+  MINUTE_MS,
   type MarketApi,
   type MarketBoard,
   type MarketListing,
@@ -12,14 +14,7 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, invalid, isAppError, isUnanswered } from "../errors";
-import {
-  API_TIMEOUT_MS,
-  MAX_ANSWER_BYTES,
-  createRequest,
-  downloadWith,
-  jsonOptions,
-  readJson,
-} from "../install/download";
+import { type Download, MAX_ANSWER_BYTES, jsonOptions, readJson } from "../install/download";
 import type { SkillStore } from "../skills/store";
 import type { ClawhubClient, ClawhubEntry } from "./clawhub";
 import { type FetchedDetail, type MarketDetailParts, createMarketDetail } from "./detail";
@@ -27,11 +22,8 @@ import { type MarketEntry, parseBoardHtml, parseSearchResponse } from "./parse";
 
 export interface MarketServiceDeps {
   store: SkillStore;
-  /**
-   * HTTP client. The built-in `fetch` ignores the proxy setting, so the desktop app injects a
-   * proxy-aware one; tests inject a fake.
-   */
-  fetchImpl?: typeof fetch;
+  /** Shared with the installer: the one HTTP client, proxy-aware in the desktop app. */
+  download: Download;
   /** Shared with the installer and the updater. */
   clawhub: ClawhubClient;
 }
@@ -46,14 +38,14 @@ const BOARD_PATHS: Partial<Record<MarketBoard, string>> = {
   all_time: "/",
 };
 const SEARCH_PATH = "/api/search";
-const BOARD_CACHE_TTL_MS = 300_000;
+const BOARD_CACHE_TTL_MS = 5 * MINUTE_MS;
 const BOARD_CACHE_PREFIX = "board:";
 const SEARCH_CACHE_PREFIX = "search:";
 /** Searches kept for offline use; the oldest go first. */
 const MAX_CACHED_SEARCHES = 100;
 const DETAIL_CACHE_PREFIX = "detail:";
 /** Audits and documents change far less often than rankings. */
-const DETAIL_CACHE_TTL_MS = 1_800_000;
+const DETAIL_CACHE_TTL_MS = 30 * MINUTE_MS;
 const MAX_SEARCH_LIMIT = 200;
 /** ClawHub answers are cached under their own keys, apart from skills.sh's. */
 const CLAWHUB_CACHE_PREFIX = "clawhub:";
@@ -64,10 +56,8 @@ interface CacheRow {
 }
 
 export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): MarketService {
-  const { store } = deps;
-  const request = createRequest(deps.fetchImpl);
-  const fetchDetail = createMarketDetail({ download: downloadWith(request) });
-  const { clawhub } = deps;
+  const { store, download, clawhub } = deps;
+  const fetchDetail = createMarketDetail({ download });
   /** Every marketplace call: its name in messages, and a short timeout. */
   const marketplace = { label: MARKETPLACE_NAME, timeoutMs: API_TIMEOUT_MS } as const;
 
@@ -209,13 +199,13 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
   async function fetchBoard(board: MarketBoard): Promise<MarketEntry[]> {
     const path = BOARD_PATHS[board];
     if (!path) throw invalid(`Unknown marketplace board: ${board}`);
-    const page = await request(`${MARKETPLACE_URL}${path}`, {
+    const page = await download(`${MARKETPLACE_URL}${path}`, {
       ...marketplace,
       accept: "text/html",
       maxBytes: MAX_ANSWER_BYTES,
       subject: "The listing",
     });
-    const entries = parseBoardHtml(page.body.toString("utf8"));
+    const entries = parseBoardHtml(page.toString("utf8"));
     if (entries.length === 0) {
       // An empty board means the page changed shape, not that the marketplace is empty.
       throw new AppError("NETWORK", `The ${MARKETPLACE_NAME} listing could not be read`);
@@ -235,7 +225,6 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
           `${CLAWHUB_NAME} board`,
         );
       }
-      if (!(board in BOARD_PATHS)) throw invalid(`Unknown marketplace board: ${board}`);
       return cachedListing(
         key,
         BOARD_CACHE_TTL_MS,
@@ -268,14 +257,11 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
               0,
               async () => {
                 const url = `${MARKETPLACE_URL}${SEARCH_PATH}?q=${encodeURIComponent(q)}&limit=${capped}`;
-                const answer = await request(
+                const answer = await download(
                   url,
                   jsonOptions({ ...marketplace, subject: "The search" }),
                 );
-                return parseSearchResponse(readJson(answer.body, MARKETPLACE_NAME)).slice(
-                  0,
-                  capped,
-                );
+                return parseSearchResponse(readJson(answer, MARKETPLACE_NAME)).slice(0, capped);
               },
               skillsSh,
               `${MARKETPLACE_NAME} search`,
