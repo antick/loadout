@@ -1,8 +1,11 @@
 import {
+  API_TIMEOUT_MS,
   MARKETPLACE_URL,
+  MIB,
   type MarketAudit,
   type MarketAuditStatus,
   type MarketSkillDetail,
+  OWNER_REPO_PATTERN,
   SKILL_MARKER_FILES,
   lastPathSegment,
   splitFrontmatter,
@@ -10,8 +13,9 @@ import {
   isRecord,
 } from "@loadout/shared";
 import { invalid, isAppError, isUnanswered } from "../errors";
-import { API_TIMEOUT_MS, type Download, jsonOptions, readJson } from "../install/download";
+import { type Download, jsonOptions, readJson } from "../install/download";
 import { locateSkill, usualSkillPaths } from "../install/repo-scan";
+import { asTrimmedText as text } from "./json";
 
 /**
  * What to read before installing a marketplace skill: the security audits the marketplace
@@ -24,17 +28,12 @@ const GITHUB_API = "https://api.github.com/repos";
 const GITHUB_RAW = "https://raw.githubusercontent.com";
 const GITHUB_WEB = "https://github.com";
 const TREE_REF = "HEAD";
-const MAX_DOCUMENT_BYTES = 1024 * 1024;
-const SOURCE_SHAPE = /^[\w.-]+\/[\w.-]+$/;
+const MAX_DOCUMENT_BYTES = MIB;
 const SKILL_ID_SHAPE = /^[\w.:-]+$/;
 const STATUSES: ReadonlySet<string> = new Set(["pass", "warn", "fail"]);
 /** Files read to settle which of several overlapping folders holds the skill. */
 const MAX_MAYBE_READS = 4;
 const [MAIN_MARKER] = SKILL_MARKER_FILES;
-
-function text(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
 
 function encodePath(path: string): string {
   return path.split("/").map(encodeURIComponent).join("/");
@@ -219,7 +218,7 @@ export function createMarketDetail(
   return async (source, skillId) => {
     const repo = source.trim();
     const id = skillId.trim();
-    if (!SOURCE_SHAPE.test(repo)) throw invalid(`Invalid marketplace source: '${source}'`);
+    if (!OWNER_REPO_PATTERN.test(repo)) throw invalid(`Invalid marketplace source: '${source}'`);
     if (!SKILL_ID_SHAPE.test(id)) throw invalid(`Invalid marketplace skill id: '${skillId}'`);
     const pageUrl = `${MARKETPLACE_URL}/${repo}/${encodeURIComponent(id)}`;
     const trace: LookupTrace = { unanswered: false };

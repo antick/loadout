@@ -1,4 +1,5 @@
-import { isRecord } from "@loadout/shared";
+import { OWNER_REPO_PATTERN, isRecord } from "@loadout/shared";
+import { asTrimmedText } from "./json";
 
 /** A marketplace listing entry before it is matched against the library. */
 export interface MarketEntry {
@@ -14,12 +15,11 @@ const NEXT_DATA_SCRIPT = /<script[^>]*\bid=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)
 const PAGE_PROPS_LISTS = ["initialSkills", "skills", "items"] as const;
 /** An object with no nested object inside it; listing entries are flat. */
 const FLAT_OBJECT = /\{[^{}]*\}/g;
-const SOURCE_SHAPE = /^[\w.-]+\/[\w.-]+$/;
 const ESCAPED_QUOTE = '\\"';
 
+/** A field that some responses carry as a number (an id), read as text. */
 function text(value: unknown): string | null {
-  if (typeof value === "number") return String(value);
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+  return asTrimmedText(typeof value === "number" ? String(value) : value);
 }
 
 function count(value: unknown): number {
@@ -33,7 +33,7 @@ function count(value: unknown): number {
 function toMarketEntry(value: unknown): MarketEntry | null {
   if (!isRecord(value)) return null;
   const source = text(value.source);
-  if (!source || !SOURCE_SHAPE.test(source)) return null;
+  if (!source || !OWNER_REPO_PATTERN.test(source)) return null;
   let skillId = text(value.skillId) ?? text(value.skill_id) ?? text(value.id);
   // Some responses carry the full `owner/repo/skill` id instead of the bare skill id.
   if (skillId?.startsWith(`${source}/`)) skillId = skillId.slice(source.length + 1);
