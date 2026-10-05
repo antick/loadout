@@ -3,7 +3,7 @@ import { invalid, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { assertReadable, schemaAt } from "./compat";
 import type { BackupEnv } from "./env";
-import { commitLibrary, commitStaged, resolveCommit } from "./repo";
+import { commitLibrary, commitStaged, commitTimeMs, inHistory, resolveCommit } from "./repo";
 
 /**
  * Restore points are the branch's own commits, read with `git log --first-parent`: every backup,
@@ -15,7 +15,6 @@ import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 export const DEFAULT_SNAPSHOT_LIMIT = 50;
 /** Fixed, so the same commit is always named the same way; git lengthens it only to stay unique. */
 const ID_LENGTH = 12;
-const MS_PER_SECOND = 1000;
 const FIELD_SEPARATOR = "\0";
 const RECORD_SEPARATOR = "\u0001";
 const LOG_FORMAT = ["%h", "%ct", "%an", "%s"].join("%x00");
@@ -52,7 +51,7 @@ async function readSnapshots(env: BackupEnv, args: string[]): Promise<Snapshot[]
     snapshots.push({
       id,
       message: subject ?? "",
-      createdAt: Number(committed ?? 0) * MS_PER_SECOND,
+      createdAt: commitTimeMs(committed ?? "0"),
       device: author ?? "",
     });
   }
@@ -62,12 +61,6 @@ async function readSnapshots(env: BackupEnv, args: string[]): Promise<Snapshot[]
 /** The newest restore points of the current branch, newest first. Empty before the first commit. */
 export function listSnapshots(env: BackupEnv, limit = DEFAULT_SNAPSHOT_LIMIT): Promise<Snapshot[]> {
   return readSnapshots(env, ["--first-parent", `--max-count=${Math.max(1, limit)}`, "HEAD"]);
-}
-
-/** True when `commit` is in the current branch's history. */
-async function inHistory(env: BackupEnv, commit: string): Promise<boolean> {
-  const result = await env.git.probe(["merge-base", "--is-ancestor", commit, "HEAD"]);
-  return result.code === 0;
 }
 
 /** The commit restore point `id` names; refused when a restore to it is not possible. */

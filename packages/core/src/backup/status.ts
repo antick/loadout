@@ -3,10 +3,18 @@ import { INTERNAL_KEYS } from "../settings/store";
 import { newerAppVersion, schemaAt } from "./compat";
 import { maskUrlCredentials } from "./credentials";
 import type { BackupEnv } from "./env";
-import { aheadBehind, currentBranch, isRepo, originUrl, resolveCommit, upstreamRef } from "./repo";
+import {
+  aheadBehind,
+  commitTimeMs,
+  currentBranch,
+  isRepo,
+  originUrl,
+  resolveCommit,
+  upstreamCommit,
+  upstreamRef,
+} from "./repo";
 import { restorePointId } from "./snapshots";
 
-const MS_PER_SECOND = 1000;
 const FIELD_SEPARATOR = "\0";
 /** Porcelain status letters that are followed by a second path (the old name). */
 const RENAME_CODES = /[RC]/;
@@ -36,7 +44,7 @@ async function upstreamHealth(
 ): Promise<UpstreamHealth> {
   if (!remote) return "no_remote";
   if (!branch) return "detached";
-  const upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+  const upstream = await upstreamCommit(env, branch);
   if (!upstream) return "no_upstream";
   // Before the first commit there is nothing to be unrelated to.
   if (!(await resolveCommit(env, "HEAD"))) return "healthy";
@@ -89,7 +97,7 @@ export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
     ahead: counts.ahead,
     behind: counts.behind,
     lastCommit: commitTime ? subject.join(FIELD_SEPARATOR) : null,
-    lastCommitAt: commitTime ? Number(commitTime) * MS_PER_SECOND : null,
+    lastCommitAt: commitTime ? commitTimeMs(commitTime) : null,
     currentSnapshot,
     restoredFrom,
     upstreamHealth: await upstreamHealth(env, remote, branch),

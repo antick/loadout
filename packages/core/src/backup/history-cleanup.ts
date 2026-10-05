@@ -1,6 +1,6 @@
 import { AppError } from "../errors";
 import type { BackupEnv } from "./env";
-import { assertRepo, commitLibrary, requireBranch, resolveCommit, upstreamRef } from "./repo";
+import { assertRepo, commitLibrary, inHistory, requireBranch, upstreamCommit } from "./repo";
 import { scanCurrentFiles, secretsFound } from "./secrets";
 import { pullRemote } from "./sync";
 
@@ -18,12 +18,12 @@ export async function cleanUpUnpushed(env: BackupEnv): Promise<void> {
   const inFiles = await scanCurrentFiles(env, branch);
   if (inFiles.length > 0) throw secretsFound(inFiles);
 
-  let upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+  let upstream = await upstreamCommit(env, branch);
   // The new commit sits on the remote's state, so ours must already contain it: bring it in.
-  if (upstream && !(await isAncestor(env, upstream))) {
+  if (upstream && !(await inHistory(env, upstream))) {
     await pullRemote(env);
-    upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
-    if (upstream && !(await isAncestor(env, upstream))) {
+    upstream = await upstreamCommit(env, branch);
+    if (upstream && !(await inHistory(env, upstream))) {
       throw new AppError(
         "SYNC_CONFLICT",
         "Bring in the other computer's changes first, then try again.",
@@ -45,9 +45,4 @@ export async function cleanUpUnpushed(env: BackupEnv): Promise<void> {
   });
   env.ctx.activity.record("backup", env.deviceName(), "Unpushed history cleaned up");
   env.ctx.touched("backup");
-}
-
-async function isAncestor(env: BackupEnv, commit: string): Promise<boolean> {
-  const result = await env.git.probe(["merge-base", "--is-ancestor", commit, "HEAD"]);
-  return result.code === 0;
 }

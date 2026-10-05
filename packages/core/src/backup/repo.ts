@@ -3,10 +3,18 @@ import { join } from "node:path";
 import { AppError } from "../errors";
 import { GIT_DIR } from "../util/fs";
 import { type BackupEnv, REMOTE_NAME } from "./env";
+import { gitError } from "./git";
 import { recoverInterrupted } from "./interrupted";
 import { refreshIgnoreFile } from "./size";
 
 /** Small questions and actions on the repository that several backup modules share. */
+
+const MS_PER_SECOND = 1000;
+
+/** A commit time as git prints it (`%ct`, seconds), in milliseconds. */
+export function commitTimeMs(seconds: string): number {
+  return Number(seconds) * MS_PER_SECOND;
+}
 
 export function isRepo(env: BackupEnv): boolean {
   return existsSync(join(env.repoDir, GIT_DIR));
@@ -43,6 +51,25 @@ export async function resolveCommit(env: BackupEnv, revision: string): Promise<s
 
 export function upstreamRef(branch: string): string {
   return `${REMOTE_NAME}/${branch}`;
+}
+
+/** The commit `origin/<branch>` was at when last fetched; null before there is one. */
+export function upstreamCommit(env: BackupEnv, branch: string): Promise<string | null> {
+  return resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+}
+
+/** True when `commit` is in the current branch's history. */
+export async function inHistory(env: BackupEnv, commit: string): Promise<boolean> {
+  const result = await env.git.probe(["merge-base", "--is-ancestor", commit, "HEAD"]);
+  return result.code === 0;
+}
+
+/** The commit two histories share last; refused when they share none. */
+export async function mergeBase(env: BackupEnv, ours: string, theirs: string): Promise<string> {
+  const result = await env.git.probe(["merge-base", ours, theirs]);
+  const base = result.code === 0 ? result.stdout.trim() : "";
+  if (!base) throw gitError("refusing to merge unrelated histories");
+  return base;
 }
 
 /** URL of `origin` as git knows it, or null when there is no remote. */

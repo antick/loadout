@@ -4,7 +4,7 @@ import { AppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { statOrNull } from "../util/fs";
 import type { BackupEnv } from "./env";
-import { resolveCommit, upstreamRef } from "./repo";
+import { resolveCommit, upstreamCommit } from "./repo";
 import { findSecrets, findSecretsInFile } from "./secret-scan";
 
 /**
@@ -32,7 +32,7 @@ async function required(env: BackupEnv, args: string[]): Promise<string> {
  * read from git itself: a key that was committed and then deleted is still in those commits.
  */
 async function scanCommitted(env: BackupEnv, branch: string): Promise<SecretFinding[]> {
-  const upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+  const upstream = await upstreamCommit(env, branch);
   const head = await resolveCommit(env, "HEAD");
   if (!head) return [];
   const range = upstream ? `${upstream}..HEAD` : "HEAD";
@@ -137,7 +137,7 @@ async function scanUncommitted(env: BackupEnv): Promise<SecretFinding[]> {
 
 /** What today's files would add to the remote, committed or not, minus the allowed findings. */
 export async function scanCurrentFiles(env: BackupEnv, branch: string): Promise<SecretFinding[]> {
-  const upstream = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+  const upstream = await upstreamCommit(env, branch);
   return notAllowed(env, await scanFilesSince(env, upstream));
 }
 

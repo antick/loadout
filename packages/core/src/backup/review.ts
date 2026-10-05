@@ -13,7 +13,6 @@ import { ensureDir, removePath } from "../util/fs";
 import { findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR, isSafeSkillPath } from "./env";
 import { PREVIEW_INDEX_PREFIX, createStage, extractPaths } from "./extract";
-import { gitError } from "./git";
 import {
   type MergeSides,
   departingFolders,
@@ -26,7 +25,15 @@ import {
 import { skillMetadataAt } from "./merge-read";
 import { reportStage, withStages } from "./progress";
 import { type SkillPlan, type SkillVersions, sameSkill } from "./merge-plan";
-import { assertRepo, isRepo, originUrl, requireBranch, resolveCommit, upstreamRef } from "./repo";
+import {
+  assertRepo,
+  isRepo,
+  mergeBase,
+  originUrl,
+  requireBranch,
+  resolveCommit,
+  upstreamCommit,
+} from "./repo";
 import { refreshIgnoreFile } from "./size";
 import { fetchRemote } from "./sync";
 
@@ -183,12 +190,10 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
   reportStage(env, "comparing");
   return env.ctx.lock.run("backup review", async () => {
     const branch = await requireBranch(env);
-    const theirs = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+    const theirs = await upstreamCommit(env, branch);
     if (!theirs) return emptyPreview();
     const { commit: ours, tree: localTree } = await snapshotWorkingTree(env);
-    const baseResult = await env.git.probe(["merge-base", ours, theirs]);
-    const base = baseResult.code === 0 ? baseResult.stdout.trim() : "";
-    if (!base) throw gitError("refusing to merge unrelated histories");
+    const base = await mergeBase(env, ours, theirs);
     const range = `${base}..${theirs}`;
     const remoteBackups = Number(await env.git.text(["rev-list", "--count", range])) || 0;
     const sides = await readSides(env, base, ours, theirs);

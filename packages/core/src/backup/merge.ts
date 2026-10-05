@@ -31,7 +31,7 @@ import {
 import type { MergePlan, PresetVersions, SkillPlan, SkillVersions } from "./merge-plan";
 import { journaledMove, noteMergeStart } from "./interrupted";
 import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
-import { commitLibrary, requireBranch, resolveCommit, upstreamRef } from "./repo";
+import { commitLibrary, mergeBase, requireBranch, resolveCommit, upstreamCommit } from "./repo";
 
 /**
  * Brings the remote branch into the library. The decision is made per skill (see
@@ -347,7 +347,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   const committed = await commitLibrary(env, BEFORE_MERGE_MESSAGE);
   const branch = await requireBranch(env);
   const ours = await resolveCommit(env, "HEAD");
-  const theirs = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
+  const theirs = await upstreamCommit(env, branch);
   if (theirs) assertReadable(await schemaAt(env, theirs));
   const idle = (): MergeResult => ({
     summary: UP_TO_DATE,
@@ -357,9 +357,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   });
   if (!ours || !theirs || ours === theirs) return idle();
 
-  const baseResult = await env.git.probe(["merge-base", ours, theirs]);
-  const base = baseResult.code === 0 ? baseResult.stdout.trim() : "";
-  if (!base) throw gitError("refusing to merge unrelated histories");
+  const base = await mergeBase(env, ours, theirs);
   if (base === theirs) return idle();
 
   const range = `${base}..${theirs}`;
