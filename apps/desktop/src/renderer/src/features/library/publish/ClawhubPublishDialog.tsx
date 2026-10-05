@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { usePublishToClawhub } from "@/features/library/publish/publish-mutations";
-import { useClawhubPreview } from "@/features/library/publish/publish-queries";
+import { canPreviewClawhub, useClawhubPreview } from "@/features/library/publish/publish-queries";
 import { useClawhubAccount } from "@/hooks/queries/publish";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { errorMessage } from "@/lib/toast";
@@ -55,7 +55,7 @@ function ClawhubPublishForm({
   const changelogId = useId();
   const licenseId = useId();
   const account = useClawhubAccount();
-  const preview = useClawhubPreview(skill.id, account.data?.handle !== null);
+  const preview = useClawhubPreview(skill.id, canPreviewClawhub(account.data));
   const publish = usePublishToClawhub();
   const openExternal = useOpenExternal();
   const [slug, setSlug] = useState<string | null>(null);
