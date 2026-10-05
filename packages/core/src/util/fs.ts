@@ -159,6 +159,11 @@ export function removePathSync(path: string): void {
   rmSync(path, { recursive: true, force: true });
 }
 
+/** Copy one entry whole, folders recursively. Links are copied as links, never followed. */
+export function copyEntrySync(from: string, to: string): void {
+  cpSync(from, to, { recursive: true, verbatimSymlinks: true });
+}
+
 export interface MoveOptions {
   /**
    * Across disks the entry is copied, then the original removed. When that removal fails the
@@ -181,7 +186,7 @@ export function moveEntrySync(from: string, to: string, options: MoveOptions = {
     if (lstatOrNull(to)) throw error;
   }
   try {
-    cpSync(from, to, { recursive: true, verbatimSymlinks: true });
+    copyEntrySync(from, to);
   } catch (error) {
     removePathSync(to);
     throw error;

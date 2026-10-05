@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { cpSync, existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import {
   REMOVED_KEEP_DAYS,
@@ -12,6 +12,7 @@ import { rowsAtPath, samePath } from "../deploy/evidence";
 import { exists, notFound } from "../errors";
 import type { SkillStore } from "../skills/store";
 import {
+  copyEntrySync,
   dirSize,
   ensureDir,
   isDirectory,
@@ -180,7 +181,7 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     writeJsonAtomic(join(dir, META_FILE), meta);
     try {
       if (how === "move") moveEntrySync(path, join(dir, CONTENT_DIR), moveOptions(path));
-      else cpSync(path, join(dir, CONTENT_DIR), { recursive: true, verbatimSymlinks: true });
+      else copyEntrySync(path, join(dir, CONTENT_DIR));
     } catch (error) {
       // Nothing was removed from `path`: a rename moves all or nothing, and a copy that failed
       // never reached the step that removes the original.

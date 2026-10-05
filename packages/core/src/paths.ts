@@ -1,4 +1,4 @@
-import { cpSync, existsSync, readFileSync, readdirSync, renameSync, rmdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, renameSync, rmdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -18,6 +18,7 @@ import { errorMessage } from "./errors";
 import { RepoLock, processAlive } from "./lock";
 import {
   canonicalPath,
+  copyEntrySync,
   ensureDir,
   moveEntrySync,
   normalizeAbsolutePath,
@@ -193,7 +194,7 @@ function migrate(source: string, target: string, defaultBaseDir: string, notes: 
         renameSync(join(source, name), join(target, name));
         renamed.push(name);
       } catch {
-        cpSync(join(source, name), join(target, name), { recursive: true, verbatimSymlinks: true });
+        copyEntrySync(join(source, name), join(target, name));
         copied.push(name);
       }
     }
