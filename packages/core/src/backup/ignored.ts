@@ -27,11 +27,22 @@ export interface SetAsideFolder {
   ignored: string[];
 }
 
-/** Left-out entries inside one skill folder, relative to it. A left-out folder counts once. */
-async function listIgnored(env: BackupEnv, folder: string): Promise<string[]> {
-  const prefix = `${folder}/`;
+/**
+ * Left-out entries inside one skill folder, relative to it; in the whole library without one.
+ * A left-out folder counts once.
+ */
+async function listIgnored(env: BackupEnv, folder?: string): Promise<string[]> {
+  const prefix = folder ? `${folder}/` : "";
   const result = await env.git.probe(
-    ["ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory", "--", prefix],
+    [
+      "ls-files",
+      "-z",
+      "--others",
+      "--ignored",
+      "--exclude-standard",
+      "--directory",
+      ...(prefix ? ["--", prefix] : []),
+    ],
     { globalArgs: ["--literal-pathspecs"] },
   );
   if (result.code !== 0) return [];
@@ -131,31 +142,38 @@ export function localFilesNotKept(dir: string): AppError {
   );
 }
 
+/** `path` and every folder above it: `a/b/c` → `a/b/c`, `a/b`, `a`. */
+function selfAndParents(path: string): string[] {
+  const parts = path.split("/");
+  return parts.map((_, index) => parts.slice(0, parts.length - index).join("/"));
+}
+
 /**
- * True when `commit` has something where one of our folders keeps a left-out entry. A
- * fast-forward would let git overwrite that entry, so the full merge must run instead.
- * `folders`: our folder → the same skill's folder in `commit`.
+ * Left-out entries of the library (relative to it) that `commit` has a file at, inside or above.
+ * A line merge of `commit` would overwrite or delete them without asking: git's merge strategy
+ * does not honour `--no-overwrite-ignore`, only a fast-forward does.
  */
-export async function ignoredInTheWay(
-  env: BackupEnv,
-  folders: ReadonlyMap<string, string>,
-  commit: string,
-): Promise<boolean> {
-  for (const [ours, theirs] of folders) {
-    const ignored = await listIgnored(env, ours);
-    if (ignored.length === 0) continue;
-    const result = await env.git.probe(
-      ["ls-tree", "-r", "-z", "--name-only", commit, "--", `${theirs}/`],
-      { globalArgs: ["--literal-pathspecs"] },
-    );
-    // Unknown counts as in the way: the full merge is always safe, only slower.
-    if (result.code !== 0) return true;
-    const prefix = `${theirs}/`;
-    const incoming = result.stdout.split("\0").map((path) => path.slice(prefix.length));
-    const hit = ignored.some((entry) =>
-      incoming.some((path) => path === entry || path.startsWith(`${entry}/`)),
-    );
-    if (hit) return true;
+export async function leftOutInTheWay(env: BackupEnv, commit: string): Promise<string[]> {
+  const ignored = await listIgnored(env);
+  if (ignored.length === 0) return [];
+  const listing = await env.git.run(["ls-tree", "-r", "-z", "--name-only", commit]);
+  const files = new Set<string>();
+  const folders = new Set<string>();
+  for (const path of listing.stdout.split("\0").filter(Boolean)) {
+    files.add(path);
+    for (const parent of selfAndParents(path).slice(1)) folders.add(parent);
   }
-  return false;
+  // Inside a left-out folder, only what is here at an incoming file's path, or a file where it
+  // needs a folder, would be lost.
+  const blocks = (entry: string, file: string): boolean =>
+    selfAndParents(file).some((path) => {
+      if (!path.startsWith(`${entry}/`)) return false;
+      const stat = lstatOrNull(join(env.repoDir, path));
+      return stat !== null && (path === file || !stat.isDirectory());
+    });
+  return ignored.filter(
+    (entry) =>
+      selfAndParents(entry).some((path) => files.has(path)) ||
+      (folders.has(entry) && [...files].some((file) => blocks(entry, file))),
+  );
 }

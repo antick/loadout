@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, joinRemote, seedRemote } from "./backup-world";
+import { type Device, joinRemote, pushByHand, rawGit, seedRemote } from "./backup-world";
 import { DEFAULT_IGNORE_LINES } from "../src/backup/size";
 import { rejection, tempDir, writeFile } from "./helpers";
 
@@ -14,12 +14,14 @@ describe("backup ignore rules", () => {
   let temp: ReturnType<typeof tempDir>;
   let a: Device;
   let b: Device;
+  let remote: string;
 
   beforeEach(async () => {
     temp = tempDir();
     const seeded = await seedRemote(temp.dir, ["alpha", "beta"]);
     a = seeded.a;
-    b = await joinRemote(temp.dir, seeded.remote);
+    remote = seeded.remote;
+    b = await joinRemote(temp.dir, remote);
   });
   afterEach(() => {
     a.close();
@@ -268,5 +270,22 @@ describe("backup ignore rules", () => {
     // Everything else was done: the merge is in, and the next sync sends it.
     expect(b.read("alpha")).toBe("from A");
     expect(await b.api.sync()).toMatchObject({ pushed: true });
+  });
+
+  it("never lets a line merge overwrite a left-out file, and names it", async () => {
+    // Someone tracks a file by hand where B keeps a left-out one; the push lacks the metadata.
+    pushByHand(temp.dir, remote, basename(a.ctx.paths.metadataDir), (dir) => {
+      writeFile(join(dir, "alpha", ".env"), "BY_HAND=1");
+      rawGit(dir, "add", "-f", "alpha/.env");
+    });
+    writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+    b.editSkill("beta", "from B");
+
+    const error = await rejection(b.api.sync());
+    expect(error.code).toBe("GIT");
+    expect(error.message).toContain("alpha/.env");
+    expect(error.details).toMatchObject({ paths: ["alpha/.env"] });
+    expect(b.read("alpha", ".env")).toBe("SECRET=1");
+    expect(existsSync(join(b.skillsDir, ".git", "MERGE_HEAD"))).toBe(false);
   });
 });

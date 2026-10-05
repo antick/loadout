@@ -13,7 +13,7 @@ import { type Stage, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
 import {
   type SetAsideFolder,
-  ignoredInTheWay,
+  leftOutInTheWay,
   localFilesNotKept,
   putBackFolder,
   setAsideFolder,
@@ -252,6 +252,15 @@ async function materialise(
 
 /** Line-based `git merge`, for a remote without our metadata (filled by hand, or by an older app). */
 async function plainMerge(env: BackupEnv, theirs: string, message: string): Promise<void> {
+  // Git would overwrite a left-out file the remote has a file at without asking: refuse instead.
+  const inTheWay = await leftOutInTheWay(env, theirs);
+  if (inTheWay.length > 0) {
+    throw new AppError(
+      "GIT",
+      `The backup remote has files where this library keeps files left out of the backup, and syncing would overwrite them: ${inTheWay.join(", ")}. Move them out of the library folder, sync again, then put back what you still need.`,
+      { paths: inTheWay },
+    );
+  }
   const result = await env.git.probe(["merge", "--no-edit", "-m", message, theirs]);
   if (result.code === 0) return;
   await env.git.probe(["merge", "--abort"]);
@@ -392,20 +401,11 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     const mine = skills.get(item.id)?.ours;
     return mine !== undefined && (item.content === "none" || item.path !== mine.path);
   });
-  // Git overwrites a left-out file without asking when the incoming side has a file at its path.
-  const replaced = new Map<string, string>();
-  for (const item of plan.skills) {
-    const { ours: mine, theirs: remote } = skills.get(item.id) ?? {};
-    if (mine && remote && item.content === "theirs") replaced.set(mine.path, remote.path);
-  }
-  if (
-    base === ours &&
-    conflicts.length === 0 &&
-    trustworthy &&
-    !reshapesOurs &&
-    !(await ignoredInTheWay(env, replaced, theirs))
-  ) {
-    fastForward = (await env.git.probe(["merge", "--ff-only", theirs])).code === 0;
+  if (base === ours && conflicts.length === 0 && trustworthy && !reshapesOurs) {
+    // Refused where the incoming side has a file at a left-out file's path: git would overwrite
+    // it. The full merge then keeps that file.
+    const result = await env.git.probe(["merge", "--ff-only", "--no-overwrite-ignore", theirs]);
+    fastForward = result.code === 0;
   }
   // Read before the merge: afterwards the folders are gone and the rebuild drops the rows.
   const departing = new Map<string, LibraryRecord>();
