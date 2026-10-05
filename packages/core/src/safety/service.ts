@@ -153,7 +153,6 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
 
     list: async () => {
       const skills = store.list();
-      reports.retain(new Set(skills.map((skill) => skill.id)));
       const stored = reports.all();
       return skills.flatMap((skill) => {
         const entry = stored[skill.id];
@@ -168,51 +167,54 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
       return record;
     },
 
-    scanLibrary: async (force = false) => {
-      const engine = await requireEngine();
-      const stored = reports.all();
-      // A built-in report is due again once SkillSpector is there: a deeper check is worth
-      // having. The other way round, a SkillSpector report is kept until the files change.
-      const deeper = engine.kind === "skillspector";
-      const due = store
-        .list()
-        .filter(
-          (skill) =>
-            force ||
-            !isCurrent(skill, stored[skill.id]) ||
-            (deeper && stored[skill.id]?.report.engine !== engine.kind),
-        );
-      const summary: SafetyScanSummary = { scanned: 0, unsafe: 0, caution: 0, failed: [] };
-      let done = 0;
-      await mapLimit(due, SCAN_WORKERS, async (skill) => {
-        try {
-          const record = await scanOne(engine, skill);
-          summary.scanned += 1;
-          if (record.verdict === "unsafe") summary.unsafe += 1;
-          if (record.verdict === "caution") summary.caution += 1;
-        } catch (error) {
-          summary.failed.push({ name: skill.name, message: errorMessage(error) });
-        }
-        done += 1;
-        ctx.emit("install:progress", {
-          key: SAFETY_SCAN_LIBRARY_KEY,
-          phase: "checking",
-          current: done,
-          total: due.length,
-          name: skill.name,
-        });
-      });
-      ctx.emit("install:progress", { key: SAFETY_SCAN_LIBRARY_KEY, phase: "done" });
-      ctx.activity.record(
-        "scan",
-        `${summary.scanned} skills`,
-        `${summary.unsafe} flagged, ${summary.caution} to review`,
-        summary.failed.length === 0,
-      );
-      ctx.touched("safety");
-      return summary;
-    },
+    scanLibrary: (force = false) => reports.batch(() => scanLibrary(force)),
   };
+
+  async function scanLibrary(force: boolean): Promise<SafetyScanSummary> {
+    const engine = await requireEngine();
+    const skills = store.list();
+    // Reports of skills no longer in the library go with this write.
+    reports.retain(new Set(skills.map((skill) => skill.id)));
+    const stored = reports.all();
+    // A built-in report is due again once SkillSpector is there: a deeper check is worth
+    // having. The other way round, a SkillSpector report is kept until the files change.
+    const deeper = engine.kind === "skillspector";
+    const due = skills.filter(
+      (skill) =>
+        force ||
+        !isCurrent(skill, stored[skill.id]) ||
+        (deeper && stored[skill.id]?.report.engine !== engine.kind),
+    );
+    const summary: SafetyScanSummary = { scanned: 0, unsafe: 0, caution: 0, failed: [] };
+    let done = 0;
+    await mapLimit(due, SCAN_WORKERS, async (skill) => {
+      try {
+        const record = await scanOne(engine, skill);
+        summary.scanned += 1;
+        if (record.verdict === "unsafe") summary.unsafe += 1;
+        if (record.verdict === "caution") summary.caution += 1;
+      } catch (error) {
+        summary.failed.push({ name: skill.name, message: errorMessage(error) });
+      }
+      done += 1;
+      ctx.emit("install:progress", {
+        key: SAFETY_SCAN_LIBRARY_KEY,
+        phase: "checking",
+        current: done,
+        total: due.length,
+        name: skill.name,
+      });
+    });
+    ctx.emit("install:progress", { key: SAFETY_SCAN_LIBRARY_KEY, phase: "done" });
+    ctx.activity.record(
+      "scan",
+      `${summary.scanned} skills`,
+      `${summary.unsafe} flagged, ${summary.caution} to review`,
+      summary.failed.length === 0,
+    );
+    ctx.touched("safety");
+    return summary;
+  }
 
   async function check(
     candidates: readonly SafetyCandidate[],
@@ -260,17 +262,22 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
   async function scanDueQuietly(): Promise<number> {
     const engine = await currentEngine();
     if (engine?.kind !== "builtin") return 0;
-    const stored = reports.all();
-    const due = store.list().filter((skill) => !isCurrent(skill, stored[skill.id]));
-    let scanned = 0;
-    for (const skill of due) {
-      try {
-        await scanOne(engine, skill);
-        scanned += 1;
-      } catch (error) {
-        ctx.log.warn(`Safety check could not finish for ${skill.name}: ${errorMessage(error)}`);
+    const scanned = await reports.batch(async () => {
+      const skills = store.list();
+      reports.retain(new Set(skills.map((skill) => skill.id)));
+      const stored = reports.all();
+      const due = skills.filter((skill) => !isCurrent(skill, stored[skill.id]));
+      let count = 0;
+      for (const skill of due) {
+        try {
+          await scanOne(engine, skill);
+          count += 1;
+        } catch (error) {
+          ctx.log.warn(`Safety check could not finish for ${skill.name}: ${errorMessage(error)}`);
+        }
       }
-    }
+      return count;
+    });
     if (scanned > 0) ctx.touched("safety");
     return scanned;
   }

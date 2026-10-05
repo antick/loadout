@@ -287,6 +287,13 @@ describe("scanning the library", () => {
     world.store.update(good.id, { contentHash: "changed" });
     expect((await safety.api.list()).find((r) => r.skillId === good.id)?.stale).toBe(true);
     expect((await safety.api.scanSkill(good.id)).stale).toBe(false);
+
+    // A scan drops the reports of skills that left the library.
+    const file = join(world.ctx.paths.cacheDir, "safety.json");
+    world.store.delete(good.id);
+    await safety.api.scanLibrary();
+    const kept = JSON.parse(readFileSync(file, "utf8")) as { skills: Record<string, unknown> };
+    expect(Object.keys(kept.skills)).not.toContain(good.id);
   });
 
   it("keeps SkillSpector's reports when only the built-in rules are left", async () => {
