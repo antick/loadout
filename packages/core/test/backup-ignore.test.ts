@@ -161,7 +161,7 @@ describe("backup ignore rules", () => {
     const conflict = (await b.api.conflicts())[0];
     expect(conflict).toBeDefined();
 
-    await b.api.resolveConflict(conflict?.skillKey ?? "", "use_remote");
+    await b.api.resolveConflicts([conflict?.skillKey ?? ""], "use_remote");
     expect(b.read("alpha")).toBe("A's version");
     expect(b.read("alpha", ".env")).toBe("SECRET=1");
   });
@@ -208,7 +208,7 @@ describe("backup ignore rules", () => {
     const conflict = (await b.api.conflicts())[0];
     expect(conflict).toBeDefined();
 
-    await b.api.resolveConflict(conflict?.skillKey ?? "", "use_remote");
+    await b.api.resolveConflicts([conflict?.skillKey ?? ""], "use_remote");
     expect(b.read("alpha", ".env")).toBe("FROM_A=1");
     expect(keptEnv()).toEqual(["SECRET=1"]);
   });

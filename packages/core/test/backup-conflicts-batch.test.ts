@@ -70,7 +70,7 @@ describe("backup conflicts, several at once", () => {
   });
 
   it("skips conflicts resolved meanwhile, and refuses when none are left", async () => {
-    await b.api.resolveConflict(alphaId, "keep_local");
+    await b.api.resolveConflicts([alphaId], "keep_local");
     await b.api.resolveConflicts([alphaId, betaId], "keep_local");
     expect(await b.api.conflicts()).toEqual([]);
 

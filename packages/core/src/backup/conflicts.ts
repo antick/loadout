@@ -140,18 +140,6 @@ async function keepBoth(env: BackupEnv, conflict: BackupConflict, work: ChoiceWo
 }
 
 /**
- * Apply the choice and return the safety snapshot taken just before.
- * Must run inside the library lock. Nothing is pushed until the next sync.
- */
-export async function resolveConflict(
-  env: BackupEnv,
-  skillKey: string,
-  action: ConflictResolution,
-): Promise<string> {
-  return resolveConflicts(env, [skillKey], action);
-}
-
-/**
  * Apply one choice to several conflicts at once, behind one safety snapshot. All or nothing: when
  * one skill fails, every one is put back as it was. Conflicts resolved meanwhile are skipped.
  * Must run inside the library lock. Nothing is pushed until the next sync.

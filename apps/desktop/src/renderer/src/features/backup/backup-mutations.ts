@@ -134,7 +134,7 @@ export function useResolveBackupConflict(): UseMutationResult<
   const { t } = useTranslation();
   return useApiMutation({
     fn: ({ conflict, action }: ResolveConflictInput) =>
-      api.backup.resolveConflict(conflict.skillKey, action),
+      api.backup.resolveConflicts([conflict.skillKey], action),
     success: (safetyTag, { conflict, action }) => ({
       message: t(`backupPage.conflicts.resolved.${action}`, { name: conflict.skillName }),
       description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),

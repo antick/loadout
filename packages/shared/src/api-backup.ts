@@ -54,7 +54,6 @@ export interface BackupApi {
   /** Returns the safety snapshot taken before restoring. */
   restore(id: string): Promise<string>;
   conflicts(): Promise<BackupConflict[]>;
-  resolveConflict(skillKey: string, action: ConflictResolution): Promise<string>;
   /**
    * One choice for several conflicts, behind one safety snapshot (returned). All or nothing;
    * conflicts already resolved are skipped.

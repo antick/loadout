@@ -4,7 +4,7 @@ import { INTERNAL_KEYS } from "../settings/store";
 import type { AutoBackupTarget } from "./auto";
 import { cloneLibrary } from "./clone";
 import { countConflicts, listConflicts } from "./conflict-store";
-import { resolveConflict, resolveConflicts } from "./conflicts";
+import { resolveConflicts } from "./conflicts";
 import { deleteRemoteToken, sanitizeRemoteUrl } from "./credentials";
 import { writeDeviceName } from "./device";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME } from "./env";
@@ -140,11 +140,6 @@ export function createBackupOperations(
     },
 
     conflicts: async () => listConflicts(ctx.db),
-
-    resolveConflict: async (skillKey, action) => {
-      assertRepo(env);
-      return ctx.lock.run("backup resolve conflict", () => resolveConflict(env, skillKey, action));
-    },
 
     resolveConflicts: async (skillKeys, action) => {
       assertRepo(env);

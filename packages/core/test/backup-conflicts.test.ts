@@ -76,7 +76,7 @@ describe("backup conflicts", () => {
   it("keep_local clears the conflict and changes nothing", async () => {
     await b.api.sync();
     const head = b.git("rev-parse", "HEAD");
-    const safety = await b.api.resolveConflict(alphaId, "keep_local");
+    const safety = await b.api.resolveConflicts([alphaId], "keep_local");
 
     expect(safety).toMatch(/^[0-9a-f]{12,}$/);
     expect(b.git("rev-parse", `${safety}^{commit}`)).toBe(head);
@@ -84,7 +84,7 @@ describe("backup conflicts", () => {
     expect(b.read("alpha")).toBe("B's version");
     expect(await b.api.conflicts()).toEqual([]);
     expect(b.skill("alpha")?.hasConflict).toBe(false);
-    await expect(b.api.resolveConflict(alphaId, "keep_local")).rejects.toMatchObject({
+    await expect(b.api.resolveConflicts([alphaId], "keep_local")).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
   });
@@ -92,7 +92,7 @@ describe("backup conflicts", () => {
   it("use_remote replaces the skill with the other device's version, same id", async () => {
     await b.api.sync();
     b.store.setTags(alphaId, ["local-tag"]);
-    const safety = await b.api.resolveConflict(alphaId, "use_remote");
+    const safety = await b.api.resolveConflicts([alphaId], "use_remote");
 
     expect(b.read("alpha")).toBe("A's version");
     expect(b.skill("alpha")?.id).toBe(alphaId);
@@ -112,7 +112,7 @@ describe("backup conflicts", () => {
   it("use_remote keeps what the other device's metadata leaves out", async () => {
     await b.api.sync();
     b.store.update(alphaId, { blockedAgents: ["cursor"], suggestFor: ["*.rs"], authored: true });
-    await b.api.resolveConflict(alphaId, "use_remote");
+    await b.api.resolveConflicts([alphaId], "use_remote");
 
     expect(b.read("alpha")).toBe("A's version");
     expect(b.skill("alpha")).toMatchObject({
@@ -124,7 +124,7 @@ describe("backup conflicts", () => {
 
   it("keep_both adds the other version as a new skill next to ours", async () => {
     await b.api.sync();
-    await b.api.resolveConflict(alphaId, "keep_both");
+    await b.api.resolveConflicts([alphaId], "keep_both");
 
     expect(b.read("alpha")).toBe("B's version");
     expect(b.read("alpha-remote")).toBe("A's version");
