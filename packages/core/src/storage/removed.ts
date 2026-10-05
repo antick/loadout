@@ -8,7 +8,7 @@ import {
   type RestoreRemovedResult,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { rowsAtPath } from "../deploy/evidence";
+import { rowsAtPath, samePath } from "../deploy/evidence";
 import { exists, notFound } from "../errors";
 import type { SkillStore } from "../skills/store";
 import {
@@ -210,10 +210,14 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     if (!stat.isDirectory())
       throw exists(`A file is in the way: ${path}. Move it, then try again.`);
     const hash = hashDir(path);
+    // Safe to drop only when the same content lives on elsewhere in the library. A library
+    // skill's own folder always matches its own hash: that is the only copy, so it is kept.
     const pristineCopy =
       hash !== null &&
       (rows.some((row) => row.sourceHash === hash) ||
-        deps.store.list().some((skill) => skill.contentHash === hash));
+        deps.store
+          .list()
+          .some((skill) => skill.contentHash === hash && !samePath(skill.libraryPath, path)));
     const displaced = pristineCopy
       ? null
       : setAside(path, { place: meta.place, reason: "replaced" });

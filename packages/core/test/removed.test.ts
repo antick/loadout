@@ -331,6 +331,22 @@ describe("recently removed", () => {
       );
       expect(readFileSync(join(edited, "notes.md"), "utf8")).toBe("mine");
     });
+
+    it("keeps the current library version in Recently removed when an older one is put back", async () => {
+      const skill = world.addSkill("alpha");
+      world.removed.keepCopy(skill.libraryPath, { place: LIBRARY_PLACE, reason: "replaced" });
+      writeFile(join(skill.libraryPath, "new.txt"), "current work");
+      world.rehash(skill);
+
+      const [older] = await storage.api.removed();
+      const result = await storage.api.restoreRemoved(older?.id ?? "");
+      expect(existsSync(join(skill.libraryPath, "new.txt"))).toBe(false);
+      expect(result.displacedId).not.toBeNull();
+
+      // Undo: the version that was current comes back.
+      await storage.api.restoreRemoved(result.displacedId ?? "");
+      expect(readFileSync(join(skill.libraryPath, "new.txt"), "utf8")).toBe("current work");
+    });
   });
 
   it("clears a half-written entry only once it is surely abandoned", async () => {
