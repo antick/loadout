@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { TEST_MAX_WORKERS, TEST_TIMEOUT_MS } from "../../vitest.workers";
+import { TEST_MAX_WORKERS, TEST_TIMEOUT_MS } from "../../vitest.workers.mts";
 
 // Same as core: each CLI test opens a real library on disk, which Windows runners do slowly.
 export default defineConfig({

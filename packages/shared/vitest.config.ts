@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { TEST_MAX_WORKERS } from "../../vitest.workers";
+import { TEST_MAX_WORKERS } from "../../vitest.workers.mts";
 
 export default defineConfig({
   test: {

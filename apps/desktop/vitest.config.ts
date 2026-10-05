@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { configDefaults, defineConfig } from "vitest/config";
-import { TEST_MAX_WORKERS } from "../../vitest.workers";
+import { TEST_MAX_WORKERS } from "../../vitest.workers.mts";
 
 // Same `@` alias as the renderer build, so tested modules import the way the app does.
 // `e2e/` holds the Playwright UI tests, which run on their own (`pnpm test:ui`).
