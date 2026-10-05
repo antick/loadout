@@ -1,8 +1,9 @@
 name: Publish to Homebrew
 
-# Publishing a GitHub release (the draft release.yml leaves) writes the Homebrew formula (the
-# command-line tool) and cask (the desktop app) for that release with scripts/homebrew.mjs, and
-# pushes them to the tap repository. Then:
+# Deferred: the tap is not set up yet, so this runs only by hand (Actions tab, "Run workflow",
+# with the tag of a published release). It writes the Homebrew formula (the command-line tool)
+# and cask (the desktop app) for that release with scripts/homebrew.mjs, and pushes them to the
+# tap repository. Then:
 #
 #   brew install antick/tap/loadout           the CLI, with Bash and Zsh completion
 #   brew install --cask antick/tap/loadout    the app
@@ -12,11 +13,15 @@ name: Publish to Homebrew
 # on it. A failed run can be re-run from the Actions tab.
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag of the published release, like v0.3.0"
+        required: true
+        type: string
 
 concurrency:
-  group: publish-homebrew-${{ github.event.release.tag_name }}
+  group: publish-homebrew-${{ inputs.tag }}
   cancel-in-progress: false
 
 permissions:
@@ -45,7 +50,7 @@ jobs:
         if: steps.token.outputs.skip != 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag }}
           persist-credentials: false
 
       - name: Checkout the tap
@@ -66,7 +71,7 @@ jobs:
         if: steps.token.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag }}
         run: |
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir assets \
             --pattern 'loadout-cli-*-darwin-*' --pattern 'loadout-cli-*-linux-*' \
@@ -75,13 +80,13 @@ jobs:
       - name: Write the formula and the cask
         if: steps.token.outputs.skip != 'true'
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag }}
         run: node scripts/homebrew.mjs --version "$TAG" --assets assets --out tap
 
       - name: Push to the tap
         if: steps.token.outputs.skip != 'true'
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag }}
         working-directory: tap
         run: |
           git add Formula Casks

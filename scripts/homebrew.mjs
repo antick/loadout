@@ -7,7 +7,7 @@
  *
  * writes tap/Formula/loadout.rb and tap/Casks/loadout.rb with the download URLs and SHA-256 of
  * every file. A missing file stops it: a formula must never point at something that is not there.
- * publish-homebrew.yml runs it when a release is published and pushes the result to the tap.
+ * publish-homebrew.yml runs it by hand for a published release and pushes the result to the tap.
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
