@@ -6,7 +6,13 @@ import {
   parseRemoteUrl,
   tokenKey,
 } from "../src/backup/credentials";
-import { cleanGitOutput, createGit, gitError } from "../src/backup/git";
+import {
+  BACKUP_ERROR_TEXT,
+  BACKUP_GIT_CONFIG,
+  cleanGitOutput,
+  createGit,
+  gitError,
+} from "../src/backup/git";
 import { classifyGitError } from "../src/util/git-errors";
 import {
   type SkillSide,
@@ -398,6 +404,8 @@ describe("git credentials", () => {
   it("reports a missing git as GIT_MISSING", async () => {
     const git = createGit({
       repoDir: process.cwd(),
+      config: BACKUP_GIT_CONFIG,
+      errorText: BACKUP_ERROR_TEXT,
       secrets: memorySecrets(),
       deviceName: () => "Test",
       proxy: () => null,

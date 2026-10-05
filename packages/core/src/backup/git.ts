@@ -7,24 +7,35 @@ import type { GitHubSignIn } from "../util/github-token";
 import { authEnvironment, maskUrlCredentials } from "./credentials";
 import { deviceEmail } from "./device";
 
-/** The one place the backup feature talks to the system `git` (through `util/git`). */
+/**
+ * The one place the backup feature talks to the system `git` (through `util/git`). Publishing
+ * uses it too, with its own settings and wording.
+ */
 
 const MAX_DETAIL_LENGTH = 600;
 /**
- * Settings on top of the shared safe ones, so a backup behaves the same on every device: paths
- * are printed verbatim, and an unattended commit never stops to ask for a signing passphrase.
+ * Settings on top of the shared safe ones, so a repository Loadout commits to behaves the same
+ * on every device: paths are printed verbatim, and an unattended commit never stops to ask for a
+ * signing passphrase.
  */
-const BACKUP_CONFIG = [
+export const COMMIT_GIT_CONFIG = [
   "core.quotepath=false",
   "commit.gpgsign=false",
   "tag.gpgsign=false",
   "advice.detachedHead=false",
+] as const;
+export const BACKUP_GIT_CONFIG = [
+  ...COMMIT_GIT_CONFIG,
   // A backup remote is not trusted blindly: refuse objects that name `..` or `.git`. Installs
-  // leave this off, as some public repositories carry harmless old objects it would refuse.
+  // and publishing leave this off, as some public repositories carry harmless old objects it
+  // would refuse.
   "transfer.fsckObjects=true",
 ] as const;
 
-const ERROR_TEXT: Record<GitErrorCode, string> = {
+/** What each kind of failure says to the user. */
+export type GitErrorText = Readonly<Record<GitErrorCode, string>>;
+
+export const BACKUP_ERROR_TEXT: GitErrorText = {
   NETWORK: "Could not reach the backup remote. Check your internet connection and proxy setting.",
   GIT_AUTH:
     "The backup remote refused the sign-in. Check that the token or SSH key is still valid and has access to the repository.",
@@ -42,11 +53,15 @@ export function cleanGitOutput(output: string): string {
   return maskUrlCredentials(gitOutputLines(output).join("\n")).slice(0, MAX_DETAIL_LENGTH);
 }
 
-export function gitError(output: string, fallback: GitErrorCode = "GIT"): AppError {
+export function gitError(
+  output: string,
+  fallback: GitErrorCode = "GIT",
+  text: GitErrorText = BACKUP_ERROR_TEXT,
+): AppError {
   const detail = cleanGitOutput(output);
   const classified = classifyGitError(detail);
   const code = classified === "GIT" ? fallback : classified;
-  const message = code === "GIT" && detail ? `${ERROR_TEXT.GIT} ${detail}` : ERROR_TEXT[code];
+  const message = code === "GIT" && detail ? `${text.GIT} ${detail}` : text[code];
   return new AppError(code, message, { detail });
 }
 
@@ -75,6 +90,9 @@ export interface Git {
 
 export interface GitDeps {
   repoDir: string;
+  /** Settings every call carries, on top of the shared safe ones and the identity. */
+  config: readonly string[];
+  errorText: GitErrorText;
   secrets: SecretStore;
   deviceName(): string;
   proxy(): string | null;
@@ -90,7 +108,7 @@ export function createGit(deps: GitDeps): Git {
   async function probe(args: string[], options: GitCallOptions = {}): Promise<ExecResult> {
     const device = deps.deviceName();
     return runGit(args, {
-      config: [...BACKUP_CONFIG, `user.name=${device}`, `user.email=${deviceEmail(device)}`],
+      config: [...deps.config, `user.name=${device}`, `user.email=${deviceEmail(device)}`],
       globalArgs: options.globalArgs,
       // A saved token is sent outright; otherwise the computer's own is git's last helper.
       network: options.network
@@ -109,7 +127,9 @@ export function createGit(deps: GitDeps): Git {
 
   async function run(args: string[], options?: GitCallOptions): Promise<ExecResult> {
     const result = await probe(args, options);
-    if (result.code !== 0) throw gitError(`${result.stderr}\n${result.stdout}`);
+    if (result.code !== 0) {
+      throw gitError(`${result.stderr}\n${result.stdout}`, "GIT", deps.errorText);
+    }
     return result;
   }
 

@@ -8,7 +8,7 @@ import type { RemovedStore } from "../storage/removed";
 import { readDirSafe } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { readDeviceName } from "./device";
-import { type Git, createGit } from "./git";
+import { BACKUP_ERROR_TEXT, BACKUP_GIT_CONFIG, type Git, createGit } from "./git";
 
 export const REMOTE_NAME = "origin";
 export const DEFAULT_BRANCH = "main";
@@ -128,6 +128,8 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
     remoteUrl,
     git: createGit({
       repoDir,
+      config: BACKUP_GIT_CONFIG,
+      errorText: BACKUP_ERROR_TEXT,
       secrets: ctx.secrets,
       deviceName,
       proxy: () => ctx.settings.proxy(),

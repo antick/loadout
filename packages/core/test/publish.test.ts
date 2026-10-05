@@ -1,8 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { PublishInput, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type PublishHooks, type PublishService, createPublishService } from "../src/publish";
+import { PUBLISH_ERROR_TEXT } from "../src/publish/checkout";
 import { collectFiles, findSecretsIn } from "../src/publish/files";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import { hashDir } from "../src/util/hash";
@@ -379,6 +381,34 @@ describe("what it refuses", () => {
     const error = await rejection(service.api.publish(publishInput([pdf])));
     expect(error.message).toContain("single skill");
     expect(commits()).toEqual(["start"]);
+  });
+
+  it("publishes to a repository holding an old object a strict object check refuses", async () => {
+    const seed = initRepo(join(world.root, "seed"));
+    writeFile(join(seed, "README.md"), "hello\n");
+    commitAll(seed, "start");
+    // A date no tool writes today: `git fsck` calls it an error, git itself reads it fine.
+    const who = "Old Tool <old@example.test> 99999999999999999999 +0000";
+    const object = join(world.root, "odd-commit");
+    writeFile(
+      object,
+      `tree ${git(seed, "rev-parse", "HEAD^{tree}")}\nparent ${git(seed, "rev-parse", "HEAD")}\nauthor ${who}\ncommitter ${who}\n\nold\n`,
+    );
+    const odd = git(seed, "hash-object", "-t", "commit", "--literally", "-w", object);
+    git(seed, "push", "--quiet", remote, `${odd}:refs/heads/main`);
+    const pdf = world.addSkill("pdf");
+
+    // Through git's transport, as from a server: a plain path is copied without any check.
+    const repo = pathToFileURL(remote).href;
+    const result = await service.api.publish(publishInput([pdf], { repo }));
+    expect(result.published).toEqual(["pdf"]);
+    expect(existsSync(join(inspect(), "skills", "pdf", "SKILL.md"))).toBe(true);
+  });
+
+  it("never words a git failure as one of the backup", () => {
+    for (const text of Object.values(PUBLISH_ERROR_TEXT)) {
+      expect(text).not.toMatch(/backup remote|the backup|this library/i);
+    }
   });
 
   it("says so when the repository cannot be reached", async () => {

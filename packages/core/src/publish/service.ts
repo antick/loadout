@@ -14,7 +14,7 @@ import {
 import type { CoreContext } from "../context";
 import { type ClawhubClient, createClawhubClient } from "../market/clawhub";
 import { createClawhubPublisher } from "./clawhub";
-import { AppError, invalid, isAppError } from "../errors";
+import { invalid, isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { SkillStore } from "../skills/store";
 import { writeAndCommit } from "./apply";
@@ -65,30 +65,6 @@ function serialized<T>(key: string, work: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** Git's own wording talks about "the backup remote"; this is not a backup. */
-function publishError(error: unknown): unknown {
-  if (!(error instanceof AppError)) return error;
-  if (error.code === "GIT_AUTH") {
-    return new AppError(
-      "GIT_AUTH",
-      "The repository refused the sign-in. Publishing uses the token saved for its host in Settings → Backup, your SSH key, or your Git credential helper, and it needs permission to write.",
-    );
-  }
-  if (error.code === "NETWORK") {
-    return new AppError(
-      "NETWORK",
-      "Could not reach the repository. Check your internet connection and proxy setting.",
-    );
-  }
-  if (error.code === "GIT_REJECTED") {
-    return new AppError(
-      "GIT_REJECTED",
-      "The repository did not accept the push. The branch may be protected, or it changed while publishing. Try again, or publish to another branch.",
-    );
-  }
-  return error;
-}
-
 /** How people install from the repository: `owner/repo` on GitHub, the address elsewhere. */
 function installSource(target: ResolvedTarget): string | null {
   if (target.remote.kind === "local") return null;
@@ -129,13 +105,9 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
     const skills = chosenSkills(input.skillIds);
     const target = resolveTarget(ctx, input);
     return serialized(target.cacheDir, async () => {
-      try {
-        const checkout = await openCheckout(ctx, target);
-        refuseSingleSkillRepo(checkout);
-        return toPlan(target, checkout, planSkills(skills, checkout.dir, target));
-      } catch (error) {
-        throw publishError(error);
-      }
+      const checkout = await openCheckout(ctx, target);
+      refuseSingleSkillRepo(checkout);
+      return toPlan(target, checkout, planSkills(skills, checkout.dir, target));
     });
   }
 
@@ -143,32 +115,28 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
     const skills = chosenSkills(input.skillIds);
     const target = resolveTarget(ctx, input);
     return serialized(target.cacheDir, async () => {
-      try {
-        for (let attempt = 1; ; attempt += 1) {
-          const checkout = await openCheckout(ctx, target);
-          refuseSingleSkillRepo(checkout);
-          // One look at the library: what is checked for keys is what gets copied.
-          const step = await ctx.lock.run("publish skills", async () => {
-            const planned = planSkills(skills, checkout.dir, target);
-            if (planned.secrets.length > 0 && !input.allowSecrets) {
-              throw secretsHeldBack(planned.secrets);
-            }
-            return { planned, commit: await writeAndCommit(checkout, planned.skills) };
-          });
-          const plan = toPlan(target, checkout, step.planned);
-          if (step.commit) {
-            try {
-              await deps.hooks?.beforePush?.(attempt);
-              await checkout.run(["push", "origin", `HEAD:refs/heads/${checkout.branch}`], true);
-            } catch (error) {
-              if (isAppError(error, "GIT_REJECTED") && attempt < MAX_PUSH_ATTEMPTS) continue;
-              throw error;
-            }
+      for (let attempt = 1; ; attempt += 1) {
+        const checkout = await openCheckout(ctx, target);
+        refuseSingleSkillRepo(checkout);
+        // One look at the library: what is checked for keys is what gets copied.
+        const step = await ctx.lock.run("publish skills", async () => {
+          const planned = planSkills(skills, checkout.dir, target);
+          if (planned.secrets.length > 0 && !input.allowSecrets) {
+            throw secretsHeldBack(planned.secrets);
           }
-          return finish(input, target, checkout, plan, step.commit);
+          return { planned, commit: await writeAndCommit(checkout, planned.skills) };
+        });
+        const plan = toPlan(target, checkout, step.planned);
+        if (step.commit) {
+          try {
+            await deps.hooks?.beforePush?.(attempt);
+            await checkout.run(["push", "origin", `HEAD:refs/heads/${checkout.branch}`], true);
+          } catch (error) {
+            if (isAppError(error, "GIT_REJECTED") && attempt < MAX_PUSH_ATTEMPTS) continue;
+            throw error;
+          }
         }
-      } catch (error) {
-        throw publishError(error);
+        return finish(input, target, checkout, plan, step.commit);
       }
     });
   }

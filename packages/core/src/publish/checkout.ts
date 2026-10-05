@@ -1,7 +1,13 @@
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { APP_NAME, APP_SLUG } from "@loadout/shared";
-import { type Git, type GitCallOptions, createGit } from "../backup/git";
+import {
+  COMMIT_GIT_CONFIG,
+  type Git,
+  type GitCallOptions,
+  type GitErrorText,
+  createGit,
+} from "../backup/git";
 import type { CoreContext } from "../context";
 import { AppError, invalid, isAppError } from "../errors";
 import type { ExecResult } from "../util/exec";
@@ -20,6 +26,20 @@ const FALLBACK_BRANCH = "main";
 const COMMON_BRANCHES = ["main", "master"] as const;
 /** Errors that say something about the user's setup, not about a damaged working copy. */
 const SETUP_ERRORS = ["NETWORK", "GIT_AUTH", "GIT_MISSING"] as const;
+/** Git's failures in publishing words: this repository is not the backup. */
+export const PUBLISH_ERROR_TEXT: GitErrorText = {
+  NETWORK: "Could not reach the repository. Check your internet connection and proxy setting.",
+  GIT_AUTH:
+    "The repository refused the sign-in. Publishing uses the token saved for its host in Settings → Backup, your SSH key, or your Git credential helper, and it needs permission to write.",
+  GIT_UNRELATED:
+    "The repository's history does not match the copy Loadout keeps of it. Try again, or publish to another branch.",
+  GIT_REJECTED:
+    "The repository did not accept the push. The branch may be protected, or it changed while publishing. Try again, or publish to another branch.",
+  GIT_NO_UPSTREAM: "The branch is not in the repository yet. Try again.",
+  SYNC_CONFLICT: "Git found conflicting changes in the repository. Try again.",
+  GIT_NOT_REPO: "That address is not a Git repository. Check it and try again.",
+  GIT: "Git could not finish the operation.",
+};
 
 export interface Checkout {
   dir: string;
@@ -64,6 +84,9 @@ export async function openCheckout(ctx: CoreContext, target: ResolvedTarget): Pr
   const { cacheDir: dir, url } = target;
   const git = createGit({
     repoDir: dir,
+    // Any repository the user names: no strict object check, which old public ones may fail.
+    config: COMMIT_GIT_CONFIG,
+    errorText: PUBLISH_ERROR_TEXT,
     secrets: ctx.secrets,
     // Never the device name: this commit may be read by anyone.
     deviceName: () => APP_NAME,
