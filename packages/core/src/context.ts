@@ -42,10 +42,10 @@ export interface HostBridge {
   appDataDir: string | null;
 }
 
-/** Everything a service needs. Built once by `createCore`. */
 /** Environment variables as the user's shell sets them, read on every call. */
 export type EnvReader = () => Readonly<Record<string, string | undefined>>;
 
+/** Everything a service needs. Built once by `createCore`. */
 export interface CoreContext {
   paths: LibraryPaths;
   homeDir: string;

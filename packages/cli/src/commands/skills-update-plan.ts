@@ -37,7 +37,7 @@ export interface UpdatePlan {
   failed: BatchFailure[];
 }
 
-/** Characters of a revision shown in the text. */
+/** Files listed per skill in the text; the rest are only counted. */
 const FILES_SHOWN = 8;
 
 /** "Git (https://github.com/acme/skills)": the kind of source and where it is. */

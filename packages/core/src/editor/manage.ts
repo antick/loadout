@@ -18,7 +18,8 @@ import type { FileHistory } from "./history";
 /**
  * Creating, renaming and deleting the files and folders of one skill folder. The main document
  * never goes: a skill without it stops being a skill. A deleted file is kept in the history
- * first, so it can be brought back. The caller holds the library lock and does the bookkeeping.
+ * first; nothing lists it afterwards, but a file made again at that path shows those versions.
+ * The caller holds the library lock and does the bookkeeping.
  */
 
 /** What a change did. */

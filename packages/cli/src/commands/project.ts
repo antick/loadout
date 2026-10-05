@@ -50,8 +50,6 @@ const PRUNE_FLAG = {
   description: `Also remove folders ${SKILLS_FILE_NAME} no longer lists.`,
 } as const;
 
-/** Characters of a commit shown in text. */
-
 const ACTION_WORDS: Record<SkillsFileAction, string> = {
   add: "add",
   update: "update",

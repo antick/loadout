@@ -112,7 +112,10 @@ export class PresetStore {
     this.#db.run("UPDATE presets SET updated_at = ? WHERE id = ?", Date.now(), id);
   }
 
-  /** Ids not listed keep their place after the listed ones. */
+  /**
+   * Listed ids take places 0, 1, 2…; an id left out keeps its old place, so it may land among
+   * them. The sidebar always sends every preset.
+   */
   reorder(ids: string[]): void {
     this.#db.transaction(() => {
       ids.forEach((id, index) => {

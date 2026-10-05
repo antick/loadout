@@ -100,10 +100,10 @@ export function createDeployOperations(
   }
 
   /**
-   * The path is ours to remove only when no row of any skill or agent still points at it, and
-   * only if it still looks like what `row` recorded. When in doubt the content stays.
+   * Remove the folder `row` recorded (`row` may still exist). The path is ours to remove only
+   * when no row of any skill or agent still points at it, and only if it still looks like what
+   * `row` recorded. When in doubt the content stays.
    */
-  /** Remove the folder `row` recorded unless another row still points at it. `row` may still exist. */
   function releasePath(row: DeploymentRecord, place = row.agentKey): boolean {
     let survivors: DeploymentRecord[];
     try {
