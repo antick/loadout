@@ -1,5 +1,6 @@
 import { existsSync, renameSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { AppError } from "../errors";
 import { LIBRARY_PLACE } from "../storage/removed-library";
 import { ensureDir, lstatOrNull } from "../util/fs";
 import type { BackupEnv } from "./env";
@@ -115,6 +116,18 @@ export function settleSetAside(env: BackupEnv, aside: SetAsideFolder, target: st
     env.ctx.activity.record("backup", name, `${NOT_KEPT_DETAIL} ${aside.to}`, false);
     return false;
   }
+}
+
+/**
+ * The error a merge or conflict choice ends with, once it is otherwise done, when left-out files
+ * could be kept neither in the skill nor in Recently removed: they wait in `dir` for the user.
+ */
+export function localFilesNotKept(dir: string): AppError {
+  return new AppError(
+    "IO",
+    `Some files kept out of the backup could not be put back in their skill or in Recently removed. They are in ${dir}; move them somewhere safe. Everything else was done.`,
+    { path: dir },
+  );
 }
 
 /**

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Device, joinRemote, seedRemote } from "./backup-world";
 import { DEFAULT_IGNORE_LINES } from "../src/backup/size";
-import { tempDir, writeFile } from "./helpers";
+import { rejection, tempDir, writeFile } from "./helpers";
 
 const ignoreFile = (device: Device): string =>
   readFileSync(join(device.skillsDir, ".gitignore"), "utf8");
@@ -174,11 +174,7 @@ describe("backup ignore rules", () => {
 
   /** B's own `.env`, kept in Recently removed with the folder it lived in. */
   function keptEnv(): string[] {
-    return b.removed
-      .list()
-      .map((entry) => join(b.removed.contentPath(entry.id), ".env"))
-      .filter((path) => existsSync(path))
-      .map((path) => readFileSync(path, "utf8"));
+    return keptFiles(".env");
   }
 
   it("keeps a left-out file in Recently removed when the other device's version has a file at its path", async () => {
@@ -213,5 +209,64 @@ describe("backup ignore rules", () => {
     await b.api.resolveConflict(conflict?.skillKey ?? "", "use_remote");
     expect(b.read("alpha", ".env")).toBe("FROM_A=1");
     expect(keptEnv()).toEqual(["SECRET=1"]);
+  });
+
+  /** What Recently removed on B holds at `relative` inside each kept folder. */
+  function keptFiles(relative: string): string[] {
+    return b.removed
+      .list()
+      .map((entry) => join(b.removed.contentPath(entry.id), relative))
+      .filter((path) => existsSync(path))
+      .map((path) => readFileSync(path, "utf8"));
+  }
+
+  it("keeps a left-out folder whose file the other device tracks, both versions whole", async () => {
+    await a.api.setIgnoreRules(["outputs/"]);
+    await a.api.sync();
+    await b.api.sync();
+    writeFile(join(b.skillsDir, "alpha", "outputs", "result.txt"), "unique local output");
+    writeFile(join(a.skillsDir, "alpha", "outputs", "result.txt"), "remote output");
+    a.git("add", "-f", "alpha/outputs/result.txt");
+    a.editSkill("alpha", "from A");
+    await a.api.sync();
+    b.editSkill("beta", "from B");
+    await b.api.sync();
+
+    expect(b.read("alpha", "outputs/result.txt")).toBe("remote output");
+    expect(keptFiles("outputs/result.txt")).toEqual(["unique local output"]);
+  });
+
+  it("keeps a left-out file in Recently removed when moving it across fails", async () => {
+    await a.api.setIgnoreRules(["cache.txt"]);
+    await a.api.sync();
+    await b.api.sync();
+    writeFile(join(b.skillsDir, "alpha", "data", "cache.txt"), "local cache");
+    // A file where B keeps a folder: the left-out file cannot go back in.
+    writeFile(join(a.skillsDir, "alpha", "data"), "a file now");
+    a.editSkill("alpha", "from A");
+    await a.api.sync();
+    b.editSkill("beta", "from B");
+    await b.api.sync();
+
+    expect(b.read("alpha", "data")).toBe("a file now");
+    expect(keptFiles("data/cache.txt")).toEqual(["local cache"]);
+  });
+
+  it("leaves the files on disk and says where when Recently removed cannot take them", async () => {
+    await trackEnvOnA();
+    writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+    b.editSkill("beta", "from B");
+    b.removed.setAside = () => {
+      throw new Error("disk full");
+    };
+
+    const error = await rejection(b.api.sync());
+    expect(error.code).toBe("IO");
+    const dir = String((error.details as { path?: string } | undefined)?.path);
+    expect(readFileSync(join(dir, ".env"), "utf8")).toBe("SECRET=1");
+    expect(error.message).toContain(dir);
+    // Everything else was done: the merge is in, and the next sync sends it.
+    expect(b.read("alpha")).toBe("from A");
+    expect(await b.api.sync()).toMatchObject({ pushed: true });
   });
 });

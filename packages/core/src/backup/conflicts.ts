@@ -10,7 +10,13 @@ import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { skillMetadataAt } from "./merge-read";
-import { type SetAsideFolder, putBackFolder, setAsideFolder, settleSetAside } from "./ignored";
+import {
+  type SetAsideFolder,
+  localFilesNotKept,
+  putBackFolder,
+  setAsideFolder,
+  settleSetAside,
+} from "./ignored";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 import { safetyPoint } from "./snapshots";
 
@@ -175,6 +181,7 @@ export async function resolveConflicts(
   await commitLibrary(env, BEFORE_RESOLVE_MESSAGE);
   const safety = await safetyPoint(env);
   const work: ChoiceWork = { created: [], replaced: [], cleanups: [] };
+  let leftIn: string | null = null;
   const message =
     conflicts.length > 1
       ? `${RESOLVE_MESSAGE[action]} (${conflicts.length} skills)`
@@ -196,7 +203,9 @@ export async function resolveConflicts(
     // Files kept out of the backup exist only here: they stay with the skill, or are kept in
     // Recently removed. When neither worked, the scratch folders holding them stay on disk.
     for (const { aside, target } of work.replaced) {
-      if (!settleSetAside(env, aside, target)) work.cleanups = [];
+      if (settleSetAside(env, aside, target)) continue;
+      work.cleanups = [];
+      leftIn ??= aside.to;
     }
   } finally {
     for (const cleanup of work.cleanups) await cleanup();
@@ -206,5 +215,7 @@ export async function resolveConflicts(
     env.ctx.activity.record("backup", conflict.skillName, RESOLVE_MESSAGE[action]);
   }
   await env.reconcile(true);
+  // The choice is made and committed; only those files still need the user.
+  if (leftIn) throw localFilesNotKept(leftIn);
   return safety;
 }

@@ -14,6 +14,7 @@ import { gitError } from "./git";
 import {
   type SetAsideFolder,
   ignoredInTheWay,
+  localFilesNotKept,
   putBackFolder,
   setAsideFolder,
   settleSetAside,
@@ -115,7 +116,10 @@ function keepDeparted(env: BackupEnv, aside: SetAsideFolder, record?: LibraryRec
   }
 }
 
-/** Put the planned library on disk and commit it as a merge of `theirs`. */
+/**
+ * Put the planned library on disk and commit it as a merge of `theirs`. Returns where files
+ * that could be kept nowhere else wait on disk (a folder of the stage); null otherwise.
+ */
 async function materialise(
   env: BackupEnv,
   plan: MergePlan,
@@ -125,7 +129,7 @@ async function materialise(
   message: string,
   /** Library records of the skills this merge takes out, for Recently removed. */
   departing: ReadonlyMap<string, LibraryRecord>,
-): Promise<void> {
+): Promise<string | null> {
   const stage: Stage = createStage(env);
   const created: string[] = [];
   // Folders of ours that the merge replaces or drops, set aside with their left-out files.
@@ -144,8 +148,8 @@ async function materialise(
     renameSync(from, target);
   };
 
-  // Cleared when left-out files could be kept nowhere else: the stage then stays on disk.
-  let cleanUp = true;
+  // Set when files could be kept nowhere else: the stage then stays on disk.
+  let leftIn: string | null = null;
   try {
     await placeAndCommit();
     // Committed: the left-out files of replaced folders move into their successors, and skills
@@ -154,14 +158,15 @@ async function materialise(
       const aside = asides.get(item.id);
       if (!aside) continue;
       if (item.content === "none" && !keepDeparted(env, aside, departing.get(item.id))) {
-        cleanUp = false;
+        leftIn ??= aside.to;
       }
       if (item.content !== "theirs" || !item.path) continue;
-      if (!settleSetAside(env, aside, join(env.repoDir, item.path))) cleanUp = false;
+      if (!settleSetAside(env, aside, join(env.repoDir, item.path))) leftIn ??= aside.to;
     }
   } finally {
-    if (cleanUp) await stage.cleanup();
+    if (!leftIn) await stage.cleanup();
   }
+  return leftIn;
 
   async function placeAndCommit(): Promise<void> {
     try {
@@ -411,9 +416,9 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
       fromDevice: await lastAuthor(env, range, paths),
     });
   }
-  if (!fastForward) {
-    await materialise(env, plan, skills, presets, theirSide, message, departing);
-  }
+  const leftIn = fastForward
+    ? null
+    : await materialise(env, plan, skills, presets, theirSide, message, departing);
 
   const newConflicts: string[] = [];
   for (const item of conflicts) {
@@ -444,6 +449,8 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     .map((item) => skillName(env, item.path ?? item.id));
 
   await env.reconcile(true);
+  // The merge is committed and the library indexed; only those files still need the user.
+  if (leftIn) throw localFilesNotKept(leftIn);
   return {
     summary: {
       upToDate: false,
