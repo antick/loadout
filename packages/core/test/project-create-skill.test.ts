@@ -58,6 +58,20 @@ describe("create a skill in a project", () => {
     expect(existsSync(join(claude, "code-review"))).toBe(false);
   });
 
+  it("lets only one of two simultaneous calls for a name write, never overwriting", async () => {
+    const project = await api().add(repo);
+    const results = await Promise.allSettled([
+      api().createSkill(project.id, { ...INPUT, description: "First request." }),
+      api().createSkill(project.id, { ...INPUT, description: "Second request." }),
+    ]);
+    expect(results.map((result) => result.status)).toEqual(["fulfilled", "rejected"]);
+    const second = results[1];
+    expect(second?.status === "rejected" && second.reason.code).toBe("ALREADY_EXISTS");
+    expect(readFileSync(join(claude, "code-review", "SKILL.md"), "utf8")).toContain(
+      "description: First request.",
+    );
+  });
+
   it("refuses a bad name, an empty description and agents that cannot be used", async () => {
     const project = await api().add(repo);
     const badName = await rejection(api().createSkill(project.id, { ...INPUT, name: "Bad Name" }));

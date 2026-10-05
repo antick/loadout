@@ -1,5 +1,5 @@
 import { renameSync, rmdirSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
   type CreateSkillInput,
@@ -204,24 +204,26 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       const targets = exportTargets(project, agentKeys);
       const [first] = targets;
       if (!first) throw invalid("No enabled installed agents selected for this project");
+      const takenBy = (target: ResolvedTarget) =>
+        exists(`${target.displayName} already has a skill named ${name} in this project`);
       // Compared without case, like the library, so the name never sits next to a near twin.
       const wanted = name.toLowerCase();
-      for (const target of targets) {
-        const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
-        const taken = roots.some((root) =>
-          readDirSafe(root).some((entry) => entry.name.toLowerCase() === wanted),
-        );
-        if (taken) {
-          throw exists(`${target.displayName} already has a skill named ${name} in this project`);
-        }
-      }
       const document = newSkillDocument(checked);
+      // Checked and written in one hold, so a second call for the name sees the first one's folder.
       await ctx.lock.run(`create ${name}`, async () => {
+        for (const target of targets) {
+          const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
+          const taken = roots.some((root) =>
+            readDirSafe(root).some((entry) => entry.name.toLowerCase() === wanted),
+          );
+          if (taken) throw takenBy(target);
+        }
         const written: string[] = [];
         try {
           for (const target of targets) {
             const dir = join(target.enabledRoot, name);
-            ensureDir(dir);
+            // Nothing made means the folder was already there: refused, never written into.
+            if ((await mkdir(dir, { recursive: true })) === undefined) throw takenBy(target);
             written.push(dir);
             await writeFile(join(dir, NEW_SKILL_DOCUMENT), document);
           }
