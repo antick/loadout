@@ -223,13 +223,6 @@
         "action": "Open repository settings"
       }
     },
-    "summary": {
-      "title": "Summary",
-      "skills": "Skills in the library",
-      "snapshots": "Snapshots",
-      "conflicts": "Waiting for a choice",
-      "unknown": "–"
-    },
     "firstRun": {
       "title": "Start fresh, or restore from a backup?",
       "description": "The library is empty. If you backed it up from another computer, paste the repository address to bring everything over.",

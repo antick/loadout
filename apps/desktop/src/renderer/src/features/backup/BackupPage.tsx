@@ -5,11 +5,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useFetchBackup, useSetDeviceName } from "@/features/backup/backup-mutations";
-import {
-  useBackupConflicts,
-  useBackupDeviceName,
-  useBackupSnapshots,
-} from "@/features/backup/backup-queries";
+import { useBackupConflicts, useBackupDeviceName } from "@/features/backup/backup-queries";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useBackupStatus } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
@@ -18,7 +14,6 @@ import { useAppEvent } from "@/lib/events";
 import { AutoBackupCard } from "./AutoBackupCard";
 import { BackupContents } from "./BackupContents";
 import { deriveBackupMode } from "@/lib/backup-mode";
-import { BackupSummary } from "./BackupSummary";
 import { ConflictList } from "./ConflictList";
 import { GIT_DOWNLOAD_URL } from "./constants";
 import { HeldBackSecrets } from "./HeldBackSecrets";
@@ -62,7 +57,6 @@ export function BackupPage(): ReactNode {
   const isRepo = data?.isRepo ?? false;
   const remoteUrl = data?.remoteUrl ?? null;
   const mode = deriveBackupMode(data, savedRemote, lastError);
-  const snapshots = useBackupSnapshots(isRepo && (data?.gitAvailable ?? false));
 
   const succeeded = (): void => {
     setLastError(null);
@@ -202,11 +196,6 @@ export function BackupPage(): ReactNode {
             }}
           />
         ) : null}
-        <BackupSummary
-          skillCount={skills.data?.length}
-          snapshotCount={snapshots.data?.length}
-          conflictCount={conflicts.data?.length ?? 0}
-        />
       </aside>
 
       <SetupDialog
