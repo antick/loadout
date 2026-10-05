@@ -133,6 +133,7 @@ export const keys = {
   system: {
     root: ["system"] as const,
     libraryLocation: ["system", "library-location"] as const,
+    activityRoot: ["system", "activity"] as const,
     activity: (limit?: number) => ["system", "activity", limit ?? null] as const,
     diagnostics: ["system", "diagnostics"] as const,
     lastCrash: ["system", "last-crash"] as const,

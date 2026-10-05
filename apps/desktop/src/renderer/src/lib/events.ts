@@ -39,7 +39,8 @@ export function useAppEvent<N extends AppEventName>(name: N, handler: Handler<N>
 
 /**
  * Query-key prefixes to refetch per `data:changed` scope. A skill change also moves workspace and
- * project skill lists, project health counts, marketplace "installed" flags and the activity log.
+ * project skill lists, project health counts, marketplace "installed" flags, the activity log,
+ * the repair report, whether the agent-control skill is installed, and every storage size.
  */
 const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   skills: [
@@ -53,7 +54,9 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     // keyed by what it compared (`sourceComparisonKey`), so it refetches only when that changes.
     keys.updates.news,
     keys.market.root,
-    keys.system.root,
+    keys.system.activityRoot,
+    keys.system.agentControl,
+    keys.system.repair,
     keys.storage.root,
     // Editing a skill can add or remove something the backup would hold back, and changes what
     // an open sync review would save.
