@@ -1,4 +1,4 @@
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { renameSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join } from "node:path";
 import type { RenameOptions, RenameResult, Skill } from "@loadout/shared";
 import type { CoreContext } from "../context";
@@ -68,9 +68,8 @@ function rewriteDocument(store: SkillStore, skill: Skill, name: string): void {
   const edited = [...skill.editedFiles];
   if (found) {
     const path = join(skill.libraryPath, found.filename);
-    const content = readFileSync(path, "utf8");
-    const next = setFrontmatterName(content, name);
-    if (next !== content) {
+    const next = setFrontmatterName(found.content, name);
+    if (next !== found.content) {
       writeFileSync(path, next);
       if (!edited.includes(found.filename)) edited.push(found.filename);
     }
