@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
-import { SNAPSHOT_TAG_PREFIX } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import {
@@ -122,14 +121,14 @@ describe("backup sync", () => {
     // Commits carry the device name; the history lists them newest first.
     expect(a.git("log", "-1", "--format=%an")).toBe("Device A");
     const snapshots = await a.api.snapshots();
-    expect(snapshots[0]).toMatchObject({ tag: local.snapshot, device: "Device A" });
+    expect(snapshots[0]).toMatchObject({ id: local.snapshot, device: "Device A" });
     expect(snapshots.map((snapshot) => snapshot.message)).toEqual(
       a.git("log", "--first-parent", "--format=%s").split("\n"),
     );
     expect(await a.api.snapshots(1)).toHaveLength(1);
 
     // Nothing to do the second time. A tag an older version made stays where it is.
-    const oldTag = `${SNAPSHOT_TAG_PREFIX}20260901-000000-abcd`;
+    const oldTag = "lo-v-20260901-000000-abcd";
     a.git("tag", oldTag);
     a.git("push", "-q", "origin", oldTag);
     expect(await a.api.sync()).toMatchObject({ committed: false, pushed: false, snapshot: null });

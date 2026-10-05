@@ -148,8 +148,8 @@ describe("git backup", () => {
     for (let index = 0; index < 50; index += 1) {
       git("commit", "-q", "--allow-empty", "-m", `later ${index}`);
     }
-    const listed = (await cli("git", "versions", "--json")).json<{ commit: string }[]>();
-    expect(listed.some((version) => version.commit.startsWith(old))).toBe(false);
+    const listed = (await cli("git", "versions", "--json")).json<{ id: string }[]>();
+    expect(listed.some((version) => version.id.startsWith(old))).toBe(false);
 
     const dry = await cli("git", "restore", old, "--dry-run", "--yes", "--json");
     expect(dry.code, dry.stderr).toBe(EXIT_OK);

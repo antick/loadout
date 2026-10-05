@@ -123,19 +123,19 @@ export function createBackupOperations(
       return listSnapshots(env, limit);
     },
 
-    restorePoint: async (tag) => {
+    restorePoint: async (id) => {
       assertRepo(env);
-      return describeRestorePoint(env, tag);
+      return describeRestorePoint(env, id);
     },
 
-    restore: async (tag) => {
+    restore: async (id) => {
       assertRepo(env);
-      const safety = await ctx.lock.run(`restore ${tag}`, async () => {
-        const point = await restoreSnapshot(env, tag);
+      const safety = await ctx.lock.run(`restore ${id}`, async () => {
+        const point = await restoreSnapshot(env, id);
         await env.reconcile(true);
         return point;
       });
-      ctx.activity.record("restore", tag, `Safety snapshot ${safety}`);
+      ctx.activity.record("restore", id, `Safety snapshot ${safety}`);
       return safety;
     },
 

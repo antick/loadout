@@ -47,12 +47,12 @@ export interface BackupApi {
   conflictDiff(skillKey: string): Promise<SyncSkillDiff>;
   snapshots(limit?: number): Promise<Snapshot[]>;
   /**
-   * The version `tag` names (a whole or shortened commit id anywhere in the branch's history),
+   * The version `id` names (a whole or shortened commit id anywhere in the branch's history),
    * checked as `restore` checks it: refused with the same error. Changes nothing.
    */
-  restorePoint(tag: string): Promise<Snapshot>;
+  restorePoint(id: string): Promise<Snapshot>;
   /** Returns the safety snapshot taken before restoring. */
-  restore(tag: string): Promise<string>;
+  restore(id: string): Promise<string>;
   conflicts(): Promise<BackupConflict[]>;
   resolveConflict(skillKey: string, action: ConflictResolution): Promise<string>;
   /**

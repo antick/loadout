@@ -157,7 +157,7 @@ async function versions({ core, args }: CommandContext): Promise<CommandResult> 
   const value = await core.api.backup.snapshots(flagInteger(args, LIMIT_FLAG.name));
   const text = table(
     ["version", "made", "device", "message"],
-    value.map((s) => [s.tag, when(s.createdAt), s.device, s.message]),
+    value.map((s) => [s.id, when(s.createdAt), s.device, s.message]),
     "No versions yet. `git sync` creates one.",
   );
   return { value, text };
@@ -165,20 +165,20 @@ async function versions({ core, args }: CommandContext): Promise<CommandResult> 
 
 async function restore({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
-  const tag = positional(args, 0, "the version to restore (see `git versions`)");
+  const id = positional(args, 0, "the version to restore (see `git versions`)");
   // Core's own check, so the dry run and the real one refuse alike, and before asking for --yes.
-  const point = await core.api.backup.restorePoint(tag);
-  requireYes(args, `switch the whole library back to ${point.tag}`);
+  const point = await core.api.backup.restorePoint(id);
+  requireYes(args, `switch the whole library back to ${point.id}`);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     return {
-      value: { dryRun: true, tag },
-      text: `Would restore the library to ${point.tag} (${when(point.createdAt)}, ${point.message}), after saving the current state as a safety version. Nothing was changed.`,
+      value: { dryRun: true, id },
+      text: `Would restore the library to ${point.id} (${when(point.createdAt)}, ${point.message}), after saving the current state as a safety version. Nothing was changed.`,
     };
   }
-  const safety = await core.api.backup.restore(tag);
+  const safety = await core.api.backup.restore(id);
   return {
-    value: { dryRun: false, tag, restored: point.tag, safetySnapshot: safety },
-    text: `Library restored to ${point.tag}. The state before that is kept as ${safety}.`,
+    value: { dryRun: false, id, restored: point.id, safetySnapshot: safety },
+    text: `Library restored to ${point.id}. The state before that is kept as ${safety}.`,
   };
 }
 

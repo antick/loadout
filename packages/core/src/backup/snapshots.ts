@@ -50,8 +50,7 @@ async function readSnapshots(env: BackupEnv, args: string[]): Promise<Snapshot[]
     const [id, committed, author, subject] = record.replace(/^\s+/, "").split(FIELD_SEPARATOR);
     if (!id) continue;
     snapshots.push({
-      tag: id,
-      commit: id,
+      id,
       message: subject ?? "",
       createdAt: Number(committed ?? 0) * MS_PER_SECOND,
       device: author ?? "",

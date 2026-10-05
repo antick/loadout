@@ -17,7 +17,7 @@ const SKELETON_ROWS = 3;
 
 /** When the snapshot was taken: the time of its commit. */
 function snapshotLabel(snapshot: Snapshot): string {
-  return formatDateTime(snapshot.createdAt) || snapshot.tag;
+  return formatDateTime(snapshot.createdAt) || snapshot.id;
 }
 
 export interface SnapshotHistoryProps {
@@ -41,10 +41,10 @@ export function SnapshotHistory({
     const confirmed = await confirm({
       title: t("backupPage.history.restoreTitle", { when: snapshotLabel(snapshot) }),
       description: t("backupPage.history.restoreBody"),
-      items: [snapshot.tag],
+      items: [snapshot.id],
       confirmLabel: t("backupPage.history.restore"),
     });
-    if (confirmed) restore.mutate(snapshot.tag, { onSuccess: onRestored });
+    if (confirmed) restore.mutate(snapshot.id, { onSuccess: onRestored });
   };
 
   let body: ReactNode;
@@ -78,9 +78,9 @@ export function SnapshotHistory({
     body = (
       <ul className="flex flex-col divide-y rounded-lg border bg-card">
         {snapshots.data.map((snapshot) => {
-          const current = snapshot.tag === currentSnapshot;
+          const current = snapshot.id === currentSnapshot;
           return (
-            <li key={snapshot.tag} className="flex items-center gap-3 px-4 py-2.5">
+            <li key={snapshot.id} className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 text-sm font-medium">
                   <span className="truncate">{snapshotLabel(snapshot)}</span>
@@ -88,13 +88,13 @@ export function SnapshotHistory({
                     <StatusBadge tone="success" label={t("backupPage.history.current")} />
                   ) : null}
                 </p>
-                <p className="truncate text-xs text-muted-foreground" title={snapshot.tag}>
+                <p className="truncate text-xs text-muted-foreground" title={snapshot.id}>
                   {snapshot.message}
                   {" · "}
                   {snapshot.device}
                   {" · "}
                   <span data-selectable className="font-mono">
-                    {snapshot.commit.slice(0, SHORT_COMMIT_LENGTH)}
+                    {snapshot.id.slice(0, SHORT_COMMIT_LENGTH)}
                   </span>
                 </p>
               </div>
