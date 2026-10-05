@@ -1,17 +1,22 @@
 import { type EditorChoice, type RepairReport } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useApiMutation } from "@/hooks/use-api-mutation";
+import { type SuccessToast, useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 import { GENERIC_ERROR_KEY, toastSuccess } from "@/lib/toast";
 
-/** Copy text to the clipboard through the main process and confirm with a toast. */
-export function useCopyText(): UseMutationResult<void, unknown, string> {
+/**
+ * Copy text to the clipboard through the main process and confirm with a toast. `success`
+ * replaces the plain "Copied" toast; null from it keeps quiet.
+ */
+export function useCopyText(
+  success?: (text: string) => SuccessToast | null,
+): UseMutationResult<void, unknown, string> {
   const { t } = useTranslation();
   return useApiMutation({
     fn: (text: string) => api.app.copyText(text),
-    success: () => t("common.copied"),
+    success: success ? (_data, text) => success(text) : () => t("common.copied"),
     error: "errors.copy",
   });
 }

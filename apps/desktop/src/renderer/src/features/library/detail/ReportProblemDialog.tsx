@@ -23,8 +23,6 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Textarea } from "@/components/ui/textarea";
 import { useCopyText, useOpenExternal } from "@/hooks/mutations/app";
 import { useAppInfo } from "@/hooks/queries/app";
-import { api } from "@/lib/api";
-import { toastError, toastSuccess } from "@/lib/toast";
 
 export interface ReportProblemDialogProps {
   /** The skill to report on; null keeps the dialog closed. */
@@ -42,6 +40,7 @@ function ReportProblemForm({ skill }: { skill: Skill }): ReactNode {
   const proposalId = useId();
   const { data: info } = useAppInfo();
   const copy = useCopyText();
+  const copyReport = useCopyText(() => t("feedback.opening"));
   const openExternal = useOpenExternal();
   const [happened, setHappened] = useState("");
   const [proposal, setProposal] = useState("");
@@ -58,13 +57,12 @@ function ReportProblemForm({ skill }: { skill: Skill }): ReactNode {
     if (!draft.url) return;
     if (!draft.urlHasBody) {
       // The link cannot carry the whole report, so it travels on the clipboard.
-      try {
-        await api.app.copyText(draft.body);
-      } catch (error) {
-        toastError(error, "errors.copy");
-        return;
-      }
-      toastSuccess(t("feedback.opening"));
+      // The hook toasts a failure; the report then stays on screen.
+      const copied = await copyReport.mutateAsync(draft.body).then(
+        () => true,
+        () => false,
+      );
+      if (!copied) return;
     }
     openExternal.mutate(draft.url);
   };

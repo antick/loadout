@@ -33,15 +33,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateSkill, useCreateProjectSkill } from "@/features/library/library-mutations";
 import { useAppInfo, useLibraryLocation } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
-import { api } from "@/lib/api";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { compactHome, joinPath } from "@/lib/paths";
 import { editLink } from "@/lib/skill-location";
-import { toastError, toastSuccess } from "@/lib/toast";
+import { toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { NewSkillPlaceField } from "./NewSkillPlaceField";
 import { newSkillFolders } from "./new-skill-folders";
+import { useCopyText } from "@/hooks/mutations/app";
 import { useNewSkillPlace } from "./use-new-skill-place";
 
 export interface NewSkillDialogProps {
@@ -58,6 +58,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
   const createInLibrary = useCreateSkill();
   const createInProject = useCreateProjectSkill();
   const place = useNewSkillPlace(projectId ?? null);
+  const copyText = useCopyText(() => null);
   const { project } = place;
   const pending = createInLibrary.isPending || createInProject.isPending;
   const { data: skills } = useSkills();
@@ -112,16 +113,15 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
       folder: skillPath,
       copies: copyFolders,
     });
-    try {
-      await api.app.copyText(prompt);
-      toastSuccess(
-        t("library.create.promptCopied", { name: skillName }),
-        t("library.create.promptCopiedHint"),
-      );
-    } catch (error) {
-      toastSuccess(t("library.create.created", { name: skillName }));
-      toastError(error, "errors.copy");
-    }
+    // Its own toasts: the copy says what was created, and a failed copy still created the skill.
+    await copyText.mutateAsync(prompt).then(
+      () =>
+        toastSuccess(
+          t("library.create.promptCopied", { name: skillName }),
+          t("library.create.promptCopiedHint"),
+        ),
+      () => toastSuccess(t("library.create.created", { name: skillName })),
+    );
   };
 
   const created = (createdName: string, promptFolder: string | null): void => {
