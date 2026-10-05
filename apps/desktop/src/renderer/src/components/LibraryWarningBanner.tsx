@@ -24,7 +24,7 @@ export function LibraryWarningBanner(): ReactNode {
         <Button
           variant="ghost"
           size="xs"
-          onClick={() => void navigate({ to: "/settings", search: { section: "general" } })}
+          onClick={() => void navigate({ to: "/settings", search: { section: "storage" } })}
         >
           {t("banners.openSettings")}
         </Button>

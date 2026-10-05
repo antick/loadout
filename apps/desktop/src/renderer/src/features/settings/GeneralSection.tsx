@@ -30,8 +30,8 @@ import { UsagePanel } from "./UsagePanel";
 const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon } as const;
 
 /**
- * Library location, how skills are installed, appearance, what closing the window does, and
- * counting skill use.
+ * How skills are installed, colours and appearance, what closing the window does, and counting
+ * skill use. The library location is under Storage.
  */
 export function GeneralSection(): ReactNode {
   const { t } = useTranslation();
