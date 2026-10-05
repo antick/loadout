@@ -37,6 +37,11 @@ export interface ScanOptions {
   recursive: boolean;
 }
 
+/** How to look through an agent's own skills folder: as deep as the agent itself looks. */
+export function agentScanOptions(agent: { recursiveScan: boolean }): ScanOptions {
+  return { recursive: agent.recursiveScan };
+}
+
 /** `strict` never guesses from names (agent folders); `loose` may (project folders). */
 export type MatchMode = "strict" | "loose";
 

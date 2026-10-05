@@ -1,4 +1,4 @@
-import { dirname } from "node:path";
+import { basename, dirname } from "node:path";
 import {
   LISTING_AGENT_KEY,
   LISTING_MAX_DESCRIPTION_CHARS,
@@ -11,12 +11,14 @@ import {
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
+import { readSkillIdentity } from "../skills/metadata";
+import { agentScanOptions, findLocalSkillDirs } from "../workspace/local-scan";
 import { readListingSettings } from "./claude-settings";
 import { readListingFields } from "./read-fields";
 
 export interface ListingDeps {
   registry: AgentRegistry;
-  workspace: Pick<WorkspaceApi, "list" | "plugins">;
+  workspace: Pick<WorkspaceApi, "plugins">;
 }
 
 export interface ListingService {
@@ -40,14 +42,16 @@ export function createListingService(ctx: CoreContext, deps: ListingDeps): Listi
       const maxChars = settings.maxDescriptionChars ?? LISTING_MAX_DESCRIPTION_CHARS;
 
       const inputs: ListingSkillInput[] = [];
-      for (const skill of await deps.workspace.list(agentKey)) {
-        const fields = readListingFields(skill.path);
+      // The folders the agent loads, found the way the agent page finds them; only their
+      // documents are read, never the whole folder.
+      for (const { path } of findLocalSkillDirs(agent.skillsDir, agentScanOptions(agent))) {
+        const { name } = readSkillIdentity(path);
         inputs.push({
-          name: skill.name,
-          path: skill.path,
+          name,
+          path,
           origin: "folder",
-          ...fields,
-          override: settings.overrides[skill.name] ?? settings.overrides[skill.dirName] ?? null,
+          ...readListingFields(path),
+          override: settings.overrides[name] ?? settings.overrides[basename(path)] ?? null,
         });
       }
       for (const skill of await deps.workspace.plugins(agentKey)) {

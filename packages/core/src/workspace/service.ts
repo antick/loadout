@@ -37,7 +37,7 @@ import {
   type BrokenDir,
   type LibraryIndex,
   type LocalEntry,
-  type ScanOptions,
+  agentScanOptions,
   classifySync,
   findLocalSkillDirs,
   indexLibrary,
@@ -66,8 +66,6 @@ const STATUS_ORDER: readonly SyncStatus[] = [
   "library_newer",
   "in_sync",
 ];
-
-const scanOptions = (agent: ResolvedAgent): ScanOptions => ({ recursive: agent.recursiveScan });
 
 function sortByAttention(skills: LocalSkill[]): LocalSkill[] {
   return [...skills].sort(
@@ -172,14 +170,14 @@ export function createWorkspaceService(
   }
 
   function brokenFolders(agent: ResolvedAgent): BrokenSkillFolder[] {
-    return walkSkillRoot(agent.skillsDir, scanOptions(agent)).broken.map(toBrokenFolder);
+    return walkSkillRoot(agent.skillsDir, agentScanOptions(agent)).broken.map(toBrokenFolder);
   }
 
   const api: WorkspaceApi = {
     list: async (agentKey) => {
       const agent = registry.get(agentKey);
       const index = library();
-      const skills = scanSkillRoot(agent.skillsDir, scanOptions(agent)).map((entry) =>
+      const skills = scanSkillRoot(agent.skillsDir, agentScanOptions(agent)).map((entry) =>
         toLocalSkill(entry, index, "strict", {
           agentKey: agent.key,
           agentDisplayName: agent.displayName,
@@ -203,7 +201,7 @@ export function createWorkspaceService(
         if (!agent) continue;
         // A folder we cannot read still has the skills we know we deployed there.
         counts[key] = isDirectory(agent.skillsDir)
-          ? findLocalSkillDirs(agent.skillsDir, scanOptions(agent)).length
+          ? findLocalSkillDirs(agent.skillsDir, agentScanOptions(agent)).length
           : store.deploymentsForAgent(key).length;
       }
       return counts;

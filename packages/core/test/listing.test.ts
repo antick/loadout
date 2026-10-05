@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { formatNumber } from "@loadout/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as hash from "../src/util/hash";
 import { createListingService } from "../src/listing";
 import { listingFindings } from "../src/health/listing";
 import { makeSkill, writeFile } from "./helpers";
@@ -65,10 +66,13 @@ describe("skill listing service", () => {
     }
   });
 
-  it("costs each skill in the agent's folder, biggest first", async () => {
+  it("costs each skill in the agent's folder, biggest first, reading only its document", async () => {
     writeSkill("small", "small", "description: Short.");
     writeSkill("large", "large", `description: ${"x".repeat(400)}`);
+    const hashed = vi.spyOn(hash, "hashDir");
     const report = await service().report(CLAUDE);
+    expect(hashed).not.toHaveBeenCalled();
+    hashed.mockRestore();
     expect(report?.entries.map((entry) => entry.name)).toEqual(["large", "small"]);
     expect(report?.full).toBe(2);
     expect(report?.budget).toBe(8000);
