@@ -127,7 +127,7 @@ describe("archive links", () => {
     expect(world.store.get(prose.id).updateStatus).toBe("update_available");
     expect(world.store.get(haiku.id).updateStatus).toBe("up_to_date");
 
-    const document = await world.updates.api.sourceDocument(prose.id);
+    const { document } = await world.updates.api.compareSource(prose.id);
     expect(document.content).toContain("A new paragraph.");
 
     const result = await world.updates.api.reimport(prose.id);

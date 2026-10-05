@@ -29,7 +29,6 @@ export interface SourcePreviewDeps {
 }
 
 export interface SourcePreview {
-  sourceDocument(skillId: string): Promise<SourceDocument>;
   sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
   compareSource(skillId: string, options?: SourceDiffOptions): Promise<SourceComparison>;
 }
@@ -85,7 +84,6 @@ export function createSourcePreview(deps: SourcePreviewDeps): SourcePreview {
   }
 
   return {
-    sourceDocument: (skillId) => withSource(skillId, documentOf),
     sourceDiff: (skillId, options = {}) =>
       withSource(skillId, (skill, source) => diffWithSource(skill, source, options)),
     compareSource: (skillId, options = {}) =>

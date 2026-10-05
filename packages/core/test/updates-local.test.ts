@@ -322,7 +322,7 @@ describe("source preview", () => {
     expect(diff).toMatchObject({ skillId: skill.id, sourceLabel: "Local", revision: "workspace" });
     expect(diff.entries.map((entry) => entry.path)).toEqual(["SKILL.md", "scripts/run.sh"]);
 
-    const document = await world.updates.api.sourceDocument(skill.id);
+    const document = (await world.updates.api.compareSource(skill.id)).document;
     expect(document).toMatchObject({
       filename: "SKILL.md",
       sourceLabel: "Local",
@@ -363,7 +363,7 @@ describe("source preview", () => {
         after: "echo pdf v2\n",
       }),
     ]);
-    const document = await world.updates.api.sourceDocument(docx.id);
+    const document = (await world.updates.api.compareSource(docx.id)).document;
     expect(document).toMatchObject({ sourceLabel: MARKETPLACE_NAME, revision: next });
     expect(document.content).toContain("# docx");
     // Looking never changes the library.

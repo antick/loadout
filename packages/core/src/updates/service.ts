@@ -98,7 +98,6 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     relink: (skillId, sourcePath, approval, options) =>
       updater.relink(skillId, sourcePath, approval, { acceptRisk: options?.acceptRisk }),
     detach: updater.detach,
-    sourceDocument: preview.sourceDocument,
     sourceDiff: preview.sourceDiff,
     compareSource: preview.compareSource,
     lastAutoRunAt: async () => auto.lastRunAt() || null,

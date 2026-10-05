@@ -138,9 +138,8 @@ export interface UpdatesApi {
    * so no source is looked for again (for a skill whose source is gone).
    */
   detach(skillId: string, options?: { markAuthored?: boolean }): Promise<Skill>;
-  sourceDocument(skillId: string): Promise<SourceDocument>;
   sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
-  /** `sourceDiff` and `sourceDocument` from one look at the source (one checkout). */
+  /** `sourceDiff` and the source's `SKILL.md` from one look at the source (one checkout). */
   compareSource(skillId: string, options?: SourceDiffOptions): Promise<SourceComparison>;
   /** When the last background update round finished (ms since the epoch); null when never. */
   lastAutoRunAt(): Promise<number | null>;

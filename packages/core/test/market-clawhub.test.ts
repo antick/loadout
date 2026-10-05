@@ -173,7 +173,7 @@ describe("ClawHub as a marketplace", () => {
     registry.state.version = "1.1.0";
     const checked = await core.api.updates.check(skill.id, true);
     expect(checked).toMatchObject({ updateStatus: "update_available", remoteRevision: "1.1.0" });
-    const preview = await core.api.updates.sourceDocument(skill.id);
+    const preview = (await core.api.updates.compareSource(skill.id)).document;
     expect(preview.content).toContain("# v1.1.0");
     expect(preview.sourceLabel).toBe("ClawHub");
 
