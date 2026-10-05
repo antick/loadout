@@ -146,22 +146,18 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
 
     setSuggestFor: async (skillId, patterns) => {
       const clean = cleanSuggestPatterns(patterns);
-      const skill = await ctx.lock.run(`suggest ${store.get(skillId).name}`, () => {
-        const fresh = store.get(skillId);
-        // Like tags, patterns are not an edit of the skill: its "last changed" time stays.
-        return store.update(skillId, { suggestFor: clean, updatedAt: fresh.updatedAt });
-      });
+      const skill = await ctx.lock.run(`suggest ${store.get(skillId).name}`, () =>
+        store.update(skillId, { suggestFor: clean }),
+      );
       ctx.touched("skills");
       return skill;
     },
 
     setNote: async (skillId, note) => {
       const clean = cleanSkillNote(note);
-      const skill = await ctx.lock.run(`note ${store.get(skillId).name}`, () => {
-        const fresh = store.get(skillId);
-        // A note is not an edit of the skill: its "last changed" time stays.
-        return store.update(skillId, { note: clean, updatedAt: fresh.updatedAt });
-      });
+      const skill = await ctx.lock.run(`note ${store.get(skillId).name}`, () =>
+        store.update(skillId, { note: clean }),
+      );
       ctx.touched("skills");
       return skill;
     },
@@ -171,11 +167,7 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
         const fresh = store.get(skillId);
         // Already as asked: the time it became one stays.
         if (favorite === (fresh.favoritedAt !== null)) return fresh;
-        // Not an edit of the skill: its "last changed" time stays.
-        return store.update(skillId, {
-          favoritedAt: favorite ? Date.now() : null,
-          updatedAt: fresh.updatedAt,
-        });
+        return store.update(skillId, { favoritedAt: favorite ? Date.now() : null });
       });
       ctx.touched("skills");
       return skill;
@@ -185,8 +177,7 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       const skill = await ctx.lock.run(`mark ${store.get(skillId).name}`, () => {
         const fresh = store.get(skillId);
         if (authored && !canLinkSource(fresh)) throw invalid(HAS_SOURCE);
-        // Marking is not an edit of the skill: its "last changed" time stays.
-        return store.update(skillId, { authored, updatedAt: fresh.updatedAt });
+        return store.update(skillId, { authored });
       });
       ctx.touched("skills");
       return skill;

@@ -246,12 +246,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     const applied = await runLocked(ctx, lockMode, `check ${skill.name}`, () => {
       const fresh = store.get(skill.id);
       if (guardOf(fresh) !== finding.guard) return fresh;
-      // A check is not an edit: the skill's own "last changed" time stays as it was.
-      return store.update(fresh.id, {
-        ...finding.patch(fresh),
-        lastCheckedAt: Date.now(),
-        updatedAt: fresh.updatedAt,
-      });
+      return store.update(fresh.id, { ...finding.patch(fresh), lastCheckedAt: Date.now() });
     });
     ctx.touched("skills");
     return applied;

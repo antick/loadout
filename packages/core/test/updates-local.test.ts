@@ -232,7 +232,10 @@ describe("reimport, relink, detach", () => {
 
   it("detaches a skill from its source and keeps its content", async () => {
     const pdf = await world.installFromGit("pdf");
+    // Not an edit: the skill's last changed time stays.
+    world.store.update(pdf.id, { updatedAt: 1000 });
     const detached = await world.updates.api.detach(pdf.id);
+    expect(detached.updatedAt).toBe(1000);
     expect(detached).toMatchObject({
       id: pdf.id,
       sourceType: "local",

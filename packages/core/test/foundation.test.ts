@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Database } from "../src/db/database";
 import { SettingsStore } from "../src/settings/store";
 import { parseFrontmatter } from "../src/skills/metadata";
+import { repointSources } from "../src/deploy/evidence";
 import { SkillStore } from "../src/skills/store";
 import { hashDir } from "../src/util/hash";
 import { agentKeyFromName, firstFreeName, sanitizeSkillName, slugify } from "../src/util/names";
@@ -102,6 +103,39 @@ describe("storage", () => {
     settings.set("deployMode", "copy");
     expect(settings.all().deployMode).toBe("copy");
     expect(() => settings.set("proxyUrl", "ftp://x")).toThrow();
+    db.close();
+  });
+
+  it("moves a skill's last changed time on edits only", () => {
+    const db = new Database(join(temp.dir, "test.db"));
+    const store = new SkillStore(db);
+    const source = join(temp.dir, "src", "alpha");
+    const { id } = store.insert({
+      name: "alpha",
+      description: "Old words",
+      sourceType: "local",
+      sourceRef: source,
+      libraryPath: join(temp.dir, "skills/alpha"),
+      contentHash: "h",
+      updateStatus: "local_only",
+      updatedAt: 1000,
+    });
+    const at = (): number => store.get(id).updatedAt;
+    // Where it comes from and how it was checked: not an edit.
+    repointSources(store, source);
+    expect(store.get(id).sourceRef).toBe(join(temp.dir, "skills/alpha"));
+    store.update(id, { updateStatus: "error", lastCheckedAt: 5, note: "mine", authored: true });
+    store.update(id, { libraryPath: join(temp.dir, "moved/alpha") });
+    // The same words written again change nothing.
+    store.update(id, { name: "alpha", description: "Old words", contentHash: "h" });
+    expect(at()).toBe(1000);
+
+    store.update(id, { description: "New words" });
+    expect(at()).toBeGreaterThan(1000);
+    store.update(id, { contentHash: "h2", updatedAt: 2000 });
+    expect(at()).toBe(2000);
+    store.update(id, { contentHash: "h3" });
+    expect(at()).toBeGreaterThan(2000);
     db.close();
   });
 });

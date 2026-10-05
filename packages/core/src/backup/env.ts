@@ -111,7 +111,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
       const skill = typeof file.id === "string" ? deps.store.find(file.id) : null;
       const revision = typeof file.source?.revision === "string" ? file.source.revision : null;
       if (!skill || skill.sourceRevision === revision) continue;
-      deps.store.update(skill.id, { sourceRevision: revision, updatedAt: skill.updatedAt });
+      deps.store.update(skill.id, { sourceRevision: revision });
     }
   }
 

@@ -154,8 +154,6 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
         lastCheckedAt: Date.now(),
         lastCheckError: null,
         authored: false,
-        // Linking changes where it comes from, not the skill itself.
-        updatedAt: fresh.updatedAt,
       });
       // Identical (perhaps but for line endings): the library copy is what came from the source.
       const snapshot = identical

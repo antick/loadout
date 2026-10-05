@@ -241,9 +241,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       );
       if (!isApproved(plan.approval, plan.domain, removals)) {
         const patch = plan.declined(fresh);
-        const skill = patch
-          ? store.update(fresh.id, { ...patch, updatedAt: fresh.updatedAt })
-          : fresh;
+        const skill = patch ? store.update(fresh.id, patch) : fresh;
         const approval = approvalToken(plan.domain, removals);
         return {
           skill,
@@ -272,7 +270,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         skill = await installOver(fresh, changedDir, record);
         deps.safety?.remember(skill, safetyReport);
       } else {
-        skill = store.update(fresh.id, { ...patchFromRecord(record), updatedAt: fresh.updatedAt });
+        skill = store.update(fresh.id, patchFromRecord(record));
         ctx.activity.record("update", fresh.name, NO_CHANGES_DETAIL);
       }
 
@@ -296,15 +294,13 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     // or upstream simply moved on since the user compared.
     const quiet: readonly ErrorCode[] = ["CANCELLED", "BUSY", "CHANGED_ON_DISK"];
     if (quiet.some((code) => isAppError(error, code))) return;
-    const skill = store.find(skillId);
-    if (!skill) return;
+    if (!store.find(skillId)) return;
     if (isAppError(error, "UNSAFE")) {
       // Nothing is wrong with the source: a new version is there, and it waits for the user.
       store.update(skillId, {
         updateStatus: "update_available",
         lastCheckError: FLAGGED_UPDATE,
         lastCheckedAt: Date.now(),
-        updatedAt: skill.updatedAt,
       });
       ctx.touched("skills");
       return;
@@ -314,7 +310,6 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       updateStatus: isAppError(error, "NOT_FOUND") ? "source_missing" : "error",
       lastCheckError: errorMessage(error),
       lastCheckedAt: Date.now(),
-      updatedAt: skill.updatedAt,
     });
     ctx.touched("skills");
   }
@@ -437,7 +432,6 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           updateStatus: "source_missing",
           lastCheckError: errorMessage(error),
           lastCheckedAt: Date.now(),
-          updatedAt: skill.updatedAt,
         });
         ctx.touched("skills");
       }

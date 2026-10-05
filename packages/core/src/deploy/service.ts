@@ -222,11 +222,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
           }
         }
         const kept = fresh.blockedAgents.filter((key) => !wanted.includes(key));
-        // Like tags, a block is not an edit of the skill: its "last changed" time stays.
-        return store.update(skillId, {
-          blockedAgents: blocked ? [...kept, ...wanted] : kept,
-          updatedAt: fresh.updatedAt,
-        });
+        return store.update(skillId, { blockedAgents: blocked ? [...kept, ...wanted] : kept });
       });
       ctx.touched("skills");
       return skill;

@@ -24,6 +24,16 @@ import {
 
 export type { DeploymentRecord, InstalledSnapshot, NewSkill, SkillPatch } from "./store-rows";
 
+/**
+ * What a skill says and holds. Changing one is an edit, which moves `updatedAt` (Changed, and the
+ * Recently updated sort); where it comes from, how it was checked, its agents and notes do not.
+ */
+const EDIT_FIELDS = [
+  "name",
+  "description",
+  "contentHash",
+] as const satisfies readonly (keyof SkillPatch)[];
+
 const NO_CHECKS: SkillInspector = {
   factsOf: () => ({ issues: [], manualOnly: false, traits: [], behaviourFields: [] }),
 };
@@ -226,11 +236,12 @@ export class SkillStore {
     return this.get(id);
   }
 
+  /** `updatedAt` moves only on an edit (see `EDIT_FIELDS`), unless the patch sets it. */
   update(id: string, patch: SkillPatch): Skill {
-    const entries = Object.entries({ updatedAt: Date.now(), ...patch }) as [
-      keyof SkillPatch,
-      unknown,
-    ][];
+    const edit = patch.updatedAt === undefined && this.#edits(id, patch);
+    const stamped = edit ? { updatedAt: Date.now(), ...patch } : patch;
+    const entries = Object.entries(stamped) as [keyof SkillPatch, unknown][];
+    if (entries.length === 0) return this.get(id);
     const assignments = entries.map(([key]) => `${PATCH_COLUMNS[key]} = ?`).join(", ");
     const values = entries.map(([key, value]) => {
       if (LIST_COLUMNS.has(key)) return encodeList(value as string[] | null);
@@ -239,6 +250,17 @@ export class SkillStore {
     });
     this.#db.run(`UPDATE skills SET ${assignments} WHERE id = ?`, ...values, id);
     return this.get(id);
+  }
+
+  /** The patch changes what the skill says or holds, not only how it is kept. */
+  #edits(id: string, patch: SkillPatch): boolean {
+    const touched = EDIT_FIELDS.filter((key) => key in patch);
+    if (touched.length === 0) return false;
+    const row = this.#db.get<Record<string, unknown>>(
+      `SELECT ${touched.map((key) => PATCH_COLUMNS[key]).join(", ")} FROM skills WHERE id = ?`,
+      id,
+    );
+    return touched.some((key) => (patch[key] ?? null) !== (row?.[PATCH_COLUMNS[key]] ?? null));
   }
 
   delete(id: string): void {
