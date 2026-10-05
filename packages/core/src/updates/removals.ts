@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { PendingRemoval } from "@loadout/shared";
 import { notFound } from "../errors";
 import { isIgnoredContentName } from "../util/hash";
+import { compareText } from "../util/text";
 
 /**
  * The removal guard: before an update replaces a folder, list what the user would lose, and only
@@ -96,10 +97,6 @@ export function listReplacedEdits(
     if (!replacement || !replacement.equals(current)) replaced.push(segments.join("/"));
   }
   return replaced.sort(compareText);
-}
-
-function compareText(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /** One fixed order for the token and for display, so the same list always yields the same token. */

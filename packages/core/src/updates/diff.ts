@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { FileDiffEntry, FileDiffKind } from "@loadout/shared";
 import { type ContentFile, listContentFiles } from "../util/hash";
+import { compareText } from "../util/text";
 
 /** Files larger than this are compared but never sent to the UI as text. */
 export const MAX_DIFF_TEXT_BYTES = 256 * 1024;
@@ -75,7 +76,7 @@ export function diffTrees(
 ): FileDiffEntry[] {
   const before = new Map(listContentFiles(beforeDir).map((file) => [file.relativePath, file]));
   const after = new Map(listContentFiles(afterDir).map((file) => [file.relativePath, file]));
-  const paths = [...new Set([...before.keys(), ...after.keys()])].sort((a, b) => (a < b ? -1 : 1));
+  const paths = [...new Set([...before.keys(), ...after.keys()])].sort(compareText);
 
   const entries: FileDiffEntry[] = [];
   for (const path of paths) {

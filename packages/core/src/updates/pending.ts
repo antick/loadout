@@ -4,6 +4,7 @@ import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
 import { lstatOrNull, targetIdentity } from "../util/fs";
 import { fileDigests } from "../util/hash";
+import { compareText } from "../util/text";
 import { LIBRARY_LOCATION, listRemovedPaths, listReplacedEdits, sortRemovals } from "./removals";
 
 /**
@@ -44,7 +45,7 @@ function pendingRemovals(
   const copies = store
     .deployments()
     .filter((row) => row.skillId === fresh.id && row.mode === "copy")
-    .sort((a, b) => (a.agentKey < b.agentKey ? -1 : 1));
+    .sort((a, b) => compareText(a.agentKey, b.agentKey));
   for (const row of copies) {
     // A copy made from the content that stays is not rewritten, so it loses nothing.
     if (!sourceDir && row.sourceHash === fresh.contentHash) continue;

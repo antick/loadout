@@ -8,6 +8,7 @@ import {
 } from "@loadout/shared";
 import { comparedLines, lineCounts, linesSimilarity, sharedCount } from "../util/similarity";
 import { yieldToEventLoop } from "../util/async";
+import { compareText } from "../util/text";
 
 /** What comparing two library skills needs to know about each. */
 export interface SimilarityInput {
@@ -195,7 +196,7 @@ function* comparePairs(
       });
     }
   }
-  return pairs.sort((x, y) => strength(y) - strength(x) || (x.key < y.key ? -1 : 1));
+  return pairs.sort((x, y) => strength(y) - strength(x) || compareText(x.key, y.key));
 }
 
 /**
