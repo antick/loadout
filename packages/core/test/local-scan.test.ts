@@ -60,7 +60,7 @@ function librarySkill(dirName: string, overrides: Partial<Skill> = {}): Skill {
     issues: [],
     manualOnly: false,
     traits: [],
-    behaviourFields: [],
+    behaviorFields: [],
     authored: false,
     suggestFor: [],
     blockedAgents: [],

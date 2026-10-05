@@ -3,9 +3,9 @@ import { join } from "node:path";
 import {
   SKILL_DOCUMENT_FILES,
   SKILL_MARKER_FILES,
-  type SkillBehaviourField,
+  type SkillBehaviorField,
   type SkillTrait,
-  behaviourFieldsIn,
+  behaviorFieldsIn,
   isManualOnly,
   traitsFromFrontmatter,
   findFrontmatter,
@@ -24,7 +24,7 @@ export interface SkillFrontmatter {
   /** Hooks, MCP servers and pre-approved tools the frontmatter declares. */
   traits: SkillTrait[];
   /** Fields the frontmatter uses that some agents skip (`allowed-tools`, `model`, `hooks`...). */
-  behaviourFields: SkillBehaviourField[];
+  behaviorFields: SkillBehaviorField[];
 }
 
 const DOCUMENT_SEARCH_DEPTH = 4;
@@ -33,7 +33,7 @@ const EMPTY: SkillFrontmatter = {
   description: null,
   manualOnly: false,
   traits: [],
-  behaviourFields: [],
+  behaviorFields: [],
 };
 
 /** Read `name`, `description` and the manual-only flag from YAML frontmatter. Never throws. */
@@ -45,7 +45,7 @@ export function parseFrontmatter(text: string): SkillFrontmatter {
     description: textField(record, "description"),
     manualOnly: isManualOnly(record),
     traits: traitsFromFrontmatter(record),
-    behaviourFields: behaviourFieldsIn(record),
+    behaviorFields: behaviorFieldsIn(record),
   };
 }
 

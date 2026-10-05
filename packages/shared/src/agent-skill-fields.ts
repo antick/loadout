@@ -6,7 +6,7 @@ import { isFilled } from "./skill-traits";
  * Some agents read them; others skip them without a word, and the skill then behaves differently
  * there (a "manual only" skill that the model may still start by itself).
  */
-export const SKILL_BEHAVIOUR_FIELDS = [
+export const SKILL_BEHAVIOR_FIELDS = [
   "allowed-tools",
   "disallowed-tools",
   MANUAL_ONLY_KEY,
@@ -20,7 +20,7 @@ export const SKILL_BEHAVIOUR_FIELDS = [
   "paths",
   "shell",
 ] as const;
-export type SkillBehaviourField = (typeof SKILL_BEHAVIOUR_FIELDS)[number];
+export type SkillBehaviorField = (typeof SKILL_BEHAVIOR_FIELDS)[number];
 
 /**
  * How sure the docs make us that an agent skips a field it does not list.
@@ -32,7 +32,7 @@ export type FieldKnowledgeBasis = "complete" | "table";
 export interface AgentFieldKnowledge {
   basis: FieldKnowledgeBasis;
   /** The behaviour fields the agent's own documentation describes for skills. */
-  reads: readonly SkillBehaviourField[];
+  reads: readonly SkillBehaviorField[];
   /** Where that was read. */
   source: string;
 }
@@ -45,7 +45,7 @@ export interface AgentFieldKnowledge {
 export const AGENT_FIELD_KNOWLEDGE: Readonly<Record<string, AgentFieldKnowledge>> = {
   claude_code: {
     basis: "complete",
-    reads: SKILL_BEHAVIOUR_FIELDS,
+    reads: SKILL_BEHAVIOR_FIELDS,
     source: "https://code.claude.com/docs/en/skills",
   },
   opencode: {
@@ -64,21 +64,21 @@ export const AGENT_FIELD_KNOWLEDGE: Readonly<Record<string, AgentFieldKnowledge>
 export type FieldNoteLevel = "ignored" | "undocumented";
 
 export interface AgentFieldNote {
-  field: SkillBehaviourField;
+  field: SkillBehaviorField;
   level: FieldNoteLevel;
 }
 
 /** A value that changes what the field asks for: `disable-model-invocation: false` asks for nothing. */
-function asksForSomething(field: SkillBehaviourField, value: unknown): boolean {
+function asksForSomething(field: SkillBehaviorField, value: unknown): boolean {
   if (field === MANUAL_ONLY_KEY) return isManualOnlyValue(value);
   if (field === "user-invocable")
     return value === false || String(value).trim().toLowerCase() === "false";
   return isFilled(value);
 }
 
-/** The behaviour fields a parsed frontmatter really uses, in the order of `SKILL_BEHAVIOUR_FIELDS`. */
-export function behaviourFieldsIn(data: Readonly<Record<string, unknown>>): SkillBehaviourField[] {
-  return SKILL_BEHAVIOUR_FIELDS.filter((field) => asksForSomething(field, data[field]));
+/** The behaviour fields a parsed frontmatter really uses, in the order of `SKILL_BEHAVIOR_FIELDS`. */
+export function behaviorFieldsIn(data: Readonly<Record<string, unknown>>): SkillBehaviorField[] {
+  return SKILL_BEHAVIOR_FIELDS.filter((field) => asksForSomething(field, data[field]));
 }
 
 /**
@@ -89,7 +89,7 @@ export function fieldNotesFor(fields: readonly string[], agentKey: string): Agen
   const knowledge = AGENT_FIELD_KNOWLEDGE[agentKey];
   if (!knowledge) return [];
   const level: FieldNoteLevel = knowledge.basis === "complete" ? "ignored" : "undocumented";
-  return SKILL_BEHAVIOUR_FIELDS.filter(
+  return SKILL_BEHAVIOR_FIELDS.filter(
     (field) => fields.includes(field) && !knowledge.reads.includes(field),
   ).map((field) => ({ field, level }));
 }

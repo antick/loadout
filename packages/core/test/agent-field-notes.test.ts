@@ -1,11 +1,11 @@
-import { AGENT_FIELD_KNOWLEDGE, behaviourFieldsIn, fieldNotesFor } from "@loadout/shared";
+import { AGENT_FIELD_KNOWLEDGE, behaviorFieldsIn, fieldNotesFor } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { parseFrontmatter } from "../src/skills/metadata";
 
 describe("fields a skill uses that agents may skip", () => {
   it("lists behaviour fields in a fixed order and leaves name and description out", () => {
     expect(
-      behaviourFieldsIn({
+      behaviorFieldsIn({
         name: "a",
         description: "b",
         model: "opus",
@@ -17,7 +17,7 @@ describe("fields a skill uses that agents may skip", () => {
 
   it("ignores a field that asks for nothing", () => {
     expect(
-      behaviourFieldsIn({
+      behaviorFieldsIn({
         "disable-model-invocation": false,
         "user-invocable": true,
         "allowed-tools": "  ",
@@ -29,13 +29,13 @@ describe("fields a skill uses that agents may skip", () => {
 
   it("counts the two switches only in the direction that changes something", () => {
     expect(
-      behaviourFieldsIn({ "disable-model-invocation": "True", "user-invocable": false }),
+      behaviorFieldsIn({ "disable-model-invocation": "True", "user-invocable": false }),
     ).toEqual(["disable-model-invocation", "user-invocable"]);
   });
 
   it("is read when the frontmatter of a document is parsed", () => {
-    expect(parseFrontmatter("---\nname: a\nmodel: opus\n---\n").behaviourFields).toEqual(["model"]);
-    expect(parseFrontmatter("no frontmatter").behaviourFields).toEqual([]);
+    expect(parseFrontmatter("---\nname: a\nmodel: opus\n---\n").behaviorFields).toEqual(["model"]);
+    expect(parseFrontmatter("no frontmatter").behaviorFields).toEqual([]);
   });
 });
 

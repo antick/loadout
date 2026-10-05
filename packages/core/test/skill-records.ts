@@ -30,7 +30,7 @@ export function skillRecord(id: string, extra: Partial<Skill> = {}): Skill {
     issues: [],
     manualOnly: false,
     traits: [],
-    behaviourFields: [],
+    behaviorFields: [],
     authored: false,
     suggestFor: [],
     blockedAgents: [],

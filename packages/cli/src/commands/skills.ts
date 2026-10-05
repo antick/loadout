@@ -189,7 +189,7 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
         problem,
         blocked: skill.blockedAgents.includes(agent.key),
         // Frontmatter this agent's documentation says it does not act on.
-        fieldNotes: fieldNotesFor(skill.behaviourFields, agent.key),
+        fieldNotes: fieldNotesFor(skill.behaviorFields, agent.key),
       };
     });
   const value = {

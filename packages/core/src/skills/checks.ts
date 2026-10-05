@@ -1,6 +1,6 @@
 import { basename, join } from "node:path";
 import {
-  type SkillBehaviourField,
+  type SkillBehaviorField,
   type SkillIssue,
   type SkillTrait,
   checkSkillDocument,
@@ -27,7 +27,7 @@ export interface SkillFacts {
   /** What the skill can make an agent do beyond reading it (scripts, hooks, MCP, tools). */
   traits: SkillTrait[];
   /** Fields it uses that some agents skip; see `fieldNotesFor`. */
-  behaviourFields: SkillBehaviourField[];
+  behaviorFields: SkillBehaviorField[];
 }
 
 /** Checks of skills, remembered per content hash so listing the library stays cheap. */
@@ -61,7 +61,7 @@ function inspectSkillFacts(dir: string): SkillFacts {
     issues: inspectSkillFolder(dir, document),
     manualOnly: frontmatter.manualOnly,
     traits: mergeTraits(frontmatter.traits, folderTraits(dir)),
-    behaviourFields: frontmatter.behaviourFields,
+    behaviorFields: frontmatter.behaviorFields,
   };
 }
 
@@ -83,7 +83,7 @@ export function createSkillInspector(inspect = inspectSkillFacts): SkillInspecto
           issues: [skillIssue("frontmatter_invalid", { reason }, 1)],
           manualOnly: false,
           traits: [],
-          behaviourFields: [],
+          behaviorFields: [],
         };
       }
       if (key) cache.set(skill.id, { key, facts });

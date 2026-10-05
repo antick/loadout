@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 const MANUAL_ONLY_FIELD = "disable-model-invocation";
 
 export interface AgentFieldNoteProps {
-  skill: Pick<Skill, "behaviourFields">;
+  skill: Pick<Skill, "behaviorFields">;
   agentKey: string;
   agentName: string;
 }
@@ -18,7 +18,7 @@ export interface AgentFieldNoteProps {
  */
 export function AgentFieldNote({ skill, agentKey, agentName }: AgentFieldNoteProps): ReactNode {
   const { t } = useTranslation();
-  const notes = fieldNotesFor(skill.behaviourFields, agentKey);
+  const notes = fieldNotesFor(skill.behaviorFields, agentKey);
   const [first] = notes;
   if (!first) return null;
   const fields = notes.map((note) => note.field).join(", ");

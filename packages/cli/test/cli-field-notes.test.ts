@@ -23,7 +23,7 @@ afterEach(() => sandbox.cleanup());
 describe("frontmatter that some agents skip", () => {
   it("lists the fields a skill uses on the skill", async () => {
     const skill = (await cli("skills", "show", "picky", "--json")).json<Skill>();
-    expect(skill.behaviourFields).toEqual(["allowed-tools", "disable-model-invocation", "model"]);
+    expect(skill.behaviorFields).toEqual(["allowed-tools", "disable-model-invocation", "model"]);
   });
 
   it("says nothing for Claude Code, which reads them all", async () => {

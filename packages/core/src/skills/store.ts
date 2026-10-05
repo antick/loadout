@@ -35,7 +35,7 @@ const EDIT_FIELDS = [
 ] as const satisfies readonly (keyof SkillPatch)[];
 
 const NO_CHECKS: SkillInspector = {
-  factsOf: () => ({ issues: [], manualOnly: false, traits: [], behaviourFields: [] }),
+  factsOf: () => ({ issues: [], manualOnly: false, traits: [], behaviorFields: [] }),
 };
 
 /**
@@ -135,7 +135,7 @@ export class SkillStore {
       issues: facts.issues,
       manualOnly: facts.manualOnly,
       traits: facts.traits,
-      behaviourFields: facts.behaviourFields,
+      behaviorFields: facts.behaviorFields,
       authored: row.authored === 1,
       suggestFor: decodeList(row.suggest_for),
       blockedAgents: decodeList(row.blocked_agents),

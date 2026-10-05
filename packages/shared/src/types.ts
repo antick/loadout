@@ -1,6 +1,6 @@
 import type { AgentCategory, AgentReload } from "./agents";
 import type { SkillIssue } from "./skill-checks";
-import type { SkillBehaviourField } from "./agent-skill-fields";
+import type { SkillBehaviorField } from "./agent-skill-fields";
 import type { SkillTrait } from "./skill-traits";
 import type { InstallOptions } from "./safety";
 
@@ -136,9 +136,9 @@ export interface Skill {
   traits: SkillTrait[];
   /**
    * Frontmatter fields it uses that some agents skip (`allowed-tools`, `model`, `hooks`...).
-   * `fieldNotesFor(skill.behaviourFields, agentKey)` says which agents do not act on them.
+   * `fieldNotesFor(skill.behaviorFields, agentKey)` says which agents do not act on them.
    */
-  behaviourFields: SkillBehaviourField[];
+  behaviorFields: SkillBehaviorField[];
   /**
    * The user said they wrote it: no source is looked for. Only ever set on skills without one
    * (see `canLinkSource`).

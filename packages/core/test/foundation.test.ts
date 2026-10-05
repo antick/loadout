@@ -41,14 +41,14 @@ describe("frontmatter", () => {
       description: null,
       manualOnly: false,
       traits: [],
-      behaviourFields: [],
+      behaviorFields: [],
     };
     expect(parseFrontmatter("---\nname: a\ndescription: b c\n---\nbody")).toEqual({
       name: "a",
       description: "b c",
       manualOnly: false,
       traits: [],
-      behaviourFields: [],
+      behaviorFields: [],
     });
     expect(parseFrontmatter("no frontmatter")).toEqual(empty);
     expect(parseFrontmatter("---\nname: [oops\n---")).toEqual(empty);
