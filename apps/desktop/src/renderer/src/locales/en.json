@@ -116,7 +116,8 @@
     "clickToInstall": "Click to install",
     "clickToRemove": "Click to remove",
     "more_one": "{{count}} more agent",
-    "more_other": "{{count}} more agents"
+    "more_other": "{{count}} more agents",
+    "moreDeployed": "Installed for {{count}} of them"
   },
   "selection": {
     "toolbar": "Selection actions",

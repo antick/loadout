@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export type BadgeAgent = Pick<AgentInfo, "key" | "displayName">;
 
 export interface AgentBadgeRowProps<T extends BadgeAgent = AgentInfo> {
-  /** Agents to show, normally the available ones. */
+  /** Agents to show, normally the available ones, in the user's order (kept as given). */
   agents: readonly T[];
   deployedKeys: ReadonlySet<string>;
   pendingKeys?: ReadonlySet<string>;
@@ -22,13 +22,15 @@ export interface AgentBadgeRowProps<T extends BadgeAgent = AgentInfo> {
   blockedKeys?: ReadonlySet<string>;
   /** Called with the state the user wants for that agent. Omit for a read-only row. */
   onToggle?: (agent: T, deploy: boolean) => void;
-  maxVisible?: number;
   className?: string;
 }
 
 const FOCUS_RING = "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
-/** One avatar per agent showing deployed or not. Click to install or remove; extras go in "+N". */
+/**
+ * One avatar per agent showing deployed or not. Click to install or remove; extras go in "+N",
+ * which says how many of them have the skill.
+ */
 export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
   agents,
   deployedKeys,
@@ -36,18 +38,17 @@ export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
   warningKeys,
   blockedKeys,
   onToggle,
-  maxVisible = AGENT_BADGE_MAX_VISIBLE,
   className,
 }: AgentBadgeRowProps<T>): ReactNode {
   const { t } = useTranslation();
   if (agents.length === 0) return null;
 
-  // Deployed agents first, so what matters stays out of the overflow.
-  const ordered = [...agents].sort(
-    (a, b) => Number(deployedKeys.has(b.key)) - Number(deployedKeys.has(a.key)),
-  );
-  const visible = ordered.slice(0, maxVisible);
-  const overflow = ordered.slice(maxVisible);
+  // The user's order, never the deployed state: a click flips that at once, and a badge that
+  // moved (or slipped into "+N") under the cursor would take the next click.
+  const visible = agents.slice(0, AGENT_BADGE_MAX_VISIBLE);
+  const overflow = agents.slice(AGENT_BADGE_MAX_VISIBLE);
+  const overflowDeployed = overflow.filter((agent) => deployedKeys.has(agent.key)).length;
+  const overflowLabel = t("agentBadges.more", { count: overflow.length });
 
   const badge = (agent: T, withName: boolean): ReactNode => {
     const deployed = deployedKeys.has(agent.key);
@@ -129,9 +130,14 @@ export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label={t("agentBadges.more", { count: overflow.length })}
+              aria-label={
+                overflowDeployed > 0
+                  ? `${overflowLabel}. ${t("agentBadges.moreDeployed", { count: overflowDeployed })}`
+                  : overflowLabel
+              }
               className={cn(
-                "inline-flex h-5 items-center rounded bg-muted px-1 font-mono text-[0.625rem] text-muted-foreground hover:text-foreground",
+                "inline-flex h-5 items-center rounded bg-muted px-1 font-mono text-[0.625rem] hover:text-foreground",
+                overflowDeployed > 0 ? "font-semibold text-foreground" : "text-muted-foreground",
                 FOCUS_RING,
               )}
             >
