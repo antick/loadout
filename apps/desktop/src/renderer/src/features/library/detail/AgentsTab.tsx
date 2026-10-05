@@ -1,6 +1,6 @@
 import type { AgentInfo, Skill } from "@loadout/shared";
 import { Bot, ChevronRight, MoreHorizontal } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { EmptyState } from "@/components/EmptyState";
@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { useSetBlocked } from "@/features/library/library-mutations";
 import { useApplySkills, useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
+import { useSkillAgentKeys } from "@/hooks/use-skill-agent-keys";
 import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
 import { SECTION_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
@@ -123,11 +124,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
   const agents = useAgents();
   const apply = useApplySkills();
   const [showUnavailable, setShowUnavailable] = useState(false);
-  const deployedKeys = useMemo(
-    () => new Set(skill.deployments.map((entry) => entry.agentKey)),
-    [skill.deployments],
-  );
-  const blockedKeys = useMemo(() => new Set(skill.blockedAgents), [skill.blockedAgents]);
+  const { deployed: deployedKeys, blocked: blockedKeys } = useSkillAgentKeys(skill);
 
   if (agents.isPending) {
     return (
