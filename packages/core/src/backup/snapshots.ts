@@ -36,18 +36,13 @@ export async function restorePointId(env: BackupEnv, revision: string): Promise<
   return result.code === 0 ? result.stdout.trim() || null : null;
 }
 
-/** The newest restore points of the current branch, newest first. Empty before the first commit. */
-export async function listSnapshots(
-  env: BackupEnv,
-  limit = DEFAULT_SNAPSHOT_LIMIT,
-): Promise<Snapshot[]> {
+/** Restore points as `git log` with `args` lists them; empty when it fails. */
+async function readSnapshots(env: BackupEnv, args: string[]): Promise<Snapshot[]> {
   const result = await env.git.probe([
     "log",
-    "--first-parent",
     `--abbrev=${ID_LENGTH}`,
-    `--max-count=${Math.max(1, limit)}`,
     `--format=${LOG_FORMAT}%x01`,
-    "HEAD",
+    ...args,
   ]);
   if (result.code !== 0) return [];
   const snapshots: Snapshot[] = [];
@@ -65,10 +60,32 @@ export async function listSnapshots(
   return snapshots;
 }
 
+/** The newest restore points of the current branch, newest first. Empty before the first commit. */
+export function listSnapshots(env: BackupEnv, limit = DEFAULT_SNAPSHOT_LIMIT): Promise<Snapshot[]> {
+  return readSnapshots(env, ["--first-parent", `--max-count=${Math.max(1, limit)}`, "HEAD"]);
+}
+
 /** True when `commit` is in the current branch's history. */
 async function inHistory(env: BackupEnv, commit: string): Promise<boolean> {
   const result = await env.git.probe(["merge-base", "--is-ancestor", commit, "HEAD"]);
   return result.code === 0;
+}
+
+/** The commit restore point `id` names; refused when a restore to it is not possible. */
+async function findRestorePoint(env: BackupEnv, id: string): Promise<string> {
+  if (!COMMIT_ID.test(id)) throw invalid(`"${id}" is not a backup version.`);
+  const commit = await resolveCommit(env, id);
+  if (!commit || !(await inHistory(env, commit))) throw notFound(`Backup version not found: ${id}`);
+  assertReadable(await schemaAt(env, commit));
+  return commit;
+}
+
+/** Restore point `id`, checked exactly as `restoreSnapshot` checks it, without restoring. */
+export async function describeRestorePoint(env: BackupEnv, id: string): Promise<Snapshot> {
+  const commit = await findRestorePoint(env, id);
+  const [snapshot] = await readSnapshots(env, ["--max-count=1", commit]);
+  if (!snapshot) throw notFound(`Backup version not found: ${id}`);
+  return snapshot;
 }
 
 /**
@@ -77,10 +94,7 @@ async function inHistory(env: BackupEnv, commit: string): Promise<boolean> {
  * content forward. Must run inside the library lock.
  */
 export async function restoreSnapshot(env: BackupEnv, id: string): Promise<string> {
-  if (!COMMIT_ID.test(id)) throw invalid(`"${id}" is not a backup version.`);
-  const commit = await resolveCommit(env, id);
-  if (!commit || !(await inHistory(env, commit))) throw notFound(`Backup version not found: ${id}`);
-  assertReadable(await schemaAt(env, commit));
+  const commit = await findRestorePoint(env, id);
 
   await commitLibrary(env, BEFORE_RESTORE_MESSAGE);
   const safety = await safetyPoint(env);

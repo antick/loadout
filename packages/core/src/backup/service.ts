@@ -14,7 +14,12 @@ import { cleanUpUnpushed } from "./history-cleanup";
 import { readIgnoreRules, writeIgnoreRules } from "./ignore-rules";
 import { allowSecrets, scanForPush, scanUncommittedChanges } from "./secrets";
 import { buildSizeReport, refreshIgnoreFile } from "./size";
-import { DEFAULT_SNAPSHOT_LIMIT, listSnapshots, restoreSnapshot } from "./snapshots";
+import {
+  DEFAULT_SNAPSHOT_LIMIT,
+  describeRestorePoint,
+  listSnapshots,
+  restoreSnapshot,
+} from "./snapshots";
 import { conflictDiff, currentLocalTree, previewDiff, previewSync } from "./review";
 import { readStatus } from "./status";
 import { fetchRemote, pullRemote, syncLibrary } from "./sync";
@@ -116,6 +121,11 @@ export function createBackupOperations(
     snapshots: async (limit = DEFAULT_SNAPSHOT_LIMIT) => {
       assertRepo(env);
       return listSnapshots(env, limit);
+    },
+
+    restorePoint: async (tag) => {
+      assertRepo(env);
+      return describeRestorePoint(env, tag);
     },
 
     restore: async (tag) => {

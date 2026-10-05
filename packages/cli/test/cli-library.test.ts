@@ -107,12 +107,56 @@ describe("git backup", () => {
     expect((await cli("git", "versions", "--limit", "5", "--json")).json()).toHaveLength(1);
     expect((await cli("git", "versions", "--limit", "many", "--json")).code).toBe(EXIT_USAGE);
 
-    // An unknown version fails alike with and without --dry-run or --yes.
-    for (const extra of [[], ["--dry-run"], ["--yes"]]) {
-      const run = await cli("git", "restore", "sometag", ...extra, "--json");
-      expect(run.code, extra.join(" ")).toBe(EXIT_FAILED);
-      expect(run.json()).toMatchObject({ code: "NOT_FOUND" });
+    // A version that is not one, or not in the history, fails alike with and without --dry-run
+    // or --yes.
+    const refusals = [
+      ["sometag", "INVALID_INPUT"],
+      ["deadbeef00", "NOT_FOUND"],
+    ];
+    for (const [version, code] of refusals) {
+      for (const extra of [[], ["--dry-run"], ["--yes"]]) {
+        const run = await cli("git", "restore", version ?? "", ...extra, "--json");
+        expect(run.code, `${version} ${extra.join(" ")}`).toBe(EXIT_FAILED);
+        expect(run.json()).toMatchObject({ code });
+      }
     }
+  });
+
+  it("restores a version older than the list shows, named by its short id", async () => {
+    expect((await cli("git", "init")).code).toBe(EXIT_OK);
+    const library = sandbox.libraryDir;
+    const git = (...args: string[]): string =>
+      execFileSync(
+        "git",
+        [
+          "-c",
+          "user.name=Test",
+          "-c",
+          "user.email=test@example.test",
+          "-c",
+          "commit.gpgsign=false",
+          ...args,
+        ],
+        { cwd: library, encoding: "utf8" },
+      ).trim();
+    writeFileSync(join(library, "old.md"), "old\n");
+    git("add", "-A");
+    git("commit", "-qm", "old version");
+    const old = git("rev-parse", "--short=7", "HEAD");
+    git("rm", "-q", "old.md");
+    git("commit", "-qm", "old file gone");
+    for (let index = 0; index < 50; index += 1) {
+      git("commit", "-q", "--allow-empty", "-m", `later ${index}`);
+    }
+    const listed = (await cli("git", "versions", "--json")).json<{ commit: string }[]>();
+    expect(listed.some((version) => version.commit.startsWith(old))).toBe(false);
+
+    const dry = await cli("git", "restore", old, "--dry-run", "--yes", "--json");
+    expect(dry.code, dry.stderr).toBe(EXIT_OK);
+    expect(existsSync(join(library, "old.md"))).toBe(false);
+    const run = await cli("git", "restore", old, "--yes", "--json");
+    expect(run.code, run.stderr).toBe(EXIT_OK);
+    expect(existsSync(join(library, "old.md"))).toBe(true);
   });
 });
 
