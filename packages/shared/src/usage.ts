@@ -4,15 +4,17 @@
  * the agent, the time and the project folder are kept; nothing leaves the computer.
  */
 
+import { DAY_MS, MINUTE_MS } from "./constants";
+
 /** Agents whose session logs Loadout can read, by agent key. */
 export const USAGE_AGENT_KEYS = ["claude_code", "codex"] as const;
 export type UsageAgentKey = (typeof USAGE_AGENT_KEYS)[number];
 
 /** "Recent" in the report: uses in this many days count as recent, older skills as unused. */
 export const USAGE_RECENT_DAYS = 30;
-export const USAGE_RECENT_MS = USAGE_RECENT_DAYS * 24 * 60 * 60 * 1000;
+export const USAGE_RECENT_MS = USAGE_RECENT_DAYS * DAY_MS;
 /** A report older than this is scanned again when the app shows usage. */
-export const USAGE_STALE_MS = 15 * 60 * 1000;
+export const USAGE_STALE_MS = 15 * MINUTE_MS;
 /** Project folders listed per skill, most recent first. */
 export const USAGE_PROJECTS_LIMIT = 5;
 

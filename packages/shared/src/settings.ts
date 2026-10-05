@@ -1,3 +1,4 @@
+import { HOUR_MS } from "./constants";
 import {
   DEFAULT_LISTING_WINDOW,
   LISTING_WINDOW_CHOICES,
@@ -78,9 +79,9 @@ export const TEXT_SIZE_SCALE: Record<TextSizeSetting, number> = {
 
 export const AUTO_UPDATE_INTERVAL_MS: Record<AutoUpdateInterval, number> = {
   off: 0,
-  "1h": 60 * 60 * 1000,
-  "6h": 6 * 60 * 60 * 1000,
-  "24h": 24 * 60 * 60 * 1000,
+  "1h": HOUR_MS,
+  "6h": 6 * HOUR_MS,
+  "24h": 24 * HOUR_MS,
 };
 
 export const PROXY_URL_PATTERN = /^(https?|socks5):\/\//i;
