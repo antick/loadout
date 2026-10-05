@@ -98,6 +98,12 @@ const STATE_TONES: Record<Exclude<PickerRowState, "available">, StatusTone> = {
   unavailable: "neutral",
 };
 
+const isPickable = (info: PickerRowInfo): boolean =>
+  info.state === "available" || info.state === "conflict";
+
+const pickableIdsOf = (rows: readonly { skill: Skill; info: PickerRowInfo }[]): string[] =>
+  rows.filter(({ info }) => isPickable(info)).map(({ skill }) => skill.id);
+
 /** Pick library skills to add to an agent or a project: search, filters, target chips, range select. */
 export function AddFromLibrarySheet({
   open,
@@ -165,36 +171,41 @@ export function AddFromLibrarySheet({
     return rowState ?? fallback;
   }, [rowState, t]);
 
-  const rows = useMemo(
+  // Every row the targets allow, before search and filters: ticks belong to these, so narrowing
+  // the list to find another skill never drops the ones ticked already.
+  const allRows = useMemo(
     () =>
       (skills.data ?? [])
         .filter((skill) => !exclude?.(skill))
-        .filter((skill) => matchesSkillQuery(skill, query))
-        .filter((skill) => matchesTagFilter(skill.tags, tagFilter))
-        .filter((skill) => source === SOURCE_FILTER_ALL || skill.sourceType === source)
         .map((skill) => ({ skill, info: infoFor(skill, agentKeys), note: featured?.get(skill.id) }))
         // Featured skills first; the sort is stable, so each group keeps the library order.
         .sort((a, b) => Number(b.note !== undefined) - Number(a.note !== undefined)),
-    [skills.data, exclude, query, tagFilter, source, infoFor, agentKeys, featured],
+    [skills.data, exclude, infoFor, agentKeys, featured],
+  );
+  const rows = useMemo(
+    () =>
+      allRows.filter(
+        ({ skill }) =>
+          matchesSkillQuery(skill, query) &&
+          matchesTagFilter(skill.tags, tagFilter) &&
+          (source === SOURCE_FILTER_ALL || skill.sourceType === source),
+      ),
+    [allRows, query, tagFilter, source],
   );
 
-  const pickableIds = useMemo(
-    () =>
-      rows
-        .filter(({ info }) => info.state === "available" || info.state === "conflict")
-        .map(({ skill }) => skill.id),
-    [rows],
-  );
-  const selection = useSelection(pickableIds);
+  const allPickableIds = useMemo(() => pickableIdsOf(allRows), [allRows]);
+  // The shown ones only drive shift-ranges and Select all.
+  const pickableIds = useMemo(() => pickableIdsOf(rows), [rows]);
+  const selection = useSelection(pickableIds, { keepIds: allPickableIds });
   const { exit, select } = selection;
   // Ticked once the rows for this opening's targets are known (the render after opening), and
   // once a tag chip narrows the list to skills the agent is still missing.
   const [pendingSelect, setPendingSelect] = useState<readonly string[] | null>(null);
   useEffect(() => {
-    if (!pendingSelect || pickableIds.length === 0) return;
+    if (!pendingSelect || allPickableIds.length === 0) return;
     select(pendingSelect);
     setPendingSelect(null);
-  }, [pendingSelect, pickableIds, select]);
+  }, [pendingSelect, allPickableIds, select]);
 
   // Every opening starts clean, with the caller's preferred targets ticked.
   useEffect(() => {
@@ -221,10 +232,7 @@ export function AddFromLibrarySheet({
     if (added.length === 0) return;
     const missing = (skills.data ?? [])
       .filter((skill) => added.some((tag) => skill.tags.includes(tag)))
-      .filter((skill) => {
-        const state = infoFor(skill, agentKeys).state;
-        return state === "available" || state === "conflict";
-      })
+      .filter((skill) => isPickable(infoFor(skill, agentKeys)))
       .map((skill) => skill.id);
     setPendingSelect([...selection.selectedIds, ...missing]);
   };
@@ -314,7 +322,7 @@ export function AddFromLibrarySheet({
             variant="ghost"
             size="xs"
             disabled={pickableIds.length === 0}
-            onClick={selection.allSelected ? selection.clear : selection.selectAll}
+            onClick={selection.allSelected ? selection.deselectAll : selection.selectAll}
           >
             {selection.allSelected ? t("selection.selectNone") : t("selection.selectAll")}
           </Button>
@@ -334,7 +342,7 @@ export function AddFromLibrarySheet({
           ) : (
             <ul className="flex flex-col gap-0.5">
               {rows.map(({ skill, info, note }) => {
-                const pickable = info.state === "available" || info.state === "conflict";
+                const pickable = isPickable(info);
                 const checked = selection.isSelected(skill.id);
                 return (
                   <li key={skill.id}>
