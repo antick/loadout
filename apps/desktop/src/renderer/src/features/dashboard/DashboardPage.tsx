@@ -2,18 +2,15 @@ import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
+import { useAgents } from "@/hooks/queries/agents";
 import { useBackupStatus } from "@/hooks/queries/app";
-import { usePresets } from "@/hooks/queries/presets";
 import { useProjects } from "@/hooks/queries/projects";
 import { useSkills } from "@/hooks/queries/skills";
 import { AgentControlCard } from "./AgentControlCard";
 import { EVENING_HOUR, NOON_HOUR } from "./constants";
 import { DashboardStats } from "./DashboardStats";
 import { GettingStarted } from "./GettingStarted";
-import { QuickActions } from "./QuickActions";
 import { RecentActivity } from "./RecentActivity";
-import { RecentSkills } from "./RecentSkills";
 import { SkillUseCard } from "./SkillUseCard";
 import { Skeletons } from "@/components/Skeletons";
 
@@ -24,7 +21,7 @@ function greetingKey(hour: number): string {
   return hour < EVENING_HOUR ? "dashboard.greeting.afternoon" : "dashboard.greeting.evening";
 }
 
-/** The home screen: how the library is doing, shortcuts, and what happened lately. */
+/** The home screen: how the library is doing and what happened lately. */
 export function DashboardPage(): ReactNode {
   const { t } = useTranslation();
   // Read once when the page opens: the greeting does not change while it is on screen.
@@ -32,7 +29,6 @@ export function DashboardPage(): ReactNode {
   const skills = useSkills();
   const agents = useAgents();
   const projects = useProjects();
-  const presets = usePresets();
   const backup = useBackupStatus();
 
   if (skills.isError) {
@@ -51,21 +47,7 @@ export function DashboardPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 px-6 py-5">
       <PageHeader title={t("nav.dashboard")} />
-      <header>
-        <p className="type-display text-2xl">{t(greetingKey(hour))}</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {empty
-            ? t("dashboard.summaryEmpty")
-            : [
-                t("dashboard.summary.skills", { count: skillList.length }),
-                t("dashboard.summary.agents", {
-                  count: agentList.filter(isAgentAvailable).length,
-                }),
-                t("dashboard.summary.presets", { count: presets.data?.length ?? 0 }),
-                t("dashboard.summary.projects", { count: projects.data?.length ?? 0 }),
-              ].join(" · ")}
-        </p>
-      </header>
+      <p className="type-display text-2xl">{t(greetingKey(hour))}</p>
 
       <AgentControlCard />
 
@@ -83,13 +65,9 @@ export function DashboardPage(): ReactNode {
             projects={projects.data ?? []}
             backup={backup.data}
           />
-          <QuickActions backup={backup.data} />
           <div className="grid gap-6 xl:grid-cols-2">
             <RecentActivity />
-            <div className="flex flex-col gap-6">
-              <RecentSkills skills={skillList} />
-              <SkillUseCard skills={skillList} />
-            </div>
+            <SkillUseCard skills={skillList} />
           </div>
         </>
       )}

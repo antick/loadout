@@ -5,17 +5,6 @@
       "afternoon": "Good afternoon",
       "evening": "Good evening"
     },
-    "summary": {
-      "skills_one": "{{count}} skill in the library",
-      "skills_other": "{{count}} skills in the library",
-      "agents_one": "{{count}} agent connected",
-      "agents_other": "{{count}} agents connected",
-      "presets_one": "{{count}} preset",
-      "presets_other": "{{count}} presets",
-      "projects_one": "{{count}} project",
-      "projects_other": "{{count}} projects"
-    },
-    "summaryEmpty": "Welcome to {{app}}. Three steps and your agents share one set of skills.",
     "agentControl": {
       "title": "Let your agents manage skills themselves",
       "body": "One small skill teaches an agent to list, install and update skills through {{app}}'s command-line tool, so you can simply ask for it in a chat.",
@@ -51,9 +40,7 @@
     },
     "actions": {
       "install": "Install skills",
-      "scan": "Scan this machine",
-      "linkProject": "Link a project",
-      "backup": "Back up now"
+      "scan": "Scan this machine"
     },
     "activity": {
       "title": "Recent activity",
@@ -77,9 +64,6 @@
         "export": "Exported",
         "publish": "Published"
       }
-    },
-    "recent": {
-      "title": "Recently updated skills"
     },
     "start": {
       "title": "Get going in three steps",
