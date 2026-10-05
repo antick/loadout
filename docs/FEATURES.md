@@ -143,8 +143,8 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - Compare a conflict file by file before choosing a version.
 - Keep all your versions, or use all the remote ones, in one step when several skills conflict.
 - Shows what a running sync is doing: saving, downloading, merging, uploading.
-- A skill deleted on another device is kept in Recently removed; restoring it brings it back everywhere.
-- A sync that would delete many skills here stops and waits for you to review it.
+- A skill deleted on another device is kept in Recently removed, whichever merge is on; restoring it brings it back everywhere.
+- A sync that would delete many skills here stops and waits for you to review it, whichever merge is on.
 - Every backup, merge and restore is a version you can go back to (a commit, no tags); automatic backup after changes.
 - Blocks pushing anything that looks like a key or token.
 - `node_modules/`, `venv/`, `.env` and `.env.*` (not `.env.example`), logs and your own patterns stay out of the backup, and stay put when a sync updates the skill (or wait in Recently removed when the new version has a file at their path). Publishing leaves out the same list.

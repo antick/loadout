@@ -4,7 +4,7 @@ import { type MergeSummary, type MergedSkill, type SyncReviewAnswer } from "@loa
 import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
 import { LIBRARY_PLACE, type LibraryRecord, libraryRecordOf } from "../storage/removed-library";
-import { ensureDir, removePath, writeFileAtomic } from "../util/fs";
+import { ensureDir, isSkillDir, removePath, writeFileAtomic } from "../util/fs";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
 import { countConflicts, recordConflict } from "./conflict-store";
@@ -18,7 +18,15 @@ import {
   setAsideFolder,
   settleSetAside,
 } from "./ignored";
-import { assertDeletesReviewed, planChanged, planSides, readSides } from "./merge-input";
+import {
+  type MergeSides,
+  assertDeletesReviewed,
+  assertFoldersReviewed,
+  departingFolders,
+  planSides,
+  readSides,
+  skillFoldersHere,
+} from "./merge-input";
 import type { MergePlan, PresetVersions, SkillPlan, SkillVersions } from "./merge-plan";
 import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
 import { commitLibrary, requireBranch, resolveCommit, upstreamRef } from "./repo";
@@ -248,6 +256,54 @@ async function plainMerge(env: BackupEnv, theirs: string, message: string): Prom
   throw gitError(output);
 }
 
+/**
+ * `plainMerge` with the protection the skill-aware merge gives skills another device deleted:
+ * many stop the sync until reviewed, and each is kept in Recently removed. Returns those skills.
+ */
+async function lineMerge(
+  env: BackupEnv,
+  sides: MergeSides,
+  range: string,
+  message: string,
+  review: SyncReviewAnswer | undefined,
+): Promise<MergedSkill[]> {
+  const theirs = sides.theirs.commit;
+  const departing = departingFolders(env, sides).map((folder) => {
+    const path = join(env.repoDir, folder);
+    return { folder, path, row: env.store.findByLibraryPath(path) };
+  });
+  assertFoldersReviewed(
+    departing.map(({ folder, row }) => row?.name ?? folder),
+    skillFoldersHere(env, sides),
+    theirs,
+    review,
+  );
+  const kept: string[] = [];
+  const removed: MergedSkill[] = [];
+  try {
+    // Copies made before git deletes the folders, so they hold the left-out files as well.
+    for (const { folder, path, row } of departing) {
+      const id = env.removed.keepCopy(path, {
+        place: LIBRARY_PLACE,
+        reason: "deleted_elsewhere",
+        ...(row ? { library: libraryRecordOf(row) } : {}),
+      });
+      if (id) kept.push(id);
+      removed.push({
+        name: row?.name ?? folder,
+        fromDevice: await lastAuthor(env, range, [folder]),
+      });
+    }
+    await plainMerge(env, theirs, message);
+  } catch (error) {
+    for (const id of kept) env.removed.remove(id);
+    throw error;
+  }
+  // Git leaves the left-out files behind in a folder it deletes; the copy holds them now.
+  for (const { path } of departing) if (!isSkillDir(path)) await removePath(path);
+  return removed;
+}
+
 /** Skills whose folder differs between two commits, for merges made without a plan. */
 async function changedSkills(env: BackupEnv, from: string, range: string): Promise<MergedSkill[]> {
   const diff = await env.git.run(["diff", "--name-only", "-z", from, "HEAD"]);
@@ -297,13 +353,13 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
 
   // Without our metadata on both sides every skill would read as deleted: git's line merge then.
   if (!env.ctx.settings.get("skillAwareMerge") || !sides.describable) {
-    if (review && review.remoteCommit !== theirs) throw planChanged();
-    await plainMerge(env, theirs, message);
+    const removed = await lineMerge(env, sides, range, message, review);
     const summary: MergeSummary = {
       ...UP_TO_DATE,
       upToDate: false,
       fastForward: base === ours,
       updated: await changedSkills(env, ours, range),
+      removed,
       pendingTotal: countConflicts(env.ctx.db),
     };
     await env.reconcile(true);

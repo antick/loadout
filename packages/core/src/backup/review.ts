@@ -14,7 +14,15 @@ import { findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR, isSafeSkillPath } from "./env";
 import { createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
-import { manyDeletes, planSides, readSides } from "./merge-input";
+import {
+  type MergeSides,
+  departingFolders,
+  manyDeletes,
+  planSides,
+  readSides,
+  skillFoldersHere,
+  tooManyDeletes,
+} from "./merge-input";
 import { skillMetadataAt } from "./merge-read";
 import { reportStage, withStages } from "./progress";
 import { type SkillPlan, type SkillVersions, sameSkill } from "./merge-plan";
@@ -140,6 +148,30 @@ function classify(versions: SkillVersions, plan: SkillPlan): Classified {
   return result;
 }
 
+/** For the line merge, which has no per-skill plan: only the skills it deletes are listed. */
+async function linePreview(env: BackupEnv, sides: MergeSides, range: string): Promise<SyncPreview> {
+  const departing = departingFolders(env, sides);
+  const author = await authorsIn(env, range);
+  const incoming = departing.map((folder): SyncPreviewItem => {
+    const row = env.store.findByLibraryPath(join(env.repoDir, folder));
+    return {
+      id: row?.id ?? folder,
+      name: row?.name ?? folder,
+      change: "deleted",
+      path: folder,
+      previousPath: null,
+      fromDevice: author(row?.id ?? folder, folder),
+    };
+  });
+  return {
+    ...emptyPreview(),
+    remoteCommit: sides.theirs.commit,
+    perSkill: false,
+    incoming,
+    manyDeletes: tooManyDeletes(departing.length, skillFoldersHere(env, sides)),
+  };
+}
+
 export function previewSync(env: BackupEnv): Promise<SyncPreview> {
   return withStages(env, () => buildPreview(env));
 }
@@ -162,7 +194,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
     const remoteBackups = Number(await env.git.text(["rev-list", "--count", range])) || 0;
     const sides = await readSides(env, base, ours, theirs);
     if (!env.ctx.settings.get("skillAwareMerge") || !sides.describable) {
-      return { ...emptyPreview(), remoteCommit: theirs, localTree, perSkill: false, remoteBackups };
+      return { ...(await linePreview(env, sides, range)), localTree, remoteBackups };
     }
 
     const planned = planSides(env, sides);

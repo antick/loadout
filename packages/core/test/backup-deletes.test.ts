@@ -139,6 +139,55 @@ describe("backup deletes from other devices", () => {
       for (const name of names) expect(d.skill(name)).not.toBeNull();
     });
 
+    describe("with the skill-aware merge off", () => {
+      beforeEach(() => {
+        d.ctx.settings.set("skillAwareMerge", false);
+      });
+
+      it("still stops before changing anything when nobody reviewed them", async () => {
+        const head = d.git("rev-parse", "HEAD");
+        await expect(d.api.sync()).rejects.toMatchObject({
+          code: "SYNC_MANY_DELETES",
+          details: { count: 3, skills: ["s1", "s2", "s3"] },
+        });
+        expect(d.git("rev-parse", "HEAD")).toBe(head);
+        for (const name of names) expect(d.skill(name)).not.toBeNull();
+        expect(d.removed.list()).toEqual([]);
+      });
+
+      it("shows the deletions in the review", async () => {
+        const preview = await d.api.preview();
+        expect(preview).toMatchObject({ perSkill: false, manyDeletes: true });
+        expect(preview.incoming.map((item) => [item.name, item.change]).sort()).toEqual([
+          ["s1", "deleted"],
+          ["s2", "deleted"],
+          ["s3", "deleted"],
+        ]);
+      });
+
+      it("keeps what a reviewed sync deletes in Recently removed, and reports it", async () => {
+        const outcome = await d.api.sync(undefined, {
+          remoteCommit: await remoteHead(d),
+          keep: [],
+        });
+        expect(outcome.merge?.removed.map((skill) => skill.name).sort()).toEqual([
+          "s1",
+          "s2",
+          "s3",
+        ]);
+        for (const name of ["s1", "s2", "s3"]) {
+          expect(d.skill(name)).toBeNull();
+          expect(existsSync(join(d.skillsDir, name))).toBe(false);
+        }
+        expect(d.skill("s4")).not.toBeNull();
+        const kept = d.removed.list();
+        expect(kept.map((entry) => entry.name).sort()).toEqual(["s1", "s2", "s3"]);
+        expect(kept.every((entry) => entry.reason === "deleted_elsewhere" && entry.library)).toBe(
+          true,
+        );
+      });
+    });
+
     it("lets a few deletions through without asking", async () => {
       const seeded = await seedRemote(join(temp.dir, "few"), ["f1", "f2", "f3", "f4", "f5"]);
       const e = await joinRemote(join(temp.dir, "few"), seeded.remote, "E");

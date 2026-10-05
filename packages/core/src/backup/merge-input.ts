@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import {
   BACKUP_DELETE_GUARD_COUNT,
   BACKUP_DELETE_GUARD_MIN,
@@ -5,6 +6,7 @@ import {
   type SyncReviewAnswer,
 } from "@loadout/shared";
 import { AppError } from "../errors";
+import { isSkillDir } from "../util/fs";
 import { listConflicts } from "./conflict-store";
 import type { BackupEnv } from "./env";
 import {
@@ -119,16 +121,39 @@ function departingSkills(planned: PlannedMerge): string[] {
 
 /**
  * More deletions than a person plausibly made on purpose: more than `BACKUP_DELETE_GUARD_COUNT`,
- * or at least `BACKUP_DELETE_GUARD_MIN` that are over half of the skills here. Most often a
+ * or at least `BACKUP_DELETE_GUARD_MIN` that are over half of the `here` skills. Most often a
  * sign that the other device lost its library (an empty or unreadable folder) and synced that.
  */
-export function manyDeletes(planned: PlannedMerge): boolean {
-  const count = departingSkills(planned).length;
-  let here = 0;
-  for (const versions of planned.skills.values()) if (versions.ours) here += 1;
+export function tooManyDeletes(count: number, here: number): boolean {
   return (
     count > BACKUP_DELETE_GUARD_COUNT || (count >= BACKUP_DELETE_GUARD_MIN && count * 2 > here)
   );
+}
+
+export function manyDeletes(planned: PlannedMerge): boolean {
+  let here = 0;
+  for (const versions of planned.skills.values()) if (versions.ours) here += 1;
+  return tooManyDeletes(departingSkills(planned).length, here);
+}
+
+/**
+ * For git's line merge, which has no per-skill plan: skill folders here that another device
+ * deleted and this one left as they were, so the merge deletes them. A folder changed on both
+ * sides is not among them: git stops at it with a conflict.
+ */
+export function departingFolders(env: BackupEnv, sides: MergeSides): string[] {
+  const folders: string[] = [];
+  for (const [name, hash] of sides.ours.entries) {
+    if (sides.theirs.entries.has(name) || sides.base.entries.get(name) !== hash) continue;
+    if (isSkillDir(join(env.repoDir, name))) folders.push(name);
+  }
+  return folders.sort();
+}
+
+/** Skill folders here, for weighing `departingFolders` against. */
+export function skillFoldersHere(env: BackupEnv, sides: MergeSides): number {
+  return [...sides.ours.entries.keys()].filter((name) => isSkillDir(join(env.repoDir, name)))
+    .length;
 }
 
 /** The review was made against another remote state: its answers may not fit any more. */
@@ -149,17 +174,38 @@ export function assertDeletesReviewed(
   theirs: string,
   review: SyncReviewAnswer | undefined,
 ): void {
+  let here = 0;
+  for (const versions of planned.skills.values()) if (versions.ours) here += 1;
+  assertReviewed(departingSkills(planned).map(names), here, theirs, review);
+}
+
+/** `assertDeletesReviewed` for git's line merge: the departing skills as `departingFolders`. */
+export function assertFoldersReviewed(
+  departing: readonly string[],
+  here: number,
+  theirs: string,
+  review: SyncReviewAnswer | undefined,
+): void {
+  // Choices to keep a skill belong to a per-skill review, which a line merge cannot carry out.
+  if (review && review.keep.length > 0) throw planChanged();
+  assertReviewed(departing, here, theirs, review);
+}
+
+function assertReviewed(
+  departing: readonly string[],
+  here: number,
+  theirs: string,
+  review: SyncReviewAnswer | undefined,
+): void {
   if (review) {
     if (review.remoteCommit !== theirs) throw planChanged();
     return;
   }
-  if (!manyDeletes(planned)) return;
-  const departing = departingSkills(planned)
-    .map(names)
-    .sort((a, b) => a.localeCompare(b));
+  if (!tooManyDeletes(departing.length, here)) return;
+  const sorted = [...departing].sort((a, b) => a.localeCompare(b));
   throw new AppError(
     "SYNC_MANY_DELETES",
-    `Sync stopped: it would delete ${departing.length} skills on this computer that were deleted on another device (${departing.join(", ")}). Nothing was changed. Review them first: press Sync on the Backup page, or run \`${CLI_BINARY_NAME} git sync --dry-run\`.`,
-    { count: departing.length, skills: departing },
+    `Sync stopped: it would delete ${sorted.length} skills on this computer that were deleted on another device (${sorted.join(", ")}). Nothing was changed. Review them first: press Sync on the Backup page, or run \`${CLI_BINARY_NAME} git sync --dry-run\`.`,
+    { count: sorted.length, skills: sorted },
   );
 }

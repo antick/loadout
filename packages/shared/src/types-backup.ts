@@ -50,7 +50,10 @@ export interface SyncPreview {
    * `BackupApi.localTree()` to tell whether it changed since. Null when there was nothing to compare.
    */
   localTree: string | null;
-  /** False when the skill-aware merge is off: then only the counts below are known. */
+  /**
+   * False when the skill-aware merge is off: then only the counts below are known, and of the
+   * skills only the ones the merge deletes (`incoming`, as `deleted`).
+   */
   perSkill: boolean;
   incoming: SyncPreviewItem[];
   outgoing: SyncPreviewItem[];

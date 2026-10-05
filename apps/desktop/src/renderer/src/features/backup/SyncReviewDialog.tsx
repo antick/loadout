@@ -104,9 +104,19 @@ function ReviewBody({
 
   if (!preview.perSkill) {
     return (
-      <InlineNotice tone="info" icon={Info}>
-        {t("backupSync.review.notPerSkill", { count: preview.remoteBackups })}
-      </InlineNotice>
+      <div className="flex min-w-0 flex-col gap-4">
+        {preview.manyDeletes ? (
+          <InlineNotice tone="warning" icon={TriangleAlert}>
+            {t("backupSync.review.manyDeletesNotPerSkill", {
+              count: allDeletions,
+              days: REMOVED_KEEP_DAYS,
+            })}
+          </InlineNotice>
+        ) : null}
+        <InlineNotice tone="info" icon={Info}>
+          {t("backupSync.review.notPerSkill", { count: preview.remoteBackups })}
+        </InlineNotice>
+      </div>
     );
   }
 
