@@ -22,13 +22,13 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { build } from "esbuild";
+import { bundleOptions } from "../build.mjs";
 
 const TARGETS = ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64", "win-x64"];
 const NODE_DIST_URL = "https://nodejs.org/dist";
 const SEA_FUSE = "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2";
 const SEA_RESOURCE = "NODE_SEA_BLOB";
 const MACHO_SEGMENT = "NODE_SEA";
-const NODE_TARGET = "node22";
 const BUILD_DIR = "dist/sea";
 const OUT_DIR = "dist/standalone";
 // Inside the checkout, not the shared temp folder another user of the machine could write to.
@@ -60,16 +60,7 @@ async function prepareBlob() {
   mkdirSync(BUILD_DIR, { recursive: true });
   const main = join(BUILD_DIR, "loadout.cjs");
   const blob = join(BUILD_DIR, "loadout.blob");
-  await build({
-    entryPoints: ["src/bin.ts"],
-    bundle: true,
-    minify: true,
-    platform: "node",
-    target: NODE_TARGET,
-    format: "cjs",
-    outfile: main,
-    logLevel: "warning",
-  });
+  await build({ ...bundleOptions("cjs", main), logLevel: "warning" });
   const config = join(BUILD_DIR, "sea-config.json");
   // No code cache or snapshot: they tie the blob to this platform, and it goes into all of them.
   writeFileSync(
