@@ -43,6 +43,17 @@ describe("deleting a library skill", () => {
   });
   afterEach(() => world.cleanup());
 
+  it("dry run: counts and refuses as the real run would, and changes nothing", async () => {
+    const skill = world.addSkill("notes");
+    await world.deploy.api.deploy(skill.id, "claude_code");
+    const result = await skills.api.removeMany([skill.id, "no-such-id"], { dryRun: true });
+    expect(result).toMatchObject({ succeeded: 1, removedIds: [] });
+    expect(result.failed).toEqual([expect.objectContaining({ name: "no-such-id" })]);
+    expect(existsSync(skill.libraryPath)).toBe(true);
+    expect(existsSync(join(claude, "notes"))).toBe(true);
+    expect(await storage.api.removed()).toEqual([]);
+  });
+
   it("keeps it in Recently removed and brings back the same skill with tags and presets", async () => {
     const skill = world.addSkill("notes", { "ref.md": "reference" });
     world.store.update(skill.id, { sourceRef: "/src/notes", sourceRevision: "abc" });

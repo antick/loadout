@@ -236,19 +236,31 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
     `delete ${plural(skills.length, "skill")} from the library and undeploy them everywhere`,
   );
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-    const wouldRemove = skills.map((skill) => ({
-      id: skill.id,
-      name: skill.name,
-      deployedTo: skill.deployments.map((d) => d.agentKey),
-    }));
+    const planned = await core.api.skills.removeMany(
+      skills.map((skill) => skill.id),
+      { dryRun: true },
+    );
+    const refused = new Set(planned.failed.map((failure) => failure.name));
+    const wouldRemove = skills
+      .filter((skill) => !refused.has(skill.name))
+      .map((skill) => ({
+        id: skill.id,
+        name: skill.name,
+        deployedTo: skill.deployments.map((d) => d.agentKey),
+      }));
     const lines = [
-      `Would remove ${plural(wouldRemove.length, "skill")}. Nothing was changed.`,
+      `Would remove ${plural(planned.succeeded, "skill")}. Nothing was changed.`,
       ...wouldRemove.map(
         (s) =>
           `  ${s.name}${s.deployedTo.length ? ` (deployed to ${s.deployedTo.join(", ")})` : ""}`,
       ),
+      ...failureLines(planned.failed),
     ];
-    return { value: { dryRun: true, wouldRemove, failed: [] }, text: lines.join("\n") };
+    return {
+      value: { dryRun: true, wouldRemove, failed: planned.failed },
+      text: lines.join("\n"),
+      exitCode: exitCodeFor(planned.failed.length > 0),
+    };
   }
   const result = await core.api.skills.removeMany(skills.map((skill) => skill.id));
   const lines = [`Removed ${plural(result.succeeded, "skill")}.`];

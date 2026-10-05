@@ -99,7 +99,11 @@ export interface SkillsApi {
   /** Write a new skill into the library from a name and description. ALREADY_EXISTS when taken. */
   create(input: CreateSkillInput): Promise<Skill>;
   document(skillId: string): Promise<SkillDocument>;
-  removeMany(skillIds: string[]): Promise<RemoveSkillsResult>;
+  /**
+   * Delete skills into Recently removed, undeploying them everywhere. With `dryRun`, count and
+   * refuse exactly as the real run would, and change nothing (`removedIds` stays empty).
+   */
+  removeMany(skillIds: string[], options?: { dryRun?: boolean }): Promise<RemoveSkillsResult>;
   allTags(): Promise<string[]>;
   setTags(skillId: string, tags: string[]): Promise<void>;
   /**

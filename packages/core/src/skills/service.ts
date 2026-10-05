@@ -91,11 +91,17 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       };
     },
 
-    removeMany: async (skillIds): Promise<RemoveSkillsResult> => {
+    removeMany: async (skillIds, options): Promise<RemoveSkillsResult> => {
       const result: RemoveSkillsResult = { succeeded: 0, failed: [], removedIds: [] };
       for (const skillId of skillIds) {
         const name = store.find(skillId)?.name ?? skillId;
         try {
+          if (options?.dryRun) {
+            // What `removeOne` refuses before it changes anything: a skill that is not there.
+            store.get(skillId);
+            result.succeeded += 1;
+            continue;
+          }
           const removedId = await removeOne(skillId);
           if (removedId !== null) result.removedIds.push(removedId);
           result.succeeded += 1;
@@ -103,7 +109,7 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
           result.failed.push({ name, message: errorMessage(error) });
         }
       }
-      ctx.touched("skills", "presets");
+      if (!options?.dryRun) ctx.touched("skills", "presets");
       return result;
     },
 
