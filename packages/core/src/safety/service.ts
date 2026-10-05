@@ -126,15 +126,27 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     return engine;
   }
 
-  function scanDir(engine: Engine, dir: string): Promise<SafetyReport> {
-    return engine.kind === "builtin"
-      ? Promise.resolve(scanWithRules(dir))
-      : runScanner(engine.program.path, dir);
+  /**
+   * One folder's report. SkillSpector failing to run is no verdict on the skill: the built-in
+   * rules check it instead, when they are on, and the report names them as its engine, so the
+   * skill shows it was not checked by SkillSpector. A report SkillSpector does give stands.
+   */
+  async function scanDir(engine: Engine, dir: string, name: string): Promise<SafetyReport> {
+    if (engine.kind === "builtin") return scanWithRules(dir);
+    try {
+      return await runScanner(engine.program.path, dir);
+    } catch (error) {
+      if (!builtin) throw error;
+      ctx.log.warn(
+        `SkillSpector could not check ${name}, so the built-in rules did: ${errorMessage(error)}`,
+      );
+      return scanWithRules(dir);
+    }
   }
 
   async function scanOne(engine: Engine, skill: Skill): Promise<SafetyRecord> {
     const hash = skill.contentHash ?? "";
-    const report = await scanDir(engine, skill.libraryPath);
+    const report = await scanDir(engine, skill.libraryPath, skill.name);
     reports.put(skill.id, { contentHash: hash, report });
     return toRecord(skill, hash, report);
   }
@@ -238,7 +250,7 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
         });
       }
       try {
-        return await scanDir(engine, candidate.dir);
+        return await scanDir(engine, candidate.dir, candidate.name);
       } catch (error) {
         // Not a pass: a skill can make the scanner crash or hang on purpose.
         ctx.log.warn(`Safety check could not finish for ${candidate.name}: ${errorMessage(error)}`);
