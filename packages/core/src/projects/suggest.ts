@@ -10,6 +10,7 @@ import {
   readTextOrNull,
   statOrNull,
 } from "../util/fs";
+import { DEPENDENCY_DIRS } from "../util/skipped-dirs";
 
 /**
  * Projects the user already works in, found without asking: Claude Code's list of projects, the
@@ -62,7 +63,6 @@ const CODE_FOLDER_DEPTH = 2;
 /** Folders read while looking for repositories, so a huge code folder cannot stall the dialog. */
 const MAX_FOLDER_READS = 400;
 const MAX_SUGGESTIONS = 60;
-const SKIPPED_FOLDERS: ReadonlySet<string> = new Set(["node_modules", "vendor", "target"]);
 /** Home folders that hold projects but are not one. */
 const CONTAINER_FOLDERS = ["Desktop", "Documents", "Downloads", ...CODE_FOLDERS];
 /** Folders macOS asks permission for before an app may look inside. */
@@ -153,7 +153,7 @@ function fromCodeFolders(homeDir: string): string[] {
     reads += 1;
     for (const entry of readDirSafe(dir)) {
       if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
-      if (SKIPPED_FOLDERS.has(entry.name)) continue;
+      if (DEPENDENCY_DIRS.has(entry.name)) continue;
       const child = join(dir, entry.name);
       if (isDirectory(join(child, GIT_DIR))) found.push(child);
       else if (depth < CODE_FOLDER_DEPTH) walk(child, depth + 1);

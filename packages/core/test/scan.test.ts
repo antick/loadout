@@ -54,6 +54,16 @@ describe("scanning agent folders", () => {
     expect(result.agentsScanned).toBe(2);
   });
 
+  it("finds what the agent page lists, and skips hidden folders and plugin bundles like it", async () => {
+    makeSkill(claude, "visible");
+    makeSkill(claude, ".staging-leftover");
+    makeSkill(join(world.home, ".hermes", "skills", "bundle", "skills"), "inside-a-bundle");
+    makeSkill(join(world.home, ".hermes", "skills", ".hidden"), "under-a-hidden-folder");
+
+    const result = await install.api.scanLocal();
+    expect(result.skills.map((s) => s.name)).toEqual(["visible"]);
+  });
+
   it("searches nested folders for agents that keep skills in categories", async () => {
     const hermes = join(world.home, ".hermes", "skills");
     makeSkill(join(hermes, "writing", "long-form"), "essay", { files: { "inner/SKILL.md": "x" } });

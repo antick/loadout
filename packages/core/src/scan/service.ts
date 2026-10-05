@@ -1,4 +1,4 @@
-import { join, resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import {
   type BatchImportResult,
   type DiscoveredLocation,
@@ -6,7 +6,6 @@ import {
   type InstallOptions,
   type ScanResult,
   type Skill,
-  type SourceType,
   firstFreeName,
 } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
@@ -14,7 +13,6 @@ import type { CoreContext } from "../context";
 import { errorMessage, invalid } from "../errors";
 import type { InstallIntoLibrary } from "../install/library";
 import { type SafetyGate, batchFailureMessage, installChecked } from "../install/safety-gate";
-import { findSkillDirs } from "../install/repo-scan";
 import { readSkillIdentity } from "../skills/metadata";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
@@ -24,10 +22,17 @@ import {
   isInside,
   isSkillDir,
   normalizeAbsolutePath,
-  readDirSafe,
   targetIdentity,
 } from "../util/fs";
 import { hashDir } from "../util/hash";
+import {
+  type LibraryIndex,
+  type ScanOptions,
+  agentScanOptions,
+  findLocalSkillDirs,
+  indexLibrary,
+  matchLibrarySkill,
+} from "../workspace/local-scan";
 
 export interface ScanServiceDeps {
   store: SkillStore;
@@ -44,16 +49,14 @@ export interface ScanService {
   importAllDiscovered(): Promise<BatchImportResult>;
 }
 
-/** Depth 1 = direct children only. */
-const FLAT_DEPTH = 1;
-/** Source types whose `sourceRef` is a folder on this machine. */
-const PATH_SOURCE_TYPES: ReadonlySet<SourceType> = new Set(["local", "import"]);
+/** Folders an agent only also reads hold skills as direct children. */
+const FLAT: ScanOptions = { recursive: false };
 
 interface ScanRoot {
   agentKey: string;
   dir: string;
-  /** Undefined: search until a skill folder is found (agents that keep skills in categories). */
-  maxDepth: number | undefined;
+  /** As deep as the agent looks: agents that keep skills in categories are searched through. */
+  options: ScanOptions;
 }
 
 /**
@@ -69,11 +72,7 @@ function scanRoots(agents: readonly ResolvedAgent[]): ScanRoot[] {
   for (const agent of agents) {
     if (!agent.installed || !isDirectory(agent.skillsDir)) continue;
     const dir = resolve(agent.skillsDir);
-    roots.push({
-      agentKey: agent.key,
-      dir,
-      maxDepth: agent.recursiveScan ? undefined : FLAT_DEPTH,
-    });
+    roots.push({ agentKey: agent.key, dir, options: agentScanOptions(agent) });
     owned.add(dir);
   }
 
@@ -88,25 +87,25 @@ function scanRoots(agents: readonly ResolvedAgent[]): ScanRoot[] {
   for (const [dir, agentsReading] of readers) {
     const installed = agentsReading.filter((agent) => agent.installed);
     const reportedUnder = installed.length > 0 ? installed : agentsReading.slice(0, 1);
-    for (const agent of reportedUnder)
-      roots.push({ agentKey: agent.key, dir, maxDepth: FLAT_DEPTH });
+    for (const agent of reportedUnder) roots.push({ agentKey: agent.key, dir, options: FLAT });
   }
   return roots;
 }
 
-/** Add one found folder to its group; same name and same content is one skill in several places. */
+/**
+ * Add one found folder to its group; same name and same content is one skill in several places.
+ * It counts as imported when the library has it, judged as the agent page judges it.
+ */
 function record(
   groups: Map<string, DiscoveredSkill>,
   paths: Set<string>,
   location: DiscoveredLocation,
-  bySourcePath: ReadonlySet<string>,
-  libraryHashes: ReadonlySet<string>,
+  library: LibraryIndex,
 ): void {
   const identity = readSkillIdentity(location.path);
   const fingerprint = hashDir(location.path);
-  const imported =
-    bySourcePath.has(canonicalPath(location.path)) ||
-    (fingerprint !== null && libraryHashes.has(fingerprint));
+  const entry = { path: location.path, dirName: basename(location.path), hash: fingerprint };
+  const imported = matchLibrarySkill(entry, library, "strict") !== null;
   const key = `${identity.name}\n${fingerprint ?? location.path}`;
   const group = groups.get(key) ?? {
     name: identity.name,
@@ -138,28 +137,18 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     const ownTargets = new Set(
       store.deployments().flatMap((d) => [resolve(d.targetPath), targetIdentity(d.targetPath)]),
     );
-    const bySourcePath = new Set(
-      skills.flatMap((s) =>
-        s.sourceRef && PATH_SOURCE_TYPES.has(s.sourceType) ? [canonicalPath(s.sourceRef)] : [],
-      ),
-    );
-    const libraryHashes = new Set(skills.flatMap((s) => (s.contentHash ? [s.contentHash] : [])));
+    const index = indexLibrary(skills, store.deployments());
 
     const roots = scanRoots(registry.list());
     const groups = new Map<string, DiscoveredSkill>();
     const paths = new Set<string>();
 
     for (const root of roots) {
-      // The root is a container, never a skill itself, so list its children and search those.
-      for (const entry of readDirSafe(root.dir)) {
-        const child = join(root.dir, entry.name);
-        if (!isDirectory(child)) continue;
-        const depth = root.maxDepth === undefined ? undefined : root.maxDepth - 1;
-        for (const path of findSkillDirs(child, { maxDepth: depth, libraryDir: library })) {
-          if (!isDirectory(path) || isInside(library, canonicalPath(path))) continue;
-          if (ownTargets.has(resolve(path)) || ownTargets.has(targetIdentity(path))) continue;
-          record(groups, paths, { agentKey: root.agentKey, path }, bySourcePath, libraryHashes);
-        }
+      // The folders the agent itself loads, found as the agent page finds them.
+      for (const { path } of findLocalSkillDirs(root.dir, root.options)) {
+        if (isInside(library, canonicalPath(path))) continue;
+        if (ownTargets.has(resolve(path)) || ownTargets.has(targetIdentity(path))) continue;
+        record(groups, paths, { agentKey: root.agentKey, path }, index);
       }
     }
 

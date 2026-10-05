@@ -14,11 +14,10 @@ import {
   scanSkillRoot,
 } from "../workspace/local-scan";
 import type { ResolvedTarget } from "./targets";
+import { DEPENDENCY_DIRS } from "../util/skipped-dirs";
 
 /** Levels below the chosen root that are searched for projects; the root itself is level 0. */
 const PROJECT_SCAN_MAX_DEPTH = 4;
-/** Dependency, build and cache folders: large, and never where a project of the user's lives. */
-const SKIPPED_DIR_NAMES: ReadonlySet<string> = new Set(["node_modules", "target", "__pycache__"]);
 const HIDDEN_PREFIX = ".";
 /** Project skills folders may hold namespace folders, so they are always searched in depth. */
 const PROJECT_SCAN = { recursive: true } as const;
@@ -37,7 +36,7 @@ export function findProjects(root: string, skillDirs: readonly string[]): string
     if (depth >= PROJECT_SCAN_MAX_DEPTH) return;
     for (const entry of readDirSafe(dir)) {
       if (!entry.isDirectory()) continue;
-      if (entry.name.startsWith(HIDDEN_PREFIX) || SKIPPED_DIR_NAMES.has(entry.name)) continue;
+      if (entry.name.startsWith(HIDDEN_PREFIX) || DEPENDENCY_DIRS.has(entry.name)) continue;
       walk(join(dir, entry.name), depth + 1);
     }
   };

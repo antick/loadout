@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { parse as parseToml } from "smol-toml";
 import { GIT_DIR, readDirSafe, readTextOrNull } from "../util/fs";
+import { DEPENDENCY_DIRS } from "../util/skipped-dirs";
 
 /** What a project holds, as far as suggestions care. */
 export interface ProjectFiles {
@@ -15,16 +16,13 @@ const MAX_DEPTH = 4;
 const MAX_PATHS = 5000;
 /** Folders that hold dependencies, builds or tool state, not the project's own files. */
 const SKIPPED_DIRS: ReadonlySet<string> = new Set([
-  "node_modules",
+  ...DEPENDENCY_DIRS,
   GIT_DIR,
-  "target",
   "dist",
   "build",
   "out",
   ".next",
   ".turbo",
-  "vendor",
-  "__pycache__",
   ".venv",
   "venv",
   ".cache",
