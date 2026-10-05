@@ -26,7 +26,13 @@ import type { InstallIntoLibrary } from "../install/library";
 import { type SafetyGate, installChecked } from "../install/safety-gate";
 import type { SkillStore } from "../skills/store";
 import { isInside, normalizeAbsolutePath, writeFileAtomic } from "../util/fs";
-import { buildPresetFile, parsePresetFile, remoteSourceOf, writeEmbeddedSkill } from "./share-file";
+import {
+  buildPresetFile,
+  holdsEmbeddedFiles,
+  parsePresetFile,
+  remoteSourceOf,
+  writeEmbeddedSkill,
+} from "./share-file";
 import type { PresetStore } from "./store";
 
 export type PresetSharingApi = Pick<PresetsApi, "exportFile" | "previewImport" | "importFile">;
@@ -80,29 +86,44 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
     return readFile(path, "utf8");
   }
 
-  /** The library skill a file entry stands for: same source first, then same name. */
-  function libraryMatch(entry: PresetFileSkill, skills: readonly Skill[]): Skill | null {
+  /**
+   * The library skill a file entry stands for: one from the same source; for an entry without a
+   * source, one of that name holding the same files, or, for an entry that is only a name, one of
+   * that name. `sameName` is a library skill of that name that is not it: it is never used.
+   */
+  function libraryMatch(
+    entry: PresetFileSkill,
+    skills: readonly Skill[],
+  ): { found: Skill | null; sameName: Skill | null } {
+    const name = entry.name.toLowerCase();
+    const named = skills.filter(
+      (skill) => skill.name.toLowerCase() === name || skill.dirName.toLowerCase() === name,
+    );
+    let found: Skill | undefined;
     if (entry.source) {
       const wanted = sourceKey(entry.source.url, entry.source.subpath);
-      const bySource = skills.find((skill) => {
+      found = skills.find((skill) => {
         const source = remoteSourceOf(skill);
         return source !== null && sourceKey(source.url, source.subpath) === wanted;
       });
-      if (bySource) return bySource;
+    } else if (entry.files) {
+      const { files } = entry;
+      found = named.find((skill) => holdsEmbeddedFiles(skill, files));
+    } else {
+      found = named[0];
     }
-    const name = entry.name.toLowerCase();
-    return (
-      skills.find(
-        (skill) => skill.name.toLowerCase() === name || skill.dirName.toLowerCase() === name,
-      ) ?? null
-    );
+    return { found: found ?? null, sameName: found ? null : (named[0] ?? null) };
   }
 
   function planOf(file: PresetFile): PresetImportPlan {
     const skills = store.list();
     const entries = file.skills.map((entry): PresetImportSkill => {
-      const found = libraryMatch(entry, skills);
-      const base = { name: entry.name, description: entry.description ?? null };
+      const { found, sameName } = libraryMatch(entry, skills);
+      const base = {
+        name: entry.name,
+        description: entry.description ?? null,
+        sameNameSkillId: sameName?.id ?? null,
+      };
       if (found) return { ...base, state: "library", librarySkillId: found.id, from: null };
       if (entry.source) {
         return {

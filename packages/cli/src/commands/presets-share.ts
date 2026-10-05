@@ -66,6 +66,7 @@ async function exportPreset(context: CommandContext): Promise<CommandResult> {
 }
 
 function planText(plan: PresetImportPlan): string {
+  const beside = plan.skills.filter((skill) => skill.sameNameSkillId !== null);
   return [
     `Preset: ${plan.name}${plan.nameTaken ? " (a preset has this name; the import gets a number)" : ""}`,
     table(
@@ -73,6 +74,11 @@ function planText(plan: PresetImportPlan): string {
       plan.skills.map((skill) => [skill.name, STATE_WORDS[skill.state], skill.from]),
       "The preset lists no skills.",
     ),
+    ...(beside.length > 0
+      ? [
+          `Your library has a different skill of the same name (another source or other files), so these are installed beside it under a free name: ${beside.map((skill) => skill.name).join(", ")}`,
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -134,7 +140,7 @@ export const presetImportCommand: CommandSpec = {
   usage: "<file | https link>",
   flags: [NAME_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
-    "Skills the library has (same source, or same name) are used as they are. Every install goes through the safety check.",
+    "Skills the library has are used as they are: the same source; for skills without one, the same name and files; for skills the file only names, the same name. A library skill that only shares the name is left alone, and the file's skill is installed beside it under a free name. Every install goes through the safety check.",
     "Exit code 1 when some skills could not be added; the preset is created with the rest.",
   ],
   run: importPreset,

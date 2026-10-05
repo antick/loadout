@@ -63,6 +63,11 @@ function PlanList({ plan }: { plan: PresetImportPlan }): ReactNode {
               <p className="truncate text-xs text-muted-foreground">
                 {skill.description ?? t("skills.noDescription")}
               </p>
+              {skill.sameNameSkillId ? (
+                <p className="text-xs text-muted-foreground">
+                  {t("presetShare.import.sameName", { name: skill.name })}
+                </p>
+              ) : null}
             </div>
             <StatusBadge
               tone={STATE_TONES[skill.state]}

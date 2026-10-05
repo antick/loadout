@@ -136,6 +136,93 @@ describe("importing a preset", () => {
   });
 });
 
+describe("importing beside a library skill that only shares the name", () => {
+  it("installs the file's skill from its source when the library's one has none", async () => {
+    const { core: alice, presetId, file } = await sharedLibrary();
+    await alice.api.presets.exportFile(presetId, file);
+    const bob = newCore("bob");
+    const own = await bob.api.skills.create({ name: "pdf", description: "My own PDF notes." });
+
+    const plan = await bob.api.presets.previewImport(file);
+    expect(plan.skills[0]).toMatchObject({
+      name: "pdf",
+      state: "source",
+      librarySkillId: null,
+      sameNameSkillId: own.id,
+    });
+
+    const result = await bob.api.presets.importFile(file);
+    expect(result.reused).not.toContain("pdf");
+    expect(result.preset.skillIds).not.toContain(own.id);
+    const used = (await bob.api.skills.list()).filter((skill) =>
+      result.preset.skillIds.includes(skill.id),
+    );
+    expect(used.find((skill) => skill.sourceType === "git")).toMatchObject({
+      sourceSubpath: "skills/pdf",
+      name: "pdf-2",
+    });
+    expect(await bob.api.skills.get(own.id)).toMatchObject({
+      name: "pdf",
+      sourceType: own.sourceType,
+    });
+  });
+
+  it("does not take a same-name skill from another repository for it", async () => {
+    const other = initRepo(join(temp.dir, "remotes", "other", "skills.git"));
+    makeSkill(join(other, "skills"), "pdf", { description: "Another PDF skill entirely." });
+    commitAll(other, "initial");
+    const { core: alice, presetId, file } = await sharedLibrary();
+    await alice.api.presets.exportFile(presetId, file);
+    const bob = newCore("bob");
+    const preview = await bob.api.install.previewGit("https://github.com/other/skills");
+    const [theirs] = await bob.api.install.confirmGit(preview.previewId, [
+      { relPath: preview.skills[0]?.relPath ?? "", name: "pdf" },
+    ]);
+
+    const plan = await bob.api.presets.previewImport(file);
+    expect(plan.skills[0]).toMatchObject({ state: "source", sameNameSkillId: theirs!.id });
+    const result = await bob.api.presets.importFile(file);
+    expect(result.preset.skillIds).not.toContain(theirs!.id);
+    expect(result.installed).toContain("pdf");
+  });
+
+  it("uses a same-name skill without a source only when its files are the same", async () => {
+    const { core: alice, presetId, file } = await sharedLibrary();
+    await alice.api.presets.exportFile(presetId, file);
+    const bob = newCore("bob");
+    const own = await bob.api.skills.create({ name: "notes", description: "Bob's own notes." });
+
+    const plan = await bob.api.presets.previewImport(file);
+    expect(plan.skills[1]).toMatchObject({
+      name: "notes",
+      state: "files",
+      sameNameSkillId: own.id,
+    });
+    const result = await bob.api.presets.importFile(file);
+    expect(result.preset.skillIds).not.toContain(own.id);
+    expect(result.installed).toContain("notes");
+    const folders = async (): Promise<string[]> =>
+      (await bob.api.skills.list()).map((skill) => skill.dirName).sort();
+    expect(await folders()).toEqual(["notes", "notes-2", "pdf"]);
+
+    // Importing again finds the copy it installed, not Bob's own, and adds no third.
+    const again = await bob.api.presets.importFile(file);
+    expect(again.preset.skillIds).not.toContain(own.id);
+    expect(await folders()).toEqual(["notes", "notes-2", "pdf"]);
+
+    // A same-name skill holding the very same files is the file's skill.
+    const carol = newCore("carol");
+    await carol.api.presets.importFile(file);
+    const carolNotes = (await carol.api.skills.list()).find((skill) => skill.name === "notes");
+    const plan2 = await carol.api.presets.previewImport(file);
+    expect(plan2.skills[1]).toMatchObject({
+      state: "library",
+      librarySkillId: carolNotes?.id,
+      sameNameSkillId: null,
+    });
+  });
+});
+
 describe("reading a preset file", () => {
   it("refuses what is not one, or is from a newer app", () => {
     expect(() => parsePresetFile("nope")).toThrow(/not JSON/);

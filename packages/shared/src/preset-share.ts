@@ -67,9 +67,10 @@ export interface PresetExportResult {
 }
 
 /**
- * What importing does with each skill: `library` uses the library's skill (same source, or the
- * same name); `source` installs it from its repository or link; `files` from the file itself;
- * `missing` cannot be had.
+ * What importing does with each skill: `library` uses the library's skill (the same source; for a
+ * skill without one, the same name and files; for a skill the file only names, the same name);
+ * `source` installs it from its repository or link; `files` from the file itself; `missing`
+ * cannot be had.
  */
 export type PresetImportSkillState = "library" | "source" | "files" | "missing";
 
@@ -81,6 +82,11 @@ export interface PresetImportSkill {
   librarySkillId: string | null;
   /** Where it comes from, safe to show, for `source`. */
   from: string | null;
+  /**
+   * A library skill of this name that is a different skill (another source or none, other
+   * files). It is left alone; this one is installed beside it under a free name.
+   */
+  sameNameSkillId: string | null;
 }
 
 export interface PresetImportPlan {

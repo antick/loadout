@@ -122,7 +122,7 @@ export function hashFile(path: string): string {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
 
-export function sha256Hex(text: string): string {
+export function sha256Hex(text: string | Uint8Array): string {
   return createHash("sha256").update(text).digest("hex");
 }
 

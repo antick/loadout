@@ -46,6 +46,29 @@ describe("presets export and import", () => {
     expect((await bob.cli("presets", "show", "Web kit")).stdout).toContain("notes");
   });
 
+  it("installs beside a different library skill of the same name, never using it", async () => {
+    writeSkill(join(alice.root, "src"), "notes");
+    await alice.cli("skills", "install", "./src/notes");
+    await alice.cli("presets", "create", "Kit");
+    await alice.cli("presets", "add", "Kit", "notes");
+    await alice.cli("presets", "export", "Kit", "--out", "./kit.json");
+    const file = join(alice.root, "kit.json");
+    await bob.cli("skills", "install", writeSkill(join(bob.root, "src"), "notes", "# Bob's own\n"));
+    const own = (await bob.cli("skills", "show", "notes", "--json")).json<{ id: string }>();
+
+    const dry = await bob.cli("presets", "import", file, "--dry-run");
+    expect(dry.stdout).toMatch(/notes\s+install from the file/);
+    expect(dry.stdout).toContain("installed beside it under a free name: notes");
+    const plan = (await bob.cli("presets", "import", file, "--dry-run", "--json")).json<{
+      plan: { skills: { state: string; sameNameSkillId: string | null }[] };
+    }>().plan;
+    expect(plan.skills[0]).toMatchObject({ state: "files", sameNameSkillId: own.id });
+
+    const run = await bob.cli("presets", "import", file, "--json");
+    expect(run.code).toBe(EXIT_OK);
+    expect(run.json<{ preset: { skillIds: string[] } }>().preset.skillIds).not.toContain(own.id);
+  });
+
   it("fails with exit 1 when a skill cannot be had, keeping the rest", async () => {
     writeSkill(join(alice.root, "src"), "notes");
     await alice.cli("skills", "install", "./src/notes");

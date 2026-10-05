@@ -14,7 +14,7 @@ import {
 import { invalid } from "../errors";
 import { isSafeRelativePath } from "../skills/portable";
 import { writeFileAtomic } from "../util/fs";
-import { listContentFiles } from "../util/hash";
+import { fileDigests, listContentFiles, sha256Hex } from "../util/hash";
 
 /** Most skills a preset file may list, and longest names it may carry. */
 const MAX_SKILLS = 500;
@@ -173,14 +173,29 @@ export function parsePresetFile(text: string): PresetFile {
   };
 }
 
+const entryContent = (entry: PresetFileEntry): string | Buffer =>
+  entry.text ?? Buffer.from(entry.base64 ?? "", "base64");
+
 /** Write an embedded skill's files into `dir`. */
 export function writeEmbeddedSkill(dir: string, files: Record<string, PresetFileEntry>): void {
   for (const [path, entry] of Object.entries(files)) {
-    const content = entry.text ?? Buffer.from(entry.base64 ?? "", "base64");
     writeFileAtomic(
       join(dir, ...path.split("/")),
-      content,
+      entryContent(entry),
       entry.executable ? EXECUTABLE_MODE : undefined,
     );
   }
+}
+
+/** True when the library skill holds exactly these files, path for path and byte for byte. */
+export function holdsEmbeddedFiles(skill: Skill, files: Record<string, PresetFileEntry>): boolean {
+  const held = fileDigests(skill.libraryPath);
+  const paths = Object.keys(files);
+  return (
+    paths.length === Object.keys(held).length &&
+    paths.every((path) => {
+      const entry = files[path];
+      return entry !== undefined && held[path] === sha256Hex(entryContent(entry));
+    })
+  );
 }

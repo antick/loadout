@@ -38,6 +38,7 @@
         "files": "From the file",
         "missing": "Not available"
       },
+      "sameName": "Your library's {{name}} is a different skill, so this one is installed beside it under a free name.",
       "done": "Created preset {{name}}",
       "installed_one": "Installed {{count}} skill.",
       "installed_other": "Installed {{count}} skills.",
