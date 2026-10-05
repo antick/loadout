@@ -18,7 +18,7 @@ import { invalid, isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { SkillStore } from "../skills/store";
 import { writeAndCommit } from "./apply";
-import { secretsHeldBack } from "./files";
+import { publishSecretsHeldBack } from "./files";
 import { type Checkout, openCheckout } from "./checkout";
 import { type Planned, planSkills } from "./plan";
 import { type ResolvedTarget, publishCacheRoot, resolveTarget } from "./target";
@@ -122,7 +122,7 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
         const step = await ctx.lock.run("publish skills", async () => {
           const planned = planSkills(skills, checkout.dir, target);
           if (planned.secrets.length > 0 && !input.allowSecrets) {
-            throw secretsHeldBack(planned.secrets);
+            throw publishSecretsHeldBack(planned.secrets);
           }
           return { planned, commit: await writeAndCommit(checkout, planned.skills) };
         });

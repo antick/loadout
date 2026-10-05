@@ -165,6 +165,9 @@ describe("backup push check", () => {
 
     await expect(a.api.sync()).rejects.toMatchObject({
       code: "SECRETS_FOUND",
+      message: expect.stringMatching(
+        /^Backup held back: leaky\/SKILL\.md, line \d+ looks like a key or token\. Remove it, or choose Back up anyway on the Backup page\.$/,
+      ),
       details: { secrets: [{ file: "leaky/SKILL.md" }] },
     });
     // Nothing reached the remote.

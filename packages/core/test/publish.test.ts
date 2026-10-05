@@ -300,7 +300,9 @@ describe("keys and tokens", () => {
 
     const error = await rejection(service.api.publish(publishInput([pdf])));
     expect(error.code).toBe("SECRETS_FOUND");
-    expect(error.message).toContain("skills/pdf/notes.md, line 1");
+    expect(error.message).toBe(
+      "Publishing held back: skills/pdf/notes.md, line 1 looks like a key or token. Remove it from the skill, or publish anyway if it is safe to share.",
+    );
     expect(git(remote, "branch", "--list")).toBe("");
   });
 

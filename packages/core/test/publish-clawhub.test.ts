@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { CLAWHUB_MAX_FILE_BYTES } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { SecretStore } from "../src/context";
 import type { Core } from "../src/core";
@@ -162,6 +163,16 @@ describe("publishing to ClawHub", () => {
       topics: ["pdf-tools", "docs"],
     });
     expect(upload?.files).toEqual(["SKILL.md", "scripts/run.sh"]);
+  });
+
+  it("names a file over ClawHub's size limit, read from its size alone", async () => {
+    await core.api.publish.setClawhubToken(TOKEN);
+    const dir = makeSkill(join(temp.dir, "src"), "big");
+    writeFileSync(join(dir, "data.bin"), Buffer.alloc(CLAWHUB_MAX_FILE_BYTES + 1));
+    const skill = await core.api.install.fromPath(dir);
+    const preview = await core.api.publish.clawhubPreview(skill.id);
+    expect(preview.problems).toEqual(["data.bin is over ClawHub's limit of 10.0 MB per file."]);
+    expect(preview.files).toContainEqual({ path: "data.bin", bytes: CLAWHUB_MAX_FILE_BYTES + 1 });
   });
 
   it("holds back a skill that looks like it carries a key, unless allowed", async () => {

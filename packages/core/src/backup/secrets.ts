@@ -5,7 +5,7 @@ import { INTERNAL_KEYS } from "../settings/store";
 import { statOrNull } from "../util/fs";
 import type { BackupEnv } from "./env";
 import { resolveCommit, upstreamCommit } from "./repo";
-import { findSecrets, findSecretsInFile } from "./secret-scan";
+import { findSecrets, findSecretsInFile, secretsHeldBack } from "./secret-scan";
 
 /**
  * The check before a backup pushes: what it would send (its commits, and changes not committed
@@ -168,16 +168,12 @@ export async function scanForPush(env: BackupEnv, branch: string): Promise<Secre
 
 /** Stop the push with the findings, worded so the status line alone says what to do. */
 export function secretsFound(findings: SecretFinding[]): AppError {
-  const [first] = findings;
-  const where = first ? `${first.file}, line ${first.line}` : "";
-  const more = findings.length > 1 ? ` and ${findings.length - 1} more` : "";
-  const what = first?.committed
-    ? "It is already in this computer's backup history, so removing it now does not stop it being pushed. Choose Back up anyway on the Backup page if it is safe to share."
-    : "Remove it, or choose Back up anyway on the Backup page.";
-  return new AppError(
-    "SECRETS_FOUND",
-    `Backup held back: ${where}${more} looks like a key or token. ${what}`,
-    { secrets: findings },
+  return secretsHeldBack(
+    "Backup",
+    findings,
+    findings[0]?.committed
+      ? "It is already in this computer's backup history, so removing it now does not stop it being pushed. Choose Back up anyway on the Backup page if it is safe to share."
+      : "Remove it, or choose Back up anyway on the Backup page.",
   );
 }
 

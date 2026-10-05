@@ -1,5 +1,4 @@
-import { existsSync, readFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
+import { unlinkSync } from "node:fs";
 import {
   BACKUP_IGNORE_MAX_LINE_LENGTH,
   BACKUP_IGNORE_MAX_LINES,
@@ -14,6 +13,8 @@ import {
   DEFAULT_IGNORE_LINES,
   IGNORE_FILE,
   customLines,
+  ignoreFilePath,
+  readIgnoreText,
   refreshIgnoreFile,
   trimBlankEdges,
 } from "./size";
@@ -28,15 +29,6 @@ import {
 const PROBE_SKILL = "any-skill";
 const PROBE_ID = "any-id";
 const NEGATION = "!";
-
-function ignoreFilePath(env: BackupEnv): string {
-  return join(env.repoDir, IGNORE_FILE);
-}
-
-function readIgnoreText(env: BackupEnv): string | null {
-  const path = ignoreFilePath(env);
-  return existsSync(path) ? readFileSync(path, "utf8") : null;
-}
 
 export function readIgnoreRules(env: BackupEnv): BackupIgnoreRules {
   assertRepo(env);

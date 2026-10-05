@@ -8,12 +8,14 @@ import {
   CLAWHUB_NAME,
   CLAWHUB_SLUG_PATTERN,
   CLAWHUB_VERSION_PATTERN,
+  CLI_BINARY_NAME,
   type ClawhubAccount,
   type ClawhubPublishInput,
   type ClawhubPublishPreview,
   type ClawhubPublishResult,
   clawhubSkillUrl,
   clawhubSlugOf,
+  formatBytes,
   isNewerVersion,
   nextPatchVersion,
 } from "@loadout/shared";
@@ -21,7 +23,7 @@ import type { CoreContext } from "../context";
 import { AppError, errorMessage, invalid } from "../errors";
 import { CLAWHUB_META_FILES, type ClawhubClient } from "../market/clawhub";
 import type { SkillStore } from "../skills/store";
-import { type PublishFile, collectFiles, findSecretsIn, secretsHeldBack } from "./files";
+import { type PublishFile, collectFiles, findSecretsIn, publishSecretsHeldBack } from "./files";
 
 /**
  * Publishing one library skill as a version on ClawHub, under the user's own token. The token
@@ -54,6 +56,13 @@ export function clawhubTopicsOf(tags: readonly string[]): string[] {
     .map((tag) => clawhubSlugOf(tag))
     .filter((tag) => tag && tag.length <= CLAWHUB_MAX_TOPIC_LENGTH && !RESERVED_TOPICS.has(tag));
   return [...new Set(topics)].slice(0, CLAWHUB_MAX_TOPICS);
+}
+
+/** What a version is made of: the files Git publishing would publish, the registry's own aside. */
+function filesOf(libraryPath: string): PublishFile[] {
+  return collectFiles(libraryPath).files.filter(
+    (file) => !REGISTRY_FILES.has(file.relativePath.split("/")[0] ?? ""),
+  );
 }
 
 export function createClawhubPublisher(
@@ -92,39 +101,27 @@ export function createClawhubPublisher(
     }
   }
 
-  /** What a version is made of: the files Git publishing would publish, the registry's own aside. */
-  function filesOf(skillId: string): {
-    files: PublishFile[];
-    upload: { path: string; data: Buffer }[];
-  } {
-    const skill = store.get(skillId);
-    const files = collectFiles(skill.libraryPath).files.filter(
-      (file) => !REGISTRY_FILES.has(file.relativePath.split("/")[0] ?? ""),
-    );
-    const upload = files.map((file) => ({
-      path: file.relativePath,
-      data: readFileSync(file.absolutePath),
-    }));
-    return { files, upload };
-  }
-
   async function preview(skillId: string): Promise<ClawhubPublishPreview> {
     const skill = store.get(skillId);
     const { handle } = await requireToken();
     const slug = clawhubSlugOf(skill.name);
-    const { files: collected, upload: files } = filesOf(skillId);
-    const totalBytes = files.reduce((sum, file) => sum + file.data.length, 0);
+    const files = filesOf(skill.libraryPath);
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
     const problems: string[] = [];
-    if (!files.some((file) => file.path === "SKILL.md")) {
+    if (!files.some((file) => file.relativePath === "SKILL.md")) {
       problems.push("The skill has no SKILL.md at its top, which ClawHub requires.");
     }
     for (const file of files) {
-      if (file.data.length > CLAWHUB_MAX_FILE_BYTES) {
-        problems.push(`${file.path} is over ClawHub's limit of 10 MB per file.`);
+      if (file.size > CLAWHUB_MAX_FILE_BYTES) {
+        problems.push(
+          `${file.relativePath} is over ClawHub's limit of ${formatBytes(CLAWHUB_MAX_FILE_BYTES)} per file.`,
+        );
       }
     }
     if (totalBytes > CLAWHUB_MAX_TOTAL_BYTES)
-      problems.push("The skill is over ClawHub's limit of 50 MB.");
+      problems.push(
+        `The skill is over ClawHub's limit of ${formatBytes(CLAWHUB_MAX_TOTAL_BYTES)}.`,
+      );
     if (!CLAWHUB_SLUG_PATTERN.test(slug)) problems.push("The name gives no usable slug.");
     const versions = await clawhub.versions(handle, slug);
     const latestVersion = versions.reduce<string | null>(
@@ -140,9 +137,9 @@ export function createClawhubPublisher(
       topics: clawhubTopicsOf(skill.tags),
       latestVersion,
       suggestedVersion: nextPatchVersion(latestVersion),
-      files: files.map((file) => ({ path: file.path, bytes: file.data.length })),
+      files: files.map((file) => ({ path: file.relativePath, bytes: file.size })),
       totalBytes,
-      secrets: findSecretsIn(collected),
+      secrets: findSecretsIn(files),
       problems,
     };
   }
@@ -162,11 +159,11 @@ export function createClawhubPublisher(
     if (!displayName) throw invalid("Give the skill a display name.");
     const skill = store.get(input.skillId);
     const { token, handle } = await requireToken();
-    const { files: collected, upload: files } = filesOf(input.skillId);
-    if (!files.some((file) => file.path === "SKILL.md"))
+    const files = filesOf(skill.libraryPath);
+    if (!files.some((file) => file.relativePath === "SKILL.md"))
       throw invalid("The skill has no SKILL.md at its top.");
-    const secrets = findSecretsIn(collected);
-    if (secrets.length > 0 && !input.allowSecrets) throw secretsHeldBack(secrets);
+    const secrets = findSecretsIn(files);
+    if (secrets.length > 0 && !input.allowSecrets) throw publishSecretsHeldBack(secrets);
     const topics = clawhubTopicsOf(input.topics ?? skill.tags);
     const payload: Record<string, unknown> = {
       slug,
@@ -178,7 +175,11 @@ export function createClawhubPublisher(
       tags: ["latest"],
       ...(topics.length > 0 ? { topics } : {}),
     };
-    const { status } = await clawhub.publish(token, payload, files);
+    const upload = files.map((file) => ({
+      path: file.relativePath,
+      data: readFileSync(file.absolutePath),
+    }));
+    const { status } = await clawhub.publish(token, payload, upload);
     ctx.activity.record("publish", skill.name, `${CLAWHUB_NAME} ${handle}/${slug}@${version}`);
     return {
       handle,
@@ -186,7 +187,7 @@ export function createClawhubPublisher(
       version,
       status,
       pageUrl: clawhubSkillUrl(handle, slug),
-      installCommand: `loadout skills install @${handle}/${slug}`,
+      installCommand: `${CLI_BINARY_NAME} skills install @${handle}/${slug}`,
     };
   }
 

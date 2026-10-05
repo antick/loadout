@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PUBLISH_MAX_FILE_BYTES, type SecretFinding } from "@loadout/shared";
-import { findSecretsInFile } from "../backup/secret-scan";
-import { AppError } from "../errors";
+import { findSecretsInFile, secretsHeldBack } from "../backup/secret-scan";
+import type { AppError } from "../errors";
 import { lstatOrNull, readDirSafe } from "../util/fs";
 import { isIgnoredContentName } from "../util/hash";
 import { isLeftOut } from "../util/left-out";
@@ -115,13 +115,10 @@ export function findSecretsIn(files: readonly PublishFile[], prefix = ""): Secre
 }
 
 /** The error a publish stops with when files look like they hold keys; lists every finding. */
-export function secretsHeldBack(findings: SecretFinding[]): AppError {
-  const [first] = findings;
-  const where = first ? `${first.file}, line ${first.line}` : "";
-  const more = findings.length > 1 ? ` and ${findings.length - 1} more` : "";
-  return new AppError(
-    "SECRETS_FOUND",
-    `Publishing held back: ${where}${more} looks like a key or token. Remove it from the skill, or publish anyway if it is safe to share.`,
-    { secrets: findings },
+export function publishSecretsHeldBack(findings: SecretFinding[]): AppError {
+  return secretsHeldBack(
+    "Publishing",
+    findings,
+    "Remove it from the skill, or publish anyway if it is safe to share.",
   );
 }

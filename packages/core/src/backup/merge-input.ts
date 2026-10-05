@@ -112,6 +112,11 @@ export function planSides(
   return { skills, presets, plan };
 }
 
+/** Skills on this computer before the merge. */
+function skillsHere(planned: PlannedMerge): number {
+  return [...planned.skills.values()].filter((versions) => versions.ours).length;
+}
+
 /** Skills here that the merge would take out because another device deleted them. */
 function departingSkills(planned: PlannedMerge): string[] {
   return planned.plan.skills
@@ -131,9 +136,7 @@ export function tooManyDeletes(count: number, here: number): boolean {
 }
 
 export function manyDeletes(planned: PlannedMerge): boolean {
-  let here = 0;
-  for (const versions of planned.skills.values()) if (versions.ours) here += 1;
-  return tooManyDeletes(departingSkills(planned).length, here);
+  return tooManyDeletes(departingSkills(planned).length, skillsHere(planned));
 }
 
 /**
@@ -174,9 +177,7 @@ export function assertDeletesReviewed(
   theirs: string,
   review: SyncReviewAnswer | undefined,
 ): void {
-  let here = 0;
-  for (const versions of planned.skills.values()) if (versions.ours) here += 1;
-  assertReviewed(departingSkills(planned).map(names), here, theirs, review);
+  assertReviewed(departingSkills(planned).map(names), skillsHere(planned), theirs, review);
 }
 
 /** `assertDeletesReviewed` for git's line merge: the departing skills as `departingFolders`. */

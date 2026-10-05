@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { SecretFinding } from "@loadout/shared";
+import { AppError } from "../errors";
 import { SECRET_PATTERNS as PATTERNS } from "../util/secret-patterns";
 import { createLineSplitter, readTextChunks } from "../util/text-stream";
 
@@ -118,6 +119,21 @@ export function findSecrets(
   const scanner = createScanner(file, path, committed);
   scanner.push(text);
   return scanner.end();
+}
+
+/**
+ * The error that stops `what` ("Backup", "Publishing") over findings: names the first and counts
+ * the rest, so the message alone says where to look; `advice` says what to do.
+ */
+export function secretsHeldBack(what: string, findings: SecretFinding[], advice: string): AppError {
+  const [first] = findings;
+  const where = first ? `${first.file}, line ${first.line}` : "";
+  const more = findings.length > 1 ? ` and ${findings.length - 1} more` : "";
+  return new AppError(
+    "SECRETS_FOUND",
+    `${what} held back: ${where}${more} looks like a key or token. ${advice}`,
+    { secrets: findings },
+  );
 }
 
 /** Every match in a file on disk, read a piece at a time. Null for a binary file. */

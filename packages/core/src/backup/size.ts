@@ -43,18 +43,29 @@ function escapeIgnorePath(name: string): string {
   return name.replace(IGNORE_SPECIAL_CHARS, (ch) => `\\${ch}`);
 }
 
-/** Lines of the managed block in the ignore file as it is now. */
-function managedLines(env: BackupEnv): string[] {
-  const path = join(env.repoDir, IGNORE_FILE);
-  if (!existsSync(path)) return [];
-  const lines: string[] = [];
+export function ignoreFilePath(env: BackupEnv): string {
+  return join(env.repoDir, IGNORE_FILE);
+}
+
+/** The ignore file as it is now; null when there is none. */
+export function readIgnoreText(env: BackupEnv): string | null {
+  const path = ignoreFilePath(env);
+  return existsSync(path) ? readFileSync(path, "utf8") : null;
+}
+
+/** An ignore file's lines: the user's own, as written, and the managed block's patterns. */
+function splitIgnoreFile(text: string): { user: string[]; managed: string[] } {
+  const user: string[] = [];
+  const managed: string[] = [];
   let insideBlock = false;
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    if (line.trim() === BLOCK_START) insideBlock = true;
-    else if (line.trim() === BLOCK_END) insideBlock = false;
-    else if (insideBlock && line.trim()) lines.push(line.trim());
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed === BLOCK_START) insideBlock = true;
+    else if (trimmed === BLOCK_END) insideBlock = false;
+    else if (!insideBlock) user.push(line);
+    else if (trimmed) managed.push(trimmed);
   }
-  return lines;
+  return { user, managed };
 }
 
 /**
@@ -66,7 +77,7 @@ async function backedUpSizes(env: BackupEnv): Promise<Map<string, number> | null
   // The standard lines count even before they are first written into the ignore file.
   const overrides = [
     ...BASE_IGNORE_LINES.map((line) => `--exclude=${line}`),
-    ...managedLines(env).map((line) => `--exclude=!${line}`),
+    ...splitIgnoreFile(readIgnoreText(env) ?? "").managed.map((line) => `--exclude=!${line}`),
   ];
   const result = await env.git.probe(["ls-files", "-z", "-co", "--exclude-standard", ...overrides]);
   if (result.code !== 0) return null;
@@ -134,19 +145,6 @@ function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
   return lines;
 }
 
-/** Everything in the file that is the user's own: not our block, not blank padding at the end. */
-function userLines(current: string): string[] {
-  const kept: string[] = [];
-  let insideBlock = false;
-  for (const line of current.split(/\r?\n/)) {
-    if (line.trim() === BLOCK_START) insideBlock = true;
-    else if (line.trim() === BLOCK_END) insideBlock = false;
-    else if (!insideBlock) kept.push(line);
-  }
-  while (kept.length > 0 && kept[kept.length - 1]?.trim() === "") kept.pop();
-  return kept;
-}
-
 /** Drop blank lines at both ends; blank lines in between are the user's layout. */
 export function trimBlankEdges(lines: string[]): string[] {
   let start = 0;
@@ -159,7 +157,7 @@ export function trimBlankEdges(lines: string[]): string[] {
 /** The user's own lines of an ignore file: neither the standard ones nor the managed block. */
 export function customLines(text: string): string[] {
   const base = new Set(BASE_IGNORE_LINES);
-  return trimBlankEdges(userLines(text).filter((line) => !base.has(line.trim())));
+  return trimBlankEdges(splitIgnoreFile(text).user.filter((line) => !base.has(line.trim())));
 }
 
 /**
@@ -168,8 +166,7 @@ export function customLines(text: string): string[] {
  * a `!` line among them) lands where it belongs and the user's own lines still have the last say.
  */
 export async function refreshIgnoreFile(env: BackupEnv): Promise<void> {
-  const path = join(env.repoDir, IGNORE_FILE);
-  const current = existsSync(path) ? readFileSync(path, "utf8") : "";
+  const current = readIgnoreText(env) ?? "";
   const custom = customLines(current);
   const lines = [...BASE_IGNORE_LINES, ...(custom.length > 0 ? ["", ...custom] : [])];
 
@@ -179,7 +176,7 @@ export async function refreshIgnoreFile(env: BackupEnv): Promise<void> {
     oversized.filter((skill) => skill.excluded),
   );
   const next = `${[...lines, ...(block.length > 0 ? ["", ...block] : [])].join("\n")}\n`;
-  if (next !== current) writeFileAtomic(path, next);
+  if (next !== current) writeFileAtomic(ignoreFilePath(env), next);
 }
 
 export async function buildSizeReport(env: BackupEnv): Promise<SizeReport> {
