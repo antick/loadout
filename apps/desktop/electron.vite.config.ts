@@ -2,13 +2,11 @@ import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+import { defineConfig } from "electron-vite";
 import type { UserConfig } from "vite";
 
-// Workspace packages ship as TypeScript source, so they are bundled rather than externalized.
-const WORKSPACE_PACKAGES = ["@loadout/core", "@loadout/shared"];
-// Pure-JS runtime deps of the workspace packages are bundled too, so the packaged app needs no node_modules.
-const BUNDLED_DEPS = [...WORKSPACE_PACKAGES, "yaml", "fflate"];
+// Nothing is externalized on purpose: the workspace packages and every runtime dependency are
+// bundled into out/, because the packaged app ships no node_modules (there are no `dependencies`).
 // Pins the renderer dev server (browser preview, UI tests); vite picks a free port without it.
 const RENDERER_PORT = Number(process.env.LOADOUT_RENDERER_PORT) || undefined;
 
@@ -38,7 +36,6 @@ export const rendererConfig: UserConfig = {
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: BUNDLED_DEPS })],
     build: {
       rollupOptions: {
         input: {
@@ -48,7 +45,6 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin({ exclude: WORKSPACE_PACKAGES })],
     build: {
       rollupOptions: {
         input: { index: resolve(__dirname, "src/preload/index.ts") },
