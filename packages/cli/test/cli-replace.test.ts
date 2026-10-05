@@ -61,4 +61,12 @@ describe("skills install --replace", () => {
     expect(folder.code).toBe(2);
     expect(folder.stderr).toContain("--replace works for repositories");
   });
+
+  it("says when a folder install with --name got a numbered name", async () => {
+    const other = writeSkill(join(box.root, "other"), "alpha");
+    const run = await box.cli("skills", "install", other, "--name", "alpha");
+    expect(run.code).toBe(0);
+    expect(run.stdout).toContain("got a numbered name instead: alpha-2");
+    expect(await names()).toEqual(["alpha", "alpha-2"]);
+  });
 });

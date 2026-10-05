@@ -228,7 +228,7 @@ async function installFromPath(context: CommandContext, path: string): Promise<I
   const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
   return {
     skills: [await core.api.install.fromPath(path, name, { acceptRisk })],
-    asked: [],
+    asked: name === undefined ? [] : [name],
     replaced: [],
   };
 }
@@ -302,7 +302,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const lines = installed.map((skill) => `Installed ${skill.name} (${skill.id}) into the library.`);
   const renamed = installed.filter((skill, index) => {
     const asked = result.asked[index];
-    return asked !== undefined && asked !== skill.name && !result.replaced.includes(skill.name);
+    return asked !== undefined && asked !== skill.dirName && !result.replaced.includes(skill.name);
   });
   if (result.replaced.length > 0) {
     lines.push(
@@ -311,7 +311,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
   }
   if (renamed.length > 0) {
     lines.push(
-      `The name was in use, so these got a numbered name instead: ${renamed.map((s) => s.name).join(", ")}.`,
+      `The name was in use, so these got a numbered name instead: ${renamed.map((s) => s.dirName).join(", ")}.`,
     );
   }
   lines.push(NOT_DEPLOYED_HINT);
