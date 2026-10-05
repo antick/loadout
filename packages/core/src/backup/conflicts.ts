@@ -4,7 +4,7 @@ import { basename, join } from "node:path";
 import { type BackupConflict, type ConflictResolution, firstFreeName } from "@loadout/shared";
 import { AppError, notFound } from "../errors";
 import { type PortableSkill, toPortableSkill } from "../skills/portable";
-import { removePath, writeJsonAtomic } from "../util/fs";
+import { isInside, removePath, writeJsonAtomic } from "../util/fs";
 import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
@@ -39,8 +39,8 @@ interface ChoiceWork {
   created: string[];
   /** Our folders that were replaced; put back on failure, their left-out files carried after. */
   replaced: { aside: SetAsideFolder; target: string }[];
-  /** Scratch folders to remove at the very end. */
-  cleanups: (() => Promise<void>)[];
+  /** Scratch folders to remove at the very end; one holding files the user must see is kept. */
+  stages: Stage[];
 }
 
 function metadataFile(env: BackupEnv, skillId: string): string {
@@ -56,7 +56,7 @@ function remoteMetadata(env: BackupEnv, conflict: BackupConflict): Promise<Porta
 async function stageRemoteVersion(
   env: BackupEnv,
   conflict: BackupConflict,
-): Promise<{ folder: string; stage: Stage; cleanup: () => Promise<void> }> {
+): Promise<{ folder: string; stage: Stage }> {
   const path = conflict.theirsPath;
   if (!path || !(await resolveCommit(env, conflict.theirsCommit))) {
     throw notFound(
@@ -69,7 +69,7 @@ async function stageRemoteVersion(
     if (!existsSync(stage.pathOf(path))) {
       throw notFound(`The other device's version of "${conflict.skillName}" has no files.`);
     }
-    return { folder: stage.pathOf(path), stage, cleanup: stage.cleanup };
+    return { folder: stage.pathOf(path), stage };
   } catch (error) {
     await stage.cleanup();
     throw error;
@@ -84,7 +84,7 @@ async function useRemote(
   const local = env.store.find(conflict.skillKey);
   const meta = await remoteMetadata(env, conflict);
   const staged = await stageRemoteVersion(env, conflict);
-  work.cleanups.push(staged.cleanup);
+  work.stages.push(staged.stage);
   const isFree = (name: string): boolean => !existsSync(join(env.repoDir, name));
   // The skill keeps the folder it has here; if it was deleted meanwhile it gets its remote name.
   const folder = local
@@ -134,7 +134,7 @@ async function keepBoth(env: BackupEnv, conflict: BackupConflict, work: ChoiceWo
     };
     writeJsonAtomic(metadataFile(env, id), copy);
   } finally {
-    await staged.cleanup();
+    await staged.stage.cleanup();
   }
 }
 
@@ -167,7 +167,7 @@ export async function resolveConflicts(
 
   await commitLibrary(env, BEFORE_RESOLVE_MESSAGE);
   const safety = await safetyPoint(env);
-  const work: ChoiceWork = { created: [], replaced: [], cleanups: [] };
+  const work: ChoiceWork = { created: [], replaced: [], stages: [] };
   let leftIn: string | null = null;
   const message =
     conflicts.length > 1
@@ -188,14 +188,14 @@ export async function resolveConflicts(
       throw error;
     }
     // Files kept out of the backup exist only here: they stay with the skill, or are kept in
-    // Recently removed. When neither worked, the scratch folders holding them stay on disk.
+    // Recently removed. When neither worked, the scratch folder holding them stays on disk.
     for (const { aside, target } of work.replaced) {
       if (settleSetAside(env, aside, target)) continue;
-      work.cleanups = [];
+      work.stages = work.stages.filter((stage) => !isInside(stage.dir, aside.to));
       leftIn ??= aside.to;
     }
   } finally {
-    for (const cleanup of work.cleanups) await cleanup();
+    for (const stage of work.stages) await stage.cleanup();
   }
   for (const conflict of conflicts) {
     deleteConflict(env.ctx.db, conflict.skillKey);

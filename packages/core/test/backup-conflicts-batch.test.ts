@@ -1,5 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GIT_DIR } from "../src/util/fs";
 import { type Device, useTwoDevices } from "./backup-world";
+import { rejection, writeFile } from "./helpers";
 
 describe("backup conflicts, several at once", () => {
   /** Both devices edit `alpha` and `beta`; A syncs first, then B, so B has two conflicts. */
@@ -75,5 +79,47 @@ describe("backup conflicts, several at once", () => {
       b.api.resolveConflicts("alpha" as unknown as string[], "keep_local"),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     expect(await b.api.conflicts()).toHaveLength(2);
+  });
+});
+
+describe("backup conflicts, left-out files that could be kept nowhere", () => {
+  /** A's version of `alpha` has a file where B keeps one out of the backup; `beta` has none. */
+  const world = useTwoDevices(["alpha", "beta"], async (a, b) => {
+    a.editSkill("alpha", "alpha from A");
+    writeFile(join(a.skillsDir, "alpha", "extra.md"), "extra from A");
+    a.editSkill("beta", "beta from A");
+    b.editSkill("alpha", "alpha from B");
+    b.editSkill("beta", "beta from B");
+    await a.api.sync();
+    await b.api.sync();
+  });
+
+  it("keeps only the scratch folder of the skill whose files could not be kept", async () => {
+    const { a, b } = world;
+    // On this device alone, `extra.md` stays out of the backup.
+    writeFile(join(b.skillsDir, GIT_DIR, "info", "exclude"), "extra.md\n");
+    writeFile(join(b.skillsDir, "alpha", "extra.md"), "alpha extra from B");
+    writeFile(join(b.skillsDir, "beta", "extra.md"), "beta extra from B");
+    vi.spyOn(b.removed, "setAside").mockImplementation(() => {
+      throw new Error("disk full");
+    });
+    const ids = [a.skill("alpha")?.id ?? "", a.skill("beta")?.id ?? ""];
+
+    const error = await rejection(b.api.resolveConflicts(ids, "use_remote"));
+
+    expect(error.code).toBe("IO");
+    expect(await b.api.conflicts()).toEqual([]);
+    expect(b.read("alpha")).toBe("alpha from A");
+    expect(b.read("alpha", "extra.md")).toBe("extra from A");
+    // Nothing stood in the way of beta's file: it moved into the new folder.
+    expect(b.read("beta", "extra.md")).toBe("beta extra from B");
+    // Alpha's file waits where the error says; beta's scratch folder is gone.
+    const left = String(error.details?.path);
+    expect(readFileSync(join(left, "extra.md"), "utf8")).toBe("alpha extra from B");
+    const stages = readdirSync(dirname(b.skillsDir)).filter((name) =>
+      name.startsWith(".backup-stage-"),
+    );
+    expect(stages).toHaveLength(1);
+    expect(left.startsWith(join(dirname(b.skillsDir), stages[0] ?? ""))).toBe(true);
   });
 });
