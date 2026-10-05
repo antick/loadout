@@ -10,7 +10,14 @@ import { type BackupEnv, REMOTE_NAME } from "./env";
 import { whileMerging } from "./interrupted";
 import { mergeRemote } from "./merge";
 import { reportStage, withStages } from "./progress";
-import { aheadBehind, assertRepo, commitLibrary, originUrl, requireBranch } from "./repo";
+import {
+  aheadBehind,
+  assertRepo,
+  commitStaged,
+  originUrl,
+  prepareCommit,
+  requireBranch,
+} from "./repo";
 import { scanForPush, scanUncommittedChanges, secretsFound } from "./secrets";
 import { refreshIgnoreFile } from "./size";
 import { restorePointId } from "./snapshots";
@@ -50,9 +57,11 @@ function fetchOrigin(env: BackupEnv): Promise<void> {
 /** Fetch, then merge what arrived. */
 export async function pullRemote(env: BackupEnv): Promise<MergeSummary> {
   await fetchRemote(env);
-  const result = await env.ctx.lock.run("backup merge", () =>
-    whileMerging(env, () => mergeRemote(env)),
-  );
+  const result = await env.ctx.lock.run("backup merge", async () => {
+    // The merge commits pending changes first; a sync has refreshed the ignore file by then.
+    await refreshIgnoreFile(env);
+    return whileMerging(env, () => mergeRemote(env));
+  });
   return result.summary;
 }
 
@@ -73,21 +82,22 @@ async function runSync(
   const { lock, settings } = env.ctx;
   const text = message.trim() || DEFAULT_BACKUP_COMMIT_MESSAGE;
 
-  // A key caught before it is committed can still simply be removed; once committed, it would
-  // travel with the history even after removal. Without a remote nothing leaves the computer.
   reportStage(env, "preparing");
   // Asked once: every git call costs a process, and a sync makes dozens.
   const hasRemote = (await originUrl(env)) !== null;
-  if (hasRemote) {
-    // The ignore list first: a skill back under the size limit stops being ignored now, and must
-    // be checked before the commit takes it in.
-    await lock.run("backup ignore list", () => refreshIgnoreFile(env));
-    const uncommitted = await scanUncommittedChanges(env);
-    if (uncommitted.length > 0) throw secretsFound(uncommitted);
-  }
-
-  reportStage(env, "saving");
-  let committed = await lock.run("backup commit", () => commitLibrary(env, text));
+  let committed = await lock.run("backup commit", async () => {
+    // The ignore list is refreshed here: a skill back under the size limit stops being ignored
+    // now, and must be checked before the commit takes it in.
+    await prepareCommit(env);
+    // A key caught before it is committed can still simply be removed; once committed, it would
+    // travel with the history even after removal. Without a remote nothing leaves the computer.
+    if (hasRemote) {
+      const uncommitted = await scanUncommittedChanges(env);
+      if (uncommitted.length > 0) throw secretsFound(uncommitted);
+    }
+    reportStage(env, "saving");
+    return commitStaged(env, text);
+  });
   let merge: MergeSummary | null = null;
   let changed = committed;
   let pushed = false;
@@ -112,7 +122,6 @@ async function runSync(
       const secrets = await scanForPush(env, branch);
       if (secrets.length > 0) throw secretsFound(secrets);
 
-      await env.hooks.beforePush?.(attempt);
       reportStage(env, "uploading");
       try {
         await env.git.run(["push", "-u", REMOTE_NAME, branch], { network: true });

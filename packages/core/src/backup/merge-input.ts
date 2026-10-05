@@ -8,7 +8,7 @@ import {
 import { AppError } from "../errors";
 import { isSkillDir } from "../util/fs";
 import { listConflicts } from "./conflict-store";
-import type { BackupEnv } from "./env";
+import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 import {
   type MergePlan,
   type PresetVersions,
@@ -17,6 +17,9 @@ import {
   planMerge,
 } from "./merge-plan";
 import { type CommitSnapshot, readCommit } from "./merge-read";
+
+/** Starts each author line of the log read by `authorsIn`, so a file name is never taken for one. */
+const AUTHOR_MARK = "\u0001";
 
 /**
  * Everything a skill-aware merge decides from, read from three commits: the common ancestor,
@@ -33,6 +36,17 @@ export interface MergeSides {
    * something else) every skill would read as deleted, so only git's line merge is safe.
    */
   describable: boolean;
+}
+
+/** Who last touched what in a range of commits, from one `git log`. */
+export interface RangeAuthors {
+  /**
+   * Newest author of the skill's metadata file, else of the top-level folder at `path`; null
+   * when the range touched neither.
+   */
+  of(id: string | null, path?: string): string | null;
+  /** Every author in the range, newest first. */
+  all: string[];
 }
 
 export interface PlannedMerge {
@@ -68,6 +82,31 @@ export async function readSides(
   ]);
   const describable = [ourSide, theirSide].every((side) => side.entries.has(env.metadataName));
   return { base: baseSide, ours: ourSide, theirs: theirSide, describable };
+}
+
+export async function authorsIn(env: BackupEnv, range: string): Promise<RangeAuthors> {
+  const output = await env.git.text(["log", `--format=${AUTHOR_MARK}%an`, "--name-only", range]);
+  const byEntry = new Map<string, string>();
+  const all: string[] = [];
+  const metadataPrefix = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/`;
+  let author = "";
+  for (const line of output.split(/\r?\n/)) {
+    if (line.startsWith(AUTHOR_MARK)) {
+      author = line.slice(AUTHOR_MARK.length);
+      if (author && !all.includes(author)) all.push(author);
+      continue;
+    }
+    if (!line) continue;
+    const key = line.startsWith(metadataPrefix) ? line : (line.split("/")[0] ?? "");
+    if (key && !byEntry.has(key)) byEntry.set(key, author);
+  }
+  return {
+    of: (id, path) =>
+      (id === null ? undefined : byEntry.get(`${metadataPrefix}${id}.json`)) ??
+      (path ? byEntry.get(path) : undefined) ??
+      null,
+    all,
+  };
 }
 
 /** Decide every skill, preset and loose entry. `keep`: remote deletions the user turned down. */
@@ -160,7 +199,7 @@ export function skillFoldersHere(env: BackupEnv, sides: MergeSides): number {
 }
 
 /** The review was made against another remote state: its answers may not fit any more. */
-export function planChanged(): AppError {
+function planChanged(): AppError {
   return new AppError(
     "SYNC_PLAN_CHANGED",
     "Another device synced while you were reviewing. Nothing was changed. Review the changes again.",

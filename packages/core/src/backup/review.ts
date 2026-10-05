@@ -11,10 +11,11 @@ import { notFound } from "../errors";
 import { diffTrees } from "../updates/diff";
 import { ensureDir, removePath } from "../util/fs";
 import { findConflict } from "./conflict-store";
-import { type BackupEnv, SKILL_METADATA_SUBDIR, isSafeSkillPath } from "./env";
+import { type BackupEnv, isSafeSkillPath } from "./env";
 import { PREVIEW_INDEX_PREFIX, createStage, extractPaths } from "./extract";
 import {
   type MergeSides,
+  authorsIn,
   departingFolders,
   manyDeletes,
   planSides,
@@ -45,7 +46,6 @@ import { fetchRemote } from "./sync";
  */
 
 const PREVIEW_MESSAGE = "backup: preview";
-const AUTHOR_MARK = "\u0001";
 const EMPTY_SIDE = "empty";
 
 /** A preview with nothing in it. Fresh arrays every time: callers fill them in. */
@@ -100,30 +100,6 @@ export async function currentLocalTree(env: BackupEnv): Promise<string | null> {
   return env.ctx.lock.run("backup review", async () => (await workingTree(env)).tree);
 }
 
-/** Newest author per top-level folder and per skill metadata file, in one `git log`. */
-async function authorsIn(
-  env: BackupEnv,
-  range: string,
-): Promise<(id: string, path?: string) => string | null> {
-  const output = await env.git.text(["log", `--format=${AUTHOR_MARK}%an`, "--name-only", range], {
-    globalArgs: ["-c", "core.quotePath=false"],
-  });
-  const byEntry = new Map<string, string>();
-  const metadataPrefix = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/`;
-  let author = "";
-  for (const line of output.split(/\r?\n/)) {
-    if (line.startsWith(AUTHOR_MARK)) {
-      author = line.slice(AUTHOR_MARK.length);
-      continue;
-    }
-    if (!line) continue;
-    const key = line.startsWith(metadataPrefix) ? line : (line.split("/")[0] ?? "");
-    if (key && !byEntry.has(key)) byEntry.set(key, author);
-  }
-  return (id, path) =>
-    byEntry.get(`${metadataPrefix}${id}.json`) ?? (path ? byEntry.get(path) : undefined) ?? null;
-}
-
 function contentChange(
   from: { treeHash: string | null; path: string },
   to: typeof from,
@@ -158,7 +134,7 @@ function classify(versions: SkillVersions, plan: SkillPlan): Classified {
 /** For the line merge, which has no per-skill plan: only the skills it deletes are listed. */
 async function linePreview(env: BackupEnv, sides: MergeSides, range: string): Promise<SyncPreview> {
   const departing = departingFolders(env, sides);
-  const author = await authorsIn(env, range);
+  const authors = await authorsIn(env, range);
   const incoming = departing.map((folder): SyncPreviewItem => {
     const row = env.store.findByLibraryPath(join(env.repoDir, folder));
     return {
@@ -167,7 +143,7 @@ async function linePreview(env: BackupEnv, sides: MergeSides, range: string): Pr
       change: "deleted",
       path: folder,
       previousPath: null,
-      fromDevice: author(row?.id ?? folder, folder),
+      fromDevice: authors.of(row?.id ?? null, folder),
     };
   });
   return {
@@ -203,7 +179,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
     }
 
     const planned = planSides(env, sides);
-    const author = await authorsIn(env, range);
+    const authors = await authorsIn(env, range);
     const preview: SyncPreview = {
       ...emptyPreview(),
       remoteCommit: theirs,
@@ -224,7 +200,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
         previousPath: change === "renamed" ? (here?.path ?? null) : null,
         fromDevice,
       });
-      const remoteAuthor = author(plan.id, versions.theirs?.path ?? versions.base?.path);
+      const remoteAuthor = authors.of(plan.id, versions.theirs?.path ?? versions.base?.path);
       if (conflict) preview.conflicts.push(item("changed", remoteAuthor));
       if (incoming) preview.incoming.push(item(incoming, remoteAuthor));
       if (outgoing) preview.outgoing.push(item(outgoing, null));

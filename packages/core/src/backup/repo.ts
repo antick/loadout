@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { SECOND_MS } from "@loadout/shared";
 import { AppError } from "../errors";
 import { GIT_DIR } from "../util/fs";
 import { type BackupEnv, REMOTE_NAME } from "./env";
@@ -9,11 +10,9 @@ import { refreshIgnoreFile } from "./size";
 
 /** Small questions and actions on the repository that several backup modules share. */
 
-const MS_PER_SECOND = 1000;
-
 /** A commit time as git prints it (`%ct`, seconds), in milliseconds. */
 export function commitTimeMs(seconds: string): number {
-  return Number(seconds) * MS_PER_SECOND;
+  return Number(seconds) * SECOND_MS;
 }
 
 export function isRepo(env: BackupEnv): boolean {
@@ -106,13 +105,21 @@ export async function commitStaged(env: BackupEnv, message: string): Promise<boo
 }
 
 /**
- * Bring the repository up to date with the database and the disk, then commit.
- * Must run inside the library lock. Returns whether a commit was made.
+ * What a commit must find first: no unfinished git operation, and the portable metadata and the
+ * ignore file as the database and the disk are now. Must run inside the library lock.
  */
-export async function commitLibrary(env: BackupEnv, message: string): Promise<boolean> {
+export async function prepareCommit(env: BackupEnv): Promise<void> {
   assertRepo(env);
   await recoverInterrupted(env);
   env.portable.write();
   await refreshIgnoreFile(env);
+}
+
+/**
+ * Bring the repository up to date with the database and the disk, then commit.
+ * Must run inside the library lock. Returns whether a commit was made.
+ */
+export async function commitLibrary(env: BackupEnv, message: string): Promise<boolean> {
+  await prepareCommit(env);
   return commitStaged(env, message);
 }

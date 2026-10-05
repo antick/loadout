@@ -25,7 +25,9 @@ import {
 } from "./ignored";
 import {
   type MergeSides,
+  type RangeAuthors,
   assertDeletesReviewed,
+  authorsIn,
   assertFoldersReviewed,
   departingFolders,
   planSides,
@@ -35,7 +37,7 @@ import {
 import type { MergePlan, PresetVersions, SkillPlan, SkillVersions } from "./merge-plan";
 import { journaledMove, noteMergeStart } from "./interrupted";
 import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
-import { commitLibrary, mergeBase, requireBranch, resolveCommit, upstreamCommit } from "./repo";
+import { commitStaged, mergeBase, requireBranch, resolveCommit, upstreamCommit } from "./repo";
 
 /**
  * Brings the remote branch into the library. The decision is made per skill (see
@@ -70,19 +72,6 @@ const UP_TO_DATE: MergeSummary = {
 
 function skillName(env: BackupEnv, path: string): string {
   return readSkillIdentity(join(env.repoDir, path)).name;
-}
-
-async function lastAuthor(env: BackupEnv, range: string, paths: string[]): Promise<string> {
-  const result = await env.git.probe(["log", "-1", "--format=%an", range, "--", ...paths], {
-    globalArgs: ["--literal-pathspecs"],
-  });
-  return (result.code === 0 && result.stdout.trim()) || UNKNOWN_DEVICE;
-}
-
-async function remoteDevices(env: BackupEnv, range: string): Promise<string> {
-  const authors = await env.git.text(["log", "--format=%an", range]);
-  const names = [...new Set(authors.split(/\r?\n/).filter(Boolean))];
-  return names.length > 0 ? names.join(", ") : UNKNOWN_DEVICE;
 }
 
 function writeIfChanged(path: string, text: string): void {
@@ -284,7 +273,7 @@ async function plainMerge(env: BackupEnv, theirs: string, message: string): Prom
 async function lineMerge(
   env: BackupEnv,
   sides: MergeSides,
-  range: string,
+  authors: RangeAuthors,
   message: string,
   review: SyncReviewAnswer | undefined,
 ): Promise<MergedSkill[]> {
@@ -312,7 +301,7 @@ async function lineMerge(
       if (id) kept.push(id);
       removed.push({
         name: row?.name ?? folder,
-        fromDevice: await lastAuthor(env, range, [folder]),
+        fromDevice: authors.of(row?.id ?? null, folder) ?? UNKNOWN_DEVICE,
       });
     }
     await plainMerge(env, theirs, message);
@@ -326,29 +315,31 @@ async function lineMerge(
 }
 
 /** Skills whose folder differs between two commits, for merges made without a plan. */
-async function changedSkills(env: BackupEnv, from: string, range: string): Promise<MergedSkill[]> {
+async function changedSkills(
+  env: BackupEnv,
+  from: string,
+  authors: RangeAuthors,
+): Promise<MergedSkill[]> {
   const diff = await env.git.run(["diff", "--name-only", "-z", from, "HEAD"]);
   const folders = new Set<string>();
   for (const path of diff.stdout.split("\0")) {
     const top = path.split("/")[0] ?? "";
     if (top && !top.startsWith(".") && existsSync(join(env.repoDir, top))) folders.add(top);
   }
-  const updated: MergedSkill[] = [];
-  for (const folder of [...folders].sort()) {
-    updated.push({
-      name: skillName(env, folder),
-      fromDevice: await lastAuthor(env, range, [folder]),
-    });
-  }
-  return updated;
+  return [...folders].sort().map((folder) => ({
+    name: skillName(env, folder),
+    fromDevice: authors.of(null, folder) ?? UNKNOWN_DEVICE,
+  }));
 }
 
 /**
- * Merge `origin/<branch>` as last fetched. Must run inside the library lock; does no network.
- * Pending local changes are committed first so the merge always starts from a clean folder.
+ * Merge `origin/<branch>` as last fetched. Must run inside the library lock, through
+ * `whileMerging`, after the ignore file was refreshed; does no network. Pending local changes
+ * are committed first so the merge always starts from a clean folder.
  */
 export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Promise<MergeResult> {
-  const committed = await commitLibrary(env, BEFORE_MERGE_MESSAGE);
+  env.portable.write();
+  const committed = await commitStaged(env, BEFORE_MERGE_MESSAGE);
   const branch = await requireBranch(env);
   const ours = await resolveCommit(env, "HEAD");
   const theirs = await upstreamCommit(env, branch);
@@ -364,19 +355,20 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   const base = await mergeBase(env, ours, theirs);
   if (base === theirs) return idle();
 
-  const range = `${base}..${theirs}`;
-  const message = `${MERGE_MESSAGE_PREFIX}${await remoteDevices(env, range)}`;
+  // One look at the incoming commits answers who sent them and who last touched each skill.
+  const authors = await authorsIn(env, `${base}..${theirs}`);
+  const message = `${MERGE_MESSAGE_PREFIX}${authors.all.join(", ") || UNKNOWN_DEVICE}`;
 
   const sides = await readSides(env, base, ours, theirs);
   const theirSide = sides.theirs;
 
   // Without our metadata on both sides every skill would read as deleted: git's line merge then.
   if (!sides.describable) {
-    const removed = await lineMerge(env, sides, range, message, review);
+    const removed = await lineMerge(env, sides, authors, message, review);
     const summary: MergeSummary = {
       ...UP_TO_DATE,
       upToDate: false,
-      updated: await changedSkills(env, ours, range),
+      updated: await changedSkills(env, ours, authors),
       removed,
     };
     await env.reconcile(true);
@@ -413,10 +405,9 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     if (item.outcome !== "deleted" || !mine) continue;
     const row = env.store.find(item.id);
     if (row) departing.set(item.id, libraryRecordOf(row));
-    const paths = [`${env.metadataName}/${SKILL_METADATA_SUBDIR}/${item.id}.json`, mine.path];
     removed.push({
       name: row?.name ?? mine.path,
-      fromDevice: await lastAuthor(env, range, paths),
+      fromDevice: authors.of(item.id, mine.path) ?? UNKNOWN_DEVICE,
     });
   }
   const leftIn = fastForward
@@ -439,12 +430,9 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   const updated: MergedSkill[] = [];
   for (const item of plan.skills) {
     if (item.outcome !== "updated" || !item.path) continue;
-    const remote = skills.get(item.id)?.theirs;
-    const paths = [`${env.metadataName}/${SKILL_METADATA_SUBDIR}/${item.id}.json`];
-    if (remote) paths.push(remote.path);
     updated.push({
       name: skillName(env, item.path),
-      fromDevice: await lastAuthor(env, range, paths),
+      fromDevice: authors.of(item.id, skills.get(item.id)?.theirs?.path) ?? UNKNOWN_DEVICE,
     });
   }
   const keptLocal = plan.skills
