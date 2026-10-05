@@ -1,9 +1,11 @@
 import type { BatchResult, Skill } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { runWithUndo } from "@/lib/batch";
+import { runWithUndo, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo } from "@/lib/removed-undo";
 
@@ -89,4 +91,32 @@ export function useDeleteLocalSkills(): UseMutationResult<BatchResult, unknown, 
       ),
     error: "agents.errors.delete",
   });
+}
+
+/**
+ * Deploy library skills to one agent in one call and toast the agent page's own summary, folders
+ * in the way listed with the failures. Rejects when nothing could be added, so the picker stays
+ * open with the selection intact.
+ */
+export function useDeployToAgent(): (agentKey: string, skillIds: string[]) => Promise<void> {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const { mutateAsync: apply } = useApplySkills();
+  return async (agentKey, skillIds) => {
+    const result = await apply({
+      skillIds,
+      agentKeys: [agentKey],
+      action: "add",
+      silent: true,
+      skipConflicts: true,
+    });
+    const failed = [
+      ...result.failed,
+      ...result.conflicts.map((conflict) => ({ name: conflict.path, message: conflict.reason })),
+    ];
+    toastBatchOutcome(t("agents.toast.added", { count: result.added }), failed, {
+      description: result.added > 0 ? reloadHintFor(queryClient, [agentKey]) : null,
+    });
+    if (result.added === 0 && failed.length > 0) throw new Error(t("agents.errors.addNone"));
+  };
 }

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AddFromLibrarySheet } from "@/components/AddFromLibrarySheet";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
-import { useRefreshWorkspace } from "@/features/agents/workspace-mutations";
+import { useDeployToAgent, useRefreshWorkspace } from "@/features/agents/workspace-mutations";
 import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
 import {
   useBrokenFolders,
@@ -28,7 +28,6 @@ import {
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
-import { useApplySkills } from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgentNames, useAgents } from "@/hooks/queries/agents";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useLastDefined } from "@/hooks/use-last-defined";
@@ -55,7 +54,7 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const plugins = usePluginSkills(agentKey);
   const listing = useSkillListing(agentKey);
   const refresh = useRefreshWorkspace();
-  const applySkills = useApplySkills();
+  const deployToAgent = useDeployToAgent();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
@@ -213,18 +212,7 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
         target={{ kind: "agent", agentKey }}
         title={t("agents.workspace.addTitle", { agent: agentName })}
         description={t("agents.workspace.addDescription")}
-        onSubmit={async (skillIds) => {
-          const result = await applySkills.mutateAsync({
-            skillIds,
-            agentKeys: [agentKey],
-            action: "add",
-            skipConflicts: true,
-          });
-          // Nothing added keeps the picker open with the selection intact.
-          if (result.added === 0 && result.failed.length + result.conflicts.length > 0) {
-            throw new Error(t("agents.errors.addNone"));
-          }
-        }}
+        onSubmit={(skillIds) => deployToAgent(agentKey, skillIds)}
       />
     </LocalSkillPage>
   );
