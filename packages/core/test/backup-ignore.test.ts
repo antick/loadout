@@ -163,4 +163,55 @@ describe("backup ignore rules", () => {
     expect(b.read("alpha")).toBe("A's version");
     expect(b.read("alpha", ".env")).toBe("SECRET=1");
   });
+
+  /** Device A tracks a file at the path of B's left-out `.env` in alpha (added past the rules). */
+  async function trackEnvOnA(): Promise<void> {
+    writeFile(join(a.skillsDir, "alpha", ".env"), "FROM_A=1");
+    a.git("add", "-f", "alpha/.env");
+    a.editSkill("alpha", "from A");
+    await a.api.sync();
+  }
+
+  /** B's own `.env`, kept in Recently removed with the folder it lived in. */
+  function keptEnv(): string[] {
+    return b.removed
+      .list()
+      .map((entry) => join(b.removed.contentPath(entry.id), ".env"))
+      .filter((path) => existsSync(path))
+      .map((path) => readFileSync(path, "utf8"));
+  }
+
+  it("keeps a left-out file in Recently removed when the other device's version has a file at its path", async () => {
+    await trackEnvOnA();
+    writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+    b.editSkill("beta", "from B");
+    await b.api.sync();
+
+    expect(b.read("alpha")).toBe("from A");
+    expect(b.read("alpha", ".env")).toBe("FROM_A=1");
+    expect(keptEnv()).toEqual(["SECRET=1"]);
+  });
+
+  it("does not fast-forward over a left-out file the other device's version has a file at", async () => {
+    await trackEnvOnA();
+    writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+    const outcome = await b.api.sync();
+
+    expect(outcome.merge?.fastForward).toBe(false);
+    expect(b.read("alpha")).toBe("from A");
+    expect(keptEnv()).toEqual(["SECRET=1"]);
+  });
+
+  it("keeps a colliding left-out file when a conflict is settled with the remote version", async () => {
+    await trackEnvOnA();
+    writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+    b.editSkill("alpha", "B's version");
+    await b.api.sync();
+    const conflict = (await b.api.conflicts())[0];
+    expect(conflict).toBeDefined();
+
+    await b.api.resolveConflict(conflict?.skillKey ?? "", "use_remote");
+    expect(b.read("alpha", ".env")).toBe("FROM_A=1");
+    expect(keptEnv()).toEqual(["SECRET=1"]);
+  });
 });

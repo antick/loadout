@@ -10,7 +10,7 @@ import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { skillMetadataAt } from "./merge-read";
-import { type SetAsideFolder, carryIgnored, putBackFolder, setAsideFolder } from "./ignored";
+import { type SetAsideFolder, putBackFolder, setAsideFolder, settleSetAside } from "./ignored";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 import { safetyPoint } from "./snapshots";
 
@@ -193,10 +193,10 @@ export async function resolveConflicts(
       await env.git.probe(["reset", "--hard", safety]);
       throw error;
     }
-    // Files kept out of the backup exist only here: they stay with the skill.
+    // Files kept out of the backup exist only here: they stay with the skill, or are kept in
+    // Recently removed. When neither worked, the scratch folders holding them stay on disk.
     for (const { aside, target } of work.replaced) {
-      const failed = carryIgnored(aside, target);
-      if (failed.length > 0) env.ctx.log.warn(`Could not keep local files of ${target}`, failed);
+      if (!settleSetAside(env, aside, target)) work.cleanups = [];
     }
   } finally {
     for (const cleanup of work.cleanups) await cleanup();

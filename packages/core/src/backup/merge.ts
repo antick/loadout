@@ -11,7 +11,13 @@ import { countConflicts, recordConflict } from "./conflict-store";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
-import { type SetAsideFolder, carryIgnored, putBackFolder, setAsideFolder } from "./ignored";
+import {
+  type SetAsideFolder,
+  ignoredInTheWay,
+  putBackFolder,
+  setAsideFolder,
+  settleSetAside,
+} from "./ignored";
 import { assertDeletesReviewed, planChanged, planSides, readSides } from "./merge-input";
 import type { MergePlan, PresetVersions, SkillPlan, SkillVersions } from "./merge-plan";
 import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
@@ -79,8 +85,11 @@ function freeFolder(env: BackupEnv, wanted: string, planned: Set<string>): strin
   );
 }
 
-/** A skill the merge took out: into Recently removed, with its tags and presets when known. */
-function keepDeparted(env: BackupEnv, aside: SetAsideFolder, record?: LibraryRecord): void {
+/**
+ * A skill the merge took out: into Recently removed, with its tags and presets when known.
+ * False when that failed: the folder then stays where it was set aside.
+ */
+function keepDeparted(env: BackupEnv, aside: SetAsideFolder, record?: LibraryRecord): boolean {
   try {
     env.removed.setAside(aside.to, {
       place: LIBRARY_PLACE,
@@ -88,8 +97,13 @@ function keepDeparted(env: BackupEnv, aside: SetAsideFolder, record?: LibraryRec
       originalPath: aside.from,
       ...(record ? { library: record } : {}),
     });
+    return true;
   } catch (error) {
-    env.ctx.log.warn(`Could not keep ${aside.from} in Recently removed`, error);
+    env.ctx.log.error(
+      `Could not keep ${aside.from} in Recently removed; left in ${aside.to}`,
+      error,
+    );
+    return false;
   }
 }
 
@@ -122,6 +136,8 @@ async function materialise(
     renameSync(from, target);
   };
 
+  // Cleared when left-out files could be kept nowhere else: the stage then stays on disk.
+  let cleanUp = true;
   try {
     await placeAndCommit();
     // Committed: the left-out files of replaced folders move into their successors, and skills
@@ -129,15 +145,14 @@ async function materialise(
     for (const item of plan.skills) {
       const aside = asides.get(item.id);
       if (!aside) continue;
-      if (item.content === "none") keepDeparted(env, aside, departing.get(item.id));
-      if (item.content !== "theirs" || !item.path) continue;
-      const failed = carryIgnored(aside, join(env.repoDir, item.path));
-      if (failed.length > 0) {
-        env.ctx.log.warn(`Backup merge could not keep local files of ${item.path}`, failed);
+      if (item.content === "none" && !keepDeparted(env, aside, departing.get(item.id))) {
+        cleanUp = false;
       }
+      if (item.content !== "theirs" || !item.path) continue;
+      if (!settleSetAside(env, aside, join(env.repoDir, item.path))) cleanUp = false;
     }
   } finally {
-    await stage.cleanup();
+    if (cleanUp) await stage.cleanup();
   }
 
   async function placeAndCommit(): Promise<void> {
@@ -311,7 +326,19 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     const mine = skills.get(item.id)?.ours;
     return mine !== undefined && (item.content === "none" || item.path !== mine.path);
   });
-  if (base === ours && conflicts.length === 0 && trustworthy && !reshapesOurs) {
+  // Git overwrites a left-out file without asking when the incoming side has a file at its path.
+  const replaced = new Map<string, string>();
+  for (const item of plan.skills) {
+    const { ours: mine, theirs: remote } = skills.get(item.id) ?? {};
+    if (mine && remote && item.content === "theirs") replaced.set(mine.path, remote.path);
+  }
+  if (
+    base === ours &&
+    conflicts.length === 0 &&
+    trustworthy &&
+    !reshapesOurs &&
+    !(await ignoredInTheWay(env, replaced, theirs))
+  ) {
     fastForward = (await env.git.probe(["merge", "--ff-only", theirs])).code === 0;
   }
   // Read before the merge: afterwards the folders are gone and the rebuild drops the rows.
