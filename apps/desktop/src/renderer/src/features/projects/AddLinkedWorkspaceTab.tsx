@@ -1,5 +1,5 @@
 import { CircleAlert } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FolderField } from "@/components/FolderField";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -15,6 +15,9 @@ import type { AddProjectTabProps } from "./AddProjectFolderTab";
 /** Link a standalone skills folder as a workspace of its own, outside any project layout. */
 export function AddLinkedWorkspaceTab({ onCancel, onAdded }: AddProjectTabProps): ReactNode {
   const { t } = useTranslation();
+  const nameId = useId();
+  const pathId = useId();
+  const disabledPathId = useId();
   const addLinked = useAddLinkedWorkspace();
   const [name, setName] = useState("");
   const [path, setPath] = useState("");
@@ -35,9 +38,9 @@ export function AddLinkedWorkspaceTab({ onCancel, onAdded }: AddProjectTabProps)
       <p className="text-sm text-muted-foreground">{t("addProject.linked.intro")}</p>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="linked-name">{t("addProject.linked.name")}</FieldLabel>
+          <FieldLabel htmlFor={nameId}>{t("addProject.linked.name")}</FieldLabel>
           <Input
-            id="linked-name"
+            id={nameId}
             value={name}
             required
             placeholder={t("addProject.linked.namePlaceholder")}
@@ -45,9 +48,9 @@ export function AddLinkedWorkspaceTab({ onCancel, onAdded }: AddProjectTabProps)
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="linked-path">{t("addProject.linked.path")}</FieldLabel>
+          <FieldLabel htmlFor={pathId}>{t("addProject.linked.path")}</FieldLabel>
           <FolderField
-            id="linked-path"
+            id={pathId}
             value={path}
             onChange={setPath}
             placeholder={t("addProject.linked.pathPlaceholder")}
@@ -55,11 +58,9 @@ export function AddLinkedWorkspaceTab({ onCancel, onAdded }: AddProjectTabProps)
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="linked-disabled-path">
-            {t("addProject.linked.disabledPath")}
-          </FieldLabel>
+          <FieldLabel htmlFor={disabledPathId}>{t("addProject.linked.disabledPath")}</FieldLabel>
           <FolderField
-            id="linked-disabled-path"
+            id={disabledPathId}
             value={disabledPath}
             onChange={setDisabledPath}
             placeholder={t("addProject.linked.disabledPlaceholder")}

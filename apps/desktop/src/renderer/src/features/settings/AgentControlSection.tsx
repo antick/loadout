@@ -13,14 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCliStatus } from "@/features/settings/settings-queries";
 import { useAgentControlStatus } from "@/hooks/queries/agent-control";
 
-/** Example invocations, keyed by their caption under `settings.cli.examples.*`. */
-const EXAMPLES = {
-  list: `${CLI_BINARY_NAME} skills list --json`,
-  install: `${CLI_BINARY_NAME} skills install owner/repo`,
-  deploy: `${CLI_BINARY_NAME} skills deploy my-skill --agent claude_code`,
-  preset: `${CLI_BINARY_NAME} presets deploy "Frontend work"`,
-  sync: `${CLI_BINARY_NAME} git sync`,
-} as const;
+/** Example invocations: arguments under `settings.cli.exampleArgs.*`, captions `examples.*`. */
+const EXAMPLE_IDS = ["list", "install", "deploy", "preset", "sync"] as const;
 
 /** The command-line tool and the bundled skill that teaches agents to use it. */
 export function AgentControlSection(): ReactNode {
@@ -60,10 +54,10 @@ export function AgentControlSection(): ReactNode {
           </InlineNotice>
         ) : null}
         <div className="grid gap-2 border-t pt-3 md:grid-cols-2">
-          {Object.entries(EXAMPLES).map(([id, command]) => (
+          {EXAMPLE_IDS.map((id) => (
             <CopyableCommand
               key={id}
-              command={command}
+              command={`${CLI_BINARY_NAME} ${t(`settings.cli.exampleArgs.${id}`)}`}
               caption={t(`settings.cli.examples.${id}`)}
             />
           ))}

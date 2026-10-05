@@ -261,6 +261,13 @@
       "version": "Version",
       "noVersion": "unknown",
       "pathHint": "Use the full location above if the command is not on your PATH. Add --json for output that programs can read.",
+      "exampleArgs": {
+        "list": "skills list --json",
+        "install": "skills install owner/repo",
+        "deploy": "skills deploy my-skill --agent claude_code",
+        "preset": "presets deploy \"Frontend work\"",
+        "sync": "git sync"
+      },
       "examples": {
         "list": "List the library",
         "install": "Install every skill of a repository",

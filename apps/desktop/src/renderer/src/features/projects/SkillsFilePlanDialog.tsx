@@ -13,7 +13,7 @@ import {
   RefreshCw,
   SearchX,
 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -33,10 +33,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { useRunSkillsFile } from "@/features/projects/skills-file-mutations";
 import { type SkillsFileMode, useSkillsFilePlan } from "@/features/projects/skills-file-queries";
 import { useLastDefined } from "@/hooks/use-last-defined";
-
-/** Characters of a commit shown next to a source. */
-const FORCE_ID = "skills-file-force";
-const PRUNE_ID = "skills-file-prune";
 
 const ACTION_LOOK: Record<SkillsFileAction, { tone: StatusTone; icon: ReactNode }> = {
   add: { tone: "success", icon: <CirclePlus /> },
@@ -94,6 +90,8 @@ function PlanBody({
   onPrune: (value: boolean) => void;
 }): ReactNode {
   const { t } = useTranslation();
+  const forceId = useId();
+  const pruneId = useId();
   const edited = plan.entries.some((e) => e.action === "edited" || e.action === "keep_edited");
   const missing = plan.sources.flatMap((source) =>
     source.missing.map((name) => `${name} (${source.url})`),
@@ -134,12 +132,12 @@ function PlanBody({
       {mode === "apply" ? (
         <div className="flex items-start gap-2">
           <Checkbox
-            id={PRUNE_ID}
+            id={pruneId}
             checked={prune}
             onCheckedChange={(v) => onPrune(v === true)}
             className="mt-0.5"
           />
-          <Label htmlFor={PRUNE_ID} className="leading-5 font-normal">
+          <Label htmlFor={pruneId} className="leading-5 font-normal">
             {t("skillsFile.prune")}
           </Label>
         </div>
@@ -147,12 +145,12 @@ function PlanBody({
       {edited ? (
         <div className="flex items-start gap-2">
           <Checkbox
-            id={FORCE_ID}
+            id={forceId}
             checked={force}
             onCheckedChange={(v) => onForce(v === true)}
             className="mt-0.5"
           />
-          <Label htmlFor={FORCE_ID} className="leading-5 font-normal">
+          <Label htmlFor={forceId} className="leading-5 font-normal">
             {t("skillsFile.force")}
           </Label>
         </div>

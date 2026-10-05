@@ -1,5 +1,5 @@
 import type { Preset } from "@loadout/shared";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PresetIconPicker } from "@/components/PresetIconPicker";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,8 @@ export interface PresetDialogProps {
 /** The form lives in its own component so every opening starts from the preset's current values. */
 function PresetForm({ preset, onOpenChange, onSaved }: Omit<PresetDialogProps, "open">): ReactNode {
   const { t } = useTranslation();
+  const nameId = useId();
+  const descriptionId = useId();
   const save = useSavePreset();
   const [name, setName] = useState(preset?.name ?? "");
   const [description, setDescription] = useState(preset?.description ?? "");
@@ -59,9 +61,9 @@ function PresetForm({ preset, onOpenChange, onSaved }: Omit<PresetDialogProps, "
       </DialogHeader>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="preset-name">{t("presets.name")}</FieldLabel>
+          <FieldLabel htmlFor={nameId}>{t("presets.name")}</FieldLabel>
           <Input
-            id="preset-name"
+            id={nameId}
             value={name}
             required
             placeholder={t("presets.namePlaceholder")}
@@ -69,9 +71,9 @@ function PresetForm({ preset, onOpenChange, onSaved }: Omit<PresetDialogProps, "
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="preset-description">{t("presets.description")}</FieldLabel>
+          <FieldLabel htmlFor={descriptionId}>{t("presets.description")}</FieldLabel>
           <Textarea
-            id="preset-description"
+            id={descriptionId}
             rows={2}
             value={description}
             placeholder={t("presets.descriptionPlaceholder")}

@@ -1,5 +1,5 @@
 import type { Project, ProjectTarget } from "@loadout/shared";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { SyncStatusBadge } from "@/components/SyncStatusBadge";
@@ -30,8 +30,6 @@ export interface ProjectSkillDetailProps {
   onClose: () => void;
 }
 
-const ENABLED_SWITCH_ID = "project-skill-enabled";
-
 /** Detail sheet of one project skill: switch, per-agent copies, files and the document tabs. */
 export function ProjectSkillDetail({
   project,
@@ -41,6 +39,7 @@ export function ProjectSkillDetail({
   onClose,
 }: ProjectSkillDetailProps): ReactNode {
   const { t } = useTranslation();
+  const enabledSwitchId = useId();
   // The sheet keeps its content while it slides out, so keep the last skill around as well.
   const group = useLastDefined(openGroup);
   // Which copy's document is on screen; falls back to the one that needs attention most.
@@ -79,13 +78,13 @@ export function ProjectSkillDetail({
       {group && project.supportsToggle ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
           <div className="min-w-0">
-            <Label htmlFor={ENABLED_SWITCH_ID}>{t("projectPage.detail.enabled")}</Label>
+            <Label htmlFor={enabledSwitchId}>{t("projectPage.detail.enabled")}</Label>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {t("projectPage.detail.enabledHint")}
             </p>
           </div>
           <Switch
-            id={ENABLED_SWITCH_ID}
+            id={enabledSwitchId}
             checked={group.enabledState === "all"}
             onCheckedChange={() => actions.toggleEnabled(group)}
           />
