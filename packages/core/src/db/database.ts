@@ -19,10 +19,17 @@ export class Database {
     this.#migrate();
   }
 
+  #version(): number {
+    return Number(this.get<{ user_version: number }>("PRAGMA user_version")?.user_version ?? 0);
+  }
+
+  /**
+   * Apply the migrations this database lacks, one transaction each. The version is read again
+   * inside each one: the app and the CLI opening a just-upgraded library together both get here,
+   * and the write lock of `BEGIN IMMEDIATE` lets only one of them apply a step.
+   */
   #migrate(): void {
-    const current = Number(
-      this.get<{ user_version: number }>("PRAGMA user_version")?.user_version ?? 0,
-    );
+    const current = this.#version();
     if (current > MIGRATIONS.length) {
       throw new AppError(
         "UNSUPPORTED",
@@ -33,6 +40,8 @@ export class Database {
       const sql = MIGRATIONS[version];
       if (!sql) continue;
       this.transaction(() => {
+        // Applied already, here or by another process since the first look.
+        if (this.#version() > version) return;
         this.#db.exec(sql);
         this.#db.exec(`PRAGMA user_version = ${version + 1}`);
       });

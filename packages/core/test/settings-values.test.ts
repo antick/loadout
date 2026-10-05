@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { isNewerVersion } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { Database } from "../src/db/database";
+import { Database, type Param, type Row } from "../src/db/database";
 import { MIGRATIONS } from "../src/db/schema";
 import { INTERNAL_KEYS, SettingsStore } from "../src/settings/store";
 import { type TestWorld, createTestWorld, databaseAt, tempDir } from "./helpers";
@@ -54,6 +54,36 @@ describe("settings that became app state", () => {
     for (const key of Object.keys(saved)) expect(settings.getRaw(key, null)).toBeNull();
     db.close();
     temp.cleanup();
+  });
+});
+
+describe("opening a library another process is upgrading", () => {
+  it("skips a migration that process applied after this one looked", () => {
+    const temp = tempDir();
+    const path = join(temp.dir, "loadout.db");
+    databaseAt(path, MIGRATIONS.length - 1).close();
+    let raced = false;
+    class RacingDatabase extends Database {
+      override get<T = Row>(sql: string, ...params: Param[]): T | undefined {
+        const value = super.get<T>(sql, ...params);
+        if (!raced && sql === "PRAGMA user_version") {
+          raced = true;
+          // The other process upgrades the library right after this one read its version.
+          new Database(path).close();
+        }
+        return value;
+      }
+    }
+    try {
+      const db = new RacingDatabase(path);
+      expect(raced).toBe(true);
+      expect(db.get<{ user_version: number }>("PRAGMA user_version")?.user_version).toBe(
+        MIGRATIONS.length,
+      );
+      db.close();
+    } finally {
+      temp.cleanup();
+    }
   });
 });
 
