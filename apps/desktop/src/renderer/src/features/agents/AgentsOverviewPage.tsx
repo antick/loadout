@@ -18,7 +18,7 @@ import {
 import { useSkills } from "@/hooks/queries/skills";
 import { AgentCard } from "./AgentCard";
 import { AgentPresetBar } from "./AgentPresetBar";
-import { UnavailableAgents } from "./UnavailableAgents";
+import { SwitchedOffAgents } from "./SwitchedOffAgents";
 
 export const AGENT_CATEGORIES: readonly AgentCategory[] = ["coding", "assistant"];
 export const DEFAULT_AGENT_CATEGORY: AgentCategory = "coding";
@@ -39,8 +39,8 @@ export function AgentsOverviewPage({
   const skills = useSkills();
 
   const available = useMemo(() => (agents.data ?? []).filter(isAgentAvailable), [agents.data]);
-  const unavailable = useMemo(
-    () => (agents.data ?? []).filter((agent) => !isAgentAvailable(agent)),
+  const switchedOff = useMemo(
+    () => (agents.data ?? []).filter((agent) => agent.installed && !agent.enabled),
     [agents.data],
   );
   const hasAssistants = available.some((agent) => agent.category === "assistant");
@@ -136,7 +136,7 @@ export function AgentsOverviewPage({
         </>
       )}
 
-      {agents.data ? <UnavailableAgents agents={unavailable} /> : null}
+      {agents.data ? <SwitchedOffAgents agents={switchedOff} /> : null}
     </div>
   );
 }

@@ -18,12 +18,11 @@
       "presetsHint_one": "Applies to the agent below",
       "presetsHint_other": "Applies to all {{count}} agents below"
     },
-    "unavailable": {
-      "title": "Not installed or switched off",
-      "manage": "Manage in Settings",
-      "hint": "These agents cannot receive skills right now. Switch an agent on, or point it at its folder, in Settings.",
-      "disabled": "Switched off",
-      "notInstalled": "Not installed"
+    "switchedOff": {
+      "title": "Switched off",
+      "hint": "Installed, but they receive no skills until switched on in Settings.",
+      "others": "Agents not found on this computer are listed in Settings.",
+      "manage": "Manage in Settings"
     },
     "workspace": {
       "summary": "{{total}} · {{managed}} managed · {{inSync}} in sync",
