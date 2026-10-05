@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { InlineEdit } from "@/components/InlineEdit";
 import { PathText } from "@/components/PathText";
-import { StatusBadge, type StatusTone } from "@/components/StatusBadge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -84,14 +84,14 @@ export function DiscoveredSkillRow({
             })}
           </span>
           {version ? (
-            <HintBadge
+            <StatusBadge
               tone="warning"
               label={t("install.scan.version", { index: version.index, total: version.total })}
               hint={t("install.scan.versionHint", { name: skill.name, count: version.total })}
             />
           ) : null}
           {skill.locations.length > 1 ? (
-            <HintBadge
+            <StatusBadge
               tone="neutral"
               label={t("install.scan.locations", { count: skill.locations.length })}
               hint={t("install.scan.locationsHint")}
@@ -124,27 +124,5 @@ export function DiscoveredSkillRow({
         </Button>
       )}
     </li>
-  );
-}
-
-/** A badge that explains itself on hover. */
-function HintBadge({
-  tone,
-  label,
-  hint,
-}: {
-  tone: StatusTone;
-  label: string;
-  hint: string;
-}): ReactNode {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex shrink-0">
-          <StatusBadge tone={tone} label={label} />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-72">{hint}</TooltipContent>
-    </Tooltip>
   );
 }

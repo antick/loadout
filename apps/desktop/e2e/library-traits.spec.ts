@@ -8,7 +8,12 @@ test("a skill that ships code says so in the library, its filter and its panel",
 }) => {
   await openApp(page, "/library");
   const content = main(page);
-  await expect(content.getByLabel("Runs code")).toHaveCount(1);
+  const badge = content.getByText("Runs code", { exact: true });
+  await expect(badge).toHaveCount(1);
+  // The badge explains itself on keyboard focus too, not only on hover.
+  await badge.locator("..").focus();
+  await expect(page.getByRole("tooltip")).toContainText("can put code in reach of your agent");
+  await page.keyboard.press("Escape");
 
   await content.getByRole("combobox", { name: "Filter by status" }).click();
   await page.getByRole("option", { name: "Runs code" }).click();

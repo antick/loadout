@@ -27,7 +27,7 @@ test("a seeded note shows on the card and can be taken off", async ({ page }) =>
     content
       .getByRole("heading", { name: "sql-migrations", level: 3 })
       .locator("..")
-      .getByLabel("Has a note"),
+      .getByText("Has a note", { exact: true }),
   ).toBeVisible();
   await content.getByRole("button", { name: "sql-migrations", exact: true }).click();
   const panel = page.getByRole("dialog", { name: "sql-migrations" });

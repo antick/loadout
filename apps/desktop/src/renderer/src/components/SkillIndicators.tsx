@@ -1,5 +1,4 @@
 import type { Skill } from "@loadout/shared";
-import { Link } from "@tanstack/react-router";
 import { FileWarning, PencilLine, StickyNote, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,12 +6,10 @@ import { ManualOnlyBadge } from "@/components/ManualOnlyBadge";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { SkillTraitBadges } from "@/components/SkillTraitBadges";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UpdateStatusBadge } from "@/components/UpdateStatusBadge";
 import { SafetyVerdictBadge } from "@/features/safety/SafetyReportView";
 import { useSafetyReports } from "@/hooks/queries/safety";
 import { hasTrackedSource } from "@/lib/skill-source";
-import { cn } from "@/lib/utils";
 
 /**
  * Attention badges of a library skill: update state, a SKILL.md that breaks the format (a link to
@@ -37,61 +34,37 @@ export function SkillIndicators({
       <CheckBadges skill={skill} compact={compact} showAll={showAll} />
       <SafetyBadge skill={skill} compact={compact} showAll={showAll} />
       {skill.manualOnly ? <ManualOnlyBadge compact={compact} /> : null}
-      {skill.note ? <NoteBadge note={skill.note} compact={compact} /> : null}
+      {skill.note ? (
+        // The user's own note, shown in full on hover.
+        <StatusBadge
+          tone="neutral"
+          icon={<StickyNote />}
+          label={t("library.note.badge")}
+          compact={compact}
+          hint={<p className="whitespace-pre-wrap">{skill.note}</p>}
+        />
+      ) : null}
       <SkillTraitBadges traits={skill.traits} compact={compact} showAll={showAll} />
       {skill.hasConflict ? (
-        <Link
-          to="/backup"
-          aria-label={t("skills.conflict")}
-          className={cn(
-            SKILL_ITEM_RAISED_CLASS,
-            "inline-flex rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          )}
-        >
-          <StatusBadge
-            tone="danger"
-            icon={<TriangleAlert />}
-            label={t("skills.conflict")}
-            compact={compact}
-          />
-        </Link>
+        <StatusBadge
+          tone="danger"
+          icon={<TriangleAlert />}
+          label={t("skills.conflict")}
+          compact={compact}
+          link={{ to: "/backup" }}
+          className={SKILL_ITEM_RAISED_CLASS}
+        />
       ) : null}
       {showAll && skill.editedFiles.length > 0 && hasTrackedSource(skill) ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex">
-              <StatusBadge
-                tone="info"
-                icon={<PencilLine />}
-                label={t("skills.edited")}
-                compact={compact}
-              />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-64">{t("skills.editedHint")}</TooltipContent>
-        </Tooltip>
+        <StatusBadge
+          tone="info"
+          icon={<PencilLine />}
+          label={t("skills.edited")}
+          compact={compact}
+          hint={t("skills.editedHint")}
+        />
       ) : null}
     </>
-  );
-}
-
-/** The user's own note, shown in full on hover. */
-function NoteBadge({ note, compact }: { note: string; compact?: boolean }): ReactNode {
-  const { t } = useTranslation();
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">
-          <StatusBadge
-            tone="neutral"
-            icon={<StickyNote />}
-            label={t("library.note.badge")}
-            compact={compact}
-          />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-72 whitespace-pre-wrap">{note}</TooltipContent>
-    </Tooltip>
   );
 }
 
@@ -129,27 +102,15 @@ function CheckBadges({
   const warnings = skill.issues.length - errors;
   if (errors > 0) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
-            to="/library/$skillId/edit"
-            params={{ skillId: skill.id }}
-            aria-label={t("checks.badge")}
-            className={cn(
-              SKILL_ITEM_RAISED_CLASS,
-              "inline-flex rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-            )}
-          >
-            <StatusBadge
-              tone="danger"
-              icon={<FileWarning />}
-              label={t("checks.badge")}
-              compact={compact}
-            />
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-64">{t("checks.badgeHint")}</TooltipContent>
-      </Tooltip>
+      <StatusBadge
+        tone="danger"
+        icon={<FileWarning />}
+        label={t("checks.badge")}
+        compact={compact}
+        hint={t("checks.badgeHint")}
+        link={{ to: "/library/$skillId/edit", params: { skillId: skill.id } }}
+        className={SKILL_ITEM_RAISED_CLASS}
+      />
     );
   }
   if (!showAll || warnings === 0) return null;

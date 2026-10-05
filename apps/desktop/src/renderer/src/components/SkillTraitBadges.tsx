@@ -8,7 +8,6 @@ import { type LucideIcon, Plug, Terminal, Webhook, Wrench } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const TRAIT_ICONS: Record<SkillTraitCode, LucideIcon> = {
@@ -72,54 +71,40 @@ export interface SkillTraitBadgesProps {
  */
 export function SkillTraitBadges({ traits, compact, showAll }: SkillTraitBadgesProps): ReactNode {
   const { t } = useTranslation();
+  const textOf = useTraitText();
   if (traits.length === 0) return null;
   if (showAll) {
     return (
       <>
-        {traits.map((trait) => (
-          <TraitBadge key={trait.code} trait={trait} compact={compact} />
-        ))}
+        {traits.map((trait) => {
+          const Icon = TRAIT_ICONS[trait.code];
+          return (
+            <StatusBadge
+              key={trait.code}
+              tone="info"
+              icon={<Icon />}
+              label={t(`traits.label.${trait.code}`)}
+              compact={compact}
+              hint={textOf(trait)}
+            />
+          );
+        })}
       </>
     );
   }
   if (!runsCode(traits)) return null;
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">
-          <StatusBadge
-            tone="info"
-            icon={<Terminal />}
-            label={t("traits.runsCode")}
-            compact={compact}
-          />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-72">
-        <p className="mb-1">{t("traits.runsCodeHint")}</p>
-        <SkillTraitList traits={traits} />
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-function TraitBadge({ trait, compact }: { trait: SkillTrait; compact?: boolean }): ReactNode {
-  const { t } = useTranslation();
-  const textOf = useTraitText();
-  const Icon = TRAIT_ICONS[trait.code];
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">
-          <StatusBadge
-            tone="info"
-            icon={<Icon />}
-            label={t(`traits.label.${trait.code}`)}
-            compact={compact}
-          />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-72">{textOf(trait)}</TooltipContent>
-    </Tooltip>
+    <StatusBadge
+      tone="info"
+      icon={<Terminal />}
+      label={t("traits.runsCode")}
+      compact={compact}
+      hint={
+        <>
+          <p className="mb-1">{t("traits.runsCodeHint")}</p>
+          <SkillTraitList traits={traits} />
+        </>
+      }
+    />
   );
 }
