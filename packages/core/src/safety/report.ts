@@ -1,7 +1,7 @@
 import type { SafetyFinding, SafetyReport, SafetySeverity, SafetyVerdict } from "@loadout/shared";
 
 /** SkillSpector's own triage line, kept by the built-in rules too: a score above this is unsafe. */
-export const SAFETY_RISK_THRESHOLD = 50;
+const SAFETY_RISK_THRESHOLD = 50;
 export const MAX_EXCERPT = 240;
 const MAX_FINDINGS = 100;
 const SEVERITY_RANK: Record<SafetySeverity, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
