@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { PublishInput, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type PublishHooks, type PublishService, createPublishService } from "../src/publish";
+import { collectFiles, findSecretsIn } from "../src/publish/files";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import { hashDir } from "../src/util/hash";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
@@ -308,6 +309,15 @@ describe("keys and tokens", () => {
     expect(plan.secrets).toMatchObject([
       { kind: "github_token", file: "skills/pdf/reference.md", line: 11_001 },
     ]);
+  });
+
+  it("finds a token at the start of a text file padded past a mebibyte", () => {
+    const pdf = world.addSkill("pdf", {
+      "reference.md": `${FAKE_TOKEN}\n${"a".repeat(1024 * 1024)}`,
+    });
+    const collected = collectFiles(pdf.libraryPath);
+    expect(collected.tooLarge).toBeNull();
+    expect(findSecretsIn(collected.files)).toMatchObject([{ kind: "github_token", line: 1 }]);
   });
 
   it("publishes anyway when told it is safe", async () => {
