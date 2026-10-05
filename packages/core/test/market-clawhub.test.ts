@@ -202,6 +202,16 @@ describe("ClawHub as a marketplace", () => {
     expect(kept.map((entry) => [entry.name, entry.reason])).toEqual([[SLUG, "replaced"]]);
   });
 
+  it("reports a skill with no published version as not found", async () => {
+    registry.state.version = "";
+    await expect(core.api.install.fromClawhub(OWNER, SLUG)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    await expect(core.api.install.readClawhubSkill(OWNER, SLUG)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
   it("refuses an odd reference", async () => {
     await expect(core.api.install.fromClawhub("a/b", "c")).rejects.toMatchObject({
       code: "INVALID_INPUT",

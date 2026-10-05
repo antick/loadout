@@ -8,11 +8,11 @@ import {
   clawhubSkillUrl,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { cancelled } from "../errors";
+import { cancelled, notFound } from "../errors";
 import { CLAWHUB_META_FILES, type ClawhubClient, parseClawhubRef } from "../market/clawhub";
 import type { SkillStore } from "../skills/store";
 import { archiveSkillDir, unpackArchive } from "./archive";
-import { type CancelRegistry, withTask } from "./cancel";
+import { type CancelRegistry, type Task, withTask } from "./cancel";
 import type { InstallIntoLibrary } from "./library";
 import { emitProgress } from "./preview-sessions";
 import { type ReplaceDeps, installOver } from "./replace";
@@ -55,90 +55,87 @@ export async function openClawhubVersion(
   }
 }
 
+/** The latest version of a ClawHub skill, unpacked for the task that opened it. */
+interface LatestClawhub {
+  key: string;
+  owner: string;
+  slug: string;
+  version: string;
+  dir: string;
+}
+
+/**
+ * Run `use` on the latest version of a ClawHub skill, as a task under the skill's progress and
+ * cancel key. The download is deleted when the task ends.
+ */
+async function withLatestClawhub<T>(
+  ctx: CoreContext,
+  deps: ClawhubInstallerDeps,
+  ownerInput: string,
+  slugInput: string,
+  use: (latest: LatestClawhub) => Promise<T>,
+  doneName?: (result: T) => string,
+): Promise<T> {
+  const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
+  const key = clawhubTaskKey(owner, slug);
+  const open = async ({ signal, keep }: Task): Promise<T> => {
+    emitProgress(ctx, key, "downloading", { name: slug });
+    const found = await deps.clawhub.detail(owner, slug);
+    const version = found.version;
+    if (!version) throw notFound(`${owner}/${slug} has no published version on ${CLAWHUB_NAME}`);
+    const opened = await openClawhubVersion(deps.clawhub, found.owner, found.slug, version, signal);
+    keep(opened.cleanup);
+    if (signal.aborted) throw cancelled();
+    return use({ key, owner: found.owner, slug: found.slug, version, dir: opened.dir });
+  };
+  return withTask(ctx, deps.cancels, key, open, doneName);
+}
+
 /** Read a ClawHub skill at its latest version without installing it (`skills use`). */
 export function createClawhubReader(ctx: CoreContext, deps: ClawhubInstallerDeps) {
-  return async function readClawhub(
-    ownerInput: string,
-    slugInput: string,
-    options: InstallOptions = {},
-  ): Promise<PreviewedSkill> {
-    const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
-    const key = clawhubTaskKey(owner, slug);
-    return withTask(ctx, deps.cancels, key, async ({ signal, keep }) => {
-      emitProgress(ctx, key, "downloading", { name: slug });
-      const found = await deps.clawhub.detail(owner, slug);
-      if (!found.version)
-        throw new Error(`${owner}/${slug} has no published version on ${CLAWHUB_NAME}`);
-      const opened = await openClawhubVersion(
-        deps.clawhub,
-        found.owner,
-        found.slug,
-        found.version,
-        signal,
-      );
-      keep(opened.cleanup);
-      if (signal.aborted) throw cancelled();
-      return readCheckedSkill(
+  return (owner: string, slug: string, options: InstallOptions = {}): Promise<PreviewedSkill> =>
+    withLatestClawhub(ctx, deps, owner, slug, (latest) =>
+      readCheckedSkill(
         deps.safety,
-        { name: found.slug, dir: opened.dir },
-        { ...options, progressKey: key },
-      );
-    });
-  };
+        { name: latest.slug, dir: latest.dir },
+        { ...options, progressKey: latest.key },
+      ),
+    );
 }
 
 /** Install a skill from the ClawHub registry at its latest version. */
 export function createClawhubInstaller(ctx: CoreContext, deps: ClawhubInstallerDeps) {
-  return async function fromClawhub(
-    ownerInput: string,
-    slugInput: string,
-    options: InstallOptions = {},
-  ): Promise<Skill> {
-    const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
-    const key = clawhubTaskKey(owner, slug);
-    return withTask(
+  return (owner: string, slug: string, options: InstallOptions = {}): Promise<Skill> =>
+    withLatestClawhub(
       ctx,
-      deps.cancels,
-      key,
-      async ({ signal, keep }) => {
-        emitProgress(ctx, key, "downloading", { name: slug });
-        const found = await deps.clawhub.detail(owner, slug);
-        if (!found.version)
-          throw new Error(`${owner}/${slug} has no published version on ${CLAWHUB_NAME}`);
-        const opened = await openClawhubVersion(
-          deps.clawhub,
-          found.owner,
-          found.slug,
-          found.version,
-          signal,
-        );
-        keep(opened.cleanup);
-        if (signal.aborted) throw cancelled();
-        emitProgress(ctx, key, "installing", { name: slug });
-        const ref = `${found.owner}/${found.slug}`;
+      deps,
+      owner,
+      slug,
+      (latest) => {
+        emitProgress(ctx, latest.key, "installing", { name: latest.slug });
+        const ref = `${latest.owner}/${latest.slug}`;
         // Installing what is already installed refreshes it instead of adding `<slug>-2`.
         const installed = deps.store.findBySource("clawhub", ref);
         return installChecked(
           installOver(ctx, deps.install, deps.replace, installed),
           deps.safety,
           {
-            sourceDir: opened.dir,
-            name: found.slug,
+            sourceDir: latest.dir,
+            name: latest.slug,
             record: {
               sourceType: "clawhub",
               sourceRef: ref,
-              sourceUrl: clawhubSkillUrl(found.owner, found.slug),
+              sourceUrl: clawhubSkillUrl(latest.owner, latest.slug),
               sourceSubpath: null,
               sourceBranch: null,
-              sourceRevision: found.version,
-              remoteRevision: found.version,
+              sourceRevision: latest.version,
+              remoteRevision: latest.version,
               updateStatus: "up_to_date",
             },
           },
-          { ...options, progressKey: key },
+          { ...options, progressKey: latest.key },
         );
       },
       (skill) => skill.name,
     );
-  };
 }
