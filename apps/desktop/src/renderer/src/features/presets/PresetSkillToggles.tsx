@@ -20,7 +20,7 @@ function isUsable(toggle: PresetAgentToggle): boolean {
 /** Per-agent switches for one skill inside one preset. Loaded when the row is expanded. */
 export function PresetSkillToggles({ presetId, skillId }: PresetSkillTogglesProps): ReactNode {
   const { t } = useTranslation();
-  const toggles = usePresetToggles(presetId, skillId, true);
+  const toggles = usePresetToggles(presetId, skillId);
   const setToggle = useSetPresetToggle();
 
   if (toggles.isPending) {

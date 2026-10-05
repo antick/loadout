@@ -19,11 +19,11 @@ export const STORAGE_KEYS = {
   newSkillTemplate: "new-skill.template",
 } as const;
 
-/** localStorage prefix of unsaved editor drafts: `<prefix><skillId>:<path>`. */
 /** File type "Export as .zip" saves, and the name an export of several skills starts with. */
 export const EXPORT_FILE_EXTENSION = ".zip";
 export const EXPORT_MANY_PREFIX = `${APP_SLUG}-skills-`;
 
+/** localStorage prefix of unsaved editor drafts: `<prefix><skillId>:<path>`. */
 export const EDITOR_DRAFT_PREFIX = "editor.draft:";
 /** Quiet time before an unsaved draft is written to localStorage. */
 export const EDITOR_DRAFT_SAVE_MS = 400;

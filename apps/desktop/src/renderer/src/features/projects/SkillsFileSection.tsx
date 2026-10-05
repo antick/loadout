@@ -1,4 +1,4 @@
-import { SKILLS_FILE_NAME, type SkillsFileInfo } from "@loadout/shared";
+import { DEFAULT_PROJECT_AGENT_KEY, SKILLS_FILE_NAME, type SkillsFileInfo } from "@loadout/shared";
 import { FileCode2, FolderOpen, MoreHorizontal, Play, RefreshCw, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -41,7 +41,7 @@ function CreateDialog({
   const suggestion = useSkillsFileSuggestion(dir, open);
   const create = useCreateSkillsFile();
   const init = suggestion.data;
-  const agents = init && init.agents.length > 0 ? init.agents : ["claude_code"];
+  const agents = init && init.agents.length > 0 ? init.agents : [DEFAULT_PROJECT_AGENT_KEY];
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !create.isPending && onClose()}>
       <DialogContent className="sm:max-w-lg">

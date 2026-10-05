@@ -86,8 +86,8 @@ export const AUTO_UPDATE_INTERVAL_MS: Record<AutoUpdateInterval, number> = {
 export const PROXY_URL_PATTERN = /^(https?|socks5):\/\//i;
 
 /**
- * The values a text setting may take. A value outside its list (typed by hand in the CLI, or
- * from an older or newer version) is refused on save and read back as the default.
+ * The values a text setting may take. A value outside its list (saved by an older or newer
+ * version, or edited by hand) is refused on save and read back as the default.
  */
 export const SETTING_CHOICES: Partial<Record<SettingKey, readonly string[]>> = {
   deployMode: DEPLOY_MODES,

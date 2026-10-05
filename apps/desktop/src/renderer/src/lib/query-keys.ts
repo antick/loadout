@@ -57,7 +57,6 @@ export const keys = {
     root: ["projects"] as const,
     all: ["projects", "all"] as const,
     suggestions: ["projects", "suggestions"] as const,
-    skillsRoot: ["projects", "skills"] as const,
     skills: (projectId: string) => ["projects", "skills", projectId] as const,
     targets: (projectId: string) => ["projects", "targets", projectId] as const,
     document: (projectId: string, relativePath: string, agentKey: string) =>
@@ -134,7 +133,6 @@ export const keys = {
     libraryLocation: ["system", "library-location"] as const,
     activity: (limit?: number) => ["system", "activity", limit ?? null] as const,
     diagnostics: ["system", "diagnostics"] as const,
-    logExcerpt: ["system", "log-excerpt"] as const,
     lastCrash: ["system", "last-crash"] as const,
     repair: ["system", "repair"] as const,
     cliStatus: ["system", "cli-status"] as const,

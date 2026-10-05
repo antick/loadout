@@ -13,7 +13,7 @@ import { api } from "@/lib/api";
 import { describeFailures, runSequentially, runWithUndo, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
-import { FAILURE_LIST_CLASS, toastSuccess } from "@/lib/toast";
+import { FAILURE_LIST_CLASS } from "@/lib/toast";
 
 /** One logical skill of a project: every per-agent copy at this relative path. */
 export interface ProjectSkillRef {
@@ -160,14 +160,12 @@ export function useSetProjectSkillEnabled(): UseMutationResult<void, unknown, Se
 export function useSetLastExportAgents(): UseMutationResult<
   void,
   unknown,
-  { projectId: string; agentKeys: string[]; silent?: boolean }
+  { projectId: string; agentKeys: string[] }
 > {
   const { t } = useTranslation();
   return useApiMutation({
     fn: ({ projectId, agentKeys }) => api.projects.setLastExportAgents(projectId, agentKeys),
-    onSuccess: (_result, { silent }) => {
-      if (!silent) toastSuccess(t("projectPage.toast.defaultsSaved"));
-    },
+    success: () => t("projectPage.toast.defaultsSaved"),
     error: "projectPage.errors.saveDefaults",
     invalidate: ({ projectId }) => [keys.projects.lastExportAgents(projectId)],
   });
