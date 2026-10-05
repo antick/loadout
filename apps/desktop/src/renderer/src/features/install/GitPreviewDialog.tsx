@@ -1,5 +1,6 @@
 import {
   type ConfirmOptions,
+  formatRevision,
   type GitPreview,
   type InstallOutcome,
   type InstallSelection,
@@ -23,9 +24,6 @@ import {
 import { PreviewSkillList } from "@/features/install/PreviewSkillList";
 import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
 import { useAgentNames } from "@/hooks/queries/agents";
-
-/** Characters of a commit id shown in the header. */
-const REVISION_SHORT_LENGTH = 7;
 
 export interface GitPreviewDialogProps {
   /** The cloned repository to choose from; null keeps the dialog closed. */
@@ -149,7 +147,7 @@ function PreviewForm({
             {preview.revision ? (
               <span className="flex items-center gap-1 font-mono text-xs" title={preview.revision}>
                 <GitCommitHorizontal className="size-3" />
-                {preview.revision.slice(0, REVISION_SHORT_LENGTH)}
+                {formatRevision(preview.revision)}
               </span>
             ) : null}
           </div>
