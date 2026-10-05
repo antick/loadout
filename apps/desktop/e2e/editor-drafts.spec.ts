@@ -53,3 +53,23 @@ test("save and leave keeps no drafts of the saved files", async ({ page }) => {
     "Another example.",
   );
 });
+
+test("discarding unsaved drafts in Settings asks first, saying how many", async ({ page }) => {
+  await openApp(page, "/settings?section=storage");
+  await page.evaluate(() => {
+    for (const path of ["SKILL.md", "notes.md"]) {
+      localStorage.setItem(`loadout:editor.draft:skill-1:${path}`, "{}");
+    }
+  });
+  // Web storage is read when the section mounts.
+  await page.reload();
+  const discard = main(page).getByRole("button", { name: "Discard" });
+  await discard.click();
+  const ask = page.getByRole("alertdialog", { name: "Discard 2 unsaved drafts?" });
+  await ask.getByRole("button", { name: "Cancel" }).click();
+  expect(await storedDrafts(page)).toEqual(["SKILL.md", "notes.md"]);
+
+  await discard.click();
+  await ask.getByRole("button", { name: "Discard" }).click();
+  await expect.poll(() => storedDrafts(page)).toEqual([]);
+});

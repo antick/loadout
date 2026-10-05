@@ -1,6 +1,7 @@
 import { formatBytes } from "@loadout/shared";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { Panel } from "@/components/Panel";
 import { PathText } from "@/components/PathText";
@@ -28,7 +29,23 @@ export function StorageSection(): ReactNode {
     drafts: countStored("drafts"),
   }));
 
-  const forget = (area: "preferences" | "drafts"): void => {
+  const confirm = useConfirm();
+
+  const forget = async (area: "preferences" | "drafts"): Promise<void> => {
+    // Drafts are text nobody saved anywhere else: say how much goes before it goes. Preferences
+    // only fall back to their defaults.
+    const drafts = countStored("drafts");
+    if (
+      area === "drafts" &&
+      !(await confirm({
+        title: t("settings.storage.window.drafts.confirmTitle", { count: drafts }),
+        description: t("settings.storage.window.drafts.confirmDescription", { count: drafts }),
+        confirmLabel: t("settings.storage.window.drafts.action"),
+        destructive: true,
+      }))
+    ) {
+      return;
+    }
     clearStored(area);
     setCounts({ preferences: countStored("preferences"), drafts: countStored("drafts") });
     toastSuccess(t(`settings.storage.window.${area}.done`));
@@ -82,7 +99,7 @@ export function StorageSection(): ReactNode {
                 variant="outline"
                 size="xs"
                 disabled={counts[area] === 0}
-                onClick={() => forget(area)}
+                onClick={() => void forget(area)}
               >
                 {t(`settings.storage.window.${area}.action`)}
               </Button>

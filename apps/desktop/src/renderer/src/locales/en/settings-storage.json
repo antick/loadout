@@ -72,6 +72,10 @@
           "description_one": "Text typed in the editor but never saved. {{count}} kept.",
           "description_other": "Text typed in the editor but never saved. {{count}} kept.",
           "action": "Discard",
+          "confirmTitle_one": "Discard {{count}} unsaved draft?",
+          "confirmTitle_other": "Discard {{count}} unsaved drafts?",
+          "confirmDescription_one": "The text typed in the editor and never saved is lost for good. Files on disk stay as they are.",
+          "confirmDescription_other": "The text typed in the editor and never saved, in {{count}} files, is lost for good. Files on disk stay as they are.",
           "done": "Unsaved drafts discarded"
         }
       },
