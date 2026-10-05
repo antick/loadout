@@ -199,4 +199,8 @@ export const MIGRATIONS: readonly string[] = [
   -- Merging is always per skill now: the switch that turned it off is gone.
   DELETE FROM settings WHERE key = 'skillAwareMerge';
   `,
+  `
+  -- The UI ships in English only: the language picker is gone.
+  DELETE FROM settings WHERE key = 'language';
+  `,
 ];

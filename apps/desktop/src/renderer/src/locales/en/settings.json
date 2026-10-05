@@ -167,8 +167,7 @@
           "default": "Default",
           "large": "Large",
           "xlarge": "Extra large"
-        },
-        "language": "Language"
+        }
       },
       "window": {
         "title": "Window and tray",

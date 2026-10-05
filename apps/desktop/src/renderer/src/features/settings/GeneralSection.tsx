@@ -23,7 +23,6 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useEditors } from "@/hooks/queries/app";
 import { useSettings } from "@/hooks/queries/settings";
-import { LANGUAGES } from "@/lib/i18n";
 import { PalettePreview } from "./PalettePreview";
 import { UsagePanel } from "./UsagePanel";
 
@@ -38,7 +37,6 @@ export function GeneralSection(): ReactNode {
   const { data: settings } = useSettings();
   const setSetting = useSetSetting();
   const textSizeId = useId();
-  const languageId = useId();
   const editorId = useId();
   const trayId = useId();
   const editors = useEditors();
@@ -173,20 +171,6 @@ export function GeneralSection(): ReactNode {
                 })
               }
               className="w-48"
-            />
-          </SettingRow>
-          <SettingRow label={t("settings.general.appearance.language")} htmlFor={languageId}>
-            <OptionSelect
-              id={languageId}
-              value={
-                LANGUAGES.some((entry) => entry.code === settings.language)
-                  ? settings.language
-                  : "en"
-              }
-              options={LANGUAGES.map((entry) => entry.code)}
-              labelOf={(code) => LANGUAGES.find((entry) => entry.code === code)?.label ?? code}
-              onChange={(value) => setSetting.mutate({ key: "language", value })}
-              className="w-36"
             />
           </SettingRow>
         </div>

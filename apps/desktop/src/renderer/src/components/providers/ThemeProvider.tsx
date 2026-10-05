@@ -7,7 +7,6 @@ import {
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { useSetting, useSettings } from "@/hooks/queries/settings";
 import { DARK_QUERY, applyAppearance, rememberAppearance } from "@/lib/appearance";
-import { applyLanguage } from "@/lib/i18n";
 
 export type ResolvedTheme = "light" | "dark";
 
@@ -39,14 +38,13 @@ function useSystemDark(): boolean {
   return dark;
 }
 
-/** Applies the appearance settings to the document: palette, mode, text scale and UI language. */
+/** Applies the appearance settings to the document: palette, mode and text scale. */
 export function ThemeProvider({ children }: { children: ReactNode }): ReactNode {
   const theme = useSetting("theme");
   const palette = useSetting("palette");
   // Until settings load, the colours restored in main.tsx stay; defaults would flash otherwise.
   const loaded = useSettings().isSuccess;
   const textSize = useSetting("textSize");
-  const language = useSetting("language");
   const systemDark = useSystemDark();
   const resolvedTheme: ResolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
 
@@ -63,8 +61,6 @@ export function ThemeProvider({ children }: { children: ReactNode }): ReactNode 
       String(TEXT_SIZE_SCALE[textSize] ?? 1),
     );
   }, [textSize]);
-
-  useEffect(() => applyLanguage(language), [language]);
 
   const value = useMemo(() => ({ theme, palette, resolvedTheme }), [theme, palette, resolvedTheme]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

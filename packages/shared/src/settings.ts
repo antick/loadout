@@ -13,8 +13,6 @@ export const PALETTES = ["flight", "blueprint", "risograph", "iris"] as const;
 export type PaletteSetting = (typeof PALETTES)[number];
 export const TEXT_SIZES = ["small", "default", "large", "xlarge"] as const;
 export type TextSizeSetting = (typeof TEXT_SIZES)[number];
-export const LANGUAGE_CODES = ["en", "hi"] as const;
-export type LanguageSetting = (typeof LANGUAGE_CODES)[number];
 /** "ask" shows the close-or-minimise prompt. */
 export const CLOSE_ACTIONS = ["ask", "hide", "quit"] as const;
 export type CloseActionSetting = (typeof CLOSE_ACTIONS)[number];
@@ -31,7 +29,6 @@ export interface Settings {
   theme: ThemeSetting;
   palette: PaletteSetting;
   textSize: TextSizeSetting;
-  language: LanguageSetting;
   closeAction: CloseActionSetting;
   showTrayIcon: boolean;
   proxyUrl: string;
@@ -68,7 +65,6 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: "system",
   palette: "flight",
   textSize: "default",
-  language: "en",
   closeAction: "ask",
   showTrayIcon: true,
   proxyUrl: "",
@@ -116,7 +112,6 @@ export const SETTING_CHOICES: Partial<Record<SettingKey, readonly string[]>> = {
   theme: THEMES,
   palette: PALETTES,
   textSize: TEXT_SIZES,
-  language: LANGUAGE_CODES,
   closeAction: CLOSE_ACTIONS,
   autoUpdateInterval: AUTO_UPDATE_INTERVALS,
   backupFirstRunPrompt: FIRST_RUN_CHOICES,

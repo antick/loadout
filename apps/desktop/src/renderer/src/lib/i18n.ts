@@ -1,14 +1,10 @@
-import { APP_NAME, type LanguageSetting, REMOVED_KEEP_DAYS } from "@loadout/shared";
+import { APP_NAME, REMOVED_KEEP_DAYS } from "@loadout/shared";
 import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "@/locales/en.json";
 
-const FALLBACK_LANGUAGE: LanguageSetting = "en";
-
-/** Languages the UI ships. To add one: drop `<code>.json` in `locales/`, add it here and below. */
-export const LANGUAGES: readonly { code: LanguageSetting; label: string }[] = [
-  { code: "en", label: "English" },
-];
+/** The UI ships in English only. */
+const LANGUAGE = "en";
 
 type Messages = Record<string, unknown>;
 
@@ -44,8 +40,8 @@ export const i18n = createInstance();
 
 void i18n.use(initReactI18next).init({
   resources,
-  lng: FALLBACK_LANGUAGE,
-  fallbackLng: FALLBACK_LANGUAGE,
+  lng: LANGUAGE,
+  fallbackLng: LANGUAGE,
   // `{{app}}` is available in every string, so the product name is never typed into copy.
   interpolation: {
     escapeValue: false,
@@ -53,11 +49,3 @@ void i18n.use(initReactI18next).init({
   },
   returnNull: false,
 });
-
-/** Switch the UI language, falling back to English for a language that has no bundle yet. */
-export function applyLanguage(language: LanguageSetting): void {
-  const supported = LANGUAGES.some((entry) => entry.code === language);
-  const next = supported ? language : FALLBACK_LANGUAGE;
-  if (i18n.language !== next) void i18n.changeLanguage(next);
-  document.documentElement.lang = next;
-}
