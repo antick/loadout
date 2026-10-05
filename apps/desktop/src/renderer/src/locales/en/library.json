@@ -130,6 +130,7 @@
       "update": "Could not update the skill.",
       "detach": "Could not detach the skill from its source.",
       "exportToProject": "Could not add the skill to the project.",
+      "exportNowhere": "It is already in the project's agent folders, or another skill uses the folder “{{dir}}” there.",
       "removeFromProject": "Could not remove the skill from the project."
     },
     "detail": {

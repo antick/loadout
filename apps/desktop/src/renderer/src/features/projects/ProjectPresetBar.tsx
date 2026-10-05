@@ -1,9 +1,11 @@
 import type { Preset, Project, ProjectTarget } from "@loadout/shared";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PresetBarSection } from "@/features/local-skills/PresetBarSection";
 import {
+  type ExportJob,
   useDeleteProjectSkills,
   useExportSkills,
 } from "@/features/projects/project-skill-mutations";
@@ -11,6 +13,7 @@ import { usePresets } from "@/hooks/queries/presets";
 import { useSkills } from "@/hooks/queries/skills";
 import type { SkillAgentPair } from "@/lib/preset-state";
 import {
+  freeTargets,
   hasSkill,
   indexPresence,
   orderedAvailableTargets,
@@ -37,10 +40,8 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
   const { mutateAsync: exportSkills } = useExportSkills();
   const { mutateAsync: deleteSkills } = useDeleteProjectSkills();
 
-  const targetKeys = useMemo(
-    () => orderedAvailableTargets(targets ?? []).map((target) => target.key),
-    [targets],
-  );
+  const available = useMemo(() => orderedAvailableTargets(targets ?? []), [targets]);
+  const targetKeys = useMemo(() => available.map((target) => target.key), [available]);
   const presence = useMemo(() => indexPresence(groups), [groups]);
   const exists = useCallback(
     (skillId: string, targetKey: string) => hasSkill(presence, skillId, targetKey),
@@ -50,15 +51,28 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
   if (!targets || !presets.data || !skills.data) return null;
   const library = skills.data;
 
-  const activate = (_preset: Preset, missing: SkillAgentPair[]): Promise<unknown> =>
-    exportSkills({
-      projectId: project.id,
-      jobs: missing.map((pair) => ({
-        skillId: pair.skillId,
-        name: library.find((skill) => skill.id === pair.skillId)?.name ?? pair.skillId,
-        agentKeys: [pair.agentKey],
-      })),
-    });
+  // Every available target, not the remembered ones: the pill counts a skill once all hold it.
+  // Folders another skill already uses are skipped, as an export there would be refused.
+  const activate = async (_preset: Preset, missing: SkillAgentPair[]): Promise<unknown> => {
+    const jobs: ExportJob[] = [];
+    const taken: string[] = [];
+    for (const skillId of new Set(missing.map((pair) => pair.skillId))) {
+      const skill = library.find((entry) => entry.id === skillId);
+      if (!skill) continue;
+      const wanted = available.filter((target) =>
+        missing.some((pair) => pair.skillId === skillId && pair.agentKey === target.key),
+      );
+      const free = freeTargets(presence, skill, wanted);
+      if (free.length < wanted.length) taken.push(skill.dirName);
+      if (free.length > 0) {
+        jobs.push({ skillId, name: skill.name, agentKeys: free.map((target) => target.key) });
+      }
+    }
+    if (taken.length > 0) {
+      toast.warning(t("projectPage.toast.presetFoldersTaken", { dirs: taken.join(", ") }));
+    }
+    return jobs.length > 0 ? exportSkills({ projectId: project.id, jobs }) : undefined;
+  };
 
   const deactivate = async (preset: Preset, present: SkillAgentPair[]): Promise<unknown> => {
     const jobs = present.flatMap((pair) =>

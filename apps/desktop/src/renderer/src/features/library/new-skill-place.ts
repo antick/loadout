@@ -1,7 +1,7 @@
 import type { LocalSkill, Project, ProjectTarget } from "@loadout/shared";
 // Relative imports (not `@/`) so this module stays loadable by plain vitest.
 import type { AgentTargetChip } from "../../components/AgentTargetChips";
-import { orderedAvailableTargets, targetOfAgent } from "../projects/project-skill-groups";
+import { orderedAvailableTargets, targetsOfAgents } from "../projects/project-skill-groups";
 
 /** The place id of the library in the "Create in" choice; any other id is a project's. */
 export const LIBRARY_PLACE = "library";
@@ -16,14 +16,15 @@ export function placeTargets(project: Project, targets: readonly ProjectTarget[]
 
 /**
  * The chips ticked at first: the agents chosen the last time skills went into this project, or
- * else only the first one. A new skill starts small; ticking more is one click.
+ * else only the first one. Unlike adding a library skill (`preferredTargets`), a new skill
+ * deliberately starts small: it is still being written, and ticking more is one click.
  */
 export function defaultChipKeys(
   chips: readonly AgentTargetChip[],
   targets: readonly ProjectTarget[],
   remembered: readonly string[],
 ): Set<string> {
-  const saved = remembered.flatMap((key) => targetOfAgent(targets, key)?.key ?? []);
+  const saved = targetsOfAgents(targets, remembered).map((target) => target.key);
   const keys = saved.length > 0 ? saved : chips.slice(0, 1).map((chip) => chip.key);
   return new Set(keys.filter((key) => chips.some((chip) => chip.key === key)));
 }

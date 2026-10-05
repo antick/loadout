@@ -8,6 +8,13 @@ import {
 } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import {
+  freeTargets,
+  groupProjectSkills,
+  indexPresence,
+  orderedAvailableTargets,
+  preferredTargets,
+} from "@/features/projects/project-skill-groups";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { runWithUndo } from "@/lib/batch";
@@ -116,21 +123,29 @@ export interface SkillProjectInput {
 }
 
 /**
- * Copy a library skill into a project: to the agents used for that project last time, or to every
- * available project agent when nothing was remembered.
+ * Copy a library skill into a project: to the agents used for that project last time that are
+ * still available, or to every available project agent when nothing was remembered. Folders that
+ * already hold it, or another skill of that folder name, are skipped.
  */
 export function useExportSkillToProject(): UseMutationResult<void, unknown, SkillProjectInput> {
   const { t } = useTranslation();
   return useApiMutation({
     fn: async ({ skill, project }: SkillProjectInput) => {
-      const remembered = await api.projects.lastExportAgents(project.id);
-      const agentKeys =
-        remembered.length > 0
-          ? remembered
-          : (await api.projects.targets(project.id))
-              .filter((target) => target.enabled && target.installed)
-              .flatMap((target) => target.agentKeys);
-      await api.projects.exportSkill(skill.id, project.id, agentKeys);
+      const [remembered, targets, copies] = await Promise.all([
+        api.projects.lastExportAgents(project.id),
+        api.projects.targets(project.id),
+        api.projects.skills(project.id),
+      ]);
+      const presence = indexPresence(groupProjectSkills(copies));
+      const available = orderedAvailableTargets(targets);
+      const free = freeTargets(presence, skill, preferredTargets(available, remembered));
+      if (free.length === 0)
+        throw new Error(t("library.errors.exportNowhere", { dir: skill.dirName }));
+      await api.projects.exportSkill(
+        skill.id,
+        project.id,
+        free.map((target) => target.key),
+      );
     },
     success: (_result, { skill, project }) =>
       t("library.projects.added", { name: skill.name, project: project.name }),

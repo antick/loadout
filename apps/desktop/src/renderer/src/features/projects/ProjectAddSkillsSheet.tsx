@@ -11,12 +11,13 @@ import {
 import { useLastExportAgents } from "@/hooks/queries/project-skills";
 import { useSkills } from "@/hooks/queries/skills";
 import {
+  freeTargets,
   hasSkill,
   indexPresence,
-  isFolderFree,
   orderedAvailableTargets,
+  preferredTargets,
   type ProjectSkillGroup,
-  targetOfAgent,
+  targetsOfAgents,
 } from "./project-skill-groups";
 
 export interface ProjectAddSkillsSheetProps {
@@ -51,15 +52,13 @@ export function ProjectAddSkillsSheet({
   const presence = useMemo(() => indexPresence(groups), [groups]);
 
   // The saved choice, minus agents that are gone; nothing saved means every available target.
-  const initialAgentKeys = useMemo(() => {
-    const saved = (lastExport.data ?? []).filter((key) => targetOfAgent(available, key));
-    return saved.length > 0 ? saved : undefined;
-  }, [lastExport.data, available]);
+  const initialAgentKeys = useMemo(
+    () => preferredTargets(available, lastExport.data ?? []).flatMap((target) => target.agentKeys),
+    [lastExport.data, available],
+  );
 
   const chosenTargets = useCallback(
-    (agentKeys: readonly string[]): ProjectTarget[] => [
-      ...new Set(agentKeys.flatMap((key) => targetOfAgent(available, key) ?? [])),
-    ],
+    (agentKeys: readonly string[]): ProjectTarget[] => targetsOfAgents(available, agentKeys),
     [available],
   );
 
@@ -69,7 +68,7 @@ export function ProjectAddSkillsSheet({
       if (chosen.length === 0) return { state: "available" };
       const missing = chosen.filter((target) => !hasSkill(presence, skill.id, target.key));
       if (missing.length === 0) return { state: "installed" };
-      const free = missing.filter((target) => isFolderFree(presence, skill.dirName, target.key));
+      const free = freeTargets(presence, skill, missing);
       if (free.length === 0) {
         return {
           state: "unavailable",
@@ -95,11 +94,7 @@ export function ProjectAddSkillsSheet({
       const skill = library.data?.find((entry) => entry.id === skillId);
       if (!skill) return [];
       // An export is all-or-nothing per call, so only ask for the folders that are still free.
-      const free = chosen.filter(
-        (target) =>
-          !hasSkill(presence, skill.id, target.key) &&
-          isFolderFree(presence, skill.dirName, target.key),
-      );
+      const free = freeTargets(presence, skill, chosen);
       if (free.length === 0) return [];
       return [{ skillId, name: skill.name, agentKeys: free.map((target) => target.key) }];
     });

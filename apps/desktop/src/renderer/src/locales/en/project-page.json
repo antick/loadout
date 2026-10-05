@@ -108,6 +108,7 @@
       "pushed": "Updated the library with “{{name}}”",
       "pushedMany_one": "Updated the library with {{count}} skill",
       "pushedMany_other": "Updated the library with {{count}} skills",
+      "presetFoldersTaken": "Skipped where a different skill already uses the folder: {{dirs}}",
       "pushConflictTitle": "“{{name}}” was not added to the library",
       "pushConflictMany_one": "{{count}} skill was skipped: its copies in different agent folders are not the same",
       "pushConflictMany_other": "{{count}} skills were skipped: their copies in different agent folders are not the same",

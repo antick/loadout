@@ -1,14 +1,17 @@
 import type { LocalSkill, ProjectTarget, SyncStatus } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import {
+  freeTargets,
   groupProjectSkills,
   hasSkill,
   indexPresence,
   isFolderFree,
   matchesEnabledFilter,
   orderedAvailableTargets,
+  preferredTargets,
   projectSkillRules,
   targetOfAgent,
+  targetsOfAgents,
 } from "./project-skill-groups";
 
 function copy(
@@ -179,5 +182,33 @@ describe("presence", () => {
     expect(isFolderFree(presence, "review", "claude_code")).toBe(false);
     expect(isFolderFree(presence, "NOTES", "cursor")).toBe(false);
     expect(isFolderFree(presence, "notes", "claude_code")).toBe(true);
+  });
+});
+
+describe("where a library skill goes in a project", () => {
+  const claude = target("claude_code");
+  const cursor = target("cursor");
+  const codex = target("codex");
+  const available = [claude, cursor, codex];
+
+  it("takes the remembered agents that are still available", () => {
+    expect(preferredTargets(available, ["cursor", "gone"])).toEqual([cursor]);
+    expect(targetsOfAgents(available, ["cursor", "cursor"])).toEqual([cursor]);
+  });
+
+  it("takes every available target when nothing remembered is left", () => {
+    expect(preferredTargets(available, [])).toEqual(available);
+    expect(preferredTargets(available, ["gone"])).toEqual(available);
+  });
+
+  it("skips targets that hold the skill or another skill of its folder name", () => {
+    const presence = indexPresence(
+      groupProjectSkills([
+        copy("review", "claude_code", "in_sync", { librarySkillId: "lib-review" }),
+        copy("review", "cursor", "local_only"),
+      ]),
+    );
+    const skill = { id: "lib-review", dirName: "review" };
+    expect(freeTargets(presence, skill, available)).toEqual([codex]);
   });
 });

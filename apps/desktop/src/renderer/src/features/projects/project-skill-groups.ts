@@ -173,3 +173,39 @@ export function hasSkill(presence: SkillPresence, skillId: string, targetKey: st
 export function isFolderFree(presence: SkillPresence, dirName: string, targetKey: string): boolean {
   return !presence.byFolder.get(groupKey(dirName))?.has(targetKey);
 }
+
+/** The targets of these agents among `targets`, once each; agents with none are left out. */
+export function targetsOfAgents(
+  targets: readonly ProjectTarget[],
+  agentKeys: readonly string[],
+): ProjectTarget[] {
+  return [...new Set(agentKeys.flatMap((key) => targetOfAgent(targets, key) ?? []))];
+}
+
+/**
+ * Where a library skill goes in a project unless the user picks: the targets remembered from the
+ * last time skills went into it, among the available ones, or else every available target.
+ */
+export function preferredTargets(
+  available: readonly ProjectTarget[],
+  remembered: readonly string[],
+): ProjectTarget[] {
+  const saved = targetsOfAgents(available, remembered);
+  return saved.length > 0 ? saved : [...available];
+}
+
+/**
+ * The targets among `targets` a library skill can still be exported to: no copy linked to it
+ * there yet, and no other skill in the folder it would take (an export there would be refused).
+ */
+export function freeTargets(
+  presence: SkillPresence,
+  skill: { id: string; dirName: string },
+  targets: readonly ProjectTarget[],
+): ProjectTarget[] {
+  return targets.filter(
+    (target) =>
+      !hasSkill(presence, skill.id, target.key) &&
+      isFolderFree(presence, skill.dirName, target.key),
+  );
+}
