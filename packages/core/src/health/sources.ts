@@ -1,4 +1,5 @@
 import {
+  CLI_COMMANDS,
   type HealthFinding,
   SOURCE_STALE_AFTER_MS,
   type Skill,
@@ -39,7 +40,7 @@ export function sourceFindings(skills: readonly Skill[], now = Date.now()): Heal
       {
         ...base,
         severity: "warning",
-        message: `Not checked for updates since ${formatDate(looked)}. Run: skills check --all`,
+        message: `Not checked for updates since ${formatDate(looked)}. Run: ${CLI_COMMANDS.checkAll}`,
       },
     ];
   });

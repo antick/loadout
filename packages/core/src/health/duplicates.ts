@@ -1,4 +1,5 @@
 import {
+  CLI_COMMANDS,
   type DuplicatesReport,
   type HealthFinding,
   type Skill,
@@ -23,6 +24,6 @@ export function duplicateFindings(
     skill: nameOf.get(pair.a) ?? pair.a,
     message: `${WHY[pair.reason]} "${nameOf.get(pair.b) ?? pair.b}" (${formatSimilarity(
       Math.max(pair.contentScore, pair.nameScore),
-    )} alike). See \`skills duplicates\`.`,
+    )} alike). See \`${CLI_COMMANDS.duplicates}\`.`,
   }));
 }

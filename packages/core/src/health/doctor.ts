@@ -10,7 +10,7 @@ import type {
   Skill,
   SyncStatus,
 } from "@loadout/shared";
-import { LISTING_AGENT_KEY } from "@loadout/shared";
+import { CLI_COMMANDS, LISTING_AGENT_KEY } from "@loadout/shared";
 import { errorMessage } from "../errors";
 import { lstatOrNull } from "../util/fs";
 import { blockedFindings } from "./blocked";
@@ -47,7 +47,7 @@ function formatFindings(skills: readonly Skill[]): Finding[] {
 }
 
 /** Why a deployment is not usable on disk. */
-export type DeploymentProblem = "missing" | "broken";
+type DeploymentProblem = "missing" | "broken";
 
 /** Nothing at the path: "missing". A link that leads nowhere: "broken". Otherwise null. */
 export function deploymentProblem(targetPath: string): DeploymentProblem | null {
@@ -57,8 +57,8 @@ export function deploymentProblem(targetPath: string): DeploymentProblem | null 
 }
 
 const DEPLOYMENT_MESSAGES = {
-  missing: "Deployed, but not on disk. skills repair puts it back.",
-  broken: "Deployed, but its link leads nowhere. skills repair puts it back.",
+  missing: `Deployed, but not on disk. ${CLI_COMMANDS.repair} puts it back.`,
+  broken: `Deployed, but its link leads nowhere. ${CLI_COMMANDS.repair} puts it back.`,
 } as const;
 
 function deploymentFindings(skills: readonly Skill[]): Finding[] {

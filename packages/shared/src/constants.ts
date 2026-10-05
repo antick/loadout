@@ -12,10 +12,16 @@ export const APP_DATA_DIR_NAME = "app";
 export const DEV_APP_DATA_DIR_NAME = "app-dev";
 /** In the app data folder while the desktop app runs: its process id. */
 export const APP_RUNNING_FILE = "running.pid";
+/** Time units, for every interval and age spelled in code. */
+export const SECOND_MS = 1000;
+export const MINUTE_MS = 60 * SECOND_MS;
+export const HOUR_MS = 60 * MINUTE_MS;
+export const DAY_MS = 24 * HOUR_MS;
 /** Where the library lives when it is not in the home data folder. Kept in the home folder. */
 export const LIBRARY_CONFIG_FILE = "library.json";
 /** Published command-line tool, in the home data folder. */
 export const CLI_BIN_DIR_NAME = "bin";
+/** The name CLI call sites use: the app slug today, kept apart so the two can part ways. */
 export const CLI_BINARY_NAME = APP_SLUG;
 /**
  * Where Homebrew, the system and snap put programs. An app started from the Dock or a desktop
@@ -96,7 +102,7 @@ export const BACKUP_REPO_WARN_BYTES = 1024 * 1024 * 1024;
 export const BACKUP_DELETE_GUARD_COUNT = 5;
 export const BACKUP_DELETE_GUARD_MIN = 3;
 /** How long a connect to a public GitHub repository waits in memory for the user's OK. */
-export const GITHUB_PUBLIC_CONFIRM_MS = 10 * 60 * 1000;
+export const GITHUB_PUBLIC_CONFIRM_MS = 10 * MINUTE_MS;
 /** The user's own "leave out of the backup" patterns: at most this many lines, this long each. */
 export const BACKUP_IGNORE_MAX_LINES = 200;
 export const BACKUP_IGNORE_MAX_LINE_LENGTH = 300;
@@ -110,9 +116,9 @@ export const SYNC_STATUS_SEVERITY = {
 } as const;
 
 /** A skill checked for updates this recently is not asked again unless the check is forced. */
-export const UPDATE_CHECK_FRESH_MS = 60 * 60 * 1000;
+export const UPDATE_CHECK_FRESH_MS = HOUR_MS;
 /** `loadout doctor` names a source whose skills were not checked for updates in this long. */
-export const SOURCE_STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+export const SOURCE_STALE_AFTER_MS = 30 * DAY_MS;
 
 /** Archives Loadout writes (export) as well as reads. */
 export const ZIP_SUFFIXES = [".zip", ".skill"] as const;
@@ -137,11 +143,6 @@ export function isArchivePath(path: string): boolean {
  */
 export const NEW_FILE_HASH = "";
 
-/** Time units, for every interval and age spelled in code. */
-export const SECOND_MS = 1000;
-export const MINUTE_MS = 60 * SECOND_MS;
-export const HOUR_MS = 60 * MINUTE_MS;
-export const DAY_MS = 24 * HOUR_MS;
 /** One mebibyte: the chunk size for streamed reads and the unit of file limits. */
 export const MIB = 1024 * 1024;
 /** Streamed text (session logs, secret scans, archives) is read this much at a time. */
@@ -175,3 +176,10 @@ export function isCommitId(revision: string): boolean {
 export const REPO_NAME_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
 /** Longest device name the backup keeps. */
 export const DEVICE_NAME_MAX_LENGTH = 64;
+
+/** CLI commands named in messages, so a renamed command is renamed where it is pointed at. */
+export const CLI_COMMANDS = {
+  checkAll: "skills check --all",
+  repair: "skills repair",
+  duplicates: "skills duplicates",
+} as const;
