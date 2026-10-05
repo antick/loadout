@@ -83,6 +83,8 @@ export const keys = {
     /** Every comparison of one skill with its source; `sourceComparison` in `skill-queries.ts`. */
     comparison: (skillId: string) => ["updates", "comparison", skillId] as const,
     news: ["updates", "source-news"] as const,
+    /** The last background update round, from its event (no fetch). */
+    autoRun: ["updates", "auto-run"] as const,
   },
   usage: {
     root: ["usage"] as const,

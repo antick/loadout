@@ -1,18 +1,13 @@
-import { formatRelative } from "@loadout/shared";
+import { type AppEvents, formatRelative } from "@loadout/shared";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpCircle, Copy, History } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
 import { Button } from "@/components/ui/button";
-import { useAppEvent } from "@/lib/events";
+import { keys } from "@/lib/query-keys";
 
-interface AutoRun {
-  ranAt: number;
-  updated: number;
-  available: number;
-  failed: number;
-  added: number;
-}
+type AutoRun = AppEvents["updates:auto-ran"];
 
 export interface LibraryBannersProps {
   /** Skills with an update waiting. */
@@ -37,8 +32,12 @@ export function LibraryBanners({
   onReviewDuplicates,
 }: LibraryBannersProps): ReactNode {
   const { t } = useTranslation();
-  const [autoRun, setAutoRun] = useState<AutoRun | null>(null);
-  useAppEvent("updates:auto-ran", setAutoRun);
+  const queryClient = useQueryClient();
+  // Stored by `lib/events.ts` whichever page was open; shown until dismissed or the next round.
+  const { data: autoRun } = useQuery<AutoRun | null>({
+    queryKey: keys.updates.autoRun,
+    queryFn: skipToken,
+  });
 
   if (updateCount === 0 && duplicateCount === 0 && !autoRun) return null;
 
@@ -77,7 +76,11 @@ export function LibraryBanners({
           tone={autoRun.failed > 0 ? "warning" : "neutral"}
           icon={History}
           actions={
-            <Button variant="ghost" size="xs" onClick={() => setAutoRun(null)}>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => queryClient.setQueryData(keys.updates.autoRun, null)}
+            >
               {t("common.dismiss")}
             </Button>
           }
