@@ -117,7 +117,9 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
   const [input, setInput] = useState("");
   const [name, setName] = useState("");
   const [reuse, setReuse] = useState<ReadonlySet<string>>(new Set());
-  const plan = preview.data;
+  // The plan holds only for the input it was made from; Import sends exactly that input.
+  const previewed = preview.variables;
+  const plan = previewed === input.trim() ? preview.data : undefined;
 
   const look = (value: string): void => {
     const trimmed = value.trim();
@@ -151,12 +153,12 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
-    if (!plan) {
+    if (!plan || previewed === undefined) {
       look(input);
       return;
     }
     importPreset.mutate(
-      { input: input.trim(), name: name.trim() || undefined, reuseSameName: [...reuse] },
+      { input: previewed, name: name.trim() || undefined, reuseSameName: [...reuse] },
       {
         onSuccess: (result) => {
           if (!result) return;
@@ -189,7 +191,8 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
               className="flex-1 font-mono text-xs"
               onChange={(event) => {
                 setInput(event.target.value);
-                if (plan || preview.isError) preview.reset();
+                // Also drops a look still under way: its answer is for the old input.
+                if (!preview.isIdle) preview.reset();
               }}
             />
             <Button type="button" variant="outline" size="sm" onClick={() => void choose()}>
