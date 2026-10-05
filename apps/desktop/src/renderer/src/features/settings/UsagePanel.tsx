@@ -7,20 +7,19 @@ import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { UsageReadStatus } from "@/components/UsageReadStatus";
 import { useSetUsageTracking } from "@/hooks/mutations/usage";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 import { useSkillUsage } from "@/hooks/queries/usage";
 
 /** The switch for counting skill use, and which agents' logs it reads. */
 export function UsagePanel(): ReactNode {
   const { t } = useTranslation();
   const usage = useSkillUsage();
-  const agents = useAgents();
+  const names = useAgentNames();
   const setTracking = useSetUsageTracking();
   const switchId = useId();
   if (!usage.report) return null;
 
-  const nameOf = (key: string): string =>
-    agents.data?.find((agent) => agent.key === key)?.displayName ?? key;
+  const nameOf = (key: string): string => names.get(key) ?? key;
 
   return (
     <Panel title={t("usage.card.title")}>
