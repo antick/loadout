@@ -13,6 +13,7 @@ import { useProjectSuggestions } from "@/features/projects/project-queries";
 import { useAppInfo } from "@/hooks/queries/app";
 import { compactHome } from "@/lib/paths";
 import { errorMessage } from "@/lib/toast";
+import { matchesQuery } from "@/lib/utils";
 import type { AddProjectTabProps } from "./AddProjectFolderTab";
 import {
   AddProjectsFooter,
@@ -25,15 +26,6 @@ const SUGGESTED_ITEM_ID_PREFIX = "suggested-project-";
 const SKELETON_ROWS = [0, 1, 2, 3];
 /** Taller than the Scan list: each row here has two lines. */
 const LIST_CLASS = "max-h-72 overflow-y-auto rounded-lg border";
-
-function matches(suggestion: ProjectSuggestion, query: string): boolean {
-  const needle = query.trim().toLowerCase();
-  return (
-    !needle ||
-    suggestion.name.toLowerCase().includes(needle) ||
-    suggestion.path.toLowerCase().includes(needle)
-  );
-}
 
 /** Name and when it was last worked on, the folder, and where it was seen. */
 function SuggestionRow({
@@ -90,7 +82,10 @@ export function AddProjectSuggestedTab({ onCancel, onAdded }: AddProjectTabProps
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
 
   const all = useMemo(() => suggestions.data ?? [], [suggestions.data]);
-  const shown = useMemo(() => all.filter((entry) => matches(entry, query)), [all, query]);
+  const shown = useMemo(
+    () => all.filter((entry) => matchesQuery(query, entry.name, entry.path)),
+    [all, query],
+  );
   const guarded = all.some((entry) => entry.guarded);
 
   let body: ReactNode;
