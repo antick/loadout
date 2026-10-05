@@ -14,7 +14,15 @@ import {
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { writeTarget } from "../deploy";
-import { AppError, errorMessage, exists, invalid, notFound, unsupported } from "../errors";
+import {
+  AppError,
+  errorMessage,
+  exists,
+  invalid,
+  isAppError,
+  notFound,
+  unsupported,
+} from "../errors";
 import { checkNewSkill } from "../skills/create";
 import { ensureDir, isInside, lstatOrNull, readDirSafe, removePath } from "../util/fs";
 import {
@@ -177,20 +185,32 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       if (targets.length === 0) {
         throw invalid("No enabled installed agents selected for this project");
       }
-      // Check every target before writing to any: an export lands everywhere or nowhere.
-      for (const target of targets) {
-        const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
-        if (roots.some((root) => lstatOrNull(join(root, skill.dirName)))) {
-          throw exists(
-            `Skill "${skill.name}" already exists in this workspace for agent ${target.key}`,
-          );
-        }
-      }
       const mode = ctx.settings.get("deployMode");
       await ctx.lock.run(`export ${skill.name}`, async () => {
+        // Check every target before writing to any: an export lands everywhere or nowhere.
+        for (const target of targets) {
+          const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
+          if (roots.some((root) => lstatOrNull(join(root, skill.dirName)))) {
+            throw exists(
+              `Skill "${skill.name}" already exists in this workspace for agent ${target.key}`,
+            );
+          }
+        }
+        const written: string[] = [];
         for (const target of targets) {
           const path = join(target.enabledRoot, skill.dirName);
-          await writeTarget(skill.libraryPath, path, mode, { kind: "no_clobber" });
+          try {
+            await writeTarget(skill.libraryPath, path, mode, { kind: "no_clobber" });
+          } catch (error) {
+            // Nothing was there before (checked above): what this call wrote is its own to take back.
+            for (const done of written) await removePath(done);
+            if (isAppError(error)) throw error;
+            throw new AppError(
+              "IO",
+              `Could not add ${skill.name} for ${target.displayName}: ${errorMessage(error)}. Nothing was added.`,
+            );
+          }
+          written.push(path);
         }
       });
       const names = targets.map((target) => target.displayName).join(", ");

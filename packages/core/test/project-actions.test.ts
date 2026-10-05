@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, symlinkSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readdirSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -15,6 +15,8 @@ import {
 const T0 = Date.UTC(2026, 0, 1);
 const MINUTE = 60_000;
 const SHARED_DIR = join(".agents", "skills");
+/** Windows ignores the mode, and root reads any file: neither can make a copy fail midway. */
+const UNREADABLE_UNSUPPORTED = process.platform === "win32" || process.getuid?.() === 0;
 
 describe("project actions", () => {
   let world: WorkspaceWorld;
@@ -144,6 +146,44 @@ describe("project actions", () => {
       expect(error.message).toBe('Skill "alpha" already exists in this workspace for agent cursor');
       expect(existsSync(join(claude, "alpha"))).toBe(false);
     });
+
+    it("takes back what it wrote when a later agent's folder cannot be written", async () => {
+      world.ctx.settings.set("deployMode", "copy");
+      const project = await api().add(repo);
+      const skill = world.addSkill("alpha");
+      // A file where Cursor's skills folder should be: the second write fails.
+      writeFile(join(repo, ".cursor", "skills"), "not a folder");
+      const failed = api().exportSkill(skill.id, project.id, ["claude_code", "cursor"]);
+      const error: unknown = await failed.catch((reason: unknown) => reason);
+      expect(readdirSync(claude)).toEqual([]);
+      expect(error).toMatchObject({
+        code: "IO",
+        message: expect.stringMatching(/^Could not add alpha for Cursor: .*Nothing was added\.$/),
+      });
+    });
+
+    it.skipIf(UNREADABLE_UNSUPPORTED)(
+      "leaves no half-written folder when a copy fails midway",
+      async () => {
+        world.ctx.settings.set("deployMode", "copy");
+        const project = await api().add(repo);
+        const skill = world.addSkill("alpha");
+        writeFile(join(skill.libraryPath, "secret.txt"), "unreadable");
+        chmodSync(join(skill.libraryPath, "secret.txt"), 0o000);
+        try {
+          await expect(api().exportSkill(skill.id, project.id)).rejects.toThrow("EACCES");
+          expect(readdirSync(claude)).toEqual([]);
+
+          // Pulling over an existing copy keeps it whole, with nothing staged beside it.
+          const stale = makeSkill(claude, "alpha", { body: "stale" });
+          await expect(api().pullFromLibrary(project.id, "alpha")).rejects.toThrow("EACCES");
+          expect(readdirSync(claude)).toEqual(["alpha"]);
+          expect(skillText(stale)).toContain("stale");
+        } finally {
+          chmodSync(join(skill.libraryPath, "secret.txt"), 0o644);
+        }
+      },
+    );
 
     it("remembers the last export choice, filtered to targets that can still be used", async () => {
       const project = await api().add(repo);

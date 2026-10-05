@@ -4,12 +4,11 @@ import { APP_NAME, type DeployMode, isWslPath } from "@loadout/shared";
 import { invalid, notFound, targetConflict } from "../errors";
 import {
   canonicalPath,
-  copyDir,
   ensureDir,
   isDirectory,
   lstatOrNull,
   pathsOverlap,
-  removePath,
+  replaceDirAtomic,
   targetIdentity,
 } from "../util/fs";
 
@@ -109,16 +108,6 @@ function tryLink(sourceDir: string, targetPath: string): boolean {
   return false;
 }
 
-/** We created `targetPath` moments ago, so a half-written copy is ours to clean up. */
-async function copyOrCleanUp(sourceDir: string, targetPath: string): Promise<void> {
-  try {
-    await copyDir(sourceDir, targetPath);
-  } catch (error) {
-    await removePath(targetPath);
-    throw error;
-  }
-}
-
 /**
  * The mode a target can really use. A folder inside WSL is read by Linux, which cannot follow a
  * Windows link back into the library, so it always gets a copy.
@@ -157,7 +146,8 @@ export async function writeTarget(
   removeClassified(targetPath, state);
 
   if (mode === "symlink" && tryLink(sourceDir, targetPath)) return "symlink";
-  await copyOrCleanUp(sourceDir, targetPath);
+  // Staged beside the target and renamed in: a copy that fails midway leaves nothing there.
+  await replaceDirAtomic(sourceDir, targetPath, { skipSymlinks: false });
   return "copy";
 }
 

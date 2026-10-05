@@ -210,7 +210,7 @@ export async function copyDir(
   });
 }
 
-export interface ReplaceDirOptions {
+export interface ReplaceDirOptions extends CopyOptions {
   /**
    * Take over the replaced content (moved to a hidden sibling) instead of deleting it. Called
    * only once the new content is in place; it must move or remove the sibling.
@@ -220,7 +220,8 @@ export interface ReplaceDirOptions {
 
 /**
  * Replace `target` with `source`'s content through a staged sibling, so a failure midway leaves
- * the original in place.
+ * the original in place, or nothing when there was none. Links inside are skipped unless
+ * `skipSymlinks` is false.
  */
 export async function replaceDirAtomic(
   source: string,
@@ -231,7 +232,12 @@ export async function replaceDirAtomic(
   const name = target.slice(parent.length + 1);
   const staged = join(parent, `.${name}.staged-${randomUUID()}`);
   const backup = join(parent, `.${name}.backup-${randomUUID()}`);
-  await copyDir(source, staged, { skipSymlinks: true });
+  try {
+    await copyDir(source, staged, { skipSymlinks: options.skipSymlinks ?? true });
+  } catch (error) {
+    await removePath(staged);
+    throw error;
+  }
   const hadTarget = lstatOrNull(target) !== null;
   try {
     if (hadTarget) renameSync(target, backup);
