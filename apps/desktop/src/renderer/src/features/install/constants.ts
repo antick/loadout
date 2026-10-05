@@ -1,4 +1,3 @@
-import type { InstallTab } from "@/lib/constants";
 import {
   CLAWHUB_NAME,
   CLAWHUB_URL,
@@ -55,8 +54,6 @@ export const ARCHIVE_LINK_PATTERN =
 /** Where to get Git, offered when it is missing. */
 export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
 
-/** Archive types the installer accepts, for the option card's hint. */
-
 /** Errors listed in a batch result before the rest collapse into "and N more". */
 export const BATCH_ERRORS_MAX_VISIBLE = 5;
 /** Folders listed under a discovered skill before "and N more". */
@@ -64,5 +61,3 @@ export const SCAN_LOCATIONS_MAX_VISIBLE = 3;
 
 /** How long the success toast stays, longer than the default so its actions can be reached. */
 export const INSTALL_SUCCESS_TOAST_MS = 8000;
-
-export const INSTALL_TAB_ORDER: readonly InstallTab[] = ["market", "local", "git", "scan"];

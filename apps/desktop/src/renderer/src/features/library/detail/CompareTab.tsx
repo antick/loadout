@@ -13,8 +13,6 @@ import { useSourceComparison } from "@/features/library/detail/skill-queries";
 import { useSkillDocument } from "@/hooks/queries/skills";
 import { errorMessage } from "@/lib/toast";
 
-/** Characters of a revision shown next to the source name. */
-
 /**
  * Library copy against its source (the tab shows only for a skill that has one), fetched only
  * when this tab is opened: changed files, then the

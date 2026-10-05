@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { INSTALL_TAB_ORDER } from "@/features/install/constants";
 import { GitTab } from "@/features/install/GitTab";
 import { LocalTab } from "@/features/install/LocalTab";
 import { MarketTab } from "@/features/install/MarketTab";
@@ -38,7 +37,7 @@ export function InstallPage({ tab, onTabChange }: InstallPageProps): ReactNode {
         }}
       >
         <TabsList>
-          {INSTALL_TAB_ORDER.map((entry) => {
+          {INSTALL_TABS.map((entry) => {
             const Icon = TAB_ICONS[entry];
             return (
               <TabsTrigger key={entry} value={entry} className="px-3">

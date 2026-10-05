@@ -212,14 +212,10 @@ export function LibraryPage({
       onSelectToggle={(target, modifiers) => selection.toggle(target.id, modifiers)}
       onOpen={(target) => onOpenSkill(target.id)}
       footer={
-        showUsage ? (
-          <div className="flex min-w-0 items-center gap-3">
-            <SkillAgentBadges skill={skill} />
-            <SkillUsageNote usage={usage.byId.get(skill.id)} />
-          </div>
-        ) : (
+        <div className="flex min-w-0 items-center gap-3">
           <SkillAgentBadges skill={skill} />
-        )
+          {showUsage ? <SkillUsageNote usage={usage.byId.get(skill.id)} /> : null}
+        </div>
       }
       menuActions={actionsFor(skill)}
       actions={<FavoriteButton skill={skill} />}

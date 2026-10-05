@@ -34,7 +34,7 @@ import { useOpenExternal, usePickFolder } from "@/hooks/mutations/app";
 import { installPhaseText } from "@/features/install/install-tasks";
 import { hasSource, isRemoteSource } from "@/lib/skill-source";
 
-/** Characters of a revision shown; the full value stays in the tooltip. */
+/** A source that is a path on this computer (POSIX, home or Windows drive), not an address. */
 const ABSOLUTE_PATH_PATTERN = /^(\/|~|[A-Za-z]:[\\/])/;
 
 function Row({ label, children }: { label: string; children: ReactNode }): ReactNode {

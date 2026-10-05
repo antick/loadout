@@ -1,18 +1,12 @@
-import type { AgentInfo, Skill } from "@loadout/shared";
+import type { Skill } from "@loadout/shared";
 import { type ReactNode, useMemo } from "react";
 import { AgentBadgeRow } from "@/components/AgentBadgeRow";
 import { useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { usePendingSet } from "@/hooks/use-pending-set";
 
-export interface SkillAgentBadgesProps {
-  skill: Skill;
-  /** Limit to these agents; defaults to every available agent. */
-  agents?: readonly AgentInfo[];
-}
-
 /** `AgentBadgeRow` wired to a library skill: clicking a badge deploys or removes it right away. */
-export function SkillAgentBadges({ skill, agents }: SkillAgentBadgesProps): ReactNode {
+export function SkillAgentBadges({ skill }: { skill: Skill }): ReactNode {
   const available = useAvailableAgents();
   const deploy = useDeploySkill();
   const undeploy = useUndeploySkill();
@@ -25,7 +19,7 @@ export function SkillAgentBadges({ skill, agents }: SkillAgentBadgesProps): Reac
 
   return (
     <AgentBadgeRow
-      agents={agents ?? available.data ?? []}
+      agents={available.data ?? []}
       deployedKeys={deployedKeys}
       blockedKeys={blockedKeys}
       pendingKeys={pending}
