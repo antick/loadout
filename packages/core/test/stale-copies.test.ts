@@ -8,6 +8,8 @@ import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { tempDir, writeFile, createTestCore } from "./helpers";
 
 const emptyReport = (): StaleCopiesReport => ({ written: 0, conflicts: [], failed: [], kept: [] });
+/** Let every settled promise run its continuations: a finished pass has then let go. */
+const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("refreshing stale copies", () => {
   let world: DeployWorld;
@@ -88,8 +90,12 @@ describe("stale copy refresher", () => {
       release();
       await vi.waitFor(() => expect(refreshStaleCopies).toHaveBeenCalledTimes(2));
       release();
-      await refresher.idle();
+      await settle();
       expect(refreshStaleCopies).toHaveBeenCalledTimes(2);
+      // Nothing is running any more: a new request starts a pass of its own.
+      refresher.request();
+      await vi.waitFor(() => expect(refreshStaleCopies).toHaveBeenCalledTimes(3));
+      release();
     } finally {
       world.cleanup();
     }
@@ -104,10 +110,9 @@ describe("stale copy refresher", () => {
     try {
       const refresher = createStaleCopyRefresher(world.ctx, { refreshStaleCopies });
       refresher.request();
-      await refresher.idle();
+      await settle();
       refresher.request();
-      await refresher.idle();
-      expect(refreshStaleCopies).toHaveBeenCalledTimes(2);
+      await vi.waitFor(() => expect(refreshStaleCopies).toHaveBeenCalledTimes(2));
     } finally {
       world.cleanup();
     }

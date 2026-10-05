@@ -10,8 +10,6 @@ import { logRedeployProblems } from "./report-log";
 export interface StaleCopyRefresher {
   /** Refresh stale copies now, or right after the pass that is running. */
   request(): void;
-  /** Resolves once no pass is running or queued. */
-  idle(): Promise<void>;
 }
 
 export function createStaleCopyRefresher(
@@ -54,9 +52,6 @@ export function createStaleCopyRefresher(
       running = loop().finally(() => {
         running = null;
       });
-    },
-    idle: async () => {
-      for (let current = running; current; current = running) await current;
     },
   };
 }
