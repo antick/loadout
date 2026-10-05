@@ -136,34 +136,15 @@ export function useRestoreSnapshot(): UseMutationResult<string, unknown, string>
   });
 }
 
-export interface ResolveConflictInput {
-  conflict: BackupConflict;
-  action: ConflictResolution;
-}
-
-/** Settle one skill that changed on two devices. Toasts the safety snapshot. */
-export function useResolveBackupConflict(): UseMutationResult<
-  string,
-  unknown,
-  ResolveConflictInput
-> {
-  const { t } = useTranslation();
-  return useBackupMutation({
-    fn: ({ conflict, action }: ResolveConflictInput) =>
-      api.backup.resolveConflicts([conflict.skillKey], action),
-    success: (safetyTag, { conflict, action }) => ({
-      message: t(`backupPage.conflicts.resolved.${action}`, { name: conflict.skillName }),
-      description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
-    }),
-  });
-}
-
 export interface ResolveConflictsInput {
   conflicts: readonly BackupConflict[];
   action: ConflictResolution;
 }
 
-/** One choice for several conflicts, behind one safety snapshot. Toasts that snapshot. */
+/**
+ * One choice for conflicts (skills that changed on two devices), behind one safety snapshot.
+ * Toasts that snapshot.
+ */
 export function useResolveBackupConflicts(): UseMutationResult<
   string,
   unknown,
@@ -176,10 +157,16 @@ export function useResolveBackupConflicts(): UseMutationResult<
         conflicts.map((conflict) => conflict.skillKey),
         action,
       ),
-    success: (safetyTag, { conflicts, action }) => ({
-      message: t(`backupPage.conflicts.resolvedAll.${action}`, { count: conflicts.length }),
-      description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
-    }),
+    success: (safetyTag, { conflicts, action }) => {
+      const [only] = conflicts;
+      return {
+        message:
+          only && conflicts.length === 1
+            ? t(`backupPage.conflicts.resolved.${action}`, { name: only.skillName })
+            : t(`backupPage.conflicts.resolvedAll.${action}`, { count: conflicts.length }),
+        description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
+      };
+    },
   });
 }
 

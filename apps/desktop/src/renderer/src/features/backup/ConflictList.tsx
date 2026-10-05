@@ -5,10 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
-import {
-  useResolveBackupConflict,
-  useResolveBackupConflicts,
-} from "@/features/backup/backup-mutations";
+import { useResolveBackupConflicts } from "@/features/backup/backup-mutations";
 import { ConflictDiffDialog } from "./ConflictDiffDialog";
 import { SHORT_COMMIT_LENGTH } from "./constants";
 
@@ -20,8 +17,7 @@ const BULK_ACTIONS = ["keep_local", "use_remote"] as const satisfies readonly Co
 export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict[] }): ReactNode {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const resolve = useResolveBackupConflict();
-  const resolveAll = useResolveBackupConflicts();
+  const resolve = useResolveBackupConflicts();
   const [comparing, setComparing] = useState<BackupConflict | null>(null);
   if (conflicts.length === 0) return null;
 
@@ -36,7 +32,7 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
       });
       if (!confirmed) return;
     }
-    resolve.mutate({ conflict, action });
+    resolve.mutate({ conflicts: [conflict], action });
   };
 
   const chooseAll = async (action: ConflictResolution): Promise<void> => {
@@ -49,9 +45,9 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
       });
       if (!confirmed) return;
     }
-    resolveAll.mutate({ conflicts, action });
+    resolve.mutate({ conflicts, action });
   };
-  const busy = resolve.isPending || resolveAll.isPending;
+  const busy = resolve.isPending;
 
   return (
     <PageSection
@@ -76,8 +72,8 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
       <ul className="flex flex-col divide-y rounded-lg border border-warning/40 bg-card">
         {conflicts.map((conflict) => {
           const pending =
-            resolveAll.isPending ||
-            (resolve.isPending && resolve.variables?.conflict.skillKey === conflict.skillKey);
+            resolve.isPending &&
+            (resolve.variables?.conflicts.some((c) => c.skillKey === conflict.skillKey) ?? false);
           return (
             <li key={conflict.skillKey} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <TriangleAlert className="size-4 shrink-0 text-warning" />
