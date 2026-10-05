@@ -69,6 +69,8 @@ export const SIDEBAR_RECENT_SKILLS = 5;
 
 export const SEARCH_DEBOUNCE_MS = 200;
 export const QUERY_STALE_MS = 30_000;
+/** How often text such as "5 minutes ago" is worked out again while it stays on screen. */
+export const RELATIVE_TIME_TICK_MS = 60_000;
 export const TOAST_DURATION_MS = 4000;
 /** Paths listed in a conflict toast before the rest is summarised as "+N more". */
 export const TOAST_MAX_CONFLICT_PATHS = 4;

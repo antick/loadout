@@ -19,6 +19,7 @@ import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useBackupStatus } from "@/hooks/queries/app";
 import { useSetting } from "@/hooks/queries/settings";
 import { useSkills } from "@/hooks/queries/skills";
+import { useNow } from "@/hooks/use-now";
 import { STATUS_BAR_HEIGHT_CLASS } from "@/lib/constants";
 import { backupTone } from "@/lib/backup-mode";
 import { useAppEvent } from "@/lib/events";
@@ -65,6 +66,7 @@ export function StatusBar(): ReactNode {
   const agents = useAvailableAgents();
   const deployMode = useSetting("deployMode");
   const work = useBackgroundWork();
+  const now = useNow();
 
   const all = skills.data ?? [];
   const attention = all.filter(needsAttention).length;
@@ -72,7 +74,7 @@ export function StatusBar(): ReactNode {
   const tone = backupTone(backup.data);
   const backupText =
     tone === "success"
-      ? t("statusBar.backup.success", { when: formatRelative(backup.data?.lastCommitAt) })
+      ? t("statusBar.backup.success", { when: formatRelative(backup.data?.lastCommitAt, now) })
       : tone === "warning"
         ? backup.data?.changedSkillCount
           ? t("statusBar.backup.warning", { count: backup.data.changedSkillCount })
