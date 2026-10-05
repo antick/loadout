@@ -14,6 +14,8 @@ const IGNORED_NAMES: ReadonlySet<string> = new Set([
 ]);
 const IGNORED_SUFFIX = ".pyc";
 const EXECUTABLE_BITS = 0o111;
+/** Folders whose plain hash `hashDirCached` remembers; the oldest looked at goes first. */
+const HASH_CACHE_MAX = 5000;
 
 export function isIgnoredContentName(name: string): boolean {
   return IGNORED_NAMES.has(name) || name.endsWith(IGNORED_SUFFIX);
@@ -179,6 +181,31 @@ export function contentFingerprint(root: string): string | null {
     );
   }
   return hash.digest("hex");
+}
+
+const hashCache = new Map<string, { fingerprint: string; hash: string | null }>();
+
+/**
+ * `hashDir` with no options, reading the files only when the folder's `contentFingerprint`
+ * changed since it was last hashed in this process. For folders looked at again and again
+ * (agent and project skills on every list), where the plain hash is all that is needed.
+ */
+export function hashDirCached(root: string): string | null {
+  const fingerprint = contentFingerprint(root);
+  if (fingerprint === null) {
+    hashCache.delete(root);
+    return null;
+  }
+  const known = hashCache.get(root);
+  // Taken out and put back, so the map's order runs from least to most recently used.
+  hashCache.delete(root);
+  const hash = known?.fingerprint === fingerprint ? known.hash : hashDir(root);
+  hashCache.set(root, { fingerprint, hash });
+  if (hashCache.size > HASH_CACHE_MAX) {
+    const oldest = hashCache.keys().next().value;
+    if (oldest !== undefined) hashCache.delete(oldest);
+  }
+  return hash;
 }
 
 /** Newest modification time among content files, or null for an empty tree. */

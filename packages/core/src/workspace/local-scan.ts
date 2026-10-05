@@ -12,7 +12,7 @@ import {
   targetIdentity,
   toPosix,
 } from "../util/fs";
-import { hashDir, newestContentMtime } from "../util/hash";
+import { hashDirCached, newestContentMtime } from "../util/hash";
 import { slugify } from "../util/names";
 
 /** A skill folder found under a skills root, before it is compared with the library. */
@@ -150,7 +150,7 @@ export function describeLocalSkill(dir: LocalSkillDir): LocalEntry {
     dirName: basename(dir.path),
     description: identity.description,
     files: listTopLevel(dir.path),
-    hash: hashDir(dir.path),
+    hash: hashDirCached(dir.path),
     newestMtime: newestContentMtime(dir.path),
   };
 }
@@ -255,7 +255,7 @@ export function classifySync(
   if (entry.hash !== null) {
     if (entry.hash === librarySkill.contentHash) return "in_sync";
     // The stored hash can lag behind a hand edit of the library folder.
-    if (entry.hash === hashDir(librarySkill.libraryPath)) return "in_sync";
+    if (entry.hash === hashDirCached(librarySkill.libraryPath)) return "in_sync";
   }
   const libraryMtime = newestContentMtime(librarySkill.libraryPath);
   if (entry.newestMtime === null || libraryMtime === null) return "diverged";

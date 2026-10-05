@@ -1,3 +1,4 @@
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { firstFreeName } from "@loadout/shared";
@@ -6,7 +7,7 @@ import { SettingsStore } from "../src/settings/store";
 import { parseFrontmatter } from "../src/skills/metadata";
 import { repointSources } from "../src/deploy/evidence";
 import { SkillStore } from "../src/skills/store";
-import { hashDir } from "../src/util/hash";
+import { hashDir, hashDirCached } from "../src/util/hash";
 import { agentKeyFromName, sanitizeSkillName, slugify } from "../src/util/names";
 import { makeSkill, tempDir, writeFile } from "./helpers";
 
@@ -78,6 +79,17 @@ describe("storage", () => {
     writeFile(join(a, "scripts/run.sh"), "echo bye");
     expect(hashDir(a)).not.toBe(before);
     expect(hashDir(join(temp.dir, "missing"))).toBeNull();
+  });
+
+  it("remembers a folder's hash until its files change", () => {
+    const a = makeSkill(temp.dir, "a", { files: { "notes.md": "one" } });
+    expect(hashDirCached(a)).toBe(hashDir(a));
+    writeFile(join(a, "notes.md"), "two, longer");
+    expect(hashDirCached(a)).toBe(hashDir(a));
+    writeFile(join(a, "extra.md"), "three");
+    expect(hashDirCached(a)).toBe(hashDir(a));
+    rmSync(a, { recursive: true });
+    expect(hashDirCached(a)).toBeNull();
   });
 
   it("migrates, stores skills, tags and settings", () => {
