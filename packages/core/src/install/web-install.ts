@@ -10,7 +10,7 @@ import { removePath } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { unpackArchive } from "./archive";
 import { archiveLinkName } from "./archive-link";
-import type { CancelRegistry } from "./cancel";
+import type { Task } from "./cancel";
 import { type Download, type DownloadOptions, percentReporter } from "./download";
 import type { FetchedFolder, FetchedPreviewOptions } from "./fetched-preview";
 import { emitProgress } from "./preview-sessions";
@@ -30,17 +30,16 @@ import {
 
 export interface WebPreviewDeps {
   download: Download;
-  cancels: CancelRegistry;
-  previewFetched(options: FetchedPreviewOptions): Promise<GitPreview>;
+  previewFetched(task: Task, options: FetchedPreviewOptions): Promise<GitPreview>;
 }
 
 export interface WebPreviews {
-  archiveLink(key: string, link: string, wanted: readonly string[]): Promise<GitPreview>;
-  skillFile(key: string, link: string): Promise<GitPreview>;
-  /** The index a site publishes, or null when it has none. Cancellable under `key`. */
-  findSite(key: string, url: string): Promise<WellKnownIndex | null>;
+  archiveLink(task: Task, link: string, wanted: readonly string[]): Promise<GitPreview>;
+  skillFile(task: Task, link: string): Promise<GitPreview>;
+  /** The index a site publishes, or null when it has none. */
+  findSite(task: Task, url: string): Promise<WellKnownIndex | null>;
   site(
-    key: string,
+    task: Task,
     url: string,
     index: WellKnownIndex,
     wanted: readonly string[],
@@ -77,7 +76,7 @@ export async function skillFileFolder(link: string, data: Buffer): Promise<Fetch
 }
 
 export function createWebPreviews(ctx: CoreContext, deps: WebPreviewDeps): WebPreviews {
-  const { download, cancels, previewFetched } = deps;
+  const { download, previewFetched } = deps;
 
   const downloadProgress = (key: string): DownloadOptions["onProgress"] =>
     percentReporter((percent) =>
@@ -85,18 +84,17 @@ export function createWebPreviews(ctx: CoreContext, deps: WebPreviewDeps): WebPr
     );
 
   return {
-    archiveLink: (key, link, wanted) =>
-      previewFetched({
-        key,
+    archiveLink: (task, link, wanted) =>
+      previewFetched(task, {
         kind: "archive",
         shownAs: link,
         wanted,
         fetch: async (signal) => {
-          emitProgress(ctx, key, "downloading");
+          emitProgress(ctx, task.key, "downloading");
           const { data, redirectedTo } = await downloadWatched(download, link, {
             signal,
             subject: "The archive",
-            onProgress: downloadProgress(key),
+            onProgress: downloadProgress(task.key),
           });
           if (signal.aborted) throw cancelled();
           return { ...(await unpackArchive(data, archiveLinkName(link))), redirectedTo };
@@ -111,13 +109,12 @@ export function createWebPreviews(ctx: CoreContext, deps: WebPreviewDeps): WebPr
         installed: (skill) => skill.sourceType === "url" && skill.sourceRef === link,
       }),
 
-    skillFile: (key, link) =>
-      previewFetched({
-        key,
+    skillFile: (task, link) =>
+      previewFetched(task, {
         kind: "file",
         shownAs: link,
         fetch: async (signal) => {
-          emitProgress(ctx, key, "downloading");
+          emitProgress(ctx, task.key, "downloading");
           const { data, redirectedTo } = await downloadWatched(download, link, {
             signal,
             subject: "The file",
@@ -136,23 +133,17 @@ export function createWebPreviews(ctx: CoreContext, deps: WebPreviewDeps): WebPr
         installed: (skill) => skill.sourceType === "url" && skill.sourceRef === link,
       }),
 
-    findSite: async (key, url) => {
-      const handle = cancels.register(key);
-      try {
-        emitProgress(ctx, key, "downloading");
-        return await findWellKnownIndex(download, url, handle.signal);
-      } finally {
-        handle.done();
-      }
+    findSite: (task, url) => {
+      emitProgress(ctx, task.key, "downloading");
+      return findWellKnownIndex(download, url, task.signal);
     },
 
-    site: (key, url, index, wanted) =>
-      previewFetched({
-        key,
+    site: (task, url, index, wanted) =>
+      previewFetched(task, {
         kind: "site",
         shownAs: url.trim(),
         wanted,
-        fetch: (signal) => fetchSite(download, index, signal, ctx, key),
+        fetch: (signal) => fetchSite(download, index, signal, ctx, task.key),
         record: (subpath) => ({
           sourceType: "url",
           sourceRef: url.trim(),

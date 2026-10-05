@@ -12,7 +12,7 @@ import { cancelled } from "../errors";
 import { CLAWHUB_META_FILES, type ClawhubClient, parseClawhubRef } from "../market/clawhub";
 import type { SkillStore } from "../skills/store";
 import { archiveSkillDir, unpackArchive } from "./archive";
-import type { CancelRegistry } from "./cancel";
+import { type CancelRegistry, withTask } from "./cancel";
 import type { InstallIntoLibrary } from "./library";
 import { emitProgress } from "./preview-sessions";
 import { type ReplaceDeps, installOver } from "./replace";
@@ -64,9 +64,7 @@ export function createClawhubReader(ctx: CoreContext, deps: ClawhubInstallerDeps
   ): Promise<PreviewedSkill> {
     const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
     const key = clawhubTaskKey(owner, slug);
-    const handle = deps.cancels.register(key);
-    let cleanup: (() => Promise<void>) | null = null;
-    try {
+    return withTask(ctx, deps.cancels, key, async ({ signal, keep }) => {
       emitProgress(ctx, key, "downloading", { name: slug });
       const found = await deps.clawhub.detail(owner, slug);
       if (!found.version)
@@ -76,23 +74,16 @@ export function createClawhubReader(ctx: CoreContext, deps: ClawhubInstallerDeps
         found.owner,
         found.slug,
         found.version,
-        handle.signal,
+        signal,
       );
-      cleanup = opened.cleanup;
-      if (handle.signal.aborted) throw cancelled();
-      return await readCheckedSkill(
+      keep(opened.cleanup);
+      if (signal.aborted) throw cancelled();
+      return readCheckedSkill(
         deps.safety,
         { name: found.slug, dir: opened.dir },
-        {
-          ...options,
-          progressKey: key,
-        },
+        { ...options, progressKey: key },
       );
-    } finally {
-      await cleanup?.();
-      handle.done();
-      emitProgress(ctx, key, "done");
-    }
+    });
   };
 }
 
@@ -105,52 +96,49 @@ export function createClawhubInstaller(ctx: CoreContext, deps: ClawhubInstallerD
   ): Promise<Skill> {
     const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
     const key = clawhubTaskKey(owner, slug);
-    const handle = deps.cancels.register(key);
-    let cleanup: (() => Promise<void>) | null = null;
-    let installedName: string | null = null;
-    try {
-      emitProgress(ctx, key, "downloading", { name: slug });
-      const found = await deps.clawhub.detail(owner, slug);
-      if (!found.version)
-        throw new Error(`${owner}/${slug} has no published version on ${CLAWHUB_NAME}`);
-      const opened = await openClawhubVersion(
-        deps.clawhub,
-        found.owner,
-        found.slug,
-        found.version,
-        handle.signal,
-      );
-      cleanup = opened.cleanup;
-      if (handle.signal.aborted) throw cancelled();
-      emitProgress(ctx, key, "installing", { name: slug });
-      const ref = `${found.owner}/${found.slug}`;
-      // Installing what is already installed refreshes it instead of adding `<slug>-2`.
-      const installed = deps.store.findBySource("clawhub", ref);
-      const skill = await installChecked(
-        installOver(ctx, deps.install, deps.replace, installed),
-        deps.safety,
-        {
-          sourceDir: opened.dir,
-          name: found.slug,
-          record: {
-            sourceType: "clawhub",
-            sourceRef: ref,
-            sourceUrl: clawhubSkillUrl(found.owner, found.slug),
-            sourceSubpath: null,
-            sourceBranch: null,
-            sourceRevision: found.version,
-            remoteRevision: found.version,
-            updateStatus: "up_to_date",
+    return withTask(
+      ctx,
+      deps.cancels,
+      key,
+      async ({ signal, keep }) => {
+        emitProgress(ctx, key, "downloading", { name: slug });
+        const found = await deps.clawhub.detail(owner, slug);
+        if (!found.version)
+          throw new Error(`${owner}/${slug} has no published version on ${CLAWHUB_NAME}`);
+        const opened = await openClawhubVersion(
+          deps.clawhub,
+          found.owner,
+          found.slug,
+          found.version,
+          signal,
+        );
+        keep(opened.cleanup);
+        if (signal.aborted) throw cancelled();
+        emitProgress(ctx, key, "installing", { name: slug });
+        const ref = `${found.owner}/${found.slug}`;
+        // Installing what is already installed refreshes it instead of adding `<slug>-2`.
+        const installed = deps.store.findBySource("clawhub", ref);
+        return installChecked(
+          installOver(ctx, deps.install, deps.replace, installed),
+          deps.safety,
+          {
+            sourceDir: opened.dir,
+            name: found.slug,
+            record: {
+              sourceType: "clawhub",
+              sourceRef: ref,
+              sourceUrl: clawhubSkillUrl(found.owner, found.slug),
+              sourceSubpath: null,
+              sourceBranch: null,
+              sourceRevision: found.version,
+              remoteRevision: found.version,
+              updateStatus: "up_to_date",
+            },
           },
-        },
-        { ...options, progressKey: key },
-      );
-      installedName = skill.name;
-      return skill;
-    } finally {
-      await cleanup?.();
-      handle.done();
-      emitProgress(ctx, key, "done", installedName ? { name: installedName } : {});
-    }
+          { ...options, progressKey: key },
+        );
+      },
+      (skill) => skill.name,
+    );
   };
 }

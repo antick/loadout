@@ -19,7 +19,7 @@ import { readDirSafe, toPosix } from "../util/fs";
 
 import { listArchiveSkills } from "./archive";
 
-import type { CancelRegistry } from "./cancel";
+import type { Task } from "./cancel";
 
 import type { InstallRecord } from "./library";
 
@@ -38,8 +38,6 @@ export interface FetchedFolder {
 }
 
 export interface FetchedPreviewOptions {
-  /** Progress and cancel key: the text exactly as the caller sent it. */
-  key: string;
   kind: GitPreview["kind"];
   /** What the preview header shows as the source. */
   shownAs: string;
@@ -54,7 +52,6 @@ export interface FetchedPreviewOptions {
 
 export interface FetchedPreviewDeps {
   store: SkillStore;
-  cancels: CancelRegistry;
   sessions: PreviewSessions;
 }
 
@@ -114,46 +111,38 @@ export function previewLibrary(
 export function createFetchedPreviews(
   ctx: CoreContext,
   deps: FetchedPreviewDeps,
-): (options: FetchedPreviewOptions) => Promise<GitPreview> {
-  const { store, cancels, sessions } = deps;
-  return async (options) => {
-    const { key } = options;
-    const handle = cancels.register(key);
-    let cleanup: (() => Promise<void>) | null = null;
-    try {
-      const fetched = await options.fetch(handle.signal);
-      cleanup = fetched.cleanup;
-      emitProgress(ctx, key, "scanning");
-      const found = listArchiveSkills(fetched.root);
-      if (handle.signal.aborted) throw cancelled();
-      const redirectedTo = fetched.redirectedTo ?? null;
-      const previewId = await sessions.open({
-        key,
-        dirs: new Map(found.map((skill) => [skill.relPath, skill.dir])),
-        // The user confirms the other site before installing: updates may follow it there.
-        record: (dir) => ({
-          ...options.record(subpathOf(fetched.root, dir)),
-          sourceTrustedHost: redirectedTo,
-        }),
-        cleanup: fetched.cleanup,
-        redirectedTo,
-      });
-      cleanup = null;
-      return {
-        previewId,
-        kind: options.kind,
-        repoUrl: options.shownAs,
-        branch: null,
-        revision: null,
-        skills: previewRows(store, found, options.installed),
-        ...matchRequested(found, options.wanted ?? []),
-        library: previewLibrary(ctx, store, options.installed),
-        redirectedTo,
-        ...NO_REQUESTED_AGENTS,
-      };
-    } finally {
-      await cleanup?.();
-      handle.done();
-    }
+): (task: Task, options: FetchedPreviewOptions) => Promise<GitPreview> {
+  const { store, sessions } = deps;
+  return async (task, options) => {
+    const fetched = await options.fetch(task.signal);
+    const release = task.keep(fetched.cleanup);
+    emitProgress(ctx, task.key, "scanning");
+    const found = listArchiveSkills(fetched.root);
+    if (task.signal.aborted) throw cancelled();
+    const redirectedTo = fetched.redirectedTo ?? null;
+    const previewId = await sessions.open({
+      key: task.key,
+      dirs: new Map(found.map((skill) => [skill.relPath, skill.dir])),
+      // The user confirms the other site before installing: updates may follow it there.
+      record: (dir) => ({
+        ...options.record(subpathOf(fetched.root, dir)),
+        sourceTrustedHost: redirectedTo,
+      }),
+      cleanup: fetched.cleanup,
+      redirectedTo,
+    });
+    release();
+    return {
+      previewId,
+      kind: options.kind,
+      repoUrl: options.shownAs,
+      branch: null,
+      revision: null,
+      skills: previewRows(store, found, options.installed),
+      ...matchRequested(found, options.wanted ?? []),
+      library: previewLibrary(ctx, store, options.installed),
+      redirectedTo,
+      ...NO_REQUESTED_AGENTS,
+    };
   };
 }
