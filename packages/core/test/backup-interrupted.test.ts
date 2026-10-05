@@ -1,8 +1,16 @@
-import { existsSync, rmSync, utimesSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  renameSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Device, joinRemote, seedRemote } from "./backup-world";
-import { tempDir } from "./helpers";
+import { tempDir, writeFile } from "./helpers";
 
 /** A process id no process has: the note of a run that crashed. */
 const GONE_PID = 2 ** 22 + 7;
@@ -55,6 +63,44 @@ describe("a backup merge that did not finish", () => {
     expect(b.read("alpha")).toBe("from A");
     expect(existsSync(join(b.skillsDir, ".git", "MERGE_HEAD"))).toBe(false);
     expect(existsSync(join(b.skillsDir, ".git", "loadout-merging"))).toBe(false);
+  });
+
+  it("puts back a skill folder it had set aside, so the skill is never sent as deleted", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
+    track(a);
+    const b = track(await joinRemote(temp.dir, remote));
+    writeFile(join(b.skillsDir, "alpha", ".env"), "only here");
+    a.editSkill("alpha", "from A");
+    await a.api.sync();
+    // As a crash leaves the skill-aware merge: our alpha set aside, A's version moved in.
+    b.git("fetch", "-q", "origin");
+    const head = b.git("rev-parse", "HEAD");
+    b.git("merge", "--no-commit", "--no-ff", "-s", "ours", "origin/main");
+    const stage = join(dirname(b.skillsDir), ".backup-stage-crashed");
+    const ours = join(b.skillsDir, "alpha");
+    const aside = join(stage, ".replaced", b.skill("alpha")?.id ?? "");
+    const theirs = join(stage, "alpha");
+    cpSync(join(a.skillsDir, "alpha"), theirs, { recursive: true });
+    mkdirSync(dirname(aside), { recursive: true });
+    renameSync(ours, aside);
+    renameSync(theirs, ours);
+    const journal = [
+      { head, stage },
+      { from: ours, to: aside },
+      { from: theirs, to: ours },
+    ].map((entry) => JSON.stringify(entry));
+    writeFileSync(
+      join(b.skillsDir, ".git", "loadout-merging"),
+      [GONE_PID, ...journal, ""].join("\n"),
+    );
+
+    await b.api.sync();
+    expect(b.read("alpha")).toBe("from A");
+    expect(b.read("alpha", ".env")).toBe("only here");
+    expect(existsSync(stage)).toBe(false);
+    expect(b.git("log", "--diff-filter=D", "--name-only", "--format=")).not.toContain("alpha/");
+    await a.api.sync();
+    expect(a.skill("alpha")).not.toBeNull();
   });
 
   it("is left alone when someone else started it, or its process still runs", async () => {

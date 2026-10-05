@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, renameSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type MergeSummary, type MergedSkill, type SyncReviewAnswer } from "@loadout/shared";
 import { AppError } from "../errors";
@@ -29,6 +29,7 @@ import {
   skillFoldersHere,
 } from "./merge-input";
 import type { MergePlan, PresetVersions, SkillPlan, SkillVersions } from "./merge-plan";
+import { journaledMove, noteMergeStart } from "./interrupted";
 import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
 import { commitLibrary, requireBranch, resolveCommit, upstreamRef } from "./repo";
 
@@ -136,6 +137,8 @@ async function materialise(
   // Folders of ours that the merge replaces or drops, set aside with their left-out files.
   const asides = new Map<string, SetAsideFolder>();
   const planned = new Set(plan.skills.flatMap((item) => (item.path ? [item.path] : [])));
+  // Every folder moved in or out before the commit is journaled, so a crash can be undone.
+  const move = (from: string, to: string): void => journaledMove(env, from, to);
   const place = (item: SkillPlan, from: string): void => {
     if (!item.path || !existsSync(from)) return;
     const folder = freeFolder(env, item.path, planned);
@@ -146,7 +149,7 @@ async function materialise(
     }
     const target = join(env.repoDir, folder);
     created.push(target);
-    renameSync(from, target);
+    move(from, target);
   };
 
   // Set when files could be kept nowhere else: the stage then stays on disk.
@@ -183,6 +186,7 @@ async function materialise(
   }
 
   async function writeMerge(): Promise<void> {
+    noteMergeStart(env, await env.git.text(["rev-parse", "HEAD"]), stage.dir);
     // Everything that can fail slowly (reading git objects) happens before the library is touched.
     const incoming = plan.skills.filter(
       (item) => item.content === "theirs" && skills.get(item.id)?.theirs?.treeHash,
@@ -200,7 +204,7 @@ async function materialise(
       const ours = skills.get(item.id)?.ours;
       if (!ours) continue;
       if (item.content !== "ours") {
-        const aside = await setAsideFolder(env, stage, ours.path, item.id);
+        const aside = await setAsideFolder(env, stage, ours.path, item.id, move);
         if (aside) asides.set(item.id, aside);
       } else if (item.path !== ours.path) movers.push(item);
     }
@@ -208,7 +212,7 @@ async function materialise(
     ensureDir(stage.pathOf(MOVES_DIR));
     for (const item of movers) {
       const from = join(env.repoDir, skills.get(item.id)?.ours?.path ?? "");
-      if (existsSync(from)) renameSync(from, stage.pathOf(join(MOVES_DIR, item.id)));
+      if (existsSync(from)) move(from, stage.pathOf(join(MOVES_DIR, item.id)));
     }
     for (const item of movers) place(item, stage.pathOf(join(MOVES_DIR, item.id)));
     for (const item of incoming) {

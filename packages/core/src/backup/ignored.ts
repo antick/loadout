@@ -45,20 +45,21 @@ async function listIgnored(env: BackupEnv, folder: string): Promise<string[]> {
 
 /**
  * Move the skill folder `folder` (relative to the library) into the stage and remember its
- * left-out files. Null when there is no such folder.
+ * left-out files. Null when there is no such folder. `move` does the move (a merge journals it).
  */
 export async function setAsideFolder(
   env: BackupEnv,
   stage: Stage,
   folder: string,
   key: string,
+  move: (from: string, to: string) => void = renameSync,
 ): Promise<SetAsideFolder | null> {
   const from = join(env.repoDir, folder);
   if (!lstatOrNull(from)) return null;
   const ignored = await listIgnored(env, folder);
   const to = stage.pathOf(join(ASIDE_DIR, key));
   ensureDir(dirname(to));
-  renameSync(from, to);
+  move(from, to);
   return { from, to, ignored };
 }
 

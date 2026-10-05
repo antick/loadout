@@ -10,6 +10,8 @@ import type { BackupEnv } from "./env";
 
 const STAGE_PREFIX = ".backup-stage-";
 const SCRATCH_INDEX = ".scratch-index";
+/** Index files the sync review builds its throwaway commit with, next to the library. */
+export const PREVIEW_INDEX_PREFIX = ".backup-preview-index-";
 /** Keeps one git call's argument list far below the smallest OS limit (Windows, 32k chars). */
 const PATHS_PER_CALL = 50;
 

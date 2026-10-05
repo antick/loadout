@@ -12,7 +12,7 @@ import { diffTrees } from "../updates/diff";
 import { ensureDir, removePath } from "../util/fs";
 import { findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR, isSafeSkillPath } from "./env";
-import { createStage, extractPaths } from "./extract";
+import { PREVIEW_INDEX_PREFIX, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
 import {
   type MergeSides,
@@ -37,7 +37,6 @@ import { fetchRemote } from "./sync";
  */
 
 const PREVIEW_MESSAGE = "backup: preview";
-const PREVIEW_INDEX_PREFIX = ".backup-preview-index-";
 const AUTHOR_MARK = "\u0001";
 const EMPTY_SIDE = "empty";
 
