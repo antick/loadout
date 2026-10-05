@@ -13,6 +13,7 @@ import {
   WINDOW_STATE_FILE,
 } from "./constants";
 import { isWebUrl } from "./links";
+import { isVisibleOn } from "./window-bounds";
 
 const RENDERER_ENTRY = join(import.meta.dirname, "../renderer/index.html");
 
@@ -47,14 +48,8 @@ function loadState(): WindowState | null {
   try {
     if (!existsSync(statePath())) return null;
     const state = JSON.parse(readFileSync(statePath(), "utf8")) as WindowState;
-    const visible = screen
-      .getAllDisplays()
-      .some(
-        ({ workArea }) =>
-          state.bounds.x < workArea.x + workArea.width &&
-          state.bounds.y < workArea.y + workArea.height,
-      );
-    return visible ? state : null;
+    const areas = screen.getAllDisplays().map((display) => display.workArea);
+    return isVisibleOn(state.bounds, areas) ? state : null;
   } catch {
     return null;
   }
