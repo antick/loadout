@@ -5,6 +5,7 @@ import {
   type MarketSkillDetail,
   splitFrontmatter,
   textField,
+  isRecord,
 } from "@loadout/shared";
 import { invalid, isAppError, isUnanswered } from "../errors";
 import { type Download, jsonOptions, readJson } from "../install/download";
@@ -30,10 +31,6 @@ const STATUSES: ReadonlySet<string> = new Set(["pass", "warn", "fail"]);
 const MAX_MAYBE_READS = 4;
 /** Where skills usually sit, tried when the repository listing is out of reach. */
 const GUESSED_FOLDERS = ["skills/", "", ".claude/skills/", ".agents/skills/"] as const;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;

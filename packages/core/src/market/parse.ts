@@ -1,3 +1,5 @@
+import { isRecord } from "@loadout/shared";
+
 /** A marketplace listing entry before it is matched against the library. */
 export interface MarketEntry {
   /** `owner/repo`. */
@@ -14,10 +16,6 @@ const PAGE_PROPS_LISTS = ["initialSkills", "skills", "items"] as const;
 const FLAT_OBJECT = /\{[^{}]*\}/g;
 const SOURCE_SHAPE = /^[\w.-]+\/[\w.-]+$/;
 const ESCAPED_QUOTE = '\\"';
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function text(value: unknown): string | null {
   if (typeof value === "number") return String(value);

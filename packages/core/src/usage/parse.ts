@@ -1,4 +1,4 @@
-import type { UsageAgentKey } from "@loadout/shared";
+import { type UsageAgentKey, isRecord } from "@loadout/shared";
 
 /** One run of a skill found in a log. */
 export interface UsageEvent {
@@ -25,15 +25,12 @@ export interface LogReader {
 
 type Json = Record<string, unknown>;
 
-const isObject = (value: unknown): value is Json =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
 const text = (value: unknown): string | null => (typeof value === "string" ? value : null);
 
 function parseRecord(line: string): Json | null {
   try {
     const value: unknown = JSON.parse(line);
-    return isObject(value) ? value : null;
+    return isRecord(value) ? value : null;
   } catch {
     return null;
   }
@@ -62,23 +59,23 @@ const CLAUDE_COMMAND = /<command-name>\/?([^<\s]+)<\/command-name>/g;
 
 /** Text the user typed: a plain string or text blocks, never a tool's result. */
 function userText(message: unknown): string {
-  if (!isObject(message)) return "";
+  if (!isRecord(message)) return "";
   const { content } = message;
   if (typeof content === "string") return content;
   if (!Array.isArray(content)) return "";
   return content
-    .filter((block) => isObject(block) && block.type === "text")
+    .filter((block) => isRecord(block) && block.type === "text")
     .map((block) => text((block as Json).text) ?? "")
     .join("\n");
 }
 
 function claudeSkillCalls(message: unknown): { id: string | null; name: string }[] {
-  if (!isObject(message) || !Array.isArray(message.content)) return [];
+  if (!isRecord(message) || !Array.isArray(message.content)) return [];
   return message.content.flatMap((block) => {
-    if (!isObject(block) || block.type !== "tool_use" || block.name !== CLAUDE_SKILL_TOOL) {
+    if (!isRecord(block) || block.type !== "tool_use" || block.name !== CLAUDE_SKILL_TOOL) {
       return [];
     }
-    const name = isObject(block.input) ? text(block.input.skill) : null;
+    const name = isRecord(block.input) ? text(block.input.skill) : null;
     return name ? [{ id: text(block.id), name }] : [];
   });
 }
@@ -142,7 +139,7 @@ function codexSkillsRead(callText: string): string[] {
 
 function codexCallText(payload: Json): string {
   const parts = [text(payload.arguments), text(payload.input)];
-  if (isObject(payload.action)) parts.push(JSON.stringify(payload.action));
+  if (isRecord(payload.action)) parts.push(JSON.stringify(payload.action));
   return parts.filter(Boolean).join("\n");
 }
 
@@ -151,7 +148,7 @@ export const codexReader: LogReader = {
   markers: [CODEX_SKILL_MARKER, CODEX_META_MARKER],
   parse(line, state) {
     const record = parseRecord(line);
-    if (!record || !isObject(record.payload)) return [];
+    if (!record || !isRecord(record.payload)) return [];
     const { payload } = record;
     if (record.type === CODEX_META) {
       state.projectPath = text(payload.cwd) ?? state.projectPath;

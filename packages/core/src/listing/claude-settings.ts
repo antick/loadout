@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { isRecord } from "@loadout/shared";
 
 /**
  * What Claude Code's own `settings.json` says about its skill listing, read only. Values of the
@@ -18,9 +19,6 @@ export interface ListingSettings {
 
 const SETTINGS_FILE = "settings.json";
 const BUDGET_ENV = "SLASH_COMMAND_TOOL_CHAR_BUDGET";
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 function positive(value: unknown): number | null {
   const number = typeof value === "string" ? Number(value.trim()) : value;

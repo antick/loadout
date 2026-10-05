@@ -1,3 +1,5 @@
+import { isRecord } from "./is-record";
+
 /**
  * `URL` is a global in Node and in browsers, the only places this runs; this package is compiled
  * without either's types. Only what the checks below read.
@@ -39,10 +41,6 @@ export interface UpdateFeed {
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const FILE_NAME_PATTERN = /^[\w.-]+$/;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 /**
  * Downloads must come over HTTPS from where the feed came from: a feed cannot send the app to

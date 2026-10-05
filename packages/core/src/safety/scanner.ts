@@ -6,6 +6,7 @@ import {
   type SafetyFinding,
   type SafetyReport,
   type SafetySeverity,
+  isRecord,
 } from "@loadout/shared";
 import { exec } from "../util/exec";
 import { isDirectory, statOrNull } from "../util/fs";
@@ -106,8 +107,7 @@ function lastLine(text: string): string | null {
 
 type Json = Record<string, unknown>;
 
-const asObject = (value: unknown): Json =>
-  value && typeof value === "object" && !Array.isArray(value) ? (value as Json) : {};
+const asObject = (value: unknown): Json => (isRecord(value) ? value : {});
 const asText = (value: unknown): string => (typeof value === "string" ? value : "");
 const asNumber = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;

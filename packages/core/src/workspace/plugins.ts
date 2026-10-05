@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import type { LocalSkill, PluginSkill, SkillDuplicate } from "@loadout/shared";
+import { type LocalSkill, type PluginSkill, type SkillDuplicate, isRecord } from "@loadout/shared";
 import type { ResolvedAgent } from "../agents/registry";
 import { readSkillIdentity } from "../skills/metadata";
 import { isDirectory, isInside, isSkillDir, readDirSafe } from "../util/fs";
@@ -31,9 +31,6 @@ function readJson(path: string): unknown {
     return null;
   }
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** `name@marketplace` → its parts; a key without `@` has no marketplace. */
 function splitKey(key: string): { plugin: string; marketplace: string | null } {

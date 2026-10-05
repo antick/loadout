@@ -7,6 +7,7 @@ import {
   cleanAgentKeys,
   cleanSkillNote,
   cleanSuggestPatterns,
+  isRecord,
 } from "@loadout/shared";
 import type { Logger } from "../log";
 import { readDirSafe } from "../util/fs";
@@ -134,12 +135,6 @@ export function isSafeLibraryDirName(name: unknown): name is string {
 
 const KNOWN_SOURCE_TYPES: ReadonlySet<unknown> = new Set(SOURCE_TYPES);
 
-type Json = Record<string, unknown>;
-
-function isObject(value: unknown): value is Json {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function textOrNull(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
@@ -157,10 +152,10 @@ function timeOr(value: unknown, fallback: number): number {
  * hand edit. Null when its id, folder or source type is unusable; odd optional fields are dropped.
  */
 export function readPortableSkill(value: unknown): PortableSkill | null {
-  if (!isObject(value) || typeof value.id !== "string" || !isSafeLibraryDirName(value.path)) {
+  if (!isRecord(value) || typeof value.id !== "string" || !isSafeLibraryDirName(value.path)) {
     return null;
   }
-  const source = isObject(value.source) ? value.source : null;
+  const source = isRecord(value.source) ? value.source : null;
   if (!source || !KNOWN_SOURCE_TYPES.has(source.type)) return null;
   return {
     ...value,
@@ -182,11 +177,11 @@ export function readPortableSkill(value: unknown): PortableSkill | null {
 
 /** A preset's metadata file as read from disk; null when its id or name is unusable. */
 export function readPortablePreset(value: unknown): PortablePreset | null {
-  if (!isObject(value) || typeof value.id !== "string" || typeof value.name !== "string") {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.name !== "string") {
     return null;
   }
   const disabledAgents: Record<string, string[]> = {};
-  if (isObject(value.disabledAgents)) {
+  if (isRecord(value.disabledAgents)) {
     for (const [skillId, keys] of Object.entries(value.disabledAgents)) {
       disabledAgents[skillId] = strings(keys);
     }

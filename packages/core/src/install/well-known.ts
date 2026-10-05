@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { formatBytes } from "@loadout/shared";
+import { formatBytes, isRecord } from "@loadout/shared";
 import { AppError, invalid, isAppError, notFound } from "../errors";
 import { resolveInside } from "../util/fs";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
@@ -56,10 +56,6 @@ const SAFE_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
 const SKILL_FILE = "SKILL.md";
 const JSON_ACCEPT = "application/json";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function parseUrl(input: string): URL | null {
   try {
