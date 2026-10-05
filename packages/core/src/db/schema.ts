@@ -227,4 +227,9 @@ export const MIGRATIONS: readonly string[] = [
   -- The row is only dropped once the folder has stayed away for a grace period.
   ALTER TABLE skills ADD COLUMN missing_since INTEGER;
   `,
+  `
+  -- What a stat walk of the skill's folder gave when content_hash was last computed, followed by
+  -- that hash ("<fingerprint>:<hash>"). While both still match, a re-index need not read the files.
+  ALTER TABLE skills ADD COLUMN content_fingerprint TEXT;
+  `,
 ];

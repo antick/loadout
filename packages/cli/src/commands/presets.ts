@@ -139,12 +139,13 @@ export const presetsGroup: CommandGroup = {
   name: "presets",
   summary: "Named sets of skills that are deployed together",
   commands: [
-    { name: "list", summary: "List presets", usage: "", flags: [], run: list },
+    { name: "list", summary: "List presets", usage: "", flags: [], readOnly: true, run: list },
     {
       name: "show",
       summary: "Show a preset and its skills",
       usage: "<name>",
       flags: [],
+      readOnly: true,
       run: show,
     },
     {

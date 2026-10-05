@@ -9,7 +9,7 @@ import {
 import { APP_NAME, type ErrorShape } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString, parseArgs, splitCommandPath } from "./args";
 import { COMMAND_GROUPS, type CommandGroup, type CommandSpec } from "./commands";
-import { resolveUserPath } from "./commands/support";
+import { DRY_RUN_FLAG, resolveUserPath } from "./commands/support";
 import { EXIT_FAILED, EXIT_OK, EXIT_USAGE } from "./exit-codes";
 import type { SkillPicker } from "./picker/state";
 import { GLOBAL_FLAGS, commandHelp, groupHelp, rootHelp } from "./help";
@@ -59,7 +59,8 @@ function openExistingLibrary(deps: CliDeps, baseDir: string | undefined): Core |
     baseDir,
   });
   if (unavailable || !isLibraryDir(paths.baseDir)) return null;
-  return deps.createCore({ ...deps.coreOptions, baseDir: paths.baseDir });
+  // Commands without a library of their own only ever read it (completion, validate).
+  return deps.createCore({ ...deps.coreOptions, baseDir: paths.baseDir, readOnly: true });
 }
 
 /** Run one invocation. Never throws and never exits the process: the caller owns both. */
@@ -124,7 +125,12 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
         `There is no ${APP_NAME} library in ${baseDir}. Check the path, or create one with \`repo init ${library}\`.`,
       );
     }
-    core = deps.createCore({ ...deps.coreOptions, ...(baseDir === undefined ? {} : { baseDir }) });
+    const readOnly = command.readOnly === true || flagBoolean(args, DRY_RUN_FLAG.name);
+    core = deps.createCore({
+      ...deps.coreOptions,
+      readOnly,
+      ...(baseDir === undefined ? {} : { baseDir }),
+    });
     const result = await command.run({ core, ...context });
     printCommandResult(io, json, result);
     return result.exitCode ?? EXIT_OK;

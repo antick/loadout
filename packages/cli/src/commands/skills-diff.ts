@@ -117,6 +117,7 @@ export const diffCommand: CommandSpec = {
   summary: "Show how a skill's copies, or its source, differ from the library",
   usage: "<ref>",
   flags: [AGENT_FLAG, UPSTREAM_FLAG],
+  readOnly: true,
   notes: [
     "Linked deployments are the library itself and always match. Copies are compared file by file; text files show a unified diff with the library first.",
   ],

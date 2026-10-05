@@ -55,6 +55,11 @@ interface CommandBase {
   createsLibraryAt?(context: Omit<CommandContext, "core">, homeDir: string): string;
   /** Left out of help: plumbing for scripts, such as the words shell completion asks for. */
   hidden?: boolean;
+  /**
+   * The command only reads the library: it opens without the start-up tidy's writes (see
+   * `CoreCreateOptions.readOnly`). Every `--dry-run` opens that way too.
+   */
+  readOnly?: boolean;
 }
 
 /** Most commands: run on the opened library. */

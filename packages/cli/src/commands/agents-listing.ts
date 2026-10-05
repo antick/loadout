@@ -98,6 +98,7 @@ export const listingCommand: CommandSpec = {
   summary: "What Claude Code's skill listing costs, and whether it is over budget",
   usage: "",
   flags: [WINDOW_FLAG, ALL_FLAG],
+  readOnly: true,
   notes: [
     "Claude Code puts every skill's name and description in the model's context and cuts descriptions past a budget of about 1% of the context window. This reads your skills, your plugins' skills and Claude Code's settings, and estimates the total. It assumes a 200k-token window; if you run a 1M-token model, add --window 1m.",
   ],

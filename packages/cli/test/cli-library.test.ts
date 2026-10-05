@@ -95,6 +95,24 @@ describe("repo and --library", () => {
   });
 });
 
+describe("commands that only read", () => {
+  it("open the library without writing its metadata files", async () => {
+    expect((await cli("skills", "list", "--json")).code).toBe(EXIT_OK);
+    const metadata = join(sandbox.libraryDir, ".loadout", "skills");
+    writeSkill(sandbox.libraryDir, "by-hand");
+
+    const listed = (await cli("skills", "list", "--json")).json<{ id: string; name: string }[]>();
+    expect(listed.map((skill) => skill.name)).toEqual(["by-hand"]);
+    const words = await cli("completion", "words", "skills");
+    expect(words.stdout).toContain("by-hand");
+    const file = join(metadata, `${listed[0]?.id}.json`);
+    expect(existsSync(file)).toBe(false);
+
+    expect((await cli("skills", "note", "by-hand", "Mine", "--json")).code).toBe(EXIT_OK);
+    expect(existsSync(file)).toBe(true);
+  });
+});
+
 describe("git backup", () => {
   it("reports, initialises and guards restore", async () => {
     expect((await cli("git", "status", "--json")).json()).toMatchObject({ isRepo: false });

@@ -175,6 +175,7 @@ export const searchCommand: CommandSpec = {
   summary: `Search ${MARKETPLACE_NAME} or ${CLAWHUB_NAME} for skills to install`,
   usage: "<words…>",
   flags: [LIMIT_FLAG, ON_FLAG, ACCEPT_RISK_FLAG],
+  readOnly: true,
   notes: [
     "Lists owner/repo@skill names (skills.sh) or @owner/slug names (ClawHub) in the marketplace's order.",
     "In a terminal, results not in the library open in a picker: tick some and press enter to",

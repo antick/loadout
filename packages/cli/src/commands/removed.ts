@@ -97,6 +97,7 @@ export const removedGroup: CommandGroup = {
       notes: [
         `Deleted library skills, and skill folders taken out of agent and project folders, are kept for ${REMOVED_KEEP_DAYS} days.`,
       ],
+      readOnly: true,
       run: list,
     },
     {

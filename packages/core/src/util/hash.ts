@@ -159,6 +159,25 @@ export function hashDir(root: string, options: HashOptions = {}): string | null 
   return hash.digest("hex");
 }
 
+/**
+ * A cheap stand-in for `hashDir`: the folder's path and every content file's path, size,
+ * modification time and executable bit, from a stat walk without reading a byte. Equal
+ * fingerprints mean the content is almost surely the same; null for an empty tree.
+ */
+export function contentFingerprint(root: string): string | null {
+  const files = listContentFiles(root);
+  if (files.length === 0) return null;
+  const hash = createHash("sha256");
+  frame(hash, root);
+  for (const file of files) {
+    frame(
+      hash,
+      `${file.relativePath}\0${file.size}\0${file.mtimeMs}\0${file.executable ? "x" : "-"}`,
+    );
+  }
+  return hash.digest("hex");
+}
+
 /** Newest modification time among content files, or null for an empty tree. */
 export function newestContentMtime(root: string): number | null {
   const files = listContentFiles(root);

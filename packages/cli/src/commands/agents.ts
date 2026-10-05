@@ -101,6 +101,7 @@ export const agentsGroup: CommandGroup = {
       summary: "List known agents, their state and skills folder",
       usage: "",
       flags: [INSTALLED_FLAG],
+      readOnly: true,
       run: list,
     },
     {

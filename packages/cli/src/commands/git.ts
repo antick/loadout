@@ -215,6 +215,7 @@ export const gitGroup: CommandGroup = {
       summary: "List restorable versions, newest first",
       usage: "",
       flags: [LIMIT_FLAG],
+      readOnly: true,
       run: versions,
     },
     {

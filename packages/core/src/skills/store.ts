@@ -279,6 +279,20 @@ export class SkillStore {
     this.#db.run("UPDATE skills SET missing_since = ? WHERE id = ?", at, id);
   }
 
+  // ── Content fingerprints ──
+
+  /** Skill id → its recorded `"<fingerprint>:<hash>"` (see the migration that added it). */
+  fingerprints(): Map<string, string> {
+    const rows = this.#db.all<{ id: string; content_fingerprint: string }>(
+      "SELECT id, content_fingerprint FROM skills WHERE content_fingerprint IS NOT NULL",
+    );
+    return new Map(rows.map((row) => [row.id, row.content_fingerprint]));
+  }
+
+  setFingerprint(id: string, value: string | null): void {
+    this.#db.run("UPDATE skills SET content_fingerprint = ? WHERE id = ?", value, id);
+  }
+
   // ── What came from the source ──
 
   /**

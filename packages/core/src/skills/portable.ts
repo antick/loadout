@@ -5,7 +5,7 @@ import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";
 import { ensureDir, isSkillDir, readDirSafe, writeJsonAtomic } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { contentFingerprint, hashDir } from "../util/hash";
 import { readSkillIdentity } from "./metadata";
 import {
   MACHINE_LOCAL_SOURCES,
@@ -221,6 +221,7 @@ export class PortableMetadata {
 
     return this.#db.transaction(() => {
       const seenSkillIds = new Set<string>();
+      const fingerprints = this.#skills.fingerprints();
       for (const file of skillFiles) {
         // Files arrive through backups from other devices: `readPortableSkill` checked them.
         const libraryPath = join(this.#paths.skillsDir, file.path);
@@ -228,7 +229,7 @@ export class PortableMetadata {
         // The row it updated may carry another id (matched by folder): that id is seen too, or
         // the row would be dropped below with its deployments and presets.
         seenSkillIds.add(file.id);
-        seenSkillIds.add(this.#upsertSkill(file, libraryPath, mode));
+        seenSkillIds.add(this.#upsertSkill(file, libraryPath, mode, fingerprints));
       }
 
       const missing: Skill[] = [];
@@ -278,11 +279,17 @@ export class PortableMetadata {
    * and the file may be behind it (written later, under the lock). Merges, restores and clones
    * bring new files on purpose, so they take every field from them.
    */
-  #upsertSkill(file: PortableSkill, libraryPath: string, mode: RebuildMode): string {
+  #upsertSkill(
+    file: PortableSkill,
+    libraryPath: string,
+    mode: RebuildMode,
+    fingerprints: ReadonlyMap<string, string>,
+  ): string {
     const identity = readSkillIdentity(libraryPath);
-    const contentHash = hashDir(libraryPath);
     const current = this.#skills.find(file.id) ?? this.#skills.findByLibraryPath(libraryPath);
+    const { contentHash, fingerprint } = this.#hashFolder(libraryPath, current, fingerprints);
     if (current) {
+      if (fingerprint !== undefined) this.#skills.setFingerprint(current.id, fingerprint);
       const changed = current.contentHash !== contentHash;
       const fromFolder = {
         name: identity.name,
@@ -292,7 +299,12 @@ export class PortableMetadata {
         updatedAt: changed ? Date.now() : current.updatedAt,
       };
       if (mode === "reindex") {
-        this.#skills.update(current.id, fromFolder);
+        const same =
+          !changed &&
+          current.name === identity.name &&
+          current.description === identity.description &&
+          current.libraryPath === libraryPath;
+        if (!same) this.#skills.update(current.id, fromFolder);
         return current.id;
       }
       this.#skills.update(current.id, {
@@ -337,8 +349,29 @@ export class PortableMetadata {
       note: readNote(file.note),
       favoritedAt: readFavoritedAt(file.favoritedAt),
     });
+    if (fingerprint !== undefined) this.#skills.setFingerprint(file.id, fingerprint);
     this.#skills.setTags(file.id, file.tags);
     return file.id;
+  }
+
+  /**
+   * The folder's content hash. Read from the files only when the stat-walk fingerprint recorded
+   * with the row's hash no longer matches: a re-index of an unchanged library reads no file
+   * bytes. `fingerprint` is what to record next to the hash, undefined when that stays.
+   */
+  #hashFolder(
+    libraryPath: string,
+    row: Skill | null,
+    fingerprints: ReadonlyMap<string, string>,
+  ): { contentHash: string | null; fingerprint: string | null | undefined } {
+    const stamp = contentFingerprint(libraryPath);
+    const recorded = row ? fingerprints.get(row.id) : undefined;
+    if (row?.contentHash && stamp && recorded === `${stamp}:${row.contentHash}`) {
+      return { contentHash: row.contentHash, fingerprint: undefined };
+    }
+    const contentHash = hashDir(libraryPath);
+    const fingerprint = stamp && contentHash ? `${stamp}:${contentHash}` : null;
+    return { contentHash, fingerprint: fingerprint === recorded ? undefined : fingerprint };
   }
 
   /**

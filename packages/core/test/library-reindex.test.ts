@@ -1,11 +1,23 @@
-import { mkdirSync, readFileSync, readlinkSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readlinkSync,
+  renameSync,
+  rmSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
 import { RepoLock } from "../src/lock";
 import { MISSING_GRACE_MS } from "../src/skills/portable";
-import { tempDir, createTestCore } from "./helpers";
+import { createTestCore, makeSkill, tempDir } from "./helpers";
 
 /**
  * Another process (a CLI sync, the app mid-merge) can set a skill folder aside for a moment while
@@ -251,6 +263,74 @@ describe("writing metadata on the way out", () => {
     });
     core = createTestCore({ homeDir: temp.dir });
     expect(core.store.get(id).note).toBe("Late note");
+  });
+});
+
+/**
+ * A re-index reads a folder's files only when a stat walk says something changed: path, size,
+ * modification time or executable bit of any file.
+ */
+describe("re-indexing without reading unchanged folders", () => {
+  let temp: ReturnType<typeof tempDir>;
+  let core: Core;
+  let id: string;
+  let doc: string;
+  beforeEach(async () => {
+    temp = tempDir();
+    core = createTestCore({ homeDir: temp.dir });
+    const skill = await core.api.skills.create({ name: "alpha", description: "Test skill" });
+    id = skill.id;
+    doc = join(skill.libraryPath, "SKILL.md");
+    await core.flush();
+    await core.background.libraryChangedOnDisk();
+  });
+  afterEach(() => {
+    core.close();
+    temp.cleanup();
+  });
+
+  const hash = (): string | null => core.store.get(id).contentHash;
+
+  it("trusts the recorded hash while the stat walk matches", async () => {
+    const stamp = new Date("2026-01-01T00:00:00Z");
+    utimesSync(doc, stamp, stamp);
+    await core.background.libraryChangedOnDisk();
+    const before = hash();
+    // Same length, same time: only reading the bytes could tell.
+    writeFileSync(doc, readFileSync(doc, "utf8").replace("Test skill", "Tset skill"));
+    utimesSync(doc, stamp, stamp);
+    await core.background.libraryChangedOnDisk();
+    expect(hash()).toBe(before);
+  });
+
+  it("hashes again when a file changes, is renamed or becomes executable", async () => {
+    const seen = new Set([hash()]);
+    writeFileSync(join(dirname(doc), "notes.md"), "notes\n");
+    await core.background.libraryChangedOnDisk();
+    seen.add(hash());
+    renameSync(join(dirname(doc), "notes.md"), join(dirname(doc), "other.md"));
+    await core.background.libraryChangedOnDisk();
+    seen.add(hash());
+    chmodSync(join(dirname(doc), "other.md"), 0o755);
+    await core.background.libraryChangedOnDisk();
+    seen.add(hash());
+    expect(seen.size).toBe(process.platform === "win32" ? 3 : 4);
+  });
+
+  it("opens for reading without writing metadata or removing links", () => {
+    core.close();
+    const metadata = join(core.ctx.paths.metadataDir, "skills");
+    makeSkill(core.ctx.paths.skillsDir, "by-hand");
+    const agentDir = join(temp.dir, ".claude", "skills");
+    mkdirSync(agentDir, { recursive: true });
+    const dangling = join(agentDir, "gone");
+    symlinkSync(join(core.ctx.paths.skillsDir, "gone"), dangling);
+
+    core = createTestCore({ homeDir: temp.dir, readOnly: true });
+    const added = core.store.list().find((skill) => skill.name === "by-hand");
+    expect(added).toBeDefined();
+    expect(existsSync(join(metadata, `${added?.id}.json`))).toBe(false);
+    expect(lstatSync(dangling).isSymbolicLink()).toBe(true);
   });
 });
 

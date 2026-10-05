@@ -48,6 +48,12 @@ export interface CoreCreateOptions extends CoreOptions {
    * that name no scanner (`safetyScannerPath: null`) unless they ask for it.
    */
   builtinSafety?: boolean;
+  /**
+   * The caller only means to read (CLI listings, completion, dry runs): the start-up tidy brings
+   * the index up to date but writes no metadata files and removes no links. A change made anyway
+   * is still written as usual.
+   */
+  readOnly?: boolean;
 }
 
 /** Long-running work the host starts once and stops on quit. */
@@ -107,6 +113,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   // with its deployments. When it is busy, the process working in it keeps the index.
   const tidied = ctx.lock.holdSync("tidy the library on start", () => {
     portable.rebuild({ mode: "reindex" });
+    if (options.readOnly) return;
     portable.write();
     pruneBrokenLinks(ctx, { registry, store });
   });
