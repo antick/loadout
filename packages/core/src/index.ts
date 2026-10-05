@@ -14,7 +14,7 @@ export { type RemovalPlan, type StorageService } from "./storage";
 export type { ResolvedAgent } from "./agents/registry";
 export { LIBRARY_LOCATION, isRemoteSource } from "./updates";
 export { diffTrees } from "./updates/diff";
-export { checkHealth } from "./health/doctor";
+export { type DeploymentProblem, checkHealth, deploymentProblem } from "./health/doctor";
 export { canonicalPath, isInside } from "./util/fs";
 export { previewLibrary } from "./install/fetched-preview";
 export { parseSkillsCommand } from "./install/skills-command";

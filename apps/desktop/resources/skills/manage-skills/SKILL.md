@@ -258,6 +258,7 @@ command again with `--approve-removals`.
 
 Start with `repo show --json` and `agents list --json`. A skill "not showing up" is almost
 always one of: installed but never deployed, deployed to a different agent, the agent is
-disabled, or `skills status` reports `presentOnDisk: false` (`skills repair` puts it back). An agent may
+disabled, or `skills status` reports `presentOnDisk: false` with `problem` `missing` (nothing
+there) or `broken` (a link that leads nowhere); `skills repair` puts either back. An agent may
 also ignore a skill whose SKILL.md is broken: run `skills validate <ref>` and report any `error`
 (missing frontmatter, name or description, or YAML that does not parse).

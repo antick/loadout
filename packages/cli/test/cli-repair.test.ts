@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { RepairReport } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -40,5 +40,34 @@ describe("skills repair", () => {
     expect(report.repaired).toEqual([]);
     expect(report.failed).toHaveLength(1);
     expect(report.failed[0]).toMatchObject({ skill: "alpha", agentKey: AGENT });
+  });
+});
+
+describe("skills status on disk", () => {
+  type Status = { agents: { agent: string; presentOnDisk: boolean; problem: string | null }[] };
+  const mine = async () =>
+    (await cli("skills", "status", "alpha", "--json"))
+      .json<Status>()
+      .agents.find((a) => a.agent === AGENT);
+
+  it("reports a link whose target is gone as broken, not present", async () => {
+    const link = join(sandbox.agentSkillsDir, "alpha");
+    const gone = join(sandbox.root, "gone");
+    mkdirSync(gone);
+    rmSync(link);
+    symlinkSync(gone, link, "dir");
+    rmSync(gone, { recursive: true });
+    expect(await mine()).toMatchObject({ presentOnDisk: false, problem: "broken" });
+    expect((await cli("skills", "status", "alpha")).stdout).toContain("broken");
+  });
+
+  it("reports a deleted deployment as missing", async () => {
+    rmSync(join(sandbox.agentSkillsDir, "alpha"));
+    expect(await mine()).toMatchObject({ presentOnDisk: false, problem: "missing" });
+    expect((await cli("skills", "status", "alpha")).stdout).toContain("missing");
+  });
+
+  it("reports a healthy deployment as present", async () => {
+    expect(await mine()).toMatchObject({ presentOnDisk: true, problem: null });
   });
 });

@@ -46,8 +46,11 @@ function formatFindings(skills: readonly Skill[]): Finding[] {
   );
 }
 
+/** Why a deployment is not usable on disk. */
+export type DeploymentProblem = "missing" | "broken";
+
 /** Nothing at the path: "missing". A link that leads nowhere: "broken". Otherwise null. */
-function deploymentProblem(targetPath: string): "missing" | "broken" | null {
+export function deploymentProblem(targetPath: string): DeploymentProblem | null {
   const stat = lstatOrNull(targetPath);
   if (stat === null) return "missing";
   return stat.isSymbolicLink() && !existsSync(targetPath) ? "broken" : null;

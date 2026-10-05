@@ -1,5 +1,4 @@
-import { lstatSync } from "node:fs";
-import { targetConflict } from "@loadout/core";
+import { deploymentProblem, targetConflict } from "@loadout/core";
 import {
   REMOVED_KEEP_DAYS,
   SOURCE_TYPES,
@@ -167,15 +166,6 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
   return { value, text };
 }
 
-function isPresent(path: string): boolean {
-  try {
-    lstatSync(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /** Where a skill is deployed, and whether each deployment is still really there on disk. */
 async function status({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
@@ -186,13 +176,16 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
     .filter((agent) => agent.installed || byAgent.has(agent.key))
     .map((agent) => {
       const deployment = byAgent.get(agent.key);
+      const problem = deployment ? deploymentProblem(deployment.targetPath) : null;
       return {
         agent: agent.key,
         enabled: agent.enabled,
         deployed: deployment !== undefined,
         mode: deployment?.mode ?? null,
         targetPath: deployment?.targetPath ?? null,
-        presentOnDisk: deployment ? isPresent(deployment.targetPath) : null,
+        // Usable on disk: a link that leads nowhere counts as absent, so `skills repair` is due.
+        presentOnDisk: deployment ? problem === null : null,
+        problem,
         blocked: skill.blockedAgents.includes(agent.key),
         // Frontmatter this agent's documentation says it does not act on.
         fieldNotes: fieldNotesFor(skill.behaviourFields, agent.key),
@@ -216,7 +209,7 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
         a.deployed,
         a.blocked,
         a.mode,
-        a.presentOnDisk,
+        a.problem ?? a.presentOnDisk,
         a.targetPath,
       ]),
       "No agents are installed.",
