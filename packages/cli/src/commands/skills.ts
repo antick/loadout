@@ -1,4 +1,4 @@
-import { deploymentProblem, targetConflict } from "@loadout/core";
+import { deploymentProblem } from "@loadout/core";
 import {
   REMOVED_KEEP_DAYS,
   SOURCE_TYPES,
@@ -31,10 +31,11 @@ import { suggestForCommand } from "./skills-suggest-for";
 import { validateCommand } from "./skills-validate";
 import {
   AGENT_FLAG,
+  DEPLOY_NOTE,
   DRY_RUN_FLAG,
   REQUIRED_YES_FLAG,
-  describeApply,
-  describeDryApply,
+  SKIP_CONFLICTS_FLAG,
+  applyOutcome,
   limitPositionals,
   positional,
   positionalsFrom,
@@ -272,12 +273,6 @@ const ALL_FLAG = {
   type: "boolean",
   description: "Every skill in the library, instead of naming them.",
 } as const;
-const SKIP_CONFLICTS_FLAG = {
-  name: "skip-conflicts",
-  type: "boolean",
-  description:
-    "Leave out folders this tool did not create and deploy the rest, instead of failing.",
-} as const;
 
 function deployer(action: "add" | "remove") {
   return async ({ core, args }: CommandContext): Promise<CommandResult> => {
@@ -296,18 +291,7 @@ function deployer(action: "add" | "remove") {
       action,
       { dryRun, skipConflicts },
     );
-    // A refusal to overwrite someone else's folder is the answer, not a footnote in a summary,
-    // unless the caller asked to go on without those folders.
-    if (result.conflicts.length > 0 && !skipConflicts) throw targetConflict(result.conflicts);
-    return {
-      value: { dryRun, ...result },
-      text: [
-        dryRun ? describeDryApply(result) : describeApply(result),
-        // Only reached with --skip-conflicts; without it these were thrown as an error.
-        ...result.conflicts.map((conflict) => `Left alone: ${conflict.path} (${conflict.reason})`),
-      ].join("\n"),
-      exitCode: exitCodeFor(result.failed.length > 0),
-    };
+    return applyOutcome(result, { dryRun, skipConflicts });
   };
 }
 
@@ -326,9 +310,6 @@ async function editTags({ core, args }: CommandContext): Promise<CommandResult> 
     text: `${skill.name}: ${tags.length > 0 ? tags.join(", ") : "no tags"}`,
   };
 }
-
-const DEPLOY_NOTE =
-  "A folder of the same name that this tool did not put there is never replaced: the command fails with TARGET_CONFLICT and lists the paths.";
 
 export const skillsGroup: CommandGroup = {
   name: "skills",

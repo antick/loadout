@@ -347,6 +347,11 @@ export interface ApplyOptions {
   skipConflicts?: boolean;
 }
 
+export interface PresetApplyOptions extends ApplyOptions {
+  /** Only these agents (each still honouring the preset's switches); every enabled one if absent. */
+  agentKeys?: string[];
+}
+
 export interface ApplyResult {
   added: number;
   removed: number;

@@ -1,6 +1,7 @@
 import type {
   ApplyResult,
   Preset,
+  PresetApplyOptions,
   PresetAgentToggle,
   PresetInput,
   PresetsApi,
@@ -66,9 +67,14 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
     };
   }
 
-  /** Preset skills × available agents, minus the pairs switched off. Preset order is kept. */
-  function wantedPairs(preset: Preset): PairRef[] {
-    const agents = registry.available();
+  /**
+   * Preset skills × available agents (only `agentKeys` when given), minus the pairs switched
+   * off. Preset order is kept.
+   */
+  function wantedPairs(preset: Preset, agentKeys?: readonly string[]): PairRef[] {
+    const agents = registry
+      .available()
+      .filter((agent) => agentKeys === undefined || agentKeys.includes(agent.key));
     return preset.skillIds.flatMap((skillId) => {
       const off = presets.disabledAgents(preset.id, skillId);
       return agents
@@ -77,15 +83,26 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
     });
   }
 
-  /** Deploy or remove the preset's wanted pairs and record the outcome in the activity log. */
-  async function applyWanted(preset: Preset, action: "add" | "remove"): Promise<ApplyResult> {
+  /**
+   * Deploy or remove the preset's wanted pairs and record the outcome in the activity log. A dry
+   * run changes nothing, so it leaves no entry.
+   */
+  async function applyWanted(
+    preset: Preset,
+    action: "add" | "remove",
+    options: PresetApplyOptions = {},
+  ): Promise<ApplyResult> {
+    const { agentKeys, ...applyOptions } = options;
+    const record = (detail: string, ok: boolean): void => {
+      if (!applyOptions.dryRun) ctx.activity.record("preset", preset.name, detail, ok);
+    };
     try {
-      const result = await deploy.applyPairs(wantedPairs(preset), action);
+      const result = await deploy.applyPairs(wantedPairs(preset, agentKeys), action, applyOptions);
       const clean = result.conflicts.length === 0 && result.failed.length === 0;
-      ctx.activity.record("preset", preset.name, describeApply(result, action), clean);
+      record(describeApply(result, action), clean);
       return result;
     } catch (error) {
-      ctx.activity.record("preset", preset.name, errorMessage(error), false);
+      record(errorMessage(error), false);
       throw error;
     }
   }
@@ -159,7 +176,7 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
       changed();
     },
 
-    applyToDefault: async (id) => applyWanted(presets.get(id), "add"),
+    applyToDefault: async (id, options) => applyWanted(presets.get(id), "add", options),
 
     removeFromDefault: async (id) => applyWanted(presets.get(id), "remove"),
 

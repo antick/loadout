@@ -181,6 +181,23 @@ describe("presets", () => {
     expect(entry?.detail).toMatch(/3 removed/);
   });
 
+  it("previews an apply for named agents without writing or recording anything", async () => {
+    const one = world.addSkill("one");
+    const preset = await api().create({ name: "Set" });
+    await api().addSkills(preset.id, [one.id]);
+
+    const preview = await api().applyToDefault(preset.id, {
+      dryRun: true,
+      agentKeys: ["cursor"],
+    });
+    expect(preview).toMatchObject({ added: 1, conflicts: [], failed: [] });
+    expect(world.store.deployments()).toEqual([]);
+    expect(world.ctx.activity.list(20).some((a) => a.kind === "preset")).toBe(false);
+
+    await api().applyToDefault(preset.id, { agentKeys: ["cursor"] });
+    expect(world.store.deployments().map((d) => d.agentKey)).toEqual(["cursor"]);
+  });
+
   it("reports a refused target and records the apply as not clean", async () => {
     const one = world.addSkill("one");
     const preset = await api().create({ name: "Set" });

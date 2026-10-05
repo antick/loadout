@@ -19,6 +19,7 @@ import type {
   Preset,
   PresetAgentToggle,
   PresetDeployStatus,
+  PresetApplyOptions,
   PresetInput,
   Project,
   ProjectCopyRef,
@@ -209,8 +210,11 @@ export interface PresetsApi {
   reorderSkills(id: string, skillIds: string[]): Promise<void>;
   toggles(id: string, skillId: string): Promise<PresetAgentToggle[]>;
   setToggle(id: string, skillId: string, agentKey: string, enabled: boolean): Promise<void>;
-  /** Deploy the preset to every enabled agent, honouring per-agent toggles. One-time copy. */
-  applyToDefault(id: string): Promise<ApplyResult>;
+  /**
+   * Deploy the preset to every enabled agent (or `agentKeys`), honouring per-agent toggles.
+   * One-time copy. Conflicts, `dryRun` and `skipConflicts` work as in `DeployApi.apply`.
+   */
+  applyToDefault(id: string, options?: PresetApplyOptions): Promise<ApplyResult>;
   /** Undo `applyToDefault`: remove the preset's skills from every enabled agent. */
   removeFromDefault(id: string): Promise<ApplyResult>;
   /** Deployment progress of every preset across the enabled agents, in preset order. */

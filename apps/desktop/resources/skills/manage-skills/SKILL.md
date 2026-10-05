@@ -139,6 +139,7 @@ loadout presets list --json
 loadout presets create "Docs work" --description "Writing and review" --json
 loadout presets add "Docs work" <ref> <ref> --json
 loadout presets deploy "Docs work" --agent claude_code --json   # no --agent = all enabled agents
+loadout presets deploy "Docs work" --dry-run --json  # TARGET_CONFLICT like skills deploy; --skip-conflicts leaves those folders out
 loadout presets undeploy "Docs work" --dry-run --json
 loadout presets undeploy "Docs work" --json        # presets deploy puts it back
 

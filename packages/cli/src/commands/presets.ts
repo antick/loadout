@@ -1,17 +1,15 @@
-import { targetConflict } from "@loadout/core";
-import type { ApplyResult, Preset } from "@loadout/shared";
 import { flagBoolean, flagList, flagString } from "../args";
 import { fields, plural, table } from "../output";
 import {
   AGENT_FLAG,
+  DEPLOY_NOTE,
   DRY_RUN_FLAG,
   LEGACY_YES_FLAG,
   REQUIRED_YES_FLAG,
-  describeApply,
-  describeDryApply,
+  SKIP_CONFLICTS_FLAG,
+  applyOutcome,
   emptyApply,
   limitPositionals,
-  mergeApply,
   positional,
   positionalsFrom,
   requireAgent,
@@ -21,7 +19,6 @@ import {
 } from "./support";
 import { presetExportCommand, presetImportCommand } from "./presets-share";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
-import { exitCodeFor } from "../exit-codes";
 
 const DESCRIPTION_FLAG = {
   name: "description",
@@ -110,44 +107,20 @@ function member(action: "add" | "remove") {
   };
 }
 
-/** Deploy to named agents while still honouring the preset's per-skill, per-agent switches. */
-async function deployTo(
-  { core }: CommandContext,
-  preset: Preset,
-  agentKeys: readonly string[],
-): Promise<ApplyResult> {
-  let total = emptyApply();
-  for (const skillId of preset.skillIds) {
-    const toggles = await core.api.presets.toggles(preset.id, skillId);
-    const off = new Set(toggles.filter((toggle) => !toggle.enabled).map((t) => t.agentKey));
-    const wanted = agentKeys.filter((key) => !off.has(key));
-    total.skipped += agentKeys.length - wanted.length;
-    if (wanted.length === 0) continue;
-    total = mergeApply(total, await core.api.deploy.apply([skillId], wanted, "add"));
-  }
-  return total;
-}
-
-function finish(preset: Preset, value: ApplyResult): CommandResult {
-  if (value.conflicts.length > 0 && value.added === 0) throw targetConflict(value.conflicts);
-  const lines = [`${preset.name}: ${describeApply(value)}`];
-  for (const conflict of value.conflicts)
-    lines.push(`Left alone: ${conflict.path} ${conflict.reason}`);
-  const incomplete = value.failed.length > 0 || value.conflicts.length > 0;
-  return { value, text: lines.join("\n"), exitCode: exitCodeFor(incomplete) };
-}
-
-async function deploy(context: CommandContext): Promise<CommandResult> {
-  const { core, args } = context;
+/** Every skill of the preset in one request, so conflicts are judged as `skills deploy` does. */
+async function deploy({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
   const preset = await resolvePreset(core, positional(args, 0, PRESET_LABEL));
   const keys = [...new Set(flagList(args, AGENT_FLAG.name))];
   for (const key of keys) requireAgent(core, key, true);
-  const value =
-    keys.length === 0
-      ? await core.api.presets.applyToDefault(preset.id)
-      : await deployTo(context, preset, keys);
-  return finish(preset, value);
+  const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
+  const skipConflicts = flagBoolean(args, SKIP_CONFLICTS_FLAG.name);
+  const value = await core.api.presets.applyToDefault(preset.id, {
+    dryRun,
+    skipConflicts,
+    ...(keys.length > 0 ? { agentKeys: keys } : {}),
+  });
+  return applyOutcome(value, { dryRun, skipConflicts, subject: preset.name });
 }
 
 async function undeploy({ core, args }: CommandContext): Promise<CommandResult> {
@@ -171,11 +144,7 @@ async function undeploy({ core, args }: CommandContext): Promise<CommandResult> 
     keys.length === 0
       ? emptyApply()
       : await core.api.deploy.apply(preset.skillIds, keys, "remove", { dryRun });
-  if (dryRun) {
-    return { value: { dryRun, ...value }, text: `${preset.name}: ${describeDryApply(value)}` };
-  }
-  const done = finish(preset, value);
-  return { ...done, value: { dryRun, ...value } };
+  return applyOutcome(value, { dryRun, skipConflicts: false, subject: preset.name });
 }
 
 export const presetsGroup: CommandGroup = {
@@ -222,9 +191,10 @@ export const presetsGroup: CommandGroup = {
       name: "deploy",
       summary: "Deploy every skill of a preset",
       usage: "<name>",
-      flags: [AGENT_FLAG],
+      flags: [AGENT_FLAG, SKIP_CONFLICTS_FLAG, DRY_RUN_FLAG],
       notes: [
         "Without --agent: every installed, enabled agent. Per-agent switches set in the app are honoured.",
+        DEPLOY_NOTE,
       ],
       run: deploy,
     },

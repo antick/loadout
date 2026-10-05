@@ -1,9 +1,11 @@
 import { existsSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import { type Core, type ResolvedAgent, invalid, notFound } from "@loadout/core";
+import { type Core, type ResolvedAgent, invalid, notFound, targetConflict } from "@loadout/core";
 import type { ApplyResult, Preset, Skill } from "@loadout/shared";
 import { type FlagSpec, type ParsedArgs, UsageError, flagBoolean, flagList } from "../args";
+import { exitCodeFor } from "../exit-codes";
 import { failureLines, plural } from "../output";
+import type { CommandResult } from "./types";
 
 /**
  * When a command asks for --yes, the same rule for all of them:
@@ -68,6 +70,17 @@ export function refuseOverwrite(args: ParsedArgs, path: string): void {
     throw new UsageError(`${path} already exists. Add --yes to replace it.`);
   }
 }
+
+export const SKIP_CONFLICTS_FLAG: FlagSpec = {
+  name: "skip-conflicts",
+  type: "boolean",
+  description:
+    "Leave out folders this tool did not create and deploy the rest, instead of failing.",
+};
+
+/** Help note of every command that deploys: what happens to a folder Loadout did not make. */
+export const DEPLOY_NOTE =
+  "A folder of the same name that this tool did not put there is never replaced: the command fails with TARGET_CONFLICT and lists the paths.";
 
 export const AGENT_FLAG: FlagSpec = {
   name: "agent",
@@ -157,17 +170,6 @@ export const emptyApply = (): ApplyResult => ({
   failed: [],
 });
 
-export function mergeApply(total: ApplyResult, part: ApplyResult): ApplyResult {
-  return {
-    added: total.added + part.added,
-    removed: total.removed + part.removed,
-    skipped: total.skipped + part.skipped,
-    blocked: total.blocked + part.blocked,
-    conflicts: [...total.conflicts, ...part.conflicts],
-    failed: [...total.failed, ...part.failed],
-  };
-}
-
 const blockedNote = (result: ApplyResult): string =>
   result.blocked > 0 ? `, ${result.blocked} blocked` : "";
 
@@ -182,4 +184,26 @@ export function describeApply(result: ApplyResult): string {
   ];
   lines.push(...failureLines(result.failed));
   return lines.join("\n");
+}
+
+/**
+ * The outcome of a deploy or undeploy, the same for `skills` and `presets`. A refusal to
+ * overwrite someone else's folder is the answer, not a footnote in a summary, unless the caller
+ * asked to go on without those folders. A dry run refuses exactly what the real run would.
+ */
+export function applyOutcome(
+  result: ApplyResult,
+  options: { dryRun: boolean; skipConflicts: boolean; subject?: string },
+): CommandResult {
+  if (result.conflicts.length > 0 && !options.skipConflicts) throw targetConflict(result.conflicts);
+  const summary = options.dryRun ? describeDryApply(result) : describeApply(result);
+  return {
+    value: { dryRun: options.dryRun, ...result },
+    text: [
+      options.subject ? `${options.subject}: ${summary}` : summary,
+      // Only reached with --skip-conflicts; without it these were thrown as an error.
+      ...result.conflicts.map((conflict) => `Left alone: ${conflict.path} (${conflict.reason})`),
+    ].join("\n"),
+    exitCode: exitCodeFor(result.failed.length > 0),
+  };
 }
