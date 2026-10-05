@@ -49,15 +49,21 @@ export function parseFrontmatter(text: string): SkillFrontmatter {
   };
 }
 
-export function readFrontmatter(skillDir: string): SkillFrontmatter {
+/** The text of the first `SKILL.md` or `skill.md` that can be read; null when neither can. */
+export function readMarkerDocument(skillDir: string): string | null {
   for (const marker of SKILL_MARKER_FILES) {
     try {
-      return parseFrontmatter(readFileSync(join(skillDir, marker), "utf8"));
+      return readFileSync(join(skillDir, marker), "utf8");
     } catch {
       // Try the next marker name.
     }
   }
-  return EMPTY;
+  return null;
+}
+
+export function readFrontmatter(skillDir: string): SkillFrontmatter {
+  const document = readMarkerDocument(skillDir);
+  return document === null ? EMPTY : parseFrontmatter(document);
 }
 
 export interface SkillIdentity {

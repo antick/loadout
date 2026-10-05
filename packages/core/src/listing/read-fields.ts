@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { SKILL_MARKER_FILES, isManualOnly, splitFrontmatter, textField } from "@loadout/shared";
+import { isManualOnly, splitFrontmatter, textField } from "@loadout/shared";
+import { readMarkerDocument } from "../skills/metadata";
 
 /** What an agent reads from a skill's document to decide how to list it. */
 export interface ListingFields {
@@ -22,19 +21,12 @@ const firstLine = (body: string): string =>
 
 /** Never throws: a skill that cannot be read costs nothing. */
 export function readListingFields(skillDir: string): ListingFields {
-  for (const marker of SKILL_MARKER_FILES) {
-    let content: string;
-    try {
-      content = readFileSync(join(skillDir, marker), "utf8");
-    } catch {
-      continue;
-    }
-    const { data, body } = splitFrontmatter(content);
-    return {
-      description: textField(data, "description") ?? firstLine(body),
-      whenToUse: textField(data, "when_to_use") ?? "",
-      manualOnly: data ? isManualOnly(data) : false,
-    };
-  }
-  return NONE;
+  const content = readMarkerDocument(skillDir);
+  if (content === null) return NONE;
+  const { data, body } = splitFrontmatter(content);
+  return {
+    description: textField(data, "description") ?? firstLine(body),
+    whenToUse: textField(data, "when_to_use") ?? "",
+    manualOnly: data ? isManualOnly(data) : false,
+  };
 }

@@ -1,17 +1,16 @@
-import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import {
-  SKILL_MARKER_FILES,
   type SkillBehaviourField,
   type SkillIssue,
   type SkillTrait,
   checkSkillDocument,
+  mergeTraits,
   skillIssue,
   errorMessage,
 } from "@loadout/shared";
 import { canonicalPath, isInside, lstatOrNull } from "../util/fs";
-import { readFrontmatter } from "./metadata";
-import { skillTraits } from "./traits";
+import { parseFrontmatter, readMarkerDocument } from "./metadata";
+import { folderTraits } from "./traits";
 
 /** What the checks need to know about a library skill. */
 export interface InspectedSkill {
@@ -36,17 +35,6 @@ export interface SkillInspector {
   factsOf(skill: InspectedSkill): SkillFacts;
 }
 
-function readDocument(dir: string): string | null {
-  for (const marker of SKILL_MARKER_FILES) {
-    try {
-      return readFileSync(join(dir, marker), "utf8");
-    } catch {
-      // Try the next marker name.
-    }
-  }
-  return null;
-}
-
 /** A linked file or folder is there, and a link inside the skill does not lead out of it. */
 function referenceExists(root: string, relativePath: string): boolean {
   const target = join(root, ...relativePath.split("/"));
@@ -55,11 +43,8 @@ function referenceExists(root: string, relativePath: string): boolean {
 }
 
 /** Every check of one skill folder, reading its files. */
-export function inspectSkillFolder(dir: string): SkillIssue[] {
-  const { issues, references, referenceLines } = checkSkillDocument(
-    readDocument(dir),
-    basename(dir),
-  );
+export function inspectSkillFolder(dir: string, document = readMarkerDocument(dir)): SkillIssue[] {
+  const { issues, references, referenceLines } = checkSkillDocument(document, basename(dir));
   const broken = references
     .filter((path) => !referenceExists(dir, path))
     .map((path) => skillIssue("broken_reference", { path }, referenceLines[path]));
@@ -70,11 +55,12 @@ export function inspectSkillFolder(dir: string): SkillIssue[] {
 
 /** Every check of one skill folder plus the frontmatter flags shown next to it. */
 function inspectSkillFacts(dir: string): SkillFacts {
-  const frontmatter = readFrontmatter(dir);
+  const document = readMarkerDocument(dir);
+  const frontmatter = parseFrontmatter(document ?? "");
   return {
-    issues: inspectSkillFolder(dir),
+    issues: inspectSkillFolder(dir, document),
     manualOnly: frontmatter.manualOnly,
-    traits: skillTraits(dir),
+    traits: mergeTraits(frontmatter.traits, folderTraits(dir)),
     behaviourFields: frontmatter.behaviourFields,
   };
 }
