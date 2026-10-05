@@ -8,8 +8,14 @@ import {
   Link2,
   TriangleAlert,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  type BackgroundWork,
+  shownProgress,
+  withoutFinished,
+  withProgress,
+} from "@/components/layout/status-bar/background-work";
 import { StatusBarItem } from "@/components/layout/status-bar/StatusBarItem";
 import { ThemeMenu } from "@/components/layout/status-bar/ThemeMenu";
 import { VersionMenu } from "@/components/layout/status-bar/VersionMenu";
@@ -31,15 +37,28 @@ const PROGRESS_LINGER_MS = 1500;
 /** What an install or update running in the background is doing, in a few words. */
 function useBackgroundWork(): string | null {
   const { t } = useTranslation();
-  const [progress, setProgress] = useState<InstallProgress | null>(null);
-  useAppEvent("install:progress", setProgress);
-
+  // Per task key, so one task finishing never hides another that is still running.
+  const [work, setWork] = useState<BackgroundWork>([]);
+  const timers = useRef(new Map<string, number>());
+  useAppEvent("install:progress", (next: InstallProgress) => {
+    window.clearTimeout(timers.current.get(next.key));
+    timers.current.delete(next.key);
+    setWork((previous) => withProgress(previous, next));
+    if (next.phase !== "done") return;
+    const timer = window.setTimeout(() => {
+      timers.current.delete(next.key);
+      setWork((previous) => withoutFinished(previous, next.key));
+    }, PROGRESS_LINGER_MS);
+    timers.current.set(next.key, timer);
+  });
   useEffect(() => {
-    if (progress?.phase !== "done") return;
-    const timer = window.setTimeout(() => setProgress(null), PROGRESS_LINGER_MS);
-    return () => window.clearTimeout(timer);
-  }, [progress]);
+    const pending = timers.current;
+    return () => {
+      for (const timer of pending.values()) window.clearTimeout(timer);
+    };
+  }, []);
 
+  const progress = shownProgress(work);
   if (!progress) return null;
   if (progress.phase === "installing" && progress.total && progress.name) {
     return t("install.phase.installingCount", {
