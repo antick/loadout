@@ -1,5 +1,10 @@
-import { type BatchResult, type SkillSource, type SourceCheckResult } from "@loadout/shared";
-import { type UseMutationResult } from "@tanstack/react-query";
+import {
+  type BatchResult,
+  type Skill,
+  type SkillSource,
+  type SourceCheckResult,
+} from "@loadout/shared";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -7,6 +12,7 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { usePendingSet } from "@/hooks/use-pending-set";
 import { api } from "@/lib/api";
 import { toastBatchOutcome } from "@/lib/batch";
+import { keys } from "@/lib/query-keys";
 import { GENERIC_ERROR_KEY } from "@/lib/toast";
 
 /** What a check of several skills found: the batch outcome, and how many now have an update. */
@@ -27,6 +33,7 @@ interface CheckSkillsInput {
  */
 function useCheckSkills(): UseMutationResult<SkillsChecked, unknown, CheckSkillsInput> {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   return useApiMutation({
     fn: async ({ skillIds }) => {
       const result = await api.updates.checkAll(
@@ -34,7 +41,10 @@ function useCheckSkills(): UseMutationResult<SkillsChecked, unknown, CheckSkills
         skillIds ? { skillIds: [...skillIds] } : undefined,
       );
       const chosen = skillIds ? new Set(skillIds) : null;
-      const updates = (await api.skills.list()).filter(
+      // The check already made the list refetch; waiting for that refetch is the one call needed.
+      await queryClient.invalidateQueries({ queryKey: keys.skills.all });
+      const skills = queryClient.getQueryData<Skill[]>(keys.skills.all) ?? [];
+      const updates = skills.filter(
         (skill) => (!chosen || chosen.has(skill.id)) && skill.updateStatus === "update_available",
       ).length;
       return { ...result, updates };
