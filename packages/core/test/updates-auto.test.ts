@@ -10,7 +10,7 @@ import {
   AUTO_TICK_MS,
   type AutoUpdateTarget,
   createAutoUpdater,
-} from "../src/updates";
+} from "../src/updates/auto";
 import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
 import { commitAll } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";

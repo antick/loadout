@@ -8,7 +8,7 @@ import {
   isApproved,
   listRemovedPaths,
   sortRemovals,
-} from "../src/updates";
+} from "../src/updates/removals";
 import { tempDir, writeFile } from "./helpers";
 
 let root: string;

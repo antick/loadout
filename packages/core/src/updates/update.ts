@@ -55,8 +55,6 @@ import {
 import { logRedeployProblems } from "../deploy/report-log";
 import { CANNOT_REFRESH, FLAGGED_UPDATE, updateEach } from "./update-many";
 
-export { FLAGGED_UPDATE } from "./update-many";
-
 export interface UpdaterDeps {
   store: SkillStore;
   git: GitClient;

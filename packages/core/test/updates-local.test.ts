@@ -2,7 +2,8 @@ import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node
 import { join } from "node:path";
 import { MARKETPLACE_NAME, type Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { LIBRARY_LOCATION, MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates";
+import { MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates/diff";
+import { LIBRARY_LOCATION } from "../src/updates/removals";
 import { hashDir } from "../src/util/hash";
 import { makeSkill, writeFile, rejection } from "./helpers";
 import { commitAll, installArchive, leftoverCheckouts, writeZip } from "./install-fixtures";

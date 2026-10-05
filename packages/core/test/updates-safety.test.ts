@@ -6,7 +6,7 @@ import { AppError } from "../src/errors";
 import { createSourceNewsStore } from "../src/sources";
 import type { SafetyGate } from "../src/install/safety-gate";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
-import { FLAGGED_UPDATE } from "../src/updates/update";
+import { FLAGGED_UPDATE } from "../src/updates/update-many";
 import { writeFile } from "./helpers";
 import { commitAll } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
