@@ -39,8 +39,9 @@ import { fetchRemote } from "./sync";
 
 /**
  * The sync review: what the next sync would bring in, send out and leave for a choice, worked
- * out by running the merge decision on a throwaway commit of the working tree. No ref, file or
- * index the library uses is changed; git only gains unreachable objects it cleans up itself.
+ * out by running the merge decision on a throwaway commit of the working tree. No ref or index
+ * the library uses is changed, and of its files only the derived ones (the portable metadata and
+ * `.gitignore`) are refreshed; git only gains unreachable objects it cleans up itself.
  */
 
 const PREVIEW_MESSAGE = "backup: preview";
@@ -232,7 +233,6 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
   });
 }
 
-/** The other device's metadata for a skill at a commit, when it is there and sane. */
 /** Files that exist here but stay out of the backup are not part of any change. */
 async function dropLeftOut(
   env: BackupEnv,
