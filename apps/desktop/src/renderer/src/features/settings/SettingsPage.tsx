@@ -31,7 +31,7 @@ export function SettingsPage({ section }: { section: SettingsSection }): ReactNo
 
   return (
     <div className="flex min-h-full px-6 py-5">
-      <PageHeader title={t("nav.settings")} subtitle={t(`settings.sections.${section}.title`)} />
+      <PageHeader title={t("nav.settings")} />
       <div className="flex min-w-0 max-w-4xl flex-1 flex-col gap-4">
         <header>
           <h2 className="type-display text-lg">{t(`settings.sections.${section}.title`)}</h2>
