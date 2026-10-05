@@ -53,7 +53,11 @@ const NUMBERED = /^(.+)-\d+$/;
 type LocatedTarget = RemoteTarget & { locator: string };
 
 /** Where a lead points, once a tree link's branch and folder are told apart. */
-async function targetOf(git: GitClient, lead: SourceLead, skillName: string): Promise<LocatedTarget> {
+async function targetOf(
+  git: GitClient,
+  lead: SourceLead,
+  skillName: string,
+): Promise<LocatedTarget> {
   const parsed = await resolveGitSource(git, lead.input);
   // A numbered library copy (`pdf-2`) is still called `pdf` upstream.
   const baseName = NUMBERED.exec(skillName)?.[1] ?? skillName;

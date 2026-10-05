@@ -22,11 +22,7 @@ export function DuplicateSkillSummary({ skill }: { skill: Skill }): ReactNode {
         {skill.description ?? t("duplicates.noDescription")}
       </p>
       <SkillTags tags={skill.tags} />
-      <AgentBadgeRow
-        agents={agents.data ?? []}
-        deployedKeys={deployed}
-        blockedKeys={blocked}
-      />
+      <AgentBadgeRow agents={agents.data ?? []} deployedKeys={deployed} blockedKeys={blocked} />
       <p className="text-xs text-muted-foreground">
         {t("duplicates.changed", { when: formatRelative(skill.updatedAt) })}
       </p>

@@ -13,9 +13,7 @@ describe("archive limits", () => {
     }));
     expect(readTar(tarBuffer(entries), 1_000_000)).toHaveLength(MAX_ARCHIVE_ENTRIES);
     const oneMore = tarBuffer([...entries, { name: "one-more" }]);
-    expect(() => readTar(oneMore, 1_000_000)).toThrow(
-      `more than ${MAX_ARCHIVE_ENTRIES} entries`,
-    );
+    expect(() => readTar(oneMore, 1_000_000)).toThrow(`more than ${MAX_ARCHIVE_ENTRIES} entries`);
   });
 });
 

@@ -35,9 +35,9 @@ export interface LibrarySkillActionsOptions {
 }
 
 /** What a library skill's right-click menu offers. */
-export function useLibrarySkillActions({
-  onDelete,
-}: LibrarySkillActionsOptions = {}): (skill: Skill) => SkillAction[] {
+export function useLibrarySkillActions({ onDelete }: LibrarySkillActionsOptions = {}): (
+  skill: Skill,
+) => SkillAction[] {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const reveal = useRevealSkill();
