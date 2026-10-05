@@ -7,7 +7,7 @@ import {
   invalid,
   notFound,
 } from "@loadout/core";
-import type { LocalSkill } from "@loadout/shared";
+import type { BatchFailure, LocalSkill } from "@loadout/shared";
 import { flagBoolean } from "../args";
 import { failureLines, plural } from "../output";
 import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
@@ -84,7 +84,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
   }
 
   const adopted: { name: string; skillId: string }[] = [];
-  const failed: { name: string; message: string }[] = [];
+  const failed: BatchFailure[] = [];
   for (const skill of candidates) {
     try {
       const librarySkill = await core.api.workspace.upload(agent.key, skill.relativePath);

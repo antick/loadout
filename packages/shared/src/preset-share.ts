@@ -1,4 +1,4 @@
-import type { Preset } from "./types";
+import type { BatchFailure, Preset } from "./types";
 
 /**
  * A preset as one file to share (`<name>.loadout-preset.json`): its skills by name, where each
@@ -120,5 +120,5 @@ export interface PresetImportResult {
   installed: string[];
   /** Names of library skills the preset uses as they were. */
   reused: string[];
-  failed: { name: string; message: string }[];
+  failed: BatchFailure[];
 }

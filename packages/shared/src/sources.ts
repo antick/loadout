@@ -1,4 +1,4 @@
-import type { Skill } from "./types";
+import type { BatchFailure, Skill } from "./types";
 import { redactUrl } from "./secrets";
 import { isArchivePath } from "./constants";
 import { lastPathSegment } from "./skill-match";
@@ -57,7 +57,7 @@ export interface SourceCheckResult {
   news: SourceNews[];
   /** Names of skills added to the library by themselves (the auto-add setting). */
   added: string[];
-  failed: { name: string; message: string }[];
+  failed: BatchFailure[];
 }
 
 const GIT_SUFFIX = /\.git$/i;

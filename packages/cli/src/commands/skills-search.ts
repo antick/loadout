@@ -1,5 +1,6 @@
 import { errorMessage, previewLibrary } from "@loadout/core";
 import {
+  type BatchFailure,
   CLAWHUB_NAME,
   MARKETPLACE_NAME,
   MARKET_PROVIDERS,
@@ -13,7 +14,7 @@ import {
   formatDateTime,
 } from "@loadout/shared";
 import { UsageError, flagBoolean, flagChoice, flagInteger } from "../args";
-import { plural, table } from "../output";
+import { failureLines, plural, table } from "../output";
 import { NOT_DEPLOYED_HINT } from "./skills-install";
 import { ACCEPT_RISK_FLAG, positionalsFrom } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
@@ -68,7 +69,7 @@ function pickerRow(skill: MarketSkill): RepoSkillPreview {
 
 interface PickedInstall {
   installed: Skill[];
-  failed: { skill: string; message: string }[];
+  failed: BatchFailure[];
 }
 
 /**
@@ -108,7 +109,7 @@ async function pickAndInstall(
           : await core.api.install.fromMarket(skill.source, skill.skillId, { acceptRisk }),
       );
     } catch (error) {
-      result.failed.push({ skill: installRef(skill), message: errorMessage(error) });
+      result.failed.push({ name: installRef(skill), message: errorMessage(error) });
     }
   }
   return result;
@@ -118,7 +119,7 @@ function pickedText(picked: PickedInstall): string {
   const lines = [
     `Installed ${plural(picked.installed.length, "skill")} into the library.`,
     ...picked.installed.map((skill) => `  ${skill.name} (${skill.id})`),
-    ...picked.failed.map((failure) => `Failed: ${failure.skill} - ${failure.message}`),
+    ...failureLines(picked.failed),
   ];
   if (picked.failed.length > 0) {
     lines.push("Try one again with: skills install <skill> (add --accept-risk for a flagged one)");

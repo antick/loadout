@@ -1,3 +1,5 @@
+import type { BatchFailure } from "./types";
+
 /**
  * Safety checks of skills. Loadout's own rules always run: static pattern matching over a skill's
  * files, no model and no key. With NVIDIA SkillSpector (github.com/NVIDIA/SkillSpector)
@@ -95,7 +97,7 @@ export interface SafetyScanSummary {
   scanned: number;
   unsafe: number;
   caution: number;
-  failed: { name: string; message: string }[];
+  failed: BatchFailure[];
 }
 
 /** Options every single-skill install takes. */
