@@ -6,13 +6,14 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 /** Items in the order of `ids`; anything not listed keeps its place at the end. */
-export function sortByIds<T extends { id: string }>(
+export function sortByIds<T>(
   items: readonly T[],
   ids: readonly string[],
+  idOf: (item: T) => string,
 ): T[] {
   const rank = new Map(ids.map((id, index) => [id, index]));
   const last = Number.MAX_SAFE_INTEGER;
-  return [...items].sort((a, b) => (rank.get(a.id) ?? last) - (rank.get(b.id) ?? last));
+  return [...items].sort((a, b) => (rank.get(idOf(a)) ?? last) - (rank.get(idOf(b)) ?? last));
 }
 
 /** Case-insensitive "does any of these fields contain the query". Empty query matches all. */

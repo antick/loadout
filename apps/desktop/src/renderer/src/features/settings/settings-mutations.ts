@@ -8,12 +8,14 @@ import {
   type LibraryLocation,
   type LogExport,
 } from "@loadout/shared";
-import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useUpdateAction } from "@/hooks/mutations/app-update";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { useReorderMutation } from "@/hooks/use-reorder-mutation";
 import { api } from "@/lib/api";
+import { type CacheSnapshot, patchCached, restoreCached } from "@/lib/optimistic";
 import { keys } from "@/lib/query-keys";
 import { toastError } from "@/lib/toast";
 
@@ -26,23 +28,22 @@ export function useCancelAppUpdate(): UseMutationResult<AppUpdateStatus, unknown
   return useUpdateAction(() => api.app.cancelUpdate(), "appUpdate.downloadFailed");
 }
 
-/** Patch one agent in the cached list so switches answer at once. */
-function patchAgent(queryClient: QueryClient, key: string, patch: Partial<AgentInfo>): void {
-  queryClient.setQueryData<AgentInfo[]>(keys.agents.all, (agents) =>
-    agents?.map((agent) => (agent.key === key ? { ...agent, ...patch } : agent)),
-  );
-}
-
+/** Switch an agent on or off; the switch answers at once and flips back if saving fails. */
 export function useSetAgentEnabled(): UseMutationResult<
   void,
   unknown,
-  { key: string; enabled: boolean }
+  { key: string; enabled: boolean },
+  CacheSnapshot
 > {
   const queryClient = useQueryClient();
   return useApiMutation({
     fn: ({ key, enabled }) => api.agents.setEnabled(key, enabled),
-    onMutate: ({ key, enabled }) => patchAgent(queryClient, key, { enabled }),
+    onMutate: ({ key, enabled }) =>
+      patchCached<AgentInfo[]>(queryClient, keys.agents.all, (agents) =>
+        agents.map((agent) => (agent.key === key ? { ...agent, enabled } : agent)),
+      ),
     error: "settings.agents.errors.save",
+    onError: (_error, _input, context) => restoreCached(queryClient, context),
   });
 }
 
@@ -57,33 +58,12 @@ export function useSetAllAgentsEnabled(): UseMutationResult<void, unknown, boole
 }
 
 /** Persist the agent order. Takes every agent key, in the new order. */
-export function useSetAgentOrder(): UseMutationResult<
-  void,
-  unknown,
-  string[],
-  { previous?: AgentInfo[] }
-> {
-  const queryClient = useQueryClient();
-  return useApiMutation({
-    fn: (agentKeys: string[]) => api.agents.setOrder(agentKeys),
-    onMutate: async (agentKeys) => {
-      await queryClient.cancelQueries({ queryKey: keys.agents.all });
-      const previous = queryClient.getQueryData<AgentInfo[]>(keys.agents.all);
-      if (previous) {
-        const rank = new Map(agentKeys.map((key, index) => [key, index]));
-        const last = Number.MAX_SAFE_INTEGER;
-        queryClient.setQueryData(
-          keys.agents.all,
-          [...previous].sort((a, b) => (rank.get(a.key) ?? last) - (rank.get(b.key) ?? last)),
-        );
-      }
-      return { previous };
-    },
-    error: "errors.reorder",
-    onError: (_error, _keys, context) => {
-      if (context?.previous) queryClient.setQueryData(keys.agents.all, context.previous);
-    },
-  });
+export function useSetAgentOrder(): UseMutationResult<void, unknown, string[], CacheSnapshot> {
+  return useReorderMutation<AgentInfo>(
+    keys.agents.all,
+    (agentKeys) => api.agents.setOrder(agentKeys),
+    (agent) => agent.key,
+  );
 }
 
 /** Add a custom agent. The form shows the backend's validation message itself. */

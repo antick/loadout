@@ -1,10 +1,11 @@
 import type { Project } from "@loadout/shared";
-import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { useReorderMutation } from "@/hooks/use-reorder-mutation";
 import { api } from "@/lib/api";
+import type { CacheSnapshot } from "@/lib/optimistic";
 import { keys } from "@/lib/query-keys";
-import { sortByIds } from "@/lib/utils";
 
 /** Unlink a project. Nothing inside the project folder is deleted. */
 export function useRemoveProject(): UseMutationResult<void, unknown, Project> {
@@ -17,26 +18,12 @@ export function useRemoveProject(): UseMutationResult<void, unknown, Project> {
 }
 
 /** Persist a new project order; the cached list is reordered at once. */
-export function useReorderProjects(): UseMutationResult<
-  void,
-  unknown,
-  string[],
-  { previous?: Project[] }
-> {
-  const queryClient = useQueryClient();
-  return useApiMutation({
-    fn: (ids: string[]) => api.projects.reorder(ids),
-    onMutate: async (ids) => {
-      await queryClient.cancelQueries({ queryKey: keys.projects.all });
-      const previous = queryClient.getQueryData<Project[]>(keys.projects.all);
-      if (previous) queryClient.setQueryData(keys.projects.all, sortByIds(previous, ids));
-      return { previous };
-    },
-    error: "errors.reorder",
-    onError: (_error, _ids, context) => {
-      if (context?.previous) queryClient.setQueryData(keys.projects.all, context.previous);
-    },
-  });
+export function useReorderProjects(): UseMutationResult<void, unknown, string[], CacheSnapshot> {
+  return useReorderMutation<Project>(
+    keys.projects.all,
+    (ids) => api.projects.reorder(ids),
+    (project) => project.id,
+  );
 }
 
 /** Pin a project to the top of the sidebar, or unpin it. */

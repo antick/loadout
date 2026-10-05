@@ -1,10 +1,11 @@
 import type { Preset, PresetInput } from "@loadout/shared";
-import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { useReorderMutation } from "@/hooks/use-reorder-mutation";
 import { api } from "@/lib/api";
+import type { CacheSnapshot } from "@/lib/optimistic";
 import { keys } from "@/lib/query-keys";
-import { sortByIds } from "@/lib/utils";
 
 export interface SavePresetInput {
   /** Omit to create a new preset. */
@@ -35,24 +36,10 @@ export function useRemovePreset(): UseMutationResult<void, unknown, Preset> {
 }
 
 /** Persist a new preset order; the cached list is reordered at once. */
-export function useReorderPresets(): UseMutationResult<
-  void,
-  unknown,
-  string[],
-  { previous?: Preset[] }
-> {
-  const queryClient = useQueryClient();
-  return useApiMutation({
-    fn: (ids: string[]) => api.presets.reorder(ids),
-    onMutate: async (ids) => {
-      await queryClient.cancelQueries({ queryKey: keys.presets.all });
-      const previous = queryClient.getQueryData<Preset[]>(keys.presets.all);
-      if (previous) queryClient.setQueryData(keys.presets.all, sortByIds(previous, ids));
-      return { previous };
-    },
-    error: "errors.reorder",
-    onError: (_error, _ids, context) => {
-      if (context?.previous) queryClient.setQueryData(keys.presets.all, context.previous);
-    },
-  });
+export function useReorderPresets(): UseMutationResult<void, unknown, string[], CacheSnapshot> {
+  return useReorderMutation<Preset>(
+    keys.presets.all,
+    (ids) => api.presets.reorder(ids),
+    (preset) => preset.id,
+  );
 }
