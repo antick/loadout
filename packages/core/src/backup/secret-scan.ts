@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { SecretFinding } from "@loadout/shared";
+import { STREAM_CHUNK_BYTES, type SecretFinding } from "@loadout/shared";
 import { AppError } from "../errors";
 import { SECRET_PATTERNS as PATTERNS } from "../util/secret-patterns";
 import { createLineSplitter, readTextChunks } from "../util/text-stream";
@@ -15,7 +15,7 @@ import { createLineSplitter, readTextChunks } from "../util/text-stream";
  * {@link OVERLAP_CHARS} of the one before: far longer than any key, so a key a border cuts is
  * still whole in the next piece.
  */
-const PIECE_CHARS = 1024 * 1024;
+const PIECE_CHARS = STREAM_CHUNK_BYTES;
 const OVERLAP_CHARS = 4096;
 /** Characters of a match shown on each side of the hidden middle. */
 const MASK_KEEP = 4;

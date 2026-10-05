@@ -1,5 +1,5 @@
 import { hostname } from "node:os";
-import { APP_SLUG } from "@loadout/shared";
+import { APP_SLUG, DEVICE_NAME_MAX_LENGTH } from "@loadout/shared";
 import { invalid } from "../errors";
 import { INTERNAL_KEYS, type SettingsStore } from "../settings/store";
 import { slugify } from "../util/names";
@@ -9,7 +9,6 @@ import { slugify } from "../util/names";
  * as the commit author, so renaming only affects future commits.
  */
 
-const MAX_DEVICE_NAME_LENGTH = 64;
 const FALLBACK_DEVICE_NAME = "My Computer";
 const LOCAL_SUFFIX = /\.local$/i;
 const LAST_CONTROL_CODE = 0x1f;
@@ -23,7 +22,7 @@ function sanitizeDeviceName(input: string): string {
     const control = code <= LAST_CONTROL_CODE || code === DELETE_CODE;
     cleaned += control || ch === "<" || ch === ">" ? " " : ch;
   }
-  return [...cleaned.replace(/\s+/g, " ").trim()].slice(0, MAX_DEVICE_NAME_LENGTH).join("").trim();
+  return [...cleaned.replace(/\s+/g, " ").trim()].slice(0, DEVICE_NAME_MAX_LENGTH).join("").trim();
 }
 
 function defaultDeviceName(): string {

@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { SECOND_MS, isRecord } from "@loadout/shared";
 import { AppError } from "../errors";
 import { processAlive } from "../lock";
 import { LIBRARY_PLACE } from "../storage/removed-library";
@@ -37,7 +38,7 @@ const INDEX_LOCK = "index.lock";
  * A git command running right now (an editor's git view, a terminal) holds `index.lock` for a
  * moment. A lock younger than this is waited for; an older one was left behind.
  */
-const INDEX_LOCK_GRACE_MS = 5000;
+const INDEX_LOCK_GRACE_MS = 5 * SECOND_MS;
 const INDEX_LOCK_POLL_MS = 100;
 
 /**
@@ -71,7 +72,7 @@ async function waitForBusyIndex(env: BackupEnv): Promise<void> {
 function parseEntry(line: string): Record<string, unknown> | null {
   try {
     const entry: unknown = JSON.parse(line);
-    return typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : null;
+    return isRecord(entry) ? entry : null;
   } catch {
     // A line cut off by the crash: the move it announced never started.
     return null;

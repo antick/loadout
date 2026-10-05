@@ -4,10 +4,16 @@ import {
   APP_NAME,
   APP_SLUG,
   type DeviceFlowPoll,
-  GITHUB_PUBLIC_CONFIRM_MS,
   type DeviceFlowStart,
+  GITHUB_HOST,
+  GITHUB_PUBLIC_CONFIRM_MS,
   type GithubAuthMethod,
   type GithubConnectResult,
+  HTTP_FORBIDDEN,
+  HTTP_NOT_FOUND,
+  HTTP_UNAUTHORIZED,
+  REPO_NAME_PATTERN,
+  isRecord,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, invalid, notFound } from "../errors";
@@ -19,8 +25,8 @@ import { GITHUB_TOKEN_KEY } from "./credentials";
  * secret store; nothing in this file returns it, logs it or writes it anywhere else.
  */
 
-const API_BASE = "https://api.github.com";
-const WEB_BASE = "https://github.com";
+const API_BASE = `https://api.${GITHUB_HOST}`;
+const WEB_BASE = `https://${GITHUB_HOST}`;
 const DEVICE_CODE_URL = `${WEB_BASE}/login/device/code`;
 const ACCESS_TOKEN_URL = `${WEB_BASE}/login/oauth/access_token`;
 const DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
@@ -29,15 +35,11 @@ const API_ACCEPT = "application/vnd.github+json";
 const API_VERSION = "2022-11-28";
 const CLIENT_ID_ENV = `${APP_SLUG.toUpperCase()}_GITHUB_CLIENT_ID`;
 const REPO_DESCRIPTION = `${APP_NAME} backup`;
-const REPO_NAME_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
 const DEFAULT_EXPIRES_SECONDS = 900;
 const DEFAULT_INTERVAL_SECONDS = 5;
 
 const STATUS_OK = 200;
 const STATUS_CREATED = 201;
-const STATUS_UNAUTHORIZED = 401;
-const STATUS_FORBIDDEN = 403;
-const STATUS_NOT_FOUND = 404;
 
 export interface GithubDeps {
   fetchImpl?: typeof fetch;
@@ -138,10 +140,9 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
     } catch {
       // Some answers have no body; the status code carries the meaning.
     }
-    const record = typeof body === "object" && body !== null && !Array.isArray(body) ? body : {};
     return {
       status: response.status,
-      body: Array.isArray(body) ? { items: body } : (record as Record<string, unknown>),
+      body: Array.isArray(body) ? { items: body } : isRecord(body) ? body : {},
     };
   }
 
@@ -179,7 +180,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
     }
 
     const user = await request(`${API_BASE}/user`, { token: cleanToken });
-    if (user.status === STATUS_UNAUTHORIZED || user.status === STATUS_FORBIDDEN) {
+    if (user.status === HTTP_UNAUTHORIZED || user.status === HTTP_FORBIDDEN) {
       throw tokenInvalid();
     }
     const login = user.body.login;
@@ -189,20 +190,20 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
 
     let repo = await request(`${API_BASE}/repos/${login}/${name}`, { token: cleanToken });
     let repoCreated = false;
-    if (repo.status === STATUS_NOT_FOUND) {
+    if (repo.status === HTTP_NOT_FOUND) {
       repo = await request(`${API_BASE}/user/repos`, {
         method: "POST",
         token: cleanToken,
         json: { name, private: true, description: REPO_DESCRIPTION, auto_init: false },
       });
-      if (repo.status === STATUS_FORBIDDEN || repo.status === STATUS_NOT_FOUND) {
+      if (repo.status === HTTP_FORBIDDEN || repo.status === HTTP_NOT_FOUND) {
         throw scopeMissing();
       }
       if (repo.status !== STATUS_CREATED) throw unexpected("create the repository", repo.status);
       repoCreated = true;
-    } else if (repo.status === STATUS_UNAUTHORIZED) {
+    } else if (repo.status === HTTP_UNAUTHORIZED) {
       throw tokenInvalid();
-    } else if (repo.status === STATUS_FORBIDDEN) {
+    } else if (repo.status === HTTP_FORBIDDEN) {
       throw scopeMissing();
     } else if (repo.status !== STATUS_OK) {
       throw unexpected("open the repository", repo.status);

@@ -1,4 +1,4 @@
-import type { SyncOutcome } from "@loadout/shared";
+import { HOUR_MS, MINUTE_MS, SECOND_MS, type SyncOutcome } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
@@ -9,9 +9,9 @@ import { INTERNAL_KEYS } from "../settings/store";
  * because nobody should wait for a network on the way out.
  */
 
-export const AUTO_QUIET_MS = 120_000;
-export const AUTO_FIRST_CHECK_MS = 90_000;
-export const AUTO_MAX_BACKOFF_MS = 60 * 60_000;
+export const AUTO_QUIET_MS = 2 * MINUTE_MS;
+export const AUTO_FIRST_CHECK_MS = 90 * SECOND_MS;
+export const AUTO_MAX_BACKOFF_MS = HOUR_MS;
 const AUTO_COMMIT_MESSAGE = "backup: automatic";
 const QUIT_COMMIT_MESSAGE = "backup: on quit";
 

@@ -1,3 +1,4 @@
+import { isRecord } from "@loadout/shared";
 import { AppError } from "../errors";
 import type { PortablePreset, PortableSkill } from "../skills/portable";
 import { GIT_DIR } from "../util/fs";
@@ -86,7 +87,7 @@ async function readFiles(
 function parseJson<T>(text: string): T | null {
   try {
     const value: unknown = JSON.parse(text);
-    return typeof value === "object" && value !== null ? (value as T) : null;
+    return isRecord(value) ? (value as T) : null;
   } catch {
     return null;
   }
