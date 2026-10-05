@@ -11,7 +11,7 @@ import { trySanitizeSkillName } from "../util/names";
 import { unpackArchive } from "./archive";
 import { archiveLinkName } from "./archive-link";
 import type { Task } from "./cancel";
-import { type Download, type DownloadOptions, percentReporter } from "./download";
+import { type Download, type DownloadOptions, PERCENT_TOTAL, percentReporter } from "./download";
 import type { FetchedFolder, FetchedPreviewOptions } from "./fetched-preview";
 import { emitProgress } from "./preview-sessions";
 import { downloadWatched } from "./redirects";
@@ -46,7 +46,6 @@ export interface WebPreviews {
   ): Promise<GitPreview>;
 }
 
-const PERCENT_TOTAL = 100;
 const SITE_DIR_PREFIX = `${APP_SLUG}-site-`;
 const FILE_DIR_PREFIX = `${APP_SLUG}-file-`;
 const FALLBACK_SKILL_NAME = "skill";

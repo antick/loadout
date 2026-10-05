@@ -13,6 +13,7 @@ import {
 import type { CoreContext } from "../context";
 import { AppError, invalid, isAppError, isUnanswered } from "../errors";
 import {
+  API_TIMEOUT_MS,
   MAX_ANSWER_BYTES,
   createRequest,
   downloadWith,
@@ -45,7 +46,6 @@ const BOARD_PATHS: Partial<Record<MarketBoard, string>> = {
   all_time: "/",
 };
 const SEARCH_PATH = "/api/search";
-const REQUEST_TIMEOUT_MS = 15_000;
 const BOARD_CACHE_TTL_MS = 300_000;
 const BOARD_CACHE_PREFIX = "board:";
 const SEARCH_CACHE_PREFIX = "search:";
@@ -69,7 +69,7 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
   const fetchDetail = createMarketDetail({ download: downloadWith(request) });
   const { clawhub } = deps;
   /** Every marketplace call: its name in messages, and a short timeout. */
-  const marketplace = { label: MARKETPLACE_NAME, timeoutMs: REQUEST_TIMEOUT_MS } as const;
+  const marketplace = { label: MARKETPLACE_NAME, timeoutMs: API_TIMEOUT_MS } as const;
 
   function readCache<T>(
     key: string,

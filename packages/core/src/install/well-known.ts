@@ -5,7 +5,7 @@ import { formatBytes, isRecord } from "@loadout/shared";
 import { AppError, invalid, isAppError, notFound } from "../errors";
 import { resolveInside } from "../util/fs";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
-import type { Download } from "./download";
+import { type Download, WEB_PROTOCOLS, parseUrl } from "./download";
 import { downloadWatched } from "./redirects";
 
 /**
@@ -43,7 +43,6 @@ const REPOSITORY_HOSTS: ReadonlySet<string> = new Set([
   "gitlab.com",
   "huggingface.co",
 ]);
-const WEB_PROTOCOLS: ReadonlySet<string> = new Set(["https:", "http:"]);
 const GIT_SUFFIX = ".git";
 const PROBE_TIMEOUT_MS = 10_000;
 const MAX_INDEX_BYTES = 2 * 1024 * 1024;
@@ -56,14 +55,6 @@ const SAFE_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
 const SKILL_FILE = "SKILL.md";
 const JSON_ACCEPT = "application/json";
-
-function parseUrl(input: string): URL | null {
-  try {
-    return new URL(input.trim());
-  } catch {
-    return null;
-  }
-}
 
 /** A web address that may be a site publishing skills, rather than a repository or a file. */
 export function isSiteCandidate(input: string): boolean {

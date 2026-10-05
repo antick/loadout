@@ -10,6 +10,7 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, invalid, notFound } from "../errors";
+import { API_TIMEOUT_MS } from "../install/download";
 import { INTERNAL_KEYS } from "../settings/store";
 import { GITHUB_TOKEN_KEY } from "./credentials";
 
@@ -26,7 +27,6 @@ const DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
 const OAUTH_SCOPE = "repo";
 const API_ACCEPT = "application/vnd.github+json";
 const API_VERSION = "2022-11-28";
-const REQUEST_TIMEOUT_MS = 15_000;
 const CLIENT_ID_ENV = `${APP_SLUG.toUpperCase()}_GITHUB_CLIENT_ID`;
 const REPO_DESCRIPTION = `${APP_NAME} backup`;
 const REPO_NAME_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
@@ -124,7 +124,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
           : options.json === undefined
             ? undefined
             : JSON.stringify(options.json),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(API_TIMEOUT_MS),
       });
     } catch {
       throw new AppError(

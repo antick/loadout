@@ -12,7 +12,7 @@ import type { SkillStore } from "../skills/store";
 import { unpackArchiveFile } from "./archive";
 import { archiveLink, skillFileLink } from "./archive-link";
 import { type CancelRegistry, type Task, withTask } from "./cancel";
-import type { Download } from "./download";
+import { type Download, PERCENT_TOTAL } from "./download";
 import { createFetchedPreviews, previewLibrary, previewRows, subpathOf } from "./fetched-preview";
 import type { GitClient } from "./git-client";
 import { isPlainUrl, marketSourceToUrl, resolveGitSource, validateGitInput } from "./git-source";
@@ -58,8 +58,6 @@ export interface GitInstaller {
   /** Delete every checkout still waiting for a confirm. Call on shutdown. */
   dispose(): Promise<void>;
 }
-
-const PERCENT_TOTAL = 100;
 
 export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): GitInstaller {
   const { store, git, download, cancels, install } = deps;

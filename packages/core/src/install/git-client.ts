@@ -30,8 +30,6 @@ import {
   toPosix,
 } from "../util/fs";
 
-import { trySanitizeSkillName } from "../util/names";
-
 import {
   DEFAULT_REF,
   HEADS_PREFIX,
@@ -43,7 +41,8 @@ import {
 } from "./git-refs";
 
 import { PARTIAL_MARK, createCloneCache } from "./clone-cache";
-import { type RemoteRefs, repoNameFromUrl } from "./git-source";
+import { eachPercentOnce } from "./download";
+import { type RemoteRefs, checkoutFolderName } from "./git-source";
 import { MANIFEST_PATTERNS, applyWorkingTree, folderPattern } from "./git-sparse";
 
 import { type FolderTrees, readFolderTrees } from "./git-trees";
@@ -117,7 +116,6 @@ export interface GitClient {
 const CLONE_FILTER = "--filter=blob:limit=256k";
 const CACHE_LIMIT_BYTES = 1024 * 1024 * 1024;
 const REPOS_DIR_NAME = "repos";
-const FALLBACK_REPO_NAME = "repository";
 /** Prefix of every temporary working copy we hand out. */
 export const CLONE_DIR_PREFIX = `${APP_SLUG}-clone-`;
 
@@ -135,12 +133,10 @@ function percentReader(
   onPercent?: (percent: number) => void,
 ): ((line: string) => void) | undefined {
   if (!onPercent) return undefined;
-  let last = -1;
+  const report = eachPercentOnce(onPercent);
   return (line) => {
     const percent = Number(RECEIVING_PERCENT.exec(line)?.[1] ?? Number.NaN);
-    if (Number.isNaN(percent) || percent === last) return;
-    last = percent;
-    onPercent(percent);
+    if (!Number.isNaN(percent)) report(percent);
   };
 }
 
@@ -348,10 +344,7 @@ export function createGitClient(ctx: CoreContext): GitClient {
 
         const parent = await mkdtemp(join(tmpdir(), CLONE_DIR_PREFIX));
         // Named after the repository so a skill at the repo root infers a sensible name.
-        const target = join(
-          parent,
-          trySanitizeSkillName(repoNameFromUrl(url)) ?? FALLBACK_REPO_NAME,
-        );
+        const target = join(parent, checkoutFolderName(url));
         const remove = (): Promise<void> => removePath(parent).catch(() => undefined);
         try {
           await copyDir(slot, target, { skipSymlinks: true });

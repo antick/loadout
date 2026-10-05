@@ -11,6 +11,7 @@ import { AppError, invalid, notFound } from "../errors";
 import {
   type HttpAnswer,
   type HttpRequest,
+  API_TIMEOUT_MS,
   createRequest,
   downloadWith,
   jsonOptions,
@@ -24,7 +25,6 @@ import type { MarketDetailParts } from "./detail";
  * is always named `owner/slug`.
  */
 
-const REQUEST_TIMEOUT_MS = 15_000;
 const DOWNLOAD_TIMEOUT_MS = 60_000;
 const PUBLISH_TIMEOUT_MS = 120_000;
 const LIST_LIMIT = 50;
@@ -176,7 +176,7 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
         method: init.method,
         body: init.body,
         headers: init.token ? { Authorization: `Bearer ${init.token}` } : undefined,
-        timeoutMs: init.timeoutMs ?? REQUEST_TIMEOUT_MS,
+        timeoutMs: init.timeoutMs ?? API_TIMEOUT_MS,
         // A publish reads every answer itself; reads only the ones the registry explains.
         answers: init.method ? () => true : (status) => READ_STATUSES.has(status),
       }),

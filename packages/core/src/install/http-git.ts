@@ -11,11 +11,9 @@ import { AppError, cancelled, isAppError } from "../errors";
 
 import { ensureDir, readDirSafe, removePath } from "../util/fs";
 
-import { trySanitizeSkillName } from "../util/names";
-
 import { unpackArchive } from "./archive";
 
-import { type Download, percentReporter } from "./download";
+import { type Download, parseUrl, percentReporter } from "./download";
 
 import {
   CLONE_DIR_PREFIX,
@@ -27,7 +25,7 @@ import {
 
 import { pickRevision, refCandidates, refLists } from "./git-refs";
 
-import { type RemoteRefs, repoNameFromUrl, trimRepoUrl } from "./git-source";
+import { type RemoteRefs, checkoutFolderName, repoNameFromUrl, trimRepoUrl } from "./git-source";
 
 /**
  * Git over plain HTTPS, for computers without Git. Refs come from the smart HTTP advertisement
@@ -71,18 +69,12 @@ const PKT_LENGTH_DIGITS = 4;
 const HEX_RADIX = 16;
 const ZERO_SHA = /^0+$/;
 const SHA = /^[0-9a-f]{40,64}$/i;
-const FALLBACK_REPO_NAME = "repository";
 
 /** `https://host/owner/repo(.git)` → host and the path without `.git`, or null. */
 function parseHttpsRemote(url: string): { host: string; path: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url.trim());
-  } catch {
-    return null;
-  }
+  const parsed = parseUrl(url);
   // Credentials in the URL mean a private repository: that is Git's job, not ours.
-  if (parsed.protocol !== HTTPS || parsed.username || parsed.password) return null;
+  if (!parsed || parsed.protocol !== HTTPS || parsed.username || parsed.password) return null;
   const path = trimRepoUrl(parsed.pathname).replace(/^\/+/, "");
   if (path.split("/").filter(Boolean).length < 2) return null;
   return { host: parsed.host.toLowerCase(), path };
@@ -180,7 +172,7 @@ export function createHttpGit(download: Download): HttpGit {
         await removePath(parent).catch(() => undefined);
       };
       try {
-        const dir = join(parent, trySanitizeSkillName(repo) ?? FALLBACK_REPO_NAME);
+        const dir = join(parent, checkoutFolderName(url));
         renameSync(wrappedRoot(unpacked.root), dir);
         ensureDir(dir);
         // The archive holds every file, so there is nothing left to fetch later.

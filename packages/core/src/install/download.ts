@@ -68,9 +68,31 @@ const RETRY_DELAY_MS = 2000;
 const MAX_REDIRECTS = 10;
 const REDIRECT_MIN = 300;
 const REDIRECT_MAX = 399;
-const WEB_PROTOCOLS: ReadonlySet<string> = new Set(["https:", "http:"]);
+/** Schemes of a web address; anything else is never fetched. */
+export const WEB_PROTOCOLS: ReadonlySet<string> = new Set(["https:", "http:"]);
+/** Progress in whole percents goes up to this. */
+export const PERCENT_TOTAL = 100;
+/** How long an API call (a listing, a search, a detail) may take. */
+export const API_TIMEOUT_MS = 15_000;
 
-const PERCENT_TOTAL = 100;
+/** `input` as a URL, or null when it is not one. */
+export function parseUrl(input: string): URL | null {
+  try {
+    return new URL(input.trim());
+  } catch {
+    return null;
+  }
+}
+
+/** `onPercent` called once per whole percent, however often the same one comes in. */
+export function eachPercentOnce(onPercent: (percent: number) => void): (percent: number) => void {
+  let last = -1;
+  return (percent) => {
+    if (percent === last) return;
+    last = percent;
+    onPercent(percent);
+  };
+}
 
 /**
  * Adapt a whole-percent listener to {@link DownloadOptions.onProgress}. Each percent is reported
@@ -80,13 +102,9 @@ export function percentReporter(
   onPercent?: (percent: number) => void,
 ): DownloadOptions["onProgress"] {
   if (!onPercent) return undefined;
-  let last = -1;
+  const report = eachPercentOnce(onPercent);
   return (received, total) => {
-    if (!total) return;
-    const percent = Math.min(PERCENT_TOTAL, Math.floor((received / total) * PERCENT_TOTAL));
-    if (percent === last) return;
-    last = percent;
-    onPercent(percent);
+    if (total) report(Math.min(PERCENT_TOTAL, Math.floor((received / total) * PERCENT_TOTAL)));
   };
 }
 

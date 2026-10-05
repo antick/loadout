@@ -10,7 +10,7 @@ import {
   isRecord,
 } from "@loadout/shared";
 import { invalid, isAppError, isUnanswered } from "../errors";
-import { type Download, jsonOptions, readJson } from "../install/download";
+import { API_TIMEOUT_MS, type Download, jsonOptions, readJson } from "../install/download";
 import { locateSkill, usualSkillPaths } from "../install/repo-scan";
 
 /**
@@ -24,7 +24,6 @@ const GITHUB_API = "https://api.github.com/repos";
 const GITHUB_RAW = "https://raw.githubusercontent.com";
 const GITHUB_WEB = "https://github.com";
 const TREE_REF = "HEAD";
-const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
 const SOURCE_SHAPE = /^[\w.-]+\/[\w.-]+$/;
 const SKILL_ID_SHAPE = /^[\w.:-]+$/;
@@ -139,7 +138,7 @@ export function createMarketDetail(
   const { download } = deps;
 
   async function json(url: string): Promise<unknown> {
-    return readJson(await download(url, jsonOptions({ timeoutMs: REQUEST_TIMEOUT_MS })), url);
+    return readJson(await download(url, jsonOptions({ timeoutMs: API_TIMEOUT_MS })), url);
   }
 
   async function audits(source: string, skillId: string, pageUrl: string) {
@@ -157,7 +156,7 @@ export function createMarketDetail(
   async function raw(source: string, path: string): Promise<string> {
     const data = await download(`${GITHUB_RAW}/${source}/${TREE_REF}/${encodePath(path)}`, {
       maxBytes: MAX_DOCUMENT_BYTES,
-      timeoutMs: REQUEST_TIMEOUT_MS,
+      timeoutMs: API_TIMEOUT_MS,
     });
     return data.toString("utf8");
   }

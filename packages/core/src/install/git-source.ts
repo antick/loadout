@@ -1,4 +1,5 @@
 import { invalid, isAppError } from "../errors";
+import { trySanitizeSkillName } from "../util/names";
 import type { GitClient } from "./git-client";
 
 /** Where a Git install comes from, after the typed text has been understood. */
@@ -23,6 +24,7 @@ export interface RemoteRefs {
 export type ListRefs = (cloneUrl: string) => Promise<RemoteRefs>;
 
 const GITHUB_URL = "https://github.com";
+const FALLBACK_REPO_NAME = "repository";
 const GITLAB_URL = "https://gitlab.com";
 const GIT_SUFFIX = ".git";
 const URL_PREFIXES = ["https://", "http://", "ssh://"] as const;
@@ -319,4 +321,9 @@ export function trimRepoUrl(url: string): string {
 export function repoNameFromUrl(url: string): string {
   const normalized = trimRepoUrl(url);
   return normalized.slice(Math.max(normalized.lastIndexOf("/"), normalized.lastIndexOf(":")) + 1);
+}
+
+/** Folder a working copy of `url` sits in: named after the repository, else `repository`. */
+export function checkoutFolderName(url: string): string {
+  return trySanitizeSkillName(repoNameFromUrl(url)) ?? FALLBACK_REPO_NAME;
 }
