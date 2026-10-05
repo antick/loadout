@@ -60,6 +60,34 @@ describe("removal guard", () => {
     expect(existsSync(join(world.claudeTarget("pdf"), "scratch.txt"))).toBe(false);
   });
 
+  it("keeps a skill up to date when only a stale copy of it would lose files", async () => {
+    world.ctx.settings.set("deployMode", "copy");
+    const pdf = await world.installFromGit("pdf");
+    await world.deploy.api.deploy(pdf.id, "claude_code");
+    writeFile(join(world.claudeTarget("pdf"), "scratch.txt"), "made by the agent");
+    // The library moved on since the copy was made: refreshing the copy drops the agent's file.
+    writeFile(join(pdf.libraryPath, "more.md"), "edited here\n");
+    world.rehash(pdf);
+
+    const asked = await world.updates.api.update(pdf.id);
+    expect(asked.contentChanged).toBe(false);
+    expect(asked.pendingRemovals).toEqual([
+      { location: "claude_code", path: "scratch.txt", kind: "removed" },
+    ]);
+    // Same revision upstream: no update is shown, and none is held back later.
+    expect(asked.skill).toMatchObject({
+      sourceRevision: pdf.sourceRevision,
+      remoteRevision: pdf.sourceRevision,
+      updateStatus: "up_to_date",
+    });
+
+    const applied = await world.updates.api.update(pdf.id, asked.approval);
+    expect(applied).toMatchObject({ contentChanged: false, pendingRemovals: [] });
+    expect(applied.skill.updateStatus).toBe("up_to_date");
+    expect(existsSync(join(world.claudeTarget("pdf"), "scratch.txt"))).toBe(false);
+    expect(existsSync(join(world.claudeTarget("pdf"), "more.md"))).toBe(true);
+  });
+
   it("says on a dry run what the real update would hold back, and writes nothing", async () => {
     world.ctx.settings.set("deployMode", "copy");
     const pdf = await world.installFromGit("pdf");

@@ -358,9 +358,10 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
             remoteRevision: revision,
             updateStatus: "up_to_date",
           }),
+          // Nothing new upstream: only a stale copy would lose files, and the row says so.
           declined: () => ({
             remoteRevision: revision,
-            updateStatus: "update_available",
+            updateStatus: same ? "up_to_date" : "update_available",
             lastCheckedAt: Date.now(),
             lastCheckError: null,
           }),
