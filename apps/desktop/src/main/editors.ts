@@ -7,6 +7,7 @@ import {
   EDITOR_NAMES,
   type EditorChoice,
   type EditorId,
+  SYSTEM_BIN_DIRS,
   SYSTEM_EDITOR,
 } from "@loadout/shared";
 import { DOCUMENT_EXTENSIONS, EDITOR_DETECT_TTL_MS } from "./constants";
@@ -58,9 +59,6 @@ const SPECS: readonly EditorSpec[] = [
   },
 ];
 
-/** Folders the CLIs land in that a Dock or desktop launch does not have on `PATH`. */
-const EXTRA_BIN_DIRS = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/snap/bin"];
-
 export interface DetectInput {
   platform: NodeJS.Platform;
   homeDir: string;
@@ -111,7 +109,7 @@ function locateOne(
       if (exists(bundle)) return { command: "open", args: ["-a", bundle] };
     }
   }
-  for (const dir of [...pathDirs, ...EXTRA_BIN_DIRS, join(input.homeDir, ".local", "bin")]) {
+  for (const dir of [...pathDirs, ...SYSTEM_BIN_DIRS, join(input.homeDir, ".local", "bin")]) {
     const program = join(dir, spec.command);
     if (exists(program)) return { command: program, args: [] };
   }

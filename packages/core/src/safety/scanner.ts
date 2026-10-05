@@ -2,6 +2,7 @@ import { accessSync, constants } from "node:fs";
 import { delimiter, join } from "node:path";
 import {
   SAFETY_SEVERITIES,
+  SYSTEM_BIN_DIRS,
   type SafetyFinding,
   type SafetyReport,
   type SafetySeverity,
@@ -18,12 +19,8 @@ import { isDirectory, statOrNull } from "../util/fs";
 
 const PROGRAM = "skillspector";
 const WINDOWS_SUFFIXES = [".exe", ".cmd", ".bat"];
-/**
- * Where `uv`, `pipx` and Homebrew put programs. A desktop app started from the Dock or Finder
- * gets a bare `PATH`, so these are looked at too.
- */
+/** Where `uv` and `pipx` put programs, looked in besides `SYSTEM_BIN_DIRS`. */
 const HOME_BIN_DIRS = [join(".local", "bin")];
-const SYSTEM_BIN_DIRS = ["/opt/homebrew/bin", "/usr/local/bin"];
 /** Static scans take a couple of seconds; the cap is for a skill that makes the scanner hang. */
 const SCAN_TIMEOUT_MS = 120_000;
 const VERSION_TIMEOUT_MS = 20_000;

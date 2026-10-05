@@ -17,6 +17,11 @@ export const LIBRARY_CONFIG_FILE = "library.json";
 /** Published command-line tool, in the home data folder. */
 export const CLI_BIN_DIR_NAME = "bin";
 export const CLI_BINARY_NAME = APP_SLUG;
+/**
+ * Where Homebrew, the system and snap put programs. An app started from the Dock or a desktop
+ * launcher gets a bare `PATH`, so these are looked in too.
+ */
+export const SYSTEM_BIN_DIRS = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/snap/bin"];
 
 /** Folder inside the library that holds one folder per skill. */
 export const LIBRARY_SKILLS_DIR_NAME = "skills";
