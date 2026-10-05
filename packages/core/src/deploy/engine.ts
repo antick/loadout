@@ -1,4 +1,4 @@
-import { readlinkSync, realpathSync, rmSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
+import { realpathSync, rmSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { APP_NAME, type DeployMode, isWslPath } from "@loadout/shared";
 import { invalid, notFound, targetConflict } from "../errors";
@@ -6,6 +6,7 @@ import {
   canonicalPath,
   ensureDir,
   isDirectory,
+  linkTargetOf,
   lstatOrNull,
   pathsOverlap,
   replaceDirAtomic,
@@ -36,9 +37,10 @@ const LINK_TYPES: readonly ("dir" | "junction")[] = WINDOWS ? ["dir", "junction"
 
 /** The link's own text first (cheap, works for dangling sources), then both sides resolved. */
 export function linkPointsAt(linkPath: string, sourceDir: string): boolean {
+  const target = linkTargetOf(linkPath);
+  if (target === null) return false;
+  if (target === resolve(sourceDir)) return true;
   try {
-    const raw = readlinkSync(linkPath);
-    if (resolve(dirname(linkPath), raw) === resolve(sourceDir)) return true;
     return realpathSync(linkPath) === realpathSync(sourceDir);
   } catch {
     return false;
