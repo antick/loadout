@@ -74,12 +74,12 @@ export function useRefreshSkill(): UseMutationResult<UpdateResult, unknown, Refr
       }
       // Upstream moved on since Compare: show the new comparison.
       if (error instanceof ApiError && error.code === "CHANGED_ON_DISK") {
-        void queryClient.invalidateQueries({ queryKey: keys.updates.sourceDiff(skillId) });
+        void queryClient.invalidateQueries({ queryKey: keys.updates.comparison(skillId) });
       }
     },
     // What Compare showed is history now: the next update must not be held to it.
     onSuccess: (_result, { skillId }) =>
-      queryClient.removeQueries({ queryKey: keys.updates.sourceDiff(skillId) }),
+      queryClient.removeQueries({ queryKey: keys.updates.comparison(skillId) }),
   });
 }
 

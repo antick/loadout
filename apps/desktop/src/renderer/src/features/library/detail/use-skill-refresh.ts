@@ -4,7 +4,6 @@ import {
   REMOVED_KEEP_DAYS,
   type PendingRemoval,
   type Skill,
-  type SourceDiff,
 } from "@loadout/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -16,9 +15,9 @@ import {
   useCancelInstall,
   useRefreshSkill,
 } from "@/features/library/detail/skill-mutations";
+import { lastSourceComparison } from "@/features/library/detail/skill-queries";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { useAppEvent } from "@/lib/events";
-import { keys } from "@/lib/query-keys";
 import { toastWithUndo } from "@/lib/removed-undo";
 
 /** An update that stopped because it would delete files; waiting for the user's decision. */
@@ -81,13 +80,13 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
     ): void {
       setRunningKind(request.kind);
       // When Compare was opened, install exactly the version it showed, nothing newer.
-      const compared = queryClient.getQueryData<SourceDiff>(keys.updates.sourceDiff(skill.id));
+      const compared = lastSourceComparison(queryClient, skill.id);
       mutateAsync({
         skillId: skill.id,
         request,
         approval,
         acceptRisk,
-        expectedRevision: compared?.revision,
+        expectedRevision: compared?.diff.revision,
       })
         .then((result) => {
           if (result.pendingRemovals.length > 0) {

@@ -358,6 +358,29 @@ describe("source preview", () => {
     expect(leftoverCheckouts(world.tmp)).toEqual([]);
   });
 
+  it("compares files and the main document from one look at the source", async () => {
+    const pdf = await world.installFromGit("pdf");
+    writeFile(join(world.remote, "skills", "pdf", "scripts", "run.sh"), "echo pdf v2\n");
+    const next = commitAll(world.remote, "pdf: v2");
+    let checkouts = 0;
+    const counting = world.withGit({
+      checkout: (...args) => {
+        checkouts += 1;
+        return world.install.git.checkout(...args);
+      },
+    });
+
+    const before = world.lookups();
+    const { diff, document } = await counting.api.compareSource(pdf.id);
+    expect(world.lookups()).toBe(before + 1);
+    expect(checkouts).toBe(1);
+    expect(diff).toMatchObject({ skillId: pdf.id, revision: next });
+    expect(diff.entries.map((entry) => entry.path)).toEqual(["scripts/run.sh"]);
+    expect(document).toMatchObject({ filename: "SKILL.md", revision: next });
+    expect(document.content).toContain("# pdf");
+    expect(leftoverCheckouts(world.tmp)).toEqual([]);
+  });
+
   it("explains why a skill without a source has nothing to show", async () => {
     const plain = world.addSkill("plain");
     expect((await rejection(world.updates.api.sourceDiff(plain.id))).message).toBe(

@@ -109,6 +109,7 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     detach: updater.detach,
     sourceDocument: preview.sourceDocument,
     sourceDiff: preview.sourceDiff,
+    compareSource: preview.compareSource,
     sourceNews: async () => sources.news(),
     checkSources: (sourceKeys) => sources.check(sourceKeys),
     dismissSourceNews: async (sourceKey, paths) => sourceNews.dismiss(sourceKey, paths),

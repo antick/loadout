@@ -1,4 +1,10 @@
-import type { Skill, SourceDiff, SourceDiffOptions, SourceDocument } from "@loadout/shared";
+import type {
+  Skill,
+  SourceComparison,
+  SourceDiff,
+  SourceDiffOptions,
+  SourceDocument,
+} from "@loadout/shared";
 import type { Download, GitClient, GitInputOptions } from "../install";
 import type { ClawhubClient } from "../market/clawhub";
 import { readSkillDocument } from "../skills/metadata";
@@ -27,6 +33,30 @@ export interface SourcePreviewDeps {
 export interface SourcePreview {
   sourceDocument(skillId: string): Promise<SourceDocument>;
   sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
+  compareSource(skillId: string, options?: SourceDiffOptions): Promise<SourceComparison>;
+}
+
+function documentOf(skill: Skill, source: OpenedSource): SourceDocument {
+  const found = readSkillDocument(source.dir);
+  return {
+    filename: found?.filename ?? "",
+    content: found?.content ?? "",
+    sourceLabel: sourceLabel(skill),
+    revision: source.revision,
+  };
+}
+
+function diffOf(skill: Skill, source: OpenedSource, options: SourceDiffOptions): SourceDiff {
+  return {
+    skillId: skill.id,
+    sourceLabel: sourceLabel(skill),
+    revision: source.revision,
+    entries: diffTrees(
+      skill.libraryPath,
+      source.dir,
+      options.asLibraryCopy ? libraryCopyOverrides(source.dir, skill.dirName) : undefined,
+    ),
+  };
 }
 
 /** Look at a skill's upstream without changing anything in the library. */
@@ -52,27 +82,13 @@ export function createSourcePreview(deps: SourcePreviewDeps): SourcePreview {
   }
 
   return {
-    sourceDocument: (skillId) =>
-      withSource(skillId, (skill, source) => {
-        const found = readSkillDocument(source.dir);
-        return {
-          filename: found?.filename ?? "",
-          content: found?.content ?? "",
-          sourceLabel: sourceLabel(skill),
-          revision: source.revision,
-        };
-      }),
-
+    sourceDocument: (skillId) => withSource(skillId, documentOf),
     sourceDiff: (skillId, options = {}) =>
+      withSource(skillId, (skill, source) => diffOf(skill, source, options)),
+    compareSource: (skillId, options = {}) =>
       withSource(skillId, (skill, source) => ({
-        skillId: skill.id,
-        sourceLabel: sourceLabel(skill),
-        revision: source.revision,
-        entries: diffTrees(
-          skill.libraryPath,
-          source.dir,
-          options.asLibraryCopy ? libraryCopyOverrides(source.dir, skill.dirName) : undefined,
-        ),
+        diff: diffOf(skill, source, options),
+        document: documentOf(skill, source),
       })),
   };
 }

@@ -47,7 +47,9 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.editor.root,
     keys.workspace.root,
     keys.projects.root,
-    keys.updates.root,
+    // Installed skills stop being news. Not all of `updates`: a comparison with the source is
+    // keyed by what it compared (`sourceComparisonKey`), so it refetches only when that changes.
+    keys.updates.news,
     keys.market.root,
     keys.system.root,
     keys.storage.root,

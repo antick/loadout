@@ -1,0 +1,41 @@
+import type { Skill } from "@loadout/shared";
+
+/** A library skill for unit tests: a plain local one, with `extra` on top. */
+export function skill(id: string, extra: Partial<Skill> = {}): Skill {
+  return {
+    id,
+    name: id,
+    dirName: id,
+    description: null,
+    sourceType: "local",
+    sourceRef: null,
+    sourceUrl: null,
+    sourceSubpath: null,
+    sourceBranch: null,
+    sourceTrustedHost: null,
+    sourceRevision: null,
+    remoteRevision: null,
+    updateStatus: "up_to_date",
+    lastCheckedAt: null,
+    lastCheckError: null,
+    libraryPath: `/lib/${id}`,
+    contentHash: null,
+    createdAt: 0,
+    updatedAt: 0,
+    deployments: [],
+    presetIds: [],
+    tags: [],
+    hasConflict: false,
+    editedFiles: [],
+    issues: [],
+    manualOnly: false,
+    traits: [],
+    behaviourFields: [],
+    authored: false,
+    suggestFor: [],
+    blockedAgents: [],
+    note: null,
+    favoritedAt: null,
+    ...extra,
+  };
+}

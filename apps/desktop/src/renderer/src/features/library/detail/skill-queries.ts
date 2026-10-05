@@ -1,28 +1,63 @@
-import type { LocalSkill, Project, SourceDiff, SourceDocument } from "@loadout/shared";
-import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query";
+import type { LocalSkill, Project, Skill, SourceComparison } from "@loadout/shared";
+import {
+  type QueryClient,
+  type QueryKey,
+  useQueries,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
-/** Library copy compared file by file with its upstream source. Fetched only when `enabled`. */
-export function useSourceDiff(skillId: string, enabled: boolean): UseQueryResult<SourceDiff> {
-  return useQuery({
-    queryKey: keys.updates.sourceDiff(skillId),
-    queryFn: () => api.updates.sourceDiff(skillId),
-    enabled,
-    retry: false,
-  });
+/**
+ * Query key of a skill's comparison with its source. Besides the id it holds what the answer
+ * depends on: the library copy, where the source is, and the last check (which notices the source
+ * moving). Any other change of the skill, or of other skills, keeps the answer: each fetch is a
+ * network lookup and a checkout.
+ */
+export function sourceComparisonKey(skill: Skill): QueryKey {
+  return [
+    ...keys.updates.comparison(skill.id),
+    skill.contentHash,
+    skill.sourceType,
+    skill.sourceUrl,
+    skill.sourceRef,
+    skill.sourceBranch,
+    skill.sourceSubpath,
+    skill.sourceRevision,
+    skill.remoteRevision,
+    skill.lastCheckedAt,
+  ];
 }
 
-/** The skill's main document as it is upstream right now. Fetched only when `enabled`. */
-export function useSourceDocument(
+/** The comparison of this skill fetched last, whatever it was keyed by; undefined when none. */
+export function lastSourceComparison(
+  queryClient: QueryClient,
   skillId: string,
+): SourceComparison | undefined {
+  const [latest] = queryClient
+    .getQueryCache()
+    .findAll({ queryKey: keys.updates.comparison(skillId) })
+    .filter((query) => query.state.data !== undefined)
+    .sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt);
+  return latest?.state.data as SourceComparison | undefined;
+}
+
+/**
+ * Library copy compared with its upstream source: changed files and the main document, from one
+ * checkout. Fetched only when `enabled`; never again on focus or age, only when the key changes.
+ */
+export function useSourceComparison(
+  skill: Skill,
   enabled: boolean,
-): UseQueryResult<SourceDocument> {
+): UseQueryResult<SourceComparison> {
   return useQuery({
-    queryKey: keys.updates.sourceDocument(skillId),
-    queryFn: () => api.updates.sourceDocument(skillId),
+    queryKey: sourceComparisonKey(skill),
+    queryFn: () => api.updates.compareSource(skill.id),
     enabled,
     retry: false,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 }
 

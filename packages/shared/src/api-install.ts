@@ -84,6 +84,12 @@ export interface UpdateRequestOptions extends RefreshOptions {
   expectedRevision?: string | null;
 }
 
+/** A skill's source, opened once: what differs from the library copy, and its main document. */
+export interface SourceComparison {
+  diff: SourceDiff;
+  document: SourceDocument;
+}
+
 export interface CheckAllOptions {
   /**
    * Only these skills (every skill when omitted). Each repository and branch among them is still
@@ -123,6 +129,8 @@ export interface UpdatesApi {
   detach(skillId: string, options?: { markAuthored?: boolean }): Promise<Skill>;
   sourceDocument(skillId: string): Promise<SourceDocument>;
   sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
+  /** `sourceDiff` and `sourceDocument` from one look at the source (one checkout). */
+  compareSource(skillId: string, options?: SourceDiffOptions): Promise<SourceComparison>;
   /** New skills repositories gained, as the last look found them. No network. */
   sourceNews(): Promise<SourceNews[]>;
   /** Look at these repositories (all when omitted) for new skills; may add them (setting). */

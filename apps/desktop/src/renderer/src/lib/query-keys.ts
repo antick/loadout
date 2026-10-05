@@ -75,8 +75,8 @@ export const keys = {
   },
   updates: {
     root: ["updates"] as const,
-    sourceDocument: (skillId: string) => ["updates", "source-document", skillId] as const,
-    sourceDiff: (skillId: string) => ["updates", "source-diff", skillId] as const,
+    /** Every comparison of one skill with its source; `sourceComparison` in `skill-queries.ts`. */
+    comparison: (skillId: string) => ["updates", "comparison", skillId] as const,
     news: ["updates", "source-news"] as const,
   },
   usage: {

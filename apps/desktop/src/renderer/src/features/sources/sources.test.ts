@@ -1,49 +1,6 @@
-import {
-  type Skill,
-  groupSkillSources,
-  normalizeSourceUrl,
-  skillsWithoutSource,
-} from "@loadout/shared";
+import { groupSkillSources, normalizeSourceUrl, skillsWithoutSource } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
-
-function skill(id: string, extra: Partial<Skill>): Skill {
-  return {
-    id,
-    name: id,
-    dirName: id,
-    description: null,
-    sourceType: "local",
-    sourceRef: null,
-    sourceUrl: null,
-    sourceSubpath: null,
-    sourceBranch: null,
-    sourceTrustedHost: null,
-    sourceRevision: null,
-    remoteRevision: null,
-    updateStatus: "up_to_date",
-    lastCheckedAt: null,
-    lastCheckError: null,
-    libraryPath: `/lib/${id}`,
-    contentHash: null,
-    createdAt: 0,
-    updatedAt: 0,
-    deployments: [],
-    presetIds: [],
-    tags: [],
-    hasConflict: false,
-    editedFiles: [],
-    issues: [],
-    manualOnly: false,
-    traits: [],
-    behaviourFields: [],
-    authored: false,
-    suggestFor: [],
-    blockedAgents: [],
-    note: null,
-    favoritedAt: null,
-    ...extra,
-  };
-}
+import { skill } from "@/test/skill";
 
 const REPO = "https://github.com/acme/skills.git";
 
