@@ -1,4 +1,5 @@
 import {
+  CLAWHUB_FIRST_VERSION,
   CLAWHUB_LICENSE,
   CLAWHUB_NAME,
   CLAWHUB_SLUG_PATTERN,
@@ -68,7 +69,7 @@ function ClawhubPublishForm({
   const plan = preview.data;
   const slugValue = slug ?? plan?.slug ?? "";
   const nameValue = displayName ?? plan?.displayName ?? skill.name;
-  const versionValue = version ?? plan?.suggestedVersion ?? "1.0.0";
+  const versionValue = version ?? plan?.suggestedVersion ?? CLAWHUB_FIRST_VERSION;
   const slugOk = CLAWHUB_SLUG_PATTERN.test(slugValue);
   const versionOk = CLAWHUB_VERSION_PATTERN.test(versionValue);
   const held = (plan?.secrets.length ?? 0) > 0 && !allowSecrets;

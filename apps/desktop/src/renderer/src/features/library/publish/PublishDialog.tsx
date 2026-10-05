@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PUBLISH_LAYER,
   PUBLISH_LAYERS,
   PUBLISH_LAYER_DIRS,
   type PublishInput,
@@ -56,7 +57,7 @@ function PublishForm({
 
   const repoValue = repo ?? defaults.data?.repo ?? "";
   const branchValue = branch ?? defaults.data?.branch ?? "";
-  const layerValue = layer ?? defaults.data?.layer ?? "root";
+  const layerValue = layer ?? defaults.data?.layer ?? DEFAULT_PUBLISH_LAYER;
   const input: PublishInput = {
     skillIds: skills.map((skill) => skill.id),
     repo: repoValue.trim(),
