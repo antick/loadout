@@ -3,8 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } from "react";
 import { AppUpdateToast } from "@/components/AppUpdateToast";
 import { CloseDialog } from "@/components/CloseDialog";
-import { CommandPalette } from "@/components/CommandPalette";
-import { SkillPicker } from "@/components/SkillPicker";
+import { CommandPalette, type PaletteMode } from "@/components/CommandPalette";
 import { CrashBanner } from "@/components/CrashBanner";
 import { RepairBanner } from "@/components/RepairBanner";
 import { LibraryMissingDialog } from "@/components/LibraryMissingDialog";
@@ -55,8 +54,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     clampSidebarWidth(Number(storedWidth) || SIDEBAR_WIDTH_DEFAULT_PX),
     sidebarMaxWidth,
   );
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [skillPickerOpen, setSkillPickerOpen] = useState(false);
+  const [paletteMode, setPaletteMode] = useState<PaletteMode | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   const [newSkill, setNewSkill] = useState<{ open: boolean; projectId: string | null }>({
@@ -94,8 +92,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
 
   const shell = useMemo<ShellActions>(
     () => ({
-      openCommandPalette: () => setPaletteOpen(true),
-      openSkillPicker: () => setSkillPickerOpen(true),
+      openCommandPalette: () => setPaletteMode("all"),
       openHelp: () => setHelpOpen(true),
       openPresetDialog: (preset) => setPresetDialog({ open: true, preset: preset ?? null }),
       openAddProject: () => setAddProjectOpen(true),
@@ -115,14 +112,14 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     [titleSlot, actionsSlot, sidebarHeaderSlot, sidebarActionsSlot],
   );
 
+  // Each shortcut opens the palette in its mode, switches to it, or closes it when already there.
   useHotkey(SHORTCUT_KEYS.palette, (event) => {
     event.preventDefault();
-    setPaletteOpen((open) => !open);
+    setPaletteMode((mode) => (mode === "all" ? null : "all"));
   });
   useHotkey(SHORTCUT_KEYS.quickOpen, (event) => {
     event.preventDefault();
-    setPaletteOpen(false);
-    setSkillPickerOpen((open) => !open);
+    setPaletteMode((mode) => (mode === "edit" ? null : "edit"));
   });
   useHotkey(SHORTCUT_KEYS.settings, (event) => {
     event.preventDefault();
@@ -163,8 +160,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             <StatusBar />
           </SidebarProvider>
 
-          <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-          <SkillPicker open={skillPickerOpen} onOpenChange={setSkillPickerOpen} />
+          <CommandPalette mode={paletteMode} onModeChange={setPaletteMode} />
           <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
           <PresetDialog
             open={presetDialog.open}

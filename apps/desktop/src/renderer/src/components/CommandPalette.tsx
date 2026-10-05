@@ -38,15 +38,20 @@ import { useProjects } from "@/hooks/queries/projects";
 import { useSkills } from "@/hooks/queries/skills";
 import { MATCHED_SKILL_VALUE, keepMatchedSkills } from "@/lib/command-filter";
 import { COMMAND_PALETTE_MAX_SKILLS } from "@/lib/constants";
+import { editLink } from "@/lib/skill-location";
 import { useShortcutLabel } from "@/hooks/use-shortcut-label";
 
+/** "all": everything below. "edit" (⌘P): library skills only, each opening in the editor. */
+export type PaletteMode = "all" | "edit";
+
 export interface CommandPaletteProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  /** Closed while null. */
+  mode: PaletteMode | null;
+  onModeChange: (mode: PaletteMode | null) => void;
 }
 
-/** ⌘K: jump to a skill, preset, project or agent, or run a common action. */
-export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): ReactNode {
+/** ⌘K: jump to a skill, preset, project or agent, or run a common action. ⌘P: edit a skill. */
+export function CommandPalette({ mode, onModeChange }: CommandPaletteProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const shell = useShell();
@@ -72,89 +77,97 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
     [skills.data, search],
   );
 
-  const changeOpen = (next: boolean): void => {
-    if (!next) setSearch("");
-    onOpenChange(next);
+  const changeMode = (next: PaletteMode | null): void => {
+    setSearch("");
+    onModeChange(next);
   };
 
   const run = (action: () => void): void => {
-    changeOpen(false);
+    changeMode(null);
     action();
   };
 
+  const editing = mode === "edit";
+
   return (
     <CommandDialog
-      open={open}
-      onOpenChange={changeOpen}
+      open={mode !== null}
+      onOpenChange={(open) => {
+        if (!open) changeMode(null);
+      }}
       filter={keepMatchedSkills}
-      title={t("palette.title")}
-      description={t("palette.description")}
+      title={t(editing ? "palette.editTitle" : "palette.title")}
+      description={t(editing ? "palette.editDescription" : "palette.description")}
     >
       <CommandInput
-        placeholder={t("palette.placeholder")}
+        placeholder={t(editing ? "palette.editSkill" : "palette.placeholder")}
         value={search}
         onValueChange={setSearch}
       />
       <CommandList>
         <CommandEmpty>{t("palette.empty")}</CommandEmpty>
 
-        <CommandGroup heading={t("palette.actions")}>
-          <CommandItem
-            onSelect={() => run(() => void navigate({ to: "/install", search: { tab: "market" } }))}
-          >
-            <Download />
-            {t("palette.install")}
-          </CommandItem>
-          <CommandItem
-            onSelect={() => run(() => void navigate({ to: "/install", search: { tab: "scan" } }))}
-          >
-            <FolderSearch />
-            {t("palette.scan")}
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => shell.openNewSkill())}>
-            <FilePlus2 />
-            {t("palette.newSkill")}
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => shell.openSkillPicker())}>
-            <PencilLine />
-            {t("palette.editSkill")}
-            <CommandShortcut>{quickOpenLabel}</CommandShortcut>
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => void scanLibrary(false))}>
-            <ShieldCheck />
-            {t("palette.safetyScan")}
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => sync.start())}>
-            <CloudUpload />
-            {t("palette.backupNow")}
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => shell.openPresetDialog())}>
-            <Plus />
-            {t("palette.newPreset")}
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              run(() =>
-                setSetting.mutate({
-                  key: "theme",
-                  value: resolvedTheme === "dark" ? "light" : "dark",
-                }),
-              )
-            }
-          >
-            <SunMoon />
-            {t("palette.toggleTheme")}
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => void navigate({ to: "/settings" }))}>
-            <Settings />
-            {t("palette.settings")}
-            <CommandShortcut>{settingsLabel}</CommandShortcut>
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => shell.openHelp())}>
-            <LifeBuoy />
-            {t("palette.help")}
-          </CommandItem>
-        </CommandGroup>
+        {!editing ? (
+          <CommandGroup heading={t("palette.actions")}>
+            <CommandItem
+              onSelect={() =>
+                run(() => void navigate({ to: "/install", search: { tab: "market" } }))
+              }
+            >
+              <Download />
+              {t("palette.install")}
+            </CommandItem>
+            <CommandItem
+              onSelect={() => run(() => void navigate({ to: "/install", search: { tab: "scan" } }))}
+            >
+              <FolderSearch />
+              {t("palette.scan")}
+            </CommandItem>
+            <CommandItem onSelect={() => run(() => shell.openNewSkill())}>
+              <FilePlus2 />
+              {t("palette.newSkill")}
+            </CommandItem>
+            <CommandItem onSelect={() => changeMode("edit")}>
+              <PencilLine />
+              {t("palette.editSkill")}
+              <CommandShortcut>{quickOpenLabel}</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => run(() => void scanLibrary(false))}>
+              <ShieldCheck />
+              {t("palette.safetyScan")}
+            </CommandItem>
+            <CommandItem onSelect={() => run(() => sync.start())}>
+              <CloudUpload />
+              {t("palette.backupNow")}
+            </CommandItem>
+            <CommandItem onSelect={() => run(() => shell.openPresetDialog())}>
+              <Plus />
+              {t("palette.newPreset")}
+            </CommandItem>
+            <CommandItem
+              onSelect={() =>
+                run(() =>
+                  setSetting.mutate({
+                    key: "theme",
+                    value: resolvedTheme === "dark" ? "light" : "dark",
+                  }),
+                )
+              }
+            >
+              <SunMoon />
+              {t("palette.toggleTheme")}
+            </CommandItem>
+            <CommandItem onSelect={() => run(() => void navigate({ to: "/settings" }))}>
+              <Settings />
+              {t("palette.settings")}
+              <CommandShortcut>{settingsLabel}</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => run(() => shell.openHelp())}>
+              <LifeBuoy />
+              {t("palette.help")}
+            </CommandItem>
+          </CommandGroup>
+        ) : null}
 
         {skillMatches.length > 0 ? (
           <CommandGroup heading={t("palette.skills")}>
@@ -163,7 +176,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
                 key={skill.id}
                 value={`${MATCHED_SKILL_VALUE}${skill.name} ${skill.id}`}
                 onSelect={() =>
-                  run(() => void navigate({ to: "/library", search: { skill: skill.id } }))
+                  run(() =>
+                    editing
+                      ? void navigate(editLink({ kind: "library", skillId: skill.id }))
+                      : void navigate({ to: "/library", search: { skill: skill.id } }),
+                  )
                 }
               >
                 <Package />
@@ -173,7 +190,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
           </CommandGroup>
         ) : null}
 
-        {(presets.data?.length ?? 0) > 0 ? (
+        {!editing && (presets.data?.length ?? 0) > 0 ? (
           <CommandGroup heading={t("palette.presets")}>
             {presets.data?.map((preset) => (
               <CommandItem
@@ -193,7 +210,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
           </CommandGroup>
         ) : null}
 
-        {(projects.data?.length ?? 0) > 0 ? (
+        {!editing && (projects.data?.length ?? 0) > 0 ? (
           <CommandGroup heading={t("palette.projects")}>
             {projects.data?.map((project) => (
               <CommandItem
@@ -216,7 +233,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): Rea
           </CommandGroup>
         ) : null}
 
-        {(agents.data?.length ?? 0) > 0 ? (
+        {!editing && (agents.data?.length ?? 0) > 0 ? (
           <CommandGroup heading={t("palette.agents")}>
             {agents.data?.map((agent) => (
               <CommandItem

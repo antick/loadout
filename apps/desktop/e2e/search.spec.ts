@@ -9,6 +9,22 @@ test("⌘P finds a skill like the library does: by its description, words in any
   await picker.getByRole("combobox").fill("readable pull");
   await expect(picker.getByRole("option", { name: /release-notes/ })).toBeVisible();
   await expect(picker.getByRole("option")).toHaveCount(1);
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/library\/[\w-]+\/edit/);
+});
+
+test("the palette's editor action asks for a skill, then opens it in the editor", async ({
+  page,
+}) => {
+  await openApp(page, "/library");
+  await page.keyboard.press("ControlOrMeta+K");
+  const palette = page.getByRole("dialog");
+  await palette.getByRole("option", { name: "Open a skill in the editor" }).click();
+  await expect(palette.getByRole("combobox")).toHaveValue("");
+  await palette.getByRole("combobox").fill("test-first");
+  await expect(palette.getByRole("option")).toHaveCount(1);
+  await palette.getByRole("option", { name: "test-first" }).click();
+  await expect(page).toHaveURL(/#\/library\/[\w-]+\/edit/);
 });
 
 test("⌘K finds a skill by its description too", async ({ page }) => {
