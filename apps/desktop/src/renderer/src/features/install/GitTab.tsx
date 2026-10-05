@@ -9,14 +9,13 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
-import { ProgressPanel } from "@/components/ProgressPanel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Spinner } from "@/components/ui/spinner";
 import { GIT_DOWNLOAD_URL, GIT_URL_EXAMPLES } from "@/features/install/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { useDiagnostics } from "@/features/install/install-queries";
-import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import {
   COMMAND_ICON,
   SOURCE_KIND_ICONS,
@@ -93,7 +92,7 @@ export function GitTab(): ReactNode {
   const previewGit = usePreviewGit();
   const cancelPreview = useCancelPreview();
   const choice = usePreviewChoice();
-  const { task, cancel } = useInstallTask();
+  const { task } = useInstallTask();
 
   const [url, setUrl] = useState("");
   /** The URL last sent, which is also the key its progress is reported under. */
@@ -159,7 +158,7 @@ export function GitTab(): ReactNode {
               />
             </InputGroup>
             <Button type="submit" disabled={!url.trim() || Boolean(running)}>
-              <PackageSearch />
+              {running ? <Spinner /> : <PackageSearch />}
               {t("install.git.preview")}
             </Button>
           </div>
@@ -180,18 +179,6 @@ export function GitTab(): ReactNode {
           ))}
         </div>
       </form>
-
-      {running ? (
-        <ProgressPanel
-          title={running.title}
-          detail={
-            running.cancelling ? t("install.toast.cancelling") : installPhaseText(running.progress)
-          }
-          percent={installProgressPercent(running.progress)}
-          cancelling={running.cancelling}
-          onCancel={running.cancellable ? () => cancel(running.key) : undefined}
-        />
-      ) : null}
 
       {emptyRepo && !running ? (
         <EmptyState

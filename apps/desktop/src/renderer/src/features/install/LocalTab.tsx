@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { OptionCard } from "@/components/OptionCard";
 import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
-import { ProgressPanel } from "@/components/ProgressPanel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,6 @@ import {
   usePickArchive,
 } from "@/features/install/install-mutations";
 import { cn } from "@/lib/utils";
-import { installPhaseText, installProgressPercent } from "@/features/install/install-tasks";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
 import { useCancelPreview, usePreviewArchive } from "@/hooks/mutations/install";
@@ -150,7 +148,7 @@ export function LocalTab(): ReactNode {
           title={t("install.local.bulkTitle")}
           description={t("install.local.bulkDescription")}
           tone="kit"
-          disabled={Boolean(bulkTask)}
+          busy={Boolean(bulkTask)}
           onClick={() => void chooseBulk()}
         />
       </div>
@@ -198,14 +196,6 @@ export function LocalTab(): ReactNode {
             </div>
           </form>
         </PageSection>
-      ) : null}
-
-      {bulk && !bulk.result ? (
-        <ProgressPanel
-          title={t("install.toast.importingFolder")}
-          detail={installPhaseText(bulkTask?.progress ?? null)}
-          percent={installProgressPercent(bulkTask?.progress ?? null)}
-        />
       ) : null}
 
       <GitPreviewDialog

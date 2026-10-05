@@ -121,12 +121,6 @@ export function installPhaseText(progress: InstallProgress | null): string {
   return i18n.t(`install.phase.${phase}`);
 }
 
-/** 0–100 when the backend reports a measurable step, otherwise null (show an indeterminate bar). */
-export function installProgressPercent(progress: InstallProgress | null): number | null {
-  if (!progress || progress.current === undefined || !progress.total) return null;
-  return Math.min(PERCENT, Math.round((progress.current / progress.total) * PERCENT));
-}
-
 function showRunningToast(task: InstallTask): void {
   toast.loading(task.title, {
     id: `${TOAST_ID_PREFIX}${task.key}`,

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MARKET_PROVIDER_NAMES } from "@/features/install/constants";
-import { type InstallTask, installPhaseText } from "@/features/install/install-tasks";
+import type { InstallTask } from "@/features/install/install-tasks";
 
 export interface MarketSkillCardProps {
   skill: MarketSkill;
@@ -81,9 +81,7 @@ export function MarketSkillCard({
           title={t("install.market.installs", { count: skill.installs })}
         >
           <Download className="size-3 shrink-0" />
-          <span className="truncate">
-            {task ? installPhaseText(task.progress) : formatCount(skill.installs)}
-          </span>
+          <span className="truncate">{formatCount(skill.installs)}</span>
         </span>
         <IconButton
           label={t("install.market.viewOnWeb", {

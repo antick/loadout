@@ -37,7 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { MARKET_PROVIDER_NAMES } from "@/features/install/constants";
 import { useMarketDetail } from "@/features/install/install-queries";
-import { type InstallTask, installPhaseText } from "@/features/install/install-tasks";
+import type { InstallTask } from "@/features/install/install-tasks";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useAgents } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
@@ -247,9 +247,6 @@ function DetailBody({
               {t(installed ? "install.market.reinstall" : "install.market.install")}
             </Button>
           )}
-          {task ? (
-            <span className="text-xs text-muted-foreground">{installPhaseText(task.progress)}</span>
-          ) : null}
           <div className="ml-auto flex items-center gap-1">
             {repoUrl ? (
               <Button variant="ghost" size="sm" onClick={() => openExternal.mutate(repoUrl)}>
