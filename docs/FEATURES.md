@@ -186,7 +186,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 
 - Settings → Storage shows each part's size; clear caches, history and logs.
 - A moved library that isn't there is never replaced with an empty one.
-- **Remove all data** can keep every skill in your agents as ordinary folders.
+- **Remove all data** can keep every skill in your agents as ordinary folders; copies you edited there always stay.
 
 ## App
 

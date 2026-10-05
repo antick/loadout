@@ -7,7 +7,7 @@ import type { RemovedStore } from "../storage/removed";
 import { canonicalPath, lstatOrNull, targetIdentity } from "../util/fs";
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { type BatchApply, createBatchApply } from "./batch";
-import { copyWasEdited, repointSources, rowsAtPath } from "./evidence";
+import { copyWasEdited, holdsOwnEdits, repointSources, rowsAtPath } from "./evidence";
 import { type DeployPair, createDeployOperations } from "./operations";
 
 export interface DeployServiceDeps {
@@ -43,6 +43,13 @@ export interface RefreshOptions {
   keepModified?: boolean;
 }
 
+export interface RemovedEverywhere {
+  /** Deployment rows dropped. */
+  removed: number;
+  /** Copies edited in agents' folders, left there as ordinary folders. */
+  keptEdited: string[];
+}
+
 export interface DeployService {
   api: DeployApi;
   /** Like `api.apply`, for pairs that are not a full skills × agents grid (preset toggles). */
@@ -51,9 +58,10 @@ export interface DeployService {
   removeAllForSkill(skill: Skill): Promise<void>;
   /**
    * Remove every link into the library from every agent folder, and every copy too when asked.
-   * Returns how many deployment rows were dropped.
+   * A copy edited in the agent's folder stays there as an ordinary folder: Recently removed goes
+   * with the rest of the data. Returns how many deployment rows were dropped, and those copies.
    */
-  removeEverywhere(options: { includeCopies: boolean }): Promise<number>;
+  removeEverywhere(options: { includeCopies: boolean }): Promise<RemovedEverywhere>;
   /** Same, for one agent. Returns how many deployment rows were dropped. */
   removeAllForAgent(agentKey: string): Promise<number>;
   /** Re-copy every copy-mode deployment after the library content of `skill` changed. */
@@ -246,10 +254,19 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       );
     },
 
-    removeEverywhere: ({ includeCopies }) =>
-      removeRows("undeploy everything", () =>
-        store.deployments().filter((row) => includeCopies || row.mode === "symlink"),
-      ),
+    removeEverywhere: async ({ includeCopies }) => {
+      const keptEdited = new Set<string>();
+      const removed = await removeRows("undeploy everything", () =>
+        store.deployments().filter((row) => {
+          if (row.mode === "symlink") return true;
+          if (!includeCopies) return false;
+          const edited = holdsOwnEdits(row, store.find(row.skillId)?.contentHash ?? null);
+          if (edited) keptEdited.add(row.targetPath);
+          return !edited;
+        }),
+      );
+      return { removed, keptEdited: [...keptEdited].sort() };
+    },
 
     removeAllForAgent: (agentKey) =>
       removeRows(`undeploy everything from ${agentName(agentKey)}`, () =>

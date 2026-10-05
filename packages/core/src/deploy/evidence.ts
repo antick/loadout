@@ -13,6 +13,14 @@ export function copyWasEdited(row: DeploymentRecord): boolean {
   return row.sourceHash === null || hashDir(row.targetPath) !== row.sourceHash;
 }
 
+/**
+ * A copy in an agent's folder holds the user's own edits: it was changed there and differs from
+ * the library's content too (a pull may have put that there, which loses nothing).
+ */
+export function holdsOwnEdits(row: DeploymentRecord, libraryHash: string | null): boolean {
+  return row.mode === "copy" && copyWasEdited(row) && hashDir(row.targetPath) !== libraryHash;
+}
+
 export function samePath(a: string, b: string): boolean {
   return a === b || targetIdentity(a) === targetIdentity(b);
 }

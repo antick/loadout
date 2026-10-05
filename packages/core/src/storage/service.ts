@@ -38,6 +38,8 @@ export interface RemovalPlan {
   emptyDirs: string[];
   /** Deployment rows dropped from agent folders before quitting. */
   undeployed: number;
+  /** Copies edited in agents' folders, left there as ordinary folders instead of removed. */
+  keptEdited: string[];
 }
 
 export interface StorageService {
@@ -174,7 +176,9 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
           );
         }
       }
-      const undeployed = await deps.deploy.removeEverywhere({ includeCopies: removeCopies });
+      const { removed: undeployed, keptEdited } = await deps.deploy.removeEverywhere({
+        includeCopies: removeCopies,
+      });
       const home = paths.defaultBaseDir;
       const moved = paths.baseDir !== home;
       // A moved library's folder was picked by the user: remove what is ours, then the folder
@@ -194,6 +198,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
         paths: [...libraryParts, home],
         emptyDirs: moved ? [paths.baseDir] : [],
         undeployed,
+        keptEdited,
       };
     },
   };

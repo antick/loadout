@@ -1,4 +1,12 @@
-import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createGitClient } from "../src/install/git-client";
@@ -107,6 +115,25 @@ describe("prepareRemoval", () => {
 
     await storage.prepareRemoval({ removeCopies: true });
     expect(existsSync(copy)).toBe(false);
+  });
+
+  it("leaves a copy edited in an agent's folder there, and says so", async () => {
+    world.installAgents(".codex");
+    const alpha = world.addSkill("alpha");
+    const beta = world.addSkill("beta");
+    world.ctx.settings.set("deployMode", "copy");
+    await world.deploy.api.deploy(alpha.id, "codex");
+    await world.deploy.api.deploy(beta.id, "codex");
+    const edited = join(world.home, ".codex", "skills", "alpha");
+    writeFileSync(join(edited, "mine.md"), "my own edit\n");
+
+    const plan = await storage.prepareRemoval({ removeCopies: true });
+    expect(plan.keptEdited).toEqual([edited]);
+    expect(plan.undeployed).toBe(1);
+    expect(readFileSync(join(edited, "mine.md"), "utf8")).toBe("my own edit\n");
+    expect(existsSync(join(world.home, ".codex", "skills", "beta"))).toBe(false);
+    // Recently removed goes with the rest of the data: nothing of the user's was put there.
+    expect(await storage.api.removed()).toEqual([]);
   });
 
   it("keeps every linked skill as a real folder when asked, before anything goes", async () => {

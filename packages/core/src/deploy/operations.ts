@@ -6,7 +6,6 @@ import { targetConflict } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
 import { lstatOrNull } from "../util/fs";
-import { hashDir } from "../util/hash";
 import {
   type OwnershipPolicy,
   type TargetState,
@@ -16,7 +15,7 @@ import {
   usableMode,
   writeTarget,
 } from "./engine";
-import { copyWasEdited, isCurrent, policyFromRows, rowsAtPath, samePath } from "./evidence";
+import { holdsOwnEdits, isCurrent, policyFromRows, rowsAtPath, samePath } from "./evidence";
 
 const REASON_OTHER_SKILL = "already holds a different skill's deployment";
 
@@ -75,10 +74,8 @@ export function createDeployOperations(
     reason: RemovedReason,
     libraryHash: string | null,
   ): string | null {
-    const edited = rows.find((row) => row.mode === "copy" && copyWasEdited(row));
-    // Already the library's content (a pull put it there): nothing of the user's to keep.
-    if (!edited || hashDir(edited.targetPath) === libraryHash) return null;
-    return removed.setAside(edited.targetPath, { place, reason });
+    const edited = rows.find((row) => holdsOwnEdits(row, libraryHash));
+    return edited ? removed.setAside(edited.targetPath, { place, reason }) : null;
   }
 
   function inspect(
