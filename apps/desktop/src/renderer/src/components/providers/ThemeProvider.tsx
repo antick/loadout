@@ -1,9 +1,4 @@
-import {
-  DEFAULT_SETTINGS,
-  type PaletteSetting,
-  TEXT_SIZE_SCALE,
-  type ThemeSetting,
-} from "@loadout/shared";
+import { DEFAULT_SETTINGS, type PaletteSetting, type ThemeSetting } from "@loadout/shared";
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { useSetting, useSettings } from "@/hooks/queries/settings";
 import { DARK_QUERY, applyAppearance, rememberAppearance } from "@/lib/appearance";
@@ -18,8 +13,6 @@ interface ThemeContextValue {
   /** What is actually on screen. */
   resolvedTheme: ResolvedTheme;
 }
-
-const TEXT_SCALE_VAR = "--app-text-scale";
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "system",
@@ -42,7 +35,7 @@ function useSystemDark(): boolean {
 export function ThemeProvider({ children }: { children: ReactNode }): ReactNode {
   const theme = useSetting("theme");
   const palette = useSetting("palette");
-  // Until settings load, the colours restored in main.tsx stay; defaults would flash otherwise.
+  // Until settings load, the look restored in main.tsx stays; defaults would flash otherwise.
   const loaded = useSettings().isSuccess;
   const textSize = useSetting("textSize");
   const systemDark = useSystemDark();
@@ -50,17 +43,10 @@ export function ThemeProvider({ children }: { children: ReactNode }): ReactNode 
 
   useEffect(() => {
     if (!loaded) return;
-    const appearance = { palette, dark: resolvedTheme === "dark" };
+    const appearance = { palette, dark: resolvedTheme === "dark", textSize };
     applyAppearance(appearance);
     rememberAppearance(appearance);
-  }, [loaded, palette, resolvedTheme]);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty(
-      TEXT_SCALE_VAR,
-      String(TEXT_SIZE_SCALE[textSize] ?? 1),
-    );
-  }, [textSize]);
+  }, [loaded, palette, resolvedTheme, textSize]);
 
   const value = useMemo(() => ({ theme, palette, resolvedTheme }), [theme, palette, resolvedTheme]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
