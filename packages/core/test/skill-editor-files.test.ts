@@ -1,8 +1,16 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import type { SkillLocation } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { EditorService } from "../src/editor";
+import { type EditorService, createFileHistory } from "../src/editor";
 import { hashDir } from "../src/util/hash";
 import { createEditorWorld, libraryLocation as lib, rejection } from "./editor-world";
 import { makeSkill, writeFile } from "./helpers";
@@ -151,6 +159,30 @@ describe("renaming", () => {
     expect((await rejection(ed().deleteFile(location, "inner"))).code).toBe("INVALID_INPUT");
     await ed().deleteFile(location, "inner/notes.md");
     expect(existsSync(join(skill.libraryPath, "inner", "SKILL.md"))).toBe(true);
+  });
+});
+
+describe("earlier versions", () => {
+  it("keeps versions of a file whose key is too long for a folder name", () => {
+    const history = createFileHistory(world.ctx.paths.historyDir);
+    const deep = `instructions:${"/a-rather-long-folder-name".repeat(20)}/CLAUDE.md`;
+    history.record(deep, "CLAUDE.md", Buffer.from("old\n"), 1_000);
+    expect(history.list(deep, "CLAUDE.md").map((version) => version.id)).toEqual(["1000"]);
+    expect(history.read(deep, "CLAUDE.md", "1000")).toBe("old\n");
+    // Short keys keep the folder names they always had, so older history is still found.
+    history.record("skill-1", "notes.md", Buffer.from("old\n"), 1_000);
+    expect(existsSync(join(world.ctx.paths.historyDir, "skill-1", "notes.md", "1000.bak"))).toBe(
+      true,
+    );
+  });
+
+  it("saves the file even when its earlier version cannot be kept", async () => {
+    const skill = world.addSkill("alpha", { "notes.md": "one\n" });
+    rmSync(world.ctx.paths.historyDir, { recursive: true, force: true });
+    writeFileSync(world.ctx.paths.historyDir, "not a folder");
+    const file = await ed().readFile(lib(skill.id), "notes.md");
+    await ed().saveFile(lib(skill.id), { path: "notes.md", content: "two\n", baseHash: file.hash });
+    expect(readFileSync(join(skill.libraryPath, "notes.md"), "utf8")).toBe("two\n");
   });
 });
 

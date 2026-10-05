@@ -123,7 +123,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const staleCopies = createStaleCopyRefresher(ctx, deploy);
   const repair = createDeployRepair(ctx, { store, registry, deploy });
   const agents = createAgentsService(ctx, { registry, deploy });
-  const history = createFileHistory(ctx.paths.historyDir);
+  const history = createFileHistory(ctx.paths.historyDir, ctx.log);
   const safety = createSafetyService(ctx, {
     store,
     builtin: options.builtinSafety ?? options.safetyScannerPath === undefined,
