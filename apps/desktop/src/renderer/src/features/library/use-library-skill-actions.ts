@@ -29,8 +29,15 @@ import { useDefaultEditor } from "@/hooks/use-default-editor";
 import { hasTrackedSource } from "@/lib/skill-source";
 import { editLink } from "@/lib/skill-location";
 
+export interface LibrarySkillActionsOptions {
+  /** Runs instead of the confirm-and-delete, where the caller deletes in its own way. */
+  onDelete?: (skill: Skill) => void;
+}
+
 /** What a library skill's right-click menu offers. */
-export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
+export function useLibrarySkillActions({
+  onDelete,
+}: LibrarySkillActionsOptions = {}): (skill: Skill) => SkillAction[] {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const reveal = useRevealSkill();
@@ -105,7 +112,7 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
         label: t("library.detail.delete"),
         icon: Trash2,
         destructive: true,
-        run: () => void deleteSkills([skill]),
+        run: () => (onDelete ? onDelete(skill) : void deleteSkills([skill])),
       });
       return actions;
     },
@@ -116,6 +123,7 @@ export function useLibrarySkillActions(): (skill: Skill) => SkillAction[] {
       check,
       exportSkills,
       deleteSkills,
+      onDelete,
       setFavorite,
       openInEditor,
       editor,
