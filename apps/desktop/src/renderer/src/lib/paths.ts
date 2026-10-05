@@ -1,4 +1,11 @@
 const HOME_SYMBOL = "~";
+/** A POSIX root, the home shorthand or a Windows drive: a path on this computer, not an address. */
+const ABSOLUTE_PATH_PATTERN = /^(\/|~|[A-Za-z]:[\\/])/;
+
+/** True for a path that starts at a root (POSIX, `~` or a Windows drive) rather than an address. */
+export function looksAbsolute(path: string): boolean {
+  return ABSOLUTE_PATH_PATTERN.test(path);
+}
 
 /** Replace the home directory prefix with `~` for display. Works with `/` and `\` separators. */
 export function compactHome(path: string, homeDir: string | undefined): string {

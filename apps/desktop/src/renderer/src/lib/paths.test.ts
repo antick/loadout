@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactHome, joinPath } from "./paths";
+import { compactHome, joinPath, looksAbsolute } from "./paths";
 
 describe("joinPath", () => {
   it("joins a relative path under a POSIX folder", () => {
@@ -30,5 +30,20 @@ describe("compactHome", () => {
 
   it("leaves a sibling folder with the same prefix alone", () => {
     expect(compactHome("/Users/meg/x", "/Users/me")).toBe("/Users/meg/x");
+  });
+});
+
+describe("looksAbsolute", () => {
+  it("knows a POSIX root, the home shorthand and a Windows drive", () => {
+    expect(looksAbsolute("/Users/me/skills")).toBe(true);
+    expect(looksAbsolute("~/skills")).toBe(true);
+    expect(looksAbsolute("C:\\Users\\me")).toBe(true);
+    expect(looksAbsolute("D:/skills")).toBe(true);
+  });
+
+  it("leaves addresses and relative paths alone", () => {
+    expect(looksAbsolute("https://example.com/acme/skills.git")).toBe(false);
+    expect(looksAbsolute("acme/skills")).toBe(false);
+    expect(looksAbsolute("")).toBe(false);
   });
 });

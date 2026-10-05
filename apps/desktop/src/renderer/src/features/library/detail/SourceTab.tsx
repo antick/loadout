@@ -32,10 +32,8 @@ import { useCheckSkillUpdate } from "@/features/library/library-mutations";
 import { FindSourceSection } from "@/features/origin/FindSourceSection";
 import { useOpenExternal, usePickFolder } from "@/hooks/mutations/app";
 import { installPhaseText } from "@/features/install/install-tasks";
+import { looksAbsolute } from "@/lib/paths";
 import { hasSource, isRemoteSource } from "@/lib/skill-source";
-
-/** A source that is a path on this computer (POSIX, home or Windows drive), not an address. */
-const ABSOLUTE_PATH_PATTERN = /^(\/|~|[A-Za-z]:[\\/])/;
 
 function Row({ label, children }: { label: string; children: ReactNode }): ReactNode {
   return (
@@ -222,7 +220,7 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
                     <ExternalLink />
                   </Button>
                 </span>
-              ) : ABSOLUTE_PATH_PATTERN.test(skill.sourceRef) ? (
+              ) : looksAbsolute(skill.sourceRef) ? (
                 <PathText path={skill.sourceRef} />
               ) : (
                 <span data-selectable className="font-mono text-xs break-all">
