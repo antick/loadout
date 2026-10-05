@@ -4,7 +4,7 @@ import {
   type PresetImportSkillState,
   presetFileName,
 } from "@loadout/shared";
-import { flagBoolean, flagString } from "../args";
+import { flagBoolean, flagList, flagString } from "../args";
 import { plural, table } from "../output";
 import {
   ACCEPT_RISK_FLAG,
@@ -37,6 +37,14 @@ const NAME_FLAG = {
   description: "Name of the new preset. Default: the name in the file (numbered when taken).",
 } as const;
 
+const REUSE_FLAG = {
+  name: "use-library",
+  type: "list",
+  value: "skill",
+  description:
+    "Use the library's skill of this name after all, though it is a different skill. Repeat for several.",
+} as const;
+
 const WEB_LINK = /^https?:\/\//i;
 const STATE_WORDS: Record<PresetImportSkillState, string> = {
   library: "in the library",
@@ -66,7 +74,9 @@ async function exportPreset(context: CommandContext): Promise<CommandResult> {
 }
 
 function planText(plan: PresetImportPlan): string {
-  const beside = plan.skills.filter((skill) => skill.sameNameSkillId !== null);
+  const beside = plan.skills.filter(
+    (skill) => skill.sameNameSkillId !== null && skill.state !== "library",
+  );
   return [
     `Preset: ${plan.name}${plan.nameTaken ? " (a preset has this name; the import gets a number)" : ""}`,
     table(
@@ -76,7 +86,7 @@ function planText(plan: PresetImportPlan): string {
     ),
     ...(beside.length > 0
       ? [
-          `Your library has a different skill of the same name (another source or other files), so these are installed beside it under a free name: ${beside.map((skill) => skill.name).join(", ")}`,
+          `Your library has a different skill of the same name (another source or other files), so these are installed beside it under a free name (--use-library <name> uses yours): ${beside.map((skill) => skill.name).join(", ")}`,
         ]
       : []),
   ].join("\n");
@@ -87,8 +97,9 @@ async function importPreset(context: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
   const raw = positional(args, 0, "a preset file or an https link");
   const input = WEB_LINK.test(raw) ? raw : resolveUserPath(raw, cwd, core.ctx.homeDir);
+  const reuseSameName = flagList(args, REUSE_FLAG.name);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-    const found = await core.api.presets.previewImport(input);
+    const found = await core.api.presets.previewImport(input, { reuseSameName });
     // The preview reads the file's name; --name gives the preset another, as the real run does.
     const name = flagString(args, NAME_FLAG.name)?.trim();
     const presets = name ? await core.api.presets.list() : [];
@@ -107,6 +118,7 @@ async function importPreset(context: CommandContext): Promise<CommandResult> {
   const result = await core.api.presets.importFile(input, {
     name: flagString(args, NAME_FLAG.name),
     acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
+    reuseSameName,
   });
   const lines = [
     `Created preset ${result.preset.name} with ${plural(result.preset.skillIds.length, "skill")}.`,
@@ -138,9 +150,9 @@ export const presetImportCommand: CommandSpec = {
   name: "import",
   summary: "Create a preset from a file or link, installing the skills the library lacks",
   usage: "<file | https link>",
-  flags: [NAME_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
+  flags: [NAME_FLAG, REUSE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
-    "Skills the library has are used as they are: the same source; for skills without one, the same name and files; for skills the file only names, the same name. A library skill that only shares the name is left alone, and the file's skill is installed beside it under a free name. Every install goes through the safety check.",
+    "Skills the library has are used as they are: the same source; for skills without one, the same name and files; for skills the file only names, the same name. A library skill that only shares the name (another source or branch, other files) is left alone, and the file's skill is installed beside it under a free name; --use-library <name> uses the library's one instead. Every install goes through the safety check.",
     "Exit code 1 when some skills could not be added; the preset is created with the rest.",
   ],
   run: importPreset,

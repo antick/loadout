@@ -59,6 +59,7 @@ import type {
   PresetImportOptions,
   PresetImportPlan,
   PresetImportResult,
+  PresetPreviewOptions,
 } from "./preset-share";
 import type {
   AgentFolderSummary,
@@ -221,7 +222,7 @@ export interface PresetsApi {
     options?: PresetExportOptions,
   ): Promise<PresetExportResult>;
   /** Read a preset file (a path or an https link) and say what importing it would do. */
-  previewImport(input: string): Promise<PresetImportPlan>;
+  previewImport(input: string, options?: PresetPreviewOptions): Promise<PresetImportPlan>;
   /**
    * Import a preset file: install the skills the library lacks, then create the preset. UNSAFE
    * when the safety check flags a skill and `acceptRisk` is unset; what was installed stays.

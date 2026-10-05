@@ -1,6 +1,7 @@
 import {
   PRESET_FILE_DIALOG_EXTENSIONS,
   type PresetImportPlan,
+  type PresetImportSkill,
   type PresetImportSkillState,
 } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
@@ -9,6 +10,7 @@ import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StatusBadge, type StatusTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -36,11 +38,24 @@ export interface ImportPresetDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** What the import will do with each skill, and the counts. */
-function PlanList({ plan }: { plan: PresetImportPlan }): ReactNode {
+/**
+ * What the import will do with each skill, and the counts. A skill the library has a different
+ * skill of the same name for can use that one instead, when the person ticks it (`reuse`).
+ */
+function PlanList({
+  plan,
+  reuse,
+  onReuseChange,
+}: {
+  plan: PresetImportPlan;
+  reuse: ReadonlySet<string>;
+  onReuseChange: (name: string, used: boolean) => void;
+}): ReactNode {
   const { t } = useTranslation();
+  const stateOf = (skill: PresetImportSkill): PresetImportSkillState =>
+    reuse.has(skill.name) ? "library" : skill.state;
   const count = (state: PresetImportSkillState): number =>
-    plan.skills.filter((skill) => skill.state === state).length;
+    plan.skills.filter((skill) => stateOf(skill) === state).length;
   const toInstall = count("source") + count("files");
   return (
     <div className="flex flex-col gap-2">
@@ -64,14 +79,25 @@ function PlanList({ plan }: { plan: PresetImportPlan }): ReactNode {
                 {skill.description ?? t("skills.noDescription")}
               </p>
               {skill.sameNameSkillId ? (
-                <p className="text-xs text-muted-foreground">
-                  {t("presetShare.import.sameName", { name: skill.name })}
-                </p>
+                <>
+                  {reuse.has(skill.name) ? null : (
+                    <p className="text-xs text-muted-foreground">
+                      {t("presetShare.import.sameName", { name: skill.name })}
+                    </p>
+                  )}
+                  <label className="mt-1 flex items-center gap-2 text-xs">
+                    <Checkbox
+                      checked={reuse.has(skill.name)}
+                      onCheckedChange={(checked) => onReuseChange(skill.name, checked === true)}
+                    />
+                    {t("presetShare.import.useMine", { name: skill.name })}
+                  </label>
+                </>
               ) : null}
             </div>
             <StatusBadge
-              tone={STATE_TONES[skill.state]}
-              label={t(`presetShare.import.state.${skill.state}`, { from: skill.from })}
+              tone={STATE_TONES[stateOf(skill)]}
+              label={t(`presetShare.import.state.${stateOf(skill)}`, { from: skill.from })}
             />
           </li>
         ))}
@@ -90,12 +116,27 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
   const nameId = useId();
   const [input, setInput] = useState("");
   const [name, setName] = useState("");
+  const [reuse, setReuse] = useState<ReadonlySet<string>>(new Set());
   const plan = preview.data;
 
   const look = (value: string): void => {
     const trimmed = value.trim();
     if (!trimmed) return;
-    preview.mutate(trimmed, { onSuccess: (found) => setName(found.name) });
+    preview.mutate(trimmed, {
+      onSuccess: (found) => {
+        setName(found.name);
+        setReuse(new Set());
+      },
+    });
+  };
+
+  const changeReuse = (skillName: string, used: boolean): void => {
+    setReuse((current) => {
+      const next = new Set(current);
+      if (used) next.add(skillName);
+      else next.delete(skillName);
+      return next;
+    });
   };
 
   const choose = async (): Promise<void> => {
@@ -115,7 +156,7 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
       return;
     }
     importPreset.mutate(
-      { input: input.trim(), name: name.trim() || undefined },
+      { input: input.trim(), name: name.trim() || undefined, reuseSameName: [...reuse] },
       {
         onSuccess: (result) => {
           if (!result) return;
@@ -171,7 +212,7 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
                 <FieldDescription>{t("presetShare.import.nameTaken")}</FieldDescription>
               ) : null}
             </Field>
-            <PlanList plan={plan} />
+            <PlanList plan={plan} reuse={reuse} onReuseChange={changeReuse} />
           </>
         ) : null}
       </FieldGroup>

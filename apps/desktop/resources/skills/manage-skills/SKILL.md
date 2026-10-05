@@ -69,6 +69,7 @@ loadout skills repair --json                    # put back deployments that are 
 loadout skills usage --json                     # how often agents ran each skill, if the user turned tracking on
 loadout project suggest --dir . --json          # library skills that fit this linked project, and why
 loadout presets import ./team.loadout-preset.json --dry-run --json   # what importing a shared preset would install
+# A row with sameNameSkillId: the library has a different skill of that name; it is installed beside it unless the user picks theirs with --use-library <name>
 
 # Install (library only)
 loadout skills search pdf --json                # find marketplace skills; install one with skills install owner/repo@skill

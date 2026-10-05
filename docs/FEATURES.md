@@ -108,7 +108,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 
 - Named groups of skills with per-agent switches; apply to agents in one click.
 - Export a preset as one file to share; importing it installs the skills the library lacks (safety-checked) and creates the preset.
-- Import matches skills by source, never by name alone: a different skill of the same name stays, the shared one goes in beside it.
+- Import matches skills by source and branch, never by name alone: a different skill of the same name stays and the shared one goes in beside it, unless you pick yours.
 
 ## Projects
 

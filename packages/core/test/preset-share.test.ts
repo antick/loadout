@@ -186,6 +186,62 @@ describe("importing beside a library skill that only shares the name", () => {
     expect(result.installed).toContain("pdf");
   });
 
+  /** A preset file of one `pdf` skill from `source`. */
+  function presetOf(source: NonNullable<PresetFile["skills"][number]["source"]>): string {
+    const file = join(temp.dir, "one.json");
+    writeFileSync(
+      file,
+      JSON.stringify({
+        format: PRESET_FILE_FORMAT,
+        version: 1,
+        name: "One",
+        skills: [{ name: "pdf", source }],
+      }),
+    );
+    return file;
+  }
+
+  it("names the file's source, not the library's local skill of that name", async () => {
+    const bob = newCore("bob");
+    const own = await bob.api.install.fromPath(makeSkill(join(temp.dir, "src"), "pdf"));
+    const plan = await bob.api.presets.previewImport(
+      presetOf({ url: "https://github.com/other/repo.git", subpath: "skills/pdf" }),
+    );
+    expect(plan.skills[0]).toMatchObject({
+      state: "source",
+      from: "other/repo",
+      sameNameSkillId: own.id,
+    });
+  });
+
+  it("counts another branch of the same repository as another source", async () => {
+    const { core: bob } = await sharedLibrary();
+    const pdf = (await bob.api.skills.list()).find((skill) => skill.name === "pdf");
+    const same = await bob.api.presets.previewImport(
+      presetOf({ url: REPO, subpath: "skills/pdf" }),
+    );
+    expect(same.skills[0]).toMatchObject({ state: "library", librarySkillId: pdf?.id });
+    const other = await bob.api.presets.previewImport(
+      presetOf({ url: REPO, branch: "dev", subpath: "skills/pdf" }),
+    );
+    expect(other.skills[0]).toMatchObject({ state: "source", sameNameSkillId: pdf?.id });
+  });
+
+  it("uses the library's skill of that name only when asked to", async () => {
+    const bob = newCore("bob");
+    const own = await bob.api.install.fromPath(makeSkill(join(temp.dir, "src"), "pdf"));
+    const file = presetOf({ url: "https://github.com/other/repo.git", subpath: "skills/pdf" });
+    const plan = await bob.api.presets.previewImport(file, { reuseSameName: ["PDF"] });
+    expect(plan.skills[0]).toMatchObject({
+      state: "library",
+      librarySkillId: own.id,
+      sameNameSkillId: own.id,
+    });
+    const result = await bob.api.presets.importFile(file, { reuseSameName: ["pdf"] });
+    expect(result).toMatchObject({ installed: [], reused: ["pdf"], failed: [] });
+    expect(result.preset.skillIds).toEqual([own.id]);
+  });
+
   it("uses a same-name skill without a source only when its files are the same", async () => {
     const { core: alice, presetId, file } = await sharedLibrary();
     await alice.api.presets.exportFile(presetId, file);

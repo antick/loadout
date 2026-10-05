@@ -12,6 +12,7 @@ import {
   type PresetImportPlan,
   type PresetImportResult,
   type PresetImportSkill,
+  type PresetPreviewOptions,
   type PresetsApi,
   type Skill,
   formatBytes,
@@ -51,8 +52,13 @@ export interface PresetSharingDeps {
 const WEB_LINK = /^https?:\/\//i;
 const DRAFT_DIR_PREFIX = "loadout-preset-";
 
-const sourceKey = (url: string, subpath: string | null | undefined): string =>
-  `${normalizeSourceUrl(url)}\u0000${(subpath ?? "").replace(/^\/+|\/+$/g, "")}`;
+/** Where a skill comes from, one spelling for each: repository or link, branch, folder in it. */
+const sourceKey = (source: NonNullable<PresetFileSkill["source"]>): string =>
+  [
+    normalizeSourceUrl(source.url),
+    source.branch ?? "",
+    (source.subpath ?? "").replace(/^\/+|\/+$/g, ""),
+  ].join("\u0000");
 
 /** "Name", or "Name 2", "Name 3"… when a preset holds it already. */
 function freeName(wanted: string, taken: ReadonlySet<string>): string {
@@ -87,9 +93,10 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
   }
 
   /**
-   * The library skill a file entry stands for: one from the same source; for an entry without a
-   * source, one of that name holding the same files, or, for an entry that is only a name, one of
-   * that name. `sameName` is a library skill of that name that is not it: it is never used.
+   * The library skill a file entry stands for: one from the same source (and branch); for an
+   * entry without a source, one of that name holding the same files, or, for an entry that is
+   * only a name, one of that name. `sameName` is a library skill of that name that is not it: it
+   * is used only when the person asks for it (`reuseSameName`).
    */
   function libraryMatch(
     entry: PresetFileSkill,
@@ -101,10 +108,10 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
     );
     let found: Skill | undefined;
     if (entry.source) {
-      const wanted = sourceKey(entry.source.url, entry.source.subpath);
+      const wanted = sourceKey(entry.source);
       found = skills.find((skill) => {
         const source = remoteSourceOf(skill);
-        return source !== null && sourceKey(source.url, source.subpath) === wanted;
+        return source !== null && sourceKey(source) === wanted;
       });
     } else if (entry.files) {
       const { files } = entry;
@@ -115,8 +122,9 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
     return { found: found ?? null, sameName: found ? null : (named[0] ?? null) };
   }
 
-  function planOf(file: PresetFile): PresetImportPlan {
+  function planOf(file: PresetFile, options: PresetPreviewOptions = {}): PresetImportPlan {
     const skills = store.list();
+    const reuse = new Set((options.reuseSameName ?? []).map((name) => name.toLowerCase()));
     const entries = file.skills.map((entry): PresetImportSkill => {
       const { found, sameName } = libraryMatch(entry, skills);
       const base = {
@@ -124,7 +132,8 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
         description: entry.description ?? null,
         sameNameSkillId: sameName?.id ?? null,
       };
-      if (found) return { ...base, state: "library", librarySkillId: found.id, from: null };
+      const used = found ?? (reuse.has(entry.name.toLowerCase()) ? sameName : null);
+      if (used) return { ...base, state: "library", librarySkillId: used.id, from: null };
       if (entry.source) {
         return {
           ...base,
@@ -236,11 +245,12 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
       return { path, skills: skills.length, embedded: built.embedded, nameOnly: built.nameOnly };
     },
 
-    previewImport: async (input) => planOf(parsePresetFile(await readInput(input))),
+    previewImport: async (input, options = {}) =>
+      planOf(parsePresetFile(await readInput(input)), options),
 
     importFile: async (input, options: PresetImportOptions = {}): Promise<PresetImportResult> => {
       const file = parsePresetFile(await readInput(input));
-      const plan = planOf(file);
+      const plan = planOf(file, options);
       const ids = new Map<PresetFileSkill, string>();
       const failed: PresetImportResult["failed"] = [];
       const installed: string[] = [];

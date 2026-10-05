@@ -83,8 +83,9 @@ export interface PresetImportSkill {
   /** Where it comes from, safe to show, for `source`. */
   from: string | null;
   /**
-   * A library skill of this name that is a different skill (another source or none, other
-   * files). It is left alone; this one is installed beside it under a free name.
+   * A library skill of this name that is a different skill (another source, branch or none,
+   * other files). It is left alone and this one is installed beside it under a free name, unless
+   * `reuseSameName` names it: then it is used (`library`) in place of the file's skill.
    */
   sameNameSkillId: string | null;
 }
@@ -98,7 +99,15 @@ export interface PresetImportPlan {
   skills: PresetImportSkill[];
 }
 
-export interface PresetImportOptions {
+export interface PresetPreviewOptions {
+  /**
+   * Names of the file's skills to take from the library after all, though the library's skill of
+   * that name is a different one (`sameNameSkillId`). The person chose it; it is never assumed.
+   */
+  reuseSameName?: string[];
+}
+
+export interface PresetImportOptions extends PresetPreviewOptions {
   /** Name of the new preset; the file's name when left out. */
   name?: string;
   /** The user read the safety report of a flagged skill and installs it anyway. */

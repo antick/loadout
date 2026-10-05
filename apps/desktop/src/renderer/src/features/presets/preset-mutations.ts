@@ -124,17 +124,17 @@ export function usePreviewPresetImport(): UseMutationResult<PresetImportPlan, un
 export function useImportPreset(): UseMutationResult<
   PresetImportResult | null,
   unknown,
-  { input: string; name?: string }
+  { input: string; name?: string; reuseSameName?: string[] }
 > {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: async ({ input, name }) => {
+    fn: async ({ input, name, reuseSameName }) => {
       try {
-        return await api.presets.importFile(input, { name });
+        return await api.presets.importFile(input, { name, reuseSameName });
       } catch (error) {
         if (!(error instanceof ApiError) || error.code !== "UNSAFE") throw error;
         if (!(await askToInstallFlagged(error.details))) return null;
-        return api.presets.importFile(input, { name, acceptRisk: true });
+        return api.presets.importFile(input, { name, reuseSameName, acceptRisk: true });
       }
     },
     onSuccess: (result) => {
