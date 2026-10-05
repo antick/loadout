@@ -102,7 +102,6 @@ export function PresetsPanel(): ReactNode {
             {!presets.isPending && items.length === 0 ? (
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  tooltip={t("presets.new")}
                   className="text-muted-foreground"
                   onClick={() => shell.openPresetDialog()}
                 >

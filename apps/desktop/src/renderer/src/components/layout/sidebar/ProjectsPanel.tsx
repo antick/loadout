@@ -233,11 +233,7 @@ export function ProjectsPanel(): ReactNode {
             />
             {!projects.isPending && items.length === 0 ? (
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip={t("projects.link")}
-                  className="text-muted-foreground"
-                  onClick={shell.openAddProject}
-                >
+                <SidebarMenuButton className="text-muted-foreground" onClick={shell.openAddProject}>
                   <FolderPlus />
                   <span>{t("projects.link")}</span>
                 </SidebarMenuButton>

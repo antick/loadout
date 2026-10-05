@@ -21,7 +21,7 @@ export interface SidebarNavItemProps {
   className?: string;
 }
 
-/** One sidebar link with active state, collapsed-mode tooltip, optional badge and context menu. */
+/** One sidebar link with active state, optional badge and context menu. */
 export function SidebarNavItem({
   link,
   label,
@@ -39,7 +39,7 @@ export function SidebarNavItem({
   );
 
   const button = (
-    <SidebarMenuButton asChild isActive={active} tooltip={label} className={className}>
+    <SidebarMenuButton asChild isActive={active} className={className}>
       <Link {...link} draggable={false}>
         {icon}
         <span className="flex min-w-0 items-center gap-1.5">

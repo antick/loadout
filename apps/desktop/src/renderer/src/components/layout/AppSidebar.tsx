@@ -130,7 +130,6 @@ export function AppSidebar({ width, maxWidth, onWidth }: AppSidebarProps): React
           )}
         >
           <Sidebar
-            collapsible="none"
             aria-label={t("sidebar.label", { section: t(`activityBar.${section}`) })}
             className="h-full"
           >
