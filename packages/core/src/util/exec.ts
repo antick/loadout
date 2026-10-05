@@ -31,7 +31,7 @@ const WINDOWS_PROGRAM_EXTENSIONS = [".exe", ".com"] as const;
  * shipped in a repository would run instead of the real one. Resolve the name on PATH alone.
  * Elsewhere, and for paths, the name is used as given.
  */
-export function resolveProgram(
+function resolveProgram(
   command: string,
   env: NodeJS.ProcessEnv = process.env,
   platform: NodeJS.Platform = process.platform,

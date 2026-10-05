@@ -8,10 +8,10 @@ import type { GitHubSignIn } from "./github-token";
  * own work needs.
  */
 
-export const GIT_BINARY = "git";
+const GIT_BINARY = "git";
 export const GIT_TIMEOUT_MS = 300_000;
 /** Transports Git may use; `file` covers local repositories and folder remotes. */
-export const GIT_TRANSPORTS = "https:http:ssh:git:file";
+const GIT_TRANSPORTS = "https:http:ssh:git:file";
 const MISSING_MESSAGE = "Git is not installed on this computer. Install Git and try again.";
 
 /**
@@ -19,7 +19,7 @@ const MISSING_MESSAGE = "Git is not installed on this computer. Install Git and 
  * in a repository's own config may run a program (no file-system monitor, no hook), and a checkout
  * refuses paths that only look harmless on a case-folding (macOS) or NTFS (Windows) disk.
  */
-export const SAFE_GIT_CONFIG = [
+const SAFE_GIT_CONFIG = [
   // Files stay byte for byte as in the repository. Otherwise Git for Windows (autocrlf on by
   // default) turns LF into CRLF, the same skill hashes differently per machine and scripts break.
   "core.autocrlf=false",
@@ -30,7 +30,7 @@ export const SAFE_GIT_CONFIG = [
 ] as const;
 
 /** Environment every call runs with, before the call's own additions. */
-export const SAFE_GIT_ENV = {
+const SAFE_GIT_ENV = {
   // Never block on a prompt nobody can see, and keep messages in English so they can be classified.
   GIT_TERMINAL_PROMPT: "0",
   LC_ALL: "C",

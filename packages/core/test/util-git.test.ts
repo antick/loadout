@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { runGit } from "../src/util/git";
-import { REMOTE_GIT_ERRORS, classifyGitError, gitFailure } from "../src/util/git-errors";
+import { classifyGitError, gitFailure } from "../src/util/git-errors";
 import { tempDir } from "./helpers";
 
 describe("the shared git runner", () => {
@@ -60,7 +60,8 @@ describe("classifying git's failures", () => {
   it("only gives the codes a caller asks for", () => {
     const unrelated = "fatal: refusing to merge unrelated histories";
     expect(classifyGitError(unrelated)).toBe("GIT_UNRELATED");
-    expect(classifyGitError(unrelated, REMOTE_GIT_ERRORS)).toBe("GIT");
+    // A failed call only tells network and sign-in trouble apart; the rest is plain GIT.
+    expect(gitFailure("Merge", unrelated).code).toBe("GIT");
     expect(gitFailure("Failed to fetch x", "fatal: not a git repository").code).toBe("GIT");
   });
 });

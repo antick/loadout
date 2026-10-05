@@ -16,7 +16,7 @@ export type GitErrorCode = Extract<
 >;
 
 /** The causes any git call can have; the rest only mean something to a sync. */
-export const REMOTE_GIT_ERRORS: readonly GitErrorCode[] = ["NETWORK", "GIT_AUTH"];
+const REMOTE_GIT_ERRORS: readonly GitErrorCode[] = ["NETWORK", "GIT_AUTH"];
 
 /**
  * First match wins, so the specific causes come before the broad "conflict" rule: git's hints
