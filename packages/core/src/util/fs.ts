@@ -7,6 +7,7 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   readlinkSync,
   realpathSync,
@@ -278,6 +279,24 @@ export function writeFileAtomic(path: string, content: string | Uint8Array, mode
 
 export function writeJsonAtomic(path: string, value: unknown): void {
   writeFileAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+/** A file's text; null when it cannot be read. */
+export function readTextOrNull(path: string): string | null {
+  try {
+    return readFileSync(path, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+/** A file read as JSON; null when it cannot be read or is not JSON. */
+export function readJsonOrNull(path: string): unknown {
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as unknown;
+  } catch {
+    return null;
+  }
 }
 
 /** Top-level entry names of a folder, folders suffixed with `/`, sorted. */

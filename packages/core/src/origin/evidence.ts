@@ -1,5 +1,4 @@
 import { redactUrl } from "@loadout/shared";
-import { readFileSync } from "node:fs";
 
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
@@ -8,7 +7,15 @@ import type { SourceEvidence } from "@loadout/shared";
 import { validateGitInput } from "../install";
 import { readSkillDocument } from "../skills/metadata";
 
-import { GIT_DIR, canonicalPath, isDirectory, isInside, statOrNull, toPosix } from "../util/fs";
+import {
+  GIT_DIR,
+  canonicalPath,
+  isDirectory,
+  isInside,
+  readTextOrNull,
+  statOrNull,
+  toPosix,
+} from "../util/fs";
 
 /**
  * Where a skill without a source may have come from, read from this machine only: the Git
@@ -70,21 +77,13 @@ interface Checkout {
   gitDir: string;
 }
 
-function readText(path: string): string | null {
-  try {
-    return readFileSync(path, "utf8");
-  } catch {
-    return null;
-  }
-}
-
 /** `.git` as a folder, or as a file pointing at one (worktrees and submodules). */
 function gitDirOf(folder: string): string | null {
   const dotGit = join(folder, GIT_DIR);
   const stat = statOrNull(dotGit);
   if (!stat) return null;
   if (stat.isDirectory()) return dotGit;
-  const pointer = readText(dotGit)?.trim() ?? "";
+  const pointer = readTextOrNull(dotGit)?.trim() ?? "";
   if (!pointer.toLowerCase().startsWith(GITDIR_PREFIX)) return null;
   const target = pointer.slice(GITDIR_PREFIX.length).trim();
   const gitDir = isAbsolute(target) ? target : resolve(folder, target);
@@ -127,13 +126,13 @@ export function remoteUrlOf(configText: string): string | null {
 
 /** The shared folder of a worktree, where its `config` lives; the folder itself otherwise. */
 function commonDirOf(gitDir: string): string {
-  const pointer = readText(join(gitDir, COMMON_DIR_FILE))?.trim();
+  const pointer = readTextOrNull(join(gitDir, COMMON_DIR_FILE))?.trim();
   if (!pointer) return gitDir;
   return isAbsolute(pointer) ? pointer : resolve(gitDir, pointer);
 }
 
 function branchOf(gitDir: string): string | null {
-  const head = readText(join(gitDir, "HEAD"))?.trim() ?? "";
+  const head = readTextOrNull(join(gitDir, "HEAD"))?.trim() ?? "";
   return head.startsWith(HEAD_REF_PREFIX) ? head.slice(HEAD_REF_PREFIX.length) : null;
 }
 
@@ -145,7 +144,7 @@ export function gitFolderLead(folder: string, homeDir: string): SourceLead | nul
   if (!isDirectory(folder)) return null;
   const checkout = findCheckout(folder, homeDir);
   if (!checkout) return null;
-  const config = readText(join(commonDirOf(checkout.gitDir), "config"));
+  const config = readTextOrNull(join(commonDirOf(checkout.gitDir), "config"));
   const url = config ? remoteUrlOf(config) : null;
   if (!url) return null;
   let input: string;

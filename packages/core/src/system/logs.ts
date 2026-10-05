@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Zippable, strToU8, zipSync } from "fflate";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { LOG_FILE_NAME } from "../log";
-import { ensureDir, readDirSafe, statOrNull } from "../util/fs";
+import { ensureDir, readDirSafe, statOrNull, readTextOrNull } from "../util/fs";
 import { sanitizeText } from "./sanitize";
 
 const EXCERPT_LINES = 200;
@@ -26,14 +26,6 @@ const ZIP_CRASH_FILE = "last-crash.json";
 
 function currentLogPath(ctx: CoreContext): string {
   return ctx.log.filePath ?? join(ctx.paths.logsDir, LOG_FILE_NAME);
-}
-
-function readOrEmpty(path: string): string {
-  try {
-    return readFileSync(path, "utf8");
-  } catch {
-    return "";
-  }
 }
 
 const ROTATED_SUFFIX = /^\.\d+$/;
@@ -55,7 +47,7 @@ export function listLogFiles(logsDir: string): string[] {
 /** Tail of the current log, cleaned of personal details, for pasting into a bug report. */
 export function readLogExcerpt(ctx: CoreContext): LogExcerpt {
   const logPath = currentLogPath(ctx);
-  const lines = readOrEmpty(logPath)
+  const lines = (readTextOrNull(logPath) ?? "")
     .split(/\r?\n/)
     .filter((line) => line.length > 0)
     .slice(-EXCERPT_LINES);
@@ -86,10 +78,10 @@ export function exportLogs(ctx: CoreContext, diagnostics: DiagnosticInfo): LogEx
   const entries: Zippable = {};
   for (const file of listLogFiles(ctx.paths.logsDir)) {
     const name = file.slice(ctx.paths.logsDir.length + 1);
-    entries[`${ZIP_LOGS_DIR}/${name}`] = clean(readOrEmpty(file));
+    entries[`${ZIP_LOGS_DIR}/${name}`] = clean(readTextOrNull(file) ?? "");
   }
   if (statOrNull(ctx.paths.crashMarkerPath)?.isFile()) {
-    entries[ZIP_CRASH_FILE] = clean(readOrEmpty(ctx.paths.crashMarkerPath));
+    entries[ZIP_CRASH_FILE] = clean(readTextOrNull(ctx.paths.crashMarkerPath) ?? "");
   }
   const activity = ctx.activity.list(EXPORT_ACTIVITY_LIMIT);
   entries[ZIP_ACTIVITY_FILE] = clean(`${JSON.stringify(activity, null, 2)}\n`);

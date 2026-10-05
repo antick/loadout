@@ -1,8 +1,15 @@
-import { readFileSync } from "node:fs";
 import { basename, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ProjectSuggestion, ProjectSuggestionSource } from "@loadout/shared";
-import { GIT_DIR, canonicalPath, isDirectory, isInside, readDirSafe, statOrNull } from "../util/fs";
+import {
+  GIT_DIR,
+  canonicalPath,
+  isDirectory,
+  isInside,
+  readDirSafe,
+  readTextOrNull,
+  statOrNull,
+} from "../util/fs";
 
 /**
  * Projects the user already works in, found without asking: Claude Code's list of projects, the
@@ -79,14 +86,6 @@ function folderIdentity(path: string): string | null {
   return stat?.isDirectory() ? `${stat.dev}:${stat.ino}` : null;
 }
 
-function readText(path: string): string | null {
-  try {
-    return readFileSync(path, "utf8");
-  } catch {
-    return null;
-  }
-}
-
 function mtimeOf(path: string): number | null {
   const stat = statOrNull(path);
   return stat ? Math.floor(stat.mtimeMs) : null;
@@ -113,7 +112,7 @@ function claudeSessionsName(path: string): string {
 
 function fromClaudeCode(homeDir: string): Map<string, number | null> {
   const found = new Map<string, number | null>();
-  const text = readText(join(homeDir, CLAUDE_STATE_FILE));
+  const text = readTextOrNull(join(homeDir, CLAUDE_STATE_FILE));
   if (!text) return found;
   let projects: unknown;
   try {
@@ -130,7 +129,7 @@ function fromClaudeCode(homeDir: string): Map<string, number | null> {
 }
 
 function fromEditor(configDir: string, appDir: string): string[] {
-  const text = readText(join(configDir, appDir, EDITOR_STORAGE_FILE));
+  const text = readTextOrNull(join(configDir, appDir, EDITOR_STORAGE_FILE));
   if (!text) return [];
   const paths: string[] = [];
   for (const uri of text.match(FILE_URI_PATTERN) ?? []) {

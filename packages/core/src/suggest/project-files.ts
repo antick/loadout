@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseToml } from "smol-toml";
-import { GIT_DIR, readDirSafe } from "../util/fs";
+import { GIT_DIR, readDirSafe, readTextOrNull } from "../util/fs";
 
 /** What a project holds, as far as suggestions care. */
 export interface ProjectFiles {
@@ -38,14 +37,6 @@ const JS_DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "peerDependenci
 /** The name at the start of a requirement line: `django>=4`, `fastapi[all]`. */
 const REQUIREMENT_NAME = /^\s*([A-Za-z0-9][A-Za-z0-9._-]*)/;
 const GEM_LINE = /^\s*gem\s+["']([^"']+)["']/;
-
-function readText(path: string): string | null {
-  try {
-    return readFileSync(path, "utf8");
-  } catch {
-    return null;
-  }
-}
 
 function jsPackages(text: string): string[] {
   try {
@@ -123,7 +114,7 @@ export function readProjectFiles(root: string): ProjectFiles {
       } else if (entry.isFile()) {
         paths.push(path);
         if (PACKAGE_FILES.has(entry.name)) {
-          const text = readText(join(dir, entry.name));
+          const text = readTextOrNull(join(dir, entry.name));
           for (const name of text ? packagesIn(entry.name, text) : []) {
             packages.add(name.toLowerCase());
           }

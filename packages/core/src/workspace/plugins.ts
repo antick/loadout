@@ -1,9 +1,8 @@
-import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { type LocalSkill, type PluginSkill, type SkillDuplicate, isRecord } from "@loadout/shared";
 import type { ResolvedAgent } from "../agents/registry";
 import { readSkillIdentity } from "../skills/metadata";
-import { isDirectory, isInside, isSkillDir, readDirSafe } from "../util/fs";
+import { isDirectory, isInside, isSkillDir, readDirSafe, readJsonOrNull } from "../util/fs";
 
 /**
  * Skills that come with an agent's plugins, read from the plugin manager's own files (Claude
@@ -24,14 +23,6 @@ interface Installation {
   version?: unknown;
 }
 
-function readJson(path: string): unknown {
-  try {
-    return JSON.parse(readFileSync(path, "utf8"));
-  } catch {
-    return null;
-  }
-}
-
 /** `name@marketplace` → its parts; a key without `@` has no marketplace. */
 function splitKey(key: string): { plugin: string; marketplace: string | null } {
   const at = key.lastIndexOf("@");
@@ -45,7 +36,7 @@ function splitKey(key: string): { plugin: string; marketplace: string | null } {
  * one switches it on, and only switching it off is written down for certain.
  */
 function enabledPlugins(configDir: string): (key: string) => boolean {
-  const settings = readJson(join(configDir, SETTINGS_FILE));
+  const settings = readJsonOrNull(join(configDir, SETTINGS_FILE));
   const map =
     isRecord(settings) && isRecord(settings.enabledPlugins) ? settings.enabledPlugins : {};
   return (key) => map[key] !== false;
@@ -54,7 +45,7 @@ function enabledPlugins(configDir: string): (key: string) => boolean {
 /** Folders the plugin keeps skills in: `skills/`, plus any its manifest names. */
 function skillRoots(installPath: string): string[] {
   const roots = [join(installPath, DEFAULT_SKILLS_DIR)];
-  const manifest = readJson(join(installPath, MANIFEST_FILE));
+  const manifest = readJsonOrNull(join(installPath, MANIFEST_FILE));
   const extra = isRecord(manifest) ? manifest.skills : undefined;
   const listed = typeof extra === "string" ? [extra] : Array.isArray(extra) ? extra : [];
   for (const entry of listed) {
@@ -77,7 +68,7 @@ function skillDirsIn(root: string): string[] {
 /** Every user-wide plugin's skills for `agent`, sorted by plugin then name. */
 export function listPluginSkills(agent: Pick<ResolvedAgent, "pluginsDir">): PluginSkill[] {
   if (!agent.pluginsDir) return [];
-  const installed = readJson(join(agent.pluginsDir, INSTALLED_FILE));
+  const installed = readJsonOrNull(join(agent.pluginsDir, INSTALLED_FILE));
   const plugins = isRecord(installed) && isRecord(installed.plugins) ? installed.plugins : {};
   const isEnabled = enabledPlugins(dirname(agent.pluginsDir));
   const skills: PluginSkill[] = [];
