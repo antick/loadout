@@ -31,7 +31,7 @@ describe("persisted state store", () => {
     expect(store.read("loadout:other")).toBe(MISSING);
   });
 
-  it("gives every reader of a key the latest write, so one group never undoes another", () => {
+  it("gives every reader of a key the latest write, so one group never undoes another", async () => {
     const storage = memoryStorage();
     const store = createPersistedStore(() => storage);
     const heard: string[] = [];
@@ -44,6 +44,9 @@ describe("persisted state store", () => {
     store.write(KEY, { ...(store.read(KEY) as object), tags: false });
 
     expect(store.read(KEY)).toEqual({ library: false, tags: false });
+    // Readers hear of it just after, never in the middle of the writer's render.
+    expect(heard).toEqual([]);
+    await Promise.resolve();
     expect(heard).toEqual(["library group", "tags group", "library group", "tags group"]);
   });
 

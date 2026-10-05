@@ -10,7 +10,10 @@ export interface PersistedStore {
   /** The stored value, parsed once per change so every reader gets the same object. */
   read(storageKey: string): unknown;
   write(storageKey: string, value: unknown): void;
-  /** Called after every write to this key, here or (through `storage` events) in another window. */
+  /**
+   * Called after every write to this key (just after, never inside the writer's render), here or,
+   * through `storage` events, in another window.
+   */
   subscribe(storageKey: string, listener: Listener): () => void;
   /** Another window changed this key (null: cleared everything); tell its readers. */
   changedElsewhere(storageKey: string | null): void;
@@ -63,7 +66,9 @@ export function createPersistedStore(storage: () => Storage): PersistedStore {
       } catch {
         unsaved.set(storageKey, raw);
       }
-      notify(storageKey);
+      // After the current render: a component may write while rendering (adjusting to a new
+      // page), and React refuses updates to other components from inside a render.
+      queueMicrotask(() => notify(storageKey));
     },
 
     subscribe(storageKey, listener) {
