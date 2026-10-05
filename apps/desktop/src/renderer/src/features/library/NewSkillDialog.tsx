@@ -37,6 +37,7 @@ import { api } from "@/lib/api";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { compactHome, joinPath } from "@/lib/paths";
+import { editLink } from "@/lib/skill-location";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { NewSkillPlaceField } from "./NewSkillPlaceField";
@@ -160,7 +161,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
     createInLibrary.mutate(skill, {
       onSuccess: (saved) => {
         created(saved.name, withPrompt ? saved.libraryPath : null);
-        void navigate({ to: "/library/$skillId/edit", params: { skillId: saved.id } });
+        void navigate(editLink({ kind: "library", skillId: saved.id }));
       },
     });
   };

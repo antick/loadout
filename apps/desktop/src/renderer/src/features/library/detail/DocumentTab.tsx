@@ -1,4 +1,10 @@
-import { SKILL_MARKER_FILES, canFixFrontmatter, hasSkillErrors, type Skill } from "@loadout/shared";
+import {
+  SKILL_MARKER_FILES,
+  type SkillLocation,
+  canFixFrontmatter,
+  hasSkillErrors,
+  type Skill,
+} from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { File, FileText, Folder, PencilLine, WandSparkles } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -12,6 +18,7 @@ import { SkillTraitList } from "@/components/SkillTraitBadges";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSkillDocument } from "@/hooks/queries/skills";
+import { editLink } from "@/lib/skill-location";
 import { cn } from "@/lib/utils";
 import { FixFrontmatterDialog } from "./FixFrontmatterDialog";
 import { NoteSection } from "./NoteSection";
@@ -28,6 +35,7 @@ function looksLikeFolder(name: string): boolean {
 export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
   const { t } = useTranslation();
   const document = useSkillDocument(skill.id);
+  const location: SkillLocation = { kind: "library", skillId: skill.id };
   const [fixing, setFixing] = useState(false);
 
   if (document.isPending) {
@@ -61,7 +69,7 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
                 </Button>
               ) : null}
               <Button asChild variant="outline" size="xs">
-                <Link to="/library/$skillId/edit" params={{ skillId: skill.id }}>
+                <Link {...editLink(location)}>
                   <PencilLine />
                   {t("checks.fix")}
                 </Link>
@@ -102,7 +110,7 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
         title={t("library.document.files", { count: files.length })}
         actions={
           <Button asChild variant="ghost" size="xs">
-            <Link to="/library/$skillId/edit" params={{ skillId: skill.id }}>
+            <Link {...editLink(location)}>
               <PencilLine />
               {t("editor.open")}
             </Link>
@@ -128,9 +136,7 @@ export function DocumentTab({ skill }: { skill: Skill }): ReactNode {
                 ) : (
                   // Files open in the editor; the editor says when one is not a text file.
                   <Link
-                    to="/library/$skillId/edit"
-                    params={{ skillId: skill.id }}
-                    search={{ file: name }}
+                    {...editLink(location, name)}
                     title={t("editor.openFile", { path: name })}
                     className="inline-flex h-full items-center gap-1.5 rounded-md px-2 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >

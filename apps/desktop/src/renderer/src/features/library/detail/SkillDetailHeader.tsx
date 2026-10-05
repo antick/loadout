@@ -12,6 +12,7 @@ import { SkillTagsEditor } from "@/features/library/detail/SkillTagsEditor";
 import { SkillUsageSummary } from "@/features/library/detail/SkillUsageSummary";
 import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
+import { editLink } from "@/lib/skill-location";
 
 /** Menu entries the header already shows as buttons of their own. */
 const HEADER_BUTTON_ACTIONS = new Set(["edit", "favorite"]);
@@ -28,11 +29,9 @@ export interface SkillDetailHeaderProps {
  */
 export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): ReactNode {
   const { t } = useTranslation();
-  const actionsFor = useLibrarySkillActions();
+  // The panel's own delete also closes it.
+  const actionsFor = useLibrarySkillActions({ onDelete });
   const actions = actionsFor(skill).filter((action) => !HEADER_BUTTON_ACTIONS.has(action.id));
-  // A fresh list each call, so the delete entry can be pointed at the panel's own delete.
-  const remove = actions.find((action) => action.id === "delete");
-  if (remove) remove.run = onDelete;
 
   return (
     <SheetHeader className="gap-3 border-b px-6 pt-5 pb-4">
@@ -48,7 +47,7 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <Button asChild variant="outline" size="sm" className="mr-1">
-            <Link to="/library/$skillId/edit" params={{ skillId: skill.id }}>
+            <Link {...editLink({ kind: "library", skillId: skill.id })}>
               <PencilLine />
               {t("editor.open")}
             </Link>

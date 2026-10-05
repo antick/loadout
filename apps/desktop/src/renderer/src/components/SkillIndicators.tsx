@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { UpdateStatusBadge } from "@/components/UpdateStatusBadge";
 import { SafetyVerdictBadge } from "@/features/safety/SafetyReportView";
 import { useSafetyReports } from "@/hooks/queries/safety";
+import { editLink } from "@/lib/skill-location";
 import { hasTrackedSource } from "@/lib/skill-source";
 
 /**
@@ -108,7 +109,7 @@ function CheckBadges({
         label={t("checks.badge")}
         compact={compact}
         hint={t("checks.badgeHint")}
-        link={{ to: "/library/$skillId/edit", params: { skillId: skill.id } }}
+        link={editLink({ kind: "library", skillId: skill.id })}
         className={SKILL_ITEM_RAISED_CLASS}
       />
     );
