@@ -358,6 +358,9 @@ export function createGitClient(ctx: CoreContext): GitClient {
       });
 
       let whole = !partial;
+      // A partial checkout comes back to its slot for the rest of its files, so the cache keeps
+      // the slot until the checkout is whole or cleaned up.
+      const release = whole ? (): void => undefined : cache.hold(slot);
       const materialize = async (wanted: readonly string[]): Promise<void> => {
         if (whole || wanted.length === 0) return;
         const folders = wanted.map((path) => {
@@ -365,6 +368,10 @@ export function createGitClient(ctx: CoreContext): GitClient {
           return toPosix(relative(dir, path));
         });
         await cache.withSlot(slot, async () => {
+          // The slot may be gone (the user deleted the cache folder): clone it again.
+          if (!existsSync(join(slot, GIT_DIR))) {
+            await prepareSlot(slot, url, { branch: checkoutOptions.branch });
+          }
           // Another checkout of this repository may have moved the cache on since.
           await pinRevision(slot, url, { revision });
           // The repository root is a skill: nothing less than every file will do.
@@ -378,9 +385,19 @@ export function createGitClient(ctx: CoreContext): GitClient {
             await removePath(target);
             await copyDir(join(slot, folder), target, { skipSymlinks: true });
           }
+          if (whole) release();
         });
       };
-      return { dir, revision, partial, materialize, cleanup };
+      return {
+        dir,
+        revision,
+        partial,
+        materialize,
+        cleanup: async () => {
+          release();
+          await cleanup();
+        },
+      };
     },
   };
 }

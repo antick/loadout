@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -78,6 +78,31 @@ describe("partial checkouts", () => {
     } finally {
       await first.cleanup();
     }
+  });
+
+  it("keeps the slot of an open partial checkout, and clones again when it is gone", async () => {
+    const client = createGitClient(world.ctx);
+    const reposDir = join(world.ctx.paths.cacheDir, "repos");
+    const preview = await client.checkout(url, { manifestsOnly: true });
+    try {
+      // Clearing the cache leaves the slot the preview still needs.
+      expect(await client.clearCache()).toBe(0);
+      expect(readdirSync(reposDir).some((name) => !name.endsWith(".lock"))).toBe(true);
+
+      const pdf = join(preview.dir, "skills", "pdf");
+      await preview.materialize([pdf]);
+      expect(readFileSync(join(pdf, "scripts", "run.sh"), "utf8")).toBe("echo pdf v1\n");
+
+      // The slot deleted by hand: the next folder is cloned afresh at the same commit.
+      rmSync(reposDir, { recursive: true, force: true });
+      const docx = join(preview.dir, "skills", "docx");
+      await preview.materialize([docx]);
+      expect(readFileSync(join(docx, "reference.md"), "utf8")).toBe("docx\n");
+    } finally {
+      await preview.cleanup();
+    }
+    // Cleaned up, the slot can go.
+    expect(await client.clearCache()).toBeGreaterThan(0);
   });
 
   it("gives every file for a skill at the repository root, and to a whole checkout", async () => {
