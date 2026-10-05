@@ -132,6 +132,21 @@ describe("skills search in a terminal", () => {
     expect(list.json<unknown[]>()).toEqual([]);
   });
 
+  it("refuses --accept-risk when no picker will open, rather than ignoring it", async () => {
+    const { box, asked } = withPicker(() => []);
+    const json = await search(box, "--accept-risk", "--json");
+    expect(json.code).toBe(EXIT_USAGE);
+    expect(json.stderr).toContain("--accept-risk");
+    expect(asked).toHaveLength(0);
+
+    // No terminal: no picker at all.
+    const plain = createSandbox({ fetchImpl });
+    const run = await search(plain, "--accept-risk");
+    plain.cleanup();
+    expect(run.code).toBe(EXIT_USAGE);
+    expect(run.stderr).toContain("skills install <skill> --accept-risk");
+  });
+
   it("never opens the picker for --json", async () => {
     const { box, asked } = withPicker(() => []);
     const run = await search(box, "--json");

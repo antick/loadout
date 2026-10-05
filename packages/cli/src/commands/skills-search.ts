@@ -134,6 +134,13 @@ function pickedText(picked: PickedInstall): string {
 async function search(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   const query = positionalsFrom(args, 0, "search words").join(" ");
+  // The flag acts on a skill ticked in the picker. Without one (no terminal, or --json) nothing
+  // is installed, and a flag that does nothing must not look as if it was taken.
+  if (!context.picker && flagBoolean(args, ACCEPT_RISK_FLAG.name)) {
+    throw new UsageError(
+      `--${ACCEPT_RISK_FLAG.name} needs the picker, which opens only in a terminal and never with --json. Install a flagged skill with: skills install <skill> --${ACCEPT_RISK_FLAG.name}`,
+    );
+  }
   const provider = flagChoice(args, ON_FLAG.name, MARKET_PROVIDERS) ?? DEFAULT_PROVIDER;
   const name = PROVIDER_NAMES[provider];
   const listing = await core.api.market.search(query, flagInteger(args, LIMIT_FLAG.name), provider);
@@ -176,7 +183,7 @@ export const searchCommand: CommandSpec = {
     "In a terminal, results not in the library open in a picker: tick some and press enter to",
     "install them, or esc to only list them. Scripts and --json never see it and install nothing.",
     "Every skill is safety-checked on install; --accept-risk installs a flagged one anyway,",
-    "with one skill ticked only.",
+    "with one skill ticked only; without the picker it is refused.",
     "Works from the last answer when offline, and says so.",
   ],
   run: search,
