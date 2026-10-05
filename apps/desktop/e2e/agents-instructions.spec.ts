@@ -22,7 +22,8 @@ test("a missing instruction file opens empty and is written only when saved", as
 
   await page.locator(".cm-content").click();
   await page.keyboard.type("Keep answers short.");
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  // Named with its shortcut, which differs per platform.
+  await page.getByRole("button", { name: /^Save\b/ }).click();
   await expect(content.getByText("CLAUDE.md does not exist yet.", { exact: false })).toHaveCount(0);
   expect(await claudeFileExists(page)).toBe(true);
 });

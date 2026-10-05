@@ -6,7 +6,8 @@ const PAIR = /^(code-review and diff-review|diff-review and code-review)$/;
 
 /** Open the duplicates and ask for the slow look at the text: the seed's pair is alike by text. */
 async function findSimilarText(page: Page): Promise<Locator> {
-  await main(page).getByRole("button", { name: "Find duplicates" }).click();
+  // The header buttons sit in the title bar, outside the main region.
+  await page.getByRole("button", { name: "Find duplicates" }).click();
   const dialog = page.getByRole("dialog", { name: "Possible duplicates" });
   await expect(dialog.getByText("No duplicates found")).toBeVisible();
   await dialog.getByRole("button", { name: "Look for similar text" }).click();
@@ -17,7 +18,7 @@ test("review a possible duplicate, compare it, keep one and undo", async ({ page
   await openApp(page, "/library");
   const content = main(page);
   // Alike text is only looked for on request, so no notice says so up front.
-  await expect(content.getByRole("button", { name: "Find duplicates" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Find duplicates" })).toBeEnabled();
   await expect(content.getByText("1 pair of skills may be duplicates.")).toHaveCount(0);
 
   const dialog = await findSimilarText(page);

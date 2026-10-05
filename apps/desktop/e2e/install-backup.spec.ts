@@ -45,7 +45,7 @@ test("the import list says what each name will do and ticks a whole folder", asy
   await expect(dialog.getByRole("button", { name: "Import selected (3)" })).toBeVisible();
 
   // Ticking the folder takes its skill; renaming it frees the name.
-  await dialog.getByRole("checkbox", { name: "Select every skill in docs" }).click();
+  await dialog.getByRole("checkbox", { name: "Select every skill in skills/docs" }).click();
   await dialog.getByLabel("Library name for release-notes").fill("acme-release-notes");
   await expect(dialog.getByText(/release-notes is taken by a skill/)).toHaveCount(0);
   await expect(dialog.getByRole("button", { name: "Import selected (4)" })).toBeVisible();
