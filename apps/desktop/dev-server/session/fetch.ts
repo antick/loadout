@@ -19,7 +19,7 @@ import type { World } from "./world.ts";
  * `fixtures-web.ts` and the world's repositories. Anything else is a 404, as if offline.
  */
 const GITHUB_API = "https://api.github.com";
-const BOARD_SIZE = 20;
+const BOARD_SIZE = 30;
 const MARKET_BOARDS = new Set(["/", "/hot", "/trending"]);
 const SCAN_CHECKED_AT = Date.parse("2026-09-01T09:00:00Z");
 

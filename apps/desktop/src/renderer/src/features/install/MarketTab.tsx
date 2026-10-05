@@ -11,12 +11,11 @@ import {
 } from "@loadout/shared";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CloudOff, ExternalLink, Package, RefreshCw, SearchX, Store } from "lucide-react";
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Pager, pageCount, pageSlice } from "@/components/Pager";
 import { SearchInput } from "@/components/SearchInput";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,7 +77,6 @@ function MarketSkeleton(): ReactNode {
 /** Browse a marketplace's boards or search it, narrow by contributor, and install. */
 export function MarketTab(): ReactNode {
   const { t } = useTranslation();
-  const top = useRef<HTMLDivElement>(null);
   const [provider, setProvider] = usePersistedState<MarketProvider>(
     PROVIDER_STORAGE_KEY,
     DEFAULT_MARKET_PROVIDER,
@@ -89,7 +87,7 @@ export function MarketTab(): ReactNode {
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(MARKET_SEARCH_LIMIT_STEP);
   const [source, setSource] = useState<string>(SOURCE_FILTER_ALL);
-  const [page, setPage] = useState(0);
+  const [shown, setShown] = useState(MARKET_PAGE_SIZE);
   const [detailFor, setDetailFor] = useState<MarketSkill | null>(null);
   const navigate = useNavigate();
 
@@ -108,20 +106,20 @@ export function MarketTab(): ReactNode {
   const sources = useMemo(() => sourceOptions(results), [results]);
   const filtered = useMemo(() => filterBySource(results, source), [results, source]);
 
-  // Boards arrive whole and are paged here; search shows everything loaded and grows by "Load more".
-  const lastPage = pageCount(filtered.length, MARKET_PAGE_SIZE) - 1;
-  const currentPage = Math.min(page, lastPage);
-  const visible = searching ? filtered : pageSlice(filtered, currentPage, MARKET_PAGE_SIZE);
-  const canLoadMore = searching && results.length >= limit && limit < MARKET_SEARCH_LIMIT_MAX;
-
-  const resetView = (): void => {
-    setPage(0);
-    setSource(SOURCE_FILTER_ALL);
+  // "Show more" shows more of a board, which arrives whole, and asks a search for more results.
+  const visible = searching ? filtered : filtered.slice(0, shown);
+  const canShowMore = searching
+    ? results.length >= limit && limit < MARKET_SEARCH_LIMIT_MAX
+    : filtered.length > shown;
+  const showMore = (): void => {
+    if (searching) {
+      setLimit((current) => Math.min(MARKET_SEARCH_LIMIT_MAX, current + MARKET_SEARCH_LIMIT_STEP));
+    } else setShown((current) => current + MARKET_PAGE_SIZE);
   };
 
-  const changePage = (next: number): void => {
-    setPage(next);
-    top.current?.scrollIntoView({ block: "start" });
+  const resetView = (): void => {
+    setShown(MARKET_PAGE_SIZE);
+    setSource(SOURCE_FILTER_ALL);
   };
 
   const connectionError =
@@ -129,7 +127,7 @@ export function MarketTab(): ReactNode {
 
   return (
     <div className="flex flex-col gap-4">
-      <div ref={top} className="flex scroll-mt-5 flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <ToggleGroup
           type="single"
           variant="outline"
@@ -190,7 +188,7 @@ export function MarketTab(): ReactNode {
           value={source}
           onValueChange={(value) => {
             setSource(value);
-            setPage(0);
+            setShown(MARKET_PAGE_SIZE);
           }}
         >
           <SelectTrigger
@@ -322,41 +320,28 @@ export function MarketTab(): ReactNode {
                 onOpen={setDetailFor}
                 onFilterSource={(next) => {
                   setSource(next);
-                  setPage(0);
+                  setShown(MARKET_PAGE_SIZE);
                 }}
               />
             ))}
           </div>
 
-          {searching ? (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground tabular-nums">
-                {t("install.market.resultCount", { count: filtered.length })}
-              </p>
-              {canLoadMore ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={searchQuery.isFetching}
-                  onClick={() =>
-                    setLimit((current) =>
-                      Math.min(MARKET_SEARCH_LIMIT_MAX, current + MARKET_SEARCH_LIMIT_STEP),
-                    )
-                  }
-                >
-                  {searchQuery.isFetching ? <Spinner /> : null}
-                  {t("install.market.loadMore")}
-                </Button>
-              ) : null}
-            </div>
-          ) : (
-            <Pager
-              page={currentPage}
-              pageSize={MARKET_PAGE_SIZE}
-              total={filtered.length}
-              onPageChange={changePage}
-            />
-          )}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {t("install.market.resultCount", { count: filtered.length })}
+            </p>
+            {canShowMore ? (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={searching && searchQuery.isFetching}
+                onClick={showMore}
+              >
+                {searching && searchQuery.isFetching ? <Spinner /> : null}
+                {t("install.market.showMore")}
+              </Button>
+            ) : null}
+          </div>
         </>
       )}
 

@@ -22,9 +22,9 @@ export const MARKET_PROVIDER_URLS: Record<MarketProvider, string> = {
   clawhub: CLAWHUB_URL,
 };
 
-/** Board results shown per page; boards arrive whole, so paging is done here. */
+/** Board results shown at first and added by each "Show more"; boards arrive whole. */
 export const MARKET_PAGE_SIZE = 24;
-/** Search asks for this many results, and "Load more" raises the limit by the same step. */
+/** Search asks for this many results, and "Show more" raises the limit by the same step. */
 export const MARKET_SEARCH_LIMIT_STEP = 40;
 /** The marketplace never returns more than this for one search. */
 export const MARKET_SEARCH_LIMIT_MAX = 200;

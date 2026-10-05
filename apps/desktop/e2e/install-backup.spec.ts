@@ -15,19 +15,30 @@ test("every Install tab opens", async ({ page }) => {
   }
 });
 
-test("search the Marketplace and load more results", async ({ page }) => {
+test("a board shows its first skills and the rest on request", async ({ page }) => {
+  await openApp(page, "/install");
+  const panel = main(page).getByRole("tabpanel", { name: "Marketplace" });
+  // The preview board holds 30 skills; 24 show at first.
+  await expect(panel.getByRole("article")).toHaveCount(24);
+  await expect(panel.getByText("30 results")).toBeVisible();
+  await panel.getByRole("button", { name: "Show more" }).click();
+  await expect(panel.getByRole("article")).toHaveCount(30);
+  await expect(panel.getByRole("button", { name: "Show more" })).toHaveCount(0);
+});
+
+test("search the Marketplace and show more results", async ({ page }) => {
   await openApp(page, "/install");
   const panel = main(page).getByRole("tabpanel", { name: "Marketplace" });
   await panel.getByRole("searchbox", { name: "Search skills.sh" }).fill("skills");
 
-  // The preview catalogue has 43 matches: the first search asks for 40, "Load more" for the rest.
+  // The preview catalogue has 43 matches: the first search asks for 40, "Show more" for the rest.
   const count = panel.getByText(/^\d+ results?$/);
   await expect(count).toHaveText("40 results");
   await expect(panel.getByRole("article")).toHaveCount(40);
-  await panel.getByRole("button", { name: "Load more" }).click();
+  await panel.getByRole("button", { name: "Show more" }).click();
   await expect(count).toHaveText("43 results");
   await expect(panel.getByRole("article")).toHaveCount(43);
-  await expect(panel.getByRole("button", { name: "Load more" })).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Show more" })).toHaveCount(0);
 });
 
 test("the import list says what each name will do and ticks a whole folder", async ({ page }) => {

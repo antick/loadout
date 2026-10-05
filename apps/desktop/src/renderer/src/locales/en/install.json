@@ -121,7 +121,7 @@
       "emptyFiltered": "This contributor has nothing in the current results.",
       "resultCount_one": "{{count}} result",
       "resultCount_other": "{{count}} results",
-      "loadMore": "Load more",
+      "showMore": "Show more",
       "detail": {
         "open": "Details of {{name}}",
         "repository": "Repository",
@@ -261,12 +261,5 @@
       "emptyTitle": "No skills found",
       "emptyDescription": "None of your agents has a skill folder that the library does not already manage."
     }
-  },
-  "pager": {
-    "label": "Pages",
-    "range": "Showing {{from}}–{{to}} of {{total}}",
-    "page": "{{page}} / {{pages}}",
-    "previous": "Previous page",
-    "next": "Next page"
   }
 }
