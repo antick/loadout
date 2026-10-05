@@ -222,4 +222,9 @@ export const MIGRATIONS: readonly string[] = [
   DELETE FROM settings
     WHERE key IN ('autoUpdateLastRunAt', 'backupLastAutoError', 'backupFirstRunPrompt', 'agentControlPrompt');
   `,
+  `
+  -- When a re-index first found the skill's folder missing (epoch ms), NULL while it is there.
+  -- The row is only dropped once the folder has stayed away for a grace period.
+  ALTER TABLE skills ADD COLUMN missing_since INTEGER;
+  `,
 ];

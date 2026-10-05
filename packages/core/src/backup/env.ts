@@ -6,6 +6,7 @@ import { INTERNAL_KEYS } from "../settings/store";
 import {
   type PortableMetadata,
   type PortableSkillFile,
+  type RebuildMode,
   readPortableSkillFiles,
 } from "../skills/portable";
 import type { SkillStore } from "../skills/store";
@@ -59,7 +60,7 @@ export interface BackupEnv {
    * The files changed underneath the database (clone, merge, restore, conflict choice):
    * rebuild it from them, refresh deployed copies and tell the UI.
    */
-  reconcile(authoritative: boolean): Promise<void>;
+  reconcile(mode: RebuildMode): Promise<void>;
 }
 
 export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
@@ -121,9 +122,9 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
       github: ctx.github,
       remoteUrl,
     }),
-    reconcile: async (authoritative) => {
+    reconcile: async (mode) => {
       dropUnsafeMetadata();
-      deps.portable.rebuild({ authoritative });
+      deps.portable.rebuild({ mode });
       adoptRevisions();
       await deps.afterContentChange();
       ctx.touched("skills", "presets", "backup");

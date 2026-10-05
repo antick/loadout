@@ -158,7 +158,7 @@ describe("portable metadata", () => {
         }),
       );
       writeFile(join(world.ctx.paths.metadataDir, "schema.json"), "{}");
-      world.portable.rebuild({ authoritative: true });
+      world.portable.rebuild({ mode: "authoritative" });
       expect(world.store.list()).toHaveLength(0);
     } finally {
       world.cleanup();
@@ -189,7 +189,7 @@ describe("portable metadata", () => {
         }),
       );
       writeFile(join(world.ctx.paths.metadataDir, "schema.json"), "{}");
-      world.portable.rebuild({ authoritative: true });
+      world.portable.rebuild({ mode: "authoritative" });
       expect(world.store.list().map((row) => row.id)).toEqual([skill.id]);
       expect(world.store.get(skill.id).tags).toEqual(["kept"]);
     } finally {

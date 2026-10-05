@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Database } from "../src/db/database";
 import { MIGRATIONS } from "../src/db/schema";
 import { INTERNAL_KEYS, SettingsStore } from "../src/settings/store";
-import { type TestWorld, createTestWorld, tempDir } from "./helpers";
+import { type TestWorld, createTestWorld, databaseAt, tempDir } from "./helpers";
 
 describe("setting values", () => {
   let world: TestWorld;
@@ -29,7 +29,9 @@ describe("settings that became app state", () => {
   it("keep their saved answers under core's own keys", () => {
     const temp = tempDir();
     const path = join(temp.dir, "loadout.db");
-    const old = new Database(path);
+    // As a database from before the move: the move runs on the next open.
+    const move = MIGRATIONS.findIndex((sql) => sql.includes("'backupFirstRunPrompt'"));
+    const old = databaseAt(path, move);
     const saved: Record<string, string> = {
       autoUpdateLastRunAt: "1700000000000",
       backupLastAutoError: '"Could not reach the backup remote."',
@@ -37,11 +39,8 @@ describe("settings that became app state", () => {
       agentControlPrompt: '"dismissed"',
     };
     for (const [key, value] of Object.entries(saved)) {
-      old.run("INSERT INTO settings(key, value) VALUES(?, ?)", key, value);
+      old.prepare("INSERT INTO settings(key, value) VALUES(?, ?)").run(key, value);
     }
-    // As a database from before the move: the move runs again on the next open.
-    const move = MIGRATIONS.findIndex((sql) => sql.includes("'backupFirstRunPrompt'"));
-    old.run(`PRAGMA user_version = ${move}`);
     old.close();
 
     const db = new Database(path);

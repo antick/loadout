@@ -1,9 +1,10 @@
-import { mkdirSync, renameSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readlinkSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
 import { RepoLock } from "../src/lock";
+import { MISSING_GRACE_MS } from "../src/skills/portable";
 import { tempDir, createTestCore } from "./helpers";
 
 /**
@@ -63,6 +64,92 @@ describe("re-indexing the library while another process works in it", () => {
       renameSync(aside, skillDir);
     });
     expect(core.store.find(skillId)?.deployments).toHaveLength(1);
+  });
+});
+
+/**
+ * A skill folder renamed by hand, or taken away for a moment by a checkout or a sync client, keeps
+ * its row: tags, note and deployments survive. Only a folder gone for good loses its skill.
+ */
+describe("re-indexing skill folders that moved or went missing", () => {
+  let temp: ReturnType<typeof tempDir>;
+  let core: Core;
+  let skillId: string;
+  let skillDir: string;
+  let linkPath: string;
+
+  beforeEach(async () => {
+    temp = tempDir();
+    mkdirSync(join(temp.dir, ".claude"), { recursive: true });
+    core = createTestCore({ homeDir: temp.dir });
+    const skill = await core.api.skills.create({ name: "alpha", description: "Test skill" });
+    await core.api.skills.setTags(skill.id, ["kept"]);
+    await core.api.skills.setNote(skill.id, "Why I keep it");
+    await core.api.deploy.apply([skill.id], ["claude_code"], "add");
+    // The metadata files are written on the next turn, under the lock.
+    await new Promise((done) => setImmediate(done));
+    await core.ctx.lock.run("wait for the metadata", () => undefined);
+    skillId = skill.id;
+    skillDir = skill.libraryPath;
+    linkPath = join(temp.dir, ".claude", "skills", "alpha");
+  });
+  afterEach(() => {
+    core.close();
+    temp.cleanup();
+  });
+
+  const expectKept = (): void => {
+    const skill = core.store.find(skillId);
+    expect(skill?.tags).toEqual(["kept"]);
+    expect(skill?.note).toBe("Why I keep it");
+    expect(skill?.deployments.map((d) => d.agentKey)).toEqual(["claude_code"]);
+  };
+
+  it("follows a folder renamed by hand, links included", async () => {
+    const renamed = join(core.ctx.paths.skillsDir, "alpha-renamed");
+    renameSync(skillDir, renamed);
+    await core.background.libraryChangedOnDisk();
+
+    expectKept();
+    expect(core.store.find(skillId)?.libraryPath).toBe(renamed);
+    expect(core.store.list()).toHaveLength(1);
+    expect(resolve(readlinkSync(linkPath))).toBe(renamed);
+  });
+
+  it("follows a folder renamed while the app was closed", () => {
+    core.close();
+    const renamed = join(core.ctx.paths.skillsDir, "alpha-renamed");
+    renameSync(skillDir, renamed);
+    core = createTestCore({ homeDir: temp.dir });
+
+    expectKept();
+    expect(core.store.find(skillId)?.libraryPath).toBe(renamed);
+    expect(core.store.list()).toHaveLength(1);
+  });
+
+  it("keeps everything when the folder comes back within the grace period", async () => {
+    const aside = join(temp.dir, "alpha-aside");
+    renameSync(skillDir, aside);
+    await core.background.libraryChangedOnDisk();
+    expectKept();
+    expect(core.store.missingSince().has(skillId)).toBe(true);
+    expect(readlinkSync(linkPath)).toBe(skillDir);
+
+    renameSync(aside, skillDir);
+    await core.background.libraryChangedOnDisk();
+    expectKept();
+    expect(core.store.missingSince().size).toBe(0);
+  });
+
+  it("removes the skill once its folder has stayed away past the grace period", async () => {
+    rmSync(skillDir, { recursive: true });
+    await core.background.libraryChangedOnDisk();
+    expect(core.store.find(skillId)).not.toBeNull();
+
+    core.store.setMissingSince(skillId, Date.now() - MISSING_GRACE_MS - 1);
+    await core.background.libraryChangedOnDisk();
+    expect(core.store.find(skillId)).toBeNull();
+    expect(() => readlinkSync(linkPath)).toThrow();
   });
 });
 

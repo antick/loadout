@@ -101,7 +101,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   // in the library. Mid-merge a skill folder is set aside for a moment, and its row would go
   // with its deployments. When it is busy, the process working in it keeps the index.
   const tidied = ctx.lock.holdSync("tidy the library on start", () => {
-    portable.rebuild({ authoritative: false });
+    portable.rebuild({ mode: "reindex" });
     portable.write();
     pruneBrokenLinks(ctx, { registry, store });
   });
@@ -261,6 +261,18 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     listing: listing.api,
   };
 
+  async function relinkMoved(skillIds: readonly string[]): Promise<void> {
+    const moved = new Set(skillIds);
+    for (const row of store.deployments()) {
+      if (!moved.has(row.skillId) || row.mode !== "symlink") continue;
+      try {
+        await deploy.putBack(row);
+      } catch (error) {
+        ctx.log.warn(`Could not point ${row.targetPath} at the renamed skill folder`, error);
+      }
+    }
+  }
+
   /** An outside change waiting for its turn at the lock: later changes ride along with it. */
   let waiting: { done: Promise<void> } | null = null;
   const background: CoreBackground = {
@@ -292,10 +304,12 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       // Mid-restore or mid-merge a skill folder can be missing for a moment: re-index and prune
       // once whatever works in the library is done, never in between.
       turn.done = ctx.lock
-        .run("re-index after an outside change", () => {
+        .run("re-index after an outside change", async () => {
           if (waiting === turn) waiting = null;
-          portable.rebuild({ authoritative: false });
+          const { moved } = portable.rebuild({ mode: "reindex" });
           pruneBrokenLinks(ctx, { registry, store });
+          // Links to a folder renamed by hand lead nowhere now: point them at its new name.
+          await relinkMoved(moved);
         })
         .then(() => {
           staleCopies.request();

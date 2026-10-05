@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
-import { APP_NAME, isNewerVersion } from "@loadout/shared";
+import { basename, join } from "node:path";
+import { APP_NAME, type Skill, isNewerVersion } from "@loadout/shared";
 import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";
@@ -43,6 +43,19 @@ export {
 /** Format of the metadata files. Raise it when an older app could not read them correctly. */
 export const BACKUP_SCHEMA_VERSION = 1;
 export const SCHEMA_FILE = "schema.json";
+/**
+ * How long a re-index keeps a skill whose folder is missing before dropping it: a folder renamed,
+ * checked out or briefly taken away by a sync client comes back within it, a deleted one does not.
+ */
+export const MISSING_GRACE_MS = 10 * 60_000;
+
+/** See `PortableMetadata.rebuild`. */
+export type RebuildMode = "authoritative" | "adopt" | "reindex";
+
+export interface RebuildResult {
+  /** Skills whose folder was renamed by hand: their row now points at the new folder. */
+  moved: string[];
+}
 
 function pruneDir(dir: string, keep: ReadonlySet<string>): void {
   for (const entry of readDirSafe(dir)) {
@@ -188,17 +201,25 @@ export class PortableMetadata {
   }
 
   /**
-   * Bring the database in line with what is on disk.
-   * `authoritative` (after clone, merge or restore): the files are the truth, so skills and
-   * presets without a file are dropped. Otherwise (normal start) rows are only added or refreshed,
-   * and skill folders nobody knows about are indexed as imported skills.
+   * Bring the database in line with what is on disk, in one of three modes:
+   * - `authoritative` (after a merge or restore): the files are the truth, so skills and presets
+   *   without a file are dropped, as are skills whose folder is gone.
+   * - `adopt` (after a clone): rows are only added or refreshed; skills whose folder is gone are
+   *   dropped.
+   * - `reindex` (start, outside changes): rows are only added or refreshed. A folder renamed by
+   *   hand keeps its row; a skill whose folder is missing is only dropped once it has stayed away
+   *   for `MISSING_GRACE_MS`, so a checkout or a sync client taking it away for a moment costs
+   *   nothing.
+   * Skill folders nobody knows about are indexed as imported skills. Returns what moved.
    */
-  rebuild(options: { authoritative: boolean }): void {
+  rebuild(options: { mode: RebuildMode; now?: number }): RebuildResult {
+    const { mode } = options;
+    const authoritative = mode === "authoritative";
     const skillFiles = readJsonDir(this.#skillsMetaDir, readPortableSkill, this.#log);
     const presetFiles = readJsonDir(this.#presetsMetaDir, readPortablePreset, this.#log);
     const hasMetadata = existsSync(join(this.#paths.metadataDir, SCHEMA_FILE));
 
-    this.#db.transaction(() => {
+    return this.#db.transaction(() => {
       const seenSkillIds = new Set<string>();
       for (const file of skillFiles) {
         // Files arrive through backups from other devices: `readPortableSkill` checked them.
@@ -210,17 +231,45 @@ export class PortableMetadata {
         seenSkillIds.add(this.#upsertSkill(file, libraryPath));
       }
 
+      const missing: Skill[] = [];
       for (const skill of this.#skills.list()) {
-        const dirGone = !existsSync(skill.libraryPath);
-        const dropped = options.authoritative && hasMetadata && !seenSkillIds.has(skill.id);
-        if (dirGone || dropped) this.#skills.delete(skill.id);
+        if (!existsSync(skill.libraryPath)) missing.push(skill);
+        else if (authoritative && hasMetadata && !seenSkillIds.has(skill.id)) {
+          this.#skills.delete(skill.id);
+        }
       }
+      const waiting = mode === "reindex" ? missing : [];
+      if (mode !== "reindex") for (const skill of missing) this.#skills.delete(skill.id);
 
-      this.#indexUnknownFolders();
+      const moved = this.#indexUnknownFolders(waiting);
+      if (mode === "reindex") this.#settleMissing(waiting, options.now ?? Date.now());
 
-      if (options.authoritative && hasMetadata) this.#replacePresets(presetFiles);
+      if (authoritative && hasMetadata) this.#replacePresets(presetFiles);
       else for (const preset of presetFiles) this.#upsertPreset(preset, false);
+      return { moved };
     });
+  }
+
+  /**
+   * Skills whose folder is still missing: the first re-index that sees it notes the time, one at
+   * least `MISSING_GRACE_MS` later drops the row. Rows whose folder is back lose the note.
+   */
+  #settleMissing(missing: readonly Skill[], now: number): void {
+    const since = this.#skills.missingSince();
+    const stillMissing = new Set(missing.map((skill) => skill.id));
+    for (const id of since.keys()) {
+      if (!stillMissing.has(id)) this.#skills.setMissingSince(id, null);
+    }
+    for (const skill of missing) {
+      const first = since.get(skill.id);
+      if (first === undefined) {
+        this.#skills.setMissingSince(skill.id, now);
+        this.#log.info(`The folder of ${skill.name} is missing; kept for now in case it returns`);
+      } else if (now - first >= MISSING_GRACE_MS) {
+        this.#skills.delete(skill.id);
+        this.#log.info(`Removed ${skill.name}: its folder stayed missing`);
+      }
+    }
   }
 
   /** Returns the id of the row it updated or inserted. */
@@ -280,28 +329,54 @@ export class PortableMetadata {
     return file.id;
   }
 
-  #indexUnknownFolders(): void {
+  /**
+   * Index skill folders no row knows. One that matches a skill whose folder went missing (same
+   * content, else the only missing skill of the same name) is that skill renamed by hand: its row
+   * follows the folder, keeping its tags, notes and deployments. Matched skills leave `missing`.
+   * Returns their ids.
+   */
+  #indexUnknownFolders(missing: Skill[]): string[] {
     let entries: string[] = [];
     try {
-      entries = readdirSync(this.#paths.skillsDir);
+      entries = readdirSync(this.#paths.skillsDir).sort();
     } catch {
-      return;
+      return [];
     }
+    const moved: string[] = [];
     for (const name of entries) {
       if (name.startsWith(".")) continue;
       const libraryPath = join(this.#paths.skillsDir, name);
       if (!isSkillDir(libraryPath) || this.#skills.findByLibraryPath(libraryPath)) continue;
       const identity = readSkillIdentity(libraryPath);
+      const contentHash = hashDir(libraryPath);
+      const sameName = missing.filter((skill) => skill.name === identity.name);
+      const match =
+        missing.find((skill) => skill.contentHash === contentHash) ??
+        (sameName.length === 1 ? sameName[0] : undefined);
+      if (match) {
+        missing.splice(missing.indexOf(match), 1);
+        this.#skills.update(match.id, {
+          name: identity.name,
+          description: identity.description,
+          libraryPath,
+          contentHash,
+        });
+        this.#skills.setMissingSince(match.id, null);
+        moved.push(match.id);
+        this.#log.info(`Skill folder ${basename(match.libraryPath)} was renamed to ${name}`);
+        continue;
+      }
       this.#skills.insert({
         name: identity.name,
         description: identity.description,
         sourceType: "import",
         libraryPath,
-        contentHash: hashDir(libraryPath),
+        contentHash,
         updateStatus: "local_only",
       });
       this.#log.info(`Indexed skill folder found in the library: ${name}`);
     }
+    return moved;
   }
 
   #replacePresets(files: PortablePreset[]): void {

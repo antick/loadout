@@ -1,9 +1,11 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { expect } from "vitest";
 import { type Core, type CoreCreateOptions, createCore } from "../src/core";
 import { type ContextBundle, createContext } from "../src/create-context";
+import { MIGRATIONS } from "../src/db/schema";
 import { AppError } from "../src/errors";
 import type { SafetyGate } from "../src/install/safety-gate";
 import { silentLogger } from "../src/log";
@@ -101,4 +103,12 @@ export function createTestCore(options: CoreCreateOptions & { homeDir: string })
     safetyScannerPath: null,
     ...options,
   });
+}
+
+/** A database as an older app left it: only the first `version` migrations applied. */
+export function databaseAt(path: string, version: number): DatabaseSync {
+  const db = new DatabaseSync(path);
+  for (const sql of MIGRATIONS.slice(0, version)) db.exec(sql);
+  db.exec(`PRAGMA user_version = ${version}`);
+  return db;
 }

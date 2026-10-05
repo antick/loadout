@@ -33,7 +33,7 @@ describe("marking a skill as the user's own", () => {
     const { portable } = setup.world;
     portable.write();
     setup.world.store.update(skill.id, { authored: false });
-    portable.rebuild({ authoritative: true });
+    portable.rebuild({ mode: "authoritative" });
     expect(setup.world.store.get(skill.id).authored).toBe(true);
   });
 

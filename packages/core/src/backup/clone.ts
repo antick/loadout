@@ -188,7 +188,7 @@ export async function cloneLibrary(
     const keep = options.keepCurrent || !carried.complete;
     if (!keep) await removePath(asideDir);
     // Not authoritative: the carried-over skills have no metadata yet and must be indexed.
-    await env.reconcile(false);
+    await env.reconcile("adopt");
     return keep ? asideDir : null;
   });
 

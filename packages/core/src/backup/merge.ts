@@ -371,7 +371,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
       updated: await changedSkills(env, ours, authors),
       removed,
     };
-    await env.reconcile(true);
+    await env.reconcile("authoritative");
     return { summary, committed, changed: true, upstream: theirs };
   }
 
@@ -439,7 +439,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     .filter((item) => item.outcome === "kept_local" && item.path)
     .map((item) => skillName(env, item.path ?? item.id));
 
-  await env.reconcile(true);
+  await env.reconcile("authoritative");
   // The merge is committed and the library indexed; only those files still need the user.
   if (leftIn) throw localFilesNotKept(leftIn);
   return {

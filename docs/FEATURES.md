@@ -37,7 +37,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - Rename a skill; deployments and project links follow. Shows a dry run as you type.
 - Delete goes to Recently removed, with Undo.
 - Possible duplicates: same files or alike names at once, alike text when you ask (**Find duplicates**). Compare, keep one with its tags and agents, or dismiss. `skills duplicates`, `skills merge`, `skills dismiss`.
-- The database rebuilds itself from the skill files.
+- The database rebuilds itself from the skill files; a skill folder renamed by hand keeps its tags, note and agents.
 
 ## Editor
 

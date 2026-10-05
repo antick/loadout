@@ -201,7 +201,7 @@ export async function resolveConflicts(
     deleteConflict(env.ctx.db, conflict.skillKey);
     env.ctx.activity.record("backup", conflict.skillName, RESOLVE_MESSAGE[action]);
   }
-  await env.reconcile(true);
+  await env.reconcile("authoritative");
   // The choice is made and committed; only those files still need the user.
   if (leftIn) throw localFilesNotKept(leftIn);
   return safety;

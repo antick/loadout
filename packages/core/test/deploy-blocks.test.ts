@@ -123,7 +123,7 @@ describe("blocking a skill for an agent", () => {
     world.store.update(skill.id, { blockedAgents: ["cline", "claude_code"] });
     world.portable.write();
     world.store.update(skill.id, { blockedAgents: [] });
-    world.portable.rebuild({ authoritative: true });
+    world.portable.rebuild({ mode: "authoritative" });
     expect(world.store.get(skill.id).blockedAgents).toEqual(["claude_code", "cline"]);
   });
 });

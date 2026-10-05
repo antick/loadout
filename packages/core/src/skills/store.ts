@@ -264,6 +264,21 @@ export class SkillStore {
     });
   }
 
+  // ── Folders gone missing ──
+
+  /** Skill id → when a re-index first found its folder missing. */
+  missingSince(): Map<string, number> {
+    const rows = this.#db.all<{ id: string; missing_since: number }>(
+      "SELECT id, missing_since FROM skills WHERE missing_since IS NOT NULL",
+    );
+    return new Map(rows.map((row) => [row.id, row.missing_since]));
+  }
+
+  /** Null: the folder is back. */
+  setMissingSince(id: string, at: number | null): void {
+    this.#db.run("UPDATE skills SET missing_since = ? WHERE id = ?", at, id);
+  }
+
   // ── What came from the source ──
 
   /**

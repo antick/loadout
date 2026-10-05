@@ -135,7 +135,7 @@ export function createBackupOperations(
       assertRepo(env);
       const safety = await ctx.lock.run(`restore ${id}`, async () => {
         const point = await restoreSnapshot(env, id);
-        await env.reconcile(true);
+        await env.reconcile("authoritative");
         return point;
       });
       ctx.activity.record("restore", id, `Safety snapshot ${safety}`);
