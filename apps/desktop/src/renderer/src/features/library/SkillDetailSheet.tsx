@@ -22,7 +22,7 @@ import { SafetyTab } from "@/features/library/detail/SafetyTab";
 import { SourceGoneNotice } from "@/features/library/detail/SourceGoneNotice";
 import { SourceTab } from "@/features/library/detail/SourceTab";
 import { useSkillRefresh } from "@/features/library/detail/use-skill-refresh";
-import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { useDeleteSkills } from "@/hooks/mutations/library";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useSkill } from "@/hooks/queries/skills";
 import { hasSource } from "@/lib/skill-source";

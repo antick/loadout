@@ -22,7 +22,7 @@ import {
   useExportSkills,
   useRevealSkill,
 } from "@/features/library/library-mutations";
-import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { useDeleteSkills } from "@/hooks/mutations/library";
 import { useOpenInEditor } from "@/hooks/mutations/app";
 import { useSetFavorite } from "@/hooks/mutations/skills";
 import { useDefaultEditor } from "@/hooks/use-default-editor";

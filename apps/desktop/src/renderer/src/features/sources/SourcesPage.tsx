@@ -17,7 +17,7 @@ import { CardGridSkeleton } from "@/components/LinkCard";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
-import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { useDeleteSkills } from "@/hooks/mutations/library";
 import { FindSourcesDialog } from "@/features/origin/FindSourcesDialog";
 import {
   useCheckSources,

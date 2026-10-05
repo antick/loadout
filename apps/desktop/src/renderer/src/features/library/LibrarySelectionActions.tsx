@@ -29,7 +29,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { hasUpdate } from "@/features/library/library-filters";
 import { useExportSkills } from "@/features/library/library-mutations";
 import { PublishDialog } from "@/features/library/publish/PublishDialog";
-import { useDeleteSkills } from "@/features/library/use-delete-skills";
+import { useDeleteSkills } from "@/hooks/mutations/library";
 import { useUpdateSkills } from "@/hooks/mutations/library";
 import { useAddSkillsToPreset } from "@/hooks/mutations/preset-members";
 import { usePresets } from "@/hooks/queries/presets";

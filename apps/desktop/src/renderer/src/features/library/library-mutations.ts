@@ -5,8 +5,6 @@ import {
   formatBytes,
   formatTimestampCompact,
   type ProjectCopyRef,
-  REMOVED_KEEP_DAYS,
-  type RemoveSkillsResult,
   type RenameResult,
   type Skill,
 } from "@loadout/shared";
@@ -17,7 +15,6 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { toastBatchOutcome } from "@/lib/batch";
 import { EXPORT_FILE_EXTENSION, EXPORT_MANY_PREFIX } from "@/lib/constants";
-import { undoAction } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 export interface CreateProjectSkillInput {
@@ -166,22 +163,5 @@ export function useRenameSkill(): UseMutationResult<
         },
       ),
     error: "library.rename.error",
-  });
-}
-
-/** Remove skills from the library (and every agent they were deployed to). Toasts the counts. */
-export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown, string[]> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: (skillIds: string[]) => api.skills.removeMany(skillIds),
-    onSuccess: (result) =>
-      toastBatchOutcome(t("skills.removed", { count: result.succeeded }), result.failed, {
-        action: undoAction(result.removedIds),
-        description:
-          result.removedIds.length > 0
-            ? t("skills.removedKept", { count: result.removedIds.length, days: REMOVED_KEEP_DAYS })
-            : null,
-      }),
-    error: "errors.removeSkills",
   });
 }
