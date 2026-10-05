@@ -25,6 +25,7 @@ import { useSkillRefresh } from "@/features/library/detail/use-skill-refresh";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useSkill } from "@/hooks/queries/skills";
+import { hasSource } from "@/lib/skill-source";
 
 const DETAIL_TABS = [
   "document",
@@ -42,7 +43,12 @@ const TAB_PANEL_CLASS = "min-h-0 flex-1 overflow-y-auto px-6 py-5";
 /** Mounted once per opened skill, so tab choice and update state never leak between skills. */
 function SkillDetailBody({ skill, onClose }: { skill: Skill; onClose: () => void }): ReactNode {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<DetailTab>(DEFAULT_TAB);
+  // Compare needs a source to compare with; a tab that went away falls back to the default.
+  const tabs: readonly DetailTab[] = hasSource(skill)
+    ? DETAIL_TABS
+    : DETAIL_TABS.filter((name) => name !== "compare");
+  const [chosenTab, setTab] = useState<DetailTab>(DEFAULT_TAB);
+  const tab = tabs.includes(chosenTab) ? chosenTab : DEFAULT_TAB;
   const refresh = useSkillRefresh(skill);
   const deleteSkills = useDeleteSkills();
   const availableAgents = useAvailableAgents();
@@ -70,7 +76,7 @@ function SkillDetailBody({ skill, onClose }: { skill: Skill; onClose: () => void
       >
         <div className="border-b px-6 py-2">
           <TabsList>
-            {DETAIL_TABS.map((name) => (
+            {tabs.map((name) => (
               <TabsTrigger key={name} value={name}>
                 {t(`library.detail.tabs.${name}`)}
                 {counts[name] ? (

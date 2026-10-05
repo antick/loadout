@@ -227,8 +227,6 @@
       "against": "Library copy compared with {{source}} ({{revision}}).",
       "local": "Local",
       "source": "Source",
-      "noSourceTitle": "Nothing to compare with",
-      "noSourceDescription": "This skill does not follow a source, so there is no other version of it.",
       "unavailableTitle": "The source cannot be reached right now",
       "unavailableDescription": "Check the connection or the source folder, then try again."
     },

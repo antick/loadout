@@ -135,3 +135,25 @@ test("a skill removed elsewhere while its panel is open closes the panel", async
 
   await expect(panel).toHaveCount(0);
 });
+
+test("the skill panel offers Compare only for a skill with a source", async ({ page }) => {
+  await openApp(page, "/library");
+  const content = main(page);
+  const panel = page.getByRole("dialog");
+  await content.getByRole("button", { name: "code-review", exact: true }).click();
+  const compare = panel.getByRole("tab", { name: "Compare" });
+  await compare.click();
+  await expect(compare).toHaveAttribute("aria-selected", "true");
+
+  // Detached from its source (as the command line would), it has nothing left to compare with.
+  await page.evaluate(`(async () => {
+    const { value: skills } = await window.loadout.invoke("skills.list", []);
+    const target = skills.find((skill) => skill.name === "code-review");
+    await window.loadout.invoke("updates.detach", [target.id]);
+  })()`);
+  await expect(compare).toHaveCount(0);
+  await expect(panel.getByRole("tab", { name: "Document" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});

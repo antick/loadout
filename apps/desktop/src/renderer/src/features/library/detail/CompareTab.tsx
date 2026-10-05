@@ -1,6 +1,6 @@
 import { formatRevision } from "@loadout/shared";
 import type { Skill } from "@loadout/shared";
-import { CloudOff, GitCompareArrows } from "lucide-react";
+import { CloudOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DocumentTabs } from "@/components/DocumentTabs";
@@ -16,25 +16,15 @@ import { errorMessage } from "@/lib/toast";
 /** Characters of a revision shown next to the source name. */
 
 /**
- * Library copy against its source, fetched only when this tab is opened: changed files, then the
+ * Library copy against its source (the tab shows only for a skill that has one), fetched only
+ * when this tab is opened: changed files, then the
  * main document as Local / Diff / Source. A source that cannot be reached is a calm empty state.
  */
 export function CompareTab({ skill }: { skill: Skill }): ReactNode {
   const { t } = useTranslation();
-  const hasSource = Boolean(skill.sourceRef ?? skill.sourceUrl);
-  const comparison = useSourceComparison(skill, hasSource);
+  const comparison = useSourceComparison(skill);
   const diff = comparison.data?.diff;
   const libraryDocument = useSkillDocument(skill.id);
-
-  if (!hasSource) {
-    return (
-      <EmptyState
-        icon={GitCompareArrows}
-        title={t("library.compare.noSourceTitle")}
-        description={t("library.compare.noSourceDescription")}
-      />
-    );
-  }
 
   if (comparison.isError) {
     return (

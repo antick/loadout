@@ -32,6 +32,7 @@ import { useCheckSkillUpdate } from "@/features/library/library-mutations";
 import { FindSourceSection } from "@/features/origin/FindSourceSection";
 import { useOpenExternal, usePickFolder } from "@/hooks/mutations/app";
 import { installPhaseText } from "@/features/install/install-tasks";
+import { hasSource, isRemoteSource } from "@/lib/skill-source";
 
 /** Characters of a revision shown; the full value stays in the tooltip. */
 const ABSOLUTE_PATH_PATTERN = /^(\/|~|[A-Za-z]:[\\/])/;
@@ -81,10 +82,10 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
   const openExternal = useOpenExternal();
   const [reporting, setReporting] = useState(false);
 
-  const remote = ["git", "marketplace", "clawhub"].includes(skill.sourceType);
+  const remote = isRemoteSource(skill);
   /** An archive linked on the web: checked and refreshed by downloading it again. */
   const link = skill.sourceType === "url";
-  const hasSource = Boolean(skill.sourceRef ?? skill.sourceUrl);
+  const sourced = hasSource(skill);
   const busy = refresh.running || check.isPending || detach.isPending;
   const none = <span className="text-muted-foreground">{t("library.source.none")}</span>;
 
@@ -170,7 +171,7 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
               <Button
                 variant={link && skill.updateStatus === "update_available" ? "default" : "outline"}
                 size="sm"
-                disabled={busy || !hasSource}
+                disabled={busy || !sourced}
                 onClick={() => refresh.start({ kind: "reimport" })}
               >
                 {refresh.runningKind === "reimport" ? (
@@ -191,7 +192,7 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={busy || !hasSource}
+                disabled={busy || !sourced}
                 onClick={() => void askDetach()}
               >
                 <Unlink />
