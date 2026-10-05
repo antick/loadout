@@ -194,7 +194,7 @@ export class PortableMetadata {
   rebuild(options: { authoritative: boolean }): void {
     const skillFiles = readJsonDir(this.#skillsMetaDir, readPortableSkill, this.#log);
     const presetFiles = readJsonDir(this.#presetsMetaDir, readPortablePreset, this.#log);
-    const hasMetadata = existsSync(join(this.#paths.metadataDir, "schema.json"));
+    const hasMetadata = existsSync(join(this.#paths.metadataDir, SCHEMA_FILE));
 
     this.#db.transaction(() => {
       const seenSkillIds = new Set<string>();
