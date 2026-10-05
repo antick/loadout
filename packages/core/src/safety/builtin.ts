@@ -1,3 +1,4 @@
+import { closeSync, openSync, readSync } from "node:fs";
 import type { SafetyFinding, SafetyReport, SafetySeverity } from "@loadout/shared";
 import { isNeverCopiedName } from "../util/fs";
 import { type ContentFile, listContentFiles } from "../util/hash";
@@ -40,7 +41,10 @@ const SKIPPED_EXTENSIONS = new Set([
   ".wav",
   ".lock",
 ]);
+/** Read as prose, unless the file can run: then it is code whatever its name. */
 const DOCUMENT_EXTENSIONS = new Set([".md", ".mdx", ".markdown", ".txt", ".rst", ""]);
+/** A first line starting with this names the program that runs the file. */
+const SHEBANG = Buffer.from("#!");
 /**
  * Files something runs or loads as code: scripts, compiled bytecode, native programs and
  * libraries. A stray NUL byte does not stop every interpreter, so their text is read anyway.
@@ -101,6 +105,21 @@ function extensionOf(path: string): string {
   const name = path.slice(path.lastIndexOf("/") + 1);
   const dot = name.lastIndexOf(".");
   return dot <= 0 ? "" : name.slice(dot).toLowerCase();
+}
+
+/** Whether the file starts with a `#!` line, so a shell runs it whatever its name. */
+function hasShebang(path: string): boolean {
+  let fd: number | undefined;
+  try {
+    fd = openSync(path, "r");
+    const head = Buffer.alloc(SHEBANG.length);
+    return readSync(fd, head, 0, head.length, 0) === head.length && head.equals(SHEBANG);
+  } catch {
+    // Reading it again below names it as unreadable.
+    return false;
+  } finally {
+    if (fd !== undefined) closeSync(fd);
+  }
 }
 
 function round(value: number): number {
@@ -231,9 +250,13 @@ function uncheckedFinding(
 /** What the rules make of one file: its findings, and why it could not be read, if so. */
 function scanFile(file: ContentFile): SafetyFinding[] {
   const extension = extensionOf(file.relativePath);
-  const runnable = file.executable || RUNNABLE_EXTENSIONS.has(extension);
+  const shebang = hasShebang(file.absolutePath);
+  const runnable = file.executable || RUNNABLE_EXTENSIONS.has(extension) || shebang;
   if (!runnable && SKIPPED_EXTENSIONS.has(extension)) return [];
-  const scan = createTextScan(file.relativePath, DOCUMENT_EXTENSIONS.has(extension));
+  // A script is code even with no extension, so its commands count in full. An executable bit
+  // alone on a named document, common in archives, leaves it prose.
+  const script = shebang || (file.executable && extension === "");
+  const scan = createTextScan(file.relativePath, !script && DOCUMENT_EXTENSIONS.has(extension));
   let binary: boolean;
   try {
     binary = readTextChunks(file.absolutePath, scan.push, runnable);
