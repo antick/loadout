@@ -193,7 +193,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
     const range = `${base}..${theirs}`;
     const remoteBackups = Number(await env.git.text(["rev-list", "--count", range])) || 0;
     const sides = await readSides(env, base, ours, theirs);
-    if (!env.ctx.settings.get("skillAwareMerge") || !sides.describable) {
+    if (!sides.describable) {
       return { ...(await linePreview(env, sides, range)), localTree, remoteBackups };
     }
 

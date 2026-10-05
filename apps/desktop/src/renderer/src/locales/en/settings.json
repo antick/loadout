@@ -271,8 +271,6 @@
       "title": "Backup options",
       "description": "Connecting, syncing and restoring happen on the Backup page.",
       "open": "Open Backup",
-      "merge": "Merge skill by skill",
-      "mergeHint": "When two computers changed the library, whole skills are merged instead of text lines, and a skill changed on both is kept for you to decide. Turn this off to use Git's plain line merge.",
       "clientId": "GitHub OAuth client id (advanced)",
       "clientIdHint": "The client id of a GitHub OAuth app with device flow enabled. Setting it adds “Sign in with GitHub” to the Backup page; without it you connect with an access token.",
       "clientIdPlaceholder": "Iv1.0123456789abcdef",

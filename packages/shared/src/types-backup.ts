@@ -51,8 +51,8 @@ export interface SyncPreview {
    */
   localTree: string | null;
   /**
-   * False when the skill-aware merge is off: then only the counts below are known, and of the
-   * skills only the ones the merge deletes (`incoming`, as `deleted`).
+   * False when the remote lacks Loadout's metadata, so git merges it line by line: then only the
+   * counts below are known, and of the skills only the ones the merge deletes (`incoming`).
    */
   perSkill: boolean;
   incoming: SyncPreviewItem[];

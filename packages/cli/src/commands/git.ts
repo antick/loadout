@@ -96,18 +96,18 @@ function describeItem(item: SyncPreviewItem): string {
 
 function describePreview(preview: SyncPreview): string[] {
   if (!preview.remoteCommit) return ["No remote branch yet: a sync pushes the whole library."];
-  if (!preview.perSkill) {
-    return [
-      `${plural(preview.remoteBackups, "backup")} to merge. The skill-aware merge is off, so git merges them line by line.`,
-    ];
-  }
   const section = (title: string, items: SyncPreviewItem[]): string[] =>
     items.length > 0 ? [`${title}:`, ...items.map(describeItem)] : [];
-  const lines = [
-    ...section("Coming in", preview.incoming),
-    ...section("Going out", preview.outgoing),
-    ...section("Changed on both sides, this computer's version stays", preview.conflicts),
-  ];
+  const lines = preview.perSkill
+    ? [
+        ...section("Coming in", preview.incoming),
+        ...section("Going out", preview.outgoing),
+        ...section("Changed on both sides, this computer's version stays", preview.conflicts),
+      ]
+    : [
+        `${plural(preview.remoteBackups, "backup")} to merge. The backup remote lacks Loadout's skill details, so git merges them line by line.`,
+        ...section("Coming in", preview.incoming),
+      ];
   if (preview.presetsIncoming > 0) {
     lines.push(`${plural(preview.presetsIncoming, "preset")} updated from other devices.`);
   }

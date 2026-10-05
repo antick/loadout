@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, joinRemote, seedRemote } from "./backup-world";
+import { type Device, joinRemote, pushByHand, seedRemote } from "./backup-world";
 import { tempDir } from "./helpers";
 
 async function remoteHead(device: Device): Promise<string> {
@@ -139,9 +139,19 @@ describe("backup deletes from other devices", () => {
       for (const name of names) expect(d.skill(name)).not.toBeNull();
     });
 
-    describe("with the skill-aware merge off", () => {
+    it("ignores a merge switch an older version saved off", async () => {
+      d.ctx.settings.setRaw("skillAwareMerge", false);
+      expect(await d.api.preview()).toMatchObject({ perSkill: true, manyDeletes: true });
+      await expect(d.api.sync()).rejects.toMatchObject({ code: "SYNC_MANY_DELETES" });
+    });
+
+    describe("from a remote without metadata, merged line by line", () => {
       beforeEach(() => {
-        d.ctx.settings.set("skillAwareMerge", false);
+        pushByHand(
+          join(temp.dir, "guard"),
+          d.git("remote", "get-url", "origin"),
+          basename(d.ctx.paths.metadataDir),
+        );
       });
 
       it("still stops before changing anything when nobody reviewed them", async () => {

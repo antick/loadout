@@ -8,6 +8,7 @@ import {
   createBareRemote,
   createDevice,
   joinRemote,
+  pushByHand,
   rawGit,
   seedRemote,
 } from "./backup-world";
@@ -400,49 +401,42 @@ describe("backup sync", () => {
     expect((await a.api.status()).ahead).toBe(1);
   });
 
-  it("falls back to a line merge and reports a conflict when skill-aware merge is off", async () => {
+  it("merges a remote without metadata line by line, and reports a conflict", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
+    track(a);
+    pushByHand(temp.dir, remote, basename(a.ctx.paths.metadataDir), (dir) =>
+      writeFile(join(dir, "alpha", "notes.md"), "by hand"),
+    );
+
+    a.editSkill("alpha", "local work");
+    await expect(a.api.sync()).rejects.toMatchObject({ code: "SYNC_CONFLICT" });
+    // The failed merge was rolled back, local work is intact.
+    expect(a.read("alpha")).toBe("local work");
+    expect(existsSync(join(a.skillsDir, ".git", "MERGE_HEAD"))).toBe(false);
+  });
+
+  it("merges skill by skill even when an older version saved the merge switch off", async () => {
     const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
     track(a);
     const b = track(await joinRemote(temp.dir, remote));
-    b.ctx.settings.set("skillAwareMerge", false);
+    b.ctx.settings.setRaw("skillAwareMerge", false);
 
-    a.editSkill("alpha", "from A");
-    b.editSkill("beta", "from B");
+    a.editSkill("alpha", "A's version");
     await a.api.sync();
-    const clean = await b.api.sync();
-    expect(clean.merge?.updated).toEqual([{ name: "alpha", fromDevice: "Device A" }]);
-    await a.api.sync();
-
-    a.editSkill("alpha", "A again");
-    b.editSkill("alpha", "B again");
-    await a.api.sync();
-    await expect(b.api.sync()).rejects.toMatchObject({ code: "SYNC_CONFLICT" });
-    // The failed merge was rolled back, local work is intact.
-    expect(b.read("alpha")).toBe("B again");
-    expect(existsSync(join(b.skillsDir, ".git", "MERGE_HEAD"))).toBe(false);
+    b.editSkill("alpha", "B's version");
+    expect((await b.api.preview()).perSkill).toBe(true);
+    const outcome = await b.api.sync();
+    // A line merge would stop here; the skill-aware one keeps B's version and asks.
+    expect(outcome.merge?.newConflicts).toEqual(["alpha"]);
+    expect(b.read("alpha")).toBe("B's version");
   });
 
   it("never reads a remote without metadata as 'everything was deleted'", async () => {
     const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
     track(a);
-    // Someone pushes by hand from a plain clone, dropping the metadata folder on the way.
-    const manual = join(temp.dir, "manual");
-    rawGit(temp.dir, "clone", "-q", remote, manual);
-    rawGit(manual, "checkout", "-q", "-B", "main", "origin/main");
-    rawGit(manual, "rm", "-rq", basename(a.ctx.paths.metadataDir));
-    writeFile(join(manual, "alpha", "by-hand.md"), "added by hand");
-    rawGit(manual, "add", "-A");
-    rawGit(
-      manual,
-      "-c",
-      "user.name=Hand",
-      "-c",
-      "user.email=hand@example.com",
-      "commit",
-      "-qm",
-      "manual",
+    pushByHand(temp.dir, remote, basename(a.ctx.paths.metadataDir), (dir) =>
+      writeFile(join(dir, "alpha", "by-hand.md"), "added by hand"),
     );
-    rawGit(manual, "push", "-q", "origin", "main");
 
     a.editSkill("beta", "local work");
     const outcome = await a.api.sync();

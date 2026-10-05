@@ -33,10 +33,11 @@ import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
 import { commitLibrary, requireBranch, resolveCommit, upstreamRef } from "./repo";
 
 /**
- * Brings the remote branch into the library. With the skill-aware setting on, the decision is
- * made per skill (see `merge-plan.ts`) and written as a real two-parent merge commit, so plain
- * git commands still see ordinary history. A content conflict never stops the merge: our version
- * stays on disk and the remote one is remembered for the user to choose later.
+ * Brings the remote branch into the library. The decision is made per skill (see
+ * `merge-plan.ts`) and written as a real two-parent merge commit, so plain git commands still see
+ * ordinary history. A content conflict never stops the merge: our version stays on disk and the
+ * remote one is remembered for the user to choose later. Only a remote without our metadata gets
+ * git's line merge instead.
  */
 
 const BEFORE_MERGE_MESSAGE = "backup: before merge";
@@ -245,7 +246,7 @@ async function materialise(
   }
 }
 
-/** Line-based `git merge`, for users who switched the skill-aware merge off. */
+/** Line-based `git merge`, for a remote without our metadata (filled by hand, or by an older app). */
 async function plainMerge(env: BackupEnv, theirs: string, message: string): Promise<void> {
   const result = await env.git.probe(["merge", "--no-edit", "-m", message, theirs]);
   if (result.code === 0) return;
@@ -254,7 +255,7 @@ async function plainMerge(env: BackupEnv, theirs: string, message: string): Prom
   if (/conflict/i.test(output)) {
     throw new AppError(
       "SYNC_CONFLICT",
-      "The same files were changed on two devices and Git could not merge them line by line. Turn on the skill-aware merge in Settings, or restore the library from the backup remote.",
+      "The same files were changed on two devices and Git could not merge them line by line. The backup remote lacks Loadout's skill details, so skills cannot be merged one by one. Restore the library from the backup remote, or resolve it in a terminal.",
       { detail: gitError(output).details?.detail },
     );
   }
@@ -357,7 +358,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   const theirSide = sides.theirs;
 
   // Without our metadata on both sides every skill would read as deleted: git's line merge then.
-  if (!env.ctx.settings.get("skillAwareMerge") || !sides.describable) {
+  if (!sides.describable) {
     const removed = await lineMerge(env, sides, range, message, review);
     const summary: MergeSummary = {
       ...UP_TO_DATE,

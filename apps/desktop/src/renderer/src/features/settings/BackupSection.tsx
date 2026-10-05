@@ -6,7 +6,6 @@ import { Panel } from "@/components/Panel";
 import { SettingRow } from "@/components/SettingRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSetting } from "@/hooks/queries/settings";
 import { toastSuccess } from "@/lib/toast";
@@ -53,10 +52,7 @@ function ClientIdForm({ saved }: { saved: string }): ReactNode {
 /** Backup options that are settings rather than actions; the actions live on the Backup page. */
 export function BackupSection(): ReactNode {
   const { t } = useTranslation();
-  const mergeId = useId();
-  const skillAwareMerge = useSetting("skillAwareMerge");
   const clientId = useSetting("githubClientId");
-  const setSetting = useSetSetting();
 
   return (
     <Panel
@@ -71,20 +67,7 @@ export function BackupSection(): ReactNode {
         </Button>
       }
     >
-      <div className="flex flex-col divide-y">
-        <SettingRow
-          label={t("settings.backup.merge")}
-          description={t("settings.backup.mergeHint")}
-          htmlFor={mergeId}
-        >
-          <Switch
-            id={mergeId}
-            checked={skillAwareMerge}
-            onCheckedChange={(value) => setSetting.mutate({ key: "skillAwareMerge", value })}
-          />
-        </SettingRow>
-        <ClientIdForm key={clientId} saved={clientId} />
-      </div>
+      <ClientIdForm key={clientId} saved={clientId} />
     </Panel>
   );
 }

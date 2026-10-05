@@ -45,8 +45,6 @@ export interface Settings {
   backupAutoEnabled: boolean;
   backupLastAutoError: string;
   backupFirstRunPrompt: FirstRunChoice;
-  /** Merge synced changes per skill instead of per text line. */
-  skillAwareMerge: boolean;
   /** OAuth app client id for GitHub device sign-in. Empty hides that option. */
   githubClientId: string;
   agentControlPrompt: AgentControlPrompt;
@@ -82,7 +80,6 @@ export const DEFAULT_SETTINGS: Settings = {
   backupAutoEnabled: true,
   backupLastAutoError: "",
   backupFirstRunPrompt: "",
-  skillAwareMerge: true,
   githubClientId: "",
   agentControlPrompt: "",
   safetyScanOnInstall: true,

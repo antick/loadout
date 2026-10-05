@@ -188,6 +188,35 @@ export async function seedRemote(
   return { a, remote };
 }
 
+/**
+ * Someone pushes to the remote by hand from a plain clone, dropping Loadout's metadata folder on
+ * the way, after `change` edited the clone. Merging that takes git's line merge.
+ */
+export function pushByHand(
+  root: string,
+  remote: string,
+  metadataName: string,
+  change: (dir: string) => void = () => {},
+): void {
+  const manual = join(root, `manual-${randomUUID()}`);
+  rawGit(root, "clone", "-q", remote, manual);
+  rawGit(manual, "checkout", "-q", "-B", "main", "origin/main");
+  rawGit(manual, "rm", "-rq", metadataName);
+  change(manual);
+  rawGit(manual, "add", "-A");
+  rawGit(
+    manual,
+    "-c",
+    "user.name=Hand",
+    "-c",
+    "user.email=hand@example.com",
+    "commit",
+    "-qm",
+    "manual",
+  );
+  rawGit(manual, "push", "-q", "origin", "main");
+}
+
 /** A second device that adopted the same remote. */
 export async function joinRemote(
   root: string,
