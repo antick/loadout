@@ -1,6 +1,6 @@
-import { createHash } from "node:crypto";
 import type { LineEnding } from "@loadout/shared";
 import { diffArrays } from "diff";
+import { looksBinary } from "../util/hash";
 
 /**
  * How the editor sees a file on disk: UTF-8 text with `\n` line breaks. Whatever the file used
@@ -37,17 +37,8 @@ interface Line {
   ending: string;
 }
 
-export function hashBytes(bytes: Uint8Array): string {
-  return createHash("sha256").update(bytes).digest("hex");
-}
-
 export function hasBom(bytes: Uint8Array): boolean {
   return bytes.length >= UTF8_BOM.length && UTF8_BOM.every((byte, index) => bytes[index] === byte);
-}
-
-/** A NUL byte is the usual sign of a binary file. */
-export function looksBinary(bytes: Uint8Array): boolean {
-  return bytes.includes(0);
 }
 
 /** The ending most lines use. A file without line breaks counts as LF. */

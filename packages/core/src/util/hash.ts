@@ -121,8 +121,9 @@ function frame(hash: ReturnType<typeof createHash>, bytes: Buffer | string): voi
   hash.update(length).update(data);
 }
 
-function isProbablyText(bytes: Buffer): boolean {
-  return !bytes.includes(0);
+/** A NUL byte is the usual sign of a binary file. */
+export function looksBinary(bytes: Uint8Array): boolean {
+  return bytes.includes(0);
 }
 
 export interface HashOptions {
@@ -148,7 +149,7 @@ export function hashDir(root: string, options: HashOptions = {}): string | null 
     } catch {
       bytes = Buffer.alloc(0);
     }
-    if (options.ignoreLineEndings && isProbablyText(bytes)) {
+    if (options.ignoreLineEndings && !looksBinary(bytes)) {
       bytes = Buffer.from(bytes.toString("utf8").replaceAll("\r\n", "\n"));
     }
     frame(hash, file.relativePath);
@@ -179,9 +180,7 @@ export function fileDigests(root: string): Record<string, string> {
   const digests: Record<string, string> = {};
   for (const file of listContentFiles(root)) {
     try {
-      digests[file.relativePath] = createHash("sha256")
-        .update(readFileSync(file.absolutePath))
-        .digest("hex");
+      digests[file.relativePath] = hashFile(file.absolutePath);
     } catch {
       // Unreadable now: it counts as changed later, which only ever asks more, never less.
     }

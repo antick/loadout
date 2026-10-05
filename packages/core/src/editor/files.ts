@@ -18,17 +18,9 @@ import {
   toPosix,
   writeFileAtomic,
 } from "../util/fs";
-import { isIgnoredContentName, listContentFiles } from "../util/hash";
+import { isIgnoredContentName, listContentFiles, looksBinary, sha256Hex } from "../util/hash";
 import type { FileHistory } from "./history";
-import {
-  MAX_EDITABLE_BYTES,
-  SNIFF_BYTES,
-  decodeText,
-  encodeText,
-  hashBytes,
-  hasBom,
-  looksBinary,
-} from "./text-file";
+import { MAX_EDITABLE_BYTES, SNIFF_BYTES, decodeText, encodeText, hasBom } from "./text-file";
 
 /**
  * Reading and writing the text files of one skill folder, wherever it lives. A write never
@@ -136,7 +128,7 @@ function toSkillFile(relative: string, bytes: Buffer, stat: Stats): SkillFile {
   return {
     path: relative,
     content: decoded.content,
-    hash: hashBytes(bytes),
+    hash: sha256Hex(bytes),
     eol: decoded.eol,
     modifiedAt: stat.mtimeMs,
   };
@@ -221,7 +213,7 @@ export function writeFileAt(
   if (missing) return createFileAt(folder, missing, input);
   const file = locate(folder, input.path);
   const current = readLocated(file);
-  const currentHash = hashBytes(current);
+  const currentHash = sha256Hex(current);
   if (currentHash !== input.baseHash && !input.overwrite) {
     throw changedOnDisk(file.relative, currentHash);
   }
@@ -278,7 +270,7 @@ function createFileAt(
     writeFileSync(missing.absolute, next, { flag: "wx" });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    throw changedOnDisk(missing.relative, hashBytes(readFileSync(missing.absolute)));
+    throw changedOnDisk(missing.relative, sha256Hex(readFileSync(missing.absolute)));
   }
   const saved = locate(folder, missing.relative);
   return {
