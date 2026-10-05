@@ -1,4 +1,4 @@
-import { renameSync, rmdirSync } from "node:fs";
+import { rmdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
@@ -25,7 +25,14 @@ import {
   unsupported,
 } from "../errors";
 import { checkNewSkill } from "../skills/create";
-import { ensureDir, isInside, lstatOrNull, readDirSafe, removePath } from "../util/fs";
+import {
+  ensureDir,
+  isInside,
+  lstatOrNull,
+  moveEntrySync,
+  readDirSafe,
+  removePath,
+} from "../util/fs";
 import {
   type LocalSyncDeps,
   pushLocalToLibrary,
@@ -163,16 +170,20 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
         moves.push({ variant: source, to });
       }
 
-      for (const leftover of leftovers) {
-        await removePath(leftover.path);
-        pruneDisabledSide(leftover);
-      }
-      for (const { variant, to } of moves) {
-        ensureDir(dirname(to));
-        renameSync(variant.path, to);
-        pruneDisabledSide(variant);
-      }
-      if (leftovers.length + moves.length > 0) ctx.touched("projects");
+      if (leftovers.length + moves.length === 0) return;
+      await ctx.lock.run(`toggle ${relativePath}`, async () => {
+        for (const leftover of leftovers) {
+          await removePath(leftover.path);
+          pruneDisabledSide(leftover);
+        }
+        for (const { variant, to } of moves) {
+          ensureDir(dirname(to));
+          // A linked workspace can park skills on another disk: moved by copy there.
+          moveEntrySync(variant.path, to);
+          pruneDisabledSide(variant);
+        }
+      });
+      ctx.touched("projects");
     },
 
     exportSkill: async (skill, project, agentKeys) => {

@@ -347,6 +347,27 @@ describe("projects", () => {
       expect(await api().list()).toEqual([]);
     });
 
+    it("waits for the library lock before moving a skill", async () => {
+      const project = await api().addLinked("Vault", skillsRoot);
+      makeSkill(skillsRoot, "alpha");
+      const parked = join(world.root, "vault", "skills-disabled", "alpha");
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const other = world.ctx.lock.run("other work", () => held);
+      const toggle = api().setSkillEnabled(project.id, "alpha", false);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Still parked where it was: the toggle is queued behind the hold.
+      expect(existsSync(join(skillsRoot, "alpha"))).toBe(true);
+      expect(existsSync(parked)).toBe(false);
+      release();
+      await other;
+      await toggle;
+      expect(existsSync(join(skillsRoot, "alpha"))).toBe(false);
+      expect(existsSync(parked)).toBe(true);
+    });
+
     it("cannot disable skills when no disabled folder could be made", async () => {
       // A file sits where the sibling folder would go.
       writeFile(join(world.root, "vault", "skills-disabled"), "not a folder");
