@@ -2,8 +2,8 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isCommitId } from "@loadout/shared";
-import type { ExecResult } from "../util/exec";
 import { removePath } from "../util/fs";
+import type { RunGit } from "./git-sparse";
 
 /**
  * Git's tree id of a folder names its whole content: the same id at two commits means not one
@@ -13,11 +13,6 @@ import { removePath } from "../util/fs";
  * cache that installs and updates use is never touched.
  */
 
-type Run = (
-  args: string[],
-  call: { network?: boolean; cwd?: string; signal?: AbortSignal },
-) => Promise<ExecResult>;
-
 /** Revision → one tree id per asked path, in order; null where it could not be read. */
 export type FolderTrees = Map<string, (string | null)[]>;
 
@@ -26,7 +21,7 @@ const TREES_DIR_PREFIX = "trees-";
 const TREES_FILTER = "--filter=blob:none";
 
 export async function readFolderTrees(
-  run: Run,
+  run: RunGit,
   tempPrefix: string,
   url: string,
   revisions: readonly string[],

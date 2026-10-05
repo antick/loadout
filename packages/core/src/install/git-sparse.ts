@@ -9,9 +9,10 @@ import { segmentsOf } from "../util/fs";
  * `--no-cone`) or a server that ignores the filter simply ends up with every file, as before.
  */
 
+/** The git runner the clone cache and the tree reader share: `cwd` defaults to the process's. */
 export type RunGit = (
   args: string[],
-  call: { cwd: string; network?: boolean; signal?: AbortSignal },
+  call: { cwd?: string; network?: boolean; signal?: AbortSignal },
 ) => Promise<ExecResult>;
 
 /** Only the skill documents, anywhere in the repository (gitignore-style: no slash, any depth). */
