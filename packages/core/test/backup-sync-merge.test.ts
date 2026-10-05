@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Device, createDevice, pushByHand, rawGit, useTwoDevices } from "./backup-world";
@@ -196,6 +196,29 @@ describe("backup sync between two devices", () => {
     expect(a.read("beta")).toBe("fine");
     expect(existsSync(join(a.skillsDir, "..", "escaped"))).toBe(false);
     expect(existsSync(join(a.skillsDir, "..", "..", "escaped"))).toBe(false);
+  });
+
+  it("reads every metadata file past one that is not valid UTF-8", async () => {
+    const ids = [a.skill("alpha")?.id ?? "", a.skill("beta")?.id ?? ""].sort();
+    const metadata = basename(a.ctx.paths.metadataDir);
+    const manual = join(world.dir, "manual");
+    rawGit(world.dir, "clone", "-q", world.remote, manual);
+    rawGit(manual, "checkout", "-q", "-B", "main", "origin/main");
+    // The file git reads first gets a note in Latin-1: one byte that is not UTF-8. Read as text
+    // and encoded back it would be two bytes, and every file after it would be read askew.
+    const file = join(manual, metadata, "skills", `${ids[0]}.json`);
+    const meta = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    writeFileSync(file, Buffer.from(JSON.stringify({ ...meta, note: "caf\u00e9" }), "latin1"));
+    writeFile(join(manual, "beta", "notes.md"), "fine");
+    rawGit(manual, "add", "-A");
+    rawGit(manual, "commit", "-qm", "manual");
+    rawGit(manual, "push", "-q", "origin", "main");
+
+    const outcome = await a.api.sync();
+
+    expect(outcome.merge?.updated.map((item) => item.name)).toContain("beta");
+    expect([a.skill("alpha")?.id, a.skill("beta")?.id].sort()).toEqual(ids);
+    expect(a.read("beta")).toBe("fine");
   });
 
   it("refuses to merge a remote with unrelated history", async () => {

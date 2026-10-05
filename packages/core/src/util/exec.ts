@@ -13,11 +13,16 @@ export interface ExecOptions {
   input?: string;
   /** Called with each stderr line as it arrives (git reports progress there). */
   onStderrLine?: (line: string) => void;
+  /** `"buffer"`: stdout is handed back as bytes in `stdoutBytes`, for output that is not text. */
+  encoding?: "utf8" | "buffer";
 }
 
 export interface ExecResult {
   code: number;
+  /** Empty when the call asked for bytes. */
   stdout: string;
+  /** Only with `encoding: "buffer"`. */
+  stdoutBytes?: Buffer;
   stderr: string;
 }
 
@@ -72,7 +77,7 @@ export function exec(
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
     });
-    let stdout = "";
+    const stdout: Buffer[] = [];
     let stderr = "";
     let pendingLine = "";
     let settled = false;
@@ -101,8 +106,8 @@ export function exec(
     }, timeoutMs);
     options.signal?.addEventListener("abort", onAbort, { once: true });
 
-    child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
-      stdout += chunk;
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdout.push(chunk);
     });
     child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
       stderr += chunk;
@@ -121,7 +126,14 @@ export function exec(
       );
     });
     child.on("close", (code) => {
-      finish(() => resolve({ code: code ?? -1, stdout, stderr }));
+      const bytes = Buffer.concat(stdout);
+      finish(() =>
+        resolve(
+          options.encoding === "buffer"
+            ? { code: code ?? -1, stdout: "", stdoutBytes: bytes, stderr }
+            : { code: code ?? -1, stdout: bytes.toString("utf8"), stderr },
+        ),
+      );
     });
     if (options.input !== undefined) child.stdin.write(options.input);
     child.stdin.end();

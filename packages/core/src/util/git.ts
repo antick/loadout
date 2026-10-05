@@ -89,6 +89,7 @@ export interface GitRunOptions {
   input?: string;
   signal?: AbortSignal;
   onStderrLine?: (line: string) => void;
+  encoding?: "utf8" | "buffer";
 }
 
 async function networkEnvironment(
@@ -122,6 +123,7 @@ export async function runGit(args: string[], options: GitRunOptions = {}): Promi
       signal: options.signal,
       input: options.input,
       onStderrLine: options.onStderrLine,
+      encoding: options.encoding,
     });
   } catch (error) {
     if (isAppError(error, "UNSUPPORTED")) throw new AppError("GIT_MISSING", MISSING_MESSAGE);

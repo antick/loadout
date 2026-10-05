@@ -58,8 +58,10 @@ async function readFiles(
   const files = new Map<string, string>();
   if (paths.length === 0) return files;
   const input = paths.map((path) => `${commit}:${path}\n`).join("");
-  const result = await env.git.run(["cat-file", "--batch"], { input });
-  const bytes = Buffer.from(result.stdout, "utf8");
+  // Read as bytes: the sizes in the headers count bytes, and a file that is not valid UTF-8
+  // (decoded and encoded back, it would grow) must not shift every offset after it.
+  const result = await env.git.run(["cat-file", "--batch"], { input, encoding: "buffer" });
+  const bytes = result.stdoutBytes ?? Buffer.alloc(0);
   let offset = 0;
   for (const path of paths) {
     const lineEnd = bytes.indexOf(NEWLINE, offset);

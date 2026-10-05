@@ -75,6 +75,8 @@ export interface GitCallOptions {
   input?: string;
   /** Options that go before the subcommand, such as `--git-dir`. */
   globalArgs?: string[];
+  /** `"buffer"`: stdout comes back as bytes (`stdoutBytes`), for output that is not text. */
+  encoding?: "utf8" | "buffer";
 }
 
 export interface Git {
@@ -120,6 +122,7 @@ export function createGit(deps: GitDeps): Git {
       cwd: options.cwd ?? deps.repoDir,
       env: options.env,
       input: options.input,
+      encoding: options.encoding,
     });
   }
 
