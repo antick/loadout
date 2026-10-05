@@ -3,6 +3,9 @@ import { toast } from "sonner";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
 
+/** Class of a toast description that lists failures or paths, one per line. */
+export const FAILURE_LIST_CLASS = "text-xs whitespace-pre-line break-words";
+
 /** A button on a toast, such as Undo. */
 export interface ToastAction {
   label: string;
@@ -33,7 +36,7 @@ export function toastError(error: unknown, fallbackKey?: string): void {
   const conflicts = error instanceof ApiError ? (error.details?.conflicts ?? []) : [];
   toast.error(errorMessage(error, fallbackKey), {
     description: conflicts.length > 0 ? describeConflicts(conflicts) : undefined,
-    descriptionClassName: "font-mono text-xs whitespace-pre-line break-all",
+    descriptionClassName: `font-mono ${FAILURE_LIST_CLASS}`,
   });
 }
 
@@ -76,6 +79,6 @@ export function toastApplyResult(
   ];
   toast.warning(i18n.t("deploy.appliedWithProblems", { summary, count: problems }), {
     description: lines.join("\n"),
-    descriptionClassName: "text-xs whitespace-pre-line break-all",
+    descriptionClassName: FAILURE_LIST_CLASS,
   });
 }

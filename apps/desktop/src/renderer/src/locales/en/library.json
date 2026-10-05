@@ -103,8 +103,6 @@
     "updates": {
       "checked_one": "Checked {{count}} skill",
       "checked_other": "Checked {{count}} skills",
-      "checkedWithFailures_one": "{{summary}}, {{count}} could not be checked",
-      "checkedWithFailures_other": "{{summary}}, {{count}} could not be checked",
       "batchDone_one": "Updated {{count}} skill, {{unchanged}} unchanged",
       "batchDone_other": "Updated {{count}} skills, {{unchanged}} unchanged",
       "heldBack": "Held back because updating would delete files or replace your edits: {{names}}. Open the skill and update it from the Source tab to review them."
@@ -366,7 +364,7 @@
       "projectCopies_one": "{{count}} copy in a project keeps the name {{name}}: copies are left as they are.",
       "projectCopies_other": "{{count}} copies in projects keep the name {{name}}: copies are left as they are.",
       "done": "Renamed {{from}} to {{to}}",
-      "notRedeployed": "Could not deploy it again for: {{agents}}. Deploy it from the skill's Agents tab.",
+      "redeployHint": "Deploy it again from the skill's Agents tab.",
       "error": "Could not rename the skill."
     },
     "suggestFor": {

@@ -15,9 +15,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
-import { describeFailures, FAILURE_LIST_CLASS } from "@/lib/batch";
+import { toastBatchOutcome } from "@/lib/batch";
 import { EXPORT_FILE_EXTENSION, EXPORT_MANY_PREFIX } from "@/lib/constants";
-import { toastWithUndo, undoAction } from "@/lib/removed-undo";
+import { undoAction } from "@/lib/removed-undo";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 export interface CreateProjectSkillInput {
@@ -68,17 +68,8 @@ export function useCheckAllUpdates(): UseMutationResult<BatchResult, unknown, vo
   const { t } = useTranslation();
   return useApiMutation({
     fn: () => api.updates.checkAll(true),
-    onSuccess: (result) => {
-      const summary = t("library.updates.checked", { count: result.succeeded });
-      if (result.failed.length === 0) {
-        toastSuccess(summary);
-        return;
-      }
-      toast.warning(
-        t("library.updates.checkedWithFailures", { summary, count: result.failed.length }),
-        { description: describeFailures(result.failed), descriptionClassName: FAILURE_LIST_CLASS },
-      );
-    },
+    onSuccess: (result) =>
+      toastBatchOutcome(t("library.updates.checked", { count: result.succeeded }), result.failed),
     error: "library.errors.check",
   });
 }
@@ -166,16 +157,14 @@ export function useRenameSkill(): UseMutationResult<
   const { t } = useTranslation();
   return useApiMutation({
     fn: ({ skillId, name }) => api.skills.rename(skillId, name),
-    onSuccess: (result) => {
-      const title = t("library.rename.done", { from: result.from, to: result.to });
-      if (result.failed.length === 0) toastSuccess(title);
-      else
-        toast.warning(title, {
-          description: t("library.rename.notRedeployed", {
-            agents: result.failed.map((failure) => failure.name).join(", "),
-          }),
-        });
-    },
+    onSuccess: (result) =>
+      toastBatchOutcome(
+        t("library.rename.done", { from: result.from, to: result.to }),
+        result.failed,
+        {
+          description: result.failed.length > 0 ? t("library.rename.redeployHint") : null,
+        },
+      ),
     error: "library.rename.error",
   });
 }
@@ -185,24 +174,14 @@ export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown
   const { t } = useTranslation();
   return useApiMutation({
     fn: (skillIds: string[]) => api.skills.removeMany(skillIds),
-    onSuccess: (result) => {
-      const summary = t("skills.removed", { count: result.succeeded });
-      const kept = t("skills.removedKept", {
-        count: result.removedIds.length,
-        days: REMOVED_KEEP_DAYS,
-      });
-      if (result.failed.length === 0) {
-        toastWithUndo(summary, result.removedIds, kept);
-        return;
-      }
-      toast.warning(t("skills.removedWithFailures", { summary, count: result.failed.length }), {
-        description: result.failed
-          .map((failure) => `${failure.name}: ${failure.message}`)
-          .join("\n"),
-        descriptionClassName: "text-xs whitespace-pre-line",
+    onSuccess: (result) =>
+      toastBatchOutcome(t("skills.removed", { count: result.succeeded }), result.failed, {
         action: undoAction(result.removedIds),
-      });
-    },
+        description:
+          result.removedIds.length > 0
+            ? t("skills.removedKept", { count: result.removedIds.length, days: REMOVED_KEEP_DAYS })
+            : null,
+      }),
     error: "errors.removeSkills",
   });
 }

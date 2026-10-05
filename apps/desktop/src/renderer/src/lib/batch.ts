@@ -2,7 +2,7 @@ import type { BatchFailure, BatchResult } from "@loadout/shared";
 import { toast } from "sonner";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
-import { type ToastAction, errorMessage } from "@/lib/toast";
+import { FAILURE_LIST_CLASS, type ToastAction, errorMessage } from "@/lib/toast";
 
 /**
  * Run one job per item, one after the other, and collect what failed. Used where the backend has
@@ -25,9 +25,6 @@ export async function runSequentially<T>(
   }
   return { succeeded, failed };
 }
-
-/** Class of a toast description that lists failures, one per line. */
-export const FAILURE_LIST_CLASS = "text-xs whitespace-pre-line break-words";
 
 /** Failures as toast lines, capped so the toast stays readable. */
 export function describeFailures(failed: readonly BatchFailure[]): string {
@@ -61,7 +58,7 @@ export function toastBatchOutcome(
   const lines = [describeFailures(failed), ...(description ? [description] : [])];
   toast.warning(i18n.t("localSkills.batch.withFailures", { summary, count: failed.length }), {
     description: lines.join("\n"),
-    descriptionClassName: "text-xs whitespace-pre-line break-all",
+    descriptionClassName: FAILURE_LIST_CLASS,
     action: extras.action,
   });
 }

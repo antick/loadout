@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { describeFailures, runSequentially, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
+import { FAILURE_LIST_CLASS } from "@/lib/toast";
 import { toastSuccess } from "@/lib/toast";
 
 /** One logical skill of a project: every per-agent copy at this relative path. */
@@ -396,7 +397,7 @@ export function usePushManyToLibrary(): UseMutationResult<
       if (outcome.failed.length > 0) {
         toast.error(t("projectPage.toast.pushFailedMany", { count: outcome.failed.length }), {
           description: describeFailures(outcome.failed),
-          descriptionClassName: "text-xs whitespace-pre-line break-all",
+          descriptionClassName: FAILURE_LIST_CLASS,
         });
       }
     },
