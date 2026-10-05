@@ -5,7 +5,7 @@ import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { PortableSkill } from "../skills/portable";
 import { copyDir, isSkillDir, readDirSafe, removePath, statOrNull } from "../util/fs";
-import { hashDir, hashFile } from "../util/hash";
+import { hashDir, hashFile, holdsUncopiedEntries, sameUnhashedEntries } from "../util/hash";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
 import { sanitizeRemoteUrl } from "./credentials";
@@ -83,6 +83,10 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
       carried.complete = false;
       continue;
     }
+    // A copy leaves `.git` folders behind: the old library then holds the only one.
+    if (entry.isDirectory() && holdsUncopiedEntries(local, { copiesLinks: true })) {
+      carried.complete = false;
+    }
     if (!existsSync(incoming)) {
       await copyDir(local, incoming);
       continue;
@@ -114,7 +118,11 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
           env.store.update(row.id, { libraryPath: join(env.repoDir, name) });
         });
       }
-    } else if (row && !sameSkill) {
+      continue;
+    }
+    // The hash does not see links or `.gitignore` files: ones the backup lacks are only here.
+    if (!sameUnhashedEntries(local, incoming)) carried.complete = false;
+    if (row && !sameSkill) {
       // Identical content under another id: the backup's identity wins, or presets synced from
       // other devices would point at a skill this device does not know.
       carried.adjustments.push(() => env.store.delete(row.id));

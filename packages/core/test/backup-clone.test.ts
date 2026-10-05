@@ -2,10 +2,12 @@ import {
   closeSync,
   existsSync,
   ftruncateSync,
+  lstatSync,
   mkdirSync,
   openSync,
   readFileSync,
   readdirSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
@@ -125,6 +127,44 @@ describe("backup clone, size rules and credentials", () => {
     expect(readFileSync(join(parent, aside[0] ?? "", "README.md"), "utf8")).toBe(
       "B's own readme\n",
     );
+  });
+
+  it.each([
+    [
+      "a local-only skill's own .git folder",
+      "mine/.git/config",
+      (dir: string) => {
+        writeFile(join(dir, "mine", ".git", "config"), "[core]\n");
+      },
+    ],
+    [
+      "a .gitignore in a skill the backup has byte for byte",
+      "shared/.gitignore",
+      (dir: string) => {
+        writeFile(join(dir, "shared", ".gitignore"), "cache/\n");
+      },
+    ],
+    [
+      "a link in a skill the backup has byte for byte",
+      "shared/guide.md",
+      (dir: string) => {
+        symlinkSync("SKILL.md", join(dir, "shared", "guide.md"));
+      },
+    ],
+  ])("keeps the old library when the new one could not take %s", async (_, kept, add) => {
+    const { a, remote } = await seedRemote(temp.dir, ["shared"]);
+    track(a);
+    const b = track(createDevice(temp.dir, "B"));
+    b.addSkill("mine");
+    b.addSkill("shared");
+    add(b.skillsDir);
+
+    await b.api.clone(remote);
+
+    const parent = dirname(b.skillsDir);
+    const aside = readdirSync(parent).filter((name) => name.startsWith("skills.backup-"));
+    expect(aside).toHaveLength(1);
+    expect(lstatSync(join(parent, aside[0] ?? "", kept))).toBeTruthy();
   });
 
   it("removes the old library when everything in it reached the new one", async () => {

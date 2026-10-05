@@ -1,14 +1,16 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
 import { lstatOrNull, readDirSafe, toPosix } from "./fs";
 
+const GIT_DIR = ".git";
+const GIT_IGNORE_FILE = ".gitignore";
 /** Entries that never count as skill content: not hashed, not diffed, not reported as removed. */
 const IGNORED_NAMES: ReadonlySet<string> = new Set([
-  ".git",
+  GIT_DIR,
   ".DS_Store",
   "Thumbs.db",
-  ".gitignore",
+  GIT_IGNORE_FILE,
   "__pycache__",
 ]);
 const IGNORED_SUFFIX = ".pyc";
@@ -21,13 +23,54 @@ export function isIgnoredContentName(name: string): boolean {
 /**
  * True when copying this folder into the library would leave something behind: a `.git` folder
  * or a link, anywhere inside. Its hash cannot see either, so equal hashes do not make it safe to
- * delete.
+ * delete. `copiesLinks`: the copy keeps links, so only a `.git` folder is left behind.
  */
-export function holdsUncopiedEntries(root: string): boolean {
+export function holdsUncopiedEntries(
+  root: string,
+  options: { copiesLinks?: boolean } = {},
+): boolean {
   return readDirSafe(root).some((entry) => {
-    if (entry.isSymbolicLink() || entry.name === ".git") return true;
-    return entry.isDirectory() && holdsUncopiedEntries(join(root, entry.name));
+    if (entry.name === GIT_DIR || (!options.copiesLinks && entry.isSymbolicLink())) return true;
+    return entry.isDirectory() && holdsUncopiedEntries(join(root, entry.name), options);
   });
+}
+
+/**
+ * What `hashDir` does not see in a folder but someone may have put there on purpose: links (by
+ * target) and `.gitignore` files (by content), by `/` separated path.
+ */
+function unhashedEntries(root: string): Map<string, string> {
+  const found = new Map<string, string>();
+  const walk = (dir: string, prefix: string): void => {
+    for (const entry of readDirSafe(dir)) {
+      if (entry.name === GIT_DIR) continue;
+      const path = join(dir, entry.name);
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink()) found.set(relativePath, `link:${linkText(path)}`);
+      else if (entry.isDirectory()) walk(path, relativePath);
+      else if (entry.name === GIT_IGNORE_FILE) found.set(relativePath, `file:${hashFile(path)}`);
+    }
+  };
+  walk(root, "");
+  return found;
+}
+
+function linkText(path: string): string {
+  try {
+    return readlinkSync(path);
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Two folders hold the same links and `.gitignore` files. With equal `hashDir` results they then
+ * differ at most in caches and `.git` folders.
+ */
+export function sameUnhashedEntries(a: string, b: string): boolean {
+  const ours = unhashedEntries(a);
+  const theirs = unhashedEntries(b);
+  return ours.size === theirs.size && [...ours].every(([path, what]) => theirs.get(path) === what);
 }
 
 export interface ContentFile {
