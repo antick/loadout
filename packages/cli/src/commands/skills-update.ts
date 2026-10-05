@@ -1,7 +1,7 @@
 import { errorMessage, isRemoteSource } from "@loadout/core";
 import type { BatchUpdateResult, Skill, UpdateResult } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
-import { fields, plural, when } from "../output";
+import { failureLines, fields, plural, when } from "../output";
 import { type UpdatePlan, hasUpdateSource, planUpdate, updatePlanText } from "./skills-update-plan";
 import { ACCEPT_RISK_FLAG, DRY_RUN_FLAG, limitPositionals } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
@@ -76,7 +76,7 @@ async function check(context: CommandContext): Promise<CommandResult> {
     lines.push(`Gone from their source (${gone.length}), so they cannot update:`);
     for (const skill of gone) lines.push(`  ${skill.name}: ${goneNext(skill.name)}`);
   }
-  for (const failure of batch.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
+  lines.push(...failureLines(batch.failed));
   return {
     value: {
       checked: batch.succeeded,
@@ -138,18 +138,18 @@ async function planUpdates(context: CommandContext, one: Skill | null): Promise<
   const { core } = context;
   // `--all` updates only skills a check finds newer upstream: the dry run looks at the same ones.
   let skills: Skill[] = one ? [one] : [];
+  const value: UpdatePlan = { dryRun: true, skills: [], failed: [] };
   if (!one) {
-    await core.api.updates.checkAll(false);
+    value.failed = (await core.api.updates.checkAll(false)).failed;
     skills = (await core.api.skills.list()).filter(
       (skill) => hasUpdateSource(skill) && skill.updateStatus === "update_available",
     );
   }
-  const value: UpdatePlan = { dryRun: true, skills: [] };
   for (const skill of skills) value.skills.push(await planUpdate(core, skill));
   return {
     value,
     text: updatePlanText(value),
-    exitCode: exitCodeFor(value.skills.some((row) => row.error)),
+    exitCode: exitCodeFor(value.failed.length > 0 || value.skills.some((row) => row.error)),
   };
 }
 
@@ -177,18 +177,20 @@ async function update(context: CommandContext): Promise<CommandResult> {
     return { value: { dryRun: false, ...value }, text: lines.join("\n") };
   }
 
-  await core.api.updates.checkAll(false);
+  // A skill whose check failed is not due, so it would otherwise go unmentioned.
+  const checked = await core.api.updates.checkAll(false);
   const due = (await core.api.skills.list()).filter((s) => s.updateStatus === "update_available");
-  const value = flagBoolean(args, APPROVE_FLAG.name)
+  const updated = flagBoolean(args, APPROVE_FLAG.name)
     ? await updateEachApproved(context, due)
     : await core.api.updates.updateMany(due.map((skill) => skill.id));
+  const value = { ...updated, failed: [...checked.failed, ...updated.failed] };
   const lines = [`${plural(value.updated, "skill")} updated, ${value.unchanged} unchanged.`];
   if (value.heldBack.length > 0) {
     lines.push(
       `Held back because files would be deleted or edits replaced: ${value.heldBack.join(", ")}`,
     );
   }
-  for (const failure of value.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
+  lines.push(...failureLines(value.failed));
   return {
     value: { dryRun: false, ...value },
     text: lines.join("\n"),

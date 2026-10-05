@@ -9,7 +9,7 @@ import {
   runsCode,
 } from "@loadout/shared";
 import { flagBoolean, flagChoice, flagList, flagString } from "../args";
-import { fields, plural, table, when } from "../output";
+import { failureLines, fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
 import { diffCommand } from "./skills-diff";
@@ -261,7 +261,7 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
       `Kept in Recently removed for ${REMOVED_KEEP_DAYS} days: see 'removed list', then 'removed restore <id>'.`,
     );
   }
-  for (const failure of result.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
+  lines.push(...failureLines(result.failed));
   return {
     value: {
       dryRun: false,

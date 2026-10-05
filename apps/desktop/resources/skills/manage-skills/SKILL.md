@@ -109,7 +109,7 @@ loadout skills feedback <ref> -m "what happened" --proposal "wording that would 
 loadout skills diff <ref> --json
 loadout skills diff <ref> --upstream --json
 
-# Updates: check first, then update
+# Updates: check first, then update; --all exits 1 when a source check or update failed (read `failed`)
 loadout skills check --all --json
 loadout skills update <ref> --json
 loadout skills update --all --json

@@ -3,7 +3,7 @@ import { isAbsolute, join, resolve } from "node:path";
 import { type Core, type ResolvedAgent, invalid, notFound } from "@loadout/core";
 import type { ApplyResult, Preset, Skill } from "@loadout/shared";
 import { type FlagSpec, type ParsedArgs, UsageError, flagBoolean, flagList } from "../args";
-import { plural } from "../output";
+import { failureLines, plural } from "../output";
 
 /**
  * When a command asks for --yes, the same rule for all of them:
@@ -180,6 +180,6 @@ export function describeApply(result: ApplyResult): string {
   const lines = [
     `${plural(result.added, "deployment")} added, ${result.removed} removed, ${result.skipped} already as wanted${blockedNote(result)}.`,
   ];
-  for (const failure of result.failed) lines.push(`Failed: ${failure.name} - ${failure.message}`);
+  lines.push(...failureLines(result.failed));
   return lines.join("\n");
 }

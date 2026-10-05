@@ -1,8 +1,8 @@
 import { redactUrl, formatRevision } from "@loadout/shared";
 import { type Core, LIBRARY_LOCATION, errorMessage, isRemoteSource } from "@loadout/core";
-import type { FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
+import type { BatchFailure, FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
 
-import { plural } from "../output";
+import { failureLines, plural } from "../output";
 
 /** What `skills update --dry-run` found for one skill. Nothing is written. */
 export interface UpdatePlanRow {
@@ -27,6 +27,8 @@ export interface UpdatePlanRow {
 export interface UpdatePlan {
   dryRun: true;
   skills: UpdatePlanRow[];
+  /** Skills whose source check failed (`--all`): nobody knows whether they would change. */
+  failed: BatchFailure[];
 }
 
 /** Characters of a revision shown in the text. */
@@ -118,5 +120,6 @@ export function updatePlanText(plan: UpdatePlan): string {
   return [
     `Dry run: nothing was updated. ${plural(due, "skill")} would change.`,
     ...plan.skills.flatMap(rowText),
+    ...failureLines(plan.failed),
   ].join("\n");
 }

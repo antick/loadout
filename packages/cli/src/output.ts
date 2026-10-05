@@ -1,4 +1,4 @@
-import { type ErrorShape, formatDateTime, terminalSafe } from "@loadout/shared";
+import { type BatchFailure, type ErrorShape, formatDateTime, terminalSafe } from "@loadout/shared";
 
 export interface CliIo {
   stdout(text: string): void;
@@ -49,6 +49,10 @@ export const when = (ms: number | null | undefined): string => formatDateTime(ms
 export function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
+
+/** "Failed: <name> - <why>": one line for each part of a batch that failed. */
+export const failureLines = (failed: readonly BatchFailure[]): string[] =>
+  failed.map((failure) => `Failed: ${failure.name} - ${failure.message}`);
 
 /**
  * Text mode can carry names and descriptions a repository wrote, so control characters are shown

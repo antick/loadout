@@ -9,7 +9,7 @@ import {
 } from "@loadout/core";
 import type { LocalSkill } from "@loadout/shared";
 import { flagBoolean } from "../args";
-import { plural } from "../output";
+import { failureLines, plural } from "../output";
 import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
@@ -96,7 +96,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const lines = [
     `Adopted ${plural(adopted.length, "skill")} for ${agent.displayName}; ${skipped.length} skipped.`,
     ...skipped.map((skill) => `  skip:  ${skill.name} (${skill.reason})`),
-    ...failed.map((failure) => `Failed: ${failure.name} - ${failure.message}`),
+    ...failureLines(failed),
   ];
   return {
     value: { dryRun: false, agent: agent.key, adopted, skipped, failed },
