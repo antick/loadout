@@ -68,7 +68,7 @@ const SOURCE_FLAG = {
 const FAVORITES_FLAG = {
   name: "favorites",
   type: "boolean",
-  description: "Only favorite skills.",
+  description: "Only favourite skills.",
 } as const;
 const ADD_FLAG = {
   name: "add",
@@ -158,7 +158,7 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
     ["Updates", value.updateStatus],
     ["Tags", value.tags.join(", ")],
     ["Note", value.note],
-    ["Favorite", value.favoritedAt === null ? null : `since ${when(value.favoritedAt)}`],
+    ["Favourite", value.favoritedAt === null ? null : `since ${when(value.favoritedAt)}`],
     ["Deployed to", agentsOf(value)],
     ["Installed", when(value.createdAt)],
     ["Changed", when(value.updatedAt)],

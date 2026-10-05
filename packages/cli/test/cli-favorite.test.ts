@@ -20,12 +20,12 @@ describe("skills favorite", () => {
   it("marks skills, lists only them, and takes the mark back", async () => {
     const marked = await cli("skills", "favorite", "alpha");
     expect(marked.code).toBe(EXIT_OK);
-    expect(marked.stdout).toContain("Favorites: alpha.");
+    expect(marked.stdout).toContain("Favourites: alpha.");
 
     const only = await cli("skills", "list", "--favorites", "--json");
     expect(only.json<{ name: string }[]>().map((skill) => skill.name)).toEqual(["alpha"]);
     expect((await cli("skills", "list")).stdout).toContain("alpha [fav]");
-    expect((await cli("skills", "show", "alpha")).stdout).toContain("Favorite");
+    expect((await cli("skills", "show", "alpha")).stdout).toContain("Favourite");
 
     const undone = await cli("skills", "favorite", "alpha", "--undo", "--json");
     expect(undone.json<{ favoritedAt: number | null }[]>()[0]?.favoritedAt).toBeNull();

@@ -6,7 +6,7 @@ import type { CommandContext, CommandResult, CommandSpec } from "./types";
 const UNDO_FLAG = {
   name: "undo",
   type: "boolean",
-  description: "Take the skills out of the favorites again.",
+  description: "Take the skills out of the favourites again.",
 } as const;
 
 /** Make skills favorites, or take that back. */
@@ -18,13 +18,13 @@ async function favorite({ core, args }: CommandContext): Promise<CommandResult> 
   const names = value.map((skill) => skill.name).join(", ");
   return {
     value,
-    text: undo ? `No longer favorites: ${names}.` : `Favorites: ${names}.`,
+    text: undo ? `No longer favourites: ${names}.` : `Favourites: ${names}.`,
   };
 }
 
 export const favoriteCommand: CommandSpec = {
   name: "favorite",
-  summary: "Mark skills as favorites, or take that back",
+  summary: "Mark skills as favourites, or take that back",
   usage: "<ref>…",
   flags: [UNDO_FLAG],
   notes: ["Kept by Loadout and backed up with the tags. skills list --favorites shows them."],
