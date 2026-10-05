@@ -118,8 +118,10 @@ is `~/.loadout`; development uses your real library and agent folders.
 3. Open **Agents**, select an agent, and use **Add Skills** to deploy skills from the library.
    Installing into the library alone does not deploy a skill to an agent.
 4. Use **Presets** to group skills, or add a project to manage its project-local skills.
-5. Optionally configure Git backup. A personal access token or Git remote URL works now;
-   GitHub device sign-in needs a build with an OAuth client id (`LOADOUT_GITHUB_CLIENT_ID`).
+5. Optionally configure Git backup. A personal access token or Git remote URL works now.
+   GitHub device sign-in only works when the app process sees an OAuth App client id in the
+   `LOADOUT_GITHUB_CLIENT_ID` environment variable at run time; no build ships one. Start the
+   app from a terminal with it set: an app opened from Finder or the Dock does not see it.
 
 ## CLI examples
 
