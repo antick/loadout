@@ -416,14 +416,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     } catch (error) {
       if (options.dryRun) throw error;
       recordFailure(skill.name, error);
-      if (isAppError(error, "NOT_FOUND") && store.find(skillId)) {
-        store.update(skillId, {
-          updateStatus: "source_missing",
-          lastCheckError: errorMessage(error),
-          lastCheckedAt: Date.now(),
-        });
-        ctx.touched("skills");
-      }
+      markFailed(skillId, error);
       throw error;
     }
   }
@@ -454,6 +447,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       });
     } catch (error) {
       recordFailure(skill.name, error);
+      markFailed(skillId, error);
       throw error;
     }
   }
