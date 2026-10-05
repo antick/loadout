@@ -82,6 +82,11 @@ export interface Core {
   followAgentFolders(): Promise<FolderMove[]>;
   /** The database and the skills folder are still where they were. */
   libraryPresent(): boolean;
+  /**
+   * Write pending metadata, waiting for the library lock like any operation. Await it before
+   * `close` wherever waiting is possible (the CLI, quitting the app).
+   */
+  flush(): Promise<void>;
   close(): void;
   /** Close without writing anything: the library was deleted and must not come back. */
   abandon(): void;
@@ -324,7 +329,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     beforeQuit: async () => {
       updates.auto.stop();
       backup.auto.stop();
-      bundle.flush();
+      await bundle.flush();
       await backup.auto.runOnQuit();
     },
   };
@@ -343,6 +348,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     projectWatchPaths: () => projects.skillFolders(),
     followAgentFolders: () => followMovedAgentFolders(ctx, { registry, store, deploy }),
     libraryPresent: () => existsSync(ctx.paths.dbPath) && existsSync(ctx.paths.skillsDir),
+    flush: bundle.flush,
     close: () => {
       background.stop();
       install.dispose();

@@ -138,6 +138,8 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
     return EXIT_FAILED;
   } finally {
     try {
+      // Waits for the library lock: a merge in the app must never see its files rewritten.
+      await core?.flush();
       core?.close();
     } catch {
       // The outcome is already printed; a failing close must not change the exit code.

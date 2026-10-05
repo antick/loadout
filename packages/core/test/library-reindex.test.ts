@@ -1,4 +1,4 @@
-import { mkdirSync, readlinkSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readlinkSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -202,6 +202,55 @@ describe("re-indexing with metadata files behind the database", () => {
     });
     await pending;
     expect(core.store.get(skill.id).tags).toEqual(["late"]);
+  });
+});
+
+/** A process that ends (the CLI, the app quitting) writes its metadata only under the lock. */
+describe("writing metadata on the way out", () => {
+  let temp: ReturnType<typeof tempDir>;
+  let core: Core;
+  let id: string;
+  let file: string;
+  beforeEach(async () => {
+    temp = tempDir();
+    core = createTestCore({ homeDir: temp.dir });
+    id = (await core.api.skills.create({ name: "alpha", description: "Test skill" })).id;
+    await core.flush();
+    file = join(core.ctx.paths.metadataDir, "skills", `${id}.json`);
+  });
+  afterEach(() => {
+    core.close();
+    temp.cleanup();
+  });
+
+  const noted = (): boolean => readFileSync(file, "utf8").includes("Late note");
+  const changeNote = (): void => {
+    core.store.update(id, { note: "Late note" });
+    core.ctx.touched("skills");
+  };
+
+  it("waits for another process before writing", async () => {
+    const other = new RepoLock(core.ctx.paths.lockPath);
+    let flushed: Promise<void> = Promise.resolve();
+    await other.run("merge in another process", async () => {
+      changeNote();
+      flushed = core.flush();
+      await sleep(150);
+      expect(noted()).toBe(false);
+    });
+    await flushed;
+    expect(noted()).toBe(true);
+  });
+
+  it("leaves the files alone when closing while another process holds the library", async () => {
+    const other = new RepoLock(core.ctx.paths.lockPath);
+    await other.run("merge in another process", () => {
+      changeNote();
+      core.close();
+      expect(noted()).toBe(false);
+    });
+    core = createTestCore({ homeDir: temp.dir });
+    expect(core.store.get(id).note).toBe("Late note");
   });
 });
 

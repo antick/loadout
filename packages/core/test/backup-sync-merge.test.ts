@@ -115,9 +115,9 @@ describe("backup sync between two devices", () => {
     expect(b.skill("alpha")).toMatchObject({ sourceType: "git", sourceRevision: "rev2" });
 
     // B's metadata is rewritten from its database; it must match what it just merged.
-    b.flush();
+    await b.flush();
     expect(await b.api.sync()).toMatchObject({ committed: false, pushed: false });
-    a.flush();
+    await a.flush();
     expect(await a.api.sync()).toMatchObject({ committed: false, pushed: false, merge: null });
   });
 

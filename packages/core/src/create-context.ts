@@ -47,8 +47,13 @@ export interface ContextBundle {
   ctx: CoreContext;
   store: SkillStore;
   portable: PortableMetadata;
-  /** Write any pending portable metadata now. */
-  flush(): void;
+  /**
+   * Write any pending portable metadata now, holding the library lock (waiting for it like any
+   * operation). When the library stays busy the write is skipped: the database keeps the change
+   * and the next locked write carries it.
+   */
+  flush(): Promise<void>;
+  /** Write pending metadata only if the lock is free right now, then close the database. */
   close(): void;
   /** Close the database without writing the portable metadata. */
   abandon(): void;
@@ -104,6 +109,7 @@ export function createContext(
   let pendingScopes = new Set<DataScope>();
   let scheduled = false;
   let abandoned = false;
+  let closed = false;
 
   const lock = new RepoLock(resolved.paths.lockPath);
 
@@ -115,13 +121,36 @@ export function createContext(
     }
   };
 
-  /** Write any pending metadata now, and tell the UI. Used on close, when nothing else runs. */
-  const flush = (): void => {
+  /**
+   * Write pending metadata now, and tell the UI. Never without the lock: a backup merge in another
+   * process must not see its metadata files rewritten under it.
+   */
+  const flush = async (): Promise<void> => {
     scheduled = false;
-    if (abandoned) return;
+    if (abandoned || closed) return;
     if (metadataDirty) {
       metadataDirty = false;
-      writeMetadata();
+      try {
+        await lock.run("write metadata", () => {
+          if (!abandoned && !closed) writeMetadata();
+        });
+      } catch (error) {
+        metadataDirty = true;
+        log.warn("Metadata not written: the library is busy; the next write carries it", error);
+      }
+    }
+    announce();
+  };
+
+  /** The last write before closing: only when the lock is free at this moment. */
+  const flushNow = (): void => {
+    scheduled = false;
+    if (abandoned || closed) return;
+    if (metadataDirty) {
+      const written = lock.holdSync("write metadata", writeMetadata);
+      if (written) metadataDirty = false;
+      else
+        log.warn("Metadata not written on close: the library is busy; the next write carries it");
     }
     announce();
   };
@@ -140,12 +169,12 @@ export function createContext(
    */
   const flushLater = (): void => {
     scheduled = false;
-    if (abandoned) return;
+    if (abandoned || closed) return;
     if (metadataDirty) {
       metadataDirty = false;
       void lock
         .run("write metadata", () => {
-          if (!abandoned) writeMetadata();
+          if (!abandoned && !closed) writeMetadata();
         })
         .catch((error: unknown) => {
           metadataDirty = true;
@@ -190,7 +219,8 @@ export function createContext(
     portable,
     flush,
     close: () => {
-      flush();
+      flushNow();
+      closed = true;
       db.close();
     },
     abandon: () => {
