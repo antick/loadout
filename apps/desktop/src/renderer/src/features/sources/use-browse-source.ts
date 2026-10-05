@@ -9,7 +9,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
-import { useCancelPreview, usePreviewArchive, usePreviewGit } from "@/hooks/mutations/install";
+import {
+  useCancelPreview,
+  usePreviewArchive,
+  usePreviewGit,
+} from "@/features/install/install-mutations";
 
 export interface BrowseSource {
   /** The source being fetched, so its button can show a spinner. */

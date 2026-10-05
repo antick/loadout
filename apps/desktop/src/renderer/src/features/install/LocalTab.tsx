@@ -12,14 +12,15 @@ import { Input } from "@/components/ui/input";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import {
+  useCancelPreview,
   useImportFolder,
   useInstallFromPath,
   usePickArchive,
+  usePreviewArchive,
 } from "@/features/install/install-mutations";
 import { cn } from "@/lib/utils";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
-import { useCancelPreview, usePreviewArchive } from "@/hooks/mutations/install";
 import { usePickFolder } from "@/hooks/mutations/app";
 
 type SourceKind = "folder" | "archive";
