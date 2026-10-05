@@ -1,6 +1,5 @@
 import { basename, dirname, join, resolve } from "node:path";
 import type { AgentRegistry } from "../agents/registry";
-import { normalizeProjectDir } from "../agents/service";
 import { invalid } from "../errors";
 import { canonicalPath, isInside, lstatOrNull } from "../util/fs";
 import { holdsUncopiedEntries } from "../util/hash";
@@ -45,7 +44,7 @@ export function folderRules(
     forbidden: [...agents.map((agent) => realPathOf(agent.skillsDir)), realPathOf(libraryDir)],
     projectDirs: new Set(
       agents.flatMap((agent) => {
-        const dir = normalizeProjectDir(agent.projectSkillsDir);
+        const dir = agent.projectSkillsDir;
         return dir ? [dir] : [];
       }),
     ),

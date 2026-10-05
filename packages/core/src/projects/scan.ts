@@ -5,7 +5,7 @@ import {
   type SyncHealth,
   type SyncStatus,
 } from "@loadout/shared";
-import { isDirectory, readDirSafe } from "../util/fs";
+import { isDirectory, readDirSafe, segmentsOf } from "../util/fs";
 import { toLocalSkill } from "../workspace/local-actions";
 import {
   type LibraryIndex,
@@ -61,11 +61,7 @@ function sides(target: ResolvedTarget): { root: string; enabled: boolean }[] {
 
 /** Copies of one skill are the folders sharing a relative path, whatever its letter case. */
 export const groupKey = (relativePath: string): string =>
-  relativePath
-    .split(/[\\/]+/)
-    .filter(Boolean)
-    .join("/")
-    .toLowerCase();
+  segmentsOf(relativePath).join("/").toLowerCase();
 
 /** Every copy of the skill at `relativePath`, found without hashing anything. */
 export function findVariants(targets: ResolvedTarget[], relativePath: string): Variant[] {

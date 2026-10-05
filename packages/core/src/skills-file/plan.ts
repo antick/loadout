@@ -8,7 +8,6 @@ import type {
   SkillsFilePlanSource,
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
-import { normalizeProjectDir } from "../agents/service";
 import { invalid } from "../errors";
 import type { GitClient } from "../install/git-client";
 import type { FoundSkill } from "../install/repo-scan";
@@ -61,7 +60,7 @@ function agentFolders(
   const unknown: string[] = [];
   for (const key of info.spec.agents) {
     const agent = registry.find(key);
-    const dir = agent ? normalizeProjectDir(agent.projectSkillsDir) : null;
+    const dir = agent?.projectSkillsDir ?? null;
     if (!dir) {
       unknown.push(key);
       continue;

@@ -9,7 +9,6 @@ import {
   groupSkillSources,
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
-import { normalizeProjectDir } from "../agents/service";
 import type { CoreContext } from "../context";
 import { exists, invalid, notFound } from "../errors";
 import type { GitClient } from "../install/git-client";
@@ -73,7 +72,7 @@ export function createSkillsFileService(
     const libraryIds = new Set<string>();
     const library = indexLibrary(deps.store.list(), deps.store.deployments());
     for (const agent of deps.registry.list()) {
-      const relative = normalizeProjectDir(agent.projectSkillsDir);
+      const relative = agent.projectSkillsDir;
       if (!relative) continue;
       for (const entry of scanSkillRoot(join(dir, relative), PROJECT_SCAN)) {
         const match = matchLibrarySkill(entry, library, "strict");

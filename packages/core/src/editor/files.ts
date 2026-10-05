@@ -14,6 +14,7 @@ import {
   isInside,
   lstatOrNull,
   resolveInside,
+  segmentsOf,
   toPosix,
   writeFileAtomic,
 } from "../util/fs";
@@ -73,11 +74,6 @@ export interface WriteOutcome {
 interface MissingFile {
   relative: string;
   absolute: string;
-}
-
-/** Split a relative path the way both separators are written, without empty segments. */
-export function segmentsOf(path: string): string[] {
-  return path.split(/[\\/]+/).filter(Boolean);
 }
 
 /** The `/` separated path of a file the folder may hold; refuses ignored names and other files. */

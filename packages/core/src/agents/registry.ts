@@ -12,7 +12,7 @@ import type { CoreContext } from "../context";
 import { notFound } from "../errors";
 import { osConfigDir } from "../paths";
 import { INTERNAL_KEYS } from "../settings/store";
-import { canonicalPath } from "../util/fs";
+import { canonicalPath, segmentsOf } from "../util/fs";
 
 /** A user-defined agent, as stored in settings. */
 export interface CustomAgentRecord {
@@ -42,12 +42,13 @@ interface ResolveSettings {
   projectOverrides: Record<string, string>;
 }
 
-/** `a\\b/` → `a/b`: project-relative folders compare as `/` separated, with no trailing slash. */
-function relativeDir(dir: string): string {
-  return dir
-    .split(/[\\/]+/)
-    .filter(Boolean)
-    .join("/");
+/**
+ * `a\\b/./` → `a/b`: project-relative folders compare as `/` separated, with no trailing slash.
+ * Null when nothing is left, or for a folder outside the project (never saved that way).
+ */
+function relativeDir(dir: string | null | undefined): string | null {
+  const segments = segmentsOf(dir ?? "").filter((segment) => segment !== ".");
+  return segments.length > 0 && !segments.includes("..") ? segments.join("/") : null;
 }
 
 /**
@@ -151,7 +152,9 @@ export class AgentRegistry {
       isCustom: false,
       skillsDir: override ?? defaultSkillsDir,
       hasPathOverride: Boolean(override),
-      projectSkillsDir: projectOverride ?? definition.projectSkillsDir ?? definition.skillsDir,
+      projectSkillsDir: relativeDir(
+        projectOverride ?? definition.projectSkillsDir ?? definition.skillsDir,
+      ),
       hasProjectPathOverride: Boolean(projectOverride),
       sharesDirWith: [],
       // Extra folders the agent reads that exist on this machine. Discovery only.
@@ -161,7 +164,9 @@ export class AgentRegistry {
       homeEnv: override ? null : envHome,
       reload: definition.reload ?? null,
       detection,
-      projectExtraScanDirs: (definition.projectExtraScanDirs ?? []).map(relativeDir),
+      projectExtraScanDirs: (definition.projectExtraScanDirs ?? []).flatMap(
+        (dir) => relativeDir(dir) ?? [],
+      ),
       recursiveScan: definition.recursiveScan ?? false,
       pluginsDir: found && definition.pluginsDir ? join(found, definition.pluginsDir) : null,
     };
@@ -177,7 +182,7 @@ export class AgentRegistry {
       isCustom: true,
       skillsDir: record.skillsDir,
       hasPathOverride: false,
-      projectSkillsDir: record.projectSkillsDir,
+      projectSkillsDir: relativeDir(record.projectSkillsDir),
       hasProjectPathOverride: false,
       sharesDirWith: [],
       alsoReads: [],

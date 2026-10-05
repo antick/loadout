@@ -8,10 +8,11 @@ import {
   readDirSafe,
   removePathSync,
   resolveInside,
+  segmentsOf,
 } from "../util/fs";
 import { isIgnoredContentName, listContentFiles } from "../util/hash";
 import { isPortableName } from "../util/names";
-import { type EditableFolder, mainDocumentOf, segmentsOf, staysInside } from "./files";
+import { type EditableFolder, mainDocumentOf, staysInside } from "./files";
 import type { FileHistory } from "./history";
 
 /**

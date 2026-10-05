@@ -13,13 +13,13 @@ import type { InstructionFinder } from "../instructions/finder";
 import type { ProjectStore } from "../projects/store";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
+import { segmentsOf } from "../util/fs";
 import { hashDir } from "../util/hash";
 import {
   type EditableFolder,
   applyToCopy,
   listFolderFiles,
   readFileAt,
-  segmentsOf,
   writeFileAt,
 } from "./files";
 import type { FileHistory } from "./history";

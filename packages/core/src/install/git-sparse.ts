@@ -1,5 +1,6 @@
 import { SKILL_MARKER_FILES } from "@loadout/shared";
 import type { ExecResult } from "../util/exec";
+import { segmentsOf } from "../util/fs";
 
 /**
  * Which files of a cached clone are on disk. The cache is a partial clone: big files arrive only
@@ -20,10 +21,7 @@ const GLOB_SPECIALS = /[\\*?[\]]/g;
 
 /** `a/b c` → `/a/b c/`: that one folder and everything in it, anchored at the repository root. */
 export function folderPattern(relativeDir: string): string {
-  const posix = relativeDir
-    .split(/[\\/]+/)
-    .filter(Boolean)
-    .join("/");
+  const posix = segmentsOf(relativeDir).join("/");
   return `/${posix.replace(GLOB_SPECIALS, "\\$&")}/`;
 }
 

@@ -107,9 +107,14 @@ export function pathsOverlap(a: string, b: string): boolean {
   return isInside(a, b) || isInside(b, a);
 }
 
+/** Split a relative path the way both separators are written, without empty segments. */
+export function segmentsOf(path: string): string[] {
+  return path.split(/[\\/]+/).filter(Boolean);
+}
+
 /** Resolve a user-supplied relative path under `root`, refusing anything that escapes it. */
 export function resolveInside(root: string, relativePath: string): string {
-  const segments = relativePath.split(/[\\/]+/).filter(Boolean);
+  const segments = segmentsOf(relativePath);
   if (segments.length === 0 || segments.some((s) => s === "." || s === "..")) {
     throw invalid(`Invalid relative path: '${relativePath}'`);
   }

@@ -18,12 +18,6 @@ export const DISABLED_SUFFIX = "-disabled";
 export const DEFAULT_PROJECT_AGENT_KEY = "claude_code";
 const NAME_SEPARATOR = " / ";
 
-const normalizeRelativeDir = (dir: string): string =>
-  dir
-    .split(/[\\/]+/)
-    .filter(Boolean)
-    .join("/");
-
 export const isAvailable = (target: ProjectTarget): boolean => target.installed && target.enabled;
 
 /** The target an agent key belongs to: its own, or the merged one it shares a folder with. */
@@ -37,17 +31,12 @@ export function findTarget(targets: ResolvedTarget[], agentKey: string): Resolve
 
 /** Project-relative skills folder of the default agent, honouring a user override. */
 export function defaultProjectSkillsDir(registry: AgentRegistry): string | null {
-  const dir = registry.find(DEFAULT_PROJECT_AGENT_KEY)?.projectSkillsDir;
-  return dir ? normalizeRelativeDir(dir) : null;
+  return registry.find(DEFAULT_PROJECT_AGENT_KEY)?.projectSkillsDir ?? null;
 }
 
 /** Every distinct project-relative skills folder any agent uses. */
 export function projectSkillDirs(registry: AgentRegistry): string[] {
-  const dirs = registry
-    .list()
-    .flatMap((agent) => (agent.projectSkillsDir ? [agent.projectSkillsDir] : []))
-    .map(normalizeRelativeDir)
-    .filter(Boolean);
+  const dirs = registry.list().flatMap((agent) => agent.projectSkillsDir ?? []);
   return [...new Set(dirs)];
 }
 
@@ -115,7 +104,7 @@ export function resolveTargets(project: ProjectRecord, registry: AgentRegistry):
 
   const groups = new Map<string, ResolvedAgent[]>();
   for (const agent of registry.list()) {
-    const relativeDir = agent.projectSkillsDir ? normalizeRelativeDir(agent.projectSkillsDir) : "";
+    const relativeDir = agent.projectSkillsDir;
     if (!relativeDir) continue;
     groups.set(relativeDir, [...(groups.get(relativeDir) ?? []), agent]);
   }

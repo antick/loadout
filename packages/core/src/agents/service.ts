@@ -4,7 +4,7 @@ import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { invalid } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
-import { canonicalPath, normalizeAbsolutePath } from "../util/fs";
+import { canonicalPath, normalizeAbsolutePath, segmentsOf } from "../util/fs";
 import { agentKeyFromName } from "../util/names";
 import type { AgentRegistry, CustomAgentRecord, ResolvedAgent } from "./registry";
 import { logRedeployProblems } from "../deploy/report-log";
@@ -31,7 +31,7 @@ export function normalizeProjectDir(input: string | null | undefined): string | 
   if (raw.startsWith(HOME_SHORTHAND) || posix.isAbsolute(raw) || win32.isAbsolute(raw)) {
     throw invalid("Project skills path must be relative to the project root");
   }
-  const segments = raw.split(/[\\/]+/).filter((segment) => segment && segment !== ".");
+  const segments = segmentsOf(raw).filter((segment) => segment !== ".");
   if (segments.includes("..")) {
     throw invalid("Project skills path cannot contain parent directory segments");
   }
