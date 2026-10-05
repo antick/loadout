@@ -1,6 +1,6 @@
 import { basename, join, relative } from "node:path";
 import { invalid, notFound } from "../errors";
-import { type SkillTrait, mergeTraits } from "@loadout/shared";
+import { type SkillTrait, lastPathSegment, mergeTraits } from "@loadout/shared";
 import { readFrontmatter, readSkillIdentity } from "../skills/metadata";
 import { folderTraits } from "../skills/traits";
 import {
@@ -138,23 +138,45 @@ export function listRepoSkills(scanRoot: string, options: FindOptions = {}): Fou
   );
 }
 
-function locate(repoDir: string, locatorId: string): string {
-  for (const container of LOCATOR_DIRS) {
-    const candidate = join(repoDir, container, locatorId);
-    if (isInside(repoDir, candidate) && isSkillDir(candidate)) return candidate;
-  }
-  // Agent-neutral copies first; the sort is stable, so each group keeps its path order.
-  const all = findSkillDirs(repoDir, { maxDepth: LOCATOR_SEARCH_DEPTH }).sort(
-    (a, b) =>
-      Number(isAgentSpecificPath(relative(repoDir, a))) -
-      Number(isAgentSpecificPath(relative(repoDir, b))),
+/** Where a skill named `id` is first looked for, relative to the repository. */
+export function usualSkillPaths(id: string): string[] {
+  return LOCATOR_DIRS.map((container) => (container ? `${container}/${id}` : id));
+}
+
+/**
+ * Which of a repository's skill folders (relative, `/`-separated) the name `id` means: the rule
+ * install and the marketplace detail share. `found` is the folder its path settles: a usual place,
+ * else the first folder of that name, agent-neutral copies first. Otherwise the folders in
+ * `byName`, in order, are the ones to check for a frontmatter `name` equal to `id`.
+ */
+export function locateSkill(
+  dirs: readonly string[],
+  id: string,
+): { found: string | null; byName: string[] } {
+  const usual = usualSkillPaths(id).find((path) => dirs.includes(path));
+  if (usual !== undefined) return { found: usual, byName: [] };
+  // The sort is stable, so each group keeps its path order.
+  const ordered = [...dirs].sort(
+    (a, b) => Number(isAgentSpecificPath(a)) - Number(isAgentSpecificPath(b)),
   );
+  const named = ordered.find((dir) => lastPathSegment(dir) === id);
+  return named === undefined ? { found: null, byName: ordered } : { found: named, byName: [] };
+}
+
+function locate(repoDir: string, locatorId: string): string {
+  const relativeOf = (dir: string): string => toPosix(relative(repoDir, dir));
+  // The usual places count even below a skill folder, which the search does not look into.
+  const usual = usualSkillPaths(locatorId).filter((path) => {
+    const dir = join(repoDir, path);
+    return isInside(repoDir, dir) && isSkillDir(dir);
+  });
+  const found = findSkillDirs(repoDir, { maxDepth: LOCATOR_SEARCH_DEPTH }).map(relativeOf);
+  const { found: settled, byName } = locateSkill([...usual, ...found], locatorId);
   const match =
-    all.find((dir) => basename(dir) === locatorId) ??
-    all.find((dir) => readFrontmatter(dir).name === locatorId);
+    settled ?? byName.find((dir) => readFrontmatter(join(repoDir, dir)).name === locatorId);
   // Never fall back to a container folder: installing the wrong skill is worse than failing.
-  if (!match) throw notFound(`Skill '${locatorId}' was not found in the repository`);
-  return match;
+  if (match === undefined) throw notFound(`Skill '${locatorId}' was not found in the repository`);
+  return join(repoDir, match);
 }
 
 /**

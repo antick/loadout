@@ -423,6 +423,19 @@ describe("marketplace skill detail", () => {
     });
   });
 
+  it("shows no document of another skill, which install would not take either", async () => {
+    serve({
+      [AUDIT_URL.replace("/pdf", "/pdf-kit")]: () => json({ audits: [] }),
+      [TREE_URL]: () => json({ tree: [{ type: "blob", path: "skills/pdf/SKILL.md" }] }),
+      [RAW_URL]: () => html(DOCUMENT),
+    });
+    // The repository's only skill is `pdf`: neither its folder nor its name is `pdf-kit`.
+    expect(await detail("acme/skills", "pdf-kit")).toMatchObject({
+      document: null,
+      documentPath: null,
+    });
+  });
+
   it("refuses sources and ids that are not the marketplace's shape", async () => {
     serve({});
     await expect(detail("acme", "pdf")).rejects.toMatchObject({ code: "INVALID_INPUT" });

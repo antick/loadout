@@ -3,12 +3,15 @@ import {
   type MarketAudit,
   type MarketAuditStatus,
   type MarketSkillDetail,
+  SKILL_MARKER_FILES,
+  lastPathSegment,
   splitFrontmatter,
   textField,
   isRecord,
 } from "@loadout/shared";
 import { invalid, isAppError, isUnanswered } from "../errors";
 import { type Download, jsonOptions, readJson } from "../install/download";
+import { locateSkill, usualSkillPaths } from "../install/repo-scan";
 
 /**
  * What to read before installing a marketplace skill: the security audits the marketplace
@@ -21,7 +24,6 @@ const GITHUB_API = "https://api.github.com/repos";
 const GITHUB_RAW = "https://raw.githubusercontent.com";
 const GITHUB_WEB = "https://github.com";
 const TREE_REF = "HEAD";
-const SKILL_FILE = "skill.md";
 const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
 const SOURCE_SHAPE = /^[\w.-]+\/[\w.-]+$/;
@@ -29,8 +31,7 @@ const SKILL_ID_SHAPE = /^[\w.:-]+$/;
 const STATUSES: ReadonlySet<string> = new Set(["pass", "warn", "fail"]);
 /** Files read to settle which of several overlapping folders holds the skill. */
 const MAX_MAYBE_READS = 4;
-/** Where skills usually sit, tried when the repository listing is out of reach. */
-const GUESSED_FOLDERS = ["skills/", "", ".claude/skills/", ".agents/skills/"] as const;
+const [MAIN_MARKER] = SKILL_MARKER_FILES;
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -64,10 +65,10 @@ function parseAudits(body: unknown, pageUrl: string): MarketAudit[] {
 
 /** Where to look for the `SKILL.md` of `skillId`, best first; see {@link documentCandidates}. */
 export interface DocumentCandidates {
-  /** Certain on sight: the folder is named after the skill, or it is the only `SKILL.md`. */
+  /** Certain on sight: install takes this folder by its path. */
   sure: string | null;
   /** Folders whose name overlaps the skill id (`react-best-practices` for `vercel-react-…`): kept
-   * only when the file's own `name` is the skill id. */
+   * only when the file's own `name` is the skill id, as install checks it. */
   maybe: string[];
 }
 
@@ -77,23 +78,31 @@ function byLength(a: string, b: string): number {
   return a.length - b.length || a.localeCompare(b);
 }
 
-/** The folder a file sits in, lower-cased: `skills/pdf/SKILL.md` → `pdf`. */
-function folderOf(path: string): string {
-  return path.split("/").at(-2)?.toLowerCase() ?? "";
-}
-
-/** Candidate `SKILL.md` paths for `skillId` among a repository's files. */
+/**
+ * Candidate `SKILL.md` paths for `skillId` among a repository's files, by the rule install finds
+ * the skill with ({@link locateSkill}), so the document shown is the one install would take.
+ */
 function documentCandidates(paths: readonly string[], skillId: string): DocumentCandidates {
-  const documents = paths.filter((path) => path.split("/").at(-1)?.toLowerCase() === SKILL_FILE);
+  // Each skill folder's document; `SKILL.md` over `skill.md`, as the skill reads it.
+  const documents = new Map<string, string>();
+  for (const path of paths) {
+    const file = lastPathSegment(path);
+    if (!(SKILL_MARKER_FILES as readonly string[]).includes(file)) continue;
+    const dir = path.slice(0, -file.length).replace(/\/$/, "");
+    if (!documents.has(dir) || file === MAIN_MARKER) documents.set(dir, path);
+  }
+  const { found, byName } = locateSkill([...documents.keys()], skillId);
+  if (found !== null) return { sure: documents.get(found) ?? null, maybe: [] };
+  // Reading every document costs a request each: only folders whose name overlaps the id.
   const id = skillId.toLowerCase();
-  const named = documents.filter((path) => folderOf(path) === id).sort(byLength);
-  if (named[0]) return { sure: named[0], maybe: [] };
-  if (documents.length === 1) return { sure: documents[0] ?? null, maybe: [] };
-  const overlapping = documents.filter((path) => {
-    const name = folderOf(path);
+  const overlapping = byName.filter((dir) => {
+    const name = lastPathSegment(dir).toLowerCase();
     return name.length >= MIN_OVERLAP && (id.includes(name) || name.includes(id));
   });
-  return { sure: null, maybe: overlapping.sort(byLength) };
+  return {
+    sure: null,
+    maybe: overlapping.flatMap((dir) => documents.get(dir) ?? []).sort(byLength),
+  };
 }
 
 /** The `name` in a document's frontmatter, or null. */
@@ -184,8 +193,8 @@ export function createMarketDetail(
     for (const path of paths) {
       try {
         const content = await raw(source, path);
-        const name = frontmatterName(content)?.toLowerCase();
-        if (nameMustBe === null || name === nameMustBe.toLowerCase()) return { path, content };
+        if (nameMustBe === null || frontmatterName(content) === nameMustBe)
+          return { path, content };
       } catch (error) {
         // Try the next place.
         noteFailure(trace, error);
@@ -201,7 +210,7 @@ export function createMarketDetail(
   ): Promise<{ path: string; content: string } | null> {
     const candidates = await listed(source, skillId, trace);
     if (!candidates) {
-      const guesses = GUESSED_FOLDERS.map((folder) => `${folder}${skillId}/SKILL.md`);
+      const guesses = usualSkillPaths(skillId).map((dir) => `${dir}/${MAIN_MARKER}`);
       return firstReadable(source, guesses, null, trace);
     }
     if (candidates.sure) return firstReadable(source, [candidates.sure], null, trace);
