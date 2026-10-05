@@ -9,9 +9,7 @@
  * The version is the app's, so `loadout --version` and the desktop app always agree.
  */
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { join, resolve } from "node:path";
-import { build } from "esbuild";
+import { join } from "node:path";
 
 const PACKAGE_NAME = "@antick/loadout";
 const BINARY = "loadout";
@@ -19,8 +17,6 @@ const BUNDLE = "dist/loadout.mjs";
 /** The bundle's name inside the package; `loadout.mjs` is the small launcher in front of it. */
 const BUNDLE_NAME = "cli.mjs";
 const OUT_DIR = "dist/npm";
-/** The agent table, bundled for a moment to be read; never part of the package. */
-const AGENTS_BUNDLE = "dist/agents-table.cjs";
 const APP_PACKAGE = "../../apps/desktop/package.json";
 /** Holds the Node.js floor (`engines.node`) of the whole repository. */
 const ROOT_PACKAGE = "../../package.json";
@@ -30,33 +26,8 @@ const app = JSON.parse(readFileSync(APP_PACKAGE, "utf8"));
 /** `node:sqlite` works without a flag from 22.13 on; the root package.json says so once. */
 const NODE_ENGINE = JSON.parse(readFileSync(ROOT_PACKAGE, "utf8")).engines.node;
 const cli = JSON.parse(readFileSync("package.json", "utf8"));
-/** Named in the README; the rest are counted from the app's own agent table. */
-const NAMED_AGENTS = ["Claude Code", "Codex", "Cursor", "Gemini CLI", "GitHub Copilot"];
-
-/**
- * The app's built-in agents, read from the shared package at pack time so the README never
- * disagrees with what the app supports. The shared package is TypeScript, so esbuild bundles the
- * one export this needs. CommonJS, because some of its dependencies call `require`.
- */
-async function builtInAgents() {
-  await build({
-    stdin: { contents: 'export { BUILT_IN_AGENTS } from "@loadout/shared";', resolveDir: "." },
-    bundle: true,
-    platform: "node",
-    format: "cjs",
-    outfile: AGENTS_BUNDLE,
-    logLevel: "silent",
-  });
-  try {
-    return createRequire(import.meta.url)(resolve(AGENTS_BUNDLE)).BUILT_IN_AGENTS;
-  } finally {
-    rmSync(AGENTS_BUNDLE, { force: true });
-  }
-}
-
-const agents = await builtInAgents();
-const unknown = NAMED_AGENTS.filter((name) => !agents.some((agent) => agent.displayName === name));
-if (unknown.length > 0) throw new Error(`Not built-in agents: ${unknown.join(", ")}`);
+/** Where the README says skills go; the full list is the app's agent table. */
+const DEPLOYED_TO = "Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and more";
 
 const manifest = {
   name: PACKAGE_NAME,
@@ -91,7 +62,7 @@ await import("./${BUNDLE_NAME}");
 const readme = `# ${PACKAGE_NAME}
 
 The \`${BINARY}\` command-line tool of [Loadout](${REPOSITORY}): one library of AI agent skills,
-deployed to ${NAMED_AGENTS.join(", ")} and ${agents.length - NAMED_AGENTS.length} more agents.
+deployed to ${DEPLOYED_TO}.
 
 It works on the same library as the desktop app (\`~/.loadout\`), or on its own without it.
 
