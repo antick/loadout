@@ -8,9 +8,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Device, joinRemote, seedRemote } from "./backup-world";
-import { tempDir, writeFile } from "./helpers";
+import { describe, expect, it } from "vitest";
+import { type Device, joinRemote, seedRemote, useTempDevices } from "./backup-world";
+import { writeFile } from "./helpers";
 
 /** A process id no process has: the note of a run that crashed. */
 const GONE_PID = 2 ** 22 + 7;
@@ -26,20 +26,8 @@ function staleIndexLock(device: Device): void {
 }
 
 describe("a backup merge that did not finish", () => {
-  let temp: ReturnType<typeof tempDir>;
-  const devices: Device[] = [];
-  const track = <T extends Device>(device: T): T => {
-    devices.push(device);
-    return device;
-  };
-
-  beforeEach(() => {
-    temp = tempDir();
-  });
-  afterEach(() => {
-    for (const device of devices.splice(0)) device.close();
-    temp.cleanup();
-  });
+  const temp = useTempDevices();
+  const { track } = temp;
 
   /** B has A's new commit fetched and a merge of it half done, as a crash leaves it. */
   async function halfMerged(): Promise<Device> {

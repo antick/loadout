@@ -1,9 +1,16 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { BACKUP_SCHEMA_VERSION, SCHEMA_FILE } from "../src/skills/portable";
-import { type Device, createBareRemote, createDevice, joinRemote, rawGit } from "./backup-world";
-import { tempDir, writeFile } from "./helpers";
+import {
+  type Device,
+  createBareRemote,
+  createDevice,
+  joinRemote,
+  rawGit,
+  useTempDevices,
+} from "./backup-world";
+import { writeFile } from "./helpers";
 
 const HAND = ["-c", "user.name=Hand", "-c", "user.email=hand@example.com"];
 
@@ -12,20 +19,8 @@ function schemaOf(device: Device): { schemaVersion: number; appVersion: string }
 }
 
 describe("backup compatibility between app versions", () => {
-  let temp: ReturnType<typeof tempDir>;
-  const devices: Device[] = [];
-  const track = <T extends Device>(device: T): T => {
-    devices.push(device);
-    return device;
-  };
-
-  beforeEach(() => {
-    temp = tempDir();
-  });
-  afterEach(() => {
-    for (const device of devices.splice(0)) device.close();
-    temp.cleanup();
-  });
+  const temp = useTempDevices();
+  const { track } = temp;
 
   async function seed(appVersion: string): Promise<{ a: Device; remote: string }> {
     const remote = createBareRemote(temp.dir);

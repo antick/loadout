@@ -12,19 +12,19 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { BACKUP_SKILL_LIMIT_BYTES } from "@loadout/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { tokenKey } from "../src/backup/credentials";
 import { BASE_IGNORE_LINES } from "../src/backup/size";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import {
-  type Device,
   createBareRemote,
   createDevice,
   joinRemote,
   memorySecrets,
   seedRemote,
+  useTempDevices,
 } from "./backup-world";
-import { makeSkill, tempDir, writeFile } from "./helpers";
+import { makeSkill, writeFile } from "./helpers";
 
 /** A file that reports a large size without writing that much to disk. */
 function sparseFile(path: string, bytes: number): void {
@@ -34,20 +34,8 @@ function sparseFile(path: string, bytes: number): void {
 }
 
 describe("backup clone, size rules and credentials", () => {
-  let temp: ReturnType<typeof tempDir>;
-  const devices: Device[] = [];
-  const track = <T extends Device>(device: T): T => {
-    devices.push(device);
-    return device;
-  };
-
-  beforeEach(() => {
-    temp = tempDir();
-  });
-  afterEach(() => {
-    for (const device of devices.splice(0)) device.close();
-    temp.cleanup();
-  });
+  const temp = useTempDevices();
+  const { track } = temp;
 
   it("a second device clone restores skills, tags and presets", async () => {
     const remote = createBareRemote(temp.dir);
