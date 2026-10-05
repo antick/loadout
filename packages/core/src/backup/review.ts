@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
+import { copyFileSync, utimesSync } from "node:fs";
+import { join, resolve } from "node:path";
 import type {
   FileDiffEntry,
   SyncChange,
@@ -9,7 +10,7 @@ import type {
 } from "@loadout/shared";
 import { notFound } from "../errors";
 import { diffTrees } from "../updates/diff";
-import { ensureDir, removePath } from "../util/fs";
+import { ensureDir, removePath, statOrNull } from "../util/fs";
 import { findConflict } from "./conflict-store";
 import { type BackupEnv, isSafeSkillPath } from "./env";
 import { PREVIEW_INDEX_PREFIX, createStage, extractPaths } from "./extract";
@@ -75,7 +76,16 @@ async function workingTree(env: BackupEnv): Promise<{ tree: string; head: string
   const options = { env: { GIT_INDEX_FILE: index } };
   try {
     const head = await resolveCommit(env, "HEAD");
-    if (head) await env.git.run(["read-tree", head], options);
+    // The library's own index already knows which files are unchanged, so `add -A` hashes only
+    // what changed. Its times go with it: git trusts an entry only when older than the index.
+    const own = resolve(env.repoDir, await env.git.text(["rev-parse", "--git-path", "index"]));
+    const stat = statOrNull(own);
+    if (stat?.isFile()) {
+      copyFileSync(own, index);
+      utimesSync(index, stat.atime, stat.mtime);
+    } else if (head) {
+      await env.git.run(["read-tree", head], options);
+    }
     await env.git.run(["add", "-A"], options);
     return { tree: await env.git.text(["write-tree"], options), head };
   } finally {

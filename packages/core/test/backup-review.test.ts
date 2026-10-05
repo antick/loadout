@@ -1,6 +1,8 @@
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Device, useTwoDevices } from "./backup-world";
+import { gitRunner } from "./git-fixtures";
 import { writeFile } from "./helpers";
 
 /**
@@ -182,6 +184,26 @@ describe("backup sync review", () => {
 
     // A fresh review sees the library as it is now.
     expect((await b.api.preview()).localTree).toBe(tagged);
+  });
+
+  it("saves the same tree from the library's own index as from HEAD alone", async () => {
+    b.editSkill("alpha", "edited on B");
+    b.addSkill("epsilon");
+    b.deleteSkill("beta");
+    writeFile(join(b.skillsDir, "gamma", "node_modules", "dep.js"), "left out");
+    writeFile(join(b.skillsDir, "gamma", ".env"), "KEY=left out");
+    const actual = await b.api.localTree();
+    // What the review used to do: HEAD's tree read into an empty index, then every file added.
+    const fresh = join(b.skillsDir, "..", "fresh-index");
+    const git = gitRunner({ GIT_INDEX_FILE: fresh });
+    git(b.skillsDir, "read-tree", "HEAD");
+    git(b.skillsDir, "add", "-A");
+    expect(actual).toBe(git(b.skillsDir, "write-tree"));
+    rmSync(fresh);
+
+    // Without an index of its own, the library is read from HEAD the same way.
+    rmSync(join(b.skillsDir, ".git", "index"));
+    expect(await b.api.localTree()).toBe(actual);
   });
 
   it("has no library state to compare without a remote to review against", async () => {
