@@ -12,7 +12,7 @@ import { segmentsOf } from "../util/fs";
 /** The git runner the clone cache and the tree reader share: `cwd` defaults to the process's. */
 export type RunGit = (
   args: string[],
-  call: { cwd?: string; network?: boolean; signal?: AbortSignal },
+  call: { cwd?: string; network?: boolean; signal?: AbortSignal; input?: string },
 ) => Promise<ExecResult>;
 
 /** Only the skill documents, anywhere in the repository (gitignore-style: no slash, any depth). */

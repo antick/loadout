@@ -120,6 +120,28 @@ describe("partial checkouts", () => {
     await whole.cleanup();
   });
 
+  it("reads the id of every folder and file asked for, at every commit, from fetched trees", async () => {
+    const first = git(remote, "rev-parse", "HEAD");
+    writeFile(join(remote, "skills", "pdf", "scripts", "run.sh"), "echo pdf v2\n");
+    writeFile(join(remote, "odd name", "SKILL.md"), "spaces in the path\n");
+    const second = commitAll(remote, "second");
+    const client = createGitClient(world.ctx);
+    const paths = ["skills/pdf", "/skills/docx/", "README.md", "missing", "", "odd name", "a\nb"];
+    const trees = await client.folderTrees(url, [first, second, "not-a-commit"], paths);
+    const expected = (revision: string): (string | null)[] =>
+      paths.map((path) => {
+        const clean = path.replace(/^\/+|\/+$/g, "");
+        if (path === "missing" || path.includes("\n")) return null;
+        if (path === "odd name" && revision === first) return null;
+        return git(remote, "rev-parse", `${revision}:${clean}`);
+      });
+    expect([...trees.keys()]).toEqual([first, second]);
+    expect(trees.get(first)).toEqual(expected(first));
+    expect(trees.get(second)).toEqual(expected(second));
+    expect(trees.get(first)?.[0]).not.toBe(trees.get(second)?.[0]);
+    expect(trees.get(first)?.[1]).toBe(trees.get(second)?.[1]);
+  });
+
   it("anchors folder patterns and escapes glob characters", () => {
     expect(folderPattern("skills/pdf")).toBe("/skills/pdf/");
     expect(folderPattern("a\\b")).toBe("/a/b/");

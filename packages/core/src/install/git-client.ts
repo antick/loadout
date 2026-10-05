@@ -152,12 +152,19 @@ export function createGitClient(ctx: CoreContext): GitClient {
 
   async function run(
     args: string[],
-    call: { network?: boolean; cwd?: string; signal?: AbortSignal; onLine?: (l: string) => void },
+    call: {
+      network?: boolean;
+      cwd?: string;
+      signal?: AbortSignal;
+      input?: string;
+      onLine?: (l: string) => void;
+    },
   ): Promise<ExecResult> {
     return runGit(args, {
       network: call.network ? { proxy: ctx.settings.proxy(), github: ctx.github } : undefined,
       cwd: call.cwd,
       signal: call.signal,
+      input: call.input,
       onStderrLine: call.onLine,
     });
   }
