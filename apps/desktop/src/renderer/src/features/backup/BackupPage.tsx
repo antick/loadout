@@ -77,7 +77,6 @@ export function BackupPage(): ReactNode {
 
   useAppEvent("backup:auto-completed", (event) => {
     if (event.ok) setLastError(null);
-    void status.refetch();
   });
 
   const primary = (): void => {
