@@ -2,10 +2,16 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelled } from "../src/errors";
-import { LIBRARY_LOCATION, updateCancelKey } from "../src/updates";
-import { makeSkill, writeFile, rejection } from "./helpers";
+import { updateCancelKey } from "../src/updates";
+import { writeFile, rejection } from "./helpers";
 import { commitAll, git, leftoverCheckouts } from "./install-fixtures";
-import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
+import {
+  MARKET_SOURCE,
+  type UpdatesWorld,
+  changePdfUpstream,
+  createUpdatesWorld,
+  pdfInRemote,
+} from "./updates-world";
 
 let world: UpdatesWorld;
 
@@ -14,16 +20,9 @@ beforeEach(() => {
 });
 afterEach(() => world.restore());
 
-const pdfInRemote = (...parts: string[]): string => join(world.remote, "skills", "pdf", ...parts);
-
-function changePdfUpstream(content = "echo pdf v2\n"): string {
-  writeFile(pdfInRemote("scripts", "run.sh"), content);
-  return commitAll(world.remote, "pdf: new script");
-}
-
-function dropNotesUpstream(): string {
-  rmSync(pdfInRemote("notes"), { recursive: true });
-  return commitAll(world.remote, "pdf: drop notes");
+function changePdfUpstreamAt(dir: string): string {
+  writeFile(join(dir, "scripts", "run.sh"), "echo moved\n");
+  return commitAll(world.remote, "pdf: moved");
 }
 
 describe("check", () => {
@@ -34,7 +33,7 @@ describe("check", () => {
     expect(same).toMatchObject({ updateStatus: "up_to_date", remoteRevision: head });
     expect(same.updatedAt).toBe(pdf.updatedAt);
 
-    const next = changePdfUpstream();
+    const next = changePdfUpstream(world);
     const before = world.lookups();
     // Fresh answer, not forced: nobody is asked.
     expect((await world.updates.api.check(pdf.id)).updateStatus).toBe("up_to_date");
@@ -57,7 +56,7 @@ describe("check", () => {
   it("offers no update when the commit changed another skill's folder only", async () => {
     const pdf = await world.installFromGit("pdf");
     const docx = await world.installFromGit("docx");
-    const next = changePdfUpstream();
+    const next = changePdfUpstream(world);
 
     const untouched = await world.updates.api.check(docx.id, true);
     expect(untouched).toMatchObject({
@@ -74,7 +73,7 @@ describe("check", () => {
   it("reads the folder trees of one repository once per round of checks", async () => {
     await world.installFromGit("pdf");
     await world.installFromGit("docx");
-    changePdfUpstream();
+    changePdfUpstream(world);
     let reads = 0;
     const counting = world.withGit({
       folderTrees: (...args) => {
@@ -88,7 +87,7 @@ describe("check", () => {
 
   it("falls back to the commit when the folder trees cannot be read", async () => {
     const docx = await world.installFromGit("docx");
-    changePdfUpstream();
+    changePdfUpstream(world);
     const blind = world.withGit({ folderTrees: async () => new Map() });
     expect((await blind.api.check(docx.id, true)).updateStatus).toBe("update_available");
   });
@@ -101,8 +100,8 @@ describe("check", () => {
 
   it("installs only the revision the user compared, never a newer one", async () => {
     const pdf = await world.installFromGit("pdf");
-    const compared = changePdfUpstream("echo v2\n");
-    changePdfUpstream("echo v3, never looked at\n");
+    const compared = changePdfUpstream(world, "echo v2\n");
+    changePdfUpstream(world, "echo v3, never looked at\n");
 
     const error = await rejection(
       world.updates.api.update(pdf.id, null, { expectedRevision: compared }),
@@ -143,7 +142,7 @@ describe("check", () => {
 
   it("drops the result when the skill was pointed elsewhere during the lookup", async () => {
     const pdf = await world.installFromGit("pdf");
-    changePdfUpstream();
+    changePdfUpstream(world);
     const updates = world.withGit({
       lsRemote: async (url, options) => {
         world.store.update(pdf.id, { sourceBranch: "other" });
@@ -168,7 +167,7 @@ describe("check", () => {
       updateStatus: "unknown",
     });
     const fresh = world.addSkill("plain");
-    const next = changePdfUpstream();
+    const next = changePdfUpstream(world);
 
     const before = world.lookups();
     const result = await world.updates.api.checkAll();
@@ -201,7 +200,7 @@ describe("check", () => {
       sourceRevision: "0".repeat(40),
       updateStatus: "unknown",
     });
-    changePdfUpstream();
+    changePdfUpstream(world);
 
     const before = world.lookups();
     const result = await world.updates.api.checkAll(true, {
@@ -227,7 +226,7 @@ describe("update", () => {
     if (!pdf) throw new Error("not installed");
     world.store.setTags(pdf.id, ["docs"]);
     await world.deploy.api.deploy(pdf.id, "claude_code");
-    const next = changePdfUpstream();
+    const next = changePdfUpstream(world);
 
     const result = await world.updates.api.update(pdf.id);
     expect(result).toMatchObject({ contentChanged: true, pendingRemovals: [], approval: null });
@@ -257,7 +256,7 @@ describe("update", () => {
     world.ctx.settings.set("deployMode", "copy");
     const pdf = await world.installFromGit("pdf");
     await world.deploy.api.deploy(pdf.id, "claude_code");
-    changePdfUpstream();
+    changePdfUpstream(world);
 
     const { skill } = await world.updates.api.update(pdf.id);
     expect(readFileSync(join(world.claudeTarget("pdf"), "scripts", "run.sh"), "utf8")).toBe(
@@ -309,7 +308,7 @@ describe("update", () => {
 
   it("marks the skill as gone when its folder left the repository, and keeps it as yours", async () => {
     const pdf = await world.installFromGit("pdf");
-    rmSync(pdfInRemote(), { recursive: true });
+    rmSync(pdfInRemote(world), { recursive: true });
     commitAll(world.remote, "drop pdf");
     const error = await rejection(world.updates.api.update(pdf.id));
     expect(error.code).toBe("NOT_FOUND");
@@ -356,181 +355,5 @@ describe("update", () => {
     // Stopping is not a failure of the source.
     expect(world.store.get(pdf.id).updateStatus).toBe("up_to_date");
     expect(await world.install.api.cancel(updateCancelKey(pdf.id))).toBe(false);
-  });
-});
-
-function changePdfUpstreamAt(dir: string): string {
-  writeFile(join(dir, "scripts", "run.sh"), "echo moved\n");
-  return commitAll(world.remote, "pdf: moved");
-}
-
-describe("removal guard", () => {
-  it("changes nothing until the exact list is approved", async () => {
-    world.ctx.settings.set("deployMode", "copy");
-    const pdf = await world.installFromGit("pdf");
-    await world.deploy.api.deploy(pdf.id, "claude_code");
-    writeFile(join(world.claudeTarget("pdf"), "scratch.txt"), "made by the agent");
-    const next = dropNotesUpstream();
-
-    const asked = await world.updates.api.update(pdf.id);
-    expect(asked.contentChanged).toBe(true);
-    expect(asked.pendingRemovals).toEqual([
-      { location: "claude_code", path: "notes/", kind: "removed" },
-      { location: "claude_code", path: "scratch.txt", kind: "removed" },
-      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
-    ]);
-    expect(asked.approval).toMatch(/^[0-9a-f]{64}$/);
-    // Nothing moved: files, hash and installed revision are as before.
-    expect(existsSync(join(pdf.libraryPath, "notes", "old.md"))).toBe(true);
-    expect(existsSync(join(world.claudeTarget("pdf"), "scratch.txt"))).toBe(true);
-    expect(asked.skill).toMatchObject({
-      sourceRevision: pdf.sourceRevision,
-      contentHash: pdf.contentHash,
-      remoteRevision: next,
-      updateStatus: "update_available",
-    });
-    // No staged or backup folder is left behind to be mistaken for a skill.
-    expect(world.store.list()).toHaveLength(1);
-    expect(leftoverCheckouts(world.tmp)).toEqual([]);
-
-    const wrong = await world.updates.api.update(pdf.id, "not-the-token");
-    expect(wrong.approval).toBe(asked.approval);
-    expect(existsSync(join(pdf.libraryPath, "notes", "old.md"))).toBe(true);
-
-    const applied = await world.updates.api.update(pdf.id, asked.approval);
-    expect(applied).toMatchObject({ contentChanged: true, pendingRemovals: [], approval: null });
-    expect(applied.skill).toMatchObject({ sourceRevision: next, updateStatus: "up_to_date" });
-    expect(existsSync(join(pdf.libraryPath, "notes"))).toBe(false);
-    expect(existsSync(join(world.claudeTarget("pdf"), "notes"))).toBe(false);
-    expect(existsSync(join(world.claudeTarget("pdf"), "scratch.txt"))).toBe(false);
-  });
-
-  it("says on a dry run what the real update would hold back, and writes nothing", async () => {
-    world.ctx.settings.set("deployMode", "copy");
-    const pdf = await world.installFromGit("pdf");
-    await world.deploy.api.deploy(pdf.id, "claude_code");
-    writeFile(join(world.claudeTarget("pdf"), "scratch.txt"), "made by the agent");
-    dropNotesUpstream();
-
-    const dry = await world.updates.api.update(pdf.id, null, { dryRun: true });
-    const asked = await world.updates.api.update(pdf.id);
-    expect(dry.pendingRemovals).toEqual(asked.pendingRemovals);
-    expect(dry.pendingRemovals).toContainEqual({
-      location: "claude_code",
-      path: "scratch.txt",
-      kind: "removed",
-    });
-
-    // Nothing to hold back: a dry run still writes nothing, not even the row.
-    const docx = await world.installFromGit("docx");
-    const before = world.store.get(docx.id);
-    makeSkill(join(world.remote, "skills"), "docx", { body: "second edition" });
-    commitAll(world.remote, "docx: second edition");
-    const quiet = await world.updates.api.update(docx.id, null, { dryRun: true });
-    expect(quiet).toMatchObject({ contentChanged: true, pendingRemovals: [], approval: null });
-    expect(world.store.get(docx.id)).toMatchObject({
-      sourceRevision: before.sourceRevision,
-      contentHash: before.contentHash,
-      updateStatus: before.updateStatus,
-    });
-  });
-
-  it("hands back on a dry run the comparison a preview would show, from one fetch", async () => {
-    const pdf = await world.installFromGit("pdf");
-    dropNotesUpstream();
-    const before = world.lookups();
-    const dry = await world.updates.api.update(pdf.id, null, { dryRun: true });
-    expect(world.lookups()).toBe(before + 1);
-    const shown = await world.updates.api.sourceDiff(pdf.id, { asLibraryCopy: true });
-    expect(dry.sourceDiff).toEqual(shown);
-    expect(dry.sourceDiff?.entries.map((entry) => [entry.path, entry.status])).toEqual([
-      ["notes/old.md", "removed"],
-    ]);
-    // Nothing new upstream: still compared, so edits made here show.
-    const docx = await world.installFromGit("docx");
-    writeFile(join(docx.libraryPath, "mine.md"), "my notes\n");
-    const same = await world.updates.api.update(docx.id, null, { dryRun: true });
-    expect(same).toMatchObject({ contentChanged: false, pendingRemovals: [] });
-    expect(same.sourceDiff?.entries.map((entry) => [entry.path, entry.status])).toEqual([
-      ["mine.md", "removed"],
-    ]);
-  });
-
-  it("writes nothing when a dry run fails, not even the failure", async () => {
-    const pdf = await world.installFromGit("pdf");
-    const before = world.store.get(pdf.id);
-    const history = world.ctx.activity.list().length;
-    rmSync(pdfInRemote(), { recursive: true });
-    commitAll(world.remote, "drop pdf");
-    const gone = await rejection(world.updates.api.update(pdf.id, null, { dryRun: true }));
-    expect(gone.code).toBe("NOT_FOUND");
-    rmSync(world.remote, { recursive: true });
-    await rejection(world.updates.api.update(pdf.id, null, { dryRun: true }));
-    expect(world.store.get(pdf.id)).toEqual(before);
-    expect(world.ctx.activity.list()).toHaveLength(history);
-  });
-
-  it("asks again when the remote moved after the list was shown", async () => {
-    const pdf = await world.installFromGit("pdf");
-    dropNotesUpstream();
-    const asked = await world.updates.api.update(pdf.id);
-    expect(asked.pendingRemovals).toEqual([
-      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
-    ]);
-
-    changePdfUpstream("echo pdf v3\n");
-    const again = await world.updates.api.update(pdf.id, asked.approval);
-    expect(again.pendingRemovals).toEqual(asked.pendingRemovals);
-    expect(again.approval).not.toBe(asked.approval);
-    expect(existsSync(join(pdf.libraryPath, "notes", "old.md"))).toBe(true);
-
-    const applied = await world.updates.api.update(pdf.id, again.approval);
-    expect(applied.pendingRemovals).toEqual([]);
-    expect(readFileSync(join(pdf.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo pdf v3\n");
-  });
-
-  it("holds such skills back in a batch, and reports the rest", async () => {
-    const pdf = await world.installFromGit("pdf");
-    const docx = await world.installFromGit("docx");
-    const plain = world.addSkill("plain");
-    dropNotesUpstream();
-    writeFile(join(world.remote, "skills", "docx", "extra.md"), "more");
-    commitAll(world.remote, "docx: extra");
-
-    const first = await world.updates.api.updateMany([pdf.id, docx.id, plain.id, "missing-id"]);
-    expect(first).toMatchObject({ updated: 1, unchanged: 0, heldBack: ["pdf"] });
-    expect(first.failed).toEqual([
-      { name: "plain", message: "Source type cannot be refreshed" },
-      { name: "missing-id", message: "Skill not found: missing-id" },
-    ]);
-    expect(existsSync(join(pdf.libraryPath, "notes", "old.md"))).toBe(true);
-    expect(existsSync(join(docx.libraryPath, "extra.md"))).toBe(true);
-
-    const second = await world.updates.api.updateMany([docx.id]);
-    expect(second).toEqual({ updated: 0, unchanged: 1, heldBack: [], failed: [] });
-  });
-
-  it("updates to what a check just found without asking the remote again", async () => {
-    const pdf = await world.installFromGit("pdf");
-    changePdfUpstream();
-    const checkedSince = Date.now();
-    await world.updates.api.checkAll(true);
-    const found = world.store.get(pdf.id).remoteRevision;
-
-    const before = world.lookups();
-    const result = await world.updates.api.updateMany([pdf.id], { checkedSince });
-    expect(result).toMatchObject({ updated: 1, failed: [] });
-    expect(world.lookups()).toBe(before);
-    expect(world.store.get(pdf.id).sourceRevision).toBe(found);
-  });
-
-  it("asks the remote when the check is older than the one the caller made", async () => {
-    const pdf = await world.installFromGit("pdf");
-    changePdfUpstream();
-    await world.updates.api.checkAll(true);
-
-    const before = world.lookups();
-    await world.updates.api.updateMany([pdf.id], { checkedSince: Date.now() + 1 });
-    expect(world.lookups()).toBe(before + 1);
   });
 });

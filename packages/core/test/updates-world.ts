@@ -1,10 +1,11 @@
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
 import type { GitClient, InstallServiceDeps } from "../src/install";
 import { type RemovedStore, createRemovedStore } from "../src/storage";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
-import { makeSkill } from "./helpers";
+import { makeSkill, writeFile } from "./helpers";
 import {
   type InstallHarness,
   commitAll,
@@ -94,4 +95,20 @@ export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}
       world.cleanup();
     },
   };
+}
+
+/** A path inside the remote's `skills/pdf`. */
+export const pdfInRemote = (world: UpdatesWorld, ...parts: string[]): string =>
+  join(world.remote, "skills", "pdf", ...parts);
+
+/** Commit a new `scripts/run.sh` for pdf upstream; returns the commit. */
+export function changePdfUpstream(world: UpdatesWorld, content = "echo pdf v2\n"): string {
+  writeFile(pdfInRemote(world, "scripts", "run.sh"), content);
+  return commitAll(world.remote, "pdf: new script");
+}
+
+/** Commit pdf without its `notes/` folder upstream; returns the commit. */
+export function dropNotesUpstream(world: UpdatesWorld): string {
+  rmSync(pdfInRemote(world, "notes"), { recursive: true });
+  return commitAll(world.remote, "pdf: drop notes");
 }
