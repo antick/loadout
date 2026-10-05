@@ -1,7 +1,7 @@
 import { existsSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BrowserWindow, app, dialog, session, shell } from "electron";
+import { BrowserWindow, Menu, app, dialog, session, shell } from "electron";
 import { AppError, type Core, createCore } from "@loadout/core";
 import {
   AGENT_HOME_ENV_VARIABLES,
@@ -18,6 +18,7 @@ import {
   errorMessage,
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
+import { buildAppMenu } from "./app-menu";
 import { closeOutcome, createCloseRequests, shouldReloadPage } from "./close-request";
 import { createCrashHandlers } from "./crash";
 import { keychainServiceToRemove, startRemoval } from "./remover";
@@ -258,6 +259,9 @@ function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService 
 
 function start(): void {
   app.dock?.setIcon(appIconPath);
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate(buildAppMenu({ platform: process.platform, packaged: app.isPackaged })),
+  );
   // The app uses no browser permissions (camera, location, page notifications): refuse them all.
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, answer) =>
     answer(false),
