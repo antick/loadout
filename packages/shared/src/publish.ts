@@ -13,6 +13,8 @@ import type { SecretFinding } from "./secrets";
 export const PUBLISH_LAYERS = ["root", "curated", "experimental"] as const;
 export type PublishLayer = (typeof PUBLISH_LAYERS)[number];
 export const DEFAULT_PUBLISH_LAYER: PublishLayer = "root";
+/** The version a skill gets on its first ClawHub publish. */
+export const CLAWHUB_FIRST_VERSION = "1.0.0";
 
 /** Folder of the repository that holds the skills of a layer, `/` separated. */
 export const PUBLISH_LAYER_DIRS: Record<PublishLayer, string> = {
@@ -117,7 +119,7 @@ export function clawhubSlugOf(name: string): string {
 /** `1.2.3` → `1.2.4`; anything else → `1.0.0`. */
 export function nextPatchVersion(version: string | null): string {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version ?? "");
-  if (!match) return "1.0.0";
+  if (!match) return CLAWHUB_FIRST_VERSION;
   return `${match[1]}.${match[2]}.${Number(match[3]) + 1}`;
 }
 

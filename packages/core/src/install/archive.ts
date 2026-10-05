@@ -48,7 +48,7 @@ const MODE_SYMLINK = 0o120000;
 const EXECUTABLE_BITS = 0o111;
 const EXECUTABLE_MODE = 0o755;
 
-function isZip(data: Buffer): boolean {
+export function isZip(data: Buffer): boolean {
   return data[0] === ZIP_MAGIC[0] && data[1] === ZIP_MAGIC[1];
 }
 

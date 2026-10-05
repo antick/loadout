@@ -1,5 +1,6 @@
 /** Install and marketplace types. Split from `types.ts` to keep both files small. */
 
+import { CLAWHUB_NAME, MARKETPLACE_NAME } from "./constants";
 import type { LibraryNameEntry } from "./install-plan";
 import type { InstallOptions, SafetyReport } from "./safety";
 import type { SkillTrait } from "./skill-traits";
@@ -135,6 +136,11 @@ export interface ScanResult {
 /** Where marketplace listings come from. */
 export const MARKET_PROVIDERS = ["skills_sh", "clawhub"] as const;
 export type MarketProvider = (typeof MARKET_PROVIDERS)[number];
+/** Each marketplace as the interface names it. */
+export const MARKET_PROVIDER_NAMES: Record<MarketProvider, string> = {
+  skills_sh: MARKETPLACE_NAME,
+  clawhub: CLAWHUB_NAME,
+};
 export const DEFAULT_MARKET_PROVIDER: MarketProvider = "skills_sh";
 
 /** skills.sh ranks by installs over a period; ClawHub sorts its catalogue. */

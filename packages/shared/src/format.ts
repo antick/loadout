@@ -2,6 +2,7 @@
  * The only place dates, durations, byte sizes and lists of names are turned into text.
  * Never format these inline elsewhere.
  */
+import { isCommitId } from "./constants";
 
 const DATE_TIME = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 const DATE_ONLY = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
@@ -87,10 +88,8 @@ export function formatNameList(names: readonly string[]): string {
 
 /** Git shows commit ids this short. */
 const SHORT_COMMIT_LENGTH = 7;
-/** A full commit id: SHA-1, or SHA-256 in repositories that use it. */
-const COMMIT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
 
 /** `4f2a9c1`: a commit id as Git shortens it; any other revision (a version like `1.2.0`) whole. */
 export function formatRevision(revision: string): string {
-  return COMMIT_ID.test(revision) ? revision.slice(0, SHORT_COMMIT_LENGTH) : revision;
+  return isCommitId(revision) ? revision.slice(0, SHORT_COMMIT_LENGTH) : revision;
 }

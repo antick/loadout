@@ -136,3 +136,42 @@ export function isArchivePath(path: string): boolean {
  * when a file appeared there meanwhile, the save is refused as a change on disk.
  */
 export const NEW_FILE_HASH = "";
+
+/** Time units, for every interval and age spelled in code. */
+export const SECOND_MS = 1000;
+export const MINUTE_MS = 60 * SECOND_MS;
+export const HOUR_MS = 60 * MINUTE_MS;
+export const DAY_MS = 24 * HOUR_MS;
+/** One mebibyte: the chunk size for streamed reads and the unit of file limits. */
+export const MIB = 1024 * 1024;
+/** Streamed text (session logs, secret scans, archives) is read this much at a time. */
+export const STREAM_CHUNK_BYTES = MIB;
+/** A single skill file fetched from the web is refused above this size. */
+export const MAX_SKILL_FILE_BYTES = 2 * MIB;
+
+/** The canonical skill document name. `SKILL_MARKER_FILES` lists the spellings accepted on disk. */
+export const SKILL_FILE = SKILL_MARKER_FILES[0];
+
+/** HTTP status codes the clients branch on. */
+export const HTTP_UNAUTHORIZED = 401;
+export const HTTP_FORBIDDEN = 403;
+export const HTTP_NOT_FOUND = 404;
+export const HTTP_CONFLICT = 409;
+/** How long one web API call (GitHub, ClawHub, skills.sh) may take. */
+export const API_TIMEOUT_MS = 15 * SECOND_MS;
+
+/** Git conventions shared by the backup and publish repositories. */
+export const GIT_REMOTE_NAME = "origin";
+export const GIT_DEFAULT_BRANCH = "main";
+export const GITHUB_HOST = "github.com";
+/** `owner/repo`, as GitHub and skills.sh shorthand. */
+export const OWNER_REPO_PATTERN = /^[\w.-]+\/[\w.-]+$/;
+/** A full commit id: SHA-1, or SHA-256 in repositories that use it. */
+export const COMMIT_ID_PATTERN = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
+export function isCommitId(revision: string): boolean {
+  return COMMIT_ID_PATTERN.test(revision);
+}
+/** GitHub repository names: letters, digits, dot, dash, underscore. */
+export const REPO_NAME_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
+/** Longest device name the backup keeps. */
+export const DEVICE_NAME_MAX_LENGTH = 64;

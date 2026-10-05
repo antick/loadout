@@ -32,10 +32,11 @@ export function isNeverCopiedName(name: string): boolean {
   return COPY_SKIP_NAMES.has(name);
 }
 
-function expandHome(input: string): string {
+/** `~` and `~/x` as the home directory; anything else unchanged. */
+export function expandHome(input: string, home = homedir()): string {
   const path = input.trim();
-  if (path === "~") return homedir();
-  if (path.startsWith("~/") || path.startsWith("~\\")) return join(homedir(), path.slice(2));
+  if (path === "~") return home;
+  if (path.startsWith("~/") || path.startsWith("~\\")) return join(home, path.slice(2));
   return path;
 }
 
