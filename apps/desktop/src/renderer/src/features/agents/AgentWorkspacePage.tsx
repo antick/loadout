@@ -3,7 +3,10 @@ import { Navigate } from "@tanstack/react-router";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AddFromLibrarySheet } from "@/components/AddFromLibrarySheet";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SelectionToolbar } from "@/components/SelectionToolbar";
 import { useRefreshWorkspace } from "@/features/agents/workspace-mutations";
+import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
 import {
   useBrokenFolders,
   usePluginSkills,
@@ -14,7 +17,14 @@ import {
 import { type LocalSkillView, toLocalSkillView } from "@/features/local-skills/local-skill-view";
 import { LinkBadge } from "@/features/local-skills/LinkBadge";
 import { LocalSkillDetailSheet } from "@/features/local-skills/LocalSkillDetailSheet";
-import { LocalSkillWorkspace } from "@/features/local-skills/LocalSkillWorkspace";
+import { LocalSkillList } from "@/features/local-skills/LocalSkillList";
+import { LocalSkillToolbar } from "@/features/local-skills/LocalSkillToolbar";
+import {
+  AddButton,
+  LocalSkillPage,
+  RefreshButton,
+  SelectButton,
+} from "@/features/local-skills/LocalSkillWorkspace";
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
@@ -23,6 +33,7 @@ import { isAgentAvailable, useAgentNames, useAgents } from "@/hooks/queries/agen
 import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { useSelection } from "@/hooks/use-selection";
+import { useViewMode } from "@/hooks/use-view-mode";
 import { summarizeAgentFolder } from "./agent-skill-rules";
 import { AgentPresetBar } from "./AgentPresetBar";
 import { AgentSelectionActions } from "./AgentSelectionActions";
@@ -47,6 +58,7 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const applySkills = useApplySkills();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
 
   const instructionFiles = useInstructionFiles(null);
   const agentInstructions = useMemo(
@@ -97,76 +109,90 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const selectedSkills = selection.selectedIds.flatMap((id) => skillsByPath.get(id) ?? []);
 
   return (
-    <LocalSkillWorkspace
-      title={agentName}
-      breadcrumbs={[{ label: t("nav.agents"), to: "/agents" }]}
-      subtitle={
-        workspace.data ? t("agents.skillCount", { count: workspace.data.length }) : undefined
-      }
-      viewModeScope={VIEW_MODE_SCOPE}
-      labels={{
-        refresh: t("agents.workspace.refresh"),
-        select: t("agents.workspace.select"),
-        add: t("agents.workspace.addSkills"),
-        search: t("agents.workspace.search"),
-        emptyTitle: t("agents.workspace.emptyTitle"),
-        emptyDescription: t("agents.workspace.emptyDescription", { agent: agentName }),
-      }}
-      onRefresh={() => refresh(agentKey)}
-      onAdd={() => setAdding(true)}
-      header={
-        agent ? (
-          <AgentWorkspaceHeader
-            agent={agent}
-            summary={workspace.data ? summarizeAgentFolder(workspace.data) : undefined}
-            sharedWith={agent.sharesDirWith.map((key) => names.get(key) ?? key)}
-          />
-        ) : null
-      }
-      instructionFiles={agentInstructions}
-      showReaders={false}
-      presetBar={<AgentPresetBar agentKeys={[agentKey]} />}
-      notices={
-        <>
-          {listing.data ? <ListingBudgetCard report={listing.data} /> : null}
-          <BrokenFoldersNotice agentKey={agentKey} agentName={agentName} folders={broken.data} />
-        </>
-      }
-      items={views}
-      filters={filters}
-      selection={selection}
-      selectionActions={
+    <LocalSkillPage>
+      <PageHeader
+        title={agentName}
+        breadcrumbs={[{ label: t("nav.agents"), to: "/agents" }]}
+        subtitle={
+          workspace.data ? t("agents.skillCount", { count: workspace.data.length }) : undefined
+        }
+        actions={
+          <>
+            <RefreshButton
+              label={t("agents.workspace.refresh")}
+              onRefresh={() => refresh(agentKey)}
+            />
+            <SelectButton
+              label={t("agents.workspace.select")}
+              selection={selection}
+              disabled={views.length === 0}
+            />
+            <AddButton label={t("agents.workspace.addSkills")} onClick={() => setAdding(true)} />
+          </>
+        }
+      />
+
+      {agent ? (
+        <AgentWorkspaceHeader
+          agent={agent}
+          summary={workspace.data ? summarizeAgentFolder(workspace.data) : undefined}
+          sharedWith={agent.sharesDirWith.map((key) => names.get(key) ?? key)}
+        />
+      ) : null}
+
+      <InstructionFilesSection files={agentInstructions} showReaders={false} />
+      <AgentPresetBar agentKeys={[agentKey]} />
+      {listing.data ? <ListingBudgetCard report={listing.data} /> : null}
+      <BrokenFoldersNotice agentKey={agentKey} agentName={agentName} folders={broken.data} />
+
+      <LocalSkillToolbar
+        filters={filters}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        searchPlaceholder={t("agents.workspace.search")}
+        total={views.length}
+      />
+
+      <SelectionToolbar selection={selection}>
         <AgentSelectionActions
           agentKey={agentKey}
           agentName={agentName}
           selected={selectedSkills}
           onDone={selection.exit}
         />
-      }
-      status={workspace}
-      collection={{
-        currentId: openPath,
-        onOpen: (view) => setOpenPath(view.id),
-        renderBadges: managedBadge,
-        menuActions: (view) => {
+      </SelectionToolbar>
+
+      <LocalSkillList
+        status={workspace}
+        items={views}
+        filters={filters}
+        viewMode={viewMode}
+        selection={selection}
+        emptyTitle={t("agents.workspace.emptyTitle")}
+        emptyDescription={t("agents.workspace.emptyDescription", { agent: agentName })}
+        addLabel={t("agents.workspace.addSkills")}
+        onAdd={() => setAdding(true)}
+        currentId={openPath}
+        onOpen={(view) => setOpenPath(view.id)}
+        renderBadges={managedBadge}
+        menuActions={(view) => {
           const skill = skillOf(view);
           return skill ? actionsFor(skill) : [];
-        },
-        renderActions: (view) => {
+        }}
+        renderActions={(view) => {
           const skill = skillOf(view);
           return skill ? <SkillActionMenu name={view.name} actions={actionsFor(skill)} /> : null;
-        },
-        renderFooter: (view) => {
+        }}
+        renderFooter={(view) => {
           const skill = skillOf(view);
           if (!skill || selection.active) return null;
           const actions = actionsFor(skill).filter((action) => action.primary);
           return actions.length > 0 ? <SkillActionButtons actions={actions} /> : null;
-        },
-      }}
-      after={
-        <PluginSkillsSection agentName={agentName} plugins={plugins.data} local={workspace.data} />
-      }
-    >
+        }}
+      />
+
+      <PluginSkillsSection agentName={agentName} plugins={plugins.data} local={workspace.data} />
+
       <LocalSkillDetailSheet
         item={openView}
         onClose={() => setOpenPath(null)}
@@ -200,6 +226,6 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
           }
         }}
       />
-    </LocalSkillWorkspace>
+    </LocalSkillPage>
   );
 }

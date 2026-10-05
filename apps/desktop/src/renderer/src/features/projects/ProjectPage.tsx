@@ -6,7 +6,9 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { IconButton } from "@/components/IconButton";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
+import { SelectionToolbar } from "@/components/SelectionToolbar";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +20,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { LocalSkillWorkspace } from "@/features/local-skills/LocalSkillWorkspace";
+import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
+import { LocalSkillList } from "@/features/local-skills/LocalSkillList";
+import { LocalSkillToolbar } from "@/features/local-skills/LocalSkillToolbar";
+import {
+  AddButton,
+  LocalSkillPage,
+  RefreshButton,
+  SelectButton,
+} from "@/features/local-skills/LocalSkillWorkspace";
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
@@ -35,6 +45,7 @@ import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useProjectSkills, useProjectTargets } from "@/hooks/queries/project-skills";
 import { useProjects } from "@/hooks/queries/projects";
 import { useSelection } from "@/hooks/use-selection";
+import { useViewMode } from "@/hooks/use-view-mode";
 import {
   ENABLED_FILTERS,
   type EnabledFilter,
@@ -119,6 +130,7 @@ function ProjectWorkspace({
     if (requestedSkill) onSkillOpened();
   }, [requestedSkill, onSkillOpened]);
   const [adding, setAdding] = useState(false);
+  const [viewMode, setViewMode] = useViewMode(VIEW_MODE_SCOPE);
   // Skills to tick when the add sheet opens from a suggestion, and why each was suggested.
   const [addPick, setAddPick] = useState<{
     ids: string[];
@@ -172,143 +184,161 @@ function ProjectWorkspace({
   };
 
   return (
-    <LocalSkillWorkspace
-      title={project.name}
-      subtitle={skills.data ? t("projectPage.skillCount", { count: groups.length }) : undefined}
-      viewModeScope={VIEW_MODE_SCOPE}
-      labels={{
-        refresh: t("projectPage.refresh"),
-        select: t("projectPage.select"),
-        add: t("projectPage.addSkills"),
-        search: t("projectPage.search"),
-        emptyTitle: t("projectPage.emptyTitle"),
-        emptyDescription: t("projectPage.emptyDescription"),
-      }}
-      onRefresh={() => refresh(project.id)}
-      refreshDisabled={project.missing}
-      onAdd={() => openAdd()}
-      addDisabled={project.missing || !targets.data}
-      menu={
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton label={t("projectPage.more")} icon={<MoreHorizontal />} />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onSelect={() => setPinned.mutate({ projectId: project.id, pinned: !project.pinned })}
-            >
-              {project.pinned ? <PinOff /> : <Pin />}
-              {t(project.pinned ? "projects.unpin" : "projects.pin")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
+    <LocalSkillPage>
+      <PageHeader
+        title={project.name}
+        subtitle={skills.data ? t("projectPage.skillCount", { count: groups.length }) : undefined}
+        actions={
+          <>
+            <RefreshButton
+              label={t("projectPage.refresh")}
+              onRefresh={() => refresh(project.id)}
               disabled={project.missing}
-              onSelect={() => revealProject.mutate(project.id)}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton label={t("projectPage.more")} icon={<MoreHorizontal />} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() =>
+                    setPinned.mutate({ projectId: project.id, pinned: !project.pinned })
+                  }
+                >
+                  {project.pinned ? <PinOff /> : <Pin />}
+                  {t(project.pinned ? "projects.unpin" : "projects.pin")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={project.missing}
+                  onSelect={() => revealProject.mutate(project.id)}
+                >
+                  <FolderOpen />
+                  {t("common.reveal")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => void onRemoveProject()}>
+                  <Unlink />
+                  {t("projects.remove")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <SelectButton
+              label={t("projectPage.select")}
+              selection={selection}
+              disabled={groups.length === 0}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={project.missing}
+              onClick={() => shell.openNewSkill(project.id)}
             >
-              <FolderOpen />
-              {t("common.reveal")}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void onRemoveProject()}>
-              <Unlink />
-              {t("projects.remove")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      }
-      extraActions={
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={project.missing}
-          onClick={() => shell.openNewSkill(project.id)}
-        >
-          <FilePlus2 />
-          {t("projectPage.newSkill")}
-        </Button>
-      }
-      header={<ProjectHeader project={project} counts={headerCounts} />}
-      replacement={
-        project.missing ? (
-          <ProjectMissingBanner project={project} onRemove={() => void onRemoveProject()} />
-        ) : undefined
-      }
-      instructionFiles={instructionFiles.data}
-      showReaders
-      sections={
+              <FilePlus2 />
+              {t("projectPage.newSkill")}
+            </Button>
+            <AddButton
+              label={t("projectPage.addSkills")}
+              onClick={() => openAdd()}
+              disabled={project.missing || !targets.data}
+            />
+          </>
+        }
+      />
+
+      <ProjectHeader project={project} counts={headerCounts} />
+
+      {project.missing ? (
+        <ProjectMissingBanner project={project} onRemove={() => void onRemoveProject()} />
+      ) : (
         <>
+          <InstructionFilesSection files={instructionFiles.data} showReaders />
           {project.type === "project" ? <SkillsFileSection dir={project.path} /> : null}
           <SuggestedSkillsSection
             project={project}
             onAdd={(ids, notes) => openAdd({ ids, notes })}
           />
-        </>
-      }
-      presetBar={<ProjectPresetBar project={project} targets={targets.data} groups={groups} />}
-      items={groups}
-      filters={filters}
-      toolbarFilters={
-        <ToggleGroup
-          type="single"
-          size="sm"
-          variant="outline"
-          value={enabledFilter}
-          aria-label={t("projectPage.filter.label")}
-          onValueChange={(next) => {
-            const picked = ENABLED_FILTERS.find((entry) => entry === next);
-            if (picked) setEnabledFilter(picked);
-          }}
-        >
-          {ENABLED_FILTERS.map((entry) => (
-            <ToggleGroupItem key={entry} value={entry} className="px-2.5 text-xs">
-              {t(`projectPage.filter.${entry}`)}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      }
-      onClearFilters={() => setEnabledFilter("all")}
-      selection={selection}
-      selectionActions={
-        <ProjectSelectionActions
-          project={project}
-          selected={selectedGroups}
-          onDone={selection.exit}
-        />
-      }
-      status={skills}
-      collection={{
-        currentId: openId,
-        onOpen: (group) => setOpenId(group.id),
-        menuActions: (group) => actions.actionsFor(group),
-        renderActions: (group) => (
-          <>
-            {project.supportsToggle ? (
-              <Switch
-                checked={group.enabledState === "all"}
-                aria-label={t("projectPage.toggleSkill", { name: group.name })}
-                onCheckedChange={() => actions.toggleEnabled(group)}
-              />
-            ) : null}
-            <SkillActionMenu name={group.name} actions={actions.actionsFor(group)} />
-          </>
-        ),
-        renderFooter: (group) => (
-          <>
-            <ProjectTargetDots
-              group={group}
-              targets={allTargets}
-              pendingTargets={actions.pendingTargets}
-              onToggle={selection.active ? undefined : actions.toggleTarget}
-              className={SKILL_ITEM_RAISED_CLASS}
+          <ProjectPresetBar project={project} targets={targets.data} groups={groups} />
+
+          <LocalSkillToolbar
+            filters={filters}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            searchPlaceholder={t("projectPage.search")}
+            total={groups.length}
+          >
+            <ToggleGroup
+              type="single"
+              size="sm"
+              variant="outline"
+              value={enabledFilter}
+              aria-label={t("projectPage.filter.label")}
+              onValueChange={(next) => {
+                const picked = ENABLED_FILTERS.find((entry) => entry === next);
+                if (picked) setEnabledFilter(picked);
+              }}
+            >
+              {ENABLED_FILTERS.map((entry) => (
+                <ToggleGroupItem key={entry} value={entry} className="px-2.5 text-xs">
+                  {t(`projectPage.filter.${entry}`)}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </LocalSkillToolbar>
+
+          <SelectionToolbar selection={selection}>
+            <ProjectSelectionActions
+              project={project}
+              selected={selectedGroups}
+              onDone={selection.exit}
             />
-            {selection.active ? null : (
-              <span className="ml-auto flex items-center gap-1.5">
-                <SkillActionButtons actions={actions.actionsFor(group)} />
-              </span>
+          </SelectionToolbar>
+
+          <LocalSkillList
+            status={skills}
+            items={groups}
+            filters={filters}
+            viewMode={viewMode}
+            selection={selection}
+            emptyTitle={t("projectPage.emptyTitle")}
+            emptyDescription={t("projectPage.emptyDescription")}
+            addLabel={t("projectPage.addSkills")}
+            onAdd={() => openAdd()}
+            onClearFilters={() => setEnabledFilter("all")}
+            currentId={openId}
+            onOpen={(group) => setOpenId(group.id)}
+            menuActions={(group) => actions.actionsFor(group)}
+            renderActions={(group) => (
+              <>
+                {project.supportsToggle ? (
+                  <Switch
+                    checked={group.enabledState === "all"}
+                    aria-label={t("projectPage.toggleSkill", { name: group.name })}
+                    onCheckedChange={() => actions.toggleEnabled(group)}
+                  />
+                ) : null}
+                <SkillActionMenu name={group.name} actions={actions.actionsFor(group)} />
+              </>
             )}
-          </>
-        ),
-      }}
-    >
+            renderFooter={(group) => (
+              <>
+                <ProjectTargetDots
+                  group={group}
+                  targets={allTargets}
+                  pendingTargets={actions.pendingTargets}
+                  onToggle={selection.active ? undefined : actions.toggleTarget}
+                  className={SKILL_ITEM_RAISED_CLASS}
+                />
+                {selection.active ? null : (
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <SkillActionButtons actions={actions.actionsFor(group)} />
+                  </span>
+                )}
+              </>
+            )}
+          />
+        </>
+      )}
+
       <ProjectSkillDetail
         project={project}
         group={openGroup}
@@ -328,6 +358,6 @@ function ProjectWorkspace({
         initialSkillIds={addPick?.ids}
         suggested={addPick?.notes}
       />
-    </LocalSkillWorkspace>
+    </LocalSkillPage>
   );
 }
