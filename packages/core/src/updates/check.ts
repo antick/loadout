@@ -218,6 +218,8 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     skill: Skill,
     round: {
       shared?: ReadonlyMap<string, RemoteOutcome>;
+      /** Each remote skill's target by skill id, worked out once for the round. */
+      targets?: ReadonlyMap<string, RemoteTarget | { failure: string }>;
       downloads?: DownloadCache;
       folders?: FolderUnchanged;
     } = {},
@@ -230,7 +232,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
         round.downloads,
       );
     }
-    const target = targetOrFailure(skill);
+    const target = round.targets?.get(skill.id) ?? targetOrFailure(skill);
     if ("failure" in target) return remoteFinding(skill, target);
     const outcome = round.shared?.get(remoteKey(target)) ?? (await lookup(target));
     const question = folderQuestion(skill, target, outcome);
@@ -264,10 +266,12 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       const now = Date.now();
       const due = force ? skills : skills.filter((skill) => !isFresh(skill, now));
 
+      const targetOf = new Map(
+        due.filter(isRemoteSource).map((skill) => [skill.id, targetOrFailure(skill)]),
+      );
       // Many skills come from one repository: ask each (url, branch) once.
       const targets = new Map<string, RemoteTarget>();
-      for (const skill of due.filter(isRemoteSource)) {
-        const target = targetOrFailure(skill);
+      for (const target of targetOf.values()) {
         if (!("failure" in target)) targets.set(remoteKey(target), target);
       }
       const outcomes = new Map<string, RemoteOutcome>();
@@ -280,14 +284,18 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       const downloads: DownloadCache = new Map();
       // Skills of one repository whose commit moved: one fetch of folder trees for all of them.
       const planned = due.flatMap((skill): FolderQuestion[] => {
-        if (!isRemoteSource(skill)) return [];
-        const target = targetOrFailure(skill);
-        if ("failure" in target) return [];
+        const target = targetOf.get(skill.id);
+        if (!target || "failure" in target) return [];
         const outcome = outcomes.get(remoteKey(target));
         const question = outcome ? folderQuestion(skill, target, outcome) : null;
         return question ? [question] : [];
       });
-      const round = { shared: outcomes, downloads, folders: folderComparer(git, planned) };
+      const round = {
+        shared: outcomes,
+        targets: targetOf,
+        downloads,
+        folders: folderComparer(git, planned),
+      };
       for (const skill of due) {
         try {
           const checked = await apply(
