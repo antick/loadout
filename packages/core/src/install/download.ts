@@ -1,6 +1,15 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
-import { APP_SLUG, formatBytes, redactUrl } from "@loadout/shared";
+import {
+  APP_SLUG,
+  HTTP_FORBIDDEN,
+  HTTP_NOT_FOUND,
+  HTTP_UNAUTHORIZED,
+  MIB,
+  SECOND_MS,
+  formatBytes,
+  redactUrl,
+} from "@loadout/shared";
 
 import { AppError, cancelled, errorMessage, invalid, notFound } from "../errors";
 
@@ -44,17 +53,15 @@ export interface HttpAnswer {
 /** A `Download` that can also send, and hands back the statuses its caller asks for. */
 export type HttpRequest = (url: string, options?: RequestOptions) => Promise<HttpAnswer>;
 
-const DOWNLOAD_TIMEOUT_MS = 300_000;
+const DOWNLOAD_TIMEOUT_MS = 300 * SECOND_MS;
 /** Big enough for any skill repository; small enough that a wrong link cannot fill the memory. */
-const MAX_DOWNLOAD_BYTES = 256 * 1024 * 1024;
+const MAX_DOWNLOAD_BYTES = 256 * MIB;
 /** Cap for an API answer or a listing page: generous, and still nothing like a repository. */
-export const MAX_ANSWER_BYTES = 8 * 1024 * 1024;
-const JSON_TYPE = "application/json";
+export const MAX_ANSWER_BYTES = 8 * MIB;
+/** The `Accept` of an API call answered in JSON. */
+export const JSON_TYPE = "application/json";
 const RETRIED_METHOD = "GET";
 const TIMEOUT_ERROR = "TimeoutError";
-const HTTP_UNAUTHORIZED = 401;
-const HTTP_FORBIDDEN = 403;
-const HTTP_NOT_FOUND = 404;
 const HIDDEN_STATUSES: ReadonlySet<number> = new Set([
   HTTP_UNAUTHORIZED,
   HTTP_FORBIDDEN,
@@ -63,7 +70,7 @@ const HIDDEN_STATUSES: ReadonlySet<number> = new Set([
 const DEFAULT_SUBJECT = "The file";
 /** Answers that often mean "busy, ask again": GitLab sends 406 while it builds an archive. */
 const RETRY_STATUSES: ReadonlySet<number> = new Set([406, 429, 502, 503, 504]);
-const RETRY_DELAY_MS = 2000;
+const RETRY_DELAY_MS = 2 * SECOND_MS;
 /** Hops followed when redirects are followed by hand; browsers stop at about the same. */
 const MAX_REDIRECTS = 10;
 const REDIRECT_MIN = 300;
@@ -72,8 +79,6 @@ const REDIRECT_MAX = 399;
 export const WEB_PROTOCOLS: ReadonlySet<string> = new Set(["https:", "http:"]);
 /** Progress in whole percents goes up to this. */
 export const PERCENT_TOTAL = 100;
-/** How long an API call (a listing, a search, a detail) may take. */
-export const API_TIMEOUT_MS = 15_000;
 
 /** `input` as a URL, or null when it is not one. */
 export function parseUrl(input: string): URL | null {

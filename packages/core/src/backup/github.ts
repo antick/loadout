@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
+  API_TIMEOUT_MS,
   APP_NAME,
   APP_SLUG,
   type DeviceFlowPoll,
@@ -10,7 +11,6 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, invalid, notFound } from "../errors";
-import { API_TIMEOUT_MS } from "../install/download";
 import { INTERNAL_KEYS } from "../settings/store";
 import { GITHUB_TOKEN_KEY } from "./credentials";
 
