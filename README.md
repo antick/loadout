@@ -225,23 +225,6 @@ publishing a release also has Vercel rebuild it through a deploy hook
 secret that run only leaves a notice, and the page offers the previous version until the next
 push to `main`.
 
-### Test an update locally
-
-Updates can be tried end to end on one Mac without publishing anything:
-
-1. Build two versions: `pnpm build`, then in `apps/desktop` run
-   `pnpm exec electron-builder --config electron-builder.yml --mac zip --arm64 --publish never`
-   once as is and once with `-c.extraMetadata.version=0.1.1` added.
-2. Unzip the older zip somewhere you can write to, with `ditto -x -k <zip> <folder>`.
-3. Put the newer zip in its own folder. Write its feed with
-   `node apps/desktop/scripts/update-feed.mjs <folder> --version 0.1.1 --base-url http://127.0.0.1:8765`,
-   and serve the folder with `python3 -m http.server 8765 --bind 127.0.0.1`.
-4. Start the older app with `LOADOUT_UPDATE_FEED=http://127.0.0.1:8765/latest.json` set, and click
-   **Update**, then **Restart now**.
-
-`LOADOUT_UPDATE_FEED` is also the only way a development build (`pnpm dev`) checks for updates;
-a development build never replaces itself.
-
 ## Layout
 
 | Path              | Purpose                                            |
