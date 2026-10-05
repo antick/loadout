@@ -3,6 +3,7 @@ import {
   type BatchFailure,
   CLAWHUB_NAME,
   MARKETPLACE_NAME,
+  MARKET_PROVIDER_NAMES,
   MARKET_PROVIDERS,
   MARKET_SEARCH_DEFAULT_LIMIT,
   type MarketListing,
@@ -35,11 +36,6 @@ const ON_FLAG = {
   value: "marketplace",
   description: `Which marketplace to search: ${MARKET_PROVIDERS.join(" or ")} (default ${DEFAULT_PROVIDER}).`,
 } as const;
-
-const PROVIDER_NAMES: Record<MarketProvider, string> = {
-  skills_sh: MARKETPLACE_NAME,
-  clawhub: CLAWHUB_NAME,
-};
 
 /** The name `skills install` takes for a marketplace skill. */
 function installRef(skill: MarketSkill): string {
@@ -143,7 +139,7 @@ async function search(context: CommandContext): Promise<CommandResult> {
     );
   }
   const provider = flagChoice(args, ON_FLAG.name, MARKET_PROVIDERS) ?? DEFAULT_PROVIDER;
-  const name = PROVIDER_NAMES[provider];
+  const name = MARKET_PROVIDER_NAMES[provider];
   const listing = await core.api.market.search(query, flagInteger(args, LIMIT_FLAG.name), provider);
   const picked = await pickAndInstall(context, listing, `${name} results for "${query}"`);
   if (picked) {
