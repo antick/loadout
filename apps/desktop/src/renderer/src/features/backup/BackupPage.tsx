@@ -9,7 +9,7 @@ import { useBackupConflicts, useBackupDeviceName } from "@/features/backup/backu
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useBackupStatus } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
-import { backupErrorText, isAuthError, isRecoverableError } from "@/lib/backup-errors";
+import { backupErrorText, isAuthError, isRecoverableError } from "@/features/backup/backup-errors";
 import { useAppEvent } from "@/lib/events";
 import { AutoBackupCard } from "./AutoBackupCard";
 import { BackupContents } from "./BackupContents";

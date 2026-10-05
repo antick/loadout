@@ -4,7 +4,7 @@ import { AgentAvatar } from "@/components/AgentAvatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
-import { useSetupAgentControl } from "@/hooks/mutations/dashboard";
+import { useSetupAgentControl } from "@/hooks/mutations/agent-control";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { cn } from "@/lib/utils";
 

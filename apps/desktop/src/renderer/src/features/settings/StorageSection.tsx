@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeletons } from "@/components/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStorageReport } from "@/features/settings/storage-queries";
-import { clearStored, countStored } from "@/lib/interface-state";
+import { clearStored, countStored } from "@/features/settings/interface-state";
 import { toastSuccess } from "@/lib/toast";
 import { LibraryLocationCard } from "./LibraryLocationCard";
 import { RecentlyRemovedPanel } from "./RecentlyRemovedPanel";

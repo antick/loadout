@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EDITOR_DRAFT_PREFIX, STORAGE_PREFIX } from "@/lib/constants";
-import { clearStored, countStored } from "@/lib/interface-state";
+import { clearStored, countStored } from "@/features/settings/interface-state";
 
 /** A minimal in-memory `Storage`. */
 function memoryStorage(entries: Record<string, string>): Storage {

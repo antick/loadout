@@ -13,8 +13,8 @@ import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { type ApiMutationOptions, useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
-import { publicRepoDetails, toastBackupError } from "@/lib/backup-errors";
-import { toastSyncOutcome } from "@/lib/backup-toast";
+import { publicRepoDetails, toastBackupError } from "@/features/backup/backup-errors";
+import { toastSyncOutcome } from "@/features/backup/backup-toast";
 import { keys } from "@/lib/query-keys";
 import { toastSuccess } from "@/lib/toast";
 

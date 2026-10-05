@@ -6,7 +6,7 @@ import { Panel } from "@/components/Panel";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
-import { useCancelAppUpdate, useCheckAppUpdate } from "@/features/settings/settings-mutations";
+import { useCancelAppUpdate, useCheckAppUpdate } from "@/hooks/mutations/app-update";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useDownloadAppUpdate, useInstallAppUpdate } from "@/hooks/mutations/app-update";
 import { useAppInfo, useAppUpdate } from "@/hooks/queries/app";

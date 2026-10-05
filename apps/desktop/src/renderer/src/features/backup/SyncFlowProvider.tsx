@@ -3,7 +3,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { usePreviewSync, useReviewedSync } from "@/features/backup/backup-mutations";
-import { backupErrorText, needsReview, toastBackupError } from "@/lib/backup-errors";
+import { backupErrorText, needsReview, toastBackupError } from "@/features/backup/backup-errors";
 import { type SyncFlow, type SyncFlowCallbacks, SyncFlowContext } from "./sync-flow";
 import { SyncReviewDialog } from "./SyncReviewDialog";
 import { useBackupStage } from "./use-backup-stage";

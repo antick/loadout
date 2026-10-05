@@ -2,7 +2,7 @@ import type { GithubConnectResult } from "@loadout/shared";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useGithubConfirmPublic, useGithubDiscardPublic } from "@/features/backup/backup-mutations";
-import { publicRepoDetails } from "@/lib/backup-errors";
+import { publicRepoDetails } from "@/features/backup/backup-errors";
 
 /**
  * Connecting to a public GitHub repository stops before anything is saved. This asks the user,

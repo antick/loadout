@@ -5,7 +5,7 @@ import { AgentControlSetup } from "@/components/AgentControlSetup";
 import { IconButton } from "@/components/IconButton";
 import { Button } from "@/components/ui/button";
 import { useDismissAgentControl } from "@/features/dashboard/dashboard-mutations";
-import { useAgentControlStatus } from "@/hooks/queries/dashboard";
+import { useAgentControlStatus } from "@/hooks/queries/agent-control";
 
 /** Suggests letting agents manage skills themselves. Gone once set up or dismissed. */
 export function AgentControlCard(): ReactNode {

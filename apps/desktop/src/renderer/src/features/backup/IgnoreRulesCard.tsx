@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useSetBackupIgnoreRules } from "@/features/backup/backup-mutations";
 import { useBackupIgnoreRules } from "@/features/backup/backup-queries";
-import { backupErrorText } from "@/lib/backup-errors";
+import { backupErrorText } from "@/features/backup/backup-errors";
 import { SECTION_LABEL } from "@/lib/styles";
 
 const toText = (lines: readonly string[]): string => lines.join("\n");

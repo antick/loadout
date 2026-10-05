@@ -17,7 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAnswerFirstRun, useRestoreFromRemote } from "@/features/backup/backup-mutations";
 import { useBackupStatus } from "@/hooks/queries/app";
 import { useSkills } from "@/hooks/queries/skills";
-import { backupErrorText } from "@/lib/backup-errors";
+import { backupErrorText } from "@/features/backup/backup-errors";
 
 /**
  * Asked once, on a brand-new library: start empty, or bring the library over from a backup.

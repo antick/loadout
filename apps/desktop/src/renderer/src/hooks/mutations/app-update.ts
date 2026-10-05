@@ -17,6 +17,15 @@ export function useUpdateAction(
   });
 }
 
+/** Look for a newer app version now. */
+export function useCheckAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
+  return useUpdateAction(() => api.app.checkUpdate(), "settings.about.updateFailed");
+}
+
+export function useCancelAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
+  return useUpdateAction(() => api.app.cancelUpdate(), "appUpdate.downloadFailed");
+}
+
 /** Download and verify the newer version. Progress arrives through the status query. */
 export function useDownloadAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
   return useUpdateAction(() => api.app.downloadUpdate(), "appUpdate.downloadFailed");

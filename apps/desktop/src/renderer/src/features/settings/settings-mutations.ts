@@ -1,7 +1,6 @@
 import {
   type AgentInfo,
   APP_NAME,
-  type AppUpdateStatus,
   type ClawhubAccount,
   type CustomAgentInput,
   formatDateTime,
@@ -11,22 +10,12 @@ import {
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useUpdateAction } from "@/hooks/mutations/app-update";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useReorderMutation } from "@/hooks/use-reorder-mutation";
 import { api } from "@/lib/api";
 import { type CacheSnapshot, patchCached, restoreCached } from "@/lib/optimistic";
 import { keys } from "@/lib/query-keys";
 import { toastError } from "@/lib/toast";
-
-/** Look for a newer app version now. */
-export function useCheckAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
-  return useUpdateAction(() => api.app.checkUpdate(), "settings.about.updateFailed");
-}
-
-export function useCancelAppUpdate(): UseMutationResult<AppUpdateStatus, unknown, void> {
-  return useUpdateAction(() => api.app.cancelUpdate(), "appUpdate.downloadFailed");
-}
 
 /** Switch an agent on or off; the switch answers at once and flips back if saving fails. */
 export function useSetAgentEnabled(): UseMutationResult<
