@@ -3,16 +3,12 @@ import { join } from "node:path";
 import { type InstructionFile, NEW_FILE_HASH, type SkillLocation } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type EditorService, createEditorService, createFileHistory } from "../src/editor";
-import {
-  type InstructionsService,
-  createInstructionFinder,
-  createInstructionsService,
-} from "../src/instructions";
+import { type InstructionFinder, createInstructionFinder } from "../src/instructions";
 import { writeFile } from "./helpers";
 import { type WorkspaceWorld, createWorkspaceWorld, rejection } from "./workspace-world";
 
 let world: WorkspaceWorld;
-let instructions: InstructionsService;
+let instructions: InstructionFinder;
 let editor: EditorService;
 
 beforeEach(() => {
@@ -22,7 +18,7 @@ beforeEach(() => {
     registry: world.registry,
     projects: world.projects.projects,
   });
-  instructions = createInstructionsService(world.ctx, { finder });
+  instructions = finder;
   editor = createEditorService(world.ctx, {
     store: world.store,
     registry: world.registry,
@@ -56,7 +52,7 @@ describe("listing", () => {
     world.installAgents(".claude", ".codex");
     writeFile(join(world.home, ".claude/CLAUDE.md"), "# Mine\n");
 
-    const files = await instructions.api.list(null);
+    const files = await instructions.list(null);
 
     const claude = byName(files, "CLAUDE.md");
     expect(claude).toMatchObject({ scope: "global", exists: true, size: 7, projectId: null });
@@ -70,7 +66,7 @@ describe("listing", () => {
     world.installAgents(".claude", ".codex", ".cursor");
     const project = await newProject();
 
-    const files = await instructions.api.list(project.id);
+    const files = await instructions.list(project.id);
 
     expect(readerKeys(byName(files, "AGENTS.md"))).toEqual(
       expect.arrayContaining(["codex", "cursor"]),
@@ -85,7 +81,7 @@ describe("listing", () => {
     writeFileSync(join(project.path, "AGENTS.md"), "shared\n");
     symlinkSync("AGENTS.md", join(project.path, "CLAUDE.md"));
 
-    const files = await instructions.api.list(project.id);
+    const files = await instructions.list(project.id);
 
     expect(files).toHaveLength(1);
     expect(readerKeys(files[0])).toEqual(expect.arrayContaining(["claude_code", "codex"]));
@@ -95,8 +91,9 @@ describe("listing", () => {
     const path = join(world.root, "linked");
     mkdirSync(path, { recursive: true });
     const linked = await world.projects.api.addLinked("Linked", path);
-    const error = await rejection(instructions.api.list(linked.id));
-    expect(error.code).toBe("UNSUPPORTED");
+    expect(() => instructions.list(linked.id)).toThrow(
+      expect.objectContaining({ code: "UNSUPPORTED" }),
+    );
   });
 });
 
@@ -120,7 +117,7 @@ describe("creating", () => {
     expect(saved.written).toBe(true);
     expect(saved.file.isNew).toBeUndefined();
     expect(readFileSync(path, "utf8")).toBe("# Rules\n");
-    expect(byName(await instructions.api.list(null), "GEMINI.md")?.exists).toBe(true);
+    expect(byName(await instructions.list(null), "GEMINI.md")?.exists).toBe(true);
   });
 
   it("makes the folders a new file needs on its first save", async () => {
