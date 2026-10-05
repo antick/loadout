@@ -8,10 +8,9 @@ import { samePath } from "../deploy/evidence";
 import { exists, invalid, targetConflict } from "../errors";
 import { lstatOrNull, readDirSafe } from "../util/fs";
 import { hashDir } from "../util/hash";
-import { checkSkillName } from "./create";
+import { checkSkillName, isLibraryNameTaken } from "./create";
 import { readSkillDocument, setFrontmatterName } from "./metadata";
 import type { SkillStore } from "./store";
-import { isLibraryNameTaken } from "./create";
 
 export interface RenameDeps {
   store: SkillStore;

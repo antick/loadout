@@ -1,9 +1,6 @@
 import { mkdtemp } from "node:fs/promises";
-
 import { tmpdir } from "node:os";
-
 import { isAbsolute, join, relative } from "node:path";
-
 import {
   APP_SLUG,
   CLAWHUB_NAME,
@@ -11,11 +8,11 @@ import {
   type Skill,
   type SourceType,
   clawhubSkillUrl,
+  isArchivePath,
+  normalizeSourceUrl,
   redactUrl,
 } from "@loadout/shared";
-
 import { AppError, invalid, notFound } from "../errors";
-
 import {
   type Download,
   type GitClient,
@@ -36,11 +33,8 @@ import {
   unpackArchive,
 } from "../install";
 import { openClawhubVersion } from "../install/clawhub-install";
-
 import { type ClawhubClient, parseClawhubRef } from "../market/clawhub";
-
 import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
-import { isArchivePath, normalizeSourceUrl } from "@loadout/shared";
 
 /**
  * Where a library skill's upstream lives and how to open it. Shared by check, update and the

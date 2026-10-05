@@ -1,11 +1,10 @@
 import { readFileSync } from "node:fs";
 import { extname } from "node:path";
-import { type ExportResult, type Skill, formatBytes } from "@loadout/shared";
+import { type ExportResult, type Skill, ZIP_SUFFIXES, formatBytes } from "@loadout/shared";
 import { type Zippable, zipSync } from "fflate";
 import { invalid } from "../errors";
 import { isInside, normalizeAbsolutePath, statOrNull, writeFileAtomic } from "../util/fs";
 import { listContentFiles } from "../util/hash";
-import { ZIP_SUFFIXES } from "@loadout/shared";
 
 /**
  * Pack library skills into one `.zip` (or `.skill`) file: each skill in a folder named after its
