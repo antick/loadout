@@ -1,11 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { renameSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
-import { APP_SLUG, type BatchFailure } from "@loadout/shared";
+import type { BatchFailure } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
 import type { SkillStore } from "../skills/store";
-import { copyDir, dirSize, removePath } from "../util/fs";
+import { dirSize, replaceDirAtomic } from "../util/fs";
 import { linkPointsAt, removeTarget } from "./engine";
 
 /** Links in agent folders that point into the library, one entry per folder on disk. */
@@ -21,9 +18,6 @@ export interface KeepResult {
   converted: number;
   failed: BatchFailure[];
 }
-
-/** The copy is written here first, then swapped in, so an agent never sees half a skill. */
-const STAGING_PREFIX = `.${APP_SLUG}-keep-`;
 
 /** Every link row, grouped by the folder on disk (agents sharing a folder share one link). */
 function linksByPath(store: SkillStore): Map<string, { skillId: string; agentKeys: string[] }> {
@@ -61,22 +55,18 @@ export async function keepLinkedSkills(ctx: CoreContext, store: SkillStore): Pro
     for (const [path, { skillId, agentKeys }] of linksByPath(store)) {
       const skill = store.find(skillId);
       if (!skill || !linkPointsAt(path, skill.libraryPath)) continue;
-      const staging = join(dirname(path), `${STAGING_PREFIX}${basename(path)}-${randomUUID()}`);
       const name = `${skill.name} (${agentKeys.join(", ")})`;
       try {
-        await copyDir(skill.libraryPath, staging);
-        if (!removeTarget(path, "symlink")) throw new Error("the link could not be removed");
+        // Staged beside the link and swapped in whole, so an agent never sees half a skill and a
+        // failure leaves the link as it was. The replaced link is unlinked, never followed.
+        await replaceDirAtomic(skill.libraryPath, path, {
+          skipSymlinks: false,
+          keepReplaced: (link) => {
+            removeTarget(link, "symlink");
+          },
+        });
       } catch (error) {
-        // Nothing changed for the agent: the link is still there.
-        await removePath(staging);
         result.failed.push({ name, message: errorMessage(error) });
-        continue;
-      }
-      try {
-        renameSync(staging, path);
-      } catch (error) {
-        // The copy is complete; keep it under its staging name rather than lose it.
-        result.failed.push({ name, message: `${errorMessage(error)}. The copy is at ${staging}` });
         continue;
       }
       for (const agentKey of agentKeys) {
