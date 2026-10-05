@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, renameSync, statSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { APP_SLUG } from "@loadout/shared";
+import { APP_SLUG, formatTimestampIso } from "@loadout/shared";
 import { errorMessage } from "./errors";
 import { ensureDir } from "./util/fs";
 
@@ -39,7 +39,7 @@ export function createFileLogger(logsDir: string, echo = false): Logger {
   rotate(filePath);
   const write = (level: LogLevel, message: string, error?: unknown): void => {
     const suffix = error === undefined ? "" : `: ${errorMessage(error)}`;
-    const line = `${new Date().toISOString()} ${level.toUpperCase().padEnd(5)} ${message}${suffix}\n`;
+    const line = `${formatTimestampIso(Date.now())} ${level.toUpperCase().padEnd(5)} ${message}${suffix}\n`;
     try {
       appendFileSync(filePath, line);
     } catch {

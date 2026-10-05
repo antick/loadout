@@ -3,6 +3,7 @@ import {
   type DuplicateMergeResult,
   type DuplicatePair,
   type DuplicateReason,
+  REMOVED_KEEP_DAYS,
   formatSimilarity,
 } from "@loadout/shared";
 import { type FlagSpec, UsageError, flagBoolean, flagString } from "../args";
@@ -108,7 +109,9 @@ function describeMerge(core: Core, result: DuplicateMergeResult, dryRun: boolean
     lines.push(`  Not deployed (${kept} is blocked there): ${result.blockedFor.join(", ")}`);
   }
   lines.push(
-    dryRun ? "Nothing was changed." : "The removed skill is in Recently removed for 30 days.",
+    dryRun
+      ? "Nothing was changed."
+      : `The removed skill is in Recently removed for ${REMOVED_KEEP_DAYS} days.`,
   );
   return lines.join("\n");
 }

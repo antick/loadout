@@ -5,6 +5,7 @@ import {
   type PublishPlan,
   type PublishResult,
   type PublishSkillPlan,
+  formatRevision,
   repositoryLabel,
 } from "@loadout/shared";
 import { UsageError, flagBoolean, flagChoice, flagString } from "../args";
@@ -40,8 +41,6 @@ const ALLOW_SECRETS_FLAG = {
   type: "boolean",
   description: "Publish what looks like keys or tokens anyway. Read the findings first.",
 } as const;
-
-const SHORT_COMMIT = 10;
 
 function changesOf(skill: PublishSkillPlan): string {
   const { added, changed, removed } = skill.files;
@@ -85,7 +84,7 @@ function describeResult(result: PublishResult): string {
   const lines = [describePlan(plan)];
   if (result.commit) {
     lines.push(
-      `Published ${result.published.join(", ")} to ${repositoryLabel(plan.target.repo)} (${result.commit.slice(0, SHORT_COMMIT)}).`,
+      `Published ${result.published.join(", ")} to ${repositoryLabel(plan.target.repo)} (${formatRevision(result.commit)}).`,
     );
   } else {
     lines.push("Nothing to publish: the repository already has these skills as they are.");

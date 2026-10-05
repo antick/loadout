@@ -38,6 +38,9 @@ export const SKILL_DOCUMENT_FILES = [
   "readme.md",
 ] as const;
 
+/** Agent every new project gets folders for, and the default when exporting without a choice. */
+export const DEFAULT_PROJECT_AGENT_KEY = "claude_code";
+
 /** The source repository. Its GitHub releases hold the installers and the update feed. */
 export const RELEASES_REPO = "antick/loadout";
 /** The source code on GitHub. */

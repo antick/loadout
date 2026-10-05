@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PROJECT_AGENT_KEY,
   SKILLS_FILE_NAME,
   SKILLS_LOCK_NAME,
   type SkillsFileAction,
@@ -137,7 +138,11 @@ async function init(context: CommandContext): Promise<CommandResult> {
       : await core.api.skillsFile.suggest(dir);
   const chosen: SkillsFileInit = {
     agents:
-      agents.length > 0 ? agents : suggested.agents.length > 0 ? suggested.agents : ["claude_code"],
+      agents.length > 0
+        ? agents
+        : suggested.agents.length > 0
+          ? suggested.agents
+          : [DEFAULT_PROJECT_AGENT_KEY],
     sources:
       sources.length > 0
         ? sources.map((url) => ({ url, ref: null, skills: null }))

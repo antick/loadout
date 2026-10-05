@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { renameSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import type { BatchFailure } from "@loadout/shared";
+import { APP_SLUG, type BatchFailure } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
 import type { SkillStore } from "../skills/store";
@@ -23,7 +23,7 @@ export interface KeepResult {
 }
 
 /** The copy is written here first, then swapped in, so an agent never sees half a skill. */
-const STAGING_PREFIX = ".loadout-keep-";
+const STAGING_PREFIX = `.${APP_SLUG}-keep-`;
 
 /** Every link row, grouped by the folder on disk (agents sharing a folder share one link). */
 function linksByPath(store: SkillStore): Map<string, { skillId: string; agentKeys: string[] }> {

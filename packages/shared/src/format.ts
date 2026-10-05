@@ -34,9 +34,19 @@ export function formatRelative(ms: number | null | undefined, now: number = Date
   return RELATIVE.format(Math.round(delta / DAY), "day");
 }
 
+/** `45s`: a duration in whole seconds. */
+export function formatSeconds(ms: number): string {
+  return `${Math.round(ms / SECOND)}s`;
+}
+
+/** `2026-09-19T15:30:45.123Z`, for log lines. UTC. */
+export function formatTimestampIso(ms: number): string {
+  return new Date(ms).toISOString();
+}
+
 /** `20260919-153045`, used in file names. UTC. */
 export function formatTimestampCompact(ms: number): string {
-  const iso = new Date(ms).toISOString();
+  const iso = formatTimestampIso(ms);
   return `${iso.slice(0, 4)}${iso.slice(5, 7)}${iso.slice(8, 10)}-${iso.slice(11, 13)}${iso.slice(14, 16)}${iso.slice(17, 19)}`;
 }
 

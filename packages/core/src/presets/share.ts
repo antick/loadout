@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  APP_SLUG,
   type InstallApi,
   PRESET_FILE_MAX_BYTES,
   type PresetExportOptions,
@@ -51,7 +52,7 @@ export interface PresetSharingDeps {
 }
 
 const WEB_LINK = /^https?:\/\//i;
-const DRAFT_DIR_PREFIX = "loadout-preset-";
+const DRAFT_DIR_PREFIX = `${APP_SLUG}-preset-`;
 
 /** Where a skill comes from, one spelling for each: repository or link, branch, folder in it. */
 const sourceKey = (source: NonNullable<PresetFileSkill["source"]>): string =>

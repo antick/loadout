@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
   type CreateSkillInput,
+  DEFAULT_PROJECT_AGENT_KEY,
   type LocalSkill,
   NEW_SKILL_DOCUMENT,
   type ProjectCopyRef,
@@ -34,13 +35,7 @@ import { indexLibrary } from "../workspace/local-scan";
 import { type Variant, findVariants, groupKey, listProjectSkills } from "./scan";
 import type { ProjectRecord } from "./store";
 import { type VersionGroup, describeVersion, groupByContent } from "./versions";
-import {
-  DEFAULT_PROJECT_AGENT_KEY,
-  type ResolvedTarget,
-  findTarget,
-  isAvailable,
-  resolveTargets,
-} from "./targets";
+import { type ResolvedTarget, findTarget, isAvailable, resolveTargets } from "./targets";
 
 export interface ProjectActionsDeps extends LocalSyncDeps {
   registry: AgentRegistry;

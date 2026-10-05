@@ -6,7 +6,9 @@ import {
   formatDateTime,
   formatNameList,
   formatRelative,
+  formatSeconds,
   formatTimestampCompact,
+  formatTimestampIso,
 } from "../src/format";
 
 // The tests run in UTC (vitest.config.ts) but in the reader's language, so most expectations hold
@@ -88,6 +90,14 @@ describe("formatTimestampCompact", () => {
   it("writes the UTC time as digits", () => {
     expect(formatTimestampCompact(AT)).toBe("20260919-153045");
     expect(formatTimestampCompact(Date.UTC(2001, 0, 2, 3, 4, 5))).toBe("20010102-030405");
+  });
+});
+
+describe("formatTimestampIso and formatSeconds", () => {
+  it("write a log line's time and a whole number of seconds", () => {
+    expect(formatTimestampIso(AT)).toBe("2026-09-19T15:30:45.000Z");
+    expect(formatSeconds(120_000)).toBe("120s");
+    expect(formatSeconds(1_400)).toBe("1s");
   });
 });
 

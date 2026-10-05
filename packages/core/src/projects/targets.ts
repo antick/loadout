@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { BUILT_IN_AGENTS, type ProjectTarget } from "@loadout/shared";
+import { BUILT_IN_AGENTS, DEFAULT_PROJECT_AGENT_KEY, type ProjectTarget } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { ProjectRecord } from "./store";
 
@@ -14,8 +14,6 @@ export interface ResolvedTarget extends ProjectTarget {
 
 /** Appended to a skills folder to name the folder its switched-off skills are moved to. */
 export const DISABLED_SUFFIX = "-disabled";
-/** Agent every new project gets folders for, and the default when exporting without a choice. */
-export const DEFAULT_PROJECT_AGENT_KEY = "claude_code";
 const NAME_SEPARATOR = " / ";
 
 export const isAvailable = (target: ProjectTarget): boolean => target.installed && target.enabled;

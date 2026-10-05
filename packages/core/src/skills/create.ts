@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  APP_SLUG,
   type CreateSkillInput,
   NEW_SKILL_DOCUMENT,
   SKILL_DESCRIPTION_MAX,
@@ -19,7 +20,7 @@ import type { InstallIntoLibrary } from "../install/library";
 import { readDirSafe } from "../util/fs";
 import type { SkillStore } from "./store";
 
-const DRAFT_DIR_PREFIX = "loadout-new-skill-";
+const DRAFT_DIR_PREFIX = `${APP_SLUG}-new-skill-`;
 
 const NAME_MESSAGES = {
   empty: "Give the skill a name.",

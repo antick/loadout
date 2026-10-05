@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { delimiter, isAbsolute, join } from "node:path";
+import { formatSeconds } from "@loadout/shared";
 import { AppError, cancelled } from "../errors";
 
 export interface ExecOptions {
@@ -93,7 +94,7 @@ export function exec(
         reject(
           new AppError(
             "TIMEOUT",
-            `${command} timed out after ${Math.round(timeoutMs / 1000)}s. Check your network connection`,
+            `${command} timed out after ${formatSeconds(timeoutMs)}. Check your network connection`,
           ),
         ),
       );
