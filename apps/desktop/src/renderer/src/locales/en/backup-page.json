@@ -202,26 +202,14 @@
     },
     "disconnect": {
       "title": "Disconnect",
-      "machine": {
-        "title": "Disconnect this machine",
-        "body": "Forgets the remote and its stored access here. The local history and the remote backup stay as they are.",
-        "action": "Disconnect",
-        "confirmTitle": "Disconnect this machine from the backup?",
-        "confirmBody": "The remote address and its stored credentials are removed from this machine. Nothing is deleted from the library, its history or the remote."
-      },
-      "revoke": {
-        "title": "Revoke authorisation",
-        "body": "Opens GitHub where you can take back the access, then disconnects this machine.",
-        "action": "Revoke and disconnect",
-        "confirmTitle": "Revoke GitHub access and disconnect?",
-        "confirmBody": "GitHub opens in your browser so you can delete the token or revoke the app. This machine is then disconnected. The remote backup itself is not deleted."
-      },
-      "remote": {
-        "title": "Delete remote backup",
-        "body": "{{app}} never deletes the repository itself. This opens its settings on GitHub, where you can.",
-        "bodyOther": "{{app}} never deletes the repository itself. Delete it on your Git host if you no longer need it.",
-        "action": "Open repository settings"
-      }
+      "body": "Forgets the remote and its stored access on this machine. The local history and the remote backup stay as they are.",
+      "action": "Disconnect",
+      "confirmTitle": "Disconnect this machine from the backup?",
+      "confirmBody": "The remote address and its stored credentials are removed from this machine. Nothing is deleted from the library, its history or the remote.",
+      "onGithub": "On GitHub you can also",
+      "revoke": "revoke access",
+      "or": "or",
+      "deleteRepo": "delete the repository"
     },
     "firstRun": {
       "title": "Start fresh, or restore from a backup?",
