@@ -1,4 +1,10 @@
-import type { ErrorDetails, FlaggedSkill, UncheckedSkill } from "@loadout/shared";
+import {
+  ApiError,
+  type ErrorDetails,
+  type FlaggedSkill,
+  type UncheckedSkill,
+} from "@loadout/shared";
+import { toast } from "sonner";
 
 /**
  * The question "install these flagged skills anyway?". Installs run outside React (see
@@ -53,4 +59,43 @@ export function askToInstallFlagged(
     };
     publish(prompt);
   });
+}
+
+/** What `runWithRiskConsent` resolves to when the user would rather not go ahead. */
+export const DECLINED: unique symbol = Symbol("declined");
+
+export interface RiskConsentOptions {
+  /** What the flagged skills were about to go through, for the question's wording. */
+  action?: FlaggedAction;
+  /** The toast when the user says no: what did not happen, and what stays as it was. */
+  declined: string;
+  /** Show the declined toast under this id, replacing a progress toast of the same id. */
+  toastId?: string | number;
+  /** Just before asking, e.g. to take a progress toast away. */
+  onAsk?: () => void;
+  /** After a yes, before running again, e.g. to show the progress toast again. */
+  onAccept?: () => void;
+}
+
+/**
+ * Run `run`. When the safety check stops it (UNSAFE), show the findings and ask; on a yes run
+ * `runAcceptingRisk`, on a no toast `declined` and resolve with DECLINED. Other errors pass through.
+ */
+export async function runWithRiskConsent<T>(
+  run: () => Promise<T>,
+  runAcceptingRisk: () => Promise<T>,
+  { action = "install", declined, toastId, onAsk, onAccept }: RiskConsentOptions,
+): Promise<T | typeof DECLINED> {
+  try {
+    return await run();
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.code !== "UNSAFE") throw error;
+    onAsk?.();
+    if (!(await askToInstallFlagged(error.details, action))) {
+      toast.info(declined, toastId === undefined ? undefined : { id: toastId });
+      return DECLINED;
+    }
+    onAccept?.();
+    return runAcceptingRisk();
+  }
 }

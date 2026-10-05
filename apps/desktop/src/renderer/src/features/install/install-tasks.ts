@@ -6,7 +6,7 @@ import {
   type DeployPreselection,
 } from "@/features/install/DeployAfterInstallToast";
 import { INSTALL_SUCCESS_TOAST_MS } from "@/features/install/constants";
-import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
+import { DECLINED, runWithRiskConsent } from "@/features/safety/flagged-prompt";
 import { onAppEvent } from "@/lib/events";
 import { i18n } from "@/lib/i18n";
 import { errorMessage } from "@/lib/toast";
@@ -217,31 +217,25 @@ function showFailureToast(id: string, error: unknown, navigation: InstallTaskNav
   });
 }
 
-const DECLINED = Symbol("declined");
-
 /**
  * Run the task; when the safety check stops it and the task can go ahead anyway, show the
  * findings and let the user choose. DECLINED when they chose not to install.
  */
-async function runOrAskAboutRisk<T>(
+function runOrAskAboutRisk<T>(
   options: InstallTaskOptions<T>,
   toastId: string,
 ): Promise<T | typeof DECLINED> {
-  try {
-    return await options.run();
-  } catch (error) {
-    if (!options.runAcceptingRisk || !(error instanceof ApiError) || error.code !== "UNSAFE") {
-      throw error;
-    }
-    toast.dismiss(toastId);
-    if (!(await askToInstallFlagged(error.details))) {
-      toast.info(i18n.t("safety.prompt.notInstalled"), { id: toastId });
-      return DECLINED;
-    }
-    const task = tasks.get(options.key);
-    if (task) showRunningToast(task);
-    return options.runAcceptingRisk();
-  }
+  const { runAcceptingRisk } = options;
+  if (!runAcceptingRisk) return options.run();
+  return runWithRiskConsent(options.run, runAcceptingRisk, {
+    declined: i18n.t("safety.prompt.notInstalled"),
+    toastId,
+    onAsk: () => toast.dismiss(toastId),
+    onAccept: () => {
+      const task = tasks.get(options.key);
+      if (task) showRunningToast(task);
+    },
+  });
 }
 
 /**

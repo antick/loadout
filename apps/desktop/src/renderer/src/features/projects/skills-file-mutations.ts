@@ -1,5 +1,4 @@
 import {
-  ApiError,
   type SkillsFileApplyOptions,
   type SkillsFileInfo,
   type SkillsFileInit,
@@ -9,7 +8,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { SkillsFileMode } from "@/features/projects/skills-file-queries";
-import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
+import { DECLINED, runWithRiskConsent } from "@/features/safety/flagged-prompt";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -45,19 +44,18 @@ export function useRunSkillsFile(): UseMutationResult<
     fn: async ({ dir, mode, options }) => {
       if (mode === "unapply") return api.skillsFile.unapply(dir, { force: options.force });
       const apply = { ...options, update: mode === "update" };
-      try {
-        return await api.skillsFile.apply(dir, apply);
-      } catch (error) {
-        if (!(error instanceof ApiError) || error.code !== "UNSAFE") throw error;
-        if (!(await askToInstallFlagged(error.details))) return null;
-        return api.skillsFile.apply(dir, { ...apply, acceptRisk: true });
-      }
+      const result = await runWithRiskConsent(
+        () => api.skillsFile.apply(dir, apply),
+        () => api.skillsFile.apply(dir, { ...apply, acceptRisk: true }),
+        {
+          action: mode === "update" ? "update" : "install",
+          declined: t(`skillsFile.declined.${mode}`),
+        },
+      );
+      return result === DECLINED ? null : result;
     },
     onSuccess: (result, { mode }) => {
-      if (!result) {
-        toast.info(t("safety.prompt.notInstalled"));
-        return;
-      }
+      if (!result) return;
       const unapplied = mode === "unapply";
       const summary = unapplied
         ? t("skillsFile.unapplied", { count: result.removed })

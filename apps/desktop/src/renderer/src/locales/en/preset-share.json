@@ -46,7 +46,8 @@
       "reused_one": "{{count}} was in the library already.",
       "reused_other": "{{count}} were in the library already.",
       "failedOne": "Not added: {{name}}. {{message}}",
-      "failed": "Could not import the preset."
+      "failed": "Could not import the preset.",
+      "declined": "Not imported. Skills it installed before the flagged one stay in the library."
     }
   }
 }

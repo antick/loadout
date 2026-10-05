@@ -1,5 +1,4 @@
 import {
-  ApiError,
   type ApplyResult,
   type Preset,
   PRESET_FILE_DIALOG_EXTENSIONS,
@@ -12,7 +11,7 @@ import {
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
+import { DECLINED, runWithRiskConsent } from "@/features/safety/flagged-prompt";
 import { patchPresetSkills } from "@/hooks/mutations/preset-members";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor, reloadHintForAvailable } from "@/lib/agent-reload";
@@ -150,13 +149,12 @@ export function useImportPreset(): UseMutationResult<
   const { t } = useTranslation();
   return useApiMutation({
     fn: async ({ input, name, reuseSameName }) => {
-      try {
-        return await api.presets.importFile(input, { name, reuseSameName });
-      } catch (error) {
-        if (!(error instanceof ApiError) || error.code !== "UNSAFE") throw error;
-        if (!(await askToInstallFlagged(error.details))) return null;
-        return api.presets.importFile(input, { name, reuseSameName, acceptRisk: true });
-      }
+      const result = await runWithRiskConsent(
+        () => api.presets.importFile(input, { name, reuseSameName }),
+        () => api.presets.importFile(input, { name, reuseSameName, acceptRisk: true }),
+        { declined: t("presetShare.import.declined") },
+      );
+      return result === DECLINED ? null : result;
     },
     onSuccess: (result) => {
       if (!result) return;

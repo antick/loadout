@@ -1,5 +1,4 @@
 import {
-  ApiError,
   type InstallProgress,
   REMOVED_KEEP_DAYS,
   type PendingRemoval,
@@ -16,7 +15,7 @@ import {
   useRefreshSkill,
 } from "@/features/library/detail/skill-mutations";
 import { lastSourceComparison } from "@/features/library/detail/skill-queries";
-import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
+import { DECLINED, runWithRiskConsent } from "@/features/safety/flagged-prompt";
 import { useMounted } from "@/hooks/use-mounted";
 import { useAppEvent } from "@/lib/events";
 import { toastWithUndo } from "@/lib/removed-undo";
@@ -67,23 +66,30 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
   });
 
   const run = useCallback(
-    // Named, so asking about a flagged version can run it again.
-    function runRefresh(
-      request: SkillRefreshRequest,
-      approval: string | null,
-      acceptRisk = false,
-    ): void {
+    (request: SkillRefreshRequest, approval: string | null, acceptRisk = false): void => {
       setRunningKind(request.kind);
       // When Compare was opened, install exactly the version it showed, nothing newer.
       const compared = lastSourceComparison(queryClient, skill.id);
-      mutateAsync({
-        skillId: skill.id,
-        request,
-        approval,
-        acceptRisk,
-        expectedRevision: compared?.diff.revision,
-      })
+      const attempt = (accept: boolean) =>
+        mutateAsync({
+          skillId: skill.id,
+          request,
+          approval,
+          acceptRisk: accept,
+          expectedRevision: compared?.diff.revision,
+        });
+      let accepted = acceptRisk;
+      // A flagged new version shows the findings and is installed only on a clear yes.
+      runWithRiskConsent(
+        () => attempt(acceptRisk),
+        () => {
+          accepted = true;
+          return attempt(true);
+        },
+        { action: "update", declined: t("safety.prompt.notUpdated") },
+      )
         .then((result) => {
+          if (result === DECLINED) return;
           if (result.pendingRemovals.length > 0) {
             if (!mounted.current) {
               toast.info(t("library.refresh.waiting", { name: result.skill.name }), {
@@ -97,7 +103,7 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
               request,
               removals: result.pendingRemovals,
               approval: result.approval,
-              acceptRisk,
+              acceptRisk: accepted,
             });
             return;
           }
@@ -111,15 +117,8 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
             t("library.refresh.editsKept", { days: REMOVED_KEEP_DAYS }),
           );
         })
-        .catch((error: unknown) => {
-          // Other errors were toasted by the mutation itself.
-          if (!(error instanceof ApiError) || error.code !== "UNSAFE") return;
-          // The new version was flagged: show the findings, update only on a clear yes.
-          void askToInstallFlagged(error.details, "update").then((yes) => {
-            if (yes) runRefresh(request, approval, true);
-            else toast.info(t("safety.prompt.notUpdated"));
-          });
-        })
+        // Other errors were toasted by the mutation itself.
+        .catch(() => undefined)
         .finally(() => {
           setProgress(null);
           setRunningKind(null);

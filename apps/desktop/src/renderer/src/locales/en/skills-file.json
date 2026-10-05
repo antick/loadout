@@ -34,6 +34,10 @@
     "keptNote": "Kept, changed by hand: {{folders}}",
     "unapplied_one": "Removed {{count}} applied folder. It waits in Recently removed.",
     "unapplied_other": "Removed {{count}} applied folders. They wait in Recently removed.",
+    "declined": {
+      "apply": "Not applied. Nothing was written.",
+      "update": "Not updated. Nothing was written."
+    },
     "title": {
       "apply": "Apply skills.toml",
       "update": "Update to the newest commits",
