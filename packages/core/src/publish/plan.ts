@@ -7,6 +7,7 @@ import {
   type PublishFileCounts,
   type PublishSkillPlan,
   type SecretFinding,
+  SKILL_FILE,
   type Skill,
   formatBytes,
 } from "@loadout/shared";
@@ -17,7 +18,6 @@ import type { ResolvedTarget } from "./target";
 
 /** What publishing would do to a repository, worked out without changing anything. */
 
-const SKILL_FILE = "SKILL.md";
 const NO_FILES: PublishFileCounts = { added: 0, changed: 0, removed: 0 };
 
 export interface PlannedSkill {

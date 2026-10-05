@@ -329,6 +329,7 @@ describe("remote URLs", () => {
       host: "host.example:8443",
       secure: true,
       cleanUrl: "https://host.example:8443/a/b.git",
+      path: null,
       token: "p@ss",
       user: "user",
     });
@@ -358,7 +359,16 @@ describe("remote URLs", () => {
       host: "host.example:2222",
     });
     expect(parseRemoteUrl("owner/repo").cleanUrl).toBe("https://github.com/owner/repo.git");
-    expect(parseRemoteUrl("/srv/git/skills.git").kind).toBe("local");
+    expect(parseRemoteUrl("/srv/git/skills.git")).toMatchObject({
+      kind: "local",
+      path: "/srv/git/skills.git",
+    });
+    // A `file://` address stays as given for git; the folder it names is known as a path.
+    expect(parseRemoteUrl("file:///srv/git/skills.git")).toMatchObject({
+      kind: "local",
+      cleanUrl: "file:///srv/git/skills.git",
+      path: "/srv/git/skills.git",
+    });
   });
 
   it("rejects what git must never be handed", () => {

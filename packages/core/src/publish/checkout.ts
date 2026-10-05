@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { APP_NAME, APP_SLUG } from "@loadout/shared";
+import { APP_NAME, APP_SLUG, GIT_DEFAULT_BRANCH, GIT_REMOTE_NAME } from "@loadout/shared";
 import {
   COMMIT_GIT_CONFIG,
   type Git,
@@ -20,10 +20,8 @@ import type { ResolvedTarget } from "./target";
  * in it is ever a user's own work, so it may be reset and cleaned freely.
  */
 
-const REMOTE = "origin";
-const REMOTE_HEADS = `refs/remotes/${REMOTE}/`;
-const FALLBACK_BRANCH = "main";
-const COMMON_BRANCHES = ["main", "master"] as const;
+const REMOTE_HEADS = `refs/remotes/${GIT_REMOTE_NAME}/`;
+const COMMON_BRANCHES = [GIT_DEFAULT_BRANCH, "master"] as const;
 /** Errors that say something about the user's setup, not about a damaged working copy. */
 const SETUP_ERRORS = ["NETWORK", "GIT_AUTH", "GIT_MISSING"] as const;
 /** Git's failures in publishing words: this repository is not the backup. */
@@ -110,13 +108,13 @@ export async function openCheckout(ctx: CoreContext, target: ResolvedTarget): Pr
       await clone();
       return false;
     }
-    const remote = await git.probe(["remote", "get-url", REMOTE]);
+    const remote = await git.probe(["remote", "get-url", GIT_REMOTE_NAME]);
     if (remote.code !== 0 || remote.stdout.trim() !== url) {
       await clone();
       return false;
     }
     try {
-      await git.run(["fetch", "--quiet", "--prune", "--no-tags", REMOTE], network);
+      await git.run(["fetch", "--quiet", "--prune", "--no-tags", GIT_REMOTE_NAME], network);
       return true;
     } catch (error) {
       if (SETUP_ERRORS.some((code) => isAppError(error, code))) throw error;
@@ -137,11 +135,21 @@ export async function openCheckout(ctx: CoreContext, target: ResolvedTarget): Pr
 
   async function defaultBranchOf(branches: readonly string[]): Promise<string | null> {
     const head = await git.probe(["symbolic-ref", "--short", "-q", `${REMOTE_HEADS}HEAD`]);
-    const named = head.code === 0 ? head.stdout.trim().slice(REMOTE.length + 1) : "";
+    const named = head.code === 0 ? head.stdout.trim().slice(GIT_REMOTE_NAME.length + 1) : "";
     if (named && branches.includes(named)) return named;
     return COMMON_BRANCHES.find((name) => branches.includes(name)) ?? branches[0] ?? null;
   }
 
+  /** Asked of git itself, before anything is cloned or fetched for a name it would refuse. */
+  async function assertBranchName(name: string): Promise<void> {
+    // A leading dash would read as an option; the working copy may not exist yet.
+    const named = name.startsWith("-")
+      ? null
+      : await git.probe(["check-ref-format", "--branch", name], { cwd: ctx.paths.baseDir });
+    if (named?.code !== 0) throw invalid(`"${name}" is not a branch name Git accepts.`);
+  }
+
+  if (target.branch !== null) await assertBranchName(target.branch);
   let reused = await refresh();
   let branches = await remoteBranches();
   if (reused && branches.length === 0) {
@@ -152,11 +160,7 @@ export async function openCheckout(ctx: CoreContext, target: ResolvedTarget): Pr
   }
   const repoEmpty = branches.length === 0;
   const defaultBranch = await defaultBranchOf(branches);
-  const branch = target.branch ?? defaultBranch ?? FALLBACK_BRANCH;
-  const named = branch.startsWith("-")
-    ? null
-    : await git.probe(["check-ref-format", "--branch", branch]);
-  if (named?.code !== 0) throw invalid(`"${branch}" is not a branch name Git accepts.`);
+  const branch = target.branch ?? defaultBranch ?? GIT_DEFAULT_BRANCH;
 
   const newBranch = !branches.includes(branch);
   if (repoEmpty) {

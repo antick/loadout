@@ -1,5 +1,6 @@
 import { isAbsolute } from "node:path";
-import { APP_NAME, redactUrl } from "@loadout/shared";
+import { fileURLToPath } from "node:url";
+import { APP_NAME, GITHUB_HOST, redactUrl } from "@loadout/shared";
 import type { SecretStore } from "../context";
 import { AppError, invalid } from "../errors";
 
@@ -16,7 +17,6 @@ const USER_KEY_PREFIX = "backup.git.user:";
  * is a user name (copied from the host's clone button), and sending it as a token fails every sync.
  */
 const LONE_TOKEN_PATTERN = /^(?:gh[pousr]_|github_pat_|glpat-|glptt-)|^[A-Za-z0-9_-]{32,}$/;
-const GITHUB_HOST = "github.com";
 /** User name sent with a token. Git hosts accept any non-empty name next to a personal token. */
 const TOKEN_USER = "x-access-token";
 const SHORTHAND_PATTERN = /^[\w.-]+\/[\w.-]+$/;
@@ -36,6 +36,8 @@ export interface ParsedRemote {
   secure: boolean;
   /** The URL with any embedded credentials removed. */
   cleanUrl: string;
+  /** A local remote's folder as a path, whether it was given as one or as a `file://` URL. */
+  path: string | null;
   /** Token that was embedded in the URL, if any. */
   token: string | null;
   /** User name given with that token (`user:token@`); null to send the generic one. */
@@ -57,6 +59,16 @@ function decode(text: string): string {
     return decodeURIComponent(text);
   } catch {
     return text;
+  }
+}
+
+/** The folder a local remote names: a path as it is, a `file://` URL converted. */
+function localPathOf(url: string): string {
+  if (!FILE_PATTERN.test(url)) return url;
+  try {
+    return fileURLToPath(url);
+  } catch {
+    throw invalid("The remote address is not a valid URL.");
   }
 }
 
@@ -88,6 +100,7 @@ export function parseRemoteUrl(input: string): ParsedRemote {
       host: parsed.host.toLowerCase(),
       secure: parsed.protocol === "https:",
       cleanUrl: parsed.toString(),
+      path: null,
       token,
       user,
     };
@@ -100,7 +113,7 @@ export function parseRemoteUrl(input: string): ParsedRemote {
     } catch {
       throw invalid("The remote address is not a valid URL.");
     }
-    return { kind: "ssh", host, secure: false, cleanUrl: url, token: null, user: null };
+    return { kind: "ssh", host, secure: false, cleanUrl: url, path: null, token: null, user: null };
   }
 
   const scp = SCP_LIKE_PATTERN.exec(url);
@@ -110,13 +123,22 @@ export function parseRemoteUrl(input: string): ParsedRemote {
       host: scp[1].toLowerCase(),
       secure: false,
       cleanUrl: url,
+      path: null,
       token: null,
       user: null,
     };
   }
 
   if (FILE_PATTERN.test(url) || isAbsolute(url)) {
-    return { kind: "local", host: null, secure: false, cleanUrl: url, token: null, user: null };
+    return {
+      kind: "local",
+      host: null,
+      secure: false,
+      cleanUrl: url,
+      path: localPathOf(url),
+      token: null,
+      user: null,
+    };
   }
 
   if (SHORTHAND_PATTERN.test(url)) {
@@ -126,6 +148,7 @@ export function parseRemoteUrl(input: string): ParsedRemote {
       host: GITHUB_HOST,
       secure: true,
       cleanUrl: `https://${GITHUB_HOST}/${repo}`,
+      path: null,
       token: null,
       user: null,
     };

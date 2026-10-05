@@ -9,6 +9,7 @@ import {
   CLAWHUB_SLUG_PATTERN,
   CLAWHUB_VERSION_PATTERN,
   CLI_BINARY_NAME,
+  SKILL_FILE,
   type ClawhubAccount,
   type ClawhubPublishInput,
   type ClawhubPublishPreview,
@@ -108,8 +109,8 @@ export function createClawhubPublisher(
     const files = filesOf(skill.libraryPath);
     const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
     const problems: string[] = [];
-    if (!files.some((file) => file.relativePath === "SKILL.md")) {
-      problems.push("The skill has no SKILL.md at its top, which ClawHub requires.");
+    if (!files.some((file) => file.relativePath === SKILL_FILE)) {
+      problems.push(`The skill has no ${SKILL_FILE} at its top, which ClawHub requires.`);
     }
     for (const file of files) {
       if (file.size > CLAWHUB_MAX_FILE_BYTES) {
@@ -160,8 +161,8 @@ export function createClawhubPublisher(
     const skill = store.get(input.skillId);
     const { token, handle } = await requireToken();
     const files = filesOf(skill.libraryPath);
-    if (!files.some((file) => file.relativePath === "SKILL.md"))
-      throw invalid("The skill has no SKILL.md at its top.");
+    if (!files.some((file) => file.relativePath === SKILL_FILE))
+      throw invalid(`The skill has no ${SKILL_FILE} at its top.`);
     const secrets = findSecretsIn(files);
     if (secrets.length > 0 && !input.allowSecrets) throw publishSecretsHeldBack(secrets);
     const topics = clawhubTopicsOf(input.topics ?? skill.tags);

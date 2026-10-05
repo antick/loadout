@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import {
@@ -17,9 +16,6 @@ import { pathsOverlap } from "../util/fs";
 
 /** Where a publish goes, with every part of the input checked. */
 
-/** A branch name git accepts, without anything that reads as an option or a path trick. */
-const BRANCH_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
-const MAX_BRANCH_LENGTH = 200;
 const CACHE_KEY_LENGTH = 16;
 const PUBLISH_CACHE_DIR = "publish";
 
@@ -37,7 +33,7 @@ export interface ResolvedTarget {
   /** Address given to git: credentials removed. */
   url: string;
   remote: ParsedRemote;
-  /** Null: the repository's own default branch. */
+  /** As given; the checkout asks git whether it is a name. Null: the repository's own default. */
   branch: string | null;
   layer: PublishLayer;
   /** Folder of the layer inside the repository, `/` separated. */
@@ -62,13 +58,7 @@ function realPathOf(path: string): string {
 
 /** The spelling of an address that two spellings of one repository share. */
 function identityOf(remote: ParsedRemote): string {
-  if (remote.kind === "local") {
-    const path = /^file:\/\//i.test(remote.cleanUrl)
-      ? fileURLToPath(remote.cleanUrl)
-      : remote.cleanUrl;
-    return realPathOf(path);
-  }
-  return normalizeSourceUrl(remote.cleanUrl);
+  return remote.path === null ? normalizeSourceUrl(remote.cleanUrl) : realPathOf(remote.path);
 }
 
 /** The saved backup address is the same repository as `remote`. */
@@ -83,23 +73,6 @@ function isBackupRepository(ctx: CoreContext, remote: ParsedRemote): boolean {
   }
 }
 
-function checkBranchName(branch: string | null | undefined): string | null {
-  const name = branch?.trim();
-  if (!name) return null;
-  if (
-    name.length > MAX_BRANCH_LENGTH ||
-    !BRANCH_PATTERN.test(name) ||
-    name.includes("..") ||
-    name.includes("//") ||
-    name.endsWith("/") ||
-    name.endsWith(".") ||
-    name.endsWith(".lock")
-  ) {
-    throw invalid(`"${name}" is not a branch name Git accepts.`);
-  }
-  return name;
-}
-
 export function resolveTarget(
   ctx: CoreContext,
   input: { repo: string; branch?: string | null; layer?: PublishLayer },
@@ -109,12 +82,9 @@ export function resolveTarget(
   const layer = input.layer ?? DEFAULT_PUBLISH_LAYER;
   if (!PUBLISH_LAYERS.includes(layer)) throw invalid(`"${String(layer)}" is not a layer.`);
 
-  if (remote.kind === "local") {
-    const path = /^file:\/\//i.test(remote.cleanUrl)
-      ? fileURLToPath(remote.cleanUrl)
-      : remote.cleanUrl;
-    if (!isAbsolute(path)) throw invalid("Give the full path of the folder.");
-    if (pathsOverlap(realPathOf(path), realPathOf(ctx.paths.baseDir))) {
+  if (remote.path !== null) {
+    if (!isAbsolute(remote.path)) throw invalid("Give the full path of the folder.");
+    if (pathsOverlap(realPathOf(remote.path), realPathOf(ctx.paths.baseDir))) {
       throw invalid(OWN_LIBRARY);
     }
   }
@@ -124,7 +94,7 @@ export function resolveTarget(
   return {
     url: remote.cleanUrl,
     remote,
-    branch: checkBranchName(input.branch),
+    branch: input.branch?.trim() || null,
     layer,
     layerDir: PUBLISH_LAYER_DIRS[layer],
     cacheDir: join(publishCacheRoot(ctx), key.slice(0, CACHE_KEY_LENGTH)),

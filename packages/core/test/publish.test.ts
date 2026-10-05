@@ -5,7 +5,7 @@ import type { PublishInput, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createRequest } from "../src/install/download";
 import { createClawhubClient } from "../src/market/clawhub";
-import { type PublishHooks, type PublishService, createPublishService } from "../src/publish";
+import { type PublishService, createPublishService } from "../src/publish";
 import { PUBLISH_ERROR_TEXT } from "../src/publish/checkout";
 import { collectFiles, findSecretsIn } from "../src/publish/files";
 import { INTERNAL_KEYS } from "../src/settings/store";
@@ -13,13 +13,13 @@ import { hashDir } from "../src/util/hash";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { writeFile, rejection } from "./helpers";
 import { commitAll, git, initRepo, redirectGithubTo } from "./install-fixtures";
+import { racingRemote } from "./racing-remote";
 
 /** A token-shaped string the key check recognises and does not take for a documentation example. */
 const FAKE_TOKEN = `ghp_${"aB3dE6gH9jK2mN5pQ8sT1vW4yZ7bC0eF3hJ6"}`;
 
 let world: DeployWorld;
 let remote: string;
-let hooks: PublishHooks;
 let service: PublishService;
 
 /** The user's own Git identity, as it would be in `~/.gitconfig` (the tests' own, git-setup.ts). */
@@ -56,10 +56,8 @@ beforeEach(() => {
   world = createDeployWorld();
   setUserIdentity();
   remote = bareRepo("skills");
-  hooks = {};
   service = createPublishService(world.ctx, {
     store: world.store,
-    hooks,
     clawhub: createClawhubClient(createRequest()),
   });
 });
@@ -428,45 +426,64 @@ describe("what it refuses", () => {
   });
 });
 
+/** A shell snippet: the seed clone adds `file`, commits as `message` and pushes. */
+const pushFrom = (seed: string, file: string, message: string): string =>
+  [
+    `cd '${seed}'`,
+    `printf 'x\\n' > "${file}"`,
+    "git add -A",
+    `git commit -qm '${message}'`,
+    "git push -q origin main",
+  ].join(" && ");
+
 describe("a push that races", () => {
-  it("starts again from what the repository holds now", async () => {
-    const seed = initRepo(join(world.root, "seed"));
-    writeFile(join(seed, "README.md"), "hello\n");
-    commitAll(seed, "start");
-    git(seed, "push", "--quiet", remote, "main");
-    const pdf = world.addSkill("pdf");
-
-    let raced = false;
-    hooks.beforePush = () => {
-      if (raced) return;
-      raced = true;
-      // Someone else pushes between our commit and our push.
-      writeFile(join(seed, "OTHER.md"), "theirs\n");
-      commitAll(seed, "theirs");
+  it.skipIf(process.platform === "win32")(
+    "starts again from what the repository holds now",
+    async () => {
+      const seed = initRepo(join(world.root, "seed"));
+      writeFile(join(seed, "README.md"), "hello\n");
+      commitAll(seed, "start");
       git(seed, "push", "--quiet", remote, "main");
-    };
-    const result = await service.api.publish(publishInput([pdf]));
-    expect(result.published).toEqual(["pdf"]);
-    expect(commits()).toEqual(["Add pdf", "theirs", "start"]);
-    expect(existsSync(join(inspect(), "OTHER.md"))).toBe(true);
-  });
+      git(seed, "remote", "add", "origin", remote);
+      const pdf = world.addSkill("pdf");
 
-  it("gives up after three refusals and says what to do", async () => {
-    const seed = initRepo(join(world.root, "seed"));
-    writeFile(join(seed, "README.md"), "hello\n");
-    commitAll(seed, "start");
-    git(seed, "push", "--quiet", remote, "main");
-    const pdf = world.addSkill("pdf");
-    let round = 0;
-    hooks.beforePush = () => {
-      round += 1;
-      writeFile(join(seed, `R${round}.md`), "x\n");
-      commitAll(seed, `race ${round}`);
+      // Someone else pushes between our commit and our push, once.
+      const racing = racingRemote(world.root, remote, pushFrom(seed, "OTHER.md", "theirs"), {
+        times: 1,
+      });
+      try {
+        const result = await service.api.publish(publishInput([pdf], { repo: racing.url }));
+        expect(racing.count()).toBe(1);
+        expect(result.published).toEqual(["pdf"]);
+        expect(commits()).toEqual(["Add pdf", "theirs", "start"]);
+        expect(existsSync(join(inspect(), "OTHER.md"))).toBe(true);
+      } finally {
+        racing.stop();
+      }
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "gives up after three refusals and says what to do",
+    async () => {
+      const seed = initRepo(join(world.root, "seed"));
+      writeFile(join(seed, "README.md"), "hello\n");
+      commitAll(seed, "start");
       git(seed, "push", "--quiet", remote, "main");
-    };
-    const error = await rejection(service.api.publish(publishInput([pdf])));
-    expect(error.code).toBe("GIT_REJECTED");
-    expect(error.message).toContain("did not accept the push");
-    expect(commits()).not.toContain("Add pdf");
-  });
+      git(seed, "remote", "add", "origin", remote);
+      const pdf = world.addSkill("pdf");
+      const racing = racingRemote(world.root, remote, pushFrom(seed, "R$ROUND.md", "race"));
+      try {
+        const error = await rejection(
+          service.api.publish(publishInput([pdf], { repo: racing.url })),
+        );
+        expect(error.code).toBe("GIT_REJECTED");
+        expect(error.message).toContain("did not accept the push");
+        expect(racing.count()).toBe(3);
+        expect(commits()).not.toContain("Add pdf");
+      } finally {
+        racing.stop();
+      }
+    },
+  );
 });

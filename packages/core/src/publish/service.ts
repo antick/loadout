@@ -2,11 +2,14 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
   APP_NAME,
+  GITHUB_HOST,
+  GIT_REMOTE_NAME,
   type PublishApi,
   type PublishInput,
   type PublishPlan,
   type PublishResult,
   type PublishTarget,
+  SKILL_FILE,
   type Skill,
   installCommand,
   repositoryLabel,
@@ -26,15 +29,8 @@ import { dirSize, readDirSafe, removePathSync } from "../util/fs";
 
 export interface PublishDeps {
   store: SkillStore;
-  hooks?: PublishHooks;
   /** The registry client, for publishing to ClawHub. */
   clawhub: ClawhubClient;
-}
-
-/** Seams for tests that need to act in a race window. Unused in the app. */
-export interface PublishHooks {
-  /** Runs after the commit and right before each push attempt. */
-  beforePush?: (attempt: number) => Promise<void> | void;
 }
 
 export interface PublishService {
@@ -48,33 +44,18 @@ export interface PublishService {
 
 /** A push refused because the branch moved is tried again from the new state, this many times. */
 const MAX_PUSH_ATTEMPTS = 3;
-const GITHUB_LABEL_HOST = "github.com";
-const SINGLE_SKILL_REPO =
-  "This repository is a single skill (it has a SKILL.md at the top). Publish to a repository made for several skills, or an empty one.";
-
-/** Publishes to one repository at a time: they share a working copy. */
-const queues = new Map<string, Promise<unknown>>();
-
-function serialized<T>(key: string, work: () => Promise<T>): Promise<T> {
-  const run = (queues.get(key) ?? Promise.resolve()).then(work, work);
-  const tail = run.catch(() => undefined);
-  queues.set(key, tail);
-  void tail.then(() => {
-    if (queues.get(key) === tail) queues.delete(key);
-  });
-  return run;
-}
+const SINGLE_SKILL_REPO = `This repository is a single skill (it has a ${SKILL_FILE} at the top). Publish to a repository made for several skills, or an empty one.`;
 
 /** How people install from the repository: `owner/repo` on GitHub, the address elsewhere. */
 function installSource(target: ResolvedTarget): string | null {
   if (target.remote.kind === "local") return null;
   const label = repositoryLabel(target.url);
-  return target.remote.host === GITHUB_LABEL_HOST ? label : target.url;
+  return target.remote.host === GITHUB_HOST ? label : target.url;
 }
 
 /** A repository that is one skill itself (`SKILL.md` at the top) is not a place to add others. */
 const hasTopLevelSkill = (checkout: Checkout): boolean =>
-  existsSync(join(checkout.dir, "SKILL.md"));
+  existsSync(join(checkout.dir, SKILL_FILE));
 
 function refuseSingleSkillRepo(checkout: Checkout): void {
   if (!checkout.repoEmpty && hasTopLevelSkill(checkout)) throw invalid(SINGLE_SKILL_REPO);
@@ -91,6 +72,19 @@ function toPlan(target: ResolvedTarget, checkout: Checkout, planned: Planned): P
 }
 
 export function createPublishService(ctx: CoreContext, deps: PublishDeps): PublishService {
+  /** Publishes to one repository at a time: they share a working copy. */
+  const queues = new Map<string, Promise<unknown>>();
+
+  function serialized<T>(key: string, work: () => Promise<T>): Promise<T> {
+    const run = (queues.get(key) ?? Promise.resolve()).then(work, work);
+    const tail = run.catch(() => undefined);
+    queues.set(key, tail);
+    void tail.then(() => {
+      if (queues.get(key) === tail) queues.delete(key);
+    });
+    return run;
+  }
+
   const clawhub = createClawhubPublisher(ctx, {
     store: deps.store,
     clawhub: deps.clawhub,
@@ -129,8 +123,10 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
         const plan = toPlan(target, checkout, step.planned);
         if (step.commit) {
           try {
-            await deps.hooks?.beforePush?.(attempt);
-            await checkout.run(["push", "origin", `HEAD:refs/heads/${checkout.branch}`], true);
+            await checkout.run(
+              ["push", GIT_REMOTE_NAME, `HEAD:refs/heads/${checkout.branch}`],
+              true,
+            );
           } catch (error) {
             if (isAppError(error, "GIT_REJECTED") && attempt < MAX_PUSH_ATTEMPTS) continue;
             throw error;
