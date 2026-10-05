@@ -119,7 +119,7 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
             <Button
               size="sm"
               disabled={members.length === 0 || apply.isPending}
-              onClick={() => apply.mutate(preset)}
+              onClick={() => apply.mutate({ preset })}
             >
               {apply.isPending ? <Spinner /> : <Play />}
               {t("presetPage.apply")}

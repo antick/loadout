@@ -37,7 +37,8 @@
       "addSkills": "Could not add the skills to the preset.",
       "removeSkills": "Could not remove the skill from the preset.",
       "toggle": "Could not save the agent switch.",
-      "apply": "Could not apply the preset."
+      "apply": "Could not apply the preset.",
+      "remove": "Could not take the preset's skills off the agents."
     },
     "overview": {
       "title": "All presets",

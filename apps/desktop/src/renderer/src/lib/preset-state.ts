@@ -19,10 +19,15 @@ export interface PresetState {
   missing: SkillAgentPair[];
 }
 
+/** Does applying the preset put this skill on this agent? Pairs it does not are not counted. */
+export type PresetPairFilter = (skillId: string, agentKey: string) => boolean;
+
 /**
  * Work out whether a preset is fully, partly or not deployed in a scope.
  * agent-pair: every skill × agent pair counts on its own.
  * logical-skill: a skill counts only when every agent has it (project scope).
+ * `wanted` leaves out pairs the preset would never deploy (switched off, blocked); a skill with
+ * no wanted pair is left out entirely.
  */
 export function computePresetState(
   preset: Preset,
@@ -30,11 +35,14 @@ export function computePresetState(
   agentKeys: readonly string[],
   exists: (skillId: string, agentKey: string) => boolean,
   mode: PresetBarMode,
+  wanted: PresetPairFilter = () => true,
 ): PresetState {
-  const skillIds = preset.skillIds.filter((id) => knownSkillIds.has(id));
   const present: SkillAgentPair[] = [];
   const missing: SkillAgentPair[] = [];
-  if (skillIds.length === 0 || agentKeys.length === 0) {
+  const skillIds = preset.skillIds.filter(
+    (id) => knownSkillIds.has(id) && agentKeys.some((agentKey) => wanted(id, agentKey)),
+  );
+  if (skillIds.length === 0) {
     return { activity: "empty", installed: 0, total: 0, present, missing };
   }
 
@@ -42,6 +50,7 @@ export function computePresetState(
   for (const skillId of skillIds) {
     let complete = true;
     for (const agentKey of agentKeys) {
+      if (!wanted(skillId, agentKey)) continue;
       if (exists(skillId, agentKey)) present.push({ skillId, agentKey });
       else {
         missing.push({ skillId, agentKey });
@@ -51,7 +60,7 @@ export function computePresetState(
     if (complete) completeSkills += 1;
   }
 
-  const total = mode === "agent-pair" ? skillIds.length * agentKeys.length : skillIds.length;
+  const total = mode === "agent-pair" ? present.length + missing.length : skillIds.length;
   const installed = mode === "agent-pair" ? present.length : completeSkills;
   let activity: PresetActivity = "partial";
   if (missing.length === 0) activity = "active";

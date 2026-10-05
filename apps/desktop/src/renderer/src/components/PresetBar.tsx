@@ -5,7 +5,12 @@ import { useTranslation } from "react-i18next";
 import { PresetIcon } from "@/components/PresetIcon";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { computePresetState, type PresetBarMode, type SkillAgentPair } from "@/lib/preset-state";
+import {
+  computePresetState,
+  type PresetBarMode,
+  type PresetPairFilter,
+  type SkillAgentPair,
+} from "@/lib/preset-state";
 import { cn } from "@/lib/utils";
 
 export interface PresetBarProps {
@@ -18,6 +23,8 @@ export interface PresetBarProps {
   exists: (skillId: string, agentKey: string) => boolean;
   /** `agent-pair` counts skill × agent pairs; `logical-skill` counts a skill once all agents have it. */
   mode: PresetBarMode;
+  /** The pairs a preset would deploy; the others are not counted. Every pair when left out. */
+  wanted?: (preset: Preset) => PresetPairFilter;
   /** Add the missing pairs. The bar stays locked until the promise settles. */
   onActivate: (preset: Preset, missing: SkillAgentPair[]) => Promise<unknown>;
   /** Remove the pairs that are present. */
@@ -36,6 +43,7 @@ export function PresetBar({
   agentKeys,
   exists,
   mode,
+  wanted,
   onActivate,
   onDeactivate,
   className,
@@ -49,10 +57,17 @@ export function PresetBar({
       presets
         .map((preset) => ({
           preset,
-          state: computePresetState(preset, knownSkillIds, agentKeys, exists, mode),
+          state: computePresetState(
+            preset,
+            knownSkillIds,
+            agentKeys,
+            exists,
+            mode,
+            wanted?.(preset),
+          ),
         }))
         .filter(({ state }) => state.activity !== "empty"),
-    [presets, knownSkillIds, agentKeys, exists, mode],
+    [presets, knownSkillIds, agentKeys, exists, mode, wanted],
   );
 
   if (items.length === 0) return null;

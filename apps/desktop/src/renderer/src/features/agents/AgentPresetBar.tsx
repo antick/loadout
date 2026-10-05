@@ -1,18 +1,20 @@
+import type { Preset } from "@loadout/shared";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { PresetBarSection } from "@/features/local-skills/PresetBarSection";
-import { useApplySkills } from "@/hooks/mutations/deploy";
+import { useApplyPreset } from "@/features/presets/preset-mutations";
+import { usePresetSwitches } from "@/features/presets/preset-queries";
 import { usePresets } from "@/hooks/queries/presets";
 import { useSkills } from "@/hooks/queries/skills";
-import type { SkillAgentPair } from "@/lib/preset-state";
 
 const PAIR_SEPARATOR = "::";
 const pairId = (skillId: string, agentKey: string): string =>
   `${skillId}${PAIR_SEPARATOR}${agentKey}`;
-const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
 /**
- * Preset pills for one agent or a set of agents. A preset counts per skill × agent pair, and a
- * pair exists when the library skill has a deployment for that agent.
+ * Preset pills for one agent or a set of agents. A preset counts per skill × agent pair it would
+ * deploy (its switch is on and the skill is not blocked there), and a pair exists when the library
+ * skill has a deployment for that agent. Clicks apply or remove the preset for these agents, as
+ * the Preset page does, so the switches hold and the activity history has an entry.
  */
 export function AgentPresetBar({
   agentKeys,
@@ -23,14 +25,22 @@ export function AgentPresetBar({
 }): ReactNode {
   const presets = usePresets();
   const skills = useSkills();
-  const { mutateAsync: apply } = useApplySkills();
+  const { mutateAsync: applyPreset } = useApplyPreset();
 
-  const deployed = useMemo(() => {
-    const pairs = new Set<string>();
+  const knownSkillIds = useMemo(
+    () => new Set((skills.data ?? []).map((skill) => skill.id)),
+    [skills.data],
+  );
+  const switchedOn = usePresetSwitches(presets.data, knownSkillIds);
+
+  const { deployed, blocked } = useMemo(() => {
+    const deployedPairs = new Set<string>();
+    const blockedPairs = new Set<string>();
     for (const skill of skills.data ?? []) {
-      for (const entry of skill.deployments) pairs.add(pairId(skill.id, entry.agentKey));
+      for (const entry of skill.deployments) deployedPairs.add(pairId(skill.id, entry.agentKey));
+      for (const agentKey of skill.blockedAgents) blockedPairs.add(pairId(skill.id, agentKey));
     }
-    return pairs;
+    return { deployed: deployedPairs, blocked: blockedPairs };
   }, [skills.data]);
 
   const exists = useCallback(
@@ -38,16 +48,17 @@ export function AgentPresetBar({
     [deployed],
   );
 
-  // `deploy.apply` works on skills × agents and skips pairs already in the wanted state, so the
-  // distinct skills and agents of the pairs describe exactly the work to do.
-  const run = (pairs: readonly SkillAgentPair[], action: "add" | "remove"): Promise<unknown> =>
-    apply({
-      skillIds: unique(pairs.map((pair) => pair.skillId)),
-      agentKeys: unique(pairs.map((pair) => pair.agentKey)),
-      action,
-    });
+  const wanted = useCallback(
+    (preset: Preset) => (skillId: string, agentKey: string) =>
+      (switchedOn?.(preset.id, skillId, agentKey) ?? false) &&
+      !blocked.has(pairId(skillId, agentKey)),
+    [switchedOn, blocked],
+  );
 
-  if (!presets.data || !skills.data) return null;
+  const run = (preset: Preset, action: "add" | "remove"): Promise<unknown> =>
+    applyPreset({ preset, action, agentKeys: [...agentKeys] });
+
+  if (!presets.data || !skills.data || !switchedOn) return null;
   return (
     <PresetBarSection
       presets={presets.data}
@@ -55,8 +66,9 @@ export function AgentPresetBar({
       agentKeys={agentKeys}
       exists={exists}
       mode="agent-pair"
-      onActivate={(_preset, missing) => run(missing, "add")}
-      onDeactivate={(_preset, present) => run(present, "remove")}
+      wanted={wanted}
+      onActivate={(preset) => run(preset, "add")}
+      onDeactivate={(preset) => run(preset, "remove")}
       hint={hint}
     />
   );

@@ -10,14 +10,18 @@ export interface PresetBarSectionProps extends Omit<PresetBarProps, "className">
 
 /**
  * A labelled `PresetBar`. Draws nothing when the bar would be empty (no agents in scope, or no
- * preset with a skill that still exists), so pages never show a heading over a blank row.
+ * preset with a skill that still exists and would go to one of them), so pages never show a heading over a blank row.
  */
 export function PresetBarSection({ hint, ...bar }: PresetBarSectionProps): ReactNode {
   const { t } = useTranslation();
   const known = new Set(bar.skills.map((skill) => skill.id));
-  const hasPills =
-    bar.agentKeys.length > 0 &&
-    bar.presets.some((preset) => preset.skillIds.some((skillId) => known.has(skillId)));
+  const hasPills = bar.presets.some((preset) => {
+    const wanted = bar.wanted?.(preset);
+    return preset.skillIds.some(
+      (skillId) =>
+        known.has(skillId) && bar.agentKeys.some((agentKey) => wanted?.(skillId, agentKey) ?? true),
+    );
+  });
   if (!hasPills) return null;
 
   return (

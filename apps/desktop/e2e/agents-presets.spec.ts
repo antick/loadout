@@ -32,3 +32,29 @@ test("an undocumented agent's page says so instead of guessing", async ({ page }
     ),
   ).toBeVisible();
 });
+
+test("a preset pill on an agent page counts only what the preset would deploy there", async ({
+  page,
+}) => {
+  // Frontend work holds react-patterns, which Claude Code lacks; its switch goes off there.
+  await openApp(page, "/presets");
+  await main(page).getByRole("link", { name: "Open preset “Frontend work”" }).click();
+  const row = main(page)
+    .getByRole("link", { name: "react-patterns", exact: true })
+    .locator("xpath=ancestor::div[@data-state][1]");
+  await row.getByRole("button", { name: "Agents" }).click();
+  const toggle = row.getByRole("switch", { name: "Include Claude Code when applying" });
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
+
+  await openApp(page, "/agents/claude_code");
+  const pill = main(page)
+    .getByRole("group", { name: "Presets" })
+    .getByRole("button", { name: /Frontend work/ });
+  await expect(pill).toHaveAttribute("aria-pressed", "true");
+
+  // Fully there, so a click takes the preset off this agent.
+  await pill.click();
+  await expect(toasts(page).first()).toContainText("Removed 2 deployments");
+  await expect(pill).toHaveAttribute("aria-pressed", "false");
+});

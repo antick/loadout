@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
 import { patchPresetSkills } from "@/hooks/mutations/preset-members";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { reloadHintForAvailable } from "@/lib/agent-reload";
+import { reloadHintFor, reloadHintForAvailable } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { type CacheSnapshot, patchCached, restoreCached } from "@/lib/optimistic";
 import { keys } from "@/lib/query-keys";
@@ -67,13 +67,34 @@ export function useSetPresetToggle(): UseMutationResult<
   });
 }
 
-/** Deploy the preset's skills to every available agent whose toggle is on. A one-time copy. */
-export function useApplyPreset(): UseMutationResult<ApplyResult, unknown, Preset> {
+export interface ApplyPresetInput {
+  preset: Preset;
+  /** Remove the preset's skills instead of deploying them. */
+  action?: "add" | "remove";
+  /** Only these agents; otherwise every available agent whose switch is on. */
+  agentKeys?: string[];
+}
+
+/**
+ * Deploy the preset's skills to every available agent whose switch is on (or to `agentKeys`, still
+ * by the switches), or take them out again. A one-time copy, logged in the activity history.
+ */
+export function useApplyPreset(): UseMutationResult<ApplyResult, unknown, ApplyPresetInput> {
   const queryClient = useQueryClient();
   return useApiMutation({
-    fn: (preset: Preset) => api.presets.applyToDefault(preset.id),
-    onSuccess: (result) => toastApplyResult(result, "add", reloadHintForAvailable(queryClient)),
-    error: "presetPage.errors.apply",
+    fn: ({ preset, action = "add", agentKeys }: ApplyPresetInput) =>
+      action === "add"
+        ? api.presets.applyToDefault(preset.id, { agentKeys })
+        : api.presets.removeFromDefault(preset.id, { agentKeys }),
+    onSuccess: (result, { action = "add", agentKeys }) =>
+      toastApplyResult(
+        result,
+        action,
+        agentKeys ? reloadHintFor(queryClient, agentKeys) : reloadHintForAvailable(queryClient),
+      ),
+    error: false,
+    onError: (error, { action = "add" }) =>
+      toastError(error, action === "add" ? "presetPage.errors.apply" : "presetPage.errors.remove"),
   });
 }
 
