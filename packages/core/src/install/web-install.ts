@@ -20,7 +20,7 @@ import {
 } from "./download";
 import type { FetchedFolder, FetchedPreviewOptions } from "./fetched-preview";
 import { emitProgress } from "./preview-sessions";
-import { downloadWatched } from "./redirects";
+import { downloadWatched, redirectRule } from "./redirects";
 import {
   type WellKnownEntry,
   type WellKnownIndex,
@@ -176,10 +176,12 @@ async function fetchSite(
   const cleanup = (): Promise<void> => removePath(root).catch(() => undefined);
   let done = 0;
   const failures: string[] = [];
+  // The skills' downloads keep to the rule the index was read under: one other site at most.
+  const rule = redirectRule("install", index.redirectedTo);
   try {
     await mapLimit(index.entries, SITE_CONCURRENCY, async (entry: WellKnownEntry) => {
       try {
-        await fetchWellKnownSkill(download, entry, join(root, entry.name), signal);
+        await fetchWellKnownSkill(download, entry, join(root, entry.name), rule, signal);
       } catch (error) {
         if (isAppError(error, "CANCELLED") || signal.aborted) throw cancelled();
         failures.push(`${entry.name}: ${errorMessage(error)}`);
@@ -198,8 +200,8 @@ async function fetchSite(
     if (failures.length === index.entries.length) {
       throw new AppError("NETWORK", `None of the skills could be downloaded. ${failures[0]}`);
     }
-    // The user confirms another site the index moved to; updates then follow it there only.
-    return { root, cleanup, redirectedTo: index.redirectedTo };
+    // The user confirms another site the downloads moved to; updates then follow it there only.
+    return { root, cleanup, redirectedTo: rule.otherHost() };
   } catch (error) {
     await cleanup();
     throw error;

@@ -1,7 +1,9 @@
+import { redactUrl } from "@loadout/shared";
+import { invalid } from "../errors";
 import { type Download, type DownloadOptions, parseUrl } from "./download";
 
 /**
- * Whether a download that was redirected ended up on another site. A move within one site
+ * Whether a download that was redirected went to another site. A move within one site
  * (`github.com` to `codeload.github.com`) is normal and never asked about; a move to another site
  * is shown before anything is installed, because the link no longer says where the files come from.
  */
@@ -83,18 +85,61 @@ export function crossSiteHost(from: string, to: string): string | null {
   return siteOf(start) === siteOf(end) ? null : end;
 }
 
-/** Download with every hop watched; says which other site, if any, the file finally came from. */
+/**
+ * The one rule for where a download may go, the same at install and at every update: each hop
+ * stays on the site of the address it started from, or on one other site, and never goes from
+ * https to plain http. An install learns that other site from the first hop that leaves (the user
+ * is asked about it before anything is installed) and refuses a second one; an update knows it
+ * from the install and refuses any other. Several downloads of one source share one rule.
+ */
+export interface RedirectRule {
+  /** The `onRedirect` of one download of `link`: throws on a hop the rule refuses. */
+  watch(link: string): (to: string) => void;
+  /** Host of the other site the downloads moved to, or were agreed to; null when none. */
+  otherHost(): string | null;
+}
+
+/**
+ * At install, `agreed` is what an earlier download of the same source already moved to (still
+ * to be confirmed), or null; at an update it is the host the user agreed to at install.
+ */
+export function redirectRule(phase: "install" | "update", agreed: string | null): RedirectRule {
+  let other = agreed;
+  return {
+    otherHost: () => other,
+    watch: (link) => (to) => {
+      const shown = redactUrl(link);
+      if (parseUrl(link)?.protocol === "https:" && parseUrl(to)?.protocol === "http:") {
+        throw invalid(
+          phase === "update"
+            ? `${shown} now leads to an unencrypted http address, so it was not updated.`
+            : `${shown} leads to an unencrypted http address, so it was not downloaded.`,
+        );
+      }
+      const host = crossSiteHost(link, to);
+      if (!host || (other && siteOf(host) === siteOf(other))) return;
+      if (phase === "update") {
+        throw invalid(
+          `${shown} now leads to ${host}. Install it again from Install to trust that site.`,
+        );
+      }
+      if (other) {
+        throw invalid(
+          `${shown} moves on to ${host} after ${other}. Loadout follows a download to one other site at most.`,
+        );
+      }
+      other = host;
+    },
+  };
+}
+
+/** Download with every hop watched by `rule`; says which other site, if any, it moved to. */
 export async function downloadWatched(
   download: Download,
   link: string,
   options: DownloadOptions,
+  rule: RedirectRule = redirectRule("install", null),
 ): Promise<{ data: Buffer; redirectedTo: string | null }> {
-  let final = link;
-  const data = await download(link, {
-    ...options,
-    onRedirect: (to) => {
-      final = to;
-    },
-  });
-  return { data, redirectedTo: crossSiteHost(link, final) };
+  const data = await download(link, { ...options, onRedirect: rule.watch(link) });
+  return { data, redirectedTo: rule.otherHost() };
 }

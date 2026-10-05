@@ -11,7 +11,7 @@ export type { InstallIntoLibrary, InstallRecord } from "./library";
 export { resolveSkillDir } from "./repo-scan";
 export { type Download, type HttpRequest, createRequest } from "./download";
 export { archiveLinkName, skillFileLink } from "./archive-link";
-export { crossSiteHost, siteOf } from "./redirects";
+export { type RedirectRule, redirectRule } from "./redirects";
 export { skillFileFolder } from "./web-install";
 export { fetchWellKnownSkill, isWellKnownIndexUrl, parseWellKnownIndex } from "./well-known";
 export { archiveSkillDir, unpackArchive, extractArchive } from "./archive";

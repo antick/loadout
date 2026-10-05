@@ -13,7 +13,7 @@ import { resolveInside } from "../util/fs";
 import { sha256Hex } from "../util/hash";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
 import { type Download, WEB_PROTOCOLS, jsonOptions, parseUrl } from "./download";
-import { downloadWatched } from "./redirects";
+import { type RedirectRule, downloadWatched } from "./redirects";
 
 /**
  * Skills a website publishes at a well-known address (RFC 8615): `/.well-known/agent-skills/` or
@@ -246,12 +246,14 @@ function writeInside(root: string, relativePath: string, data: Buffer): void {
 
 /**
  * Download one skill of an index into `root` (created here) and return its folder. The current
- * format's artifact must match its digest, so a changed or tampered file is refused.
+ * format's artifact must match its digest, so a changed or tampered file is refused. Every
+ * download keeps to `rule`, the one the index was read under.
  */
 export async function fetchWellKnownSkill(
   download: Download,
   entry: WellKnownEntry,
   root: string,
+  rule: RedirectRule,
   signal?: AbortSignal,
 ): Promise<string> {
   mkdirSync(root, { recursive: true });
@@ -262,6 +264,7 @@ export async function fetchWellKnownSkill(
       signal,
       subject,
       maxBytes: type === "archive" ? MAX_ARTIFACT_BYTES : MAX_SKILL_FILE_BYTES,
+      onRedirect: rule.watch(url),
     });
     if (sha256Digest(data) !== digest) {
       throw new AppError(
@@ -292,6 +295,7 @@ export async function fetchWellKnownSkill(
         signal,
         subject,
         maxBytes: isDocument ? MAX_SKILL_FILE_BYTES : MAX_ARTIFACT_BYTES,
+        onRedirect: rule.watch(address),
       });
     } catch (error) {
       // The document is the skill; a missing extra file is skipped, as other tools do.

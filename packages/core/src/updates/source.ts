@@ -18,8 +18,8 @@ import {
   type GitClient,
   archiveLinkName,
   archiveSkillDir,
-  crossSiteHost,
-  siteOf,
+  type RedirectRule,
+  redirectRule,
   extractArchive,
   fetchWellKnownSkill,
   isWellKnownIndexUrl,
@@ -188,41 +188,28 @@ const noCleanup = async (): Promise<void> => undefined;
  */
 export type DownloadCache = Map<string, Promise<Buffer>>;
 
-/**
- * At install the user saw where a link's download came from, and agreed to any other site. An
- * update asks no one, so it stays on that ground: a link that now leads to a site the user did
- * not agree to, or to plain http, is refused before anything is fetched from there.
- */
-function guardedRedirect(link: string, trustedHost: string | null): (to: string) => void {
-  return (to) => {
-    const other = crossSiteHost(link, to);
-    if (other && (!trustedHost || siteOf(other) !== siteOf(trustedHost))) {
-      throw invalid(
-        `${redactUrl(link)} now leads to ${other}. Install it again from Install to trust that site.`,
-      );
-    }
-    if (to.toLowerCase().startsWith("http:")) {
-      throw invalid(
-        `${redactUrl(link)} now leads to an unencrypted http address, so it was not updated.`,
-      );
-    }
-  };
-}
-
-/** Download `link` once per round of checks. */
+/** Download `link` once per round of checks, keeping to `rule` (see `redirectRule`). */
 function cachedDownload(
   download: Download,
   link: string,
   subject: string,
-  trustedHost: string | null,
+  rule: RedirectRule,
   cache?: DownloadCache,
 ): Promise<Buffer> {
   let pending = cache?.get(link);
   if (!pending) {
-    pending = download(link, { subject, onRedirect: guardedRedirect(link, trustedHost) });
+    pending = download(link, { subject, onRedirect: rule.watch(link) });
     cache?.set(link, pending);
   }
   return pending;
+}
+
+/**
+ * At install the user saw where a link's download went, and agreed to any other site. An update
+ * asks no one, so it keeps to exactly that: the same rule, with the site the install recorded.
+ */
+function updateRule(skill: Skill): RedirectRule {
+  return redirectRule("update", skill.sourceTrustedHost);
 }
 
 const SITE_CHECK_PREFIX = `${APP_SLUG}-site-check-`;
@@ -236,13 +223,8 @@ async function openSiteSource(
 ): Promise<OpenedSource> {
   const name = skill.sourceSubpath;
   if (!name) throw invalid("This skill does not record its name on the site it came from");
-  const data = await cachedDownload(
-    download,
-    indexUrl,
-    "The skills index",
-    skill.sourceTrustedHost,
-    cache,
-  );
+  const rule = updateRule(skill);
+  const data = await cachedDownload(download, indexUrl, "The skills index", rule, cache);
   let raw: unknown;
   try {
     raw = JSON.parse(data.toString("utf8"));
@@ -256,7 +238,7 @@ async function openSiteSource(
   const root = await mkdtemp(join(tmpdir(), SITE_CHECK_PREFIX));
   const cleanup = (): Promise<void> => removePath(root).catch(() => undefined);
   try {
-    const dir = await fetchWellKnownSkill(download, entry, join(root, name));
+    const dir = await fetchWellKnownSkill(download, entry, join(root, name), rule);
     return { dir, revision: LINK_REVISION, subpath: name, cleanup };
   } catch (error) {
     await cleanup();
@@ -268,12 +250,12 @@ async function openSiteSource(
 async function openSkillFileSource(
   link: string,
   download: Download,
-  trustedHost: string | null,
+  rule: RedirectRule,
   cache?: DownloadCache,
 ): Promise<OpenedSource> {
   const folder = await skillFileFolder(
     link,
-    await cachedDownload(download, link, "The file", trustedHost, cache),
+    await cachedDownload(download, link, "The file", rule, cache),
   );
   return { dir: folder.root, revision: LINK_REVISION, subpath: null, cleanup: folder.cleanup };
 }
@@ -289,9 +271,9 @@ async function openLinkSource(
     return openSiteSource(skill, skill.sourceUrl, download, cache);
   }
   if (skillFileLink(link)) {
-    return openSkillFileSource(link, download, skill.sourceTrustedHost, cache);
+    return openSkillFileSource(link, download, updateRule(skill), cache);
   }
-  const pending = cachedDownload(download, link, "The archive", skill.sourceTrustedHost, cache);
+  const pending = cachedDownload(download, link, "The archive", updateRule(skill), cache);
   const archive = await unpackArchive(await pending, archiveLinkName(link));
   try {
     return {

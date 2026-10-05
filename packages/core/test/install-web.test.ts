@@ -326,6 +326,72 @@ describe("downloads that move to another site", () => {
     expect(pdf).toMatchObject({ name: "pdf", sourceRef: file });
   });
 
+  it("asks about a site a download only passes through, and updates through it the same way", async () => {
+    const link = "https://example.com/get/SKILL.md";
+    const through = "https://go.elsewhere.net/r/pdf";
+    web.served.set(FILE_LINK, Buffer.from(skillMd("pdf")));
+    web.redirects.set(link, through);
+    web.redirects.set(through, FILE_LINK);
+    const preview = await world.install.api.previewGit(link);
+    // Back on the link's own site at the end, yet it went through another one.
+    expect(preview.redirectedTo).toBe("go.elsewhere.net");
+    const items = [{ relPath: preview.skills[0]?.relPath ?? "", name: "" }];
+    const [pdf] = await world.install.api.confirmGit(preview.previewId, items, {
+      acceptRedirect: true,
+    });
+    if (!pdf) throw new Error("not installed");
+    expect(pdf.sourceTrustedHost).toBe("go.elsewhere.net");
+
+    // The update follows the very hops the install was agreed for.
+    web.served.set(FILE_LINK, Buffer.from(skillMd("pdf", "Changed.\n")));
+    expect((await world.updates.api.check(pdf.id, true)).updateStatus).toBe("update_available");
+  });
+
+  it("refuses at install a download that goes through two other sites, as an update would", async () => {
+    const link = "https://example.com/get/SKILL.md";
+    const third = "https://cdn.third.org/pdf/SKILL.md";
+    web.served.set(third, Buffer.from(skillMd("pdf")));
+    web.redirects.set(link, "https://go.elsewhere.net/r/pdf");
+    web.redirects.set("https://go.elsewhere.net/r/pdf", third);
+    await expect(world.install.api.previewGit(link)).rejects.toThrow(
+      "moves on to cdn.third.org after go.elsewhere.net",
+    );
+    expect(web.requests).not.toContain(third);
+  });
+
+  it("holds a site's skill downloads to the same rule as its index", async () => {
+    const site = "https://skills.acme.dev";
+    const pdfUrl = `${site}/pdf.md`;
+    const mirror = "https://mirror.acme-cdn.net/pdf.md";
+    const pdf = Buffer.from(skillMd("pdf"));
+    const skills = [
+      { name: "pdf", type: "skill-md", description: "PDF", url: pdfUrl, digest: sha256Digest(pdf) },
+    ];
+    web.served.set(
+      `${site}/.well-known/agent-skills/index.json`,
+      json({ $schema: SCHEMA, skills }),
+    );
+    web.served.set(mirror, pdf);
+    web.redirects.set(pdfUrl, mirror);
+
+    const preview = await world.install.api.previewGit(site);
+    expect(preview).toMatchObject({ kind: "site", redirectedTo: "mirror.acme-cdn.net" });
+    const [installed] = await world.install.api.confirmGit(
+      preview.previewId,
+      [{ relPath: "pdf", name: "" }],
+      { acceptRedirect: true },
+    );
+    if (!installed) throw new Error("not installed");
+    expect(installed.sourceTrustedHost).toBe("mirror.acme-cdn.net");
+    expect((await world.updates.api.check(installed.id, true)).updateStatus).toBe("up_to_date");
+
+    // The skill's file moved on to a site nobody agreed to: the update refuses it.
+    web.redirects.set(pdfUrl, "https://evil.example/pdf.md");
+    const refused = await world.updates.api.check(installed.id, true);
+    expect(refused.lastCheckError).toContain("now leads to evil.example");
+    expect(web.requests).not.toContain("https://evil.example/pdf.md");
+  });
+
   it("asks before a site whose index moved elsewhere, then updates from there only", async () => {
     const site = "https://skills.acme.dev";
     const moved = "https://acme-skills.pages.dev/.well-known/agent-skills/index.json";
