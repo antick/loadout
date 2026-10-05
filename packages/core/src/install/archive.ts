@@ -13,7 +13,13 @@ import { unzipSync } from "fflate";
 import { errorMessage, invalid, isAppError, notFound } from "../errors";
 import { isInside, isSkillDir, removePath, resolveInside } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
-import { type FoundSkill, findSkillDirs, listRepoSkills, preferNeutralCopies } from "./repo-scan";
+import {
+  type FoundSkill,
+  describeSkill,
+  findSkillDirs,
+  listRepoSkills,
+  preferNeutralCopies,
+} from "./repo-scan";
 import { MAX_ARCHIVE_ENTRIES, isGzip, isTar, readTar } from "./tar";
 
 /** An unpacked archive. Always call `cleanup`. */
@@ -198,9 +204,13 @@ function archiveSkillDirs(root: string): string[] {
   return preferNeutralCopies(root, findSkillDirs(root, { maxDepth: SKILL_SEARCH_DEPTH }));
 }
 
-/** The skills of an unpacked archive, described for a preview. Same set as {@link archiveSkillDirs}. */
+/**
+ * The skills of an unpacked archive, described for a preview: the set {@link archiveSkillDir}
+ * picks from, or the root itself when the archive holds no marker file.
+ */
 export function listArchiveSkills(root: string): FoundSkill[] {
-  return listRepoSkills(root, { maxDepth: SKILL_SEARCH_DEPTH });
+  const found = listRepoSkills(root, { maxDepth: SKILL_SEARCH_DEPTH });
+  return found.length > 0 ? found : [describeSkill(root, root)];
 }
 
 /**

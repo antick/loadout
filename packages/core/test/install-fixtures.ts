@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Zippable, strToU8, zipSync } from "fflate";
-import type { AppEvents } from "@loadout/shared";
+import type { AppEvents, InstallApi, Skill } from "@loadout/shared";
 import { AgentRegistry } from "../src/agents/registry";
 import {
   type InstallService,
@@ -105,6 +105,15 @@ export function isolateTmpDir(dir: string): () => void {
 
 export function leftoverCheckouts(tmpDir: string): string[] {
   return readdirSync(tmpDir).filter((name) => name.startsWith(CLONE_DIR_PREFIX));
+}
+
+/** Install every skill of an archive file as the app does: preview it, then confirm. */
+export async function installArchive(api: InstallApi, path: string, name = ""): Promise<Skill> {
+  const preview = await api.previewArchive(path);
+  const items = preview.skills.map((skill) => ({ relPath: skill.relPath, name }));
+  const [skill] = await api.confirmGit(preview.previewId, items);
+  if (!skill) throw new Error(`Nothing installed from ${path}`);
+  return skill;
 }
 
 export function skillsDirOf(world: TestWorld): string {

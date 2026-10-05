@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { archiveLink, archiveLinkName } from "../src/install/archive-link";
-import { leftoverCheckouts, writeZip } from "./install-fixtures";
+import { installArchive, leftoverCheckouts, writeZip } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
 const LINK = "https://downloads.example.com/packs/writing.zip?dl=1";
@@ -213,10 +213,6 @@ describe("archive files with several skills", () => {
       "bundle/prose/SKILL.md": skillMd("prose"),
       "bundle/haiku/SKILL.md": skillMd("haiku"),
     });
-    await expect(world.install.api.fromPath(path)).rejects.toMatchObject({
-      code: "INVALID_INPUT",
-    });
-
     const preview = await world.install.api.previewArchive(path);
     expect(preview).toMatchObject({ kind: "archive", repoUrl: path });
     // The status bar stops showing the scan once the list is there.
@@ -242,11 +238,11 @@ describe("archive files with several skills", () => {
     expect(world.store.get(haiku?.id ?? "")).toMatchObject({ sourceSubpath: "bundle/haiku" });
   });
 
-  it("still installs a single-skill archive in one step, as before", async () => {
+  it("follows the skill of a single-skill archive at its folder", async () => {
     const path = join(world.root, "one.zip");
     writeZip(path, { "one/SKILL.md": skillMd("one") });
-    const skill = await world.install.api.fromPath(path);
-    expect(skill).toMatchObject({ name: "one", sourceType: "local", sourceSubpath: null });
+    const skill = await installArchive(world.install.api, path);
+    expect(skill).toMatchObject({ name: "one", sourceType: "local", sourceSubpath: "one" });
     expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("up_to_date");
   });
 });

@@ -6,6 +6,7 @@ import { createFileHistory } from "../src/editor";
 import { type SkillsService, createSkillsService } from "../src/skills/service";
 import { createRemovedStore } from "../src/storage";
 import { makeSkill, writeFile } from "./helpers";
+import { installArchive } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
 let world: UpdatesWorld;
@@ -51,7 +52,7 @@ describe("export", () => {
     });
 
     // Installs again as the same skill, with the script still executable.
-    const again = await world.install.api.fromPath(path, "pdf-copy");
+    const again = await installArchive(world.install.api, path, "pdf-copy");
     expect(readFileSync(join(again.libraryPath, "SKILL.md"), "utf8")).toBe(
       readFileSync(join(skill.libraryPath, "SKILL.md"), "utf8"),
     );

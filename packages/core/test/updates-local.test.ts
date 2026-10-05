@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LIBRARY_LOCATION, MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates";
 import { hashDir } from "../src/util/hash";
 import { makeSkill, writeFile, rejection } from "./helpers";
-import { commitAll, leftoverCheckouts, writeZip } from "./install-fixtures";
+import { commitAll, installArchive, leftoverCheckouts, writeZip } from "./install-fixtures";
 import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
 let world: UpdatesWorld;
@@ -77,7 +77,7 @@ describe("check of local sources", () => {
       "packed/SKILL.md": "---\nname: packed\ndescription: zipped\n---\n",
       "packed/data.txt": "v1",
     });
-    const skill = await world.install.api.fromPath(archive);
+    const skill = await installArchive(world.install.api, archive);
     expect((await world.updates.api.check(skill.id, true)).updateStatus).toBe("up_to_date");
     writeZip(archive, {
       "packed/SKILL.md": "---\nname: packed\ndescription: zipped\n---\n",

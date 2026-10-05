@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { archiveSuffixOf, isArchivePath } from "@loadout/shared";
-import { tarBuffer } from "./install-fixtures";
+import { installArchive, tarBuffer } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
 const LINK = "https://downloads.example.com/packs/writing.tgz";
@@ -68,7 +68,7 @@ describe("tar archives", () => {
   it("installs a plain .tar holding one skill in one step", async () => {
     const path = join(world.root, "solo.tar");
     writeFileSync(path, tarBuffer([{ name: "SKILL.md", content: skillMd("solo") }]));
-    const skill = await world.install.api.fromPath(path);
+    const skill = await installArchive(world.install.api, path);
     expect(skill).toMatchObject({ name: "solo", sourceType: "local" });
   });
 
@@ -110,7 +110,7 @@ describe("tar archives", () => {
     writeFileSync(join(folder, "references", "guide.md"), "guide\n");
     const path = join(world.root, "native.tar.gz");
     execFileSync("tar", ["-czf", path, "-C", join(world.root, "made"), "native-skill"]);
-    const skill = await world.install.api.fromPath(path);
+    const skill = await installArchive(world.install.api, path);
     expect(readFileSync(join(skill.libraryPath, "references", "guide.md"), "utf8")).toBe("guide\n");
   });
 

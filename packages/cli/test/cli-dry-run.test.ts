@@ -2,6 +2,7 @@ import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Skill } from "@loadout/shared";
 import type { InstallPlan } from "../src/commands/skills-install-plan";
 import type { UpdatePlan } from "../src/commands/skills-update-plan";
 import { type Sandbox, createSandbox, writeSkill } from "./harness";
@@ -178,6 +179,23 @@ describe("a dry run checks its input like the real run", () => {
         expect(run.json()).toMatchObject({ code: "NOT_FOUND" });
       }
       expect(await names()).toEqual([]);
+    } finally {
+      maker.cleanup();
+    }
+  });
+
+  it("installs a one-skill archive through the same preview as its dry run", async () => {
+    const maker = createSandbox();
+    await maker.cli("skills", "install", writeSkill(maker.root, "solo"));
+    const zip = join(maker.root, "solo.zip");
+    await maker.cli("skills", "export", "solo", "--out", zip);
+    try {
+      const plan = await box.cli("skills", "install", zip, "--dry-run", "--json");
+      const [planned] = plan.json<InstallPlan>().skills;
+      const run = await box.cli("skills", "install", zip, "--json");
+      expect(run.json<{ installed: Skill[] }>().installed).toMatchObject([
+        { name: "solo", sourceSubpath: planned?.relPath },
+      ]);
     } finally {
       maker.cleanup();
     }

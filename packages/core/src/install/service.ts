@@ -13,7 +13,6 @@ import {
   readDirSafe,
   statOrNull,
 } from "../util/fs";
-import { extractArchive } from "./archive";
 import { CancelRegistry } from "./cancel";
 import { type Download, createRequest, downloadWith } from "./download";
 import { type GitClient, type GitClientOptions, createGitClient } from "./git-client";
@@ -21,7 +20,7 @@ import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
 import type { GitInputOptions } from "./git-source";
 import { createHttpGit } from "./http-git";
-import { type InstallIntoLibrary, type InstallRecord, installIntoLibrary } from "./library";
+import { type InstallIntoLibrary, installIntoLibrary } from "./library";
 import type { SourceNewsStore } from "../sources/news-store";
 import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
@@ -121,23 +120,15 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     const path = normalizeAbsolutePath(sourcePath, "Source path");
     const stat = statOrNull(path);
     if (!stat) throw notFound(`Nothing found at ${path}`);
-    const record: InstallRecord = { ...LOCAL_RECORD, sourceRef: path };
-    const checked = { ...options, progressKey: sourcePath };
-    if (stat.isDirectory()) {
-      if (!isSkillDir(path)) throw invalid(`No SKILL.md found in ${path}`);
-      return installChecked(install, deps.safety, { sourceDir: path, name, record }, checked);
-    }
-    const archive = await extractArchive(path);
-    try {
-      return await installChecked(
-        install,
-        deps.safety,
-        { sourceDir: archive.skillDir, name, record },
-        checked,
-      );
-    } finally {
-      await archive.cleanup();
-    }
+    // Archives go through `previewArchive`, which lists what they hold before installing.
+    if (!stat.isDirectory()) throw invalid(`Not a folder: ${path}`);
+    if (!isSkillDir(path)) throw invalid(`No SKILL.md found in ${path}`);
+    return installChecked(
+      install,
+      deps.safety,
+      { sourceDir: path, name, record: { ...LOCAL_RECORD, sourceRef: path } },
+      { ...options, progressKey: sourcePath },
+    );
   }
 
   async function importFolder(folderPath: string): Promise<BatchImportResult> {

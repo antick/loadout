@@ -26,7 +26,7 @@ import type {
 } from "./types-install";
 
 export interface InstallApi {
-  /** A folder containing a skill, or an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`). */
+  /** A folder containing a skill. An archive goes through `previewArchive` and `confirmGit`. */
   fromPath(sourcePath: string, name?: string, options?: InstallOptions): Promise<Skill>;
   importFolder(folderPath: string): Promise<BatchImportResult>;
   /** Fetch a Git repository, or download an archive link, and list the skills in it. */

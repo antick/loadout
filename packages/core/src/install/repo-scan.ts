@@ -118,19 +118,24 @@ export function preferNeutralCopies(root: string, dirs: readonly string[]): stri
   return dirs.filter((dir) => !specific(dir) || !neutralNames.has(names.get(dir)));
 }
 
+/** The skill folder `dir` under a scan root, described for a preview. */
+export function describeSkill(scanRoot: string, dir: string): FoundSkill {
+  const identity = readSkillIdentity(dir);
+  return {
+    dir,
+    relPath: toPosix(relative(scanRoot, dir)) || basename(scanRoot),
+    name: identity.name,
+    description: identity.description,
+    manualOnly: identity.manualOnly,
+    traits: mergeTraits(identity.traits, folderTraits(dir)),
+  };
+}
+
 /** Skills under a scan root, described for a preview. Agent-specific duplicates are left out. */
 export function listRepoSkills(scanRoot: string, options: FindOptions = {}): FoundSkill[] {
-  return preferNeutralCopies(scanRoot, findSkillDirs(scanRoot, options)).map((dir) => {
-    const identity = readSkillIdentity(dir);
-    return {
-      dir,
-      relPath: toPosix(relative(scanRoot, dir)) || basename(scanRoot),
-      name: identity.name,
-      description: identity.description,
-      manualOnly: identity.manualOnly,
-      traits: mergeTraits(identity.traits, folderTraits(dir)),
-    };
-  });
+  return preferNeutralCopies(scanRoot, findSkillDirs(scanRoot, options)).map((dir) =>
+    describeSkill(scanRoot, dir),
+  );
 }
 
 function locate(repoDir: string, locatorId: string): string {

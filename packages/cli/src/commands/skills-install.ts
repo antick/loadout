@@ -218,23 +218,13 @@ async function installFromPreview(
   }
 }
 
-/**
- * A folder or an archive file. An archive holding several skills is picked from like a
- * repository; anything else installs as one skill, exactly as before.
- */
+/** A folder, or an archive file, which is picked from like a repository, as its dry run is. */
 async function installFromPath(context: CommandContext, path: string): Promise<Installed> {
   const { core, args } = context;
-  const name = flagString(args, NAME_FLAG.name);
   if (isArchivePath(path)) {
-    const preview = await core.api.install.previewArchive(path);
-    // Replacing goes through the preview, which knows which library skill holds the name; a
-    // named --skill too, so it is checked against the archive exactly as the dry run checks it.
-    const picked = flagList(args, SKILL_FLAG.name).length > 0;
-    if (preview.skills.length > 1 || flagBoolean(args, REPLACE_FLAG.name) || picked) {
-      return installFromPreview(context, preview);
-    }
-    await core.api.install.cancelPreview(preview.previewId);
+    return installFromPreview(context, await core.api.install.previewArchive(path));
   }
+  const name = flagString(args, NAME_FLAG.name);
   const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
   return {
     skills: [await core.api.install.fromPath(path, name, { acceptRisk })],

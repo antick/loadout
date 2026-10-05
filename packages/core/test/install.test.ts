@@ -9,6 +9,7 @@ import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers
 import {
   type InstallHarness,
   createInstallHarness,
+  installArchive,
   isolateTmpDir,
   skillsDirOf,
   writeZip,
@@ -203,7 +204,7 @@ describe("install from an archive", () => {
       "zipped/SKILL.md": { content: SKILL_MD, mode: 0o644 },
       "zipped/run.sh": { content: "#!/bin/sh\n", mode: 0o755 },
     });
-    const skill = await install.api.fromPath(zip);
+    const skill = await installArchive(install.api, zip);
     expect(skill).toMatchObject({ name: "zipped", sourceType: "local", sourceRef: zip });
     if (process.platform !== "win32") {
       expect(statSync(join(skill.libraryPath, "run.sh")).mode & 0o111).not.toBe(0);
@@ -212,14 +213,11 @@ describe("install from an archive", () => {
     expect(readdirSync(join(world.root, "tmp"))).toEqual([]);
   });
 
-  it("rejects an archive holding several skills", async () => {
-    const zip = writeZip(join(sources, "many.zip"), {
-      "one/SKILL.md": SKILL_MD,
-      "two/skill.md": SKILL_MD,
-    });
+  it("installs only folders from a path: an archive is previewed first", async () => {
+    const zip = writeZip(join(sources, "one.zip"), { "one/SKILL.md": SKILL_MD });
     await expect(install.api.fromPath(zip)).rejects.toMatchObject({
       code: "INVALID_INPUT",
-      message: expect.stringContaining("several skills"),
+      message: `Not a folder: ${zip}`,
     });
     expect(readdirSync(join(world.root, "tmp"))).toEqual([]);
   });
@@ -230,13 +228,13 @@ describe("install from an archive", () => {
       "zipped/plain.txt": "plain",
       ".claude/skills/zipped/SKILL.md": SKILL_MD,
     });
-    const skill = await install.api.fromPath(zip);
+    const skill = await installArchive(install.api, zip);
     expect(readdirSync(skill.libraryPath).sort()).toEqual(["SKILL.md", "plain.txt"]);
   });
 
   it("names an archive without a marker after the file, not after a temp folder", async () => {
     const zip = writeZip(join(sources, "My Notes.zip"), { "README.md": "# notes" });
-    const skill = await install.api.fromPath(zip);
+    const skill = await installArchive(install.api, zip);
     expect(skill.name).toBe("My Notes");
     expect(skill.dirName).toBe("My Notes");
   });
@@ -245,15 +243,15 @@ describe("install from an archive", () => {
     writeFile(join(sources, "skill.rar"), "x");
     writeFile(join(sources, "skill.tar.gz"), "x");
     writeFile(join(sources, "broken.zip"), "not a zip");
-    await expect(install.api.fromPath(join(sources, "skill.rar"))).rejects.toMatchObject({
+    await expect(install.api.previewArchive(join(sources, "skill.rar"))).rejects.toMatchObject({
       code: "INVALID_INPUT",
       message: "Unsupported archive format: .rar",
     });
-    await expect(install.api.fromPath(join(sources, "skill.tar.gz"))).rejects.toMatchObject({
+    await expect(install.api.previewArchive(join(sources, "skill.tar.gz"))).rejects.toMatchObject({
       code: "INVALID_INPUT",
       message: "The archive is empty or damaged",
     });
-    await expect(install.api.fromPath(join(sources, "broken.zip"))).rejects.toMatchObject({
+    await expect(install.api.previewArchive(join(sources, "broken.zip"))).rejects.toMatchObject({
       code: "INVALID_INPUT",
     });
   });

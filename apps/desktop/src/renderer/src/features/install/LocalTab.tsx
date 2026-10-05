@@ -1,5 +1,5 @@
 import { ARCHIVE_SUFFIXES, isArchivePath } from "@loadout/shared";
-import type { BatchImportResult } from "@loadout/shared";
+import type { BatchImportResult, GitPreview } from "@loadout/shared";
 import { FileArchive, FolderInput, FolderTree, PackagePlus, X } from "lucide-react";
 import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import {
   useCancelPreview,
+  useConfirmGit,
   useImportFolder,
   useInstallFromPath,
   usePickArchive,
@@ -28,6 +29,8 @@ type SourceKind = "folder" | "archive";
 interface PickedSource {
   path: string;
   kind: SourceKind;
+  /** An archive's open preview, holding its one skill: installing confirms it. */
+  preview?: GitPreview;
 }
 
 /** Install from this computer: one skill folder, one archive, or every skill inside a folder. */
@@ -36,6 +39,7 @@ export function LocalTab(): ReactNode {
   const pickFolder = usePickFolder();
   const pickArchive = usePickArchive();
   const installFromPath = useInstallFromPath();
+  const confirmGit = useConfirmGit();
   const importFolder = useImportFolder();
   const previewArchive = usePreviewArchive();
   const cancelPreview = useCancelPreview();
@@ -51,23 +55,27 @@ export function LocalTab(): ReactNode {
 
   const [dragging, setDragging] = useState(false);
 
+  /** Give up the picked source; an archive's preview is thrown away. */
+  const drop = (): void => {
+    if (picked?.preview) cancelPreview.mutate(picked.preview.previewId);
+    setPicked(null);
+  };
+
   /**
    * Take a picked or dropped source. An archive holding several skills goes straight to the
-   * picker; one with a single skill (or none, which install then reports) keeps the name form.
+   * picker; one with a single skill keeps the name form.
    */
   const accept = async (source: PickedSource): Promise<void> => {
+    drop();
     setName("");
-    if (source.kind === "archive") {
-      const preview = await previewArchive.mutateAsync(source.path).catch(() => null);
-      if (!preview) return;
-      if (preview.skills.length > 1) {
-        setPicked(null);
-        archiveChoice.show(preview);
-        return;
-      }
-      cancelPreview.mutate(preview.previewId);
+    if (source.kind === "folder") {
+      setPicked(source);
+      return;
     }
-    setPicked(source);
+    const preview = await previewArchive.mutateAsync(source.path).catch(() => null);
+    if (!preview) return;
+    if (preview.skills.length > 1) archiveChoice.show(preview);
+    else setPicked({ ...source, preview });
   };
 
   /** A dropped archive is recognised by its extension; anything else is treated as a folder. */
@@ -105,8 +113,18 @@ export function LocalTab(): ReactNode {
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
     if (!picked) return;
-    const installed = await installFromPath(picked.path, name);
-    if (installed) {
+    const { preview } = picked;
+    const installed = preview
+      ? await confirmGit(
+          preview,
+          preview.skills.map((skill) => ({
+            relPath: skill.relPath,
+            name: name.trim() || skill.name,
+          })),
+        )
+      : await installFromPath(picked.path, name);
+    // Trying spends an archive's preview whether or not it installed.
+    if (installed || preview) {
       setPicked(null);
       setName("");
     }
@@ -189,7 +207,7 @@ export function LocalTab(): ReactNode {
                 variant="ghost"
                 size="sm"
                 disabled={Boolean(singleTask)}
-                onClick={() => setPicked(null)}
+                onClick={drop}
               >
                 <X />
                 {t("common.clear")}
