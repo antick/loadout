@@ -7,7 +7,9 @@ test("a deployment that could not be put back shows in a banner until dismissed"
   await setUp(page, "repair-failed");
   await openApp(page, "/library");
   const banner = page.getByRole("status").filter({ hasText: "could not be put back" });
-  await expect(banner).toContainText("release-notes (Cursor): Refusing to replace");
+  await expect(banner).toContainText(
+    "release-notes (Cursor): a folder Loadout did not make is in its place",
+  );
   await banner.getByRole("button", { name: "Dismiss" }).click();
   await expect(banner).toHaveCount(0);
 });

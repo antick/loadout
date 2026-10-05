@@ -281,6 +281,8 @@
     "viewLogs": "View logs",
     "repairTitle_one": "{{count}} deployment could not be put back.",
     "repairTitle_other": "{{count}} deployments could not be put back.",
+    "repairEntry": "{{skill}} ({{agent}}): {{message}}",
+    "repairNotOurs": "a folder {{app}} did not make is in its place. Move it away, then retry.",
     "repairDone_one": "Put back {{count}} deployment.",
     "repairDone_other": "Put back {{count}} deployments.",
     "libraryTitle": "The library location needs attention.",

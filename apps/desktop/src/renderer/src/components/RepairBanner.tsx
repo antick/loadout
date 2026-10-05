@@ -7,15 +7,22 @@ import { useDismissRepair, useRepairDeployments } from "@/hooks/mutations/app";
 import { useRepairReport } from "@/hooks/queries/app";
 
 /**
- * What the start-up repair could not put back: a deployment whose place is taken by a folder
- * Loadout did not create, or whose skill folder is gone. Retry runs the repair again.
+ * What the start-up repair could not put back: a deployment that failed, or whose place is taken
+ * by a folder Loadout did not create (left alone, never overwritten). Retry runs the repair again.
  */
 export function RepairBanner(): ReactNode {
   const { t } = useTranslation();
   const report = useRepairReport();
   const retry = useRepairDeployments();
   const dismiss = useDismissRepair();
-  const failed = report.data?.failed ?? [];
+  const failed = [
+    ...(report.data?.failed ?? []),
+    ...(report.data?.notOurs ?? []).map(({ skill, agent }) => ({
+      skill,
+      agent,
+      message: t("banners.repairNotOurs"),
+    })),
+  ];
   if (failed.length === 0) return null;
   const [first] = failed;
   const rest = failed.length - 1;
@@ -27,9 +34,11 @@ export function RepairBanner(): ReactNode {
       title={t("banners.repairTitle", { count: failed.length })}
       description={
         first
-          ? `${first.skill} (${first.agent}): ${first.message}${
-              rest > 0 ? ` ${t("common.andMore", { count: rest })}` : ""
-            }`
+          ? `${t("banners.repairEntry", {
+              skill: first.skill,
+              agent: first.agent,
+              message: first.message,
+            })}${rest > 0 ? ` ${t("common.andMore", { count: rest })}` : ""}`
           : undefined
       }
       actions={
