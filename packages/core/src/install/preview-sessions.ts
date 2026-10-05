@@ -8,6 +8,7 @@ import type {
   PreviewedSkill,
   Skill,
 } from "@loadout/shared";
+import { MINUTE_MS } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
@@ -50,7 +51,7 @@ export interface PreviewSessions {
   dispose(): Promise<void>;
 }
 
-export const PREVIEW_TTL_MS = 30 * 60_000;
+export const PREVIEW_TTL_MS = 30 * MINUTE_MS;
 const SESSION_EXPIRED = "Preview expired, please try again";
 
 export function emitProgress(
@@ -112,12 +113,10 @@ export function createPreviewSessions(ctx: CoreContext, deps: PreviewSessionDeps
       const checkable = chosen.flatMap(({ dir, name }) => (dir ? [{ name, dir }] : []));
       // Whole folders before anything reads them: the safety check, then the install.
       await session.materialize?.(checkable.map((entry) => entry.dir));
-      const checked = safety
-        ? await safety.check(checkable, {
-            acceptRisk: options.acceptRisk,
-            progressKey: session.key,
-          })
-        : [];
+      const checked = await safety.check(checkable, {
+        acceptRisk: options.acceptRisk,
+        progressKey: session.key,
+      });
       const reportOf = new Map(
         checkable.map((entry, index) => [entry.dir, checked[index] ?? null]),
       );
