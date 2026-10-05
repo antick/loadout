@@ -1,8 +1,7 @@
 import { createHash } from "node:crypto";
-import { closeSync, openSync, readSync } from "node:fs";
-import { StringDecoder } from "node:string_decoder";
 import type { SecretFinding } from "@loadout/shared";
 import { SECRET_PATTERNS as PATTERNS } from "../util/secret-patterns";
+import { createLineSplitter, readTextChunks } from "../util/text-stream";
 
 /**
  * Searching text for well-known key and token formats, for the backup's push check and for
@@ -10,8 +9,6 @@ import { SECRET_PATTERNS as PATTERNS } from "../util/secret-patterns";
  * only binary files (a NUL byte anywhere) are not text and are skipped.
  */
 
-/** Bytes read from a file at a time. */
-const CHUNK_BYTES = 1024 * 1024;
 /**
  * A line longer than this many characters is searched in pieces, each repeating the last
  * {@link OVERLAP_CHARS} of the one before: far longer than any key, so a key a border cuts is
@@ -26,7 +23,6 @@ const ID_LENGTH = 16;
 const PLACEHOLDER = /example|x{6,}|\*{4,}/i;
 /** Lines a private key block may span; its `END` line closes it. */
 const MAX_KEY_BLOCK_LINES = 200;
-const NUL = 0;
 
 function mask(match: string): string {
   if (match.length <= MASK_KEEP * 2) return "•".repeat(match.length);
@@ -59,8 +55,6 @@ function createScanner(file: string, path: string, committed: boolean): Scanner 
    * key block above them may run into. */
   let lines: string[] = [];
   let first = 1;
-  /** Text after the last line break. */
-  let partial = "";
 
   /** Search `context[index]`; matches ending at `before` or later are left for the next piece. */
   const search = (
@@ -90,21 +84,23 @@ function createScanner(file: string, path: string, committed: boolean): Scanner 
     first += count;
   };
 
-  return {
-    push(text) {
-      const parts = `${partial}${text}`.split("\n");
-      partial = parts.pop() ?? "";
-      for (const part of parts) lines.push(part.endsWith("\r") ? part.slice(0, -1) : part);
-      if (lines.length > MAX_KEY_BLOCK_LINES * 2) flush(false);
-      if (partial.length > PIECE_CHARS) {
-        // An over-long line: search what is there, keep its tail for the next piece.
-        search([partial], 0, first + lines.length, partial.length);
-        partial = partial.slice(-OVERLAP_CHARS);
+  const splitter = createLineSplitter(
+    (text, line, ends) => {
+      if (ends) {
+        lines.push(text);
+        if (lines.length > MAX_KEY_BLOCK_LINES * 2) flush(false);
+      } else {
+        // A piece of an over-long line: what touches its end is searched again in the next.
+        search([text], 0, line, text.length);
       }
     },
+    { pieceChars: PIECE_CHARS, overlapChars: OVERLAP_CHARS },
+  );
+
+  return {
+    push: (text) => splitter.push(text),
     end() {
-      lines.push(partial.endsWith("\r") ? partial.slice(0, -1) : partial);
-      partial = "";
+      splitter.end();
       flush(true);
       // An over-long line is searched before the lines above it that still wait.
       return findings.sort((a, b) => a.line - b.line);
@@ -130,21 +126,6 @@ export function findSecretsInFile(
   path: string,
   committed = false,
 ): SecretFinding[] | null {
-  const fd = openSync(path, "r");
-  try {
-    const buffer = Buffer.alloc(CHUNK_BYTES);
-    const decoder = new StringDecoder("utf8");
-    const scanner = createScanner(file, path, committed);
-    for (;;) {
-      const read = readSync(fd, buffer, 0, buffer.length, null);
-      if (read === 0) break;
-      const bytes = buffer.subarray(0, read);
-      if (bytes.includes(NUL)) return null;
-      scanner.push(decoder.write(bytes));
-    }
-    scanner.push(decoder.end());
-    return scanner.end();
-  } finally {
-    closeSync(fd);
-  }
+  const scanner = createScanner(file, path, committed);
+  return readTextChunks(path, scanner.push) ? null : scanner.end();
 }

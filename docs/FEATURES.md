@@ -90,6 +90,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 ## Safety check
 
 - Always on: Loadout's own static rules look for destructive, phoning-home, escalating, hidden, injecting or key-stealing code.
+- Every file is read whatever its size; one it cannot read as text (a binary, compiled code) is named, never passed as safe.
 - With NVIDIA SkillSpector installed, its deeper static checks run instead.
 - Runs before every install, update and `skills.toml` apply; a flagged skill needs your OK. Unchecked skills are checked at start.
 - Reports kept per skill, shown on the skill's Safety tab; a **Safety flagged** filter and sidebar view list what needs a look.

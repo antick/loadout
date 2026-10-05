@@ -39,12 +39,18 @@ export interface ContentFile {
   executable: boolean;
 }
 
-/** Every regular file that counts as skill content, sorted by relative path. */
-export function listContentFiles(root: string): ContentFile[] {
+/**
+ * Every regular file that counts as skill content, sorted by relative path. `skip` widens or
+ * narrows that: a check of what gets copied passes `isNeverCopiedName`.
+ */
+export function listContentFiles(
+  root: string,
+  skip: (name: string) => boolean = isIgnoredContentName,
+): ContentFile[] {
   const files: ContentFile[] = [];
   const walk = (dir: string, prefix: string): void => {
     for (const entry of readDirSafe(dir)) {
-      if (isIgnoredContentName(entry.name)) continue;
+      if (skip(entry.name)) continue;
       const absolutePath = join(dir, entry.name);
       const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {

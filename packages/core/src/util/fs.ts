@@ -24,6 +24,11 @@ import { invalid } from "../errors";
 /** Names never copied into or out of the library. */
 const COPY_SKIP_NAMES: ReadonlySet<string> = new Set([".git", ".DS_Store"]);
 
+/** A name copying leaves behind: everything else travels with a skill. */
+export function isNeverCopiedName(name: string): boolean {
+  return COPY_SKIP_NAMES.has(name);
+}
+
 function expandHome(input: string): string {
   const path = input.trim();
   if (path === "~") return homedir();

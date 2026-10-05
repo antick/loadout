@@ -9,7 +9,10 @@ import { SECRET_PATTERNS } from "../util/secret-patterns";
  */
 
 /** The rule set as a version, kept in each report so a changed set shows as a stale check. */
-export const BUILTIN_RULES_VERSION = "1";
+export const BUILTIN_RULES_VERSION = "2";
+
+/** The category of a file the rules could not read as text. */
+export const UNCHECKED_CATEGORY = "Not checked";
 
 export type RuleCategory =
   | "destructive"
