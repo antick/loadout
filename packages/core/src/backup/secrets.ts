@@ -1,13 +1,11 @@
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SecretFinding } from "@loadout/shared";
 import { AppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { statOrNull } from "../util/fs";
-import { SECRET_PATTERNS as PATTERNS } from "../util/secret-patterns";
 import type { BackupEnv } from "./env";
 import { resolveCommit, upstreamRef } from "./repo";
+import { findSecrets, findSecretsInFile } from "./secret-scan";
 
 /**
  * The check before a backup pushes: what it would send (its commits, and changes not committed
@@ -15,68 +13,10 @@ import { resolveCommit, upstreamRef } from "./repo";
  * are matched, so a skill that merely talks about keys passes.
  */
 
-/** Larger files are not text a skill carries by hand; reading them for keys would only cost time. */
-export const MAX_SCANNED_BYTES = 1024 * 1024;
-/** Characters of a match shown on each side of the hidden middle. */
-const MASK_KEEP = 4;
-const ID_LENGTH = 16;
-/** Documentation examples (AWS's `AKIAIOSFODNN7EXAMPLE`, `sk-xxxx…`) are not secrets. */
-const PLACEHOLDER = /example|x{6,}|\*{4,}/i;
 /** Regular files in git trees; links and submodules hold no text of ours. */
 const FILE_MODES: ReadonlySet<string> = new Set(["100644", "100755"]);
 /** One `--raw -z` record: modes, blob ids, status, then the path. */
 const RAW_RECORD = /:(\d{6}) (\d{6}) ([0-9a-f]+) ([0-9a-f]+) ([A-Z])\d*\0([^\0]+)\0/g;
-
-function mask(match: string): string {
-  if (match.length <= MASK_KEEP * 2) return "•".repeat(match.length);
-  return `${match.slice(0, MASK_KEEP)}…${match.slice(-MASK_KEEP)}`;
-}
-
-/** Stable for the same text in the same file. */
-function findingId(file: string, match: string): string {
-  return createHash("sha256").update(`${file}\0${match}`).digest("hex").slice(0, ID_LENGTH);
-}
-
-/** Lines a private key block may span; its `END` line closes it. */
-const MAX_KEY_BLOCK_LINES = 200;
-
-/** The whole key block from its `BEGIN` line, so allowing one key never allows another. */
-function keyBlock(lines: readonly string[], start: number): string {
-  const end = lines.findIndex((line, index) => index >= start && line.includes("-----END "));
-  const last = end === -1 ? Math.min(lines.length, start + MAX_KEY_BLOCK_LINES) : end + 1;
-  return lines.slice(start, last).join("\n");
-}
-
-/** Every match in one file's text, one per distinct secret per line. */
-export function findSecrets(
-  file: string,
-  path: string,
-  text: string,
-  committed = false,
-): SecretFinding[] {
-  const findings: SecretFinding[] = [];
-  const lines = text.split(/\r?\n/);
-  lines.forEach((line, index) => {
-    const seen = new Set<string>();
-    for (const { kind, regex } of PATTERNS) {
-      for (const match of line.matchAll(regex)) {
-        const value = match[0];
-        if (seen.has(value) || PLACEHOLDER.test(value)) continue;
-        seen.add(value);
-        findings.push({
-          id: findingId(file, kind === "private_key" ? keyBlock(lines, index) : value),
-          file,
-          path,
-          line: index + 1,
-          kind,
-          masked: mask(value),
-          committed,
-        });
-      }
-    }
-  });
-  return findings;
-}
 
 /** A git call whose answer the check depends on: when git fails, nothing may be pushed. */
 async function required(env: BackupEnv, args: string[]): Promise<string> {
@@ -85,12 +25,6 @@ async function required(env: BackupEnv, args: string[]): Promise<string> {
     throw new AppError("GIT", `Could not check the backup for keys: git ${args[0]} failed.`);
   }
   return result.stdout;
-}
-
-/** Text of a readable, not-too-large, not-binary file or blob; null otherwise. */
-function scannable(bytes: Buffer): string | null {
-  if (bytes.length > MAX_SCANNED_BYTES || bytes.includes(0)) return null;
-  return bytes.toString("utf8");
 }
 
 /**
@@ -147,9 +81,11 @@ async function scanCommitted(env: BackupEnv, branch: string): Promise<SecretFind
     const file = key.slice(blob.length + 1);
     const content = await env.git.probe(["cat-file", "blob", blob]);
     if (content.code !== 0) throw new AppError("GIT", `Could not read ${file} from the backup.`);
-    const text = scannable(Buffer.from(content.stdout, "utf8"));
-    if (text === null) continue;
-    findings.push(...findSecrets(file, join(env.repoDir, ...file.split("/")), text, true));
+    // Binary content is not text; anything else is searched whatever its size.
+    if (content.stdout.includes("\0")) continue;
+    findings.push(
+      ...findSecrets(file, join(env.repoDir, ...file.split("/")), content.stdout, true),
+    );
   }
   return findings;
 }
@@ -188,10 +124,8 @@ async function scanFilesSince(env: BackupEnv, base: string | null): Promise<Secr
   // The metadata folder is checked too: it holds the user's own words (skill notes).
   for (const file of files) {
     const path = join(env.repoDir, ...file.split("/"));
-    const stat = statOrNull(path);
-    if (!stat?.isFile() || stat.size > MAX_SCANNED_BYTES) continue;
-    const text = scannable(readFileSync(path));
-    if (text !== null) findings.push(...findSecrets(file, path, text));
+    if (!statOrNull(path)?.isFile()) continue;
+    findings.push(...(findSecretsInFile(file, path) ?? []));
   }
   return findings;
 }

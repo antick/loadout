@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PUBLISH_MAX_FILE_BYTES, type SecretFinding } from "@loadout/shared";
-import { MAX_SCANNED_BYTES, findSecrets } from "../backup/secrets";
+import { findSecretsInFile } from "../backup/secret-scan";
 import { AppError } from "../errors";
 import { lstatOrNull, readDirSafe } from "../util/fs";
 import { isIgnoredContentName } from "../util/hash";
@@ -107,11 +107,9 @@ export function digestsInTree(dir: string): Map<string, string> {
 export function findSecretsIn(files: readonly PublishFile[], prefix = ""): SecretFinding[] {
   const found: SecretFinding[] = [];
   for (const file of files) {
-    if (file.size > MAX_SCANNED_BYTES) continue;
-    const bytes = readFileSync(file.absolutePath);
-    if (bytes.includes(0)) continue;
     const name = prefix ? `${prefix}/${file.relativePath}` : file.relativePath;
-    found.push(...findSecrets(name, file.absolutePath, bytes.toString("utf8")));
+    // Every text file, whatever its size; a binary one is not text and holds no key to read.
+    found.push(...(findSecretsInFile(name, file.absolutePath) ?? []));
   }
   return found;
 }

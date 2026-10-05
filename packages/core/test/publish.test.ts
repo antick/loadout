@@ -300,6 +300,16 @@ describe("keys and tokens", () => {
     expect(git(remote, "branch", "--list")).toBe("");
   });
 
+  it("finds a token in a text file larger than a mebibyte", async () => {
+    // About 1.3 MB of ordinary lines before the token.
+    const padding = `${"Reference text for the skill. ".repeat(4)}\n`.repeat(11_000);
+    const pdf = world.addSkill("pdf", { "reference.md": `${padding}key: ${FAKE_TOKEN}\n` });
+    const plan = await service.api.preview(publishInput([pdf]));
+    expect(plan.secrets).toMatchObject([
+      { kind: "github_token", file: "skills/pdf/reference.md", line: 11_001 },
+    ]);
+  });
+
   it("publishes anyway when told it is safe", async () => {
     const pdf = world.addSkill("pdf", { "notes.md": `key: ${FAKE_TOKEN}\n` });
     const result = await service.api.publish(publishInput([pdf], { allowSecrets: true }));

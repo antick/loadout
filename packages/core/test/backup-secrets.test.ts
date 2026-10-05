@@ -1,6 +1,7 @@
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { findSecrets } from "../src/backup/secrets";
+import { findSecrets, findSecretsInFile } from "../src/backup/secret-scan";
 import { type Device, createBareRemote, createDevice, joinRemote, rawGit } from "./backup-world";
 import { tempDir, writeFile } from "./helpers";
 
@@ -8,6 +9,8 @@ import { tempDir, writeFile } from "./helpers";
 const GITHUB_TOKEN = `ghp_${"a1B2c3D4e5".repeat(4)}`;
 const ANTHROPIC_KEY = `sk-ant-api03-${"Zx9".repeat(10)}`;
 const OPENAI_KEY = `sk-proj-${"Q7w".repeat(12)}`;
+/** About 1.3 MB of ordinary lines: more than the check once read of any file. */
+const LARGE_TEXT = `${"Reference text for the skill. ".repeat(4)}\n`.repeat(11_000);
 
 describe("secret patterns", () => {
   it("finds well-known key shapes, masks them, and names the line", () => {
@@ -73,6 +76,55 @@ describe("secret patterns", () => {
       "Use sk-... from the dashboard.",
     ].join("\n");
     expect(findSecrets("doc/SKILL.md", "/x", text)).toEqual([]);
+  });
+});
+
+describe("searching large files", () => {
+  const MIB = 1024 * 1024;
+  let temp: ReturnType<typeof tempDir>;
+  beforeEach(() => {
+    temp = tempDir();
+  });
+  afterEach(() => temp.cleanup());
+
+  /** `size` bytes of filler, each key at its byte offset with a space on each side. */
+  function fileWith(size: number, filler: string, at: [number, string][]): string {
+    const bytes = Buffer.from(filler.repeat(Math.ceil(size / filler.length)).slice(0, size));
+    for (const [offset, key] of at) bytes.write(` ${key} `, offset - 1);
+    const path = join(temp.dir, "big.md");
+    writeFileSync(path, bytes);
+    return path;
+  }
+
+  it("finds a key that a read border cuts in two", () => {
+    const line = `${"word ".repeat(19)}\n`;
+    const offset = MIB - 10;
+    const path = fileWith(2 * MIB, line, [[offset, GITHUB_TOKEN]]);
+    const findings = findSecretsInFile("big.md", path) ?? [];
+    expect(findings.map((f) => [f.kind, f.line, f.masked])).toEqual([
+      ["github_token", Math.floor(offset / line.length) + 1, `ghp_…${GITHUB_TOKEN.slice(-4)}`],
+    ]);
+  });
+
+  it("searches one over-long line in overlapping pieces, each key once", () => {
+    const border = 2 * MIB;
+    const path = fileWith(3 * MIB, "abcdefgh ", [
+      [border - 1000, GITHUB_TOKEN],
+      [border - 30, ANTHROPIC_KEY],
+    ]);
+    const findings = findSecretsInFile("big.md", path) ?? [];
+    expect(findings.map((f) => [f.kind, f.line])).toEqual([
+      ["github_token", 1],
+      ["anthropic_key", 1],
+    ]);
+  });
+
+  it("skips a binary file, wherever its first NUL byte is", () => {
+    const path = fileWith(2 * MIB, "text ", [
+      [10, GITHUB_TOKEN],
+      [MIB + 5, "\0"],
+    ]);
+    expect(findSecretsInFile("big.md", path)).toBeNull();
   });
 });
 
@@ -208,6 +260,32 @@ describe("backup push check", () => {
     a.addSkill("mine");
     expect(await a.api.sync()).toMatchObject({ pushed: true });
     expect(await a.api.secretFindings()).toEqual([]);
+  });
+
+  it("holds back a token in a text file larger than a mebibyte, committed or not", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    await a.api.init();
+    a.addSkill("large");
+    writeFile(
+      join(a.ctx.paths.skillsDir, "large", "reference.md"),
+      `${LARGE_TEXT}${GITHUB_TOKEN}\n`,
+    );
+    await a.api.setRemote(remote);
+    await expect(a.api.sync()).rejects.toMatchObject({
+      code: "SECRETS_FOUND",
+      details: { secrets: [{ file: "large/reference.md", committed: false }] },
+    });
+
+    // Backed up locally first: then it is found in the history the push would send.
+    a.git("add", "--all");
+    a.git("commit", "--quiet", "-m", "backup: snapshot");
+    expect(await a.api.secretFindings()).toMatchObject([
+      { file: "large/reference.md", committed: true },
+    ]);
+    await expect(a.api.sync()).rejects.toMatchObject({ code: "SECRETS_FOUND" });
+    expect(rawGit(remote, "for-each-ref")).toBe("");
   });
 
   it("checks nothing without a remote: a local backup never leaves the computer", async () => {
