@@ -16,6 +16,7 @@ import { createGitClient } from "../src/install/git-client";
 import { installIntoLibrary } from "../src/install/library";
 import { createWorkspaceService } from "../src/workspace";
 import { type StorageService, createStorageService } from "../src/storage";
+import { LIBRARY_PLACE } from "../src/storage/removed-library";
 import { makeSkill, writeFile } from "./helpers";
 import {
   type WorkspaceWorld,
@@ -304,6 +305,31 @@ describe("recently removed", () => {
       // Nothing later treats it as a stale copy to replace.
       await deploy.refreshCopies(world.store.get(skill.id));
       expect(readFileSync(join(copy, "notes.md"), "utf8")).toBe("mine");
+    });
+
+    it("brings agents' copies back to a library version put back, keeping edited ones", async () => {
+      world.ctx.settings.set("deployMode", "copy");
+      const skill = world.addSkill("alpha");
+      await world.deploy.api.deploy(skill.id, "claude_code");
+      await world.deploy.api.deploy(skill.id, "cursor");
+      // An update: the old version is kept, the library and the copies move on.
+      world.removed.keepCopy(skill.libraryPath, { place: LIBRARY_PLACE, reason: "replaced" });
+      writeFile(join(skill.libraryPath, "new.txt"), "fresh");
+      await world.deploy.refreshCopies(world.rehash(skill));
+      const copy = join(claude, "alpha");
+      const edited = join(world.home, ".cursor", "skills", "alpha");
+      expect(readFileSync(join(copy, "new.txt"), "utf8")).toBe("fresh");
+      writeFile(join(edited, "notes.md"), "mine");
+
+      const [entry] = await storage.api.removed();
+      await storage.api.restoreRemoved(entry?.id ?? "");
+      expect(existsSync(join(skill.libraryPath, "new.txt"))).toBe(false);
+      expect(existsSync(join(copy, "new.txt"))).toBe(false);
+      const restored = world.store.get(skill.id);
+      expect(world.store.deployment(skill.id, "claude_code")?.sourceHash).toBe(
+        restored.contentHash,
+      );
+      expect(readFileSync(join(edited, "notes.md"), "utf8")).toBe("mine");
     });
   });
 

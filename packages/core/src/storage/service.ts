@@ -10,6 +10,7 @@ import {
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { keepLinkedSkills, linkedFolders } from "../deploy/keep";
+import { logRedeployProblems } from "../deploy/report-log";
 import { AppError, invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
 import type { GitClient } from "../install/git-client";
@@ -143,7 +144,17 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
     },
 
     removed: async () => deps.removed.list(),
-    restoreRemoved: async (id) => deps.removed.restore(id),
+    restoreRemoved: async (id) => {
+      const result = await deps.removed.restore(id);
+      // A library skill's folder came back (an earlier version): copies in agents' folders follow
+      // it, as after an update. One edited there is kept, never replaced.
+      const skill = deps.store.findByLibraryPath(result.path);
+      if (skill) {
+        const report = await deps.deploy.refreshCopies(skill, { keepModified: true });
+        logRedeployProblems(ctx.log, report, "refresh");
+      }
+      return result;
+    },
     deleteRemoved: async (id) => deps.removed.remove(id),
     revealRemoved: async (id) => ctx.host.revealPath(deps.removed.contentPath(id)),
   };
