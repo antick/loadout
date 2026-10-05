@@ -9,6 +9,7 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
+import { holdsOwnEdits } from "../deploy/evidence";
 import { keepLinkedSkills, linkedFolders } from "../deploy/keep";
 import { logRedeployProblems } from "../deploy/report-log";
 import { AppError, invalid } from "../errors";
@@ -132,16 +133,21 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
 
     agentFolders: async () => {
       const linked = linkedFolders(deps.store);
-      const copies = new Set(
-        deps.store
-          .deployments()
-          .filter((row) => row.mode === "copy" && lstatOrNull(row.targetPath)?.isDirectory())
+      const copyRows = deps.store
+        .deployments()
+        .filter((row) => row.mode === "copy" && lstatOrNull(row.targetPath)?.isDirectory());
+      const copies = new Set(copyRows.map((row) => row.targetPath));
+      // The same test `removeEverywhere` uses: these stay in place even when copies go.
+      const edited = new Set(
+        copyRows
+          .filter((row) => holdsOwnEdits(row, deps.store.find(row.skillId)?.contentHash ?? null))
           .map((row) => row.targetPath),
       );
       return {
         linkedFolders: linked.folders,
         linkedBytes: linked.bytes,
         copiedFolders: copies.size,
+        editedCopies: edited.size,
       };
     },
 

@@ -60,6 +60,8 @@ export interface AgentFolderSummary {
   linkedBytes: number;
   /** Copies of library skills. */
   copiedFolders: number;
+  /** Of those copies, the ones edited in the agent's folder: never deleted with the rest. */
+  editedCopies: number;
 }
 
 /**

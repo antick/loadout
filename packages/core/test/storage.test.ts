@@ -127,6 +127,8 @@ describe("prepareRemoval", () => {
     const edited = join(world.home, ".codex", "skills", "alpha");
     writeFileSync(join(edited, "mine.md"), "my own edit\n");
 
+    // Said before the user confirms, too.
+    expect(await storage.api.agentFolders()).toMatchObject({ copiedFolders: 2, editedCopies: 1 });
     const plan = await storage.prepareRemoval({ removeCopies: true });
     expect(plan.keptEdited).toEqual([edited]);
     expect(plan.undeployed).toBe(1);

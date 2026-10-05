@@ -109,7 +109,9 @@
         "none": {
           "title": "Remove everything {{app}} added",
           "description_one": "The {{count}} skill folder {{app}} put into an agent folder is deleted. Skills you added yourself stay.",
-          "description_other": "All {{count}} skill folders {{app}} put into agent folders are deleted. Skills you added yourself stay."
+          "description_other": "All {{count}} skill folders {{app}} put into agent folders are deleted. Skills you added yourself stay.",
+          "keptEdited_one": "The copy you edited in an agent folder stays where it is.",
+          "keptEdited_other": "The {{count}} copies you edited in agent folders stay where they are."
         },
         "confirm": "Remove and quit"
       },

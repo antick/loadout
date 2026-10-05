@@ -31,6 +31,7 @@ function useFolderChoices(summary: AgentFolderSummary | undefined): Choice<Agent
   const { t } = useTranslation();
   const linked = summary?.linkedFolders ?? 0;
   const copies = summary?.copiedFolders ?? 0;
+  const edited = summary?.editedCopies ?? 0;
   const size = formatBytes(summary?.linkedBytes ?? 0);
   return [
     {
@@ -53,7 +54,12 @@ function useFolderChoices(summary: AgentFolderSummary | undefined): Choice<Agent
     {
       value: "none",
       title: t("settings.storage.removeAll.none.title"),
-      description: t("settings.storage.removeAll.none.description", { count: linked + copies }),
+      description: [
+        t("settings.storage.removeAll.none.description", { count: linked + copies }),
+        edited > 0 ? t("settings.storage.removeAll.none.keptEdited", { count: edited }) : null,
+      ]
+        .filter(Boolean)
+        .join(" "),
     },
   ];
 }
