@@ -4,14 +4,7 @@ import type { SHORTCUT_KEYS } from "@/lib/shortcuts";
  * What the sidebar can show. Each has a button in the activity bar, which also opens the
  * section's main page.
  */
-const SIDEBAR_SECTIONS = [
-  "home",
-  "library",
-  "agents",
-  "presets",
-  "projects",
-  "settings",
-] as const;
+const SIDEBAR_SECTIONS = ["home", "library", "agents", "presets", "projects", "settings"] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
 export const DEFAULT_SIDEBAR_SECTION: SidebarSection = "home";
 
