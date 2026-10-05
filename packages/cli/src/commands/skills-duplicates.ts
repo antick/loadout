@@ -54,7 +54,11 @@ function pairRow(core: Core, pair: DuplicatePair): (string | boolean)[] {
 
 async function list({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
-  const report = await core.api.duplicates.find({ includeDismissed: flagBoolean(args, "all") });
+  // Asked for on purpose, so the texts are compared too.
+  const report = await core.api.duplicates.find({
+    includeDismissed: flagBoolean(args, "all"),
+    similarText: true,
+  });
   const rows = report.pairs.map((pair) => pairRow(core, pair));
   const lines = [
     table(["skill", "and", "why", "alike", "dismissed"], rows, "No skills look like duplicates."),

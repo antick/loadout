@@ -1,15 +1,26 @@
+import type { Locator, Page } from "@playwright/test";
 import { expect, main, openApp, test, toasts } from "./app";
 
 // The pair is named in the order of the two skills' ids, which each seed draws afresh.
 const PAIR = /^(code-review and diff-review|diff-review and code-review)$/;
 
+/** Open the duplicates and ask for the slow look at the text: the seed's pair is alike by text. */
+async function findSimilarText(page: Page): Promise<Locator> {
+  await main(page).getByRole("button", { name: "Find duplicates" }).click();
+  const dialog = page.getByRole("dialog", { name: "Possible duplicates" });
+  await expect(dialog.getByText("No duplicates found")).toBeVisible();
+  await dialog.getByRole("button", { name: "Look for similar text" }).click();
+  return dialog;
+}
+
 test("review a possible duplicate, compare it, keep one and undo", async ({ page }) => {
   await openApp(page, "/library");
   const content = main(page);
-  await expect(content.getByText("1 pair of skills may be duplicates.")).toBeVisible();
-  await content.getByRole("button", { name: "Review", exact: true }).click();
+  // Alike text is only looked for on request, so no notice says so up front.
+  await expect(content.getByRole("button", { name: "Find duplicates" })).toBeEnabled();
+  await expect(content.getByText("1 pair of skills may be duplicates.")).toHaveCount(0);
 
-  const dialog = page.getByRole("dialog", { name: "Possible duplicates" });
+  const dialog = await findSimilarText(page);
   const pair = dialog.getByRole("article", { name: PAIR });
   await expect(pair).toBeVisible();
 
@@ -32,8 +43,7 @@ test("review a possible duplicate, compare it, keep one and undo", async ({ page
 test("mark a pair as different and bring it back", async ({ page }) => {
   await openApp(page, "/library");
   const content = main(page);
-  await content.getByRole("button", { name: "Review", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Possible duplicates" });
+  const dialog = await findSimilarText(page);
   await dialog.getByRole("button", { name: "Not a duplicate" }).click();
   await expect(dialog.getByText("No duplicates found")).toBeVisible();
 
@@ -42,5 +52,6 @@ test("mark a pair as different and bring it back", async ({ page }) => {
   await expect(pair.getByText("Marked as different")).toBeVisible();
   await pair.getByRole("button", { name: "List again" }).click();
   await dialog.getByRole("button", { name: "Close" }).first().click();
+  // The look at the text holds until the library changes.
   await expect(content.getByText("1 pair of skills may be duplicates.")).toBeVisible();
 });

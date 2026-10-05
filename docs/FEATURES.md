@@ -36,7 +36,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - **Create and copy prompt**: creates the skill and copies a prompt for your agent to write it in full. `skills create --prompt`.
 - Rename a skill; deployments and project links follow. Shows a dry run as you type.
 - Delete goes to Recently removed, with Undo.
-- Possible duplicates: same files, alike text or names. Compare, keep one with its tags and agents, or dismiss. `skills duplicates`.
+- Possible duplicates: same files or alike names at once, alike text when you ask (**Find duplicates**). Compare, keep one with its tags and agents, or dismiss. `skills duplicates`.
 - The database rebuilds itself from the skill files.
 
 ## Editor

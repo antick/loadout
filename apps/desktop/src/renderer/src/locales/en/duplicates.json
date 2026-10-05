@@ -23,7 +23,8 @@
     "showDismissed_other": "Also show {{count}} pairs marked as different",
     "empty": {
       "title": "No duplicates found",
-      "description": "No two skills in the library share their files or most of their text."
+      "description": "No two skills in the library share their files or most of their text.",
+      "descriptionQuick": "No two skills in the library share their files or have alike names and descriptions."
     },
     "merge": {
       "title": "Keep {{keep}}?",
@@ -41,6 +42,10 @@
     "errors": {
       "dismiss": "Could not save your choice.",
       "merge": "Could not keep this skill. Nothing was removed."
-    }
+    },
+    "find": "Find duplicates",
+    "similarText": "Look for similar text",
+    "similarTextHint": "Only skills with the same files or alike names are listed. Comparing every skill's text with every other takes longer.",
+    "comparing": "Comparing the text of every skill…"
   }
 }

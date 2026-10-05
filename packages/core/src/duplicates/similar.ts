@@ -14,7 +14,7 @@ export interface SimilarityInput {
   id: string;
   name: string;
   description: string | null;
-  /** The text of its `SKILL.md`; empty when it has none. */
+  /** The text of its `SKILL.md`; empty when it has none, or when texts are not compared. */
   document: string;
   /** Hash of every file; two skills with one hash are the same files. */
   contentHash: string | null;
@@ -38,6 +38,19 @@ export interface SimilarPair {
 const SHARED_LINES_PREFILTER = 0.3;
 /** Longest stretch of comparing before other work gets a turn. */
 const SLICE_MS = 10;
+
+export interface SimilarOptions {
+  /**
+   * Compare the documents' text too: every one with every other, slow on a big library. Without
+   * it only the same files and alike names and descriptions count, which stays cheap.
+   */
+  similarText?: boolean;
+}
+
+export interface SliceOptions extends SimilarOptions {
+  /** Asked between slices: false stops the look, a newer one having replaced it. */
+  stillWanted?: () => boolean;
+}
 
 function lineSet(text: string): Set<string> {
   const lines = new Set<string>();
@@ -100,7 +113,7 @@ interface Prepared {
   counts: Map<number, number>;
 }
 
-function prepare(skills: readonly SimilarityInput[]): Prepared[] {
+function prepare(skills: readonly SimilarityInput[], similarText: boolean): Prepared[] {
   // One number per distinct line across the library: numbers compare faster than text.
   const numbers = new Map<string, number>();
   const numberOf = (line: string): number => {
@@ -112,10 +125,10 @@ function prepare(skills: readonly SimilarityInput[]): Prepared[] {
     return found;
   };
   return skills.map((input) => {
-    const ordered = comparedLines(input.document).map(numberOf);
+    const ordered = similarText ? comparedLines(input.document).map(numberOf) : [];
     return {
       input,
-      lines: lineSet(input.document),
+      lines: similarText ? lineSet(input.document) : new Set<string>(),
       words: wordSet(input.description),
       ordered,
       counts: lineCounts(ordered),
@@ -158,8 +171,12 @@ function strength(pair: SimilarPair): number {
 }
 
 /** Compares every pair, pausing (`yield`) after each one so a caller can let other work run. */
-function* comparePairs(skills: readonly SimilarityInput[]): Generator<void, SimilarPair[]> {
-  const prepared = prepare(skills);
+function* comparePairs(
+  skills: readonly SimilarityInput[],
+  similarText: boolean,
+): Generator<void, SimilarPair[]> {
+  // Without text, the empty line sets make `classify` skip the costly comparison.
+  const prepared = prepare(skills, similarText);
   const pairs: SimilarPair[] = [];
   for (let i = 0; i < prepared.length; i += 1) {
     for (let j = i + 1; j < prepared.length; j += 1) {
@@ -185,8 +202,11 @@ function* comparePairs(skills: readonly SimilarityInput[]): Generator<void, Simi
  * Every pair of skills that may be one, strongest first. Pure: the caller reads the files. A skill
  * is compared with every other, so a group of three copies lists all three pairs.
  */
-export function findSimilarPairs(skills: readonly SimilarityInput[]): SimilarPair[] {
-  const steps = comparePairs(skills);
+export function findSimilarPairs(
+  skills: readonly SimilarityInput[],
+  { similarText = true }: SimilarOptions = {},
+): SimilarPair[] {
+  const steps = comparePairs(skills, similarText);
   for (;;) {
     const step = steps.next();
     if (step.done) return step.value;
@@ -195,18 +215,20 @@ export function findSimilarPairs(skills: readonly SimilarityInput[]): SimilarPai
 
 /**
  * `findSimilarPairs`, giving the event loop a turn every `SLICE_MS`: a big library takes a while,
- * and the app's other calls must not wait for it.
+ * and the app's other calls must not wait for it. Null when `stillWanted` said to stop.
  */
 export async function findSimilarPairsInSlices(
   skills: readonly SimilarityInput[],
-): Promise<SimilarPair[]> {
-  const steps = comparePairs(skills);
+  { similarText = true, stillWanted = () => true }: SliceOptions = {},
+): Promise<SimilarPair[] | null> {
+  const steps = comparePairs(skills, similarText);
   let sliceStart = performance.now();
   for (;;) {
     const step = steps.next();
     if (step.done) return step.value;
     if (performance.now() - sliceStart >= SLICE_MS) {
       await yieldToEventLoop();
+      if (!stillWanted()) return null;
       sliceStart = performance.now();
     }
   }

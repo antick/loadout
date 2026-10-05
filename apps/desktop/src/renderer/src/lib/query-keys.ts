@@ -9,9 +9,14 @@ export const keys = {
     detail: (skillId: string) => ["skills", "detail", skillId] as const,
     document: (skillId: string) => ["skills", "document", skillId] as const,
     tags: ["skills", "tags"] as const,
-    duplicates: (withDismissed: boolean) => ["skills", "duplicates", withDismissed] as const,
     renamePreview: (skillId: string, name: string) =>
       ["skills", "rename-preview", skillId, name] as const,
+  },
+  /** Its own namespace: what changes a skill's agents or tags must not ask for it again. */
+  duplicates: {
+    root: ["duplicates"] as const,
+    find: (withDismissed: boolean, similarText: boolean) =>
+      ["duplicates", "find", withDismissed, similarText] as const,
   },
   editor: {
     root: ["editor"] as const,

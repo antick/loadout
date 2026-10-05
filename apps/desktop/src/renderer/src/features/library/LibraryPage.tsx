@@ -2,6 +2,7 @@ import type { Skill } from "@loadout/shared";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowUpCircle,
+  CopyCheck,
   FilePlus2,
   FilterX,
   Library,
@@ -363,6 +364,16 @@ export function LibraryPage({
             >
               <ListChecks />
               <span className="max-xl:sr-only">{t("library.select")}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={total < 2}
+              onClick={() => setDuplicatesOpen(true)}
+              title={t("duplicates.find")}
+            >
+              <CopyCheck />
+              <span className="max-xl:sr-only">{t("duplicates.find")}</span>
             </Button>
             <Button
               variant="outline"

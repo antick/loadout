@@ -44,6 +44,8 @@ export function useAppEvent<N extends AppEventName>(name: N, handler: Handler<N>
 const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   skills: [
     keys.skills.root,
+    // Core answers from its last look unless a name, description or file changed.
+    keys.duplicates.root,
     keys.editor.root,
     keys.workspace.root,
     keys.projects.root,

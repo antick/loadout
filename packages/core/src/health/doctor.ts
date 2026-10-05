@@ -204,8 +204,9 @@ export async function checkHealth(api: CoreApi): Promise<HealthReport> {
   const usage = await guarded("usage", () => api.usage.report(), null, failures);
   const duplicates = await guarded(
     "duplicates",
-    () => api.duplicates.find(),
-    { pairs: [], dismissedCount: 0 },
+    // The doctor is asked for on purpose, so it compares the text as well.
+    () => api.duplicates.find({ similarText: true }),
+    { pairs: [], dismissedCount: 0, similarText: false },
     failures,
   );
   const listing = await guarded(

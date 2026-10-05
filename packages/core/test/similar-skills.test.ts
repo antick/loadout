@@ -172,6 +172,44 @@ describe("comparing a whole library", () => {
   });
 });
 
+describe("looking without the text", () => {
+  it("finds the same files and alike names, never alike documents", () => {
+    const description = "Read, merge and split PDF documents for reports";
+    const pairs = findSimilarPairs(
+      [
+        input("a", { name: "one", contentHash: "same", document: GUIDE }),
+        input("b", { name: "two", contentHash: "same", document: GUIDE }),
+        input("c", { name: "pdf-tools", description, document: GUIDE }),
+        input("d", { name: "pdf-toolkit", description, document: `${GUIDE}\nMore.` }),
+        input("e", { name: "acrobat-helper", document: GUIDE }),
+      ],
+      { similarText: false },
+    );
+    expect(pairs.map((pair) => [pair.key, pair.reason, pair.contentScore])).toEqual([
+      ["a:b", "identical", 1],
+      ["c:d", "name", 0],
+    ]);
+  });
+
+  it("stops between slices once a newer look is wanted", async () => {
+    const base = steps(200, "Template");
+    const library = Array.from({ length: 80 }, (_, k) =>
+      skill(`s${k}`, `review-${k}`, rewrite(base, 5, `s${k}`)),
+    );
+    let wanted = true;
+    let asked = 0;
+    const look = findSimilarPairsInSlices(library, {
+      stillWanted: () => {
+        asked += 1;
+        return wanted;
+      },
+    });
+    wanted = false;
+    expect(await look).toBeNull();
+    expect(asked).toBe(1);
+  });
+});
+
 describe("duplicates in a library", () => {
   let temp: ReturnType<typeof tempDir>;
   let core: Core;
@@ -199,13 +237,16 @@ describe("duplicates in a library", () => {
     const b = await install("pdf-helper", GUIDE.replace("Ask before", "Always ask before"));
     await install("docker", "# Docker\n\nBuild images.\nPush them.", "Ship containers");
 
-    const found = await core.api.duplicates.find();
+    const found = await core.api.duplicates.find({ similarText: true });
     expect(found.pairs).toHaveLength(1);
     expect(new Set([found.pairs[0]?.a, found.pairs[0]?.b])).toEqual(new Set([a.id, b.id]));
 
     await core.api.duplicates.dismiss(b.id, a.id);
     expect((await core.api.duplicates.find()).pairs).toEqual([]);
-    const withDismissed = await core.api.duplicates.find({ includeDismissed: true });
+    const withDismissed = await core.api.duplicates.find({
+      includeDismissed: true,
+      similarText: true,
+    });
     expect(withDismissed.pairs[0]?.dismissed).toBe(true);
     expect(withDismissed.dismissedCount).toBe(1);
 
@@ -214,13 +255,40 @@ describe("duplicates in a library", () => {
   });
 
   it("notices a skill added or removed since the last look", async () => {
+    const look = () => core.api.duplicates.find({ similarText: true });
     await install("pdf-tools", GUIDE);
-    expect((await core.api.duplicates.find()).pairs).toEqual([]);
+    expect((await look()).pairs).toEqual([]);
     const copy = await install("pdf-helper", GUIDE);
-    expect((await core.api.duplicates.find()).pairs).toHaveLength(1);
-    expect((await core.api.duplicates.find()).pairs).toHaveLength(1);
+    expect((await look()).pairs).toHaveLength(1);
+    expect((await look()).pairs).toHaveLength(1);
     await core.api.skills.removeMany([copy.id]);
-    expect((await core.api.duplicates.find()).pairs).toEqual([]);
+    expect((await look()).pairs).toEqual([]);
+  });
+
+  it("compares the text only when asked, and remembers that it did", async () => {
+    await install("pdf-tools", GUIDE);
+    await install("pdf-helper", GUIDE);
+    expect(await core.api.duplicates.find()).toMatchObject({ pairs: [], similarText: false });
+    const full = await core.api.duplicates.find({ similarText: true });
+    expect(full).toMatchObject({ similarText: true, pairs: [{ reason: "content" }] });
+    // The look at the text answers a quick question about the same library.
+    expect(await core.api.duplicates.find()).toEqual(full);
+  });
+
+  it("runs one look at a time: a newer one stops the one under way and answers both", async () => {
+    const base = steps(200, "Template");
+    const skills = [];
+    for (let k = 0; k < 40; k += 1) {
+      skills.push(await install(`review-${k}`, rewrite(base, 5, `s${k}`).join("\n")));
+    }
+    const first = core.api.duplicates.find({ similarText: true });
+    const gone = skills[0]?.id ?? "";
+    await core.api.skills.removeMany([gone]);
+    const second = core.api.duplicates.find({ similarText: true });
+    const [older, newer] = await Promise.all([first, second]);
+    expect(older).toEqual(newer);
+    expect(newer.pairs.some((pair) => pair.a === gone || pair.b === gone)).toBe(false);
+    expect(newer.pairs).toHaveLength((39 * 38) / 2);
   });
 
   it("forgets a dismissal when one of the skills is deleted", async () => {

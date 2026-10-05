@@ -43,11 +43,21 @@ export interface DuplicatesReport {
   pairs: DuplicatePair[];
   /** Pairs the user dismissed, whether or not `pairs` lists them. */
   dismissedCount: number;
+  /**
+   * The documents' text was compared, now or by an earlier look at the same library. When false,
+   * only skills with the same files or alike names and descriptions are listed.
+   */
+  similarText: boolean;
 }
 
 export interface DuplicatesOptions {
   /** Also list the pairs the user said are not duplicates. */
   includeDismissed?: boolean;
+  /**
+   * Also compare the `SKILL.md` texts, every one with every other: slow on a big library, so only
+   * when someone asks. A newer look stops one still running.
+   */
+  similarText?: boolean;
 }
 
 export interface DuplicateMergeOptions {

@@ -1,9 +1,10 @@
 import type { Skill } from "@loadout/shared";
-import { CopyCheck } from "lucide-react";
+import { CopyCheck, TextSearch } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { useDismissDuplicate } from "@/features/library/duplicates/duplicate-mutations";
 import { useDuplicates } from "@/features/library/duplicates/duplicate-queries";
 import { DuplicatePairCard } from "@/features/library/duplicates/DuplicatePairCard";
@@ -24,11 +26,15 @@ export interface DuplicatesDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Pairs of library skills that may be one: compare them, keep one, or say they differ. */
+/**
+ * Pairs of library skills that may be one: compare them, keep one, or say they differ. Same files
+ * and alike names are listed at once; comparing every skill's text waits until the person asks.
+ */
 export function DuplicatesDialog({ open, onOpenChange }: DuplicatesDialogProps): ReactNode {
   const { t } = useTranslation();
   const [showDismissed, setShowDismissed] = useState(false);
-  const duplicates = useDuplicates(showDismissed);
+  const [similarText, setSimilarText] = useState(false);
+  const duplicates = useDuplicates({ includeDismissed: showDismissed, similarText });
   const skills = useSkills();
   const dismiss = useDismissDuplicate();
   const merge = useMergeDuplicate();
@@ -38,9 +44,18 @@ export function DuplicatesDialog({ open, onOpenChange }: DuplicatesDialogProps):
   );
   const pairs = duplicates.data?.pairs ?? [];
   const dismissedCount = duplicates.data?.dismissedCount ?? 0;
+  const textCompared = duplicates.data?.similarText === true;
+  const comparing = similarText && duplicates.isFetching;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // The slow look is asked for each time, never carried into the next opening.
+        if (!next) setSimilarText(false);
+        onOpenChange(next);
+      }}
+    >
       <DialogContent
         className="flex max-h-[85vh] flex-col gap-4 sm:max-w-3xl"
         onInteractOutside={(event) => {
@@ -63,6 +78,22 @@ export function DuplicatesDialog({ open, onOpenChange }: DuplicatesDialogProps):
             {t("duplicates.showDismissed", { count: dismissedCount })}
           </label>
         ) : null}
+        {duplicates.isSuccess && !textCompared ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+              {t("duplicates.similarTextHint")}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={comparing}
+              onClick={() => setSimilarText(true)}
+            >
+              {comparing ? <Spinner /> : <TextSearch />}
+              {comparing ? t("duplicates.comparing") : t("duplicates.similarText")}
+            </Button>
+          </div>
+        ) : null}
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
           {duplicates.isPending || skills.isPending ? (
             <Skeleton className="h-40 w-full" />
@@ -72,7 +103,9 @@ export function DuplicatesDialog({ open, onOpenChange }: DuplicatesDialogProps):
             <EmptyState
               icon={CopyCheck}
               title={t("duplicates.empty.title")}
-              description={t("duplicates.empty.description")}
+              description={t(
+                textCompared ? "duplicates.empty.description" : "duplicates.empty.descriptionQuick",
+              )}
             />
           ) : (
             pairs.map((pair) => {

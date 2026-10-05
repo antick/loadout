@@ -13,6 +13,13 @@ import { readSkillDocument } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import { type SimilarPair, type SimilarityInput, findSimilarPairsInSlices } from "./similar";
 
+/** One look through the library; `pairs` is null once a newer look replaced it. */
+interface Look {
+  fingerprint: string;
+  similarText: boolean;
+  pairs: Promise<SimilarPair[] | null>;
+}
+
 /** The parts of the other services a merge is made of. */
 export type DuplicatesDeps = {
   store: SkillStore;
@@ -47,13 +54,15 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
   }
 
   /**
-   * The pairs of the last look, kept while no skill's files, name or description changed: the app
-   * asks whenever the library changes, and deploying a skill must not read every document again.
-   * A look still running is shared by everyone asking about the same library.
+   * The last look, kept while no skill's files, name or description changed: the app asks
+   * whenever the library changes, and deploying a skill must not compare anything again. Only one
+   * look runs at a time: a new one stops the one before at its next slice, through `generation`.
    */
-  let remembered: { fingerprint: string; pairs: Promise<SimilarPair[]> } | null = null;
+  let current: Look | null = null;
+  let generation = 0;
 
-  function similarPairs(): Promise<SimilarPair[]> {
+  /** The look under way or done for the library as it is now, else a new one. */
+  function lookAt(similarText: boolean): Look {
     const library = store.list();
     const fingerprint = library
       .map((skill) =>
@@ -63,22 +72,42 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
       )
       .sort()
       .join("\u0001");
-    if (remembered?.fingerprint === fingerprint) return remembered.pairs;
+    // A look that compared the text answers one that did not ask to.
+    if (current?.fingerprint === fingerprint && (current.similarText || !similarText)) {
+      return current;
+    }
+    generation += 1;
+    const mine = generation;
     const inputs: SimilarityInput[] = library.map((skill) => ({
       id: skill.id,
       name: skill.name,
       description: skill.description,
-      document: readSkillDocument(skill.libraryPath)?.content ?? "",
+      // Only a look at the text needs to read every document.
+      document: similarText ? (readSkillDocument(skill.libraryPath)?.content ?? "") : "",
       contentHash: skill.contentHash,
     }));
     // Compared in slices without the library lock, so other calls go on meanwhile.
-    const pairs = findSimilarPairsInSlices(inputs);
-    const look = { fingerprint, pairs };
-    remembered = look;
-    pairs.catch(() => {
-      if (remembered === look) remembered = null;
+    const pairs = findSimilarPairsInSlices(inputs, {
+      similarText,
+      stillWanted: () => generation === mine,
     });
-    return pairs;
+    const look: Look = { fingerprint, similarText, pairs };
+    current = look;
+    pairs.catch(() => {
+      if (current === look) current = null;
+    });
+    return look;
+  }
+
+  async function similarPairs(
+    similarText: boolean,
+  ): Promise<{ pairs: SimilarPair[]; similarText: boolean }> {
+    for (;;) {
+      const look = lookAt(similarText);
+      const pairs = await look.pairs;
+      if (pairs) return { pairs, similarText: look.similarText };
+      // A newer look replaced this one: ask again, which joins it or starts the one wanted.
+    }
   }
 
   function changeDismissed(idA: string, idB: string, dismissed: boolean): void {
@@ -127,15 +156,16 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
 
   const api: DuplicatesApi = {
     find: async (options = {}) => {
+      const found = await similarPairs(options.similarText === true);
       const dismissed = dismissedKeys();
       const pairs: DuplicatePair[] = [];
-      for (const pair of await similarPairs()) {
+      for (const pair of found.pairs) {
         const isDismissed = dismissed.has(pair.key);
         if (options.includeDismissed === true || !isDismissed) {
           pairs.push({ ...pair, dismissed: isDismissed });
         }
       }
-      return { pairs, dismissedCount: dismissed.size };
+      return { pairs, dismissedCount: dismissed.size, similarText: found.similarText };
     },
 
     dismiss: async (idA, idB) => changeDismissed(idA, idB, true),
