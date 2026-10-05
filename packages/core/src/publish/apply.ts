@@ -12,16 +12,17 @@ const FILE_MODE = 0o644;
 const EXECUTABLE_MODE = 0o755;
 const MESSAGE_NAMES_SHOWN = 4;
 
+const list = (names: string[]): string => {
+  const shown = names.slice(0, MESSAGE_NAMES_SHOWN);
+  const rest = names.length - shown.length;
+  if (rest > 0) return `${shown.join(", ")} and ${rest} more`;
+  return shown.length > 1
+    ? `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}`
+    : (shown[0] ?? "");
+};
+
 /** `Add pdf`, `Update pdf and docx`, `Add a; update b, c and 2 more`. */
 function commitMessage(plans: readonly PublishSkillPlan[]): string {
-  const list = (names: string[]): string => {
-    const shown = names.slice(0, MESSAGE_NAMES_SHOWN);
-    const rest = names.length - shown.length;
-    if (rest > 0) return `${shown.join(", ")} and ${rest} more`;
-    return shown.length > 1
-      ? `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}`
-      : (shown[0] ?? "");
-  };
   const named = (status: PublishSkillPlan["status"]): string[] =>
     plans.filter((plan) => plan.status === status).map((plan) => plan.name);
   const added = named("new");

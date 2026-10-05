@@ -136,6 +136,21 @@ describe("importing a preset", () => {
   });
 });
 
+/** A preset file of one `pdf` skill from `source`. */
+function presetOf(source: NonNullable<PresetFile["skills"][number]["source"]>): string {
+  const file = join(temp.dir, "one.json");
+  writeFileSync(
+    file,
+    JSON.stringify({
+      format: PRESET_FILE_FORMAT,
+      version: 1,
+      name: "One",
+      skills: [{ name: "pdf", source }],
+    }),
+  );
+  return file;
+}
+
 describe("importing beside a library skill that only shares the name", () => {
   it("installs the file's skill from its source when the library's one has none", async () => {
     const { core: alice, presetId, file } = await sharedLibrary();
@@ -185,21 +200,6 @@ describe("importing beside a library skill that only shares the name", () => {
     expect(result.preset.skillIds).not.toContain(theirs!.id);
     expect(result.installed).toContain("pdf");
   });
-
-  /** A preset file of one `pdf` skill from `source`. */
-  function presetOf(source: NonNullable<PresetFile["skills"][number]["source"]>): string {
-    const file = join(temp.dir, "one.json");
-    writeFileSync(
-      file,
-      JSON.stringify({
-        format: PRESET_FILE_FORMAT,
-        version: 1,
-        name: "One",
-        skills: [{ name: "pdf", source }],
-      }),
-    );
-    return file;
-  }
 
   it("names the file's source, not the library's local skill of that name", async () => {
     const bob = newCore("bob");

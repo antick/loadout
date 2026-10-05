@@ -34,26 +34,26 @@ export interface LocationDeps {
 const LIBRARY_LABEL = "Library";
 const PLACE_SEPARATOR = " · ";
 
+function library(skill: Skill): ResolvedLocation {
+  return {
+    location: { kind: "library", skillId: skill.id },
+    folder: { dir: skill.libraryPath, label: skill.name, historyKey: skill.id },
+    librarySkill: skill,
+    otherCopies: [],
+    target: {
+      location: { kind: "library", skillId: skill.id },
+      name: skill.name,
+      folderName: skill.dirName,
+      path: skill.libraryPath,
+      placeLabel: LIBRARY_LABEL,
+      librarySkillId: skill.id,
+      otherCopies: [],
+    },
+  };
+}
+
 export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
   const { store, registry, projects, instructions } = deps;
-
-  function library(skill: Skill): ResolvedLocation {
-    return {
-      location: { kind: "library", skillId: skill.id },
-      folder: { dir: skill.libraryPath, label: skill.name, historyKey: skill.id },
-      librarySkill: skill,
-      otherCopies: [],
-      target: {
-        location: { kind: "library", skillId: skill.id },
-        name: skill.name,
-        folderName: skill.dirName,
-        path: skill.libraryPath,
-        placeLabel: LIBRARY_LABEL,
-        librarySkillId: skill.id,
-        otherCopies: [],
-      },
-    };
-  }
 
   /** A folder that is really the library's (a deployed link): edit it as the library skill. */
   function libraryBehind(dir: string): Skill | null {

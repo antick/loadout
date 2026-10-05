@@ -219,15 +219,15 @@ describe("crash marker", () => {
   });
 });
 
+const binFile = (name: string): string => join(world.ctx.paths.binDir, name);
+
+function bundle(content: string): string {
+  const path = join(world.root, "bundle", `${CLI_BINARY_NAME}.mjs`);
+  writeFile(path, content);
+  return path;
+}
+
 describe("CLI publishing", () => {
-  const binFile = (name: string): string => join(world.ctx.paths.binDir, name);
-
-  function bundle(content: string): string {
-    const path = join(world.root, "bundle", `${CLI_BINARY_NAME}.mjs`);
-    writeFile(path, content);
-    return path;
-  }
-
   it("does nothing when no CLI is bundled", async () => {
     expect(await system.publishCli()).toMatchObject({ published: false, version: null });
     expect(existsSync(world.ctx.paths.binDir)).toBe(false);
@@ -323,13 +323,13 @@ describe("CLI publishing", () => {
   });
 });
 
-describe("agent control", () => {
-  function shipSkill(body = "# Manage skills\n"): void {
-    const resources = join(world.root, "resources", "skills");
-    makeSkill(resources, AGENT_CONTROL_SKILL_NAME, { body });
-    world.ctx.host.bundledSkillDir = resources;
-  }
+function shipSkill(body = "# Manage skills\n"): void {
+  const resources = join(world.root, "resources", "skills");
+  makeSkill(resources, AGENT_CONTROL_SKILL_NAME, { body });
+  world.ctx.host.bundledSkillDir = resources;
+}
 
+describe("agent control", () => {
   it("starts not installed and not dismissed, and can be dismissed", async () => {
     expect(await system.api.agentControlStatus()).toEqual({
       installed: false,

@@ -100,6 +100,10 @@ function installSource(target: ResolvedTarget): string | null {
 const hasTopLevelSkill = (checkout: Checkout): boolean =>
   existsSync(join(checkout.dir, "SKILL.md"));
 
+function refuseSingleSkillRepo(checkout: Checkout): void {
+  if (!checkout.repoEmpty && hasTopLevelSkill(checkout)) throw invalid(SINGLE_SKILL_REPO);
+}
+
 function toPlan(target: ResolvedTarget, checkout: Checkout, planned: Planned): PublishPlan {
   return {
     target: { repo: target.url, branch: checkout.branch, layer: target.layer },
@@ -119,10 +123,6 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
     const unique = [...new Set(ids)];
     if (unique.length === 0) throw invalid("Choose at least one skill to publish.");
     return unique.map((id) => deps.store.get(id));
-  }
-
-  function refuseSingleSkillRepo(checkout: Checkout): void {
-    if (!checkout.repoEmpty && hasTopLevelSkill(checkout)) throw invalid(SINGLE_SKILL_REPO);
   }
 
   async function preview(input: PublishInput): Promise<PublishPlan> {

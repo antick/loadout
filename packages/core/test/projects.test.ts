@@ -16,6 +16,14 @@ const T0 = Date.UTC(2026, 0, 1);
 const MINUTE = 60_000;
 const SHARED_DIR = join(".agents", "skills");
 
+/** A library skill plus a project copy of it that was edited `offsetMs` after the library. */
+function editedCopy(skill: Skill, root: string, offsetMs: number, body = "edited"): string {
+  const local = makeSkill(root, skill.dirName, { body });
+  setContentMtime(skill.libraryPath, T0);
+  setContentMtime(local, T0 + offsetMs);
+  return local;
+}
+
 describe("projects", () => {
   let world: WorkspaceWorld;
   let repo: string;
@@ -32,14 +40,6 @@ describe("projects", () => {
     claudeOff = join(repo, ".claude", "skills-disabled");
   });
   afterEach(() => world.cleanup());
-
-  /** A library skill plus a project copy of it that was edited `offsetMs` after the library. */
-  function editedCopy(skill: Skill, root: string, offsetMs: number, body = "edited"): string {
-    const local = makeSkill(root, skill.dirName, { body });
-    setContentMtime(skill.libraryPath, T0);
-    setContentMtime(local, T0 + offsetMs);
-    return local;
-  }
 
   describe("watching", () => {
     it("lists each workspace's skills folders, parking folders included, once each", async () => {

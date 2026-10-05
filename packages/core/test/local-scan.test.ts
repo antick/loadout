@@ -250,10 +250,10 @@ describe("classifySync", () => {
   });
 });
 
-describe("walkSkillRoot", () => {
-  const brokenOf = (recursive: boolean) =>
-    walkSkillRoot(root, { recursive }).broken.map((b) => [b.relativePath, b.reason]);
+const brokenOf = (recursive: boolean) =>
+  walkSkillRoot(root, { recursive }).broken.map((b) => [b.relativePath, b.reason]);
 
+describe("walkSkillRoot", () => {
   it("flat: every visible folder without a SKILL.md is broken, bundles and files are not", () => {
     makeSkill(root, "good");
     mkdirSync(join(root, "empty"));

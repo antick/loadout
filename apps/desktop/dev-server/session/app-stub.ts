@@ -32,13 +32,13 @@ const IDLE_UPDATE: AppUpdateStatus = {
 };
 
 const nothing = async (): Promise<void> => undefined;
+const update = async (): Promise<AppUpdateStatus> => IDLE_UPDATE;
 
 /**
  * The Electron-only part of the API (`main/app-api.ts`) for a browser: dialogs answer with a
  * fixed place in the fake home, the shell and window calls do nothing, updates never come.
  */
 export function createAppStub(world: World): AppApi {
-  const update = async (): Promise<AppUpdateStatus> => IDLE_UPDATE;
   return {
     info: async () => ({
       name: APP_NAME,

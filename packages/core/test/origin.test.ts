@@ -373,15 +373,15 @@ describe("find and link a source", () => {
   });
 });
 
-describe("link by itself after an import", () => {
-  /** A checkout of the fixture repository, as someone cloned it by hand. */
-  function clonedByHand(): string {
-    const clone = join(world.home, "code", "skills");
-    mkdirSync(join(world.home, "code"), { recursive: true });
-    git(join(world.home, "code"), "clone", "--quiet", `${REPO_URL}.git`, "skills");
-    return join(clone, "skills", "pdf");
-  }
+/** A checkout of the fixture repository, as someone cloned it by hand. */
+function clonedByHand(): string {
+  const clone = join(world.home, "code", "skills");
+  mkdirSync(join(world.home, "code"), { recursive: true });
+  git(join(world.home, "code"), "clone", "--quiet", `${REPO_URL}.git`, "skills");
+  return join(clone, "skills", "pdf");
+}
 
+describe("link by itself after an import", () => {
   it("links an import whose folder is a checkout holding the same files", async () => {
     const folder = clonedByHand();
     const pdf = importedPdf({ sourceRef: folder });

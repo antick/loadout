@@ -94,10 +94,11 @@ function describeItem(item: SyncPreviewItem): string {
   return `  ${item.change.padEnd(8)} ${item.name}${renamed}${device}`;
 }
 
+const section = (title: string, items: SyncPreviewItem[]): string[] =>
+  items.length > 0 ? [`${title}:`, ...items.map(describeItem)] : [];
+
 function describePreview(preview: SyncPreview): string[] {
   if (!preview.remoteCommit) return ["No remote branch yet: a sync pushes the whole library."];
-  const section = (title: string, items: SyncPreviewItem[]): string[] =>
-    items.length > 0 ? [`${title}:`, ...items.map(describeItem)] : [];
   const lines = preview.perSkill
     ? [
         ...section("Coming in", preview.incoming),

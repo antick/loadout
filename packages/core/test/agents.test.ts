@@ -295,10 +295,10 @@ describe("agents service", () => {
     });
   });
 
-  describe("home folder variables", () => {
-    const registryWith = (env: Record<string, string>) =>
-      new AgentRegistry({ ...world.ctx, env: () => env });
+  const registryWith = (env: Record<string, string>) =>
+    new AgentRegistry({ ...world.ctx, env: () => env });
 
+  describe("home folder variables", () => {
     it("reads an agent's folders inside the folder its variable names", () => {
       const codexHome = join(world.root, "codex-work");
       mkdirSync(codexHome, { recursive: true });

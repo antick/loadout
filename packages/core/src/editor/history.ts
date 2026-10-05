@@ -45,19 +45,19 @@ function flatName(text: string): string {
   return /^\.+$/.test(encoded) ? encoded.replaceAll(".", "%2E") : encoded;
 }
 
+function versionIds(dir: string): string[] {
+  return readDirSafe(dir)
+    .filter((entry) => entry.isFile() && entry.name.endsWith(VERSION_SUFFIX))
+    .map((entry) => entry.name.slice(0, -VERSION_SUFFIX.length))
+    .filter((id) => VERSION_ID_PATTERN.test(id))
+    .sort(compareVersions);
+}
+
 export function createFileHistory(historyDir: string): FileHistory {
   // One flat folder name per file: the relative path cannot escape or collide once encoded.
   const skillDir = (skillId: string): string => join(historyDir, flatName(skillId));
   const fileDir = (skillId: string, path: string): string =>
     join(skillDir(skillId), flatName(path));
-
-  function versionIds(dir: string): string[] {
-    return readDirSafe(dir)
-      .filter((entry) => entry.isFile() && entry.name.endsWith(VERSION_SUFFIX))
-      .map((entry) => entry.name.slice(0, -VERSION_SUFFIX.length))
-      .filter((id) => VERSION_ID_PATTERN.test(id))
-      .sort(compareVersions);
-  }
 
   return {
     record: (skillId, path, bytes, now = Date.now()) => {

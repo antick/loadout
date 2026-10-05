@@ -7,25 +7,25 @@ export const GIT_NEEDED =
   "Git is not installed. Without Git, Loadout can only install public repositories from GitHub " +
   "and GitLab. Install Git (git-scm.com) for private repositories and other hosts.";
 
+async function orHttp<T>(
+  call: () => Promise<T>,
+  canHelp: boolean,
+  fallback: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await call();
+  } catch (error) {
+    if (!isAppError(error, "GIT_MISSING")) throw error;
+    if (!canHelp) throw new AppError("GIT_MISSING", GIT_NEEDED);
+    return fallback();
+  }
+}
+
 /**
  * A git client that uses system Git when it is there and plain HTTPS when it is not. Nothing
  * changes for a computer with Git: the fallback only answers calls that failed with GIT_MISSING.
  */
 export function withHttpFallback(git: GitClient, http: HttpGit): GitClient {
-  async function orHttp<T>(
-    call: () => Promise<T>,
-    canHelp: boolean,
-    fallback: () => Promise<T>,
-  ): Promise<T> {
-    try {
-      return await call();
-    } catch (error) {
-      if (!isAppError(error, "GIT_MISSING")) throw error;
-      if (!canHelp) throw new AppError("GIT_MISSING", GIT_NEEDED);
-      return fallback();
-    }
-  }
-
   return {
     gitVersion: git.gitVersion,
     clearCache: git.clearCache,

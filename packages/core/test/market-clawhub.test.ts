@@ -23,11 +23,12 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+const skillBody = (version: string): string =>
+  `---\nname: ${SLUG}\ndescription: Learns from mistakes\n---\n\n# v${version}\n`;
+
 /** A registry with one skill, whose latest version the test can move. */
 function fakeRegistry() {
   const state = { version: "1.0.0", calls: [] as string[], offline: false };
-  const skillBody = (version: string): string =>
-    `---\nname: ${SLUG}\ndescription: Learns from mistakes\n---\n\n# v${version}\n`;
   const item = () => ({
     ownerHandle: OWNER,
     slug: SLUG,

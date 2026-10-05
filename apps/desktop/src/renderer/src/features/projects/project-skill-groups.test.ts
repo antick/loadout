@@ -50,6 +50,15 @@ function target(key: string, extra: Partial<ProjectTarget> = {}): ProjectTarget 
   };
 }
 
+const status = (...statuses: SyncStatus[]): SyncStatus | undefined =>
+  groupProjectSkills(statuses.map((entry, index) => copy("skill", `agent-${index}`, entry)))[0]
+    ?.syncStatus;
+
+const state = (...enabled: boolean[]): string | undefined =>
+  groupProjectSkills(
+    enabled.map((on, index) => copy("skill", `agent-${index}`, "in_sync", { enabled: on })),
+  )[0]?.enabledState;
+
 describe("groupProjectSkills", () => {
   it("groups copies by lowercase relative path and keeps the backend's order", () => {
     const groups = groupProjectSkills([
@@ -76,9 +85,6 @@ describe("groupProjectSkills", () => {
   });
 
   it("takes the worst status of the variants", () => {
-    const status = (...statuses: SyncStatus[]): SyncStatus | undefined =>
-      groupProjectSkills(statuses.map((entry, index) => copy("skill", `agent-${index}`, entry)))[0]
-        ?.syncStatus;
     expect(status("in_sync", "local_only")).toBe("local_only");
     expect(status("local_only", "library_newer")).toBe("library_newer");
     expect(status("library_newer", "local_newer")).toBe("local_newer");
@@ -86,10 +92,6 @@ describe("groupProjectSkills", () => {
   });
 
   it("reports all / partial / none enabled", () => {
-    const state = (...enabled: boolean[]): string | undefined =>
-      groupProjectSkills(
-        enabled.map((on, index) => copy("skill", `agent-${index}`, "in_sync", { enabled: on })),
-      )[0]?.enabledState;
     expect(state(true, true)).toBe("all");
     expect(state(true, false)).toBe("partial");
     expect(state(false, false)).toBe("none");
@@ -118,13 +120,13 @@ describe("matchesEnabledFilter", () => {
   });
 });
 
-describe("projectSkillRules", () => {
-  const rules = (status: SyncStatus) => {
-    const [group] = groupProjectSkills([copy("skill", "a", status)]);
-    if (!group) throw new Error("expected a group");
-    return projectSkillRules(group);
-  };
+const rules = (syncStatus: SyncStatus) => {
+  const [group] = groupProjectSkills([copy("skill", "a", syncStatus)]);
+  if (!group) throw new Error("expected a group");
+  return projectSkillRules(group);
+};
 
+describe("projectSkillRules", () => {
   it("offers the sync actions that fit each status", () => {
     expect(rules("in_sync")).toEqual({ push: false, pull: false, restore: false });
     expect(rules("local_only")).toEqual({ push: true, pull: false, restore: false });

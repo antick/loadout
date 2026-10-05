@@ -168,6 +168,9 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     return { agentsScanned, skillsFound: paths.size, skills: lastScan };
   }
 
+  const sameName = (candidate: string): Skill[] =>
+    store.list().filter((skill) => skill.name.toLowerCase() === candidate.toLowerCase());
+
   /**
    * The library name for a found skill nobody renamed: its own, unless the library already has a
    * different skill by that name (another version found elsewhere); then `name-2`, `name-3`, …
@@ -176,8 +179,6 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
    */
   function distinctName(source: string): string | undefined {
     const own = readSkillIdentity(source).name;
-    const sameName = (candidate: string): Skill[] =>
-      store.list().filter((skill) => skill.name.toLowerCase() === candidate.toLowerCase());
     const others = sameName(own);
     if (others.length === 0) return undefined;
     const hash = hashDir(source);

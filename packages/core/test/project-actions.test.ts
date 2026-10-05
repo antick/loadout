@@ -18,6 +18,14 @@ const SHARED_DIR = join(".agents", "skills");
 /** Windows ignores the mode, and root reads any file: neither can make a copy fail midway. */
 const UNREADABLE_UNSUPPORTED = process.platform === "win32" || process.getuid?.() === 0;
 
+/** A library skill plus a project copy of it that was edited `offsetMs` after the library. */
+function editedCopy(skill: Skill, root: string, offsetMs: number, body = "edited"): string {
+  const local = makeSkill(root, skill.dirName, { body });
+  setContentMtime(skill.libraryPath, T0);
+  setContentMtime(local, T0 + offsetMs);
+  return local;
+}
+
 describe("project actions", () => {
   let world: WorkspaceWorld;
   let repo: string;
@@ -34,14 +42,6 @@ describe("project actions", () => {
     claudeOff = join(repo, ".claude", "skills-disabled");
   });
   afterEach(() => world.cleanup());
-
-  /** A library skill plus a project copy of it that was edited `offsetMs` after the library. */
-  function editedCopy(skill: Skill, root: string, offsetMs: number, body = "edited"): string {
-    const local = makeSkill(root, skill.dirName, { body });
-    setContentMtime(skill.libraryPath, T0);
-    setContentMtime(local, T0 + offsetMs);
-    return local;
-  }
 
   describe("enable and disable", () => {
     it("moves every copy between the two folders and prunes the emptied disabled side", async () => {

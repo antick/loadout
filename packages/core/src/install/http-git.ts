@@ -117,13 +117,13 @@ function wrappedRoot(root: string): string {
   return entries.length === 1 && only?.isDirectory() ? join(root, only.name) : root;
 }
 
-export function createHttpGit(download: Download): HttpGit {
-  function archiveHost(url: string): { host: ArchiveHost; path: string } | null {
-    const remote = parseHttpsRemote(url);
-    const host = remote && ARCHIVE_HOSTS.find((entry) => entry.host === remote.host);
-    return remote && host ? { host, path: remote.path } : null;
-  }
+function archiveHost(url: string): { host: ArchiveHost; path: string } | null {
+  const remote = parseHttpsRemote(url);
+  const host = remote && ARCHIVE_HOSTS.find((entry) => entry.host === remote.host);
+  return remote && host ? { host, path: remote.path } : null;
+}
 
+export function createHttpGit(download: Download): HttpGit {
   async function advertisedRefs(url: string, signal?: AbortSignal): Promise<Map<string, string>> {
     const remote = parseHttpsRemote(url);
     if (!remote) throw new AppError("GIT_MISSING", "Git is needed for this repository.");

@@ -128,42 +128,42 @@ describe("a link to a SKILL.md", () => {
   });
 });
 
-describe("a site that publishes skills", () => {
-  function publishDocs(pdfBody = ""): void {
-    const pdf = Buffer.from(skillMd("pdf", pdfBody));
-    const tools = gzipSync(
-      tarBuffer([
-        { name: "SKILL.md", content: skillMd("tools") },
-        { name: "scripts/run.sh", content: "#!/bin/sh\n", mode: 0o755 },
-      ]),
-    );
-    web.served.set("https://docs.example.com/guide/skills/pdf.md", pdf);
-    web.served.set("https://assets.example.net/tools.tar.gz", tools);
-    web.served.set(
-      DOCS_INDEX,
-      json({
-        $schema: SCHEMA,
-        skills: [
-          {
-            name: "pdf",
-            type: "skill-md",
-            description: "Read PDFs",
-            url: "/guide/skills/pdf.md",
-            digest: sha256Digest(pdf),
-          },
-          {
-            name: "tools",
-            type: "archive",
-            description: "Handy tools",
-            url: "https://assets.example.net/tools.tar.gz",
-            digest: sha256Digest(tools),
-          },
-          { name: "Bad Name", type: "skill-md", description: "x", url: "/x", digest: "sha256:0" },
-        ],
-      }),
-    );
-  }
+function publishDocs(pdfBody = ""): void {
+  const pdf = Buffer.from(skillMd("pdf", pdfBody));
+  const tools = gzipSync(
+    tarBuffer([
+      { name: "SKILL.md", content: skillMd("tools") },
+      { name: "scripts/run.sh", content: "#!/bin/sh\n", mode: 0o755 },
+    ]),
+  );
+  web.served.set("https://docs.example.com/guide/skills/pdf.md", pdf);
+  web.served.set("https://assets.example.net/tools.tar.gz", tools);
+  web.served.set(
+    DOCS_INDEX,
+    json({
+      $schema: SCHEMA,
+      skills: [
+        {
+          name: "pdf",
+          type: "skill-md",
+          description: "Read PDFs",
+          url: "/guide/skills/pdf.md",
+          digest: sha256Digest(pdf),
+        },
+        {
+          name: "tools",
+          type: "archive",
+          description: "Handy tools",
+          url: "https://assets.example.net/tools.tar.gz",
+          digest: sha256Digest(tools),
+        },
+        { name: "Bad Name", type: "skill-md", description: "x", url: "/x", digest: "sha256:0" },
+      ],
+    }),
+  );
+}
 
+describe("a site that publishes skills", () => {
   it("lists every valid skill of a scoped index and installs the chosen ones", async () => {
     publishDocs();
     const preview = await world.install.api.previewGit(DOCS);

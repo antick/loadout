@@ -72,10 +72,10 @@ describe("a newer version on disk", () => {
   });
 });
 
-describe("resolving", () => {
-  const conflicted = () =>
-    applyDiskVersion(withDraft(openSession(file("one"), null), "mine"), file("two"));
+const conflicted = () =>
+  applyDiskVersion(withDraft(openSession(file("one"), null), "mine"), file("two"));
 
+describe("resolving", () => {
   it("keeps mine: the next save is based on the disk version", () => {
     const next = keepMine(conflicted());
     expect(next).toMatchObject({ draft: "mine", baseHash: "hash-of-two" });

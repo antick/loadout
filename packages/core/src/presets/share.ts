@@ -71,6 +71,36 @@ function freeName(wanted: string, taken: ReadonlySet<string>): string {
 }
 
 /**
+ * The library skill a file entry stands for: one from the same source (and branch); for an
+ * entry without a source, one of that name holding the same files, or, for an entry that is
+ * only a name, one of that name. `sameName` is a library skill of that name that is not it: it
+ * is used only when the person asks for it (`reuseSameName`).
+ */
+function libraryMatch(
+  entry: PresetFileSkill,
+  skills: readonly Skill[],
+): { found: Skill | null; sameName: Skill | null } {
+  const name = entry.name.toLowerCase();
+  const named = skills.filter(
+    (skill) => skill.name.toLowerCase() === name || skill.dirName.toLowerCase() === name,
+  );
+  let found: Skill | undefined;
+  if (entry.source) {
+    const wanted = sourceKey(entry.source);
+    found = skills.find((skill) => {
+      const source = remoteSourceOf(skill);
+      return source !== null && sourceKey(source) === wanted;
+    });
+  } else if (entry.files) {
+    const { files } = entry;
+    found = named.find((skill) => holdsEmbeddedFiles(skill, files));
+  } else {
+    found = named[0];
+  }
+  return { found: found ?? null, sameName: found ? null : (named[0] ?? null) };
+}
+
+/**
  * Presets as files to share: export one with its skills' sources (and files, for skills without
  * one), and import one, installing what the library lacks through the usual installers.
  */
@@ -90,36 +120,6 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
       throw invalid(`The file is larger than ${formatBytes(PRESET_FILE_MAX_BYTES)}.`);
     }
     return readFile(path, "utf8");
-  }
-
-  /**
-   * The library skill a file entry stands for: one from the same source (and branch); for an
-   * entry without a source, one of that name holding the same files, or, for an entry that is
-   * only a name, one of that name. `sameName` is a library skill of that name that is not it: it
-   * is used only when the person asks for it (`reuseSameName`).
-   */
-  function libraryMatch(
-    entry: PresetFileSkill,
-    skills: readonly Skill[],
-  ): { found: Skill | null; sameName: Skill | null } {
-    const name = entry.name.toLowerCase();
-    const named = skills.filter(
-      (skill) => skill.name.toLowerCase() === name || skill.dirName.toLowerCase() === name,
-    );
-    let found: Skill | undefined;
-    if (entry.source) {
-      const wanted = sourceKey(entry.source);
-      found = skills.find((skill) => {
-        const source = remoteSourceOf(skill);
-        return source !== null && sourceKey(source) === wanted;
-      });
-    } else if (entry.files) {
-      const { files } = entry;
-      found = named.find((skill) => holdsEmbeddedFiles(skill, files));
-    } else {
-      found = named[0];
-    }
-    return { found: found ?? null, sameName: found ? null : (named[0] ?? null) };
   }
 
   function planOf(file: PresetFile, options: PresetPreviewOptions = {}): PresetImportPlan {

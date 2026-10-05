@@ -44,6 +44,13 @@ function requireBuiltIn(agent: ResolvedAgent, what: string): void {
   }
 }
 
+function defaultProjectDir(key: string): string | null {
+  const definition = BUILT_IN_AGENTS.find((agent) => agent.key === key);
+  return definition
+    ? normalizeProjectDir(definition.projectSkillsDir ?? definition.skillsDir)
+    : null;
+}
+
 export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): AgentsService {
   const { registry, deploy } = deps;
   const { settings } = ctx;
@@ -77,13 +84,6 @@ export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): 
     if (canonicalPath(before.skillsDir) === canonicalPath(after.skillsDir)) return;
     const report = await deploy.moveAgentDeployments(before.key, before.skillsDir, after.skillsDir);
     logRedeployProblems(ctx.log, report, "move");
-  }
-
-  function defaultProjectDir(key: string): string | null {
-    const definition = BUILT_IN_AGENTS.find((agent) => agent.key === key);
-    return definition
-      ? normalizeProjectDir(definition.projectSkillsDir ?? definition.skillsDir)
-      : null;
   }
 
   const api: AgentsApi = {

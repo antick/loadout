@@ -235,14 +235,14 @@ describe("recently removed", () => {
     ]);
   });
 
-  describe("copies the app deployed", () => {
-    const deployWithRemoved = () =>
-      createDeployService(world.ctx, {
-        store: world.store,
-        registry: world.registry,
-        removed: world.removed,
-      });
+  const deployWithRemoved = () =>
+    createDeployService(world.ctx, {
+      store: world.store,
+      registry: world.registry,
+      removed: world.removed,
+    });
 
+  describe("copies the app deployed", () => {
     it("keeps an edited copy that is removed or overwritten, and nothing for a clean one", async () => {
       world.ctx.settings.set("deployMode", "copy");
       const deploy = deployWithRemoved();

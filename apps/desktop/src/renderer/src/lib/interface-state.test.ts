@@ -17,15 +17,15 @@ function memoryStorage(entries: Record<string, string>): Storage {
   };
 }
 
-describe("interface state", () => {
-  const storage = () =>
-    memoryStorage({
-      [`${STORAGE_PREFIX}sidebar.width`]: "300",
-      [`${STORAGE_PREFIX}view-mode:library`]: '"list"',
-      [`${STORAGE_PREFIX}${EDITOR_DRAFT_PREFIX}library:a:SKILL.md`]: "{}",
-      "someone-else": "keep",
-    });
+const storage = () =>
+  memoryStorage({
+    [`${STORAGE_PREFIX}sidebar.width`]: "300",
+    [`${STORAGE_PREFIX}view-mode:library`]: '"list"',
+    [`${STORAGE_PREFIX}${EDITOR_DRAFT_PREFIX}library:a:SKILL.md`]: "{}",
+    "someone-else": "keep",
+  });
 
+describe("interface state", () => {
   it("counts preferences and drafts apart", () => {
     const store = storage();
     expect(countStored("preferences", store)).toBe(2);

@@ -156,6 +156,10 @@ function patchFromRecord(record: InstallRecord): SkillPatch {
   };
 }
 
+function requireLocal(skill: Skill): void {
+  if (isRemoteSource(skill)) throw unsupported(NOT_LOCAL);
+}
+
 export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   const { store, git, download, cancels } = deps;
   const clients = { git, clawhub: deps.clawhub };
@@ -300,10 +304,6 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       updatedAt: skill.updatedAt,
     });
     ctx.touched("skills");
-  }
-
-  function requireLocal(skill: Skill): void {
-    if (isRemoteSource(skill)) throw unsupported(NOT_LOCAL);
   }
 
   async function update(
