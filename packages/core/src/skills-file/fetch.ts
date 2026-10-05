@@ -1,8 +1,9 @@
-import { type SkillsFileSource, skillMatchesName } from "@loadout/shared";
+import type { SkillsFileSource } from "@loadout/shared";
 import { invalid } from "../errors";
 import type { GitClient } from "../install/git-client";
-import { parseGitSource, resolveTreeRef } from "../install/git-source";
+import { resolveGitSource } from "../install/git-source";
 import { type FoundSkill, listRepoSkills, resolveSkillDir } from "../install/repo-scan";
+import { matchRequested } from "../install/requested";
 
 /** A source checked out at one commit, with the skills it holds. Always call `cleanup`. */
 export interface FetchedSource {
@@ -28,12 +29,7 @@ export async function fetchSource(
   options: FetchOptions,
 ): Promise<FetchedSource> {
   const typed = source.ref ? `${source.url}#${source.ref}` : source.url;
-  let parsed = parseGitSource(typed, { allowLocalPath: options.allowLocalPath });
-  if (parsed.treeTail) {
-    const tail = parsed.treeTail;
-    const split = await resolveTreeRef(parsed.cloneUrl, tail, (url) => git.listRefs(url));
-    parsed = { ...parsed, ...split, treeTail: null };
-  }
+  const parsed = await resolveGitSource(git, typed, { allowLocalPath: options.allowLocalPath });
   const checkout = await git.checkout(parsed.cloneUrl, {
     branch: parsed.branch,
     revision: options.revision,
@@ -56,19 +52,13 @@ export async function fetchSource(
 
 /**
  * The skills of a source the file asks for, by name or folder name, and the names it asks for
- * that the source does not have. Null takes them all.
+ * that the source does not have. Null takes them all; a name several skills answer to is refused.
  */
 export function chooseSkills(
   available: readonly FoundSkill[],
   wanted: readonly string[] | null,
 ): { chosen: FoundSkill[]; missing: string[] } {
   if (wanted === null) return { chosen: [...available], missing: [] };
-  const chosen: FoundSkill[] = [];
-  const missing: string[] = [];
-  for (const name of wanted) {
-    const match = available.find((skill) => skillMatchesName(skill, name));
-    if (!match) missing.push(name);
-    else if (!chosen.includes(match)) chosen.push(match);
-  }
-  return { chosen, missing };
+  const { selected, missing } = matchRequested(available, wanted);
+  return { chosen: available.filter((skill) => selected?.includes(skill.relPath)), missing };
 }

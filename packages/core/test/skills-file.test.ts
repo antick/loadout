@@ -323,6 +323,19 @@ describe("apply", () => {
     expect(existsSync(join(project, ".claude"))).toBe(false);
   });
 
+  it("takes the skill in a folder of the asked name, and refuses a name that stays ambiguous", async () => {
+    makeSkill(join(remote, "skills", "extra"), "pdf-old", { name: "pdf" });
+    commitAll(remote, "namesake");
+    await api.apply(project);
+    expect(existsSync(join(project, ".claude", "skills", "pdf", "scripts", "run.sh"))).toBe(true);
+
+    makeSkill(join(remote, "skills", "extra"), "pdf");
+    commitAll(remote, "twin");
+    await expect(api.apply(project, { update: true })).rejects.toThrow(
+      '"pdf" names several skills: skills/extra/pdf, skills/extra/pdf-old, skills/pdf.',
+    );
+  });
+
   it("finds the file from a folder inside the project", async () => {
     expect((await api.find(join(project, "src")))?.root).toBe(project);
     expect(await api.find(world.root)).toBeNull();

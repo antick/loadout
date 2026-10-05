@@ -1,5 +1,6 @@
 import { isAbsolute } from "node:path";
 import { invalid, isAppError } from "../errors";
+import type { GitClient } from "./git-client";
 
 /** Where a Git install comes from, after the typed text has been understood. */
 export interface GitSource {
@@ -297,6 +298,23 @@ export async function resolveTreeRef(
     (clean.split("/")[0] as string);
   const rest = clean.slice(ref.length + 1);
   return { branch: ref, subpath: rest || null };
+}
+
+/**
+ * Understand the typed text, with a tree URL's branch / subpath split settled against the refs
+ * the remote really has: `treeTail` is always null.
+ */
+export async function resolveGitSource(
+  git: Pick<GitClient, "listRefs">,
+  text: string,
+  options: GitInputOptions & { signal?: AbortSignal } = {},
+): Promise<GitSource> {
+  const source = parseGitSource(text, options);
+  if (!source.treeTail) return source;
+  const split = await resolveTreeRef(source.cloneUrl, source.treeTail, (url) =>
+    git.listRefs(url, { signal: options.signal }),
+  );
+  return { ...source, ...split, treeTail: null };
 }
 
 /** `owner/repo` from the marketplace → clone URL. */

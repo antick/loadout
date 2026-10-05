@@ -8,7 +8,7 @@ import {
 
 import { isAppError, notFound } from "../errors";
 
-import { type GitClient, parseGitSource, resolveTreeRef } from "../install";
+import { type GitClient, resolveGitSource } from "../install";
 import type { InstalledSnapshot } from "../skills/store";
 
 import { readSkillDocument } from "../skills/metadata";
@@ -55,21 +55,14 @@ async function targetOf(
   lead: SourceLead,
   skillName: string,
 ): Promise<RemoteTarget> {
-  const parsed = parseGitSource(lead.input);
-  let branch = parsed.branch;
-  let subpath = parsed.subpath;
-  if (parsed.treeTail) {
-    ({ branch, subpath } = await resolveTreeRef(parsed.cloneUrl, parsed.treeTail, (url) =>
-      git.listRefs(url),
-    ));
-  }
+  const parsed = await resolveGitSource(git, lead.input);
   // A numbered library copy (`pdf-2`) is still called `pdf` upstream.
   const baseName = NUMBERED.exec(skillName)?.[1] ?? skillName;
   return {
     kind: "git",
     url: parsed.cloneUrl,
-    branch: lead.branch ?? branch,
-    subpath: lead.subpath ?? subpath,
+    branch: lead.branch ?? parsed.branch,
+    subpath: lead.subpath ?? parsed.subpath,
     locator: lead.locator ?? parsed.skill ?? baseName,
   };
 }

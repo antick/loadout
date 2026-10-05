@@ -15,13 +15,7 @@ import { type CancelRegistry, type Task, withTask } from "./cancel";
 import type { Download } from "./download";
 import { createFetchedPreviews, previewLibrary, previewRows, subpathOf } from "./fetched-preview";
 import type { GitClient } from "./git-client";
-import {
-  type GitSource,
-  isPlainUrl,
-  marketSourceToUrl,
-  parseGitSource,
-  resolveTreeRef,
-} from "./git-source";
+import { isPlainUrl, marketSourceToUrl, resolveGitSource, validateGitInput } from "./git-source";
 import type { InstallIntoLibrary } from "./library";
 import { normalizeSourceUrl, repositorySourceKey } from "@loadout/shared";
 import type { SourceNewsStore } from "../sources/news-store";
@@ -87,15 +81,6 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       emitProgress(ctx, key, "cloning", { current: percent, total: PERCENT_TOTAL });
   }
 
-  /** Settle the branch / subpath split of a tree URL against the refs the remote really has. */
-  async function resolveSource(source: GitSource, signal: AbortSignal): Promise<GitSource> {
-    if (!source.treeTail) return source;
-    const split = await resolveTreeRef(source.cloneUrl, source.treeTail, (url) =>
-      git.listRefs(url, { signal }),
-    );
-    return { ...source, ...split, treeTail: null };
-  }
-
   /**
    * Clone and list a repository. `repoUrl` is the repository part of the typed text; `wanted`
    * skills named outside the URL.
@@ -106,10 +91,11 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     wanted: readonly string[],
   ): Promise<GitPreview> {
     const { key, signal } = task;
-    // Validate before anything else, so a bad URL never reaches git.
-    const parsed = parseGitSource(repoUrl, { allowLocalPath: deps.allowLocalGitSources });
+    const input = { allowLocalPath: deps.allowLocalGitSources };
+    // Validate before anything else, so a bad URL never reaches git nor the status bar.
+    validateGitInput(repoUrl, input);
     emitProgress(ctx, key, "cloning");
-    const source = await resolveSource(parsed, signal);
+    const source = await resolveGitSource(git, repoUrl, { ...input, signal });
     const checkout = await git.checkout(source.cloneUrl, {
       branch: source.branch,
       // The list needs only each skill's SKILL.md; confirming fetches the chosen folders.

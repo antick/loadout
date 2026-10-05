@@ -5,7 +5,7 @@ export {
   type GitInputOptions,
   marketSourceToUrl,
   parseGitSource,
-  resolveTreeRef,
+  resolveGitSource,
   validateGitInput,
 } from "./git-source";
 export type { InstallIntoLibrary, InstallRecord } from "./library";
