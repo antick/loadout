@@ -20,7 +20,8 @@ export interface ResolvedLocation {
   folder: EditableFolder;
   /** Set for library skills: saves update its row, edit marks and deployed copies. */
   librarySkill: Skill | null;
-  target: EditTarget;
+  /** Computed on access for copies outside the library: matching one hashes its folder. */
+  readonly target: EditTarget;
   /** The project's other copies of this skill (project copies only). */
   otherCopies: (SkillCopy & { folder: EditableFolder })[];
 }
@@ -99,14 +100,17 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
       },
       librarySkill: null,
       otherCopies: [],
-      target: {
-        location,
-        name: entry.name,
-        folderName: basename(entry.path),
-        path: entry.path,
-        placeLabel: agent.displayName,
-        librarySkillId: matchedSkillId(entry.path),
-        otherCopies: [],
+      // Matching against the library hashes the folder: only when the target is asked for.
+      get target() {
+        return {
+          location,
+          name: entry.name,
+          folderName: basename(entry.path),
+          path: entry.path,
+          placeLabel: agent.displayName,
+          librarySkillId: matchedSkillId(entry.path),
+          otherCopies: [],
+        };
       },
     };
   }
@@ -162,17 +166,19 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
       },
       librarySkill: null,
       otherCopies,
-      target: {
-        location,
-        name: entry.name,
-        folderName: basename(chosen.path),
-        path: chosen.path,
-        placeLabel,
-        librarySkillId: matchedSkillId(chosen.path),
-        otherCopies: otherCopies.map(({ agentKey: key, agentName }) => ({
-          agentKey: key,
-          agentName,
-        })),
+      get target() {
+        return {
+          location,
+          name: entry.name,
+          folderName: basename(chosen.path),
+          path: chosen.path,
+          placeLabel,
+          librarySkillId: matchedSkillId(chosen.path),
+          otherCopies: otherCopies.map(({ agentKey: key, agentName }) => ({
+            agentKey: key,
+            agentName,
+          })),
+        };
       },
     };
   }

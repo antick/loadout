@@ -162,8 +162,8 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
           ctx.activity.record("edit", skill.name, outcome.file.path);
           return { ...base, skill, copiesRefreshed: copies.written, copiesKept: copies.kept };
         }
-        const where = `${resolved.target.placeLabel}: ${outcome.file.path}`;
-        ctx.activity.record("edit", resolved.target.name, where);
+        const { placeLabel, name } = resolved.target;
+        ctx.activity.record("edit", name, `${placeLabel}: ${outcome.file.path}`);
         if (input.otherCopies === "identical") {
           const copies = carryToCopies(resolved, outcome.file.path, outcome.before, outcome.after);
           return { ...base, otherCopiesSaved: copies.saved, otherCopiesSkipped: copies.skipped };
