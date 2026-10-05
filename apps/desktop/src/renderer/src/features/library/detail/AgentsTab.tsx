@@ -20,7 +20,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useSetBlocked } from "@/features/library/library-mutations";
-import { useApplySkills, useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
+import {
+  useApplySkills,
+  useConfirmUndeploy,
+  useDeploySkill,
+  useUndeploySkill,
+} from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
 import { useSkillAgentKeys } from "@/hooks/use-skill-agent-keys";
 import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
@@ -47,6 +52,7 @@ function AgentRow({
   const { t } = useTranslation();
   const deploy = useDeploySkill();
   const undeploy = useUndeploySkill();
+  const confirmUndeploy = useConfirmUndeploy();
   const setBlocked = useSetBlocked();
   const pending = deploy.isPending || undeploy.isPending || setBlocked.isPending;
   const isBlocked = blocked && !deployed;
@@ -85,9 +91,14 @@ function AgentRow({
         aria-label={t(deployed ? "agentBadges.deployedTo" : "agentBadges.notDeployedTo", {
           agent: agent.displayName,
         })}
-        onCheckedChange={(next) =>
-          (next ? deploy : undeploy).mutate({ skillId: skill.id, agentKey: agent.key })
-        }
+        onCheckedChange={(next) => {
+          const pair = { skillId: skill.id, agentKey: agent.key };
+          if (next) deploy.mutate(pair);
+          else
+            void confirmUndeploy(skill, agent.key, agent.displayName).then((ok) => {
+              if (ok) undeploy.mutate(pair);
+            });
+        }}
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

@@ -13,7 +13,7 @@ import {
 import { useSetBlocked } from "@/features/library/library-mutations";
 import { MatrixCell } from "@/features/library/matrix/MatrixCell";
 import { agentColumnCoverage, matrixCellState } from "@/features/library/matrix/matrix-state";
-import { useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
+import { useConfirmUndeploy, useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
 import { cn } from "@/lib/utils";
 import { SECTION_LABEL } from "@/lib/styles";
 
@@ -55,6 +55,7 @@ export function LibraryMatrix({
   const { t } = useTranslation();
   const deploy = useDeploySkill();
   const undeploy = useUndeploySkill();
+  const confirmUndeploy = useConfirmUndeploy();
   const setBlocked = useSetBlocked();
   // Set by the right-click that opens the menu, so its one item knows which square it is for.
   const [target, setTarget] = useState<CellTarget | null>(null);
@@ -86,8 +87,15 @@ export function LibraryMatrix({
     )}`;
 
   const toggle = (skill: Skill, agentKey: string): void => {
-    const on = matrixCellState(skill, agentKey) === "deployed";
-    (on ? undeploy : deploy).mutate({ skillId: skill.id, agentKey });
+    const pair = { skillId: skill.id, agentKey };
+    if (matrixCellState(skill, agentKey) !== "deployed") {
+      deploy.mutate(pair);
+      return;
+    }
+    const agentName = agents.find((agent) => agent.key === agentKey)?.displayName ?? agentKey;
+    void confirmUndeploy(skill, agentKey, agentName).then((ok) => {
+      if (ok) undeploy.mutate(pair);
+    });
   };
 
   /** Only a square has a menu; anywhere else the right-click does nothing. */

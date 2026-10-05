@@ -1,9 +1,13 @@
-import type { ApplyResult, Deployment } from "@loadout/shared";
+import type { ApplyResult, Deployment, Skill, UndeployResult } from "@loadout/shared";
 import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
+import { toastWithUndo } from "@/lib/removed-undo";
 import { toastApplyResult } from "@/lib/toast";
 
 export interface DeployPairInput {
@@ -45,32 +49,77 @@ function flipDeployment(
   });
 }
 
-function usePairMutation(
-  deployed: boolean,
-): UseMutationResult<void, unknown, DeployPairInput, CacheSnapshot> {
+/** Deploy one skill to one agent; the badge flips immediately and rolls back on failure. */
+export function useDeploySkill(): UseMutationResult<void, unknown, DeployPairInput, CacheSnapshot> {
   const queryClient = useQueryClient();
   return useApiMutation({
-    fn: ({ skillId, agentKey }: DeployPairInput) =>
-      deployed ? api.deploy.deploy(skillId, agentKey) : api.deploy.undeploy(skillId, agentKey),
-    onMutate: (input) => flipDeployment(queryClient, input, deployed),
-    error: deployed ? "errors.deploy" : "errors.undeploy",
+    fn: ({ skillId, agentKey }: DeployPairInput) => api.deploy.deploy(skillId, agentKey),
+    onMutate: (input) => flipDeployment(queryClient, input, true),
+    error: "errors.deploy",
     onError: (_error, _input, context) => restoreCached(queryClient, context),
   });
 }
 
-/** Deploy one skill to one agent; the badge flips immediately and rolls back on failure. */
-export function useDeploySkill(): UseMutationResult<void, unknown, DeployPairInput, CacheSnapshot> {
-  return usePairMutation(true);
-}
-
-/** Remove one skill from one agent; the badge flips immediately and rolls back on failure. */
+/**
+ * Remove one skill from one agent; the badge flips immediately and rolls back on failure. A copy
+ * edited in the agent's folder goes to Recently removed: the toast says so and offers Undo.
+ */
 export function useUndeploySkill(): UseMutationResult<
-  void,
+  UndeployResult,
   unknown,
   DeployPairInput,
   CacheSnapshot
 > {
-  return usePairMutation(false);
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  return useApiMutation({
+    fn: ({ skillId, agentKey }: DeployPairInput) => api.deploy.undeploy(skillId, agentKey),
+    onMutate: (input) => flipDeployment(queryClient, input, false),
+    onSuccess: (result) => {
+      if (result.removedIds.length > 0) {
+        toastWithUndo(t("library.agents.editedCopyRemoved"), result.removedIds);
+      }
+    },
+    error: "errors.undeploy",
+    onError: (_error, _input, context) => restoreCached(queryClient, context),
+  });
+}
+
+/**
+ * Before removing a skill from an agent: when the copy there was edited, ask first, as the agent
+ * page does. Resolves to false when the answer was no.
+ */
+export function useConfirmUndeploy(): (
+  skill: Skill,
+  agentKey: string,
+  agentName: string,
+) => Promise<boolean> {
+  const { t } = useTranslation();
+  const confirm = useConfirm();
+  return useCallback(
+    async (skill, agentKey, agentName) => {
+      const deployment = skill.deployments.find((entry) => entry.agentKey === agentKey);
+      if (deployment?.mode !== "copy") return true;
+      let edited: string[];
+      try {
+        ({ editedCopies: edited } = await api.deploy.undeploy(skill.id, agentKey, {
+          dryRun: true,
+        }));
+      } catch {
+        // Nothing is lost by going on: an edited copy still goes to Recently removed.
+        return true;
+      }
+      if (edited.length === 0) return true;
+      return confirm({
+        title: t("agents.confirm.removeTitle", { name: skill.name, agent: agentName }),
+        description: t("agents.confirm.removeDescription"),
+        items: edited,
+        confirmLabel: t("agents.actions.removeShort"),
+        destructive: true,
+      });
+    },
+    [t, confirm],
+  );
 }
 
 /** Add or remove many skill × agent pairs in one call and toast the counts. */

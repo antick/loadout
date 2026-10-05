@@ -247,7 +247,8 @@
       "reasonDisabled": "Switched off on the Agents page",
       "reasonNotInstalled": "Not found on this computer",
       "noneTitle": "No agents available",
-      "noneDescription": "Install a supported agent, or switch one on from the Agents page."
+      "noneDescription": "Install a supported agent, or switch one on from the Agents page.",
+      "editedCopyRemoved": "Removed the copy you edited in the agent's folder"
     },
     "presets": {
       "title": "Presets",
