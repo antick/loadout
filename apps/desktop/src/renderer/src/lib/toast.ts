@@ -45,13 +45,23 @@ export function errorMessage(error: unknown, fallbackKey = GENERIC_ERROR_KEY): s
   return i18n.t(fallbackKey);
 }
 
-/** Toast a failure. TARGET_CONFLICT errors list the paths that were in the way. */
-export function toastError(error: unknown, fallbackKey?: string): void {
+/**
+ * Toast a failure. With `contextKey` (an i18n key saying what failed, such as "Could not save the
+ * file.") that is the title and the error's own message the description; without one the message
+ * is the title. TARGET_CONFLICT errors list the paths that were in the way after it.
+ */
+export function toastError(error: unknown, contextKey?: string): void {
   if (error instanceof ApiError && error.code === "CANCELLED") return;
   const conflicts = error instanceof ApiError ? (error.details?.conflicts ?? []) : [];
-  toast.error(errorMessage(error, fallbackKey), {
-    description: conflicts.length > 0 ? describeConflicts(conflicts) : undefined,
-    descriptionClassName: `font-mono ${FAILURE_LIST_CLASS}`,
+  const message = errorMessage(error, contextKey);
+  const title = contextKey ? i18n.t(contextKey) : message;
+  const lines = [
+    ...(message !== title ? [message] : []),
+    ...(conflicts.length > 0 ? [describeConflicts(conflicts)] : []),
+  ];
+  toast.error(title, {
+    description: lines.length > 0 ? lines.join("\n") : undefined,
+    descriptionClassName: FAILURE_LIST_CLASS,
   });
 }
 
