@@ -2,9 +2,8 @@ import type { BatchResult, Skill } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { runSequentially, runWithUndo, toastBatchOutcome } from "@/lib/batch";
+import { runWithUndo } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo } from "@/lib/removed-undo";
 
@@ -13,17 +12,6 @@ export interface LocalSkillRef {
   agentKey: string;
   relativePath: string;
   name: string;
-}
-
-export interface ManagedSkillRef {
-  agentKey: string;
-  skillId: string;
-  name: string;
-}
-
-export interface DeployToAgentInput {
-  agentKey: string;
-  skills: readonly { id: string; name: string }[];
 }
 
 /** Refetch one agent's folder and the per-agent counts (the Refresh button). */
@@ -100,41 +88,5 @@ export function useDeleteLocalSkills(): UseMutationResult<BatchResult, unknown, 
         (count) => t("agents.toast.deletedMany", { count }),
       ),
     error: "agents.errors.delete",
-  });
-}
-
-/** Take a managed skill out of one agent. The library copy stays. */
-export function useRemoveFromAgent(): UseMutationResult<void, unknown, ManagedSkillRef> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: ({ skillId, agentKey }: ManagedSkillRef) => api.deploy.undeploy(skillId, agentKey),
-    success: (_result, { name }) => t("agents.toast.removed", { name }),
-    error: "errors.undeploy",
-  });
-}
-
-/**
- * Deploy library skills to one agent, one after the other, and toast one summary. Rejects when
- * nothing could be added, so the picker stays open with the selection intact.
- */
-export function useDeployToAgent(): UseMutationResult<BatchResult, unknown, DeployToAgentInput> {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: async ({ agentKey, skills }: DeployToAgentInput) => {
-      const result = await runSequentially(
-        skills,
-        (skill) => skill.name,
-        (skill) => api.deploy.deploy(skill.id, agentKey),
-      );
-      toastBatchOutcome(t("agents.toast.added", { count: result.succeeded }), result.failed, {
-        description: result.succeeded > 0 ? reloadHintFor(queryClient, [agentKey]) : null,
-      });
-      if (result.succeeded === 0 && result.failed.length > 0) {
-        throw new Error(t("agents.errors.addNone"));
-      }
-      return result;
-    },
-    error: false,
   });
 }

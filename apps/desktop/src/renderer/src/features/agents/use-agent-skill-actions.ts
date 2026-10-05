@@ -9,10 +9,11 @@ import {
   type LocalSkillRef,
   useDeleteLocalSkill,
   usePullLocalSkill,
-  useRemoveFromAgent,
   useUploadLocalSkill,
 } from "@/features/agents/workspace-mutations";
+import { useUndeploySkill } from "@/hooks/mutations/deploy";
 import { editLink } from "@/lib/skill-location";
+import { toastSuccess } from "@/lib/toast";
 import { agentSkillRules } from "./agent-skill-rules";
 
 /**
@@ -29,7 +30,7 @@ export function useAgentSkillActions(
   // `mutate` is stable across renders; the mutation objects are not.
   const { mutate: upload } = useUploadLocalSkill();
   const { mutate: pull } = usePullLocalSkill();
-  const { mutate: remove } = useRemoveFromAgent();
+  const { mutate: remove } = useUndeploySkill();
   const { mutate: deleteLocal } = useDeleteLocalSkill();
 
   return useCallback(
@@ -115,8 +116,13 @@ export function useAgentSkillActions(
               if (!ok) return;
             }
             remove(
-              { agentKey: skill.agentKey, skillId, name: skill.name },
-              { onSuccess: () => onGone?.(skill) },
+              { agentKey: skill.agentKey, skillId },
+              {
+                onSuccess: () => {
+                  toastSuccess(t("agents.toast.removed", { name: skill.name }));
+                  onGone?.(skill);
+                },
+              },
             );
           },
         });

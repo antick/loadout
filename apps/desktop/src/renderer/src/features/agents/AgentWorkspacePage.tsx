@@ -3,7 +3,7 @@ import { Navigate } from "@tanstack/react-router";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AddFromLibrarySheet } from "@/components/AddFromLibrarySheet";
-import { useDeployToAgent, useRefreshWorkspace } from "@/features/agents/workspace-mutations";
+import { useRefreshWorkspace } from "@/features/agents/workspace-mutations";
 import {
   useBrokenFolders,
   usePluginSkills,
@@ -18,9 +18,9 @@ import { LocalSkillWorkspace } from "@/features/local-skills/LocalSkillWorkspace
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
+import { useApplySkills } from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgentNames, useAgents } from "@/hooks/queries/agents";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
-import { useSkills } from "@/hooks/queries/skills";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { useSelection } from "@/hooks/use-selection";
 import { summarizeAgentFolder } from "./agent-skill-rules";
@@ -39,13 +39,12 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
   const { t } = useTranslation();
   const agents = useAgents();
   const names = useAgentNames();
-  const library = useSkills();
   const workspace = useWorkspaceSkills(agentKey);
   const broken = useBrokenFolders(agentKey);
   const plugins = usePluginSkills(agentKey);
   const listing = useSkillListing(agentKey);
   const refresh = useRefreshWorkspace();
-  const deployToAgent = useDeployToAgent();
+  const applySkills = useApplySkills();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -188,15 +187,18 @@ export function AgentWorkspacePage({ agentKey }: { agentKey: string }): ReactNod
         target={{ kind: "agent", agentKey }}
         title={t("agents.workspace.addTitle", { agent: agentName })}
         description={t("agents.workspace.addDescription")}
-        onSubmit={(skillIds) =>
-          deployToAgent.mutateAsync({
-            agentKey,
-            skills: skillIds.map((id) => ({
-              id,
-              name: library.data?.find((skill) => skill.id === id)?.name ?? id,
-            })),
-          })
-        }
+        onSubmit={async (skillIds) => {
+          const result = await applySkills.mutateAsync({
+            skillIds,
+            agentKeys: [agentKey],
+            action: "add",
+            skipConflicts: true,
+          });
+          // Nothing added keeps the picker open with the selection intact.
+          if (result.added === 0 && result.failed.length + result.conflicts.length > 0) {
+            throw new Error(t("agents.errors.addNone"));
+          }
+        }}
       />
     </LocalSkillWorkspace>
   );

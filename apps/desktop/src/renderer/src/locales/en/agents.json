@@ -108,9 +108,7 @@
       "deleted": "Deleted “{{name}}”",
       "deletedMany_one": "Deleted {{count}} local skill",
       "deletedMany_other": "Deleted {{count}} local skills",
-      "removed": "Removed “{{name}}” from the agent",
-      "added_one": "Added {{count}} skill",
-      "added_other": "Added {{count}} skills"
+      "removed": "Removed “{{name}}” from the agent"
     },
     "errors": {
       "upload": "Could not upload the skill to the library.",
