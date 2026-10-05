@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 import "@/lib/i18n";
-import { toastBatchOutcome } from "@/lib/batch";
+import { runWithUndo, toastBatchOutcome } from "@/lib/batch";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { FAILURE_LIST_CLASS } from "@/lib/toast";
 
@@ -25,5 +25,26 @@ describe("toastBatchOutcome", () => {
       descriptionClassName: FAILURE_LIST_CLASS,
       action: undo,
     });
+  });
+});
+
+describe("runWithUndo", () => {
+  it("runs every job, counts what failed and offers one Undo for all that was set aside", async () => {
+    vi.mocked(toast.warning).mockClear();
+    const result = await runWithUndo(
+      ["a", "b", "c"],
+      (name) => name,
+      async (name) => {
+        if (name === "b") throw new Error("in use");
+        return [`${name}-removed`];
+      },
+      (count) => `Deleted ${count}`,
+    );
+
+    expect(result).toEqual({ succeeded: 2, failed: [{ name: "b", message: "in use" }] });
+    expect(toast.warning).toHaveBeenCalledWith(
+      "Deleted 2, 1 failed",
+      expect.objectContaining({ action: expect.objectContaining({ label: "Undo" }) }),
+    );
   });
 });

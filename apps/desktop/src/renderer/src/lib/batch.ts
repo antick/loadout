@@ -2,6 +2,7 @@ import type { BatchFailure, BatchResult } from "@loadout/shared";
 import { toast } from "sonner";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
+import { undoAction } from "@/lib/removed-undo";
 import { FAILURE_LIST_CLASS, type ToastAction, errorMessage } from "@/lib/toast";
 
 /**
@@ -61,4 +62,22 @@ export function toastBatchOutcome(
     descriptionClassName: FAILURE_LIST_CLASS,
     action: extras.action,
   });
+}
+
+/**
+ * Run jobs that each set folders aside in Recently removed (resolving to their ids), one after
+ * the other, then toast the outcome with one Undo that puts back everything set aside.
+ */
+export async function runWithUndo<T>(
+  items: readonly T[],
+  nameOf: (item: T) => string,
+  job: (item: T) => Promise<readonly string[]>,
+  summary: (succeeded: number) => string,
+): Promise<BatchResult> {
+  const removedIds: string[] = [];
+  const result = await runSequentially(items, nameOf, async (item) => {
+    removedIds.push(...(await job(item)));
+  });
+  toastBatchOutcome(summary(result.succeeded), result.failed, { action: undoAction(removedIds) });
+  return result;
 }

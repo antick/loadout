@@ -10,11 +10,10 @@ import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { describeFailures, runSequentially, toastBatchOutcome } from "@/lib/batch";
+import { describeFailures, runSequentially, runWithUndo, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
-import { FAILURE_LIST_CLASS } from "@/lib/toast";
-import { toastSuccess } from "@/lib/toast";
+import { FAILURE_LIST_CLASS, toastSuccess } from "@/lib/toast";
 
 /** One logical skill of a project: every per-agent copy at this relative path. */
 export interface ProjectSkillRef {
@@ -240,24 +239,13 @@ export function useDeleteVariants(): UseMutationResult<
 > {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: async ({ projectId, jobs }) => {
-      const removedIds: string[] = [];
-      const result = await runSequentially(
+    fn: ({ projectId, jobs }) =>
+      runWithUndo(
         jobs,
         (job) => job.name,
-        async (job) => {
-          removedIds.push(
-            ...(await api.projects.deleteSkill(projectId, job.relativePath, job.agentKey)),
-          );
-        },
-      );
-      toastBatchOutcome(
-        t("projectPage.toast.removedCopies", { count: result.succeeded }),
-        result.failed,
-        { action: undoAction(removedIds) },
-      );
-      return result;
-    },
+        (job) => api.projects.deleteSkill(projectId, job.relativePath, job.agentKey),
+        (count) => t("projectPage.toast.removedCopies", { count }),
+      ),
     error: "projectPage.errors.delete",
   });
 }
@@ -270,22 +258,13 @@ export function useDeleteProjectSkills(): UseMutationResult<
 > {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: async (refs: ProjectSkillRef[]) => {
-      const removedIds: string[] = [];
-      const result = await runSequentially(
+    fn: (refs: ProjectSkillRef[]) =>
+      runWithUndo(
         refs,
         (ref) => ref.name,
-        async (ref) => {
-          removedIds.push(...(await api.projects.deleteSkill(ref.projectId, ref.relativePath)));
-        },
-      );
-      toastBatchOutcome(
-        t("projectPage.toast.deletedMany", { count: result.succeeded }),
-        result.failed,
-        { action: undoAction(removedIds) },
-      );
-      return result;
-    },
+        (ref) => api.projects.deleteSkill(ref.projectId, ref.relativePath),
+        (count) => t("projectPage.toast.deletedMany", { count }),
+      ),
     error: "projectPage.errors.delete",
   });
 }
@@ -323,22 +302,13 @@ export function usePullManyFromLibrary(): UseMutationResult<
 > {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: async (refs: ProjectSkillRef[]) => {
-      const removedIds: string[] = [];
-      const result = await runSequentially(
+    fn: (refs: ProjectSkillRef[]) =>
+      runWithUndo(
         refs,
         (ref) => ref.name,
-        async (ref) => {
-          removedIds.push(...(await api.projects.pullFromLibrary(ref.projectId, ref.relativePath)));
-        },
-      );
-      toastBatchOutcome(
-        t("projectPage.toast.pulledMany", { count: result.succeeded }),
-        result.failed,
-        { action: undoAction(removedIds) },
-      );
-      return result;
-    },
+        (ref) => api.projects.pullFromLibrary(ref.projectId, ref.relativePath),
+        (count) => t("projectPage.toast.pulledMany", { count }),
+      ),
     error: "projectPage.errors.pull",
   });
 }

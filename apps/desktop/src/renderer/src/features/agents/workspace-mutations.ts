@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { runSequentially, toastBatchOutcome } from "@/lib/batch";
+import { runSequentially, runWithUndo, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
-import { toastWithUndo, undoAction } from "@/lib/removed-undo";
+import { toastWithUndo } from "@/lib/removed-undo";
 
 /** One skill folder inside an agent's global skills folder. */
 export interface LocalSkillRef {
@@ -92,20 +92,13 @@ export function useDeleteBrokenFolder(): UseMutationResult<string[], unknown, Lo
 export function useDeleteLocalSkills(): UseMutationResult<BatchResult, unknown, LocalSkillRef[]> {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: async (refs: LocalSkillRef[]) => {
-      const removedIds: string[] = [];
-      const result = await runSequentially(
+    fn: (refs: LocalSkillRef[]) =>
+      runWithUndo(
         refs,
         (ref) => ref.name,
-        async (ref) => {
-          removedIds.push(...(await api.workspace.deleteLocal(ref.agentKey, ref.relativePath)));
-        },
-      );
-      toastBatchOutcome(t("agents.toast.deletedMany", { count: result.succeeded }), result.failed, {
-        action: undoAction(removedIds),
-      });
-      return result;
-    },
+        (ref) => api.workspace.deleteLocal(ref.agentKey, ref.relativePath),
+        (count) => t("agents.toast.deletedMany", { count }),
+      ),
     error: "agents.errors.delete",
   });
 }

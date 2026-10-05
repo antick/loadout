@@ -1,5 +1,6 @@
 import {
   ApiError,
+  type BatchResult,
   type Project,
   type SafetyRecord,
   type Skill,
@@ -9,8 +10,8 @@ import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
+import { runWithUndo } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
-import { toastWithUndo } from "@/lib/removed-undo";
 import { GENERIC_ERROR_KEY, toastError } from "@/lib/toast";
 
 /** Replace the file patterns of projects a skill is suggested for. */
@@ -149,23 +150,18 @@ export interface RemoveFromProjectInput extends SkillProjectInput {
 
 /** Delete a skill's copies from a project folder. */
 export function useRemoveSkillFromProject(): UseMutationResult<
-  string[],
+  BatchResult,
   unknown,
   RemoveFromProjectInput
 > {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: async ({ project, relativePaths }: RemoveFromProjectInput) => {
-      const removedIds: string[] = [];
-      for (const relativePath of relativePaths) {
-        removedIds.push(...(await api.projects.deleteSkill(project.id, relativePath)));
-      }
-      return removedIds;
-    },
-    onSuccess: (removedIds, { skill, project }) =>
-      toastWithUndo(
-        t("library.projects.removed", { name: skill.name, project: project.name }),
-        removedIds,
+    fn: ({ skill, project, relativePaths }: RemoveFromProjectInput) =>
+      runWithUndo(
+        relativePaths,
+        (relativePath) => relativePath,
+        (relativePath) => api.projects.deleteSkill(project.id, relativePath),
+        () => t("library.projects.removed", { name: skill.name, project: project.name }),
       ),
     error: "library.errors.removeFromProject",
   });
