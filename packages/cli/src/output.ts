@@ -1,4 +1,4 @@
-import { type BatchFailure, type ErrorShape, formatDateTime } from "@loadout/shared";
+import type { BatchFailure, ErrorShape } from "@loadout/shared";
 import { terminalSafe } from "./terminal-text";
 
 export interface CliIo {
@@ -44,8 +44,6 @@ export function fields(pairs: readonly (readonly [string, Cell])[]): string {
     .map(([label, value]) => `${`${label}:`.padEnd(width + 2)}${cellText(value)}`)
     .join("\n");
 }
-
-export const when = (ms: number | null | undefined): string => formatDateTime(ms);
 
 export function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;

@@ -1,6 +1,7 @@
-import type { Skill, UpdateResult } from "@loadout/shared";
+import type { Core } from "@loadout/core";
+import { type BatchFailure, type Skill, type UpdateResult, formatDateTime } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
-import { failureLines, fields, plural, when } from "../output";
+import { failureLines, fields, plural } from "../output";
 import {
   type UpdatePlan,
   checkFailureLines,
@@ -60,7 +61,7 @@ async function check(context: CommandContext): Promise<CommandResult> {
     const text = fields([
       ["Skill", value.name],
       ["Status", value.updateStatus],
-      ["Checked", when(value.lastCheckedAt)],
+      ["Checked", formatDateTime(value.lastCheckedAt)],
       ["Problem", value.lastCheckError],
       ["Next", value.updateStatus === "source_missing" ? goneNext(value.name) : null],
     ]);
@@ -94,6 +95,17 @@ async function check(context: CommandContext): Promise<CommandResult> {
   };
 }
 
+/**
+ * Asked to update everything: look upstream now, never at an answer kept from earlier, and take
+ * the skills a check finds newer upstream. A skill whose check failed is not due, so the failures
+ * come back too, or it would go unmentioned.
+ */
+async function dueForUpdate(core: Core): Promise<{ due: Skill[]; failed: BatchFailure[] }> {
+  const checked = await core.api.updates.checkAll(true);
+  const due = (await core.api.skills.list()).filter((s) => s.updateStatus === "update_available");
+  return { due, failed: checked.failed };
+}
+
 const updateView = (result: UpdateResult) => ({
   skill: checkView(result.skill),
   contentChanged: result.contentChanged,
@@ -116,13 +128,7 @@ async function planUpdates(context: CommandContext, one: Skill | null): Promise<
   // `--all` updates only skills a check finds newer upstream: the dry run looks at the same ones.
   let skills: Skill[] = one ? [one] : [];
   const value: UpdatePlan = { dryRun: true, skills: [], failed: [] };
-  if (!one) {
-    // Asked to update everything: look upstream now, never at an answer kept from earlier.
-    value.failed = (await core.api.updates.checkAll(true)).failed;
-    skills = (await core.api.skills.list()).filter(
-      (skill) => skill.updateStatus === "update_available",
-    );
-  }
+  if (!one) ({ due: skills, failed: value.failed } = await dueForUpdate(core));
   for (const skill of skills) value.skills.push(await planUpdate(core, skill));
   return {
     value,
@@ -155,13 +161,10 @@ async function update(context: CommandContext): Promise<CommandResult> {
     return { value: { dryRun: false, ...value }, text: lines.join("\n") };
   }
 
-  // Asked to update everything: look upstream now, never at an answer kept from earlier. A skill
-  // whose check failed is not due, so it would otherwise go unmentioned.
   const checkedSince = Date.now();
-  const checked = await core.api.updates.checkAll(true);
-  const due = (await core.api.skills.list()).filter((s) => s.updateStatus === "update_available");
+  const checked = await dueForUpdate(core);
   const updated = await core.api.updates.updateMany(
-    due.map((skill) => skill.id),
+    checked.due.map((skill) => skill.id),
     { checkedSince, approveRemovals: flagBoolean(args, APPROVE_FLAG.name) },
   );
   const value = { ...updated, failed: [...checked.failed, ...updated.failed] };

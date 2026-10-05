@@ -6,9 +6,10 @@ import {
   fieldNotesFor,
   matchesSkillQuery,
   runsCode,
+  formatDateTime,
 } from "@loadout/shared";
 import { flagBoolean, flagChoice, flagList, flagString } from "../args";
-import { failureLines, fields, plural, table, when } from "../output";
+import { failureLines, fields, plural, table } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
 import { diffCommand } from "./skills-diff";
@@ -158,10 +159,10 @@ async function show({ core, args }: CommandContext): Promise<CommandResult> {
     ["Updates", value.updateStatus],
     ["Tags", value.tags.join(", ")],
     ["Note", value.note],
-    ["Favourite", value.favoritedAt === null ? null : `since ${when(value.favoritedAt)}`],
+    ["Favourite", value.favoritedAt === null ? null : `since ${formatDateTime(value.favoritedAt)}`],
     ["Deployed to", agentsOf(value)],
-    ["Installed", when(value.createdAt)],
-    ["Changed", when(value.updatedAt)],
+    ["Installed", formatDateTime(value.createdAt)],
+    ["Changed", formatDateTime(value.updatedAt)],
     ["Problems", value.issues.map((issue) => `${issue.severity}: ${issue.message}`).join(" | ")],
   ]);
   return { value, text };

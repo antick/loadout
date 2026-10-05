@@ -4,9 +4,10 @@ import {
   type SourceNews,
   groupSkillSources,
   skillsWithoutSource,
+  formatDateTime,
 } from "@loadout/shared";
 import { flagList } from "../args";
-import { plural, table, when } from "../output";
+import { plural, table } from "../output";
 import { limitPositionals, positional } from "./support";
 import { originCommands } from "./sources-origin";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
@@ -66,7 +67,7 @@ async function list({ core, args }: CommandContext): Promise<CommandResult> {
         source.skills.length,
         source.updatesAvailable,
         source.newSkills.length,
-        when(source.lastCheckedAt),
+        formatDateTime(source.lastCheckedAt),
         source.location,
       ]),
       "No sources yet: nothing was installed from a repository, an archive or a link.",

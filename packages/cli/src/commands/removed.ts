@@ -1,7 +1,12 @@
 import { notFound } from "@loadout/core";
-import { REMOVED_KEEP_DAYS, type RemovedFolder, formatBytes } from "@loadout/shared";
+import {
+  REMOVED_KEEP_DAYS,
+  type RemovedFolder,
+  formatBytes,
+  formatDateTime,
+} from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
-import { table, when } from "../output";
+import { table } from "../output";
 import {
   DRY_RUN_FLAG,
   REQUIRED_YES_FLAG,
@@ -35,13 +40,13 @@ async function list({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
   const entries = await core.api.storage.removed();
   const text = table(
-    ["ID", "NAME", "FROM", "REASON", "REMOVED", "SIZE", "PATH"],
+    ["id", "name", "from", "reason", "removed", "size", "path"],
     entries.map((entry) => [
       shortId(entry.id),
       entry.name,
       entry.place,
       entry.reason,
-      when(entry.removedAt),
+      formatDateTime(entry.removedAt),
       formatBytes(entry.bytes),
       entry.originalPath,
     ]),

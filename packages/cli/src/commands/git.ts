@@ -3,9 +3,10 @@ import {
   type MergeSummary,
   type SyncPreview,
   type SyncPreviewItem,
+  formatDateTime,
 } from "@loadout/shared";
 import { flagBoolean, flagInteger, flagString } from "../args";
-import { fields, plural, table, when } from "../output";
+import { fields, plural, table } from "../output";
 import {
   ALLOW_SECRETS_FLAG,
   DRY_RUN_FLAG,
@@ -47,7 +48,7 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
         ["Unsaved changes", value.hasChanges ? plural(value.changedSkillCount, "skill") : "none"],
         ["Ahead / behind", `${value.ahead} / ${value.behind}`],
         ["Last backup", value.lastCommit],
-        ["Made", when(value.lastCommitAt)],
+        ["Made", formatDateTime(value.lastCommitAt)],
         ["Version", value.currentSnapshot],
         ["Restored from", value.restoredFrom],
       ])
@@ -157,7 +158,7 @@ async function versions({ core, args }: CommandContext): Promise<CommandResult> 
   const value = await core.api.backup.snapshots(flagInteger(args, LIMIT_FLAG.name));
   const text = table(
     ["version", "made", "device", "message"],
-    value.map((s) => [s.id, when(s.createdAt), s.device, s.message]),
+    value.map((s) => [s.id, formatDateTime(s.createdAt), s.device, s.message]),
     "No versions yet. `git sync` creates one.",
   );
   return { value, text };
@@ -172,7 +173,7 @@ async function restore({ core, args }: CommandContext): Promise<CommandResult> {
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     return {
       value: { dryRun: true, id },
-      text: `Would restore the library to ${point.id} (${when(point.createdAt)}, ${point.message}), after saving the current state as a safety version. Nothing was changed.`,
+      text: `Would restore the library to ${point.id} (${formatDateTime(point.createdAt)}, ${point.message}), after saving the current state as a safety version. Nothing was changed.`,
     };
   }
   const safety = await core.api.backup.restore(id);
