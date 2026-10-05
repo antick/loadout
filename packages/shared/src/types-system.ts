@@ -45,13 +45,11 @@ export interface MergedSkill {
 
 export interface MergeSummary {
   upToDate: boolean;
-  fastForward: boolean;
   updated: MergedSkill[];
   keptLocal: string[];
   /** Deleted on another device and taken out here; each waits in Recently removed. */
   removed: MergedSkill[];
   newConflicts: string[];
-  pendingTotal: number;
 }
 
 export interface SyncOutcome {
@@ -89,7 +87,6 @@ export interface GithubConnectResult {
   url: string;
   login: string;
   repoCreated: boolean;
-  repoPrivate: boolean;
   remoteHasContent: boolean;
 }
 

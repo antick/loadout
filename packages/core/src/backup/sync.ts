@@ -26,15 +26,13 @@ const MAX_PUSH_ATTEMPTS = 3;
 /** Several merges in one sync (a retried push) read as one to the user. */
 function combine(earlier: MergeSummary | null, later: MergeSummary): MergeSummary {
   if (!earlier || earlier.upToDate) return later;
-  if (later.upToDate) return { ...earlier, pendingTotal: later.pendingTotal };
+  if (later.upToDate) return earlier;
   return {
     upToDate: false,
-    fastForward: earlier.fastForward && later.fastForward,
     updated: [...earlier.updated, ...later.updated],
     keptLocal: [...new Set([...earlier.keptLocal, ...later.keptLocal])],
     removed: [...earlier.removed, ...later.removed],
     newConflicts: [...new Set([...earlier.newConflicts, ...later.newConflicts])],
-    pendingTotal: later.pendingTotal,
   };
 }
 

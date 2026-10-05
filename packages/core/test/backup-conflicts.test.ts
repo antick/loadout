@@ -33,7 +33,7 @@ describe("backup conflicts", () => {
     const outcome = await b.api.sync();
 
     expect(outcome.pushed).toBe(true);
-    expect(outcome.merge).toMatchObject({ newConflicts: ["alpha"], pendingTotal: 1 });
+    expect(outcome.merge).toMatchObject({ newConflicts: ["alpha"] });
     expect(outcome.merge?.updated).toEqual([{ name: "beta", fromDevice: "Device A" }]);
     expect(b.read("alpha")).toBe("B's version");
     expect(b.read("beta")).toBe("beta from A");

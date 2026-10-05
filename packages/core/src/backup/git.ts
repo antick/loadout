@@ -70,7 +70,6 @@ export interface GitCallOptions {
   network?: boolean;
   /** Remote being contacted when it is not the saved one yet (clone). */
   remoteUrl?: string;
-  signal?: AbortSignal;
   cwd?: string;
   env?: Record<string, string>;
   input?: string;
@@ -120,7 +119,6 @@ export function createGit(deps: GitDeps): Git {
         : undefined,
       cwd: options.cwd ?? deps.repoDir,
       env: options.env,
-      signal: options.signal,
       input: options.input,
     });
   }

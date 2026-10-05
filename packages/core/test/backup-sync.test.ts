@@ -147,7 +147,7 @@ describe("backup sync", () => {
     const outcome = await b.api.sync();
 
     expect(outcome.pushed).toBe(true);
-    expect(outcome.merge).toMatchObject({ upToDate: false, newConflicts: [], pendingTotal: 0 });
+    expect(outcome.merge).toMatchObject({ upToDate: false, newConflicts: [] });
     expect(outcome.merge?.updated).toEqual([{ name: "alpha", fromDevice: "Device A" }]);
     expect(b.read("alpha")).toBe("from A");
     expect(b.read("beta")).toBe("from B");
@@ -156,7 +156,6 @@ describe("backup sync", () => {
     expect(b.git("log", "-1", "--format=%P").split(" ")).toHaveLength(2);
 
     const back = await a.api.sync();
-    expect(back.merge).toMatchObject({ fastForward: true });
     expect(back.merge?.updated).toEqual([{ name: "beta", fromDevice: "Device B" }]);
     expect(a.read("beta")).toBe("from B");
     expect(a.git("rev-parse", "HEAD")).toBe(b.git("rev-parse", "HEAD"));

@@ -127,7 +127,9 @@ describe("backup ignore rules", () => {
     await a.api.sync();
     const outcome = await b.api.sync();
 
-    expect(outcome.merge?.fastForward).toBe(true);
+    // Fast-forwarded: no merge commit, the same commit as the other device.
+    expect(outcome.merge?.upToDate).toBe(false);
+    expect(b.git("rev-parse", "HEAD")).toBe(a.git("rev-parse", "HEAD"));
     expect(b.read("alpha")).toBe("from A");
     expect(b.read("alpha", ".env")).toBe("SECRET=1");
   });
@@ -195,7 +197,9 @@ describe("backup ignore rules", () => {
     writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
     const outcome = await b.api.sync();
 
-    expect(outcome.merge?.fastForward).toBe(false);
+    // A real merge commit with both parents.
+    expect(outcome.merge?.upToDate).toBe(false);
+    expect(b.git("log", "-1", "--format=%P").split(" ")).toHaveLength(2);
     expect(b.read("alpha")).toBe("from A");
     expect(keptEnv()).toEqual(["SECRET=1"]);
   });

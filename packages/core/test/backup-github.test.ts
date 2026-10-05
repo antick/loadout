@@ -80,7 +80,6 @@ describe("GitHub connect", () => {
       url: "https://github.com/octo/my-backup.git",
       login: "octo",
       repoCreated: true,
-      repoPrivate: true,
       remoteHasContent: false,
     });
     const create = calls.find((call) => call.method === "POST");
@@ -120,7 +119,6 @@ describe("GitHub connect", () => {
     const result = await device.api.githubConnect(TOKEN, "backup");
     expect(result).toMatchObject({
       repoCreated: false,
-      repoPrivate: true,
       remoteHasContent: true,
     });
     expect(device.ctx.settings.getRaw(INTERNAL_KEYS.backupRemoteUrl, "")).toBe(result.url);
@@ -153,7 +151,7 @@ describe("GitHub connect", () => {
 
     const confirmId = (refused as { details: { confirmId: string } }).details.confirmId;
     const result = await device.api.githubConfirmPublic(confirmId);
-    expect(result).toMatchObject({ repoPrivate: false, remoteHasContent: false });
+    expect(result).toMatchObject({ remoteHasContent: false });
     expect(device.secrets.values.get(GITHUB_TOKEN_KEY)).toBe(TOKEN);
     // Each confirmation works once.
     await expect(device.api.githubConfirmPublic(confirmId)).rejects.toMatchObject({
@@ -183,7 +181,6 @@ describe("GitHub connect", () => {
     });
     device = createDevice(temp.dir, "A", { fetchImpl });
     expect(await device.api.githubConnect(TOKEN, "backup")).toMatchObject({
-      repoPrivate: true,
       remoteHasContent: false,
     });
   });
@@ -310,7 +307,9 @@ describe("GitHub connect", () => {
     expect(device.secrets.values.has(GITHUB_TOKEN_KEY)).toBe(false);
 
     const confirmId = (refused as { details: { confirmId: string } }).details.confirmId;
-    expect(await device.api.githubConfirmPublic(confirmId)).toMatchObject({ repoPrivate: false });
+    expect(await device.api.githubConfirmPublic(confirmId)).toMatchObject({
+      url: "https://github.com/octo/backup.git",
+    });
     expect(device.secrets.values.get(GITHUB_TOKEN_KEY)).toBe("gho_devicetoken");
     expect(await device.api.githubAuthMethod()).toBe("oauth");
   });

@@ -238,8 +238,6 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
       url,
       login,
       repoCreated,
-      // A missing flag is read as private, so the "this repository is public" warning stays rare.
-      repoPrivate: repo.body.private !== false,
       remoteHasContent: repoCreated
         ? false
         : await remoteHasContent(cleanToken, fullName, repo.body.size),

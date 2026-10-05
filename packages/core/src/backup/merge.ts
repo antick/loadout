@@ -7,7 +7,7 @@ import { LIBRARY_PLACE, type LibraryRecord, libraryRecordOf } from "../storage/r
 import { ensureDir, isSkillDir, removePath, writeFileAtomic } from "../util/fs";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
-import { countConflicts, recordConflict } from "./conflict-store";
+import { recordConflict } from "./conflict-store";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
@@ -58,12 +58,10 @@ export interface MergeResult {
 
 const UP_TO_DATE: MergeSummary = {
   upToDate: true,
-  fastForward: false,
   updated: [],
   keptLocal: [],
   removed: [],
   newConflicts: [],
-  pendingTotal: 0,
 };
 
 function skillName(env: BackupEnv, path: string): string {
@@ -352,7 +350,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   const theirs = await resolveCommit(env, `refs/remotes/${upstreamRef(branch)}`);
   if (theirs) assertReadable(await schemaAt(env, theirs));
   const idle = (): MergeResult => ({
-    summary: { ...UP_TO_DATE, pendingTotal: countConflicts(env.ctx.db) },
+    summary: UP_TO_DATE,
     committed,
     changed: false,
     upstream: theirs,
@@ -376,10 +374,8 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
     const summary: MergeSummary = {
       ...UP_TO_DATE,
       upToDate: false,
-      fastForward: base === ours,
       updated: await changedSkills(env, ours, range),
       removed,
-      pendingTotal: countConflicts(env.ctx.db),
     };
     await env.reconcile(true);
     return { summary, committed, changed: true, upstream: theirs };
@@ -459,12 +455,10 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   return {
     summary: {
       upToDate: false,
-      fastForward,
       updated,
       keptLocal,
       removed,
       newConflicts,
-      pendingTotal: countConflicts(env.ctx.db),
     },
     committed,
     changed: true,
