@@ -16,7 +16,7 @@ import type { CommandResult } from "./types";
  *   push to another repository (`skills publish`), a file overwritten outside the library
  *   (`--out` of an export).
  * - No --yes: anything kept in Recently removed and restored as it was (`project unapply`,
- *   `project prune`), undone by the opposite command (`skills undeploy`, `presets undeploy`,
+ *   `project apply --prune`), undone by the opposite command (`skills undeploy`, `presets undeploy`,
  *   `skills block`), or a field set again in one step (tags, notes, favourites).
  * - A dry run never needs it, and --json never implies it.
  * A few commands also take --yes to answer their own yes/no question that a script must answer

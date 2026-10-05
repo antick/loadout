@@ -81,6 +81,22 @@ describe("project", () => {
     }
   });
 
+  it("updates and prunes through flags of apply, not commands of their own", async () => {
+    const dry = await box.cli(
+      "project",
+      "apply",
+      "--dir",
+      project,
+      "--update",
+      "--prune",
+      "--dry-run",
+    );
+    expect(dry.code).toBe(0);
+    for (const gone of ["update", "prune"]) {
+      expect((await box.cli("project", gone, "--dir", project)).code).not.toBe(0);
+    }
+  });
+
   it("unapply removes what apply wrote, into Recently removed, without --yes", async () => {
     await box.cli("project", "apply", "--dir", project);
     const gone = await box.cli("project", "unapply", "--dir", project);

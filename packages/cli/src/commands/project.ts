@@ -18,7 +18,7 @@ import {
   resolveUserPath,
 } from "./support";
 import { suggestCommand } from "./project-suggest";
-import type { CommandContext, CommandGroup, CommandResult, CommandSpec } from "./types";
+import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
 const DIR_FLAG = {
   name: "dir",
@@ -106,42 +106,23 @@ function resultText(result: SkillsFileResult): string {
   return `${planText(result.plan, done)}${kept}\n${SKILLS_LOCK_NAME} records what was written; commit it with ${SKILLS_FILE_NAME}.`;
 }
 
-/** Apply, update or prune: the same run with different options. */
-function applyCommand(
-  name: string,
-  summary: string,
-  preset: { update?: boolean; prune?: boolean },
-  notes: string[],
-): CommandSpec {
-  const extraFlags = preset.update || preset.prune ? [] : [UPDATE_FLAG, PRUNE_FLAG];
-  return {
-    name,
-    summary,
-    usage: "",
-    flags: [DIR_FLAG, ...extraFlags, FORCE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
-    notes,
-    run: async (context) => {
-      const { core, args } = context;
-      limitPositionals(args, 0);
-      const options = {
-        update: preset.update === true || flagBoolean(args, UPDATE_FLAG.name),
-        prune: preset.prune === true || flagBoolean(args, PRUNE_FLAG.name),
-        force: flagBoolean(args, FORCE_FLAG.name),
-        acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
-      };
-      const dir = directory(context);
-      if (flagBoolean(args, DRY_RUN_FLAG.name)) {
-        const plan = await core.api.skillsFile.plan(dir, options);
-        return {
-          value: { dryRun: true, plan },
-          text: planText(plan, "Dry run: nothing was written."),
-        };
-      }
-      const result = await core.api.skillsFile.apply(dir, options);
-      // Keeping a folder changed by hand is a safety stop, not a failure.
-      return { value: { dryRun: false, ...result }, text: resultText(result) };
-    },
+async function apply(context: CommandContext): Promise<CommandResult> {
+  const { core, args } = context;
+  limitPositionals(args, 0);
+  const options = {
+    update: flagBoolean(args, UPDATE_FLAG.name),
+    prune: flagBoolean(args, PRUNE_FLAG.name),
+    force: flagBoolean(args, FORCE_FLAG.name),
+    acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
   };
+  const dir = directory(context);
+  if (flagBoolean(args, DRY_RUN_FLAG.name)) {
+    const plan = await core.api.skillsFile.plan(dir, options);
+    return { value: { dryRun: true, plan }, text: planText(plan, "Dry run: nothing was written.") };
+  }
+  const result = await core.api.skillsFile.apply(dir, options);
+  // Keeping a folder changed by hand is a safety stop, not a failure.
+  return { value: { dryRun: false, ...result }, text: resultText(result) };
 }
 
 async function init(context: CommandContext): Promise<CommandResult> {
@@ -199,21 +180,21 @@ export const projectGroup: CommandGroup = {
       ],
       run: init,
     },
-    applyCommand("apply", "Put the listed skills into the project's agent folders", {}, [
-      `Uses the commits pinned in ${SKILLS_LOCK_NAME}, so everyone gets identical files.`,
-      "Folders changed by hand are never replaced without --force. The library is not touched.",
-      "Skills are safety-checked before they are written; a flagged one stops the run with",
-      "UNSAFE and its findings. --accept-risk writes it anyway.",
-    ]),
-    applyCommand("update", "Move every source to its newest commit, then apply", { update: true }, [
-      `Rewrites the pins in ${SKILLS_LOCK_NAME}.`,
-    ]),
-    applyCommand(
-      "prune",
-      `Apply, and remove folders ${SKILLS_FILE_NAME} no longer lists`,
-      { prune: true },
-      ["Only folders Loadout wrote and nobody changed are removed; they go to Recently removed."],
-    ),
+    {
+      name: "apply",
+      summary: "Put the listed skills into the project's agent folders",
+      usage: "",
+      flags: [DIR_FLAG, UPDATE_FLAG, PRUNE_FLAG, FORCE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
+      notes: [
+        `Uses the commits pinned in ${SKILLS_LOCK_NAME}, so everyone gets identical files.`,
+        "--update rewrites those pins. --prune removes only folders Loadout wrote and nobody",
+        "changed; they go to Recently removed.",
+        "Folders changed by hand are never replaced without --force. The library is not touched.",
+        "Skills are safety-checked before they are written; a flagged one stops the run with",
+        "UNSAFE and its findings. --accept-risk writes it anyway.",
+      ],
+      run: apply,
+    },
     {
       name: "unapply",
       summary: "Remove every skill folder apply wrote",

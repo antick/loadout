@@ -193,9 +193,9 @@ has skills deployed, and an export (`skills export`, `presets export`) whose `--
 already exists. `--json` never implies
 it, and `--dry-run` never needs it.
 
-Undeploying, `project unapply` and `project prune` need no `--yes`: what they take away waits in
-Recently removed or comes back with one command. Still preview them when the user did not ask
-for exactly that.
+Undeploying, `project unapply` and `project apply --prune` need no `--yes`: what they take away
+waits in Recently removed or comes back with one command. Still preview them when the user did
+not ask for exactly that.
 
 1. Run the command with `--dry-run` first and read what it would do. A dry run checks the
    arguments exactly like the real run, so if it fails, the real run would fail the same way.
