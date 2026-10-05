@@ -8,7 +8,7 @@ import {
 } from "@loadout/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type SkillRefreshRequest,
@@ -17,11 +17,12 @@ import {
 } from "@/features/library/detail/skill-mutations";
 import { lastSourceComparison } from "@/features/library/detail/skill-queries";
 import { askToInstallFlagged } from "@/features/safety/flagged-prompt";
+import { useMounted } from "@/hooks/use-mounted";
 import { useAppEvent } from "@/lib/events";
 import { toastWithUndo } from "@/lib/removed-undo";
 
 /** An update that stopped because it would delete files; waiting for the user's decision. */
-export interface PendingApproval {
+interface PendingApproval {
   request: SkillRefreshRequest;
   removals: PendingRemoval[];
   approval: string | null;
@@ -59,13 +60,7 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
   const { mutateAsync } = refresh;
   // The panel can close while an update runs. Its answer is still acted on (callbacks passed to
   // `mutate` would be dropped); only the removal question needs the panel, so it says so instead.
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+  const mounted = useMounted();
 
   useAppEvent("install:progress", (event) => {
     if (event.key === progressKey) setProgress(event);
@@ -130,7 +125,7 @@ export function useSkillRefresh(skill: Skill): SkillRefresh {
           setRunningKind(null);
         });
     },
-    [mutateAsync, queryClient, skill.id, t],
+    [mounted, mutateAsync, queryClient, skill.id, t],
   );
 
   return {

@@ -5,7 +5,7 @@ import type {
   InstallSelection,
 } from "@loadout/shared";
 import { ExternalLink, KeyRound, PackageSearch, TriangleAlert } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
@@ -23,6 +23,7 @@ import {
   guessSource,
 } from "@/features/install/source-guess";
 import { useInstallTask } from "@/features/install/use-install-task";
+import { useMounted } from "@/hooks/use-mounted";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
 import { useCancelPreview, usePreviewGit } from "@/features/install/install-mutations";
@@ -100,13 +101,7 @@ export function GitTab(): ReactNode {
   const [emptyRepo, setEmptyRepo] = useState<Pick<GitPreview, "kind" | "repoUrl"> | null>(null);
   const InputIcon = commandSource(url) ? COMMAND_ICON : SOURCE_KIND_ICONS[guessSource(url)];
 
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+  const mounted = useMounted();
 
   const running = activeUrl ? task(activeUrl) : undefined;
 
