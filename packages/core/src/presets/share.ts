@@ -48,7 +48,7 @@ export interface PresetSharingDeps {
   install: Pick<InstallApi, "previewGit" | "confirmGit" | "cancelPreview">;
   installIntoLibrary: InstallIntoLibrary;
   download: Download;
-  safety?: SafetyGate;
+  safety: SafetyGate;
 }
 
 const WEB_LINK = /^https?:\/\//i;

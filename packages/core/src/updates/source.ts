@@ -29,7 +29,6 @@ import {
   marketSourceToUrl,
   parseGitSource,
   parseWellKnownIndex,
-  type GitInputOptions,
   validateGitInput,
   resolveSkillDir,
   skillFileFolder,
@@ -102,9 +101,8 @@ function splitMarketRef(ref: string): [source: string, locator: string] {
 /**
  * Resolve the remote of a git or marketplace skill: the stored clone URL when there is one, else
  * whatever the original reference parses to. Throws INVALID_INPUT when neither is usable.
- * `gitInput` is for tests that clone local fixtures; the app never passes it.
  */
-export function remoteTargetOf(skill: Skill, gitInput: GitInputOptions = {}): RemoteTarget {
+export function remoteTargetOf(skill: Skill): RemoteTarget {
   if (skill.sourceType === "clawhub") {
     const { owner, slug } = parseClawhubRef(skill.sourceRef ?? "");
     return {
@@ -132,7 +130,7 @@ export function remoteTargetOf(skill: Skill, gitInput: GitInputOptions = {}): Re
     // The URL may come from another device's backup: it gets the same check as a typed one.
     return {
       kind: "git",
-      url: validateGitInput(skill.sourceUrl, gitInput),
+      url: validateGitInput(skill.sourceUrl),
       branch: skill.sourceBranch,
       subpath: skill.sourceSubpath,
       locator: null,

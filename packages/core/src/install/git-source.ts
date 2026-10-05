@@ -1,4 +1,3 @@
-import { isAbsolute } from "node:path";
 import { invalid, isAppError } from "../errors";
 import type { GitClient } from "./git-client";
 
@@ -16,14 +15,6 @@ export interface GitSource {
   skill: string | null;
 }
 
-export interface GitInputOptions {
-  /**
-   * Accept an absolute folder path or a `file://` URL as the repository. Internal only: tests use
-   * it to clone local fixtures. Never set it for text a user typed.
-   */
-  allowLocalPath?: boolean;
-}
-
 export interface RemoteRefs {
   branches: string[];
   tags: string[];
@@ -35,7 +26,6 @@ const GITHUB_URL = "https://github.com";
 const GITLAB_URL = "https://gitlab.com";
 const GIT_SUFFIX = ".git";
 const URL_PREFIXES = ["https://", "http://", "ssh://"] as const;
-const LOCAL_URL_PREFIX = "file://";
 const GITHUB_PREFIX = "github:";
 const GITLAB_PREFIX = "gitlab:";
 /** `git@host:owner/repo.git` */
@@ -87,10 +77,6 @@ function hasHostPrefix(text: string): boolean {
   return lower.startsWith(GITHUB_PREFIX) || lower.startsWith(GITLAB_PREFIX);
 }
 
-function isLocalSource(text: string): boolean {
-  return text.toLowerCase().startsWith(LOCAL_URL_PREFIX) || isAbsolute(text);
-}
-
 function stripGitSuffix(text: string): string {
   return text.toLowerCase().endsWith(GIT_SUFFIX) ? text.slice(0, -GIT_SUFFIX.length) : text;
 }
@@ -110,7 +96,7 @@ function isGitLike(text: string): boolean {
 }
 
 /** Trim and check the typed text. Returns the trimmed text, throws INVALID_INPUT otherwise. */
-export function validateGitInput(input: string, options: GitInputOptions = {}): string {
+export function validateGitInput(input: string): string {
   const text = input.trim();
   if (!text) throw invalid("Repository URL is required");
   // A leading dash would be read by git as an option; whitespace never belongs in a URL.
@@ -124,7 +110,6 @@ export function validateGitInput(input: string, options: GitInputOptions = {}): 
     if (hasHostPrefix(bare)) parseWithoutFragment(bare);
     return text;
   }
-  if (options.allowLocalPath && isLocalSource(text)) return text;
   throw invalid(SCHEME_NOT_ALLOWED);
 }
 
@@ -247,11 +232,8 @@ export function isPlainUrl(text: string): boolean {
 }
 
 /** Understand every accepted source form. Validates first, so callers need not. */
-export function parseGitSource(input: string, options: GitInputOptions = {}): GitSource {
-  const text = validateGitInput(input, options);
-  if (options.allowLocalPath && isLocalSource(text)) {
-    return { cloneUrl: text, branch: null, subpath: null, treeTail: null, skill: null };
-  }
+export function parseGitSource(input: string): GitSource {
+  const text = validateGitInput(input);
   const fragment = splitFragment(text);
   const source = parseWithoutFragment(fragment.text);
   return {
@@ -307,12 +289,12 @@ export async function resolveTreeRef(
 export async function resolveGitSource(
   git: Pick<GitClient, "listRefs">,
   text: string,
-  options: GitInputOptions & { signal?: AbortSignal } = {},
+  signal?: AbortSignal,
 ): Promise<GitSource> {
-  const source = parseGitSource(text, options);
+  const source = parseGitSource(text);
   if (!source.treeTail) return source;
   const split = await resolveTreeRef(source.cloneUrl, source.treeTail, (url) =>
-    git.listRefs(url, { signal: options.signal }),
+    git.listRefs(url, { signal }),
   );
   return { ...source, ...split, treeTail: null };
 }

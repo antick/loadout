@@ -63,7 +63,7 @@ function pairFor(skill: Skill, agent: ResolvedAgent, skillsDir = agent.skillsDir
 export function createDeployOperations(
   ctx: CoreContext,
   store: SkillStore,
-  removed?: Pick<RemovedStore, "setAside" | "putBack">,
+  removed: Pick<RemovedStore, "setAside" | "putBack">,
 ): DeployOperations {
   /**
    * A copy edited inside the agent's folder is about to be overwritten or deleted: put it in
@@ -75,7 +75,6 @@ export function createDeployOperations(
     reason: RemovedReason,
     libraryHash: string | null,
   ): string | null {
-    if (!removed) return null;
     const edited = rows.find((row) => row.mode === "copy" && copyWasEdited(row));
     // Already the library's content (a pull put it there): nothing of the user's to keep.
     if (!edited || hashDir(edited.targetPath) === libraryHash) return null;
@@ -148,7 +147,7 @@ export function createDeployOperations(
         used = await writeTarget(skill.libraryPath, targetPath, wanted, check.policy);
       } catch (error) {
         // The agent keeps its own copy rather than being left with nothing.
-        if (keptId) removed?.putBack(keptId);
+        if (keptId) removed.putBack(keptId);
         throw error;
       }
       if (used !== wanted) ctx.log.warn(`Could not link ${targetPath}; copied the skill instead`);

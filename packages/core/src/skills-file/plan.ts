@@ -48,7 +48,6 @@ export interface PrepareOptions {
   prune: boolean;
   /** Ask for nothing: every folder the lock lists is a removal (unapply). */
   nothing?: boolean;
-  allowLocalGitSources?: boolean;
 }
 
 /** Project-relative skills folder of each agent the file names, and the names it does not know. */
@@ -123,10 +122,7 @@ export async function preparePlan(
     for (const source of options.nothing ? [] : spec.sources) {
       const locked = lock?.sources.find((s) => s.url === source.url && s.ref === source.ref);
       const revision = options.update ? null : (locked?.revision ?? null);
-      const checkout = await fetchSource(deps.git, source, {
-        revision,
-        allowLocalPath: options.allowLocalGitSources,
-      });
+      const checkout = await fetchSource(deps.git, source, { revision });
       fetched.push(checkout);
       const { chosen, missing } = chooseSkills(checkout.skills, source.skills);
       sources.push({

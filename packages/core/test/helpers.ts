@@ -5,6 +5,7 @@ import { expect } from "vitest";
 import { type Core, type CoreCreateOptions, createCore } from "../src/core";
 import { type ContextBundle, createContext } from "../src/create-context";
 import { AppError } from "../src/errors";
+import type { SafetyGate } from "../src/install/safety-gate";
 import { silentLogger } from "../src/log";
 
 /** A throwaway folder, removed by the returned cleanup. */
@@ -73,6 +74,12 @@ export function createTestWorld(): TestWorld {
     },
   };
 }
+
+/** A safety check that passes everything, for services in tests that are not about safety. */
+export const passingSafety: SafetyGate = {
+  check: async (candidates) => candidates.map(() => null),
+  remember: () => undefined,
+};
 
 /** The `AppError` a promise rejects with; fails the test when it resolves or throws anything else. */
 export async function rejection(promise: Promise<unknown>): Promise<AppError> {

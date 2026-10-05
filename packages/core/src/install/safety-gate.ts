@@ -4,7 +4,7 @@ import type { SafetyService } from "../safety/service";
 import { readSkillIdentity } from "../skills/metadata";
 import type { InstallIntoLibrary, InstallRequest } from "./library";
 
-/** The part of the safety service installs use; absent in tests that do not care. */
+/** The part of the safety service installs use. */
 export type SafetyGate = Pick<SafetyService, "check" | "remember">;
 
 /** What a batch import says about a skill the safety check flagged. */
@@ -22,11 +22,10 @@ function candidateName(request: InstallRequest): string {
  */
 export async function installChecked(
   install: InstallIntoLibrary,
-  safety: SafetyGate | undefined,
+  safety: SafetyGate,
   request: InstallRequest,
   options: InstallOptions & { progressKey?: string } = {},
 ): Promise<Skill> {
-  if (!safety) return install(request);
   const [report] = await safety.check(
     [{ name: candidateName(request), dir: request.sourceDir }],
     options,

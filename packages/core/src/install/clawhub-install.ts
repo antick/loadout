@@ -24,9 +24,9 @@ export interface ClawhubInstallerDeps {
   clawhub: ClawhubClient;
   cancels: CancelRegistry;
   install: InstallIntoLibrary;
-  safety?: SafetyGate;
+  safety: SafetyGate;
   /** Recently removed and deployed copies, for installing a skill that is already there. */
-  replace?: ReplaceDeps;
+  replace: ReplaceDeps;
 }
 
 /** Progress and cancel key of a ClawHub install, as the app names it. */

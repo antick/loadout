@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { SafetyReport, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
+import { createSourceNewsStore } from "../src/sources";
 import type { SafetyGate } from "../src/install/safety-gate";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { FLAGGED_UPDATE } from "../src/updates/update";
@@ -59,6 +60,8 @@ beforeEach(() => {
     install: world.install,
     deploy: world.deploy,
     safety,
+    removed: world.removed,
+    sourceNews: createSourceNewsStore(world.ctx),
   });
 });
 afterEach(() => world.restore());

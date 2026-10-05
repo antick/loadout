@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { planInstallNames } from "@loadout/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createGitClient } from "../src/install/git-client";
+import { PREVIEW_TTL_MS } from "../src/install/preview-sessions";
 import { gitFailure } from "../src/util/git-errors";
 import { createRemovedStore } from "../src/storage/removed";
 import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
@@ -23,8 +24,9 @@ let world: TestWorld;
 let install: InstallHarness;
 let tmp: string;
 let remotes: string;
-/** Stands in for `https://github.com/acme/skills.git`. */
+/** Working copy of the repository at {@link REPO}. */
 let remote: string;
+const REPO = "https://github.com/acme/skills.git";
 let restores: (() => void)[];
 
 beforeEach(() => {
@@ -112,9 +114,9 @@ describe("named skills and refs in the typed text", () => {
 describe("git preview and confirm", () => {
   it("lists the skills of a repository, then installs the chosen ones under new names", async () => {
     const head = git(remote, "rev-parse", "HEAD");
-    const preview = await install.api.previewGit(remote);
+    const preview = await install.api.previewGit(REPO);
 
-    expect(preview).toMatchObject({ repoUrl: remote, branch: null, revision: head });
+    expect(preview).toMatchObject({ repoUrl: REPO, branch: null, revision: head });
     expect(preview.skills).toEqual([
       {
         relPath: "skills/docx",
@@ -133,7 +135,7 @@ describe("git preview and confirm", () => {
         alreadyInstalled: false,
       },
     ]);
-    expect(install.progressFor(remote)).toEqual(["cloning", "scanning", "done"]);
+    expect(install.progressFor(REPO)).toEqual(["cloning", "scanning", "done"]);
     expect(leftoverCheckouts(tmp)).toHaveLength(1);
 
     const installed = await install.api.confirmGit(preview.previewId, [
@@ -145,8 +147,8 @@ describe("git preview and confirm", () => {
     expect(installed[0]).toMatchObject({
       dirName: "My PDF",
       sourceType: "git",
-      sourceRef: remote,
-      sourceUrl: remote,
+      sourceRef: REPO,
+      sourceUrl: REPO,
       sourceSubpath: "skills/pdf",
       sourceBranch: null,
       sourceRevision: head,
@@ -157,7 +159,7 @@ describe("git preview and confirm", () => {
       "echo pdf",
     );
     expect(existsSync(join(skillsDirOf(world), "My PDF", ".git"))).toBe(false);
-    expect(install.progressFor(remote).slice(3)).toEqual(["installing", "installing", "done"]);
+    expect(install.progressFor(REPO).slice(3)).toEqual(["installing", "installing", "done"]);
     expect(leftoverCheckouts(tmp)).toEqual([]);
 
     // The session is spent: the same id can never install twice.
@@ -166,7 +168,7 @@ describe("git preview and confirm", () => {
       message: "Preview expired, please try again",
     });
 
-    const again = await install.api.previewGit(remote);
+    const again = await install.api.previewGit(REPO);
     expect(again.skills.map((s) => [s.name, s.alreadyInstalled])).toEqual([
       ["docx", true],
       ["pdf", false],
@@ -175,8 +177,8 @@ describe("git preview and confirm", () => {
     // each name will do.
     expect(again.library.map((entry) => [entry.dirName, entry.sameSource, entry.source])).toEqual(
       expect.arrayContaining([
-        ["My PDF", true, remote],
-        ["docx", true, remote],
+        ["My PDF", true, REPO],
+        ["docx", true, REPO],
       ]),
     );
     expect(
@@ -190,7 +192,7 @@ describe("git preview and confirm", () => {
   });
 
   it("stops at the first failure and still deletes the checkout", async () => {
-    const preview = await install.api.previewGit(remote);
+    const preview = await install.api.previewGit(REPO);
     await expect(
       install.api.confirmGit(preview.previewId, [
         { relPath: "skills/pdf", name: "" },
@@ -203,25 +205,28 @@ describe("git preview and confirm", () => {
   });
 
   it("expires previews nobody confirmed, and cancelPreview never throws", async () => {
-    const shortLived = createInstallHarness(world, { previewTtlMs: 1 });
-    const preview = await shortLived.api.previewGit(remote);
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    await expect(shortLived.api.confirmGit(preview.previewId, [])).rejects.toMatchObject({
-      message: "Preview expired, please try again",
-    });
+    const preview = await install.api.previewGit(REPO);
+    const later = Date.now() + PREVIEW_TTL_MS + 1;
+    vi.spyOn(Date, "now").mockReturnValue(later);
+    try {
+      await expect(install.api.confirmGit(preview.previewId, [])).rejects.toMatchObject({
+        message: "Preview expired, please try again",
+      });
+    } finally {
+      vi.restoreAllMocks();
+    }
     expect(leftoverCheckouts(tmp)).toEqual([]);
-    await expect(shortLived.api.cancelPreview(preview.previewId)).resolves.toBeUndefined();
-    await expect(shortLived.api.cancelPreview("unknown")).resolves.toBeUndefined();
+    await expect(install.api.cancelPreview(preview.previewId)).resolves.toBeUndefined();
+    await expect(install.api.cancelPreview("unknown")).resolves.toBeUndefined();
   });
 
   it("validates the URL before touching git", async () => {
-    const strict = createInstallHarness(world, { allowLocalGitSources: false });
     for (const url of [remote, "ftp://example.com/x.git", "--upload-pack=x", ""]) {
-      await expect(strict.api.previewGit(url)).rejects.toMatchObject({ code: "INVALID_INPUT" });
+      await expect(install.api.previewGit(url)).rejects.toMatchObject({ code: "INVALID_INPUT" });
     }
     // Nothing started: the only word is the closing "done" that clears the status bar.
     expect(
-      strict.events.filter(
+      install.events.filter(
         (entry) => (entry.payload as { phase?: string } | undefined)?.phase !== "done",
       ),
     ).toEqual([]);
@@ -267,13 +272,13 @@ describe("git preview and confirm", () => {
   });
 
   it("cancels a clone in flight and keeps the cache slot", async () => {
-    await install.api.cancelPreview((await install.api.previewGit(remote)).previewId);
+    await install.api.cancelPreview((await install.api.previewGit(REPO)).previewId);
     const slots = cacheSlots();
     expect(slots).toHaveLength(1);
 
     const state = { settled: false };
     const outcome = install.api
-      .previewGit(remote)
+      .previewGit(REPO)
       .then(
         () => "finished",
         (error: { code?: string }) => error.code,
@@ -282,12 +287,12 @@ describe("git preview and confirm", () => {
         state.settled = true;
       });
     // The key is registered a tick after the call starts; cancel as soon as it is.
-    while (!state.settled && !(await install.api.cancel(remote))) {
+    while (!state.settled && !(await install.api.cancel(REPO))) {
       await new Promise((resolve) => setImmediate(resolve));
     }
 
     expect(await outcome).toBe("CANCELLED");
-    expect(await install.api.cancel(remote)).toBe(false);
+    expect(await install.api.cancel(REPO)).toBe(false);
     expect(cacheSlots()).toEqual(slots);
     expect(leftoverCheckouts(tmp)).toEqual([]);
   });
@@ -427,18 +432,6 @@ describe("git client", () => {
     const checkout = await client.checkout(remote);
     expect(existsSync(join(checkout.dir, "skills", "pdf", "SKILL.md"))).toBe(true);
     await checkout.cleanup();
-  });
-
-  it("prunes least recently used slots over the budget before a fresh clone", async () => {
-    const other = initRepo(join(remotes, "acme", "other.git"));
-    makeSkill(other, "x");
-    commitAll(other);
-    const client = createGitClient(world.ctx, { cacheLimitBytes: 1 });
-    await (await client.checkout(remote)).cleanup();
-    const before = cacheSlots();
-    await (await client.checkout(other)).cleanup();
-    expect(cacheSlots()).toHaveLength(1);
-    expect(cacheSlots()).not.toEqual(before);
   });
 
   it("refuses an aborted signal and reports a missing repository as a git error", async () => {

@@ -2,7 +2,6 @@ export { type InstallService, createInstallService } from "./service";
 export { CancelRegistry } from "./cancel";
 export type { GitClient } from "./git-client";
 export {
-  type GitInputOptions,
   marketSourceToUrl,
   parseGitSource,
   resolveGitSource,

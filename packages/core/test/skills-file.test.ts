@@ -19,7 +19,7 @@ import { preparePlan } from "../src/skills-file/plan";
 import { createSafetyService } from "../src/safety";
 import { createSkillsFileService } from "../src/skills-file/service";
 import { createRemovedStore } from "../src/storage";
-import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
+import { type TestWorld, createTestWorld, makeSkill, passingSafety, writeFile } from "./helpers";
 import {
   commitAll,
   createInstallHarness,
@@ -57,6 +57,7 @@ beforeEach(() => {
     registry: new AgentRegistry(world.ctx),
     store: world.store,
     removed: createRemovedStore(world.ctx, { store: world.store }),
+    safety: passingSafety,
   }).api;
 });
 

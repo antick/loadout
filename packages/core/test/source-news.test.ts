@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createSourceNewsStore } from "../src/sources";
 import { makeSkill } from "./helpers";
 import { commitAll, createInstallHarness } from "./install-fixtures";
-import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
+import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
 let world: UpdatesWorld;
 
@@ -51,7 +51,7 @@ describe("new skills in a repository", () => {
 
     // Import xlsx from a list showing every skill: pptx and csv were seen and skipped.
     const install = createInstallHarness(world, { sourceNews: createSourceNewsStore(world.ctx) });
-    const preview = await install.api.previewGit(world.remote);
+    const preview = await install.api.previewGit(MARKET_SOURCE);
     const xlsx = preview.skills.find((skill) => skill.name === "xlsx");
     await install.api.confirmGit(preview.previewId, [{ relPath: xlsx?.relPath ?? "", name: "" }]);
     expect(await newPaths()).toEqual([]);
@@ -69,7 +69,7 @@ describe("new skills in a repository", () => {
     makeSkill(`${world.remote}/tools`, "xlsx");
     commitAll(world.remote, "add a skill outside skills/");
     const install = createInstallHarness(world, { sourceNews: createSourceNewsStore(world.ctx) });
-    const preview = await install.api.previewGit(world.remote);
+    const preview = await install.api.previewGit(MARKET_SOURCE);
     expect(preview.skills.map((skill) => skill.relPath)).toEqual([
       "skills/docx",
       "skills/pdf",

@@ -27,10 +27,8 @@ export interface SkillsFileDeps {
   registry: AgentRegistry;
   store: SkillStore;
   removed: RemovedStore;
-  /** Checks every skill before it is written, as an install does; absent in tests that skip it. */
-  safety?: Pick<SafetyService, "check">;
-  /** Tests only: a local folder may stand in for a remote repository. */
-  allowLocalGitSources?: boolean;
+  /** Checks every skill before it is written, as an install does. */
+  safety: Pick<SafetyService, "check">;
 }
 
 /** The path of the skills file for `dir`, or NOT_FOUND saying where it looked. */
@@ -118,7 +116,6 @@ export function createSkillsFileService(
         const prepared = await preparePlan(info, planDeps, {
           update: options.update === true,
           prune: options.prune === true,
-          allowLocalGitSources: deps.allowLocalGitSources,
         });
         await prepared.cleanup();
         return prepared.plan;
@@ -130,7 +127,6 @@ export function createSkillsFileService(
         const prepared = await preparePlan(info, planDeps, {
           update: options.update === true,
           prune: options.prune === true,
-          allowLocalGitSources: deps.allowLocalGitSources,
         });
         try {
           // Before the lock too: a scan is slow, and a flagged skill stops the run unwritten.
@@ -139,7 +135,7 @@ export function createSkillsFileService(
             dir: skill.dir,
           }));
           if (candidates.length > 0) {
-            await deps.safety?.check(candidates, { acceptRisk: options.acceptRisk === true });
+            await deps.safety.check(candidates, { acceptRisk: options.acceptRisk === true });
           }
           const result = await ctx.lock.run(`apply ${SKILLS_FILE_NAME}`, () =>
             applyPlan(info, prepared, { removed: deps.removed }, options.force === true),

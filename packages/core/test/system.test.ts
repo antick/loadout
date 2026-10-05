@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { strFromU8, unzipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AGENT_CONTROL_SKILL_NAME, APP_SLUG, CLI_BINARY_NAME } from "@loadout/shared";
-import { createInstallService } from "../src/install";
+
 import { LOG_FILE_NAME } from "../src/log";
 import { readSkillIdentity } from "../src/skills/metadata";
 import {
@@ -25,12 +25,13 @@ import {
 import { createDeployRepair } from "../src/deploy";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 import { makeSkill, writeFile } from "./helpers";
+import { createInstallHarness } from "./install-fixtures";
 
 let world: DeployWorld;
 let system: SystemService;
 
 function build(): SystemService {
-  const install = createInstallService(world.ctx, { store: world.store, registry: world.registry });
+  const install = createInstallHarness(world);
   return createSystemService(world.ctx, {
     store: world.store,
     install,

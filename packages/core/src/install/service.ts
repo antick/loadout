@@ -15,10 +15,9 @@ import {
 } from "../util/fs";
 import { CancelRegistry } from "./cancel";
 import { type Download, createRequest, downloadWith } from "./download";
-import { type GitClient, type GitClientOptions, createGitClient } from "./git-client";
+import { type GitClient, createGitClient } from "./git-client";
 import { withHttpFallback } from "./git-fallback";
 import { createGitInstaller } from "./git-install";
-import type { GitInputOptions } from "./git-source";
 import { createHttpGit } from "./http-git";
 import { type InstallIntoLibrary, installIntoLibrary } from "./library";
 import type { SourceNewsStore } from "../sources/news-store";
@@ -31,25 +30,19 @@ import { readFolderSkill } from "./read-skill";
 export interface InstallServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
-  /** Tests only: let a local folder stand in for a remote repository. Never set from user input. */
-  allowLocalGitSources?: boolean;
-  previewTtlMs?: number;
-  git?: GitClientOptions;
   /**
    * HTTP client for downloads (Git-less repositories, archive links). The built-in `fetch`
    * ignores the proxy setting, so the desktop app injects a proxy-aware one; tests a fake.
    */
   fetchImpl?: typeof fetch;
-  /** Safety checks before installs; absent in tests that do not need them. */
-  safety?: SafetyGate;
+  /** Safety checks before every install. */
+  safety: SafetyGate;
   /** Recently removed and deployed copies, for an import that replaces a library skill. */
-  replace?: ReplaceDeps;
+  replace: ReplaceDeps;
   /** Which skills of each repository were already offered. */
-  sourceNews?: Pick<SourceNewsStore, "markSeen">;
+  sourceNews: Pick<SourceNewsStore, "markSeen">;
   /** Called after a skill found in an agent's folder is imported, with the folder it came from. */
   onImported?: (skill: Skill, sourcePath: string) => void;
-  /** Tests only: a ClawHub client with a fake fetch. */
-  clawhub?: ClawhubClient;
 }
 
 export interface InstallService {
@@ -58,8 +51,6 @@ export interface InstallService {
   git: GitClient;
   /** Shared by the updates service, which downloads archive links again to check them. */
   download: Download;
-  /** How stored repository URLs are read: local folders only when tests allow them. */
-  gitInput: GitInputOptions;
   /** Shared by the marketplace and the updates service: one ClawHub client for all. */
   clawhub: ClawhubClient;
   /** Shared so an update can be cancelled through `install.cancel("update:<skillId>")`. */
@@ -77,7 +68,7 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
   const http = createRequest(deps.fetchImpl);
   const download = downloadWith(http);
   // System Git when it is installed; public GitHub and GitLab repositories work without it.
-  const git = withHttpFallback(createGitClient(ctx, deps.git), createHttpGit(download));
+  const git = withHttpFallback(createGitClient(ctx), createHttpGit(download));
   const cancels = new CancelRegistry();
   const install: InstallIntoLibrary = (request) => installIntoLibrary(ctx, store, request);
   const gitInstaller = createGitInstaller(ctx, {
@@ -89,11 +80,9 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     safety: deps.safety,
     replace: deps.replace,
     sourceNews: deps.sourceNews,
-    allowLocalGitSources: deps.allowLocalGitSources,
-    previewTtlMs: deps.previewTtlMs,
     agentKeys: () => new Set(registry.list().map((agent) => agent.key)),
   });
-  const clawhub = deps.clawhub ?? createClawhubClient({ request: http });
+  const clawhub = createClawhubClient({ request: http });
   const clawhubDeps = {
     store,
     clawhub,
@@ -189,7 +178,6 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     api,
     git,
     download,
-    gitInput: { allowLocalPath: deps.allowLocalGitSources === true },
     clawhub,
     cancels,
     installIntoLibrary: install,

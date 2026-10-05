@@ -15,8 +15,6 @@ export interface FetchedSource {
 export interface FetchOptions {
   /** The commit to check out; null takes the newest one of the source's branch or tag. */
   revision: string | null;
-  /** Tests only: a local folder may stand in for a remote repository. */
-  allowLocalPath?: boolean;
 }
 
 /**
@@ -29,7 +27,7 @@ export async function fetchSource(
   options: FetchOptions,
 ): Promise<FetchedSource> {
   const typed = source.ref ? `${source.url}#${source.ref}` : source.url;
-  const parsed = await resolveGitSource(git, typed, { allowLocalPath: options.allowLocalPath });
+  const parsed = await resolveGitSource(git, typed);
   const checkout = await git.checkout(parsed.cloneUrl, {
     branch: parsed.branch,
     revision: options.revision,

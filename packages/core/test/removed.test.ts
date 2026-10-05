@@ -26,6 +26,7 @@ import {
   setContentMtime,
   skillText,
 } from "./workspace-world";
+import { createClawhubClient } from "../src/market/clawhub";
 import { createPublishService } from "../src/publish";
 
 const T0 = Date.UTC(2026, 0, 1);
@@ -46,7 +47,10 @@ describe("recently removed", () => {
       store: world.store,
       git: createGitClient(world.ctx),
       removed: world.removed,
-      publish: createPublishService(world.ctx, { store: world.store }),
+      publish: createPublishService(world.ctx, {
+        store: world.store,
+        clawhub: createClawhubClient(),
+      }),
     });
   });
   afterEach(() => world.cleanup());

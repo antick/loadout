@@ -10,19 +10,19 @@ import type { SafetyGate } from "./safety-gate";
  * `acceptRisk` is not set, so a flagged prompt never reaches an agent unasked.
  */
 export async function readCheckedSkill(
-  safety: SafetyGate | undefined,
+  safety: SafetyGate,
   candidate: { name: string; dir: string },
   options: InstallOptions & { progressKey?: string } = {},
 ): Promise<PreviewedSkill> {
   const found = readSkillDocument(candidate.dir);
   if (!found) throw notFound(`${candidate.name} has no SKILL.md to read.`);
-  const [report] = safety ? await safety.check([candidate], options) : [null];
+  const [report] = await safety.check([candidate], options);
   return { name: candidate.name, document: found.content, safety: report ?? null };
 }
 
 /** A skill folder on this computer, read where it is. */
 export async function readFolderSkill(
-  safety: SafetyGate | undefined,
+  safety: SafetyGate,
   folderPath: string,
   options: InstallOptions = {},
 ): Promise<PreviewedSkill> {

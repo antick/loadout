@@ -10,8 +10,10 @@ import {
   createInstallService,
 } from "../src/install/service";
 import { CLONE_DIR_PREFIX } from "../src/install/git-client";
+import { createSourceNewsStore } from "../src/sources";
+import { createRemovedStore } from "../src/storage";
 import { setEnv } from "./git-env";
-import type { TestWorld } from "./helpers";
+import { type TestWorld, passingSafety } from "./helpers";
 
 export { redirectGithubTo, setEnv } from "./git-env";
 
@@ -70,7 +72,10 @@ export interface InstallHarness extends InstallService {
   progressFor(key: string): string[];
 }
 
-/** Install service over a test world, with local git sources allowed and events captured. */
+/**
+ * Install service over a test world, with events captured. Safety passes everything and a
+ * replaced skill goes to Recently removed, unless `deps` says otherwise.
+ */
 export function createInstallHarness(
   world: TestWorld,
   deps: Partial<InstallServiceDeps> = {},
@@ -82,7 +87,12 @@ export function createInstallHarness(
   const service = createInstallService(world.ctx, {
     store: world.store,
     registry: new AgentRegistry(world.ctx),
-    allowLocalGitSources: true,
+    safety: passingSafety,
+    replace: {
+      removed: createRemovedStore(world.ctx, { store: world.store }),
+      refreshCopies: async () => undefined,
+    },
+    sourceNews: createSourceNewsStore(world.ctx),
     ...deps,
   });
   return {

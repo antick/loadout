@@ -20,7 +20,7 @@ import {
   readJson,
 } from "../install/download";
 import type { SkillStore } from "../skills/store";
-import { type ClawhubClient, type ClawhubEntry, createClawhubClient } from "./clawhub";
+import type { ClawhubClient, ClawhubEntry } from "./clawhub";
 import { type FetchedDetail, type MarketDetailParts, createMarketDetail } from "./detail";
 import { type MarketEntry, parseBoardHtml, parseSearchResponse } from "./parse";
 
@@ -31,8 +31,8 @@ export interface MarketServiceDeps {
    * proxy-aware one; tests inject a fake.
    */
   fetchImpl?: typeof fetch;
-  /** Shared with the installer and the updater; a fresh one when absent. */
-  clawhub?: ClawhubClient;
+  /** Shared with the installer and the updater. */
+  clawhub: ClawhubClient;
 }
 
 export interface MarketService {
@@ -68,7 +68,7 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
   const { store } = deps;
   const request = createRequest(deps.fetchImpl);
   const fetchDetail = createMarketDetail({ download: downloadWith(request) });
-  const clawhub = deps.clawhub ?? createClawhubClient({ request });
+  const { clawhub } = deps;
   /** Every marketplace call: its name in messages, and a short timeout. */
   const marketplace = { label: MARKETPLACE_NAME, timeoutMs: REQUEST_TIMEOUT_MS } as const;
 

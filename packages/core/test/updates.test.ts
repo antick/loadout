@@ -162,7 +162,7 @@ describe("check", () => {
     const docx = await world.installFromGit("docx");
     const broken = world.store.update(world.addSkill("broken").id, {
       sourceType: "git",
-      sourceUrl: join(world.root, "no-such-repo.git"),
+      sourceUrl: "https://github.com/acme/no-such-repo.git",
       sourceRevision: "0".repeat(40),
       updateStatus: "unknown",
     });
@@ -196,7 +196,7 @@ describe("check", () => {
     const docx = await world.installFromGit("docx");
     const broken = world.store.update(world.addSkill("broken").id, {
       sourceType: "git",
-      sourceUrl: join(world.root, "no-such-repo.git"),
+      sourceUrl: "https://github.com/acme/no-such-repo.git",
       sourceRevision: "0".repeat(40),
       updateStatus: "unknown",
     });
@@ -219,7 +219,7 @@ describe("check", () => {
 
 describe("update", () => {
   it("swaps the content and keeps the id, name, tags and deployments", async () => {
-    const preview = await world.install.api.previewGit(world.remote);
+    const preview = await world.install.api.previewGit(MARKET_SOURCE);
     const [pdf] = await world.install.api.confirmGit(preview.previewId, [
       { relPath: "skills/pdf", name: "My PDF" },
     ]);

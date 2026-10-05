@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
 import { AgentRegistry, type AgentsService, createAgentsService } from "../src/agents";
 import { type DeployService, createDeployService } from "../src/deploy";
+import { type RemovedStore, createRemovedStore } from "../src/storage";
 import { hashDir } from "../src/util/hash";
 import { type TestWorld, createTestWorld, makeSkill } from "./helpers";
 
@@ -10,6 +11,8 @@ export interface DeployWorld extends TestWorld {
   registry: AgentRegistry;
   deploy: DeployService;
   agents: AgentsService;
+  /** Recently removed, where edited copies and replaced versions go. */
+  removed: RemovedStore;
   /** Create a skill folder in the library and its row. */
   addSkill(dirName: string, files?: Record<string, string>): Skill;
   /** Make built-in agents look installed by creating their detect folders under the fake home. */
@@ -22,13 +25,15 @@ export interface DeployWorld extends TestWorld {
 export function createDeployWorld(): DeployWorld {
   const world = createTestWorld();
   const registry = new AgentRegistry(world.ctx);
-  const deploy = createDeployService(world.ctx, { store: world.store, registry });
+  const removed = createRemovedStore(world.ctx, { store: world.store });
+  const deploy = createDeployService(world.ctx, { store: world.store, registry, removed });
   const agents = createAgentsService(world.ctx, { registry, deploy });
   return {
     ...world,
     registry,
     deploy,
     agents,
+    removed,
     addSkill: (dirName, files) => {
       const libraryPath = makeSkill(world.ctx.paths.skillsDir, dirName, { files });
       return world.store.insert({

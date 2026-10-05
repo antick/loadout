@@ -50,7 +50,7 @@ export interface PreviewSessions {
   dispose(): Promise<void>;
 }
 
-const PREVIEW_TTL_MS = 30 * 60_000;
+export const PREVIEW_TTL_MS = 30 * 60_000;
 const SESSION_EXPIRED = "Preview expired, please try again";
 
 export function emitProgress(
@@ -65,22 +65,18 @@ export function emitProgress(
 export interface PreviewSessionDeps {
   install: InstallIntoLibrary;
   store: SkillStore;
-  safety?: SafetyGate;
+  safety: SafetyGate;
   /** How a ticked "replace" puts a skill in place of the library skill holding its name. */
-  replace?: ReplaceDeps;
+  replace: ReplaceDeps;
 }
 
-export function createPreviewSessions(
-  ctx: CoreContext,
-  deps: PreviewSessionDeps,
-  ttlMs: number = PREVIEW_TTL_MS,
-): PreviewSessions {
+export function createPreviewSessions(ctx: CoreContext, deps: PreviewSessionDeps): PreviewSessions {
   const { install, store, safety } = deps;
   const sessions = new Map<string, PreviewSession & { createdAt: number }>();
 
   /** Previews nobody confirmed or cancelled would otherwise keep their temp folder forever. */
   async function sweepExpired(): Promise<void> {
-    const cutoff = Date.now() - ttlMs;
+    const cutoff = Date.now() - PREVIEW_TTL_MS;
     for (const [id, session] of sessions) {
       if (session.createdAt > cutoff) continue;
       sessions.delete(id);
@@ -141,9 +137,9 @@ export function createPreviewSessions(
           // Looked up now, not at preview time: an earlier row may have just taken the name.
           const owner = item.replace ? skillHoldingName(store, name) : null;
           const skill = owner
-            ? await installReplacing(ctx, install, deps.replace ?? {}, owner, request)
+            ? await installReplacing(ctx, install, deps.replace, owner, request)
             : await install(request);
-          safety?.remember(skill, reportOf.get(dir) ?? null);
+          safety.remember(skill, reportOf.get(dir) ?? null);
           installed.push(skill);
         }
         session.confirmed?.();

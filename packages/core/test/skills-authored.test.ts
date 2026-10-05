@@ -3,7 +3,7 @@ import type { Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createScanService } from "../src/scan/service";
 import { type EditorWorld, createEditorWorld, rejection } from "./editor-world";
-import { makeSkill } from "./helpers";
+import { makeSkill, passingSafety } from "./helpers";
 
 let setup: EditorWorld;
 
@@ -60,6 +60,7 @@ describe("import hook", () => {
       store: world.store,
       registry: world.registry,
       install: world.install.installIntoLibrary,
+      safety: passingSafety,
       onImported,
     });
     const skill = await scan.importDiscovered(folder);

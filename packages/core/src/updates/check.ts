@@ -8,7 +8,7 @@ import {
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
 import { errorMessage, isAppError } from "../errors";
-import type { Download, GitClient, GitInputOptions } from "../install";
+import type { Download, GitClient } from "../install";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
@@ -30,8 +30,6 @@ export interface CheckerDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
-  /** How stored repository URLs are read (`InstallService.gitInput`). */
-  gitInput?: GitInputOptions;
   /** The registry client, for ClawHub skills. */
   clawhub?: ClawhubClient;
 }
@@ -195,12 +193,9 @@ async function localFinding(
 }
 
 /** A row whose source cannot be understood is a failed check, not a crash. */
-function targetOrFailure(
-  skill: Skill,
-  gitInput: GitInputOptions | undefined,
-): RemoteTarget | { failure: string } {
+function targetOrFailure(skill: Skill): RemoteTarget | { failure: string } {
   try {
-    return remoteTargetOf(skill, gitInput);
+    return remoteTargetOf(skill);
   } catch (error) {
     return { failure: errorMessage(error) };
   }
@@ -235,7 +230,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
         round.downloads,
       );
     }
-    const target = targetOrFailure(skill, deps.gitInput);
+    const target = targetOrFailure(skill);
     if ("failure" in target) return remoteFinding(skill, target);
     const outcome = round.shared?.get(remoteKey(target)) ?? (await lookup(target));
     const question = folderQuestion(skill, target, outcome);
@@ -272,7 +267,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       // Many skills come from one repository: ask each (url, branch) once.
       const targets = new Map<string, RemoteTarget>();
       for (const skill of due.filter(isRemoteSource)) {
-        const target = targetOrFailure(skill, deps.gitInput);
+        const target = targetOrFailure(skill);
         if (!("failure" in target)) targets.set(remoteKey(target), target);
       }
       const outcomes = new Map<string, RemoteOutcome>();
@@ -286,7 +281,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       // Skills of one repository whose commit moved: one fetch of folder trees for all of them.
       const planned = due.flatMap((skill): FolderQuestion[] => {
         if (!isRemoteSource(skill)) return [];
-        const target = targetOrFailure(skill, deps.gitInput);
+        const target = targetOrFailure(skill);
         if ("failure" in target) return [];
         const outcome = outcomes.get(remoteKey(target));
         const question = outcome ? folderQuestion(skill, target, outcome) : null;

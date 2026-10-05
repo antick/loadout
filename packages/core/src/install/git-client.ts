@@ -107,13 +107,6 @@ export interface GitClient {
   clearCache(): Promise<number>;
 }
 
-export interface GitClientOptions {
-  /** Clone cache budget (tests shrink it). */
-  cacheLimitBytes?: number;
-  /** Tests only: the git executable to run, e.g. one that does not exist. */
-  binary?: string;
-}
-
 /**
  * Files bigger than this come later, only when a checkout needs them. Skill documents and text
  * arrive with the clone, so a typical skill repository is complete in one trip; big files
@@ -156,18 +149,16 @@ function isHopeless(error: unknown): boolean {
 }
 
 /** System git with a shared clone cache. All network calls honour the proxy setting. */
-export function createGitClient(ctx: CoreContext, config: GitClientOptions = {}): GitClient {
+export function createGitClient(ctx: CoreContext): GitClient {
   const reposDir = join(ctx.paths.cacheDir, REPOS_DIR_NAME);
-  const cacheLimit = config.cacheLimitBytes ?? CACHE_LIMIT_BYTES;
   // A clone can take as long as git is given, so a second checkout of it waits that long.
-  const cache = createCloneCache(reposDir, cacheLimit, GIT_TIMEOUT_MS);
+  const cache = createCloneCache(reposDir, CACHE_LIMIT_BYTES, GIT_TIMEOUT_MS);
 
   async function run(
     args: string[],
     call: { network?: boolean; cwd?: string; signal?: AbortSignal; onLine?: (l: string) => void },
   ): Promise<ExecResult> {
     return runGit(args, {
-      binary: config.binary,
       network: call.network ? { proxy: ctx.settings.proxy(), github: ctx.github } : undefined,
       cwd: call.cwd,
       signal: call.signal,

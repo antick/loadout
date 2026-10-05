@@ -11,6 +11,7 @@ import {
   createInstallHarness,
   initRepo,
   isolateTmpDir,
+  redirectGithubTo,
   skillsDirOf,
 } from "./install-fixtures";
 
@@ -206,13 +207,15 @@ describe("the safety check on install", () => {
   });
 
   it("checks every ticked skill of a preview first, and keeps the preview for a second try", async () => {
-    const repo = join(world.root, "repo");
+    const remotes = join(world.root, "remotes");
+    const restoreGithub = redirectGithubTo(remotes);
+    const repo = join(remotes, "acme", "skills.git");
     makeSkill(repo, "good");
     makeSkill(repo, "bad", { body: EVIL });
     initRepo(repo);
     commitAll(repo);
 
-    const preview = await install.api.previewGit(repo);
+    const preview = await install.api.previewGit("acme/skills").finally(restoreGithub);
     const items = preview.skills.map((s) => ({ relPath: s.relPath, name: s.name }));
     const error = await rejection(install.api.confirmGit(preview.previewId, items));
     expect(error.code).toBe("UNSAFE");

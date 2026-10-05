@@ -17,6 +17,7 @@ import { type StorageService, createStorageService } from "../src/storage";
 import { moveEntrySync } from "../src/util/fs";
 import { makeSkill } from "./helpers";
 import { type WorkspaceWorld, createWorkspaceWorld, skillText } from "./workspace-world";
+import { createClawhubClient } from "../src/market/clawhub";
 import { createPublishService } from "../src/publish";
 
 /**
@@ -146,7 +147,10 @@ describe("Recently removed on another disk", () => {
       store: world.store,
       git: createGitClient(world.ctx),
       removed: world.removed,
-      publish: createPublishService(world.ctx, { store: world.store }),
+      publish: createPublishService(world.ctx, {
+        store: world.store,
+        clawhub: createClawhubClient(),
+      }),
     });
     disk.crossDisk = true;
   });

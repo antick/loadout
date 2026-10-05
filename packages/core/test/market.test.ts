@@ -1,8 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { APP_SLUG, MARKETPLACE_URL } from "@loadout/shared";
-import { createMarketService } from "../src/market";
+import { type MarketService, createMarketService } from "../src/market";
+import { createClawhubClient } from "../src/market/clawhub";
 import { parseBoardHtml, parseSearchResponse } from "../src/market/parse";
 import { type TestWorld, createTestWorld } from "./helpers";
+
+/** The marketplace of `world`, every request answered by `fetchImpl`. */
+function marketOver(world: TestWorld, fetchImpl: typeof fetch): MarketService {
+  const clawhub = createClawhubClient({ fetchImpl });
+  return createMarketService(world.ctx, { store: world.store, fetchImpl, clawhub });
+}
 
 const PDF = { source: "acme/skills", skillId: "pdf", name: "PDF Tools", installs: 1200 };
 const DOCX = { source: "acme/skills", skillId: "docx", name: "docx", installs: 35 };
@@ -86,7 +93,7 @@ describe("marketplace service", () => {
 
   it("fetches the right page per board, identifies itself and caches the listing", async () => {
     const { fetchImpl, calls } = fakeFetch(() => html(NEXT_DATA_PAGE));
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
 
     const hot = await market.api.board("hot");
     expect(hot).toEqual({
@@ -113,7 +120,7 @@ describe("marketplace service", () => {
 
   it("marks skills the library already has, even on a cached listing", async () => {
     const { fetchImpl } = fakeFetch(() => html(STREAMED_PAGE));
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
     expect((await market.api.board("hot")).skills.map((s) => s.installed)).toEqual([false, false]);
 
     world.store.insert({
@@ -144,7 +151,7 @@ describe("marketplace service", () => {
       if (!online) throw new TypeError("fetch failed");
       return html(PLAIN_PAGE);
     });
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
     await market.api.board("hot");
 
     const age = (ms: number): void => {
@@ -169,7 +176,7 @@ describe("marketplace service", () => {
   it("reports HTTP errors and unreadable pages as network failures, without caching them", async () => {
     let body: Response = new Response("nope", { status: 500 });
     const { fetchImpl, calls } = fakeFetch(() => body.clone());
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
     await expect(market.api.board("hot")).rejects.toMatchObject({
       code: "NETWORK",
       message: expect.stringContaining("500"),
@@ -185,7 +192,7 @@ describe("marketplace service", () => {
     const { fetchImpl } = fakeFetch(() => {
       throw new DOMException("The operation timed out.", "TimeoutError");
     });
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
     await expect(market.api.board("hot")).rejects.toMatchObject({ code: "TIMEOUT" });
   });
 
@@ -196,17 +203,14 @@ describe("marketplace service", () => {
       busy = false;
       return new Response("busy", { status: 503 });
     });
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
     expect((await market.api.search("pdf")).skills).toHaveLength(1);
     expect(calls).toHaveLength(2);
 
     const huge = fakeFetch(
       () => new Response("{}", { headers: { "content-length": String(64 * 1024 * 1024) } }),
     );
-    const capped = createMarketService(world.ctx, {
-      store: world.store,
-      fetchImpl: huge.fetchImpl,
-    });
+    const capped = marketOver(world, huge.fetchImpl);
     await expect(capped.api.search("docx")).rejects.toMatchObject({
       message: expect.stringContaining("larger than"),
     });
@@ -214,7 +218,7 @@ describe("marketplace service", () => {
 
   it("searches with an encoded query and a capped limit", async () => {
     const { fetchImpl, calls } = fakeFetch(() => json({ skills: [PDF, DOCX, PDF] }));
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
 
     expect(await market.api.search("   ")).toEqual({ skills: [], cachedAt: null });
     expect(calls).toEqual([]);
@@ -238,7 +242,7 @@ describe("marketplace service", () => {
   it("accepts a bare array from search and rejects an answer that is not JSON", async () => {
     let body: Response = json([PDF]);
     const { fetchImpl } = fakeFetch(() => body.clone());
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
     expect((await market.api.search("pdf")).skills.map((s) => s.id)).toEqual(["acme/skills/pdf"]);
     body = html("<html>not json</html>");
     await expect(market.api.search("docx")).rejects.toMatchObject({ code: "NETWORK" });
@@ -250,7 +254,7 @@ describe("marketplace service", () => {
       if (!online) throw new TypeError("fetch failed");
       return json([PDF]);
     });
-    const market = createMarketService(world.ctx, { store: world.store, fetchImpl });
+    const market = marketOver(world, fetchImpl);
     await market.api.search("PDF");
     online = false;
     const offline = await market.api.search(" pdf ");
@@ -291,7 +295,7 @@ describe("marketplace skill detail", () => {
     const { fetchImpl, calls } = fakeFetch((url) =>
       (routes[url] ?? (() => new Response("", { status: 404 })))(),
     );
-    const service = createMarketService(detailWorld.ctx, { store: detailWorld.store, fetchImpl });
+    const service = marketOver(detailWorld, fetchImpl);
     detail = service.api.detail;
     return calls;
   }
@@ -381,10 +385,7 @@ describe("marketplace skill detail", () => {
     detailWorld.ctx.db.run("UPDATE market_cache SET fetched_at = ?", fetchedAt);
 
     const offline = fakeFetch(() => Promise.reject(new TypeError("fetch failed")));
-    detail = createMarketService(detailWorld.ctx, {
-      store: detailWorld.store,
-      fetchImpl: offline.fetchImpl,
-    }).api.detail;
+    detail = marketOver(detailWorld, offline.fetchImpl).api.detail;
     expect(await detail("acme/skills", "pdf")).toMatchObject({
       document: DOCUMENT,
       documentPath: "skills/pdf/SKILL.md",

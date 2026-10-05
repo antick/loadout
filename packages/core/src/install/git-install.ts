@@ -34,14 +34,10 @@ export interface GitInstallerDeps {
   download: Download;
   cancels: CancelRegistry;
   install: InstallIntoLibrary;
-  safety?: SafetyGate;
-  replace?: ReplaceDeps;
+  safety: SafetyGate;
+  replace: ReplaceDeps;
   /** Remembers which skills of a repository an import listed, so they are not news later. */
-  sourceNews?: Pick<SourceNewsStore, "markSeen">;
-  /** Tests only: let a local folder stand in for a remote repository. */
-  allowLocalGitSources?: boolean;
-  /** How long an unconfirmed preview keeps its checkout (tests shorten it). */
-  previewTtlMs?: number;
+  sourceNews: Pick<SourceNewsStore, "markSeen">;
   /** Every agent key there is, to read the agents a pasted `skills add` command names. */
   agentKeys(): ReadonlySet<string>;
 }
@@ -67,11 +63,7 @@ const PERCENT_TOTAL = 100;
 
 export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): GitInstaller {
   const { store, git, download, cancels, install } = deps;
-  const sessions = createPreviewSessions(
-    ctx,
-    { install, store, safety: deps.safety, replace: deps.replace },
-    deps.previewTtlMs,
-  );
+  const sessions = createPreviewSessions(ctx, deps);
   const previewFetched = createFetchedPreviews(ctx, { store, sessions });
   const web = createWebPreviews(ctx, { download, previewFetched });
 
@@ -91,11 +83,10 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     wanted: readonly string[],
   ): Promise<GitPreview> {
     const { key, signal } = task;
-    const input = { allowLocalPath: deps.allowLocalGitSources };
     // Validate before anything else, so a bad URL never reaches git nor the status bar.
-    validateGitInput(repoUrl, input);
+    validateGitInput(repoUrl);
     emitProgress(ctx, key, "cloning");
-    const source = await resolveGitSource(git, repoUrl, { ...input, signal });
+    const source = await resolveGitSource(git, repoUrl, signal);
     const checkout = await git.checkout(source.cloneUrl, {
       branch: source.branch,
       // The list needs only each skill's SKILL.md; confirming fetches the chosen folders.
@@ -126,7 +117,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       materialize: checkout.materialize,
       cleanup: checkout.cleanup,
       confirmed: () =>
-        deps.sourceNews?.markSeen(
+        deps.sourceNews.markSeen(
           repositorySourceKey(source.cloneUrl, source.branch),
           found.map((skill) => subpathOf(checkout.dir, skill.dir) ?? ""),
           // Only a list of the whole repository can stand for everything it holds.

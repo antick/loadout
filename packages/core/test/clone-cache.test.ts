@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, utimesSync, writeFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -53,6 +53,17 @@ describe("the clone cache across processes", () => {
     writeFileSync(`${slot}.lock`, JSON.stringify(gone));
     expect(await cache.withSlot(slot, async () => "done")).toBe("done");
     expect(existsSync(`${slot}.lock`)).toBe(false);
+  });
+
+  it("prunes the least recently used slots until the cache fits its budget", async () => {
+    const cache = createCloneCache(reposDir, 150, SHORT_WAIT_MS);
+    const older = slotWithFile(cache, URL_A);
+    const newer = slotWithFile(cache, URL_B);
+    utimesSync(older, 1000, 1000);
+    utimesSync(newer, 2000, 2000);
+    await cache.prune(join(reposDir, "kept"));
+    expect(existsSync(older)).toBe(false);
+    expect(existsSync(newer)).toBe(true);
   });
 
   it("never prunes or clears a slot another process uses", async () => {

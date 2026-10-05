@@ -33,7 +33,7 @@ export interface ScanServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
   install: InstallIntoLibrary;
-  safety?: SafetyGate;
+  safety: SafetyGate;
   /** Told about every import, with the folder it came from (to look for its source). */
   onImported?: (skill: Skill, sourcePath: string) => void;
 }

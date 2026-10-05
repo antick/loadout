@@ -7,12 +7,12 @@ import { LIBRARY_PLACE } from "../storage/removed-library";
 import { hashDir } from "../util/hash";
 import type { InstallIntoLibrary, InstallRequest } from "./library";
 
-/** What replacing a library skill needs besides the installer. Absent parts are skipped. */
+/** What replacing a library skill needs besides the installer. */
 export interface ReplaceDeps {
   /** Keeps the version being replaced in Recently removed. */
-  removed?: Pick<RemovedStore, "keepCopy">;
+  removed: Pick<RemovedStore, "keepCopy">;
   /** Rewrites copies deployed to agents, so they show the new version too. */
-  refreshCopies?(skill: Skill): Promise<unknown>;
+  refreshCopies(skill: Skill): Promise<unknown>;
 }
 
 /**
@@ -41,14 +41,14 @@ export async function installReplacing(
     const changed =
       hashAsLibraryCopy(request.sourceDir, owner.dirName) !== hashDir(owner.libraryPath);
     if (changed)
-      deps.removed?.keepCopy(owner.libraryPath, { place: LIBRARY_PLACE, reason: "replaced" });
+      deps.removed.keepCopy(owner.libraryPath, { place: LIBRARY_PLACE, reason: "replaced" });
     return install({
       ...request,
       name: owner.name,
       record: { ...request.record, replaceSkillId: owner.id },
     });
   });
-  await deps.refreshCopies?.(skill);
+  await deps.refreshCopies(skill);
   return skill;
 }
 
@@ -59,9 +59,9 @@ export async function installReplacing(
 export function installOver(
   ctx: CoreContext,
   install: InstallIntoLibrary,
-  deps: ReplaceDeps | undefined,
+  deps: ReplaceDeps,
   owner: Skill | null,
 ): InstallIntoLibrary {
   if (!owner) return install;
-  return (request) => installReplacing(ctx, install, deps ?? {}, owner, request);
+  return (request) => installReplacing(ctx, install, deps, owner, request);
 }

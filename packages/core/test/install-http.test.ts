@@ -11,10 +11,9 @@ import {
   createInstallHarness,
   isolateTmpDir,
   leftoverCheckouts,
+  setEnv,
 } from "./install-fixtures";
 
-/** A git executable that does not exist, so every git call fails with GIT_MISSING. */
-const NO_GIT = { binary: "loadout-test-no-such-git" };
 const MAIN_SHA = "a".repeat(40);
 const DEV_SHA = "b".repeat(40);
 const TAG_OBJECT_SHA = "c".repeat(40);
@@ -89,7 +88,7 @@ beforeEach(() => {
   tmp = join(world.root, "tmp");
   restoreTmp = isolateTmpDir(tmp);
   web = fakeWeb(GITHUB_ROUTES());
-  install = createInstallHarness(world, { git: NO_GIT, fetchImpl: web.fetch });
+  install = createInstallHarness(world, { fetchImpl: web.fetch });
 });
 
 afterEach(() => {
@@ -117,6 +116,13 @@ describe("ref advertisement", () => {
 });
 
 describe("without git", () => {
+  // A PATH with no git on it: every git call fails with GIT_MISSING.
+  let restorePath: () => void;
+  beforeEach(() => {
+    restorePath = setEnv({ PATH: join(world.root, "no-git") });
+  });
+  afterEach(() => restorePath());
+
   it("previews and installs a GitHub repository from its archive", async () => {
     const preview = await install.api.previewGit("acme/skills");
     expect(preview).toMatchObject({
@@ -204,8 +210,7 @@ describe("without git", () => {
 
 describe("with git", () => {
   it("never downloads anything itself", async () => {
-    const withGit = createInstallHarness(world, { fetchImpl: web.fetch });
-    await expect(withGit.api.previewGit("https://example.invalid/acme/none.git")).rejects.toThrow();
+    await expect(install.api.previewGit("https://example.invalid/acme/none.git")).rejects.toThrow();
     expect(web.requests).toEqual([]);
   });
 });

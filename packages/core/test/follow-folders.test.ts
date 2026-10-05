@@ -16,7 +16,11 @@ describe("following an agent's folder when its home variable moves it", () => {
   const follow = () => {
     const ctx = { ...world.ctx, env: () => env };
     const registry = new AgentRegistry(ctx);
-    const deploy = createDeployService(ctx, { store: world.store, registry });
+    const deploy = createDeployService(ctx, {
+      store: world.store,
+      registry,
+      removed: world.removed,
+    });
     return followMovedAgentFolders(ctx, { registry, store: world.store, deploy });
   };
 

@@ -185,12 +185,9 @@ describe("parseGitSource", () => {
     }
   });
 
-  it("accepts a local path only through the internal option", () => {
+  it("refuses a local path", () => {
     expectInvalid(() => parseGitSource("/tmp/fixture"));
-    expect(parseGitSource("/tmp/fixture", { allowLocalPath: true }).cloneUrl).toBe("/tmp/fixture");
-    expect(validateGitInput("file:///tmp/fixture", { allowLocalPath: true })).toBe(
-      "file:///tmp/fixture",
-    );
+    expectInvalid(() => validateGitInput("file:///tmp/fixture"));
   });
 
   it("refuses a local folder stored as a skill's source, as another device's backup may hold", () => {

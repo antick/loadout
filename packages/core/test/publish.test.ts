@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { PublishInput, Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createClawhubClient } from "../src/market/clawhub";
 import { type PublishHooks, type PublishService, createPublishService } from "../src/publish";
 import { PUBLISH_ERROR_TEXT } from "../src/publish/checkout";
 import { collectFiles, findSecretsIn } from "../src/publish/files";
@@ -55,7 +56,11 @@ beforeEach(() => {
   setUserIdentity();
   remote = bareRepo("skills");
   hooks = {};
-  service = createPublishService(world.ctx, { store: world.store, hooks });
+  service = createPublishService(world.ctx, {
+    store: world.store,
+    hooks,
+    clawhub: createClawhubClient(),
+  });
 });
 afterEach(() => {
   world.cleanup();

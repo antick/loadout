@@ -43,6 +43,7 @@ beforeEach(() => {
       deploy: createDeployService(world.ctx, {
         store: world.store,
         registry: new AgentRegistry(world.ctx),
+        removed: createRemovedStore(world.ctx, { store: world.store }),
       }),
       projectSkillFolders: () => [],
     },

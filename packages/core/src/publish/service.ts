@@ -12,7 +12,7 @@ import {
   repositoryLabel,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { type ClawhubClient, createClawhubClient } from "../market/clawhub";
+import type { ClawhubClient } from "../market/clawhub";
 import { createClawhubPublisher } from "./clawhub";
 import { invalid, isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
@@ -27,8 +27,8 @@ import { dirSize, readDirSafe, removePathSync } from "../util/fs";
 export interface PublishDeps {
   store: SkillStore;
   hooks?: PublishHooks;
-  /** The registry client, for publishing to ClawHub. Absent in tests of the Git side. */
-  clawhub?: ClawhubClient;
+  /** The registry client, for publishing to ClawHub. */
+  clawhub: ClawhubClient;
 }
 
 /** Seams for tests that need to act in a race window. Unused in the app. */
@@ -93,7 +93,7 @@ function toPlan(target: ResolvedTarget, checkout: Checkout, planned: Planned): P
 export function createPublishService(ctx: CoreContext, deps: PublishDeps): PublishService {
   const clawhub = createClawhubPublisher(ctx, {
     store: deps.store,
-    clawhub: deps.clawhub ?? createClawhubClient(),
+    clawhub: deps.clawhub,
   });
   function chosenSkills(ids: readonly string[]): Skill[] {
     const unique = [...new Set(ids)];

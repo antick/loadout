@@ -3,10 +3,10 @@ import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
 import type { GitClient } from "../src/install";
 import type { InstallServiceDeps } from "../src/install/service";
-import { type RemovedStore, createRemovedStore } from "../src/storage";
+import { createSourceNewsStore } from "../src/sources/news-store";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
-import { makeSkill, writeFile } from "./helpers";
+import { makeSkill, passingSafety, writeFile } from "./helpers";
 import {
   type InstallHarness,
   commitAll,
@@ -16,17 +16,17 @@ import {
   redirectGithubTo,
 } from "./install-fixtures";
 
-/** `owner/repo` the fixture repository stands in for on the marketplace. */
+/** `owner/repo` the fixture repository stands in for on GitHub and the marketplace. */
 export const MARKET_SOURCE = "acme/skills";
+/** The fixture repository's address, as an install records it. */
+export const REMOTE_URL = `https://github.com/${MARKET_SOURCE}.git`;
 
 export interface UpdatesWorld extends DeployWorld {
   install: InstallHarness;
-  /** Recently removed, where an update keeps the edited version it replaces. */
-  removed: RemovedStore;
   updates: UpdatesService;
   /** Private temp folder; leftover checkouts show up here. */
   tmp: string;
-  /** Local repository with `skills/pdf` and `skills/docx`. */
+  /** Working copy of the repository at {@link REMOTE_URL}, with `skills/pdf` and `skills/docx`. */
   remote: string;
   /** How often the remote was asked for its revision. */
   lookups(): number;
@@ -58,13 +58,15 @@ export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}
       return install.git.lsRemote(url, options);
     },
   };
-  const removed = createRemovedStore(world.ctx, { store: world.store });
+  const sourceNews = createSourceNewsStore(world.ctx);
   const serviceWith = (git: GitClient): UpdatesService =>
     createUpdatesService(world.ctx, {
       store: world.store,
       install: { ...install, git },
       deploy: world.deploy,
-      removed,
+      safety: passingSafety,
+      removed: world.removed,
+      sourceNews,
     });
 
   const remote = initRepo(join(remotes, "acme", "skills.git"));
@@ -77,13 +79,12 @@ export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}
   return {
     ...world,
     install,
-    removed,
     updates: serviceWith(countingGit),
     tmp,
     remote,
     lookups: () => lookupCount,
     installFromGit: async (name) => {
-      const preview = await install.api.previewGit(remote);
+      const preview = await install.api.previewGit(MARKET_SOURCE);
       const relPath = preview.skills.find((skill) => skill.name === name)?.relPath ?? name;
       const [skill] = await install.api.confirmGit(preview.previewId, [{ relPath, name: "" }]);
       if (!skill) throw new Error(`Fixture skill not installed: ${name}`);

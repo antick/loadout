@@ -59,7 +59,7 @@ describe("replacing the library skill that holds a name", () => {
   it("puts the new skill in the old one's place and keeps the old version", async () => {
     const own = await installOwnPdf();
     world.store.setTags(own.id, ["docs"]);
-    const preview = await install.api.previewGit(remote);
+    const preview = await install.api.previewGit("acme/skills");
 
     const rows = preview.skills.map((skill) => skill.name);
     expect(planInstallNames(rows, preview.library).map((o) => o.kind)).toEqual(["new", "taken"]);
@@ -88,7 +88,7 @@ describe("replacing the library skill that holds a name", () => {
 
   it("installs as usual when the name is free, and without replace adds a numbered copy", async () => {
     await installOwnPdf();
-    const preview = await install.api.previewGit(remote);
+    const preview = await install.api.previewGit("acme/skills");
     const installed = await install.api.confirmGit(preview.previewId, [
       { relPath: "skills/docx", name: "docx", replace: true },
       { relPath: "skills/pdf", name: "pdf" },
@@ -100,11 +100,11 @@ describe("replacing the library skill that holds a name", () => {
   });
 
   it("keeps nothing aside when the incoming skill is identical", async () => {
-    const preview = await install.api.previewGit(remote);
+    const preview = await install.api.previewGit("acme/skills");
     const [first] = await install.api.confirmGit(preview.previewId, [
       { relPath: "skills/pdf", name: "pdf" },
     ]);
-    const again = await install.api.previewGit(remote);
+    const again = await install.api.previewGit("acme/skills");
     const [second] = await install.api.confirmGit(again.previewId, [
       { relPath: "skills/pdf", name: "pdf", replace: true },
     ]);

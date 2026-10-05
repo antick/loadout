@@ -23,7 +23,6 @@ import type {
   CancelRegistry,
   Download,
   GitClient,
-  GitInputOptions,
   InstallIntoLibrary,
   InstallRecord,
 } from "../install";
@@ -62,15 +61,13 @@ export interface UpdaterDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
-  /** How stored repository URLs are read (`InstallService.gitInput`). */
-  gitInput?: GitInputOptions;
   cancels: CancelRegistry;
   installIntoLibrary: InstallIntoLibrary;
   refreshCopies(skill: Skill): Promise<RedeployReport>;
-  /** The same safety check installs get; absent in tests that do not care. */
-  safety?: SafetyGate;
-  /** Keeps the edited version an approved update replaces; absent in tests that do not care. */
-  removed?: Pick<RemovedStore, "keepCopy">;
+  /** The same safety check installs get. */
+  safety: SafetyGate;
+  /** Keeps the edited version an approved update replaces. */
+  removed: Pick<RemovedStore, "keepCopy">;
   /** The registry client, for ClawHub skills. */
   clawhub?: ClawhubClient;
 }
@@ -199,7 +196,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
    */
   async function checkNewVersion(plan: Replacement): Promise<SafetyReport | null> {
     const current = store.get(plan.skillId);
-    if (!deps.safety || !plan.sourceDir) return null;
+    if (!plan.sourceDir) return null;
     if (hashAsLibraryCopy(plan.sourceDir, current.dirName) === current.contentHash) return null;
     const [report] = await deps.safety.check([{ name: current.name, dir: plan.sourceDir }], {
       acceptRisk: plan.acceptRisk,
@@ -256,15 +253,12 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       );
       const kept =
         changedDir && replacesEdits
-          ? (deps.removed?.keepCopy(fresh.libraryPath, {
-              place: LIBRARY_PLACE,
-              reason: "replaced",
-            }) ?? null)
+          ? deps.removed.keepCopy(fresh.libraryPath, { place: LIBRARY_PLACE, reason: "replaced" })
           : null;
       let skill: Skill;
       if (changedDir) {
         skill = await installOver(fresh, changedDir, record);
-        deps.safety?.remember(skill, safetyReport);
+        deps.safety.remember(skill, safetyReport);
       } else {
         skill = store.update(fresh.id, patchFromRecord(record));
         ctx.activity.record("update", fresh.name, NO_CHANGES_DETAIL);
@@ -325,7 +319,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     const handle = cancels.register(key);
     try {
       ctx.emit("install:progress", { key, phase: "cloning", name: skill.name });
-      const target = remoteTargetOf(skill, deps.gitInput);
+      const target = remoteTargetOf(skill);
       const revision =
         options.knownRevision ?? (await resolveRemoteRevision(clients, target, handle.signal));
       if (options.expectedRevision && revision !== options.expectedRevision) {
@@ -351,7 +345,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           dryRun: options.dryRun,
           preview: source,
           verify: (fresh) => {
-            const still = isRemoteSource(fresh) && remoteKey(remoteTargetOf(fresh, deps.gitInput));
+            const still = isRemoteSource(fresh) && remoteKey(remoteTargetOf(fresh));
             if (still !== remoteKey(target)) throw invalid(SOURCE_MOVED);
           },
           record: (fresh) => ({

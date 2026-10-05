@@ -2,6 +2,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, symlinkSync }
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createGitClient } from "../src/install/git-client";
+import { createClawhubClient } from "../src/market/clawhub";
 import { createPublishService } from "../src/publish";
 import { type StorageService, createRemovedStore, createStorageService } from "../src/storage";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
@@ -17,7 +18,10 @@ beforeEach(() => {
     store: world.store,
     git: createGitClient(world.ctx),
     removed: createRemovedStore(world.ctx, { store: world.store }),
-    publish: createPublishService(world.ctx, { store: world.store }),
+    publish: createPublishService(world.ctx, {
+      store: world.store,
+      clawhub: createClawhubClient(),
+    }),
   });
 });
 afterEach(() => world.cleanup());
