@@ -4,7 +4,7 @@ import { formatTimestampCompact } from "@loadout/shared";
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { PortableSkill } from "../skills/portable";
-import { copyDir, isSkillDir, readDirSafe, removePath, statOrNull } from "../util/fs";
+import { GIT_DIR, copyDir, isSkillDir, readDirSafe, removePath, statOrNull } from "../util/fs";
 import { hashDir, hashFile, holdsUncopiedEntries, sameUnhashedEntries } from "../util/hash";
 import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
@@ -22,7 +22,6 @@ import { IGNORE_FILE } from "./size";
 const CLONE_DIR_PREFIX = "skills.clone-";
 const SET_ASIDE_PREFIX = "skills.backup-";
 const LOCAL_COPY_SUFFIX = "-local";
-const GIT_DIR = ".git";
 
 export interface CloneOptions {
   /**

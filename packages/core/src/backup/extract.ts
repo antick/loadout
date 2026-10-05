@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
-import { ensureDir, removePath } from "../util/fs";
+import { GIT_DIR, ensureDir, removePath } from "../util/fs";
 import type { BackupEnv } from "./env";
 
 /**
@@ -39,7 +39,7 @@ export async function extractPaths(
     await env.git.run(["checkout", commit, "--", ...paths.slice(start, start + PATHS_PER_CALL)], {
       cwd: stage.dir,
       globalArgs: [
-        `--git-dir=${join(env.repoDir, ".git")}`,
+        `--git-dir=${join(env.repoDir, GIT_DIR)}`,
         `--work-tree=${stage.dir}`,
         "--literal-pathspecs",
       ],

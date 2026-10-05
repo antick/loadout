@@ -8,7 +8,7 @@ import type { SourceEvidence } from "@loadout/shared";
 import { validateGitInput } from "../install";
 import { readSkillDocument } from "../skills/metadata";
 
-import { canonicalPath, isDirectory, isInside, statOrNull, toPosix } from "../util/fs";
+import { GIT_DIR, canonicalPath, isDirectory, isInside, statOrNull, toPosix } from "../util/fs";
 
 /**
  * Where a skill without a source may have come from, read from this machine only: the Git
@@ -31,7 +31,6 @@ export interface SourceLead {
   marketRef?: string | null;
 }
 
-const GIT_DIR = ".git";
 const GITDIR_PREFIX = "gitdir:";
 const HEAD_REF_PREFIX = "ref: refs/heads/";
 const COMMON_DIR_FILE = "commondir";

@@ -1,5 +1,6 @@
 import { AppError } from "../errors";
 import type { PortablePreset, PortableSkill } from "../skills/portable";
+import { GIT_DIR } from "../util/fs";
 import {
   type BackupEnv,
   PRESET_METADATA_SUBDIR,
@@ -32,7 +33,7 @@ export interface CommitSnapshot {
  */
 export function isPlainEntryName(name: string): boolean {
   const normalized = name.toLowerCase().replace(/[. ]+$/, "");
-  return normalized !== "" && normalized !== ".git" && !/[\\/\0]/.test(name);
+  return normalized !== "" && normalized !== GIT_DIR && !/[\\/\0]/.test(name);
 }
 
 async function topLevelEntries(env: BackupEnv, commit: string): Promise<Map<string, string>> {

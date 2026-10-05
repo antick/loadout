@@ -1,9 +1,8 @@
 import { createHash } from "node:crypto";
 import { readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
-import { lstatOrNull, readDirSafe, toPosix } from "./fs";
+import { GIT_DIR, lstatOrNull, readDirSafe, toPosix } from "./fs";
 
-const GIT_DIR = ".git";
 const GIT_IGNORE_FILE = ".gitignore";
 /** Entries that never count as skill content: not hashed, not diffed, not reported as removed. */
 const IGNORED_NAMES: ReadonlySet<string> = new Set([

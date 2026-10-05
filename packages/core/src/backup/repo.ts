@@ -1,13 +1,13 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { AppError } from "../errors";
+import { GIT_DIR } from "../util/fs";
 import { type BackupEnv, REMOTE_NAME } from "./env";
 import { recoverInterrupted } from "./interrupted";
 import { refreshIgnoreFile } from "./size";
 
 /** Small questions and actions on the repository that several backup modules share. */
 
-const GIT_DIR = ".git";
 export function isRepo(env: BackupEnv): boolean {
   return existsSync(join(env.repoDir, GIT_DIR));
 }

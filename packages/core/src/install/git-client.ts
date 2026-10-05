@@ -20,7 +20,15 @@ import { GIT_TIMEOUT_MS, runGit } from "../util/git";
 
 import { gitFailure } from "../util/git-errors";
 
-import { copyDir, ensureDir, isDirectory, isInside, removePath, toPosix } from "../util/fs";
+import {
+  GIT_DIR,
+  copyDir,
+  ensureDir,
+  isDirectory,
+  isInside,
+  removePath,
+  toPosix,
+} from "../util/fs";
 
 import { trySanitizeSkillName } from "../util/names";
 
@@ -251,7 +259,7 @@ export function createGitClient(ctx: CoreContext, config: GitClientOptions = {})
   }
 
   async function prepareSlot(slot: string, url: string, options: CheckoutOptions): Promise<void> {
-    if (existsSync(join(slot, ".git"))) {
+    if (existsSync(join(slot, GIT_DIR))) {
       try {
         await refresh(slot, url, options);
         return;

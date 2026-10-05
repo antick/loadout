@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { basename, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ProjectSuggestion, ProjectSuggestionSource } from "@loadout/shared";
-import { canonicalPath, isDirectory, isInside, readDirSafe, statOrNull } from "../util/fs";
+import { GIT_DIR, canonicalPath, isDirectory, isInside, readDirSafe, statOrNull } from "../util/fs";
 
 /**
  * Projects the user already works in, found without asking: Claude Code's list of projects, the
@@ -49,7 +49,6 @@ const CODE_FOLDERS = [
   "work",
   "workspace",
 ];
-const GIT_DIR = ".git";
 /** `.git/index` changes with every commit and staging, which makes it a good "last worked on". */
 const GIT_ACTIVITY_FILES = ["index", "HEAD"];
 const CODE_FOLDER_DEPTH = 2;

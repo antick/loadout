@@ -7,7 +7,7 @@ import {
   type OversizedSkill,
   type SizeReport,
 } from "@loadout/shared";
-import { dirSize, readDirSafe, statOrNull, writeFileAtomic } from "../util/fs";
+import { GIT_DIR, dirSize, readDirSafe, statOrNull, writeFileAtomic } from "../util/fs";
 import { LEFT_OUT_LINES } from "../util/left-out";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 
@@ -18,7 +18,6 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
  */
 
 export const IGNORE_FILE = ".gitignore";
-const GIT_DIR = ".git";
 /**
  * `writeFileAtomic` writes `<file>.tmp.<uuid>` and renames it. Git must never pick one up: it can
  * vanish between git listing it and reading it, which fails the whole commit.

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseToml } from "smol-toml";
-import { readDirSafe } from "../util/fs";
+import { GIT_DIR, readDirSafe } from "../util/fs";
 
 /** What a project holds, as far as suggestions care. */
 export interface ProjectFiles {
@@ -17,7 +17,7 @@ const MAX_PATHS = 5000;
 /** Folders that hold dependencies, builds or tool state, not the project's own files. */
 const SKIPPED_DIRS: ReadonlySet<string> = new Set([
   "node_modules",
-  ".git",
+  GIT_DIR,
   "target",
   "dist",
   "build",

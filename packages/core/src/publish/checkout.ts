@@ -11,7 +11,7 @@ import {
 import type { CoreContext } from "../context";
 import { AppError, invalid, isAppError } from "../errors";
 import type { ExecResult } from "../util/exec";
-import { ensureDir, removePath } from "../util/fs";
+import { GIT_DIR, ensureDir, removePath } from "../util/fs";
 import type { ResolvedTarget } from "./target";
 
 /**
@@ -106,7 +106,7 @@ export async function openCheckout(ctx: CoreContext, target: ResolvedTarget): Pr
   }
 
   async function refresh(): Promise<boolean> {
-    if (!existsSync(join(dir, ".git"))) {
+    if (!existsSync(join(dir, GIT_DIR))) {
       await clone();
       return false;
     }

@@ -4,6 +4,7 @@ import { type SkillTrait, mergeTraits } from "@loadout/shared";
 import { readFrontmatter, readSkillIdentity } from "../skills/metadata";
 import { folderTraits } from "../skills/traits";
 import {
+  GIT_DIR,
   canonicalPath,
   isDirectory,
   isInside,
@@ -35,7 +36,7 @@ export interface FindOptions {
 /** Folders that never hold installable skills. */
 const SKIPPED_DIR_NAMES: ReadonlySet<string> = new Set([
   ".hub",
-  ".git",
+  GIT_DIR,
   "node_modules",
   "__MACOSX",
 ]);

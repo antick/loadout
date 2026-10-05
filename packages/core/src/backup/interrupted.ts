@@ -11,11 +11,18 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "../errors";
 import { processAlive } from "../lock";
 import { LIBRARY_PLACE } from "../storage/removed-library";
-import { ensureDir, isInside, lstatOrNull, readDirSafe, removePath, statOrNull } from "../util/fs";
+import {
+  GIT_DIR,
+  ensureDir,
+  isInside,
+  lstatOrNull,
+  readDirSafe,
+  removePath,
+  statOrNull,
+} from "../util/fs";
 import type { BackupEnv } from "./env";
 import { PREVIEW_INDEX_PREFIX } from "./extract";
 
-const GIT_DIR = ".git";
 /** Files git leaves behind while an operation is unfinished. */
 const INTERRUPTED_MARKERS = ["MERGE_HEAD", "index.lock", "rebase-merge", "rebase-apply"] as const;
 /**

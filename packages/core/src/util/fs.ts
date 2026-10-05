@@ -21,8 +21,10 @@ import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "no
 import { SKILL_MARKER_FILES } from "@loadout/shared";
 import { invalid } from "../errors";
 
+/** The folder a git repository keeps its data in. */
+export const GIT_DIR = ".git";
 /** Names never copied into or out of the library. */
-const COPY_SKIP_NAMES: ReadonlySet<string> = new Set([".git", ".DS_Store"]);
+const COPY_SKIP_NAMES: ReadonlySet<string> = new Set([GIT_DIR, ".DS_Store"]);
 
 /** A name copying leaves behind: everything else travels with a skill. */
 export function isNeverCopiedName(name: string): boolean {
