@@ -1,3 +1,4 @@
+import { OWNER_REPO_PATTERN } from "@loadout/shared";
 import { invalid, isAppError } from "../errors";
 import { trySanitizeSkillName } from "../util/names";
 import type { GitClient } from "./git-client";
@@ -33,9 +34,10 @@ const GITLAB_PREFIX = "gitlab:";
 /** `git@host:owner/repo.git` */
 const SCP_STYLE = /^git@[\w.-]+:[^\s]+$/i;
 const REPO_SEGMENT = String.raw`[A-Za-z0-9_][\w.-]*`;
-/** `owner/repo`, the GitHub shorthand. Never starts with `.`, `-`, `/` or `~`, so it is never a path. */
-const SHORTHAND = new RegExp(`^${REPO_SEGMENT}\\/${REPO_SEGMENT}$`);
-/** `owner/repo/path/in/repo`, optionally `@skill`. */
+/**
+ * `owner/repo/path/in/repo`, optionally `@skill`. Never starts with `.`, `-`, `/` or `~`, so it
+ * is never a path.
+ */
 const SHORTHAND_WITH_PATH = new RegExp(
   `^${REPO_SEGMENT}\\/${REPO_SEGMENT}(?:\\/[^\\s@]+)?(?:@[^\\s/@]+)?$`,
 );
@@ -304,7 +306,7 @@ export async function resolveGitSource(
 /** `owner/repo` from the marketplace → clone URL. */
 export function marketSourceToUrl(source: string): string {
   const text = source.trim();
-  if (!SHORTHAND.test(text)) throw invalid(`Invalid marketplace source: '${source}'`);
+  if (!OWNER_REPO_PATTERN.test(text)) throw invalid(`Invalid marketplace source: '${source}'`);
   const [owner = "", repo = ""] = text.split("/");
   return githubCloneUrl(owner, repo);
 }
