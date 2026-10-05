@@ -1,4 +1,5 @@
 export type { SecretStore } from "./context";
+export { type FileSecretStoreOptions, createFileSecretStore } from "./secret-file";
 export {
   AppError,
   cancelled,

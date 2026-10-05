@@ -2,16 +2,15 @@ import {
   cpSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   realpathSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { cp, rm, writeFile } from "node:fs/promises";
+import { cp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { SecretStore } from "@loadout/core";
+import { type SecretStore, createFileSecretStore } from "@loadout/core";
 
 /**
  * One session's temporary world. Everything it changes lives under `live`, at the same path for
@@ -118,22 +117,5 @@ export function removeWorld(world: World): void {
 
 /** Credentials in a file of the world, so they come back with the seed like everything else. */
 export function fileSecrets(world: World): SecretStore {
-  const read = (): Record<string, string> => {
-    try {
-      return JSON.parse(readFileSync(world.secretsFile, "utf8")) as Record<string, string>;
-    } catch {
-      return {};
-    }
-  };
-  const write = (values: Record<string, string>): Promise<void> =>
-    writeFile(world.secretsFile, JSON.stringify(values));
-  return {
-    available: () => true,
-    get: async (key) => read()[key] ?? null,
-    set: async (key, value) => write({ ...read(), [key]: value }),
-    delete: async (key) => {
-      const { [key]: _gone, ...rest } = read();
-      await write(rest);
-    },
-  };
+  return createFileSecretStore(world.secretsFile);
 }
