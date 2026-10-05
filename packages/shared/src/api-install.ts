@@ -98,6 +98,14 @@ export interface CheckAllOptions {
   skillIds?: string[];
 }
 
+export interface UpdateManyOptions {
+  /**
+   * A check of these skills ran at or after this time (ms since the epoch). A skill it found newer
+   * upstream is updated to the revision it found, without asking the remote again.
+   */
+  checkedSince?: number;
+}
+
 export interface UpdatesApi {
   check(skillId: string, force?: boolean): Promise<Skill>;
   checkAll(force?: boolean, options?: CheckAllOptions): Promise<BatchResult>;
@@ -110,7 +118,7 @@ export interface UpdatesApi {
     approval?: string | null,
     options?: UpdateRequestOptions,
   ): Promise<UpdateResult>;
-  updateMany(skillIds: string[]): Promise<BatchUpdateResult>;
+  updateMany(skillIds: string[], options?: UpdateManyOptions): Promise<BatchUpdateResult>;
   reimport(
     skillId: string,
     approval?: string | null,

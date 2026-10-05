@@ -3,6 +3,7 @@ import type {
   ErrorCode,
   SafetyReport,
   Skill,
+  UpdateManyOptions,
   UpdateResult,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
@@ -102,7 +103,7 @@ export interface Updater {
     options?: UpdateOptions,
   ): Promise<UpdateResult>;
   detach(skillId: string, options?: { markAuthored?: boolean }): Promise<Skill>;
-  updateMany(skillIds: string[]): Promise<BatchUpdateResult>;
+  updateMany(skillIds: string[], options?: UpdateManyOptions): Promise<BatchUpdateResult>;
 }
 
 const UPDATE_CANCEL_PREFIX = "update:";
@@ -474,6 +475,15 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     reimport,
     relink,
     detach: (skillId, options) => detachSkill(ctx, store, skillId, options),
-    updateMany: (skillIds) => updateEach(store, { update, reimport }, skillIds),
+    updateMany: (skillIds, options) =>
+      updateEach(
+        store,
+        {
+          update: (skillId, knownRevision) => update(skillId, null, { knownRevision }),
+          reimport: (skillId) => reimport(skillId),
+        },
+        skillIds,
+        options,
+      ),
   };
 }

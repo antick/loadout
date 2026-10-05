@@ -509,4 +509,28 @@ describe("removal guard", () => {
     const second = await world.updates.api.updateMany([docx.id]);
     expect(second).toEqual({ updated: 0, unchanged: 1, heldBack: [], failed: [] });
   });
+
+  it("updates to what a check just found without asking the remote again", async () => {
+    const pdf = await world.installFromGit("pdf");
+    changePdfUpstream();
+    const checkedSince = Date.now();
+    await world.updates.api.checkAll(true);
+    const found = world.store.get(pdf.id).remoteRevision;
+
+    const before = world.lookups();
+    const result = await world.updates.api.updateMany([pdf.id], { checkedSince });
+    expect(result).toMatchObject({ updated: 1, failed: [] });
+    expect(world.lookups()).toBe(before);
+    expect(world.store.get(pdf.id).sourceRevision).toBe(found);
+  });
+
+  it("asks the remote when the check is older than the one the caller made", async () => {
+    const pdf = await world.installFromGit("pdf");
+    changePdfUpstream();
+    await world.updates.api.checkAll(true);
+
+    const before = world.lookups();
+    await world.updates.api.updateMany([pdf.id], { checkedSince: Date.now() + 1 });
+    expect(world.lookups()).toBe(before + 1);
+  });
 });

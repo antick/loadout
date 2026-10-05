@@ -187,11 +187,15 @@ async function update(context: CommandContext): Promise<CommandResult> {
 
   // Asked to update everything: look upstream now, never at an answer kept from earlier. A skill
   // whose check failed is not due, so it would otherwise go unmentioned.
+  const checkedSince = Date.now();
   const checked = await core.api.updates.checkAll(true);
   const due = (await core.api.skills.list()).filter((s) => s.updateStatus === "update_available");
   const updated = flagBoolean(args, APPROVE_FLAG.name)
     ? await updateEachApproved(context, due)
-    : await core.api.updates.updateMany(due.map((skill) => skill.id));
+    : await core.api.updates.updateMany(
+        due.map((skill) => skill.id),
+        { checkedSince },
+      );
   const value = { ...updated, failed: [...checked.failed, ...updated.failed] };
   const lines = [`${plural(value.updated, "skill")} updated, ${value.unchanged} unchanged.`];
   if (value.heldBack.length > 0) {

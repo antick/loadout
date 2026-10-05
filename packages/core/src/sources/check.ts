@@ -35,6 +35,14 @@ export interface SourceChecker {
 /** The revision of a skill's upstream that is already known, or null to ask the remote. */
 export type KnownRevision = (skill: Skill) => string | null;
 
+/** What a check that ran at or after `since` found upstream; null when it did not, or failed. */
+export function checkedSince(since: number): KnownRevision {
+  return (skill) =>
+    skill.lastCheckedAt !== null && skill.lastCheckedAt >= since && skill.updateStatus !== "error"
+      ? skill.remoteRevision
+      : null;
+}
+
 /** One repository the library has skills from. */
 interface Repository {
   key: string;

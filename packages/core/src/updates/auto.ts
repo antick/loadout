@@ -9,7 +9,7 @@ import {
 import type { CoreContext } from "../context";
 import { isAppError } from "../errors";
 import { pause } from "../util/async";
-import type { KnownRevision } from "../sources";
+import { type KnownRevision, checkedSince } from "../sources";
 import type { LockMode } from "./locking";
 import { isRemoteSource } from "./source";
 import type { UpdateOptions } from "./update";
@@ -107,12 +107,7 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
     const apply = ctx.settings.get("autoUpdateApply");
     // What this round's check found is used as it is: each repository is asked once a round.
     const checkedFrom = Date.now();
-    const known: KnownRevision = (skill) =>
-      skill.lastCheckedAt !== null &&
-      skill.lastCheckedAt >= checkedFrom &&
-      skill.updateStatus !== "error"
-        ? skill.remoteRevision
-        : null;
+    const known = checkedSince(checkedFrom);
     try {
       // A skill the library was too busy to check keeps its last answer for this round.
       await target.checkAll(true, BACKGROUND);
