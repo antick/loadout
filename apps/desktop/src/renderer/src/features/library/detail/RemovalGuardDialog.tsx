@@ -106,21 +106,16 @@ export function RemovalGuardDialog({
             </section>
           ) : null}
           {groups.map(([location, paths]) => {
+            const agentName = names.get(location) ?? location;
             return (
               <section key={location} className="flex flex-col gap-1.5">
                 <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
                   {location === LIBRARY_LOCATION ? (
                     <Library className="size-3.5" />
                   ) : (
-                    <AgentAvatar
-                      agentKey={location}
-                      name={names.get(location) ?? location}
-                      size="sm"
-                    />
+                    <AgentAvatar agentKey={location} name={agentName} size="sm" />
                   )}
-                  {location === LIBRARY_LOCATION
-                    ? t("library.removalGuard.library")
-                    : (agent?.displayName ?? location)}
+                  {location === LIBRARY_LOCATION ? t("library.removalGuard.library") : agentName}
                   <span className="tabular-nums opacity-70">{paths.length}</span>
                 </h3>
                 <ul
