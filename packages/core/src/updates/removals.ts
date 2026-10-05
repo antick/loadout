@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { type Dirent, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { PendingRemoval } from "@loadout/shared";
+import { notFound } from "../errors";
 import { isIgnoredContentName } from "../util/hash";
 
 /**
@@ -44,7 +45,7 @@ function kindAt(path: string): EntryKind | null {
  */
 export function listRemovedPaths(currentRoot: string, replacementRoot: string): string[] {
   if (kindAt(replacementRoot) !== "dir") {
-    throw new Error(`Replacement folder is missing: ${replacementRoot}`);
+    throw notFound(`Replacement folder is missing: ${replacementRoot}`);
   }
   const removed: string[] = [];
   const walk = (currentDir: string, replacementDir: string, prefix: string): void => {

@@ -8,6 +8,7 @@ import {
   type SafetySeverity,
   isRecord,
 } from "@loadout/shared";
+import { AppError, invalid } from "../errors";
 import { exec } from "../util/exec";
 import { isDirectory, statOrNull } from "../util/fs";
 import { buildReport, isBlockingSeverity, shorten } from "./report";
@@ -90,7 +91,7 @@ export async function runScanner(path: string, skillDir: string): Promise<Safety
   });
   if (!REPORT_EXIT_CODES.has(result.code)) {
     const reason = lastLine(result.stderr) ?? lastLine(result.stdout) ?? `exit code ${result.code}`;
-    throw new Error(`SkillSpector could not scan the skill: ${reason}`);
+    throw new AppError("IO", `SkillSpector could not scan the skill: ${reason}`);
   }
   return parseReport(result.stdout, Date.now());
 }
@@ -144,11 +145,11 @@ export function parseReport(stdout: string, scannedAt: number): SafetyReport {
   try {
     data = asObject(JSON.parse(start >= 0 ? stdout.slice(start) : stdout));
   } catch {
-    throw new Error("SkillSpector's report could not be read.");
+    throw invalid("SkillSpector's report could not be read.");
   }
   const risk = asObject(data.risk_assessment);
   const score = asNumber(risk.score);
-  if (score === null) throw new Error("SkillSpector's report has no risk score.");
+  if (score === null) throw invalid("SkillSpector's report has no risk score.");
 
   const findings = (Array.isArray(data.issues) ? data.issues : []).flatMap((raw) => {
     const finding = findingOf(raw);
