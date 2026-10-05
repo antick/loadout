@@ -297,6 +297,21 @@ describe("a site that publishes skills", () => {
     });
     expect(await findWellKnownIndex(download, "https://nothing.example.com")).toBeNull();
   });
+
+  it("asks a host that does not answer once, not at every address an index may be", async () => {
+    const asked: string[] = [];
+    const offline = (async (input: string | URL) => {
+      asked.push(String(input));
+      throw new TypeError("fetch failed");
+    }) as typeof fetch;
+    const download = downloadWith(createRequest(offline));
+    expect(await findWellKnownIndex(download, `${SHOP}/team/list`)).toBeNull();
+    expect(asked).toEqual([`${SHOP}/team/list/.well-known/agent-skills/index.json`]);
+    // A 404 is an answer: the next address is still asked.
+    web.requests.length = 0;
+    expect(await findWellKnownIndex(downloadWith(createRequest(web.fetchImpl)), SHOP)).toBeNull();
+    expect(web.requests).toEqual([`${SHOP}/.well-known/agent-skills/index.json`, SHOP_INDEX]);
+  });
 });
 
 describe("downloads that move to another site", () => {

@@ -8,7 +8,7 @@ import {
   formatBytes,
   isRecord,
 } from "@loadout/shared";
-import { AppError, invalid, isAppError, notFound } from "../errors";
+import { AppError, invalid, isAppError, isUnanswered, notFound } from "../errors";
 import { resolveInside } from "../util/fs";
 import { sha256Hex } from "../util/hash";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
@@ -155,12 +155,15 @@ export function parseWellKnownIndex(raw: unknown, indexUrl: string): WellKnownEn
     : null;
 }
 
-/** Download and read one index, watching where it moves; null when there is none there. */
+/** What asking one address for an index gave: the index, nothing, or no answer at all. */
+type IndexProbe = Omit<WellKnownIndex, "indexUrl"> | "none" | "unanswered";
+
+/** Download and read one index, watching where it moves. */
 async function readWellKnownIndex(
   download: Download,
   indexUrl: string,
   signal?: AbortSignal,
-): Promise<Omit<WellKnownIndex, "indexUrl"> | null> {
+): Promise<IndexProbe> {
   let fetched: Awaited<ReturnType<typeof downloadWatched>>;
   try {
     fetched = await downloadWatched(
@@ -175,15 +178,16 @@ async function readWellKnownIndex(
     );
   } catch (error) {
     if (isAppError(error, "CANCELLED")) throw error;
-    return null;
+    // Offline, timed out or failing: the other addresses are on the same host.
+    return isUnanswered(error) ? "unanswered" : "none";
   }
   let entries: WellKnownEntry[] | null;
   try {
     entries = parseWellKnownIndex(JSON.parse(fetched.data.toString("utf8")), indexUrl);
   } catch {
-    return null;
+    return "none";
   }
-  return entries ? { entries, redirectedTo: fetched.redirectedTo } : null;
+  return entries ? { entries, redirectedTo: fetched.redirectedTo } : "none";
 }
 
 interface Candidate {
@@ -221,7 +225,9 @@ export async function findWellKnownIndex(
   let rootFound = false;
   for (const candidate of all) {
     const found = await readWellKnownIndex(download, candidate.indexUrl, signal);
-    if (!found) continue;
+    // A host that does not answer is not asked again at each address, a timeout each.
+    if (found === "unanswered") break;
+    if (found === "none") continue;
     if (candidate.scoped || !wantsScope) return { indexUrl: candidate.indexUrl, ...found };
     rootFound = true;
   }
