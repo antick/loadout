@@ -11,7 +11,6 @@ import {
   RefreshCw,
   ScanSearch,
   Send,
-  Trash2,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +18,6 @@ import { BatchDeployDialog } from "@/components/BatchDeployDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
@@ -52,7 +50,6 @@ import {
 import { LibrarySelectionActions } from "@/features/library/LibrarySelectionActions";
 import { LibraryToolbar } from "@/features/library/LibraryToolbar";
 import { SkillDetailSheet } from "@/features/library/SkillDetailSheet";
-import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
 import { useUpdateSkills } from "@/hooks/mutations/library";
 import { useAvailableAgents } from "@/hooks/queries/agents";
@@ -101,7 +98,6 @@ export function LibraryPage({
   const allTags = useAllTags();
   const checkAll = useCheckAllUpdates();
   const updateMany = useUpdateSkills();
-  const deleteSkills = useDeleteSkills();
   const actionsFor = useLibrarySkillActions();
   const [viewMode, setViewMode] = useViewMode<LibraryViewMode>(VIEW_MODE_SCOPE);
   const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
@@ -218,18 +214,7 @@ export function LibraryPage({
         )
       }
       menuActions={actionsFor(skill)}
-      actions={
-        <>
-          <FavoriteButton skill={skill} />
-          <IconButton
-            size="icon-xs"
-            label={t("library.deleteSkill", { name: skill.name })}
-            icon={<Trash2 />}
-            className="text-muted-foreground hover:text-danger"
-            onClick={() => void deleteSkills([skill])}
-          />
-        </>
-      }
+      actions={<FavoriteButton skill={skill} />}
     />
   );
 

@@ -23,7 +23,6 @@
     "select": "Select",
     "install": "Install",
     "newSkill": "New skill",
-    "deleteSkill": "Delete {{name}}",
     "toolbar": {
       "search": "Search name, description, tags, notes or source",
       "source": "Filter by source",

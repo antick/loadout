@@ -6,7 +6,8 @@ test("delete a skill, then restore it from Recently removed", async ({ page }) =
   const card = content.getByRole("heading", { name: "api-docs", level: 3 });
   await expect(card).toBeVisible();
 
-  await content.getByRole("button", { name: "Delete api-docs" }).click();
+  await content.getByRole("button", { name: "api-docs", exact: true }).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Delete skill" }).click();
   const dialog = page.getByRole("alertdialog");
   await expect(dialog.getByRole("heading", { name: "Delete “api-docs”?" })).toBeVisible();
   await dialog.getByRole("button", { name: "Delete skill" }).click();
