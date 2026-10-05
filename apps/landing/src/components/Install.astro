@@ -1,6 +1,7 @@
 ---
 import { loadDownloads } from "../lib/downloads";
-import { ALL_RELEASES_URL, APP_VERSION, DOWNLOADS_URL, INSTALL_GUIDE } from "../lib/site";
+import { INSTALL_GUIDE_URL, LATEST_RELEASE_URL, RELEASES_URL } from "@loadout/shared";
+import { APP_VERSION } from "../lib/site";
 import DownloadButton from "./DownloadButton.astro";
 
 const downloads = await loadDownloads();
@@ -13,7 +14,7 @@ const downloads = await loadDownloads();
       <p>Tools are better with your context.</p>
     </div>
     <div class="download-action">
-      <DownloadButton href={DOWNLOADS_URL} />
+      <DownloadButton href={LATEST_RELEASE_URL} />
       <p>Available for macOS, Windows &amp; Linux</p>
     </div>
   </div>
@@ -31,10 +32,10 @@ const downloads = await loadDownloads();
       </dl>}
       <p>
         The builds aren't signed with an Apple or Microsoft certificate yet, so your system may
-        ask for an extra step on first launch. <a href={INSTALL_GUIDE}>Follow the install guide</a>.
+        ask for an extra step on first launch. <a href={INSTALL_GUIDE_URL}>Follow the install guide</a>.
         After that, Loadout can check for updates and install them with one restart.
       </p>
-      <a class="release-link" href={ALL_RELEASES_URL}>Browse all releases <span aria-hidden="true">↗</span></a>
+      <a class="release-link" href={RELEASES_URL}>Browse all releases <span aria-hidden="true">↗</span></a>
     </div>
   </details>
 </section>

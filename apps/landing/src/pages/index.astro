@@ -1,5 +1,5 @@
 ---
-import { APP_NAME } from "@loadout/shared";
+import { APP_NAME, INSTALL_GUIDE_URL, RELEASES_URL, SOURCE_URL } from "@loadout/shared";
 import Agents from "../components/Agents.astro";
 import Brand from "../components/Brand.astro";
 import Header from "../components/Header.astro";
@@ -9,7 +9,7 @@ import Features from "../components/Features.astro";
 import Safety from "../components/Safety.astro";
 import Base from "../layouts/Base.astro";
 import { AGENT_COUNT } from "../lib/agents";
-import { ALL_RELEASES_URL, GITHUB_URL, INSTALL_GUIDE, PARENT_NAME, PARENT_URL } from "../lib/site";
+import { PARENT_NAME, PARENT_URL } from "../lib/site";
 ---
 
 <Base title={`${APP_NAME}: one skill library for every coding agent`}
@@ -27,9 +27,9 @@ import { ALL_RELEASES_URL, GITHUB_URL, INSTALL_GUIDE, PARENT_NAME, PARENT_URL } 
     <Brand />
     <p>A <a href={PARENT_URL}>{PARENT_NAME}</a> project</p>
     <nav aria-label="Footer navigation">
-      <a href={GITHUB_URL}>GitHub</a>
-      <a href={ALL_RELEASES_URL}>Releases</a>
-      <a href={INSTALL_GUIDE}>Install guide</a>
+      <a href={SOURCE_URL}>GitHub</a>
+      <a href={RELEASES_URL}>Releases</a>
+      <a href={INSTALL_GUIDE_URL}>Install guide</a>
     </nav>
   </footer>
 </Base>

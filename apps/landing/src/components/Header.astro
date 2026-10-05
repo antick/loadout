@@ -1,5 +1,5 @@
 ---
-import { GITHUB_URL } from "../lib/site";
+import { SOURCE_URL } from "@loadout/shared";
 import Brand from "./Brand.astro";
 import DownloadButton from "./DownloadButton.astro";
 ---
@@ -9,7 +9,7 @@ import DownloadButton from "./DownloadButton.astro";
   <nav aria-label="Main navigation">
     <a class="section-link" href="#what-it-does">Features</a>
     <a class="section-link" href="#agents">Agents</a>
-    <a class="source-link" href={GITHUB_URL}>GitHub</a>
+    <a class="source-link" href={SOURCE_URL}>GitHub</a>
     <DownloadButton compact />
   </nav>
 </header>

@@ -1,5 +1,6 @@
 ---
-import { GITHUB_URL, LIBRARY_FIGURE } from "../lib/site";
+import { SOURCE_URL } from "@loadout/shared";
+import { LIBRARY_FIGURE } from "../lib/site";
 import DownloadButton from "./DownloadButton.astro";
 import Icon from "./Icon.astro";
 ---
@@ -13,7 +14,7 @@ import Icon from "./Icon.astro";
     </p>
     <div class="actions">
       <DownloadButton />
-      <a class="button button-outline" href={GITHUB_URL}>
+      <a class="button button-outline" href={SOURCE_URL}>
         <Icon name="code" /> View on GitHub
       </a>
     </div>
