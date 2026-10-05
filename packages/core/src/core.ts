@@ -51,7 +51,7 @@ export interface CoreCreateOptions extends CoreOptions {
 }
 
 /** Long-running work the host starts once and stops on quit. */
-export interface CoreBackground {
+interface CoreBackground {
   start(): void;
   stop(): void;
   /**

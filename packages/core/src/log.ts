@@ -4,7 +4,7 @@ import { APP_SLUG, formatTimestampIso } from "@loadout/shared";
 import { errorMessage } from "./errors";
 import { ensureDir, statOrNull } from "./util/fs";
 
-export type LogLevel = "debug" | "info" | "warn" | "error";
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface Logger {
   debug(message: string, error?: unknown): void;

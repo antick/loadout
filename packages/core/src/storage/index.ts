@@ -1,7 +1,2 @@
-export {
-  type RemovalPlan,
-  type StorageService,
-  type StorageServiceDeps,
-  createStorageService,
-} from "./service";
-export { type RemovedStore, type SetAsideInfo, createRemovedStore } from "./removed";
+export { type StorageService, createStorageService } from "./service";
+export { type RemovedStore, createRemovedStore } from "./removed";

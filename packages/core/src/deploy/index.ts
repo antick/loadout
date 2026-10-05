@@ -8,13 +8,11 @@ export {
 } from "./engine";
 export type { PairRef } from "./batch";
 export { pruneBrokenLinks } from "./prune";
-export { type DeployRepair, type DeployRepairDeps, createDeployRepair } from "./repair";
-export { type StaleCopyRefresher, createStaleCopyRefresher } from "./stale-refresh";
+export { type DeployRepair, createDeployRepair } from "./repair";
+export { createStaleCopyRefresher } from "./stale-refresh";
 export {
   type DeployService,
-  type DeployServiceDeps,
   type RedeployReport,
-  type RefreshOptions,
   type StaleCopiesReport,
   createDeployService,
 } from "./service";
