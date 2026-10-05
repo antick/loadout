@@ -4,6 +4,7 @@ export const SECRET_KINDS = [
   "private_key",
   "aws_key",
   "github_token",
+  "gitlab_token",
   "anthropic_key",
   "openai_key",
   "slack_token",

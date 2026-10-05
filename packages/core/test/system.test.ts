@@ -59,7 +59,7 @@ describe("sanitizer", () => {
     const text = [
       "/Users/somebody/projects/x and /fake/home/.library",
       "https://user:secret@example.com/repo.git",
-      "token ghp_abcdefghijklmnop1234 and sk-abcdefghijklmnop",
+      `token ghp_${"a".repeat(36)} and sk-${"b".repeat(48)}`,
       "mail person@example.com",
     ].join("\n");
     const clean = sanitizeText(text, "/fake/home");
@@ -67,20 +67,21 @@ describe("sanitizer", () => {
     expect(clean).toContain("https://<redacted>@example.com/repo.git");
     expect(clean).not.toContain("secret");
     expect(clean).not.toContain("ghp_");
-    expect(clean).not.toContain("sk-abc");
+    expect(clean).not.toContain("sk-bbb");
     expect(clean).toContain("<email>");
   });
 
   it("hides GitLab and npm tokens and Authorization values, not ordinary words", () => {
     const text = [
-      "glpat-abcdefghij12 npm_abcdefghijklmnop",
+      `glpat-${"c".repeat(20)} npm_${"d".repeat(36)}`,
       "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.x.y",
       "Authorization: token 0123456789abcdef",
       "the token successfully refreshed",
     ].join("\n");
     const clean = sanitizeText(text, "/fake/home");
-    expect(clean).not.toMatch(/glpat-|npm_a|eyJhbGci|0123456789abcdef/);
+    expect(clean).not.toMatch(/glpat-|npm_d|eyJhbGci|0123456789abcdef/);
     expect(clean).toContain("Bearer <token>");
+    expect(clean).not.toMatch(/cccc|dddd/);
     expect(clean).toContain("the token successfully refreshed");
   });
 
@@ -123,7 +124,7 @@ describe("logs", () => {
 
   it("exports logs, activity and diagnostics, and nothing private", async () => {
     const logsDir = world.ctx.paths.logsDir;
-    writeFile(join(logsDir, LOG_FILE_NAME), `now ${world.home}/thing ghp_abcdefghijklmnop1234\n`);
+    writeFile(join(logsDir, LOG_FILE_NAME), `now ${world.home}/thing ghp_${"a".repeat(36)}\n`);
     writeFile(join(logsDir, `${LOG_FILE_NAME}.1`), "older\n");
     writeFile(join(logsDir, "unrelated.txt"), "not a log\n");
     writeFile(join(logsDir, `${LOG_FILE_NAME}.bak`), "not a rotated log\n");

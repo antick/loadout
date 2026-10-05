@@ -9,6 +9,7 @@ export const SECRET_PATTERNS: readonly { kind: SecretKind; regex: RegExp }[] = [
   { kind: "private_key", regex: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY(?: BLOCK)?-----/g },
   { kind: "aws_key", regex: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
   { kind: "github_token", regex: /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})/g },
+  { kind: "gitlab_token", regex: /\bglpat-[A-Za-z0-9_-]{20,}/g },
   { kind: "anthropic_key", regex: /\bsk-ant-[A-Za-z0-9_-]{20,}/g },
   { kind: "openai_key", regex: /\bsk-(?!ant-)(?:proj-|svcacct-)?[A-Za-z0-9_-]{32,}/g },
   {
