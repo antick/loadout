@@ -78,7 +78,6 @@ export const keys = {
       ["workspace", "document", agentKey, relativePath] as const,
   },
   updates: {
-    root: ["updates"] as const,
     /** Every comparison of one skill with its source; `sourceComparison` in `skill-queries.ts`. */
     comparison: (skillId: string) => ["updates", "comparison", skillId] as const,
     news: ["updates", "source-news"] as const,
@@ -142,11 +141,9 @@ export const keys = {
     agentControl: ["system", "agent-control"] as const,
   },
   install: {
-    root: ["install"] as const,
     scan: ["install", "scan"] as const,
   },
   app: {
-    root: ["app"] as const,
     info: ["app", "info"] as const,
     update: ["app", "update"] as const,
     editors: ["app", "editors"] as const,

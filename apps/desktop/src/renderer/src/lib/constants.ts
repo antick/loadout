@@ -85,7 +85,7 @@ export const COMMAND_PALETTE_MAX_SKILLS = 50;
 export const DRAG_ACTIVATION_DISTANCE_PX = 6;
 
 /** Collapsible groups inside the sidebar sections; their open state is remembered. */
-export const SIDEBAR_GROUP_IDS = ["agents", "assistants"] as const;
+const SIDEBAR_GROUP_IDS = ["agents", "assistants"] as const;
 export type SidebarGroupId = (typeof SIDEBAR_GROUP_IDS)[number];
 
 export const INSTALL_TABS = ["market", "local", "git", "scan"] as const;

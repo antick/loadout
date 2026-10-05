@@ -46,7 +46,7 @@ import { useSelection } from "@/hooks/use-selection";
 import { matchesTagFilter } from "@/lib/tag-filter";
 import { cn } from "@/lib/utils";
 
-export type AddFromLibraryTarget =
+type AddFromLibraryTarget =
   /** No agents involved (e.g. adding to a preset): the target row is hidden. */
   | { kind: "none" }
   | { kind: "agent"; agentKey: string }
@@ -60,7 +60,7 @@ export type AddFromLibraryTarget =
     };
 
 /** `installed` and `unavailable` rows cannot be picked; `conflict` rows can, with a warning. */
-export type PickerRowState = "available" | "installed" | "conflict" | "unavailable";
+type PickerRowState = "available" | "installed" | "conflict" | "unavailable";
 
 export interface PickerRowInfo {
   state: PickerRowState;

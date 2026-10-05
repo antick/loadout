@@ -1,6 +1,6 @@
 import { splitFrontmatter } from "@loadout/shared";
 
-export interface FrontmatterEntry {
+interface FrontmatterEntry {
   key: string;
   value: string;
 }

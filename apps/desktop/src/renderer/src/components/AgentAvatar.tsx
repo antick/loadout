@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 import { agentMonogram, agentTintStyle } from "@/lib/agent-color";
 import { cn } from "@/lib/utils";
 
-export type AgentAvatarSize = "sm" | "md" | "lg";
+type AgentAvatarSize = "sm" | "md" | "lg";
 /**
  * `on`: deployed / healthy, `off`: not deployed (dimmed), `warning`: needs attention,
  * `blocked`: dimmed with a red ring, the skill may never be deployed here.
  */
-export type AgentAvatarStatus = "on" | "off" | "warning" | "blocked";
+type AgentAvatarStatus = "on" | "off" | "warning" | "blocked";
 
 const SIZE_CLASSES: Record<AgentAvatarSize, string> = {
   sm: "size-5 rounded text-[0.5625rem]",

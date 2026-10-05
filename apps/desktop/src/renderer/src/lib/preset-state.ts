@@ -1,7 +1,7 @@
 import type { Preset } from "@loadout/shared";
 
 export type PresetBarMode = "agent-pair" | "logical-skill";
-export type PresetActivity = "empty" | "active" | "partial" | "inactive";
+type PresetActivity = "empty" | "active" | "partial" | "inactive";
 
 export interface SkillAgentPair {
   skillId: string;

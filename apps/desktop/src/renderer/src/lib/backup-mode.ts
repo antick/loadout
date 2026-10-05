@@ -1,9 +1,9 @@
 import type { StatusTone } from "@/components/StatusBadge";
 import type { BackupStatus } from "@loadout/shared";
 
-export type FixReason = "unrelated_histories" | "detached";
+type FixReason = "unrelated_histories" | "detached";
 /** Where the waiting changes are: on this machine, on the remote, or both. */
-export type PendingSide = "local" | "remote" | "both";
+type PendingSide = "local" | "remote" | "both";
 
 export type BackupMode =
   | { kind: "loading" }

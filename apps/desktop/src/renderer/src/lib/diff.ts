@@ -3,14 +3,14 @@ import { DIFF_CONTEXT_LINES } from "@/lib/constants";
 
 export type DiffLineKind = "context" | "added" | "removed";
 
-export interface DiffLine {
+interface DiffLine {
   kind: DiffLineKind;
   text: string;
   oldNumber: number | null;
   newNumber: number | null;
 }
 
-export interface DiffHunk {
+interface DiffHunk {
   header: string;
   lines: DiffLine[];
 }

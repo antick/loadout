@@ -8,7 +8,7 @@ import { createContext, type ReactNode, useContext, useEffect, useMemo, useState
 import { useSetting, useSettings } from "@/hooks/queries/settings";
 import { DARK_QUERY, applyAppearance, rememberAppearance } from "@/lib/appearance";
 
-export type ResolvedTheme = "light" | "dark";
+type ResolvedTheme = "light" | "dark";
 
 interface ThemeContextValue {
   /** The saved setting, which may be "system". */

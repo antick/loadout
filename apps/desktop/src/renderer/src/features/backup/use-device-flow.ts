@@ -6,7 +6,7 @@ import { useOpenExternal } from "@/hooks/mutations/app";
 import { toastBackupError } from "@/features/backup/backup-errors";
 import { DEVICE_POLL_MIN_INTERVAL_S, DEVICE_POLL_SLOW_DOWN_S, MS_PER_SECOND } from "./constants";
 
-export type DeviceFlowPhase = "idle" | "starting" | "waiting" | "expired";
+type DeviceFlowPhase = "idle" | "starting" | "waiting" | "expired";
 
 export interface DeviceFlow {
   phase: DeviceFlowPhase;

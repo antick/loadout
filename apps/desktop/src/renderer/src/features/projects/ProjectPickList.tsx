@@ -19,7 +19,7 @@ import { errorMessage } from "@/lib/toast";
  * the outcome of adding them, and the footer that adds the ticked ones.
  */
 
-export interface ProjectPickItem {
+interface ProjectPickItem {
   path: string;
   /** The row's body; the checkbox sits in front of it. */
   content: ReactNode;

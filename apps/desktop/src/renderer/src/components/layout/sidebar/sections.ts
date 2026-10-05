@@ -4,7 +4,7 @@ import type { SHORTCUT_KEYS } from "@/lib/shortcuts";
  * What the sidebar can show. Each has a button in the activity bar, which also opens the
  * section's main page.
  */
-export const SIDEBAR_SECTIONS = [
+const SIDEBAR_SECTIONS = [
   "home",
   "library",
   "agents",

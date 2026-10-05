@@ -1,7 +1,7 @@
 import type { Skill } from "@loadout/shared";
 
 /** The agent does not have the skill yet, and the skill is not blocked for it. */
-export function canReceive(skill: Skill, agentKey: string): boolean {
+function canReceive(skill: Skill, agentKey: string): boolean {
   return (
     !skill.deployments.some((deployment) => deployment.agentKey === agentKey) &&
     !skill.blockedAgents.includes(agentKey)

@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-export type StatusBarTone = "default" | "danger" | "warning" | "info";
+type StatusBarTone = "default" | "danger" | "warning" | "info";
 
 const TONES: Record<StatusBarTone, string> = {
   default: "text-muted-foreground hover:text-foreground",
