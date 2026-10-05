@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -27,6 +27,8 @@ function greetingKey(hour: number): string {
 /** The home screen: how the library is doing, shortcuts, and what happened lately. */
 export function DashboardPage(): ReactNode {
   const { t } = useTranslation();
+  // Read once when the page opens: the greeting does not change while it is on screen.
+  const [hour] = useState(() => new Date().getHours());
   const skills = useSkills();
   const agents = useAgents();
   const projects = useProjects();
@@ -50,7 +52,7 @@ export function DashboardPage(): ReactNode {
     <div className="flex flex-col gap-6 px-6 py-5">
       <PageHeader title={t("nav.dashboard")} />
       <header>
-        <p className="type-display text-2xl">{t(greetingKey(new Date().getHours()))}</p>
+        <p className="type-display text-2xl">{t(greetingKey(hour))}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {empty
             ? t("dashboard.summaryEmpty")
