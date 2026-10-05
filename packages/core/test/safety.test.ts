@@ -1,6 +1,5 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SafetyReport } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findScanner, parseReport, runScanner } from "../src/safety/scanner";
 import { type SafetyService, createSafetyService } from "../src/safety/service";
@@ -78,21 +77,50 @@ let world: TestWorld;
 let install: InstallHarness;
 let safety: SafetyService;
 let sources: string;
-let scanned: string[];
+let fake: FakeScanner;
 let restoreTmp: () => void;
 
-/** Flags a skill whose SKILL.md says EVIL; fails on BROKEN; clean otherwise. */
-async function fakeScan(_program: string, dir: string): Promise<SafetyReport> {
-  scanned.push(dir);
-  const text = readFileSync(join(dir, "SKILL.md"), "utf8");
-  if (text.includes(BROKEN)) throw new Error("SkillSpector could not scan the skill: boom");
-  return parseReport(text.includes(EVIL) ? FLAGGED_OUTPUT : CLEAN_OUTPUT, Date.now());
+interface FakeScanner {
+  /** The program's path. */
+  path: string;
+  /** Folders it was asked to scan, in order. */
+  scanned(): string[];
+  forget(): void;
 }
 
-function setup(program: string | null = "/bin/skillspector", builtin = false): void {
+/**
+ * A stand-in for SkillSpector on disk: flags a skill whose SKILL.md says EVIL, fails on BROKEN,
+ * reports clean otherwise, and notes every folder it was given.
+ */
+function writeFakeScanner(dir: string): FakeScanner {
+  mkdirSync(dir, { recursive: true });
+  const log = join(dir, "scanned.log");
+  const clean = join(dir, "clean.json");
+  const flagged = join(dir, "flagged.json");
+  const path = join(dir, "skillspector");
+  writeFileSync(clean, CLEAN_OUTPUT);
+  writeFileSync(flagged, FLAGGED_OUTPUT);
+  writeFileSync(
+    path,
+    [
+      "#!/bin/sh",
+      `printf '%s\\n' "$2" >> '${log}'`,
+      `if grep -q ${BROKEN} "$2/SKILL.md"; then echo boom >&2; exit 2; fi`,
+      `if grep -q ${EVIL} "$2/SKILL.md"; then cat '${flagged}'; else cat '${clean}'; fi`,
+      "",
+    ].join("\n"),
+  );
+  chmodSync(path, 0o755);
+  return {
+    path,
+    scanned: () => (existsSync(log) ? readFileSync(log, "utf8").split("\n").filter(Boolean) : []),
+    forget: () => rmSync(log, { force: true }),
+  };
+}
+
+function setup(program: string | null = fake.path, builtin = false): void {
   safety = createSafetyService(world.ctx, {
     store: world.store,
-    scan: fakeScan,
     builtin,
     findProgram: () => (program ? { path: program, version: "2.12.0" } : null),
   });
@@ -104,7 +132,7 @@ beforeEach(() => {
   restoreTmp = isolateTmpDir(join(world.root, "tmp"));
   sources = join(world.root, "sources");
   mkdirSync(sources, { recursive: true });
-  scanned = [];
+  fake = writeFakeScanner(join(world.root, "fake-scanner"));
   setup();
 });
 
@@ -179,12 +207,12 @@ describe("the safety check on install", () => {
   it("skips the check when switched off or when the scanner is missing", async () => {
     world.ctx.settings.set("safetyScanOnInstall", false);
     await install.api.fromPath(makeSkill(sources, "off", { body: EVIL }));
-    expect(scanned).toEqual([]);
+    expect(fake.scanned()).toEqual([]);
 
     world.ctx.settings.set("safetyScanOnInstall", true);
     setup(null);
     await install.api.fromPath(makeSkill(sources, "missing", { body: EVIL }));
-    expect(scanned).toEqual([]);
+    expect(fake.scanned()).toEqual([]);
     expect(
       world.store
         .list()
@@ -249,16 +277,58 @@ describe("scanning the library", () => {
     expect(first).toMatchObject({ scanned: 2, unsafe: 1, caution: 0 });
     expect(first.failed.map((f) => f.name)).toEqual(["broken"]);
 
-    scanned = [];
+    fake.forget();
     // Nothing changed: only the one that failed is due again.
     await safety.api.scanLibrary();
-    expect(scanned).toHaveLength(1);
+    expect(fake.scanned()).toHaveLength(1);
 
     // A changed skill's report no longer holds until it is scanned again.
     writeFileSync(join(good.libraryPath, "extra.md"), "more\n");
     world.store.update(good.id, { contentHash: "changed" });
     expect((await safety.api.list()).find((r) => r.skillId === good.id)?.stale).toBe(true);
     expect((await safety.api.scanSkill(good.id)).stale).toBe(false);
+  });
+
+  it("keeps SkillSpector's reports when only the built-in rules are left", async () => {
+    world.ctx.settings.set("safetyScanOnInstall", false);
+    const good = await install.api.fromPath(makeSkill(sources, "good"));
+    await safety.api.scanLibrary();
+    expect((await safety.api.list())[0]).toMatchObject({
+      skillId: good.id,
+      engine: "skillspector",
+    });
+
+    setup(null, true);
+    expect(await safety.api.scanLibrary()).toMatchObject({ scanned: 0 });
+    expect((await safety.api.list())[0]).toMatchObject({ engine: "skillspector", stale: false });
+
+    // The deeper check is worth having once the scanner is back: built-in reports are due again.
+    world.store.update(good.id, { contentHash: "changed" });
+    await safety.api.scanLibrary();
+    expect((await safety.api.list())[0]).toMatchObject({ engine: "builtin" });
+    world.store.update(good.id, { contentHash: "changed" });
+    setup();
+    expect(await safety.api.scanLibrary()).toMatchObject({ scanned: 1 });
+    expect((await safety.api.list())[0]).toMatchObject({ engine: "skillspector" });
+  });
+
+  it("counts the install check's progress by candidate, whatever order scans finish in", async () => {
+    const folder = join(world.root, "batch");
+    for (const name of ["one", "two", "three", "four"]) makeSkill(folder, name);
+    const key = "progress-key";
+    await safety.check(
+      [...Array(4).keys()].map((i) => ({ name: `s${i}`, dir: join(folder, "one") })),
+      { progressKey: key },
+    );
+    const currents = install.events.flatMap(({ event, payload }) =>
+      event === "install:progress" &&
+      "key" in payload &&
+      payload.key === key &&
+      "current" in payload
+        ? [payload.current]
+        : [],
+    );
+    expect([...currents].sort()).toEqual([1, 2, 3, 4]);
   });
 
   it("says plainly when the scanner is missing", async () => {

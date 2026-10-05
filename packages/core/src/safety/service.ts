@@ -21,8 +21,6 @@ import { SafetyStore, type StoredReport } from "./store";
 
 export interface SafetyServiceDeps {
   store: SkillStore;
-  /** Tests only: run this instead of the real scanner. */
-  scan?: (programPath: string, skillDir: string) => Promise<SafetyReport>;
   /** Tests only: the program to use, instead of looking for one. */
   findProgram?: () => ScannerProgram | null;
   /** Run Loadout's own rules when SkillSpector is not found (default true; tests turn it off). */
@@ -88,7 +86,6 @@ function toRecord(skill: Skill, contentHash: string, report: SafetyReport): Safe
 export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): SafetyService {
   const { store } = deps;
   const reports = new SafetyStore(ctx.paths.cacheDir);
-  const scan = deps.scan ?? runScanner;
   const builtin = deps.builtin ?? true;
   let program: { value: ScannerProgram | null; at: number; configured: string } | null = null;
 
@@ -131,7 +128,7 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
   function scanDir(engine: Engine, dir: string): Promise<SafetyReport> {
     return engine.kind === "builtin"
       ? Promise.resolve(scanWithRules(dir))
-      : scan(engine.program.path, dir);
+      : runScanner(engine.program.path, dir);
   }
 
   async function scanOne(engine: Engine, skill: Skill): Promise<SafetyRecord> {
@@ -174,14 +171,16 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     scanLibrary: async (force = false) => {
       const engine = await requireEngine();
       const stored = reports.all();
-      // A report from the other engine is due again: a deeper check is worth having.
+      // A built-in report is due again once SkillSpector is there: a deeper check is worth
+      // having. The other way round, a SkillSpector report is kept until the files change.
+      const deeper = engine.kind === "skillspector";
       const due = store
         .list()
         .filter(
           (skill) =>
             force ||
             !isCurrent(skill, stored[skill.id]) ||
-            stored[skill.id]?.report.engine !== engine.kind,
+            (deeper && stored[skill.id]?.report.engine !== engine.kind),
         );
       const summary: SafetyScanSummary = { scanned: 0, unsafe: 0, caution: 0, failed: [] };
       let done = 0;
@@ -225,13 +224,12 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
     const engine = await currentEngine();
     if (!engine) return candidates.map(() => null);
     const unchecked: UncheckedSkill[] = [];
-    let done = 0;
-    const results = await mapLimit(candidates, SCAN_WORKERS, async (candidate) => {
+    const results = await mapLimit(candidates, SCAN_WORKERS, async (candidate, index) => {
       if (options.progressKey) {
         ctx.emit("install:progress", {
           key: options.progressKey,
           phase: "checking",
-          current: done + 1,
+          current: index + 1,
           total: candidates.length,
           name: candidate.name,
         });
@@ -243,8 +241,6 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
         ctx.log.warn(`Safety check could not finish for ${candidate.name}: ${errorMessage(error)}`);
         unchecked.push({ name: candidate.name, reason: errorMessage(error) });
         return null;
-      } finally {
-        done += 1;
       }
     });
     const flagged = candidates.flatMap((candidate, index): FlaggedSkill[] => {
