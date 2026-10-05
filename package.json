@@ -18,9 +18,9 @@
     "package": "turbo run package"
   },
   "devDependencies": {
-    "oxfmt": "0.68.0",
-    "oxlint": "1.83.0",
-    "turbo": "2.11.2",
+    "oxfmt": "0.71.0",
+    "oxlint": "1.86.0",
+    "turbo": "2.11.6",
     "typescript": "7.0.2"
   },
   "engines": {
