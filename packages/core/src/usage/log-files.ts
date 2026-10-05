@@ -1,5 +1,6 @@
 import { open, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { STREAM_CHUNK_BYTES } from "@loadout/shared";
 
 /** A session log and how big it is now. */
 export interface LogFile {
@@ -11,7 +12,6 @@ export interface LogFile {
 const LOG_SUFFIX = ".jsonl";
 /** Sessions sit a few folders down (`projects/<project>/<session>/subagents/…`). */
 const MAX_DEPTH = 5;
-const CHUNK_BYTES = 1024 * 1024;
 const NEWLINE = 0x0a;
 
 /** Every `.jsonl` file under `root`; none when it is missing. Links are not followed. */
@@ -68,9 +68,9 @@ export async function readMarkedLines(
     let position = from;
     let readTo = from;
     let carry = Buffer.alloc(0);
-    const chunk = Buffer.alloc(CHUNK_BYTES);
+    const chunk = Buffer.alloc(STREAM_CHUNK_BYTES);
     for (;;) {
-      const { bytesRead } = await handle.read(chunk, 0, CHUNK_BYTES, position);
+      const { bytesRead } = await handle.read(chunk, 0, STREAM_CHUNK_BYTES, position);
       if (bytesRead === 0) break;
       position += bytesRead;
       const buffer =

@@ -1,13 +1,12 @@
 import { closeSync, openSync, readSync } from "node:fs";
 import { StringDecoder } from "node:string_decoder";
+import { STREAM_CHUNK_BYTES } from "@loadout/shared";
 
 /**
  * Reading text of any size a bounded piece at a time, so nothing passes unread for being large:
  * a file in chunks, then its lines, an over-long one cut into overlapping pieces.
  */
 
-/** Bytes read from a file at a time. */
-const CHUNK_BYTES = 1024 * 1024;
 const NUL = 0;
 
 /**
@@ -22,7 +21,7 @@ export function readTextChunks(
 ): boolean {
   const fd = openSync(path, "r");
   try {
-    const buffer = Buffer.alloc(CHUNK_BYTES);
+    const buffer = Buffer.alloc(STREAM_CHUNK_BYTES);
     const decoder = new StringDecoder("utf8");
     let binary = false;
     for (;;) {

@@ -1,5 +1,6 @@
 import {
   type FlaggedSkill,
+  MINUTE_MS,
   type UncheckedSkill,
   SAFETY_SCAN_LIBRARY_KEY,
   type SafetyApi,
@@ -53,7 +54,7 @@ export interface SafetyService {
 /** Scans run side by side; each is its own process. */
 const SCAN_WORKERS = 3;
 /** How long the found program and its version are trusted before looking again. */
-const PROGRAM_TTL_MS = 60_000;
+const PROGRAM_TTL_MS = MINUTE_MS;
 
 function flaggedMessage(
   flagged: readonly FlaggedSkill[],

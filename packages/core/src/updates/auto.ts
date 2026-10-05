@@ -1,5 +1,6 @@
 import {
   AUTO_UPDATE_INTERVAL_MS,
+  MINUTE_MS,
   type AppEvents,
   type BatchResult,
   type Skill,
@@ -22,12 +23,12 @@ import type { UpdateOptions } from "./update";
  * would delete files stays "available" until a person has looked at the list.
  */
 
-export const AUTO_FIRST_TICK_MS = 60_000;
-export const AUTO_TICK_MS = 15 * 60_000;
+export const AUTO_FIRST_TICK_MS = MINUTE_MS;
+export const AUTO_TICK_MS = 15 * MINUTE_MS;
 /** Breathing room before each update a round applies, so it never hammers a host or the disk. */
 export const AUTO_SKILL_PAUSE_MS = 200;
 
-export type AutoRunSummary = AppEvents["updates:auto-ran"];
+type AutoRunSummary = AppEvents["updates:auto-ran"];
 
 /** The parts of the updates service a round drives. */
 export interface AutoUpdateTarget {

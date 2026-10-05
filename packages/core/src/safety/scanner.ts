@@ -1,7 +1,9 @@
 import { accessSync, constants } from "node:fs";
 import { delimiter, join } from "node:path";
 import {
+  MINUTE_MS,
   SAFETY_SEVERITIES,
+  SECOND_MS,
   SYSTEM_BIN_DIRS,
   type SafetyFinding,
   type SafetyReport,
@@ -24,8 +26,8 @@ const WINDOWS_SUFFIXES = [".exe", ".cmd", ".bat"];
 /** Where `uv` and `pipx` put programs, looked in besides `SYSTEM_BIN_DIRS`. */
 const HOME_BIN_DIRS = [join(".local", "bin")];
 /** Static scans take a couple of seconds; the cap is for a skill that makes the scanner hang. */
-const SCAN_TIMEOUT_MS = 120_000;
-const VERSION_TIMEOUT_MS = 20_000;
+const SCAN_TIMEOUT_MS = 2 * MINUTE_MS;
+const VERSION_TIMEOUT_MS = 20 * SECOND_MS;
 /** Exit 0: clean; 1: findings or a high score. Both come with a report. 2 is a failed scan. */
 const REPORT_EXIT_CODES: ReadonlySet<number> = new Set([0, 1]);
 const MAX_TEXT = 1_000;
