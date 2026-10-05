@@ -1,6 +1,7 @@
 import type { AppEvents, LibraryWarning } from "@loadout/shared";
 import type { ActivityLog } from "./activity";
 import type { Database } from "./db/database";
+import { unsupported } from "./errors";
 import type { RepoLock } from "./lock";
 import type { Logger } from "./log";
 import type { LibraryPaths } from "./paths";
@@ -19,7 +20,7 @@ export const noSecretStore: SecretStore = {
   available: () => false,
   get: async () => null,
   set: async () => {
-    throw new Error("No credential store is available here");
+    throw unsupported("No credential store is available here");
   },
   delete: async () => undefined,
 };
