@@ -366,6 +366,13 @@ export interface PresetRemoveOptions extends ApplyOptions {
   everyHolder?: boolean;
 }
 
+export interface UndeployResult {
+  /** Copies edited in the agent's folder that the removal sets aside (with `dryRun`: would). */
+  editedCopies: string[];
+  /** Their Recently removed entries, to restore for an undo. Empty on a dry run. */
+  removedIds: string[];
+}
+
 export interface ApplyResult {
   added: number;
   removed: number;

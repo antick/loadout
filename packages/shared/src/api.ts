@@ -33,6 +33,7 @@ import type {
   RenameResult,
   Skill,
   SkillDocument,
+  UndeployResult,
 } from "./types";
 import type {
   EditTarget,
@@ -169,7 +170,15 @@ export interface InstructionsApi {
 export interface DeployApi {
   /** INVALID_INPUT when the skill is blocked for the agent. */
   deploy(skillId: string, agentKey: string): Promise<void>;
-  undeploy(skillId: string, agentKey: string): Promise<void>;
+  /**
+   * Take the skill out of the agent's folder. A copy edited there goes to Recently removed
+   * instead of away: the result names it, so it can be asked about first (`dryRun`) and undone.
+   */
+  undeploy(
+    skillId: string,
+    agentKey: string,
+    options?: { dryRun?: boolean },
+  ): Promise<UndeployResult>;
   /**
    * Block or allow a skill for agents. Blocking also removes the skill from an agent it is
    * deployed to (what Loadout put there; nothing else). Unknown agent keys are INVALID_INPUT.

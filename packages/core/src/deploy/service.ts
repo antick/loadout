@@ -1,4 +1,10 @@
-import type { BatchFailure, DeployApi, Skill, TargetConflict } from "@loadout/shared";
+import type {
+  BatchFailure,
+  DeployApi,
+  Skill,
+  TargetConflict,
+  UndeployResult,
+} from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage, invalid, isAppError } from "../errors";
@@ -206,12 +212,29 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       ctx.touched("skills");
     },
 
-    undeploy: async (skillId, agentKey) => {
+    undeploy: async (skillId, agentKey, options) => {
       const skill = store.get(skillId);
-      await removeRows(`undeploy ${skill.name}`, () => {
+      if (options?.dryRun) {
         const row = store.deployment(skillId, agentKey);
-        return row ? [row] : [];
+        const edited = row ? ops.editedCopyOf(row) : null;
+        return { editedCopies: edited ? [edited] : [], removedIds: [] };
+      }
+      const result: UndeployResult = { editedCopies: [], removedIds: [] };
+      const dropped = await ctx.lock.run(`undeploy ${skill.name}`, () => {
+        const row = store.deployment(skillId, agentKey);
+        if (!row) return false;
+        const edited = ops.editedCopyOf(row);
+        try {
+          ops.undeployRow(row, agentName(agentKey), result.removedIds);
+        } catch (error) {
+          ctx.log.warn(`Could not remove ${row.targetPath}`, error);
+          return false;
+        }
+        if (edited && result.removedIds.length > 0) result.editedCopies.push(edited);
+        return true;
       });
+      if (dropped) ctx.touched("skills");
+      return result;
     },
 
     setBlocked: async (skillId, agentKeys, blocked) => {

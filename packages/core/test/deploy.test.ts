@@ -170,6 +170,26 @@ describe("deploy service", () => {
   });
   afterEach(() => world.cleanup());
 
+  it("says which edited copy an undeploy sets aside, so it can be asked about and undone", async () => {
+    world.ctx.settings.set("deployMode", "copy");
+    const skill = world.addSkill("alpha");
+    await world.deploy.api.deploy(skill.id, "claude_code");
+    const plain = await world.deploy.api.undeploy(skill.id, "claude_code", { dryRun: true });
+    expect(plain).toEqual({ editedCopies: [], removedIds: [] });
+
+    writeFile(join(claudeTarget("alpha"), "mine.md"), "my edit\n");
+    const asked = await world.deploy.api.undeploy(skill.id, "claude_code", { dryRun: true });
+    expect(asked).toEqual({ editedCopies: [claudeTarget("alpha")], removedIds: [] });
+    expect(existsSync(claudeTarget("alpha"))).toBe(true);
+
+    const done = await world.deploy.api.undeploy(skill.id, "claude_code");
+    expect(done.editedCopies).toEqual([claudeTarget("alpha")]);
+    expect(done.removedIds).toHaveLength(1);
+    expect(existsSync(claudeTarget("alpha"))).toBe(false);
+    await world.removed.restore(done.removedIds[0] ?? "");
+    expect(readFileSync(join(claudeTarget("alpha"), "mine.md"), "utf8")).toBe("my edit\n");
+  });
+
   it("deploys a link, records it, and does nothing the second time", async () => {
     const skill = world.addSkill("alpha");
     await world.deploy.api.deploy(skill.id, "claude_code");

@@ -45,7 +45,10 @@ export interface DeployOperations {
   /** `known`: every deployment row, read once by a caller that inspects many pairs. */
   inspect(pair: DeployPair, policy?: OwnershipPolicy, known?: DeploymentRecord[]): TargetCheck;
   deployPair(pair: DeployPair, policy?: OwnershipPolicy): Promise<DeployOutcome>;
-  undeployRow(row: DeploymentRecord, agentName?: string): boolean;
+  /** `setAside` collects the Recently removed entry of an edited copy kept instead of deleted. */
+  undeployRow(row: DeploymentRecord, agentName?: string, setAside?: string[]): boolean;
+  /** The copy `undeployRow` would set aside instead of deleting: its path, or null. */
+  editedCopyOf(row: DeploymentRecord): string | null;
 }
 
 /** The target is named after the library folder, not the display name, so it stays unique. */
@@ -100,19 +103,32 @@ export function createDeployOperations(
    * when no row of any skill or agent still points at it, and only if it still looks like what
    * `row` recorded. When in doubt the content stays.
    */
-  function releasePath(row: DeploymentRecord, place = row.agentKey): boolean {
-    let survivors: DeploymentRecord[];
+  /** Other rows still pointing at `row`'s path keep it; null when that could not be checked. */
+  function sharedWithOthers(row: DeploymentRecord): boolean | null {
     try {
-      survivors = rowsAtPath(store.deployments(), row.targetPath).filter(
+      return rowsAtPath(store.deployments(), row.targetPath).some(
         (other) => other.skillId !== row.skillId || other.agentKey !== row.agentKey,
       );
     } catch (error) {
       ctx.log.warn(`Kept ${row.targetPath}: could not check who else uses it`, error);
-      return false;
+      return null;
     }
-    if (survivors.length > 0) return false;
+  }
+
+  function editedCopyOf(row: DeploymentRecord): string | null {
+    if (sharedWithOthers(row) !== false) return null;
     const libraryHash = store.find(row.skillId)?.contentHash ?? null;
-    if (setAsideEdited([row], place, "deleted", libraryHash) !== null) return true;
+    return holdsOwnEdits(row, libraryHash) ? row.targetPath : null;
+  }
+
+  function releasePath(row: DeploymentRecord, place = row.agentKey, setAside?: string[]): boolean {
+    if (sharedWithOthers(row) !== false) return false;
+    const libraryHash = store.find(row.skillId)?.contentHash ?? null;
+    const keptId = setAsideEdited([row], place, "deleted", libraryHash);
+    if (keptId !== null) {
+      setAside?.push(keptId);
+      return true;
+    }
     const gone = removeTarget(row.targetPath, row.mode);
     if (!gone && lstatOrNull(row.targetPath)) {
       ctx.log.warn(`Kept ${row.targetPath}: it no longer matches its recorded ${row.mode}`);
@@ -161,14 +177,18 @@ export function createDeployOperations(
     return "written";
   }
 
-  function undeployRow(row: DeploymentRecord, agentName = row.agentKey): boolean {
+  function undeployRow(
+    row: DeploymentRecord,
+    agentName = row.agentKey,
+    setAside?: string[],
+  ): boolean {
     const skillName = store.find(row.skillId)?.name ?? row.skillId;
     // The folder first: if removing it fails, the row stays as the proof the folder is ours.
-    const released = releasePath(row, agentName);
+    const released = releasePath(row, agentName, setAside);
     store.deleteDeployment(row.skillId, row.agentKey);
     ctx.activity.record("undeploy", skillName, agentName);
     return released;
   }
 
-  return { pairFor, inspect, deployPair, undeployRow };
+  return { pairFor, inspect, deployPair, undeployRow, editedCopyOf };
 }
