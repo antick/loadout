@@ -153,6 +153,58 @@ describe("re-indexing skill folders that moved or went missing", () => {
   });
 });
 
+/**
+ * The database owns tags, notes and the rest; a metadata file can be behind it (written later,
+ * under the lock). A re-index refreshes only what comes from the folder.
+ */
+describe("re-indexing with metadata files behind the database", () => {
+  let temp: ReturnType<typeof tempDir>;
+  let core: Core;
+  beforeEach(() => {
+    temp = tempDir();
+    core = createTestCore({ homeDir: temp.dir });
+  });
+  afterEach(() => {
+    core.close();
+    temp.cleanup();
+  });
+
+  it("keeps tags, note and favourite the files do not have yet", async () => {
+    const skill = await core.api.skills.create({ name: "alpha", description: "Test skill" });
+    core.close();
+    core = createTestCore({ homeDir: temp.dir });
+    // Changed in the database only, as when the deferred metadata write has not run yet.
+    core.store.setTags(skill.id, ["fresh"]);
+    core.store.update(skill.id, { note: "Fresh note", favoritedAt: 1 });
+    writeFileSync(join(skill.libraryPath, "extra.md"), "more\n");
+
+    await core.background.libraryChangedOnDisk();
+
+    const after = core.store.get(skill.id);
+    expect(after.tags).toEqual(["fresh"]);
+    expect(after.note).toBe("Fresh note");
+    expect(after.favoritedAt).toBe(1);
+    expect(after.contentHash).not.toBe(skill.contentHash);
+  });
+
+  it("changes tags only while it holds the library", async () => {
+    const skill = await core.api.skills.create({ name: "alpha", description: "Test skill" });
+    const other = new RepoLock(core.ctx.paths.lockPath);
+    let tagged = false;
+    let pending: Promise<void> = Promise.resolve();
+    await other.run("merge in another process", async () => {
+      pending = core.api.skills.setTags(skill.id, ["late"]).then(() => {
+        tagged = true;
+      });
+      await sleep(150);
+      expect(tagged).toBe(false);
+      expect(core.store.get(skill.id).tags).toEqual([]);
+    });
+    await pending;
+    expect(core.store.get(skill.id).tags).toEqual(["late"]);
+  });
+});
+
 describe("metadata files the app did not write", () => {
   let temp: ReturnType<typeof tempDir>;
   beforeEach(() => {

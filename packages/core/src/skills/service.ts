@@ -110,8 +110,10 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
     allTags: async () => store.allTags(),
 
     setTags: async (skillId, tags) => {
-      store.get(skillId);
-      store.setTags(skillId, tags);
+      await ctx.lock.run(`tag ${store.get(skillId).name}`, () => {
+        store.get(skillId);
+        store.setTags(skillId, tags);
+      });
       ctx.touched("skills");
     },
 
@@ -123,12 +125,13 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
       const target = to.trim();
       if (!source || !target) throw invalid("Tag name cannot be empty");
       if (source === target) return;
-      store.renameTag(source, target);
+      await ctx.lock.run(`rename the tag ${source}`, () => store.renameTag(source, target));
       ctx.touched("skills");
     },
 
     deleteTag: async (tag) => {
-      store.deleteTag(tag.trim());
+      const clean = tag.trim();
+      await ctx.lock.run(`delete the tag ${clean}`, () => store.deleteTag(clean));
       ctx.touched("skills");
     },
 

@@ -228,7 +228,7 @@ export class PortableMetadata {
         // The row it updated may carry another id (matched by folder): that id is seen too, or
         // the row would be dropped below with its deployments and presets.
         seenSkillIds.add(file.id);
-        seenSkillIds.add(this.#upsertSkill(file, libraryPath));
+        seenSkillIds.add(this.#upsertSkill(file, libraryPath, mode));
       }
 
       const missing: Skill[] = [];
@@ -272,18 +272,31 @@ export class PortableMetadata {
     }
   }
 
-  /** Returns the id of the row it updated or inserted. */
-  #upsertSkill(file: PortableSkill, libraryPath: string): string {
+  /**
+   * Returns the id of the row it updated or inserted. A re-index only refreshes what comes from
+   * the folder of a skill it already knows: the database owns tags, notes, sources and the rest,
+   * and the file may be behind it (written later, under the lock). Merges, restores and clones
+   * bring new files on purpose, so they take every field from them.
+   */
+  #upsertSkill(file: PortableSkill, libraryPath: string, mode: RebuildMode): string {
     const identity = readSkillIdentity(libraryPath);
     const contentHash = hashDir(libraryPath);
     const current = this.#skills.find(file.id) ?? this.#skills.findByLibraryPath(libraryPath);
     if (current) {
       const changed = current.contentHash !== contentHash;
-      this.#skills.update(current.id, {
+      const fromFolder = {
         name: identity.name,
         description: identity.description,
         libraryPath,
         contentHash,
+        updatedAt: changed ? Date.now() : current.updatedAt,
+      };
+      if (mode === "reindex") {
+        this.#skills.update(current.id, fromFolder);
+        return current.id;
+      }
+      this.#skills.update(current.id, {
+        ...fromFolder,
         sourceType: file.source.type,
         sourceUrl: file.source.url ?? current.sourceUrl,
         sourceSubpath: file.source.subpath ?? null,
@@ -297,7 +310,6 @@ export class PortableMetadata {
         blockedAgents: readBlockedAgents(file.blockedAgents),
         note: readNote(file.note),
         favoritedAt: readFavoritedAt(file.favoritedAt),
-        updatedAt: changed ? Date.now() : current.updatedAt,
       });
       this.#skills.setTags(current.id, file.tags);
       return current.id;
