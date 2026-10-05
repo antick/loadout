@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { APP_SLUG, MARKETPLACE_URL } from "@loadout/shared";
-import { type MarketService, createMarketService } from "../src/market";
+import { type MarketService, createMarketService } from "../src/market/client";
 import { createClawhubClient } from "../src/market/clawhub";
 import { parseBoardHtml, parseSearchResponse } from "../src/market/parse";
 import { type TestWorld, createTestWorld } from "./helpers";
