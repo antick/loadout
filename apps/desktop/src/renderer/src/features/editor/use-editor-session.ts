@@ -22,12 +22,12 @@ import { api } from "@/lib/api";
 import { EDITOR_DRAFT_SAVE_MS } from "@/lib/constants";
 import { locationKey } from "@/lib/skill-location";
 
-export type SaveOutcome =
+type SaveOutcome =
   | { kind: "saved"; result: SaveSkillFileResult }
   | { kind: "conflict"; disk: SkillFile | null }
   | { kind: "failed"; error: unknown };
 
-export interface SaveOptions {
+interface SaveOptions {
   overwrite?: boolean;
   /** Project copies: also give identical copies the change. */
   otherCopies?: OtherCopiesMode;
