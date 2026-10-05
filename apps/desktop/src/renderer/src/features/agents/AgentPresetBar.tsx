@@ -2,7 +2,6 @@ import type { Preset } from "@loadout/shared";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { PresetBarSection } from "@/features/local-skills/PresetBarSection";
 import { useApplyPreset } from "@/features/presets/preset-mutations";
-import { usePresetSwitches } from "@/features/presets/preset-queries";
 import { usePresets } from "@/hooks/queries/presets";
 import { useSkills } from "@/hooks/queries/skills";
 
@@ -27,12 +26,6 @@ export function AgentPresetBar({
   const skills = useSkills();
   const { mutateAsync: applyPreset } = useApplyPreset();
 
-  const knownSkillIds = useMemo(
-    () => new Set((skills.data ?? []).map((skill) => skill.id)),
-    [skills.data],
-  );
-  const switchedOn = usePresetSwitches(presets.data, knownSkillIds);
-
   const { deployed, blocked } = useMemo(() => {
     const deployedPairs = new Set<string>();
     const blockedPairs = new Set<string>();
@@ -50,15 +43,15 @@ export function AgentPresetBar({
 
   const wanted = useCallback(
     (preset: Preset) => (skillId: string, agentKey: string) =>
-      (switchedOn?.(preset.id, skillId, agentKey) ?? false) &&
+      !(preset.switchedOff[skillId]?.includes(agentKey) ?? false) &&
       !blocked.has(pairId(skillId, agentKey)),
-    [switchedOn, blocked],
+    [blocked],
   );
 
   const run = (preset: Preset, action: "add" | "remove"): Promise<unknown> =>
     applyPreset({ preset, action, agentKeys: [...agentKeys] });
 
-  if (!presets.data || !skills.data || !switchedOn) return null;
+  if (!presets.data || !skills.data) return null;
   return (
     <PresetBarSection
       presets={presets.data}

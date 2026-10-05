@@ -8,6 +8,7 @@ const PRESET: Preset = {
   description: null,
   icon: null,
   sortOrder: 0,
+  switchedOff: {},
   skillIds: ["a", "b"],
   createdAt: 0,
   updatedAt: 0,

@@ -287,6 +287,8 @@ export interface Preset {
   icon: string | null;
   sortOrder: number;
   skillIds: string[];
+  /** Per member skill, the agents its switch is off for; skills with every switch on are left out. */
+  switchedOff: Record<string, string[]>;
   createdAt: number;
   updatedAt: number;
 }

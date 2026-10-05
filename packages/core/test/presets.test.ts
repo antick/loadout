@@ -117,6 +117,10 @@ describe("presets", () => {
       (t) => t.agentKey === "claude_code",
     );
     expect(off?.enabled).toBe(false);
+    // The preset itself says which switches are off, so a list needs no call per skill.
+    expect((await api().list()).find((p) => p.id === preset.id)?.switchedOff).toEqual({
+      [skill.id]: ["claude_code", "codex"],
+    });
     await api().setToggle(preset.id, skill.id, "claude_code", true);
     const on = (await api().toggles(preset.id, skill.id)).find((t) => t.agentKey === "claude_code");
     expect(on?.enabled).toBe(true);

@@ -38,6 +38,7 @@ export class PresetStore {
       icon: row.icon,
       sortOrder: row.sort_order,
       skillIds: this.skillIds(row.id),
+      switchedOff: this.#switchedOff(row.id),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -183,6 +184,18 @@ export class PresetStore {
       });
       this.#touch(presetId);
     });
+  }
+
+  /** Every agent switched off in a preset, by skill, in one query. */
+  #switchedOff(presetId: string): Record<string, string[]> {
+    const rows = this.#db.all<{ skill_id: string; agent_key: string }>(
+      `SELECT skill_id, agent_key FROM preset_skill_agents
+       WHERE preset_id = ? AND enabled = 0 ORDER BY skill_id, agent_key`,
+      presetId,
+    );
+    const off: Record<string, string[]> = {};
+    for (const row of rows) (off[row.skill_id] ??= []).push(row.agent_key);
+    return off;
   }
 
   /** Agents switched off for one skill of a preset. Everything not listed is on. */
