@@ -1,13 +1,9 @@
 import type { Skill } from "@loadout/shared";
 import { flagBoolean } from "../args";
-import { positionalsFrom, resolveSkills } from "./support";
+import { positionalsFrom, resolveSkills, undoFlag } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
-const UNDO_FLAG = {
-  name: "undo",
-  type: "boolean",
-  description: "Take the skills out of the favourites again.",
-} as const;
+const UNDO_FLAG = undoFlag("Take the skills out of the favourites again.");
 
 /** Make skills favorites, or take that back. */
 async function favorite({ core, args }: CommandContext): Promise<CommandResult> {

@@ -37,12 +37,12 @@ describe("skills duplicates", () => {
   });
 
   it("hides a dismissed pair, lists it with --all and brings it back on restore", async () => {
-    const dismissed = await cli("skills", "duplicates", "dismiss", "pdf-tools", "pdf-helper");
+    const dismissed = await cli("skills", "dismiss", "pdf-tools", "pdf-helper");
     expect(dismissed.code).toBe(EXIT_OK);
     expect((await cli("skills", "duplicates")).stdout).toContain("No skills look like duplicates");
     expect((await cli("skills", "duplicates", "--all")).stdout).toContain("pdf-helper");
 
-    await cli("skills", "duplicates", "restore", "pdf-helper", "pdf-tools");
+    await cli("skills", "dismiss", "pdf-helper", "pdf-tools", "--undo");
     expect(
       (await cli("skills", "duplicates", "--json")).json<DuplicatesReport>().pairs,
     ).toHaveLength(1);
@@ -60,21 +60,12 @@ describe("skills duplicates", () => {
     await cli("skills", "deploy", "pdf-helper", "--agent", AGENT);
     await cli("skills", "tag", "pdf-helper", "--add", "office");
 
-    const noYes = await cli(
-      "skills",
-      "duplicates",
-      "merge",
-      "--keep",
-      "pdf-tools",
-      "--remove",
-      "pdf-helper",
-    );
+    const noYes = await cli("skills", "merge", "--keep", "pdf-tools", "--remove", "pdf-helper");
     expect(noYes.code).toBe(EXIT_USAGE);
     expect(existsSync(join(sandbox.libraryDir, "pdf-helper"))).toBe(true);
 
     const preview = await cli(
       "skills",
-      "duplicates",
       "merge",
       "--keep",
       "pdf-tools",
@@ -91,7 +82,6 @@ describe("skills duplicates", () => {
 
     const done = await cli(
       "skills",
-      "duplicates",
       "merge",
       "--keep",
       "pdf-tools",
@@ -106,14 +96,43 @@ describe("skills duplicates", () => {
     expect(existsSync(join(sandbox.agentSkillsDir, "pdf-helper"))).toBe(false);
   });
 
+  it("keeps the older skills duplicates merge|dismiss|restore forms working", async () => {
+    const dismissed = await cli("skills", "duplicates", "dismiss", "pdf-tools", "pdf-helper");
+    expect(dismissed.code).toBe(EXIT_OK);
+    expect((await cli("skills", "duplicates")).stdout).toContain("No skills look like duplicates");
+    expect((await cli("skills", "duplicates", "restore", "pdf-helper", "pdf-tools")).code).toBe(
+      EXIT_OK,
+    );
+    expect(
+      (await cli("skills", "duplicates", "--json")).json<DuplicatesReport>().pairs,
+    ).toHaveLength(1);
+    const merged = await cli(
+      "skills",
+      "duplicates",
+      "merge",
+      "--keep",
+      "pdf-tools",
+      "--remove",
+      "pdf-helper",
+      "--dry-run",
+      "--json",
+    );
+    expect(merged.code).toBe(EXIT_OK);
+    expect(merged.json<DuplicateMergeResult>()).toMatchObject({ keptId: expect.any(String) });
+    // The old forms are plumbing: help lists the commands they forward to.
+    const help = await cli("skills", "duplicates", "--help");
+    expect(help.stdout).not.toContain("--keep");
+    expect((await cli("skills", "merge", "--help")).stdout).toContain("--keep");
+  });
+
   it("needs both skills and an action it knows", async () => {
-    expect((await cli("skills", "duplicates", "merge", "--keep", "pdf-tools", "--yes")).code).toBe(
+    expect((await cli("skills", "merge", "--keep", "pdf-tools", "--yes")).code).toBe(EXIT_USAGE);
+    expect((await cli("skills", "merge", "extra", "--keep", "a", "--remove", "b")).code).toBe(
       EXIT_USAGE,
     );
     expect((await cli("skills", "duplicates", "fix")).code).toBe(EXIT_USAGE);
+    expect((await cli("skills", "dismiss", "pdf-tools")).code).toBe(EXIT_USAGE);
     expect((await cli("skills", "duplicates", "dismiss", "pdf-tools")).code).toBe(EXIT_USAGE);
-    expect((await cli("skills", "duplicates", "dismiss", "pdf-tools", "nope")).code).toBe(
-      EXIT_FAILED,
-    );
+    expect((await cli("skills", "dismiss", "pdf-tools", "nope")).code).toBe(EXIT_FAILED);
   });
 });

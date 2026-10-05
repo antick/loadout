@@ -6,7 +6,14 @@ import {
 } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { plural, table } from "../output";
-import { limitPositionals, yesFlag, positional, positionalsFrom, resolveSkills } from "./support";
+import {
+  limitPositionals,
+  positional,
+  positionalsFrom,
+  resolveSkills,
+  undoFlag,
+  yesFlag,
+} from "./support";
 import type { CommandContext, CommandResult, LibraryCommandSpec } from "./types";
 
 /**
@@ -14,11 +21,7 @@ import type { CommandContext, CommandResult, LibraryCommandSpec } from "./types"
  * user wrote so nobody looks again.
  */
 
-const UNDO_FLAG = {
-  name: "undo",
-  type: "boolean",
-  description: "Take the mark away again.",
-} as const;
+const UNDO_FLAG = undoFlag("Take the mark away again.");
 const LINK_YES_FLAG = yesFlag("Link it even when its files differ from the repository's.");
 
 const MATCH_TEXT: Record<SourceCandidate["match"], (candidate: SourceCandidate) => string> = {

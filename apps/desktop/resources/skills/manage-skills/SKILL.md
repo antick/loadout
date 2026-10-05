@@ -96,8 +96,8 @@ loadout skills unblock <ref> --agent codex --json  # allow it again (does not de
 
 # Skills that look like one skill installed twice (nothing is removed by itself)
 loadout skills duplicates --json
-loadout skills duplicates merge --keep <ref> --remove <ref> --dry-run --json   # tags, presets and agents move to the kept one
-loadout skills duplicates dismiss <ref> <ref> --json    # they are different skills; stop listing the pair
+loadout skills merge --keep <ref> --remove <ref> --dry-run --json   # tags, presets and agents move to the kept one
+loadout skills dismiss <ref> <ref> --json    # they are different skills; stop listing the pair (--undo lists it again)
 
 # Publish skills to a Git repository so others can `npx skills add` them. Pushes to a remote: only when the user asked, and preview first
 loadout skills publish <ref>... --repo owner/repo --dry-run --json   # what would change; writes nothing
@@ -187,7 +187,7 @@ none, the command fails and lists them - pick with `--skill` or confirm `--all` 
 ## Destructive commands
 
 A command that deletes or overwrites something Loadout cannot give back as it was refuses
-to run without `--yes`: `skills remove`, `skills duplicates merge`, `presets delete`,
+to run without `--yes`: `skills remove`, `skills merge`, `presets delete`,
 `removed delete`, `git restore` and `skills publish`. So does `agents disable` when the agent
 has skills deployed, and an export (`skills export`, `presets export`) whose `--out` file
 already exists. `--json` never implies

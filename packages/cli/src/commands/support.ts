@@ -11,7 +11,7 @@ import type { CommandResult } from "./types";
  * When a command asks for --yes, the same rule for all of them:
  * - Needs --yes: deleting or overwriting something Loadout cannot give back as it was. A
  *   permanent delete (`removed delete`, `presets delete`), a library skill
- *   removed with its deployments (`skills remove`, `skills duplicates merge`), every
+ *   removed with its deployments (`skills remove`, `skills merge`), every
  *   deployment of an agent (`agents disable`), the whole library rolled back (`git restore`), a
  *   push to another repository (`skills publish`), a file overwritten outside the library
  *   (`--out` of an export).
@@ -31,6 +31,13 @@ export const YES_FLAG: FlagSpec = {
 
 /** --yes with what it confirms on one command, so its help says what it really does. */
 export const yesFlag = (description: string): FlagSpec => ({ ...YES_FLAG, description });
+
+/** --undo on a command that marks something, with what taking it back means there. */
+export const undoFlag = (description: string): FlagSpec => ({
+  name: "undo",
+  type: "boolean",
+  description,
+});
 
 export const ACCEPT_RISK_FLAG: FlagSpec = {
   name: "accept-risk",

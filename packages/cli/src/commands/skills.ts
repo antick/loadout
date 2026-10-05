@@ -12,7 +12,7 @@ import { failureLines, fields, plural, table, when } from "../output";
 import { adoptCommand } from "./skills-adopt";
 import { createCommand } from "./skills-create";
 import { diffCommand } from "./skills-diff";
-import { duplicatesCommand } from "./skills-duplicates";
+import { dismissCommand, duplicatesCommand, mergeCommand } from "./skills-duplicates";
 import { publishCommand } from "./skills-publish";
 import { feedbackCommand } from "./skills-feedback";
 import { renameCommand } from "./skills-rename";
@@ -333,6 +333,8 @@ export const skillsGroup: CommandGroup = {
     blockCommand,
     unblockCommand,
     duplicatesCommand,
+    mergeCommand,
+    dismissCommand,
     publishCommand,
     feedbackCommand,
     {
