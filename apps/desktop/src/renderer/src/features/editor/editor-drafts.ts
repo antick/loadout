@@ -1,3 +1,4 @@
+import { type FileSession, isDirty } from "@/features/editor/editor-session";
 import { EDITOR_DRAFT_MAX_AGE_MS, EDITOR_DRAFT_PREFIX, STORAGE_PREFIX } from "@/lib/constants";
 
 /**
@@ -42,11 +43,13 @@ export function readDraft(draftKey: string, path: string, now = Date.now()): Edi
   }
 }
 
-export function writeDraft(draftKey: string, path: string, draft: EditorDraft): void {
+/** False when storage is full or blocked: the text is then only in the editor, nowhere else. */
+export function writeDraft(draftKey: string, path: string, draft: EditorDraft): boolean {
   try {
     window.localStorage.setItem(storageKey(draftKey, path), JSON.stringify(draft));
+    return true;
   } catch {
-    // Storage full or blocked: the text is still in the editor for this session.
+    return false;
   }
 }
 
@@ -56,6 +59,27 @@ export function clearDraft(draftKey: string, path: string): void {
   } catch {
     // Nothing to clean up when storage is unavailable.
   }
+}
+
+/**
+ * Make storage match the open files: an unsaved file keeps its draft, a saved one loses it, so
+ * an old draft can never come back over a save. False when a draft could not be stored.
+ */
+export function storeDrafts(
+  draftKey: string,
+  sessions: Iterable<FileSession>,
+  now = Date.now(),
+): boolean {
+  let stored = true;
+  for (const session of sessions) {
+    if (!isDirty(session)) {
+      clearDraft(draftKey, session.path);
+      continue;
+    }
+    const draft = { baseHash: session.baseHash, content: session.draft, savedAt: now };
+    if (!writeDraft(draftKey, session.path, draft)) stored = false;
+  }
+  return stored;
 }
 
 /** Paths of the skill (by location key) that have a stored draft, for the file list dots. */

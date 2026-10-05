@@ -6,7 +6,7 @@ import {
   type SkillLocation,
 } from "@loadout/shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { clearDraft, readDraft, writeDraft } from "@/features/editor/editor-drafts";
+import { clearDraft, readDraft, storeDrafts } from "@/features/editor/editor-drafts";
 import {
   type FileSession,
   afterSave,
@@ -33,8 +33,10 @@ export interface SaveOptions {
   otherCopies?: OtherCopiesMode;
 }
 
+type Sessions = Record<string, FileSession>;
+
 export interface EditorSession {
-  sessions: Readonly<Record<string, FileSession>>;
+  sessions: Readonly<Sessions>;
   /** A version of `file` was read from disk. */
   sync(file: SkillFile): void;
   setDraft(path: string, draft: string): void;
@@ -48,6 +50,8 @@ export interface EditorSession {
   /** Throw away every unsaved change, including the copies kept in localStorage. */
   discardAll(): void;
   dirtyPaths: string[];
+  /** False while unsaved text could not be kept in localStorage: closing the window loses it. */
+  draftsStored: boolean;
 }
 
 /**
@@ -57,29 +61,39 @@ export interface EditorSession {
 export function useEditorSession(location: SkillLocation): EditorSession {
   // Drafts are stored per place, so a project copy never picks up the library's draft.
   const draftKey = locationKey(location);
-  const [sessions, setSessions] = useState<Record<string, FileSession>>({});
+  // `latest` moves with every change at once, not at the next render, so a save that finishes
+  // just before the page goes still settles its stored draft.
+  const latest = useRef<Sessions>({});
+  const [sessions, setSessions] = useState<Sessions>({});
   const [saving, setSaving] = useState<ReadonlySet<string>>(new Set());
-  const latest = useRef(sessions);
+  const [draftsStored, setDraftsStored] = useState(true);
   /** Set once the user discarded everything, so leaving does not store the drafts again. */
   const discarded = useRef(false);
-  useEffect(() => {
-    latest.current = sessions;
-  });
   const saveFile = useSaveSkillFile();
   const { mutateAsync } = saveFile;
 
-  const update = useCallback((path: string, change: (session: FileSession) => FileSession) => {
-    setSessions((previous) => {
-      const session = previous[path];
-      if (!session) return previous;
-      const next = change(session);
-      return next === session ? previous : { ...previous, [path]: next };
-    });
+  const commit = useCallback((change: (previous: Sessions) => Sessions) => {
+    const next = change(latest.current);
+    if (next === latest.current) return;
+    latest.current = next;
+    setSessions(next);
   }, []);
+
+  const update = useCallback(
+    (path: string, change: (session: FileSession) => FileSession) => {
+      commit((previous) => {
+        const session = previous[path];
+        if (!session) return previous;
+        const next = change(session);
+        return next === session ? previous : { ...previous, [path]: next };
+      });
+    },
+    [commit],
+  );
 
   const sync = useCallback(
     (file: SkillFile) => {
-      setSessions((previous) => {
+      commit((previous) => {
         const session = previous[file.path];
         const next = session
           ? applyDiskVersion(session, file)
@@ -87,7 +101,7 @@ export function useEditorSession(location: SkillLocation): EditorSession {
         return next === session ? previous : { ...previous, [file.path]: next };
       });
     },
-    [draftKey],
+    [commit, draftKey],
   );
 
   const save = useCallback(
@@ -107,8 +121,11 @@ export function useEditorSession(location: SkillLocation): EditorSession {
             otherCopies: options.otherCopies,
           },
         });
-        // The stored draft goes with the next mirror pass once nothing is left unsaved.
         update(path, (current) => afterSave(current, result.file));
+        // Settle the stored draft now, not at the next mirror pass: leaving right after a save
+        // would otherwise keep the old draft. Typing done meanwhile is stored on the new version.
+        const saved = latest.current[path];
+        if (saved && !storeDrafts(draftKey, [saved])) setDraftsStored(false);
         return { kind: "saved", result };
       } catch (error) {
         if (error instanceof ApiError && error.code === "CHANGED_ON_DISK") {
@@ -125,24 +142,12 @@ export function useEditorSession(location: SkillLocation): EditorSession {
         });
       }
     },
-    [location, mutateAsync, update],
+    [draftKey, location, mutateAsync, update],
   );
 
-  // Mirror unsaved drafts to localStorage after a short pause, and at once when the page goes.
+  // Mirror the drafts to localStorage after a short pause, and at once when the page goes.
   useEffect(() => {
-    const flush = (): void => {
-      for (const session of Object.values(sessions)) {
-        if (isDirty(session)) {
-          writeDraft(draftKey, session.path, {
-            baseHash: session.baseHash,
-            content: session.draft,
-            savedAt: Date.now(),
-          });
-        } else {
-          clearDraft(draftKey, session.path);
-        }
-      }
-    };
+    const flush = (): void => setDraftsStored(storeDrafts(draftKey, Object.values(sessions)));
     const timer = window.setTimeout(flush, EDITOR_DRAFT_SAVE_MS);
     window.addEventListener("pagehide", flush);
     return () => {
@@ -151,18 +156,11 @@ export function useEditorSession(location: SkillLocation): EditorSession {
     };
   }, [sessions, draftKey]);
 
-  // Leaving the page (or switching skill) writes whatever is still unsaved right away.
+  // Leaving the page (or switching skill) runs the same pass right away, which the pause above
+  // would miss: unsaved files keep their drafts and saved ones lose theirs.
   useEffect(
     () => () => {
-      if (discarded.current) return;
-      for (const session of Object.values(latest.current)) {
-        if (!isDirty(session)) continue;
-        writeDraft(draftKey, session.path, {
-          baseHash: session.baseHash,
-          content: session.draft,
-          savedAt: Date.now(),
-        });
-      }
+      if (!discarded.current) storeDrafts(draftKey, Object.values(latest.current));
     },
     [draftKey],
   );
@@ -191,12 +189,13 @@ export function useEditorSession(location: SkillLocation): EditorSession {
     discardAll: () => {
       discarded.current = true;
       for (const path of Object.keys(latest.current)) clearDraft(draftKey, path);
-      setSessions((previous) =>
+      commit((previous) =>
         Object.fromEntries(
           Object.entries(previous).map(([path, session]) => [path, revertToDisk(session)]),
         ),
       );
     },
     dirtyPaths,
+    draftsStored,
   };
 }

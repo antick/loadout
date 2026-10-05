@@ -334,6 +334,7 @@ export function EditorWorkspace({
             isNew={current?.disk.isNew ?? false}
             diskChanged={current ? hasDiskChange(current) : false}
             restored={current?.restored ?? false}
+            draftsUnstored={!session.draftsStored && session.dirtyPaths.length > 0}
             problems={problems}
             onJumpToLine={(line) => {
               // The preview-only layout hides the text: show it so the jump lands somewhere.

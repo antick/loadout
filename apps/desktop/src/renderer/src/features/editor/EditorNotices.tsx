@@ -25,6 +25,8 @@ export interface EditorNoticesProps {
   diskChanged: boolean;
   /** Unsaved text came back from an earlier session. */
   restored: boolean;
+  /** Unsaved text could not be kept on this computer, so closing the window would lose it. */
+  draftsUnstored: boolean;
   /** Format problems of the text on screen (SKILL.md only), errors first. */
   problems: readonly SkillIssue[];
   /** Take the editor to a problem's line. */
@@ -48,6 +50,7 @@ export function EditorNotices({
   isNew,
   diskChanged,
   restored,
+  draftsUnstored,
   problems,
   onJumpToLine,
   onCompare,
@@ -110,6 +113,14 @@ export function EditorNotices({
         }
       >
         {t("editor.notice.restored")}
+      </InlineNotice>,
+    );
+  }
+
+  if (draftsUnstored) {
+    notices.push(
+      <InlineNotice key="unstored" tone="warning" icon={TriangleAlert}>
+        {t("editor.notice.unstored")}
       </InlineNotice>,
     );
   }

@@ -80,6 +80,7 @@
       "keepMine": "Keep mine",
       "reload": "Load disk version",
       "restored": "Unsaved changes from last time are back. Save them, or discard them.",
+      "unstored": "Unsaved changes could not be kept on this computer, so closing the window would lose them. Save them before you close it.",
       "discard": "Discard",
       "tracked": "This skill is updated from {{source}}. An update asks before it replaces anything you change here.",
       "copies_one": "This project also has this skill in {{agents}}.",
