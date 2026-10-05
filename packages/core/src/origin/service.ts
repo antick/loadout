@@ -15,6 +15,7 @@ import { type GitClient, marketSourceToUrl } from "../install";
 import type { SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
 import { fileDigests, hashDir } from "../util/hash";
+import { createSerialQueue } from "../util/queue";
 import { type ComparedLead, compareLead } from "./compare";
 import { type SourceLead, gitFolderLead, linkLeads } from "./evidence";
 import { lockFileLead } from "./lock";
@@ -105,7 +106,7 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
    * Automatic linking after an import, one skill at a time: an "import all" must not start a
    * clone per skill at once. Settles whatever happened, never rejects.
    */
-  let linking: Promise<unknown> = Promise.resolve();
+  const linking = createSerialQueue();
 
   async function marketLeads(skill: Skill): Promise<SourceLead[]> {
     if (!deps.searchMarket) return [];
@@ -246,9 +247,7 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
     },
 
     linkIfExact: (skillId, sourcePath) => {
-      const turn = linking.then(() => linkByItself(skillId, sourcePath));
-      linking = turn;
-      return turn;
+      return linking.run(() => linkByItself(skillId, sourcePath));
     },
   };
 }

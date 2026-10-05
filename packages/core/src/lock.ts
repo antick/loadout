@@ -4,6 +4,7 @@ import { hostname, uptime } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "./errors";
 import { statOrNull } from "./util/fs";
+import { createSerialQueue } from "./util/queue";
 
 const WAIT_MS = 20_000;
 const POLL_MS = 50;
@@ -83,7 +84,8 @@ export class RepoLock {
   #current: object | null = null;
   /** `startedAt` written into the file we created, to release only our own lock. */
   #ownStartedAt: number | null = null;
-  #queue: Promise<unknown> = Promise.resolve();
+  /** Calls of this process wait here for their turn before trying the file. */
+  readonly #queue = createSerialQueue();
   readonly #heartbeatMs: number;
   readonly #staleMs: number;
   #heartbeat: ReturnType<typeof setInterval> | null = null;
@@ -209,7 +211,7 @@ export class RepoLock {
   /** Run `fn` holding the lock, waiting (20 s unless set) for another process to finish. */
   async run<T>(operation: string, fn: () => Promise<T> | T): Promise<T> {
     if (this.#inside()) return fn();
-    const task = this.#queue.then(async () => {
+    return this.#queue.run(async () => {
       const deadline = Date.now() + this.#waitMs;
       while (!this.#tryAcquire(operation)) {
         if (Date.now() > deadline) {
@@ -223,8 +225,6 @@ export class RepoLock {
       }
       return this.#holding(fn);
     });
-    this.#queue = task.catch(() => undefined);
-    return task;
   }
 
   /**

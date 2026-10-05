@@ -3,6 +3,7 @@ import { normalizeSourceUrl } from "@loadout/shared";
 import { RepoLock } from "../lock";
 import { dirSize, ensureDir, readDirSafe, removePath, statOrNull } from "../util/fs";
 import { sha256Hex } from "../util/hash";
+import { KeyedQueue } from "../util/queue";
 
 /**
  * The clone cache (`cache/repos`): one slot per repository, shared by the app and the CLI. A slot
@@ -32,8 +33,8 @@ export interface CloneCache {
 }
 
 export function createCloneCache(reposDir: string, limitBytes: number, waitMs: number): CloneCache {
-  /** Tail of the work queued per slot. A slot present here is in use in this process. */
-  const queues = new Map<string, Promise<unknown>>();
+  /** Checkouts waiting per slot. A slot busy here is in use in this process. */
+  const queue = new KeyedQueue();
   const locks = new Map<string, RepoLock>();
   /** Open checkouts per slot that may still come back to it. */
   const held = new Map<string, number>();
@@ -48,7 +49,7 @@ export function createCloneCache(reposDir: string, limitBytes: number, waitMs: n
   };
 
   const inUse = (slot: string): boolean =>
-    queues.has(slot) || held.has(slot) || lockOf(slot).heldElsewhere();
+    queue.busy(slot) || held.has(slot) || lockOf(slot).heldElsewhere();
 
   /** The slot an entry of the cache folder belongs to, or null for a lock file. */
   const ownerOf = (name: string): string | null =>
@@ -57,21 +58,12 @@ export function createCloneCache(reposDir: string, limitBytes: number, waitMs: n
   return {
     slotFor: (url) => join(reposDir, sha256Hex(normalizeSourceUrl(url)).slice(0, SLOT_HEX_LENGTH)),
 
-    withSlot: async (slot, fn) => {
-      const previous = queues.get(slot) ?? Promise.resolve();
-      const task = previous.then(() => {
+    withSlot: (slot, fn) =>
+      queue.run(slot, () => {
         // The lock file sits beside the slot, so the cache folder must exist first.
         ensureDir(reposDir);
         return lockOf(slot).run(LOCK_OPERATION, fn);
-      });
-      const settled = task.catch(() => undefined);
-      queues.set(slot, settled);
-      try {
-        return await task;
-      } finally {
-        if (queues.get(slot) === settled) queues.delete(slot);
-      }
-    },
+      }),
 
     hold: (slot) => {
       held.set(slot, (held.get(slot) ?? 0) + 1);

@@ -26,6 +26,7 @@ import { type Checkout, openCheckout } from "./checkout";
 import { type Planned, planSkills } from "./plan";
 import { type ResolvedTarget, publishCacheRoot, resolveTarget } from "./target";
 import { dirSize, readDirSafe, removePathSync } from "../util/fs";
+import { KeyedQueue } from "../util/queue";
 
 export interface PublishDeps {
   store: SkillStore;
@@ -73,17 +74,7 @@ function toPlan(target: ResolvedTarget, checkout: Checkout, planned: Planned): P
 
 export function createPublishService(ctx: CoreContext, deps: PublishDeps): PublishService {
   /** Publishes to one repository at a time: they share a working copy. */
-  const queues = new Map<string, Promise<unknown>>();
-
-  function serialized<T>(key: string, work: () => Promise<T>): Promise<T> {
-    const run = (queues.get(key) ?? Promise.resolve()).then(work, work);
-    const tail = run.catch(() => undefined);
-    queues.set(key, tail);
-    void tail.then(() => {
-      if (queues.get(key) === tail) queues.delete(key);
-    });
-    return run;
-  }
+  const queue = new KeyedQueue();
 
   const clawhub = createClawhubPublisher(ctx, {
     store: deps.store,
@@ -98,7 +89,7 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
   async function preview(input: PublishInput): Promise<PublishPlan> {
     const skills = chosenSkills(input.skillIds);
     const target = resolveTarget(ctx, input);
-    return serialized(target.cacheDir, async () => {
+    return queue.run(target.cacheDir, async () => {
       const checkout = await openCheckout(ctx, target);
       refuseSingleSkillRepo(checkout);
       return toPlan(target, checkout, planSkills(skills, checkout.dir, target));
@@ -108,7 +99,7 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
   async function publish(input: PublishInput): Promise<PublishResult> {
     const skills = chosenSkills(input.skillIds);
     const target = resolveTarget(ctx, input);
-    return serialized(target.cacheDir, async () => {
+    return queue.run(target.cacheDir, async () => {
       for (let attempt = 1; ; attempt += 1) {
         const checkout = await openCheckout(ctx, target);
         refuseSingleSkillRepo(checkout);
@@ -180,7 +171,7 @@ export function createPublishService(ctx: CoreContext, deps: PublishDeps): Publi
     for (const entry of readDirSafe(publishCacheRoot(ctx))) {
       const dir = join(publishCacheRoot(ctx), entry.name);
       // Through the same queue as a publish to it: one running finishes first.
-      await serialized(dir, async () => {
+      await queue.run(dir, async () => {
         freed += dirSize(dir);
         removePathSync(dir);
       });
