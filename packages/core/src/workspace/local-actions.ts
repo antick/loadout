@@ -1,5 +1,5 @@
 import { relative } from "node:path";
-import type { LocalSkill, Skill, SkillDocument } from "@loadout/shared";
+import { type LocalSkill, type Skill, type SkillDocument, firstFreeName } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { writeTarget } from "../deploy";
@@ -20,7 +20,6 @@ import {
   toPosix,
 } from "../util/fs";
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
-import { firstFreeName } from "../util/names";
 import {
   type LibraryIndex,
   type LocalEntry,

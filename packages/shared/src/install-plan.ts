@@ -44,13 +44,24 @@ const FIRST_NUMBER = 2;
 
 const nameKey = (name: string): string => name.trim().toLowerCase();
 
-/** First of `name`, `name-2`, `name-3`, … whose key is not in `taken`. */
-export function nextFreeName(name: string, taken: ReadonlySet<string>): string {
-  if (!taken.has(nameKey(name))) return name;
+/**
+ * First of `name`, `name-2`, `name-3`, … that `isFree` accepts. The dry-run planner and every
+ * real install, rename or copy number names this one way.
+ */
+export function firstFreeName(
+  name: string,
+  isFree: (candidate: string) => boolean,
+  separator = NUMBER_SEPARATOR,
+): string {
+  if (isFree(name)) return name;
   let n = FIRST_NUMBER;
-  while (taken.has(nameKey(`${name}${NUMBER_SEPARATOR}${n}`))) n += 1;
-  return `${name}${NUMBER_SEPARATOR}${n}`;
+  while (!isFree(`${name}${separator}${n}`)) n += 1;
+  return `${name}${separator}${n}`;
 }
+
+/** First of `name`, `name-2`, … whose key is not in `taken`. */
+const nextFreeName = (name: string, taken: ReadonlySet<string>): string =>
+  firstFreeName(name, (candidate) => !taken.has(nameKey(candidate)));
 
 /** A library skill (not a stray folder) holds the name, so the import may replace it. */
 export function canReplace(outcome: InstallOutcome): boolean {

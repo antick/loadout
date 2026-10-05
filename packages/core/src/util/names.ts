@@ -1,4 +1,5 @@
 import { basename } from "node:path";
+import { firstFreeName } from "@loadout/shared";
 import { invalid } from "../errors";
 
 const FORBIDDEN_CHARS = /[<>:"/\\|?*]/g;
@@ -6,6 +7,7 @@ const WINDOWS_DEVICE_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 const FALLBACK_SKILL_NAME = "unknown-skill";
 const FALLBACK_SLUG = "skill";
 const FALLBACK_AGENT_KEY = "agent";
+const AGENT_KEY_SEPARATOR = "_";
 const LAST_CONTROL_CODE = 0x1f;
 const DELETE_CODE = 0x7f;
 
@@ -68,18 +70,7 @@ export function agentKeyFromName(name: string, taken: ReadonlySet<string>): stri
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "") || FALLBACK_AGENT_KEY;
-  if (!taken.has(base)) return base;
-  let n = 2;
-  while (taken.has(`${base}_${n}`)) n += 1;
-  return `${base}_${n}`;
-}
-
-/** First of `name`, `name-2`, `name-3`… that `isFree` accepts. */
-export function firstFreeName(name: string, isFree: (candidate: string) => boolean): string {
-  if (isFree(name)) return name;
-  let n = 2;
-  while (!isFree(`${name}-${n}`)) n += 1;
-  return `${name}-${n}`;
+  return firstFreeName(base, (candidate) => !taken.has(candidate), AGENT_KEY_SEPARATOR);
 }
 
 /**

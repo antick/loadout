@@ -16,6 +16,7 @@ import {
   type PresetsApi,
   type Skill,
   formatBytes,
+  firstFreeName,
   normalizeSourceUrl,
   repositoryLabel,
 } from "@loadout/shared";
@@ -63,11 +64,7 @@ const sourceKey = (source: NonNullable<PresetFileSkill["source"]>): string =>
 /** "Name", or "Name 2", "Name 3"… when a preset holds it already. */
 function freeName(wanted: string, taken: ReadonlySet<string>): string {
   const lower = new Set([...taken].map((name) => name.toLowerCase()));
-  if (!lower.has(wanted.toLowerCase())) return wanted;
-  for (let number = 2; ; number += 1) {
-    const candidate = `${wanted} ${number}`;
-    if (!lower.has(candidate.toLowerCase())) return candidate;
-  }
+  return firstFreeName(wanted, (candidate) => !lower.has(candidate.toLowerCase()), " ");
 }
 
 /**

@@ -1,11 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { type MergeSummary, type MergedSkill, type SyncReviewAnswer } from "@loadout/shared";
+import {
+  type MergeSummary,
+  type MergedSkill,
+  type SyncReviewAnswer,
+  firstFreeName,
+} from "@loadout/shared";
 import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
 import { LIBRARY_PLACE, type LibraryRecord, libraryRecordOf } from "../storage/removed-library";
 import { ensureDir, isSkillDir, removePath, writeFileAtomic } from "../util/fs";
-import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
 import { recordConflict } from "./conflict-store";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";

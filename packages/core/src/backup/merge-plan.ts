@@ -1,5 +1,5 @@
+import { firstFreeName } from "@loadout/shared";
 import type { PortableSkill } from "../skills/portable";
-import { firstFreeName } from "../util/names";
 
 /**
  * The merge decision table, as pure functions: given what a skill looked like at the common

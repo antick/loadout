@@ -1,12 +1,11 @@
 import { existsSync, readFileSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
-import { formatTimestampCompact } from "@loadout/shared";
+import { formatTimestampCompact, firstFreeName } from "@loadout/shared";
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { PortableSkill } from "../skills/portable";
 import { GIT_DIR, copyDir, isSkillDir, readDirSafe, removePath, statOrNull } from "../util/fs";
 import { hashDir, hashFile, holdsUncopiedEntries, sameUnhashedEntries } from "../util/hash";
-import { firstFreeName } from "../util/names";
 import { assertReadable, schemaAt } from "./compat";
 import { sanitizeRemoteUrl } from "./credentials";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME, SKILL_METADATA_SUBDIR } from "./env";

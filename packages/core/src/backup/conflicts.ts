@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { BackupConflict, ConflictResolution } from "@loadout/shared";
+import { type BackupConflict, type ConflictResolution, firstFreeName } from "@loadout/shared";
 import { AppError, notFound } from "../errors";
 import { type PortableSkill, toPortableSkill } from "../skills/portable";
 import { removePath, writeJsonAtomic } from "../util/fs";
-import { firstFreeName } from "../util/names";
 import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";

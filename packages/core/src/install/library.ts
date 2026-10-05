@@ -1,4 +1,4 @@
-import { redactUrl } from "@loadout/shared";
+import { redactUrl, firstFreeName } from "@loadout/shared";
 import { basename, join } from "node:path";
 
 import type { ActivityKind, Skill, SourceType, UpdateStatus } from "@loadout/shared";
@@ -24,7 +24,7 @@ import {
 
 import { fileDigests, hashDir } from "../util/hash";
 
-import { firstFreeName, sanitizeSkillName } from "../util/names";
+import { sanitizeSkillName } from "../util/names";
 
 /** Where the installed skill came from; written to its row as is. */
 export interface InstallRecord {

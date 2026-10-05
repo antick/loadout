@@ -1,12 +1,13 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { firstFreeName } from "@loadout/shared";
 import { Database } from "../src/db/database";
 import { SettingsStore } from "../src/settings/store";
 import { parseFrontmatter } from "../src/skills/metadata";
 import { repointSources } from "../src/deploy/evidence";
 import { SkillStore } from "../src/skills/store";
 import { hashDir } from "../src/util/hash";
-import { agentKeyFromName, firstFreeName, sanitizeSkillName, slugify } from "../src/util/names";
+import { agentKeyFromName, sanitizeSkillName, slugify } from "../src/util/names";
 import { makeSkill, tempDir, writeFile } from "./helpers";
 
 describe("names", () => {

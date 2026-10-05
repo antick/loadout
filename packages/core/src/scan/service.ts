@@ -1,12 +1,13 @@
 import { join, resolve } from "node:path";
-import type {
-  BatchImportResult,
-  DiscoveredLocation,
-  DiscoveredSkill,
-  InstallOptions,
-  ScanResult,
-  Skill,
-  SourceType,
+import {
+  type BatchImportResult,
+  type DiscoveredLocation,
+  type DiscoveredSkill,
+  type InstallOptions,
+  type ScanResult,
+  type Skill,
+  type SourceType,
+  firstFreeName,
 } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
@@ -27,7 +28,6 @@ import {
   targetIdentity,
 } from "../util/fs";
 import { hashDir } from "../util/hash";
-import { firstFreeName } from "../util/names";
 
 export interface ScanServiceDeps {
   store: SkillStore;
