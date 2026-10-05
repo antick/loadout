@@ -114,6 +114,9 @@ export const keys = {
     deviceAvailable: ["backup", "device-available"] as const,
     secrets: ["backup", "secrets"] as const,
     ignore: ["backup", "ignore"] as const,
+    /** The library as a git tree id, compared with the one a sync review saw. */
+    localTree: (reviewTree: string) => ["backup", "local-tree", reviewTree] as const,
+    localTreeRoot: ["backup", "local-tree"] as const,
     previewDiff: (skillId: string, remoteCommit: string) =>
       ["backup", "preview-diff", skillId, remoteCommit] as const,
     conflictDiff: (skillKey: string) => ["backup", "conflict-diff", skillKey] as const,

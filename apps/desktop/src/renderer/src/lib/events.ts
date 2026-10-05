@@ -55,8 +55,10 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.market.root,
     keys.system.root,
     keys.storage.root,
-    // Editing a skill can add or remove something the backup would hold back.
+    // Editing a skill can add or remove something the backup would hold back, and changes what
+    // an open sync review would save.
     keys.backup.secrets,
+    keys.backup.localTreeRoot,
     // Reports say whether they are stale by comparing content hashes.
     keys.safety.root,
     // Runs are matched to skills by name.
@@ -69,7 +71,7 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.editor.root,
     keys.instructions.root,
   ],
-  presets: [keys.presets.root, keys.skills.root],
+  presets: [keys.presets.root, keys.skills.root, keys.backup.localTreeRoot],
   // Project copies that are replaced or deleted land in Recently removed (storage).
   projects: [keys.projects.root, keys.editor.root, keys.instructions.root, keys.storage.root],
   backup: [keys.backup.root],
