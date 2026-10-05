@@ -216,8 +216,11 @@ export interface PresetsApi {
    * One-time copy. Conflicts, `dryRun` and `skipConflicts` work as in `DeployApi.apply`.
    */
   applyToDefault(id: string, options?: PresetApplyOptions): Promise<ApplyResult>;
-  /** Undo `applyToDefault`: remove the preset's skills from every enabled agent. */
-  removeFromDefault(id: string): Promise<ApplyResult>;
+  /**
+   * Undo `applyToDefault`: remove the preset's skills from every agent that holds one (or from
+   * `agentKeys`), switches aside. `dryRun` works as in `DeployApi.apply`.
+   */
+  removeFromDefault(id: string, options?: PresetApplyOptions): Promise<ApplyResult>;
   /** Deployment progress of every preset across the enabled agents, in preset order. */
   deployStatus(): Promise<PresetDeployStatus[]>;
   /** Write the preset to a file others can import: skills by source, or with their files. */

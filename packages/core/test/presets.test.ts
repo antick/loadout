@@ -181,6 +181,37 @@ describe("presets", () => {
     expect(entry?.detail).toMatch(/3 removed/);
   });
 
+  it("removes from named agents only, previews with dryRun, and ignores switches", async () => {
+    const one = world.addSkill("one");
+    const preset = await api().create({ name: "Set" });
+    await api().addSkills(preset.id, [one.id]);
+    await api().applyToDefault(preset.id);
+    expect(
+      world.store
+        .deployments()
+        .map((d) => d.agentKey)
+        .sort(),
+    ).toEqual(["claude_code", "cursor"]);
+
+    const preview = await api().removeFromDefault(preset.id, {
+      dryRun: true,
+      agentKeys: ["cursor"],
+    });
+    expect(preview).toMatchObject({ removed: 1, conflicts: [], failed: [] });
+    expect(world.store.deployments()).toHaveLength(2);
+    expect(world.ctx.activity.list(20).filter((a) => a.kind === "preset")).toHaveLength(1);
+
+    expect(await api().removeFromDefault(preset.id, { agentKeys: ["cursor"] })).toMatchObject({
+      removed: 1,
+    });
+    expect(world.store.deployments().map((d) => d.agentKey)).toEqual(["claude_code"]);
+
+    // A switch turned off after the deploy does not leave the copy behind.
+    await api().setToggle(preset.id, one.id, "claude_code", false);
+    expect(await api().removeFromDefault(preset.id)).toMatchObject({ removed: 1 });
+    expect(world.store.deployments()).toEqual([]);
+  });
+
   it("previews an apply for named agents without writing or recording anything", async () => {
     const one = world.addSkill("one");
     const preset = await api().create({ name: "Set" });

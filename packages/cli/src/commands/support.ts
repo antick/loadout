@@ -161,15 +161,6 @@ export async function resolvePreset(core: Core, ref: string): Promise<Preset> {
   return match;
 }
 
-export const emptyApply = (): ApplyResult => ({
-  added: 0,
-  removed: 0,
-  skipped: 0,
-  blocked: 0,
-  conflicts: [],
-  failed: [],
-});
-
 const blockedNote = (result: ApplyResult): string =>
   result.blocked > 0 ? `, ${result.blocked} blocked` : "";
 

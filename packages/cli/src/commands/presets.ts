@@ -8,7 +8,6 @@ import {
   REQUIRED_YES_FLAG,
   SKIP_CONFLICTS_FLAG,
   applyOutcome,
-  emptyApply,
   limitPositionals,
   positional,
   positionalsFrom,
@@ -126,24 +125,13 @@ async function deploy({ core, args }: CommandContext): Promise<CommandResult> {
 async function undeploy({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
   const preset = await resolvePreset(core, positional(args, 0, PRESET_LABEL));
-  const named = [...new Set(flagList(args, AGENT_FLAG.name))];
-  for (const key of named) requireAgent(core, key, false);
-  // No agent named: every agent that really holds one of the preset's skills.
-  const keys =
-    named.length > 0
-      ? named
-      : [
-          ...new Set(
-            preset.skillIds.flatMap(
-              (id) => core.store.find(id)?.deployments.map((d) => d.agentKey) ?? [],
-            ),
-          ),
-        ];
+  const keys = [...new Set(flagList(args, AGENT_FLAG.name))];
+  for (const key of keys) requireAgent(core, key, false);
   const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
-  const value =
-    keys.length === 0
-      ? emptyApply()
-      : await core.api.deploy.apply(preset.skillIds, keys, "remove", { dryRun });
+  const value = await core.api.presets.removeFromDefault(preset.id, {
+    dryRun,
+    ...(keys.length > 0 ? { agentKeys: keys } : {}),
+  });
   return applyOutcome(value, { dryRun, skipConflicts: false, subject: preset.name });
 }
 

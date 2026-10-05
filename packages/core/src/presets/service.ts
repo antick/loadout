@@ -84,6 +84,23 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
   }
 
   /**
+   * Preset skills × the agents to take them out of: `agentKeys` when given, else every agent
+   * that currently holds one of the skills. Switches are not consulted: a removal must not leave
+   * a copy behind because its switch is off.
+   */
+  function heldPairs(preset: Preset, agentKeys?: readonly string[]): PairRef[] {
+    const keys = agentKeys ?? [
+      ...new Set(
+        store
+          .deployments()
+          .filter((d) => preset.skillIds.includes(d.skillId))
+          .map((d) => d.agentKey),
+      ),
+    ];
+    return preset.skillIds.flatMap((skillId) => keys.map((agentKey) => ({ skillId, agentKey })));
+  }
+
+  /**
    * Deploy or remove the preset's wanted pairs and record the outcome in the activity log. A dry
    * run changes nothing, so it leaves no entry.
    */
@@ -96,8 +113,9 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
     const record = (detail: string, ok: boolean): void => {
       if (!applyOptions.dryRun) ctx.activity.record("preset", preset.name, detail, ok);
     };
+    const pairs = action === "add" ? wantedPairs(preset, agentKeys) : heldPairs(preset, agentKeys);
     try {
-      const result = await deploy.applyPairs(wantedPairs(preset, agentKeys), action, applyOptions);
+      const result = await deploy.applyPairs(pairs, action, applyOptions);
       const clean = result.conflicts.length === 0 && result.failed.length === 0;
       record(describeApply(result, action), clean);
       return result;
@@ -178,7 +196,7 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
 
     applyToDefault: async (id, options) => applyWanted(presets.get(id), "add", options),
 
-    removeFromDefault: async (id) => applyWanted(presets.get(id), "remove"),
+    removeFromDefault: async (id, options) => applyWanted(presets.get(id), "remove", options),
 
     deployStatus: async () => {
       const deployed = new Set(store.deployments().map((d) => pairKey(d.skillId, d.agentKey)));
