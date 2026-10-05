@@ -23,6 +23,7 @@ import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
+import { Skeletons } from "@/components/Skeletons";
 import { UsageReadStatus } from "@/components/UsageReadStatus";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +32,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useDuplicates } from "@/features/library/duplicates/duplicate-queries";
 import { DuplicatesDialog } from "@/features/library/duplicates/DuplicatesDialog";
@@ -75,7 +75,7 @@ const SORT_STORAGE_KEY = "library.sort";
 const GROUP_STORAGE_KEY = "library.group-by-source";
 const GRID_CLASS = "grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]";
 const LIST_CLASS = "flex flex-col gap-1.5";
-const SKELETON_ITEMS = [0, 1, 2, 3, 4, 5];
+const SKELETON_COUNT = 6;
 
 export interface LibraryPageProps {
   /** Skill whose detail panel is open; comes from the URL so other screens can deep-link. */
@@ -226,12 +226,10 @@ export function LibraryPage({
   if (skills.isPending) {
     content = (
       <div className={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}>
-        {SKELETON_ITEMS.map((item) => (
-          <Skeleton
-            key={item}
-            className={cn("rounded-lg", viewMode === "grid" ? "h-36" : "h-12")}
-          />
-        ))}
+        <Skeletons
+          count={SKELETON_COUNT}
+          className={cn("rounded-lg", viewMode === "grid" ? "h-36" : "h-12")}
+        />
       </div>
     );
   } else if (skills.isError) {

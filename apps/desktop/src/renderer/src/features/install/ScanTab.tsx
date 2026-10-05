@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageSection } from "@/components/PageSection";
+import { Skeletons } from "@/components/Skeletons";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { SCAN_SKELETON_COUNT } from "@/features/install/constants";
@@ -46,22 +46,6 @@ function versionsOf(groups: readonly DiscoveredSkill[]): Map<string, SkillVersio
   return versions;
 }
 
-function ScanSkeleton(): ReactNode {
-  return (
-    <div className="divide-y rounded-lg border bg-card" aria-hidden="true">
-      {Array.from({ length: SCAN_SKELETON_COUNT }, (_, index) => (
-        <div key={index} className="flex items-center gap-4 px-4 py-3">
-          <div className="flex flex-1 flex-col gap-2">
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-3 w-80 max-w-full" />
-          </div>
-          <Skeleton className="h-8 w-20" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /** Find skills already sitting in agent folders and copy them into the library. */
 export function ScanTab(): ReactNode {
   const { t } = useTranslation();
@@ -91,7 +75,13 @@ export function ScanTab(): ReactNode {
     if (result && result.errors.length > 0) setBatch(result);
   };
 
-  if (scan.isPending) return <ScanSkeleton />;
+  if (scan.isPending) {
+    return (
+      <div className="flex flex-col gap-2" aria-hidden="true">
+        <Skeletons count={SCAN_SKELETON_COUNT} className="h-16 rounded-lg" />
+      </div>
+    );
+  }
   if (scan.isError) {
     return (
       <ErrorState

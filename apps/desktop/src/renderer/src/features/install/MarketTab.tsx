@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
 import { SearchInput } from "@/components/SearchInput";
+import { Skeletons } from "@/components/Skeletons";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -26,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -56,23 +56,6 @@ const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3";
 const PROVIDER_STORAGE_KEY = "install.market-provider";
 const PROVIDER_ICONS: Record<MarketProvider, typeof Store> = { skills_sh: Store, clawhub: Package };
 const CONNECTION_ERROR_CODES: ReadonlySet<ErrorCode> = new Set(["NETWORK", "TIMEOUT"]);
-
-function MarketSkeleton(): ReactNode {
-  return (
-    <div className={GRID_CLASS} aria-hidden="true">
-      {Array.from({ length: MARKET_SKELETON_COUNT }, (_, index) => (
-        <div key={index} className="flex min-h-28 flex-col gap-2 rounded-lg border bg-card p-3">
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-3 w-1/2" />
-          <div className="mt-auto flex items-center justify-between pt-2">
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-8 w-20" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /** Browse a marketplace's boards or search it, narrow by contributor, and install. */
 export function MarketTab(): ReactNode {
@@ -259,7 +242,9 @@ export function MarketTab(): ReactNode {
       ) : null}
 
       {active.isPending ? (
-        <MarketSkeleton />
+        <div className={GRID_CLASS} aria-hidden="true">
+          <Skeletons count={MARKET_SKELETON_COUNT} className="h-28 rounded-lg" />
+        </div>
       ) : active.isError ? (
         <div className="flex flex-col items-center">
           <ErrorState

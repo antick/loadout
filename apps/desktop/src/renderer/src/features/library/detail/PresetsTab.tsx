@@ -8,10 +8,12 @@ import { ErrorState } from "@/components/ErrorState";
 import { useShell } from "@/components/layout/shell-context";
 import { PageSection } from "@/components/PageSection";
 import { PresetIcon } from "@/components/PresetIcon";
+import { Skeletons } from "@/components/Skeletons";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAddSkillsToPreset, useRemoveSkillsFromPreset } from "@/hooks/mutations/preset-members";
 import { usePresets } from "@/hooks/queries/presets";
+
+const SKELETON_ROWS = 3;
 
 /** Every preset with a checkbox: tick to put this skill in it. Membership never touches disk. */
 export function PresetsTab({ skill }: { skill: Skill }): ReactNode {
@@ -24,9 +26,7 @@ export function PresetsTab({ skill }: { skill: Skill }): ReactNode {
   if (presets.isPending) {
     return (
       <div className="flex flex-col gap-2">
-        {[0, 1, 2].map((row) => (
-          <Skeleton key={row} className="h-11 w-full" />
-        ))}
+        <Skeletons count={SKELETON_ROWS} className="h-11 w-full" />
       </div>
     );
   }
