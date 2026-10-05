@@ -1,4 +1,4 @@
-import type { AgentInfo, PendingRemoval } from "@loadout/shared";
+import type { PendingRemoval } from "@loadout/shared";
 import { FileX, Library, PencilLine } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 import { SECTION_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
@@ -57,15 +57,13 @@ export function RemovalGuardDialog({
   onDecline,
 }: RemovalGuardDialogProps): ReactNode {
   const { t } = useTranslation();
-  const agents = useAgents();
+  const names = useAgentNames();
   const groups = useMemo(() => groupByLocation(removals ?? []), [removals]);
   const edits = useMemo(
     () => (removals ?? []).filter((removal) => removal.kind === "edited").map((r) => r.path),
     [removals],
   );
   const deletions = (removals?.length ?? 0) - edits.length;
-  const agentOf = (key: string): AgentInfo | undefined =>
-    agents.data?.find((agent) => agent.key === key);
 
   return (
     <AlertDialog
@@ -108,7 +106,6 @@ export function RemovalGuardDialog({
             </section>
           ) : null}
           {groups.map(([location, paths]) => {
-            const agent = location === LIBRARY_LOCATION ? undefined : agentOf(location);
             return (
               <section key={location} className="flex flex-col gap-1.5">
                 <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
@@ -117,7 +114,7 @@ export function RemovalGuardDialog({
                   ) : (
                     <AgentAvatar
                       agentKey={location}
-                      name={agent?.displayName ?? location}
+                      name={names.get(location) ?? location}
                       size="sm"
                     />
                   )}

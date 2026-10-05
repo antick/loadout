@@ -14,7 +14,6 @@ export function useAgents(): UseQueryResult<AgentInfo[]> {
   return useQuery({ queryKey: keys.agents.all, queryFn: () => api.agents.list() });
 }
 
-/** Installed and enabled agents, optionally limited to one category. */
 /** Every agent's display name by its key, for labelling deployments and shared folders. */
 export function useAgentNames(): ReadonlyMap<string, string> {
   const agents = useAgents();
@@ -24,6 +23,7 @@ export function useAgentNames(): ReadonlyMap<string, string> {
   );
 }
 
+/** Installed and enabled agents, optionally limited to one category. */
 export function useAvailableAgents(category?: AgentCategory): UseQueryResult<AgentInfo[]> {
   const select = useCallback(
     (agents: AgentInfo[]) =>

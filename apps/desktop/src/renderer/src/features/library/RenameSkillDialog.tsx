@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useRenameSkill } from "@/features/library/library-mutations";
 import { useRenamePreview } from "@/features/library/library-queries";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { errorMessage } from "@/lib/toast";
@@ -38,9 +38,8 @@ export interface RenameSkillDialogProps {
 /** What the rename will touch, from the dry run: deployments, project links, project copies. */
 function RenamePreview({ preview }: { preview: RenameResult }): ReactNode {
   const { t } = useTranslation();
-  const agents = useAgents().data ?? [];
-  const nameOf = (key: string): string =>
-    agents.find((agent) => agent.key === key)?.displayName ?? key;
+  const names = useAgentNames();
+  const nameOf = (key: string): string => names.get(key) ?? key;
   return (
     <div className="flex flex-col gap-2">
       <InlineNotice tone="info" icon={Info}>

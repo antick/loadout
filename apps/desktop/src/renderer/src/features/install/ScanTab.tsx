@@ -19,7 +19,6 @@ import {
 } from "@/features/install/install-mutations";
 import { useScanLocal } from "@/features/install/install-queries";
 import { useInstallTask } from "@/features/install/use-install-task";
-import { useAgents } from "@/hooks/queries/agents";
 
 /** Stable identity of a discovered group across rescans. */
 function groupKey(skill: DiscoveredSkill): string {
@@ -50,17 +49,12 @@ function versionsOf(groups: readonly DiscoveredSkill[]): Map<string, SkillVersio
 export function ScanTab(): ReactNode {
   const { t } = useTranslation();
   const scan = useScanLocal();
-  const agents = useAgents();
   const importOne = useImportDiscovered();
   const importAll = useImportAllDiscovered();
   const { task } = useInstallTask();
   const [names, setNames] = useState<Record<string, string>>({});
   const [batch, setBatch] = useState<BatchImportResult | null>(null);
 
-  const agentsByKey = useMemo(
-    () => new Map((agents.data ?? []).map((agent) => [agent.key, agent])),
-    [agents.data],
-  );
   const found = scan.data?.skills;
   const groups = found ?? [];
   const versions = useMemo(() => versionsOf(found ?? []), [found]);
@@ -106,7 +100,6 @@ export function ScanTab(): ReactNode {
             key={key}
             skill={skill}
             version={version}
-            agentsByKey={agentsByKey}
             importName={importName}
             importing={Boolean(task(discoveredTaskKey(skill)))}
             disabled={importingAll}

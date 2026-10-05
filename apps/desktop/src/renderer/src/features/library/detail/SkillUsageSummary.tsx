@@ -2,7 +2,7 @@ import { USAGE_RECENT_DAYS, formatRelative } from "@loadout/shared";
 import { Activity } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 import { useAppInfo } from "@/hooks/queries/app";
 import { useSkillUsage } from "@/hooks/queries/usage";
 import { compactHome } from "@/lib/paths";
@@ -14,13 +14,12 @@ import { compactHome } from "@/lib/paths";
 export function SkillUsageSummary({ skillId }: { skillId: string }): ReactNode {
   const { t } = useTranslation();
   const usage = useSkillUsage();
-  const agents = useAgents();
+  const names = useAgentNames();
   const { data: info } = useAppInfo();
   if (!usage.enabled || !usage.report?.scannedAt) return null;
 
   const used = usage.byId.get(skillId);
-  const nameOf = (key: string): string =>
-    agents.data?.find((agent) => agent.key === key)?.displayName ?? key;
+  const nameOf = (key: string): string => names.get(key) ?? key;
 
   return (
     <div className="flex items-start gap-2 text-xs text-muted-foreground">

@@ -39,7 +39,7 @@ import { MARKET_PROVIDER_NAMES } from "@/features/install/constants";
 import { useMarketDetail } from "@/features/install/install-queries";
 import type { InstallTask } from "@/features/install/install-tasks";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
 import { occurrenceKeys } from "@/lib/utils";
 import { Skeletons } from "@/components/Skeletons";
@@ -152,12 +152,10 @@ function AuditsSection({
 /** Where the library copy is deployed, or a note that it is not deployed yet. */
 function LibraryNote({ copy, onOpen }: { copy: Skill; onOpen: () => void }): ReactNode {
   const { t } = useTranslation();
-  const agents = useAgents();
+  const names = useAgentNames();
   const deployed = copy.deployments.map((deployment) => ({
     key: deployment.agentKey,
-    name:
-      agents.data?.find((agent) => agent.key === deployment.agentKey)?.displayName ??
-      deployment.agentKey,
+    name: names.get(deployment.agentKey) ?? deployment.agentKey,
   }));
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2">

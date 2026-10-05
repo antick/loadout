@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { PreviewSkillList } from "@/features/install/PreviewSkillList";
 import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 
 /** Characters of a commit id shown in the header. */
 const REVISION_SHORT_LENGTH = 7;
@@ -38,12 +38,10 @@ export interface GitPreviewDialogProps {
 /** What a pasted `skills add … -a` command asked for, and which of its agents are unknown here. */
 function RequestedAgentsNotice({ preview }: { preview: GitPreview }): ReactNode {
   const { t } = useTranslation();
-  const agents = useAgents();
+  const agentNames = useAgentNames();
   const { unknownAgents, allAgents } = preview;
   if (!allAgents && preview.agents.length === 0 && unknownAgents.length === 0) return null;
-  const names = preview.agents.map(
-    (key) => agents.data?.find((agent) => agent.key === key)?.displayName ?? key,
-  );
+  const names = preview.agents.map((key) => agentNames.get(key) ?? key);
   return (
     <InlineNotice tone="info" icon={Bot}>
       {allAgents || names.length > 0 ? (

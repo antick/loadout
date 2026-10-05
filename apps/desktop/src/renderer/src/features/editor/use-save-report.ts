@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 
 /**
  * Tells the user what a save did beyond writing the file. A plain save says nothing (the status
@@ -16,12 +16,11 @@ export function useSaveReport(
 ): (result: SaveSkillFileResult) => void {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const agents = useAgents();
+  const agentNames = useAgentNames();
 
   return useCallback(
     (result: SaveSkillFileResult) => {
-      const nameOf = (key: string): string =>
-        copyNames[key] ?? agents.data?.find((agent) => agent.key === key)?.displayName ?? key;
+      const nameOf = (key: string): string => copyNames[key] ?? agentNames.get(key) ?? key;
       if (result.otherCopiesSkipped.length > 0) {
         toast.warning(t("editor.saved.skippedTitle", { count: result.otherCopiesSkipped.length }), {
           description: t("editor.saved.skippedDescription", {
@@ -54,6 +53,6 @@ export function useSaveReport(
           : undefined,
       });
     },
-    [agents.data, copyNames, navigate, t],
+    [agentNames, copyNames, navigate, t],
   );
 }

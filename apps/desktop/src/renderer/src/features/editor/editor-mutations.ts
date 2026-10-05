@@ -2,7 +2,7 @@ import type { SkillFileChangeResult, SkillLocation } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useAgents } from "@/hooks/queries/agents";
+import { useAgentNames } from "@/hooks/queries/agents";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -30,7 +30,7 @@ function useFileChange<Variables>(
 ): UseMutationResult<SkillFileChangeResult, unknown, Variables> {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const agents = useAgents();
+  const agentNames = useAgentNames();
   return useApiMutation({
     fn: run,
     onSuccess: (result, variables) => {
@@ -40,9 +40,7 @@ function useFileChange<Variables>(
         toastSuccess(title);
         return;
       }
-      const names = result.copiesKept.map(
-        (key) => agents.data?.find((agent) => agent.key === key)?.displayName ?? key,
-      );
+      const names = result.copiesKept.map((key) => agentNames.get(key) ?? key);
       toast.warning(title, {
         description: t("editor.manage.copiesKept", {
           count: names.length,

@@ -1,4 +1,4 @@
-import type { AgentInfo, DiscoveredSkill } from "@loadout/shared";
+import type { DiscoveredSkill } from "@loadout/shared";
 import { Check, Download } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SCAN_LOCATIONS_MAX_VISIBLE } from "@/features/install/constants";
+import { useAgentNames } from "@/hooks/queries/agents";
 
 /** Where a group stands among folders that share its name but hold different files. */
 export interface SkillVersionPlace {
@@ -21,7 +22,6 @@ export interface DiscoveredSkillRowProps {
   skill: DiscoveredSkill;
   /** Set when other folders share this name with different files. */
   version: SkillVersionPlace | null;
-  agentsByKey: ReadonlyMap<string, AgentInfo>;
   /** Name it will get in the library; starts as the discovered name. */
   importName: string;
   onRename: (name: string) => void;
@@ -34,7 +34,6 @@ export interface DiscoveredSkillRowProps {
 export function DiscoveredSkillRow({
   skill,
   version,
-  agentsByKey,
   importName,
   onRename,
   onImport,
@@ -42,6 +41,7 @@ export function DiscoveredSkillRow({
   disabled,
 }: DiscoveredSkillRowProps): ReactNode {
   const { t } = useTranslation();
+  const agentNames = useAgentNames();
   const shown = skill.locations.slice(0, SCAN_LOCATIONS_MAX_VISIBLE);
   const hidden = skill.locations.length - shown.length;
   // The same agent can hold several copies; one avatar per agent is enough.
@@ -69,7 +69,7 @@ export function DiscoveredSkillRow({
           ) : null}
           <span className="flex shrink-0 items-center gap-1">
             {agentKeys.map((agentKey) => {
-              const displayName = agentsByKey.get(agentKey)?.displayName ?? agentKey;
+              const displayName = agentNames.get(agentKey) ?? agentKey;
               return (
                 <Tooltip key={agentKey}>
                   <TooltipTrigger asChild>
