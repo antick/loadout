@@ -115,11 +115,20 @@ function rowText(row: UpdatePlanRow): string[] {
   return lines;
 }
 
+/** Skills whose source check failed: not "nothing to update", but "nobody knows". */
+export function checkFailureLines(failed: readonly BatchFailure[]): string[] {
+  if (failed.length === 0) return [];
+  return [
+    `Could not check ${plural(failed.length, "skill")}, so whether they have updates is unknown:`,
+    ...failureLines(failed),
+  ];
+}
+
 export function updatePlanText(plan: UpdatePlan): string {
   const due = plan.skills.filter((row) => !row.error && changeCount(row) > 0).length;
   return [
     `Dry run: nothing was updated. ${plural(due, "skill")} would change.`,
     ...plan.skills.flatMap(rowText),
-    ...failureLines(plan.failed),
+    ...checkFailureLines(plan.failed),
   ].join("\n");
 }

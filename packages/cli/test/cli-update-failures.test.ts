@@ -1,5 +1,6 @@
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { createCore, silentLogger } from "@loadout/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { UpdatePlan } from "../src/commands/skills-update-plan";
 import { EXIT_FAILED, EXIT_OK } from "../src/run";
@@ -60,5 +61,50 @@ describe("bulk runs with failed source checks", () => {
     const run = await box.cli("skills", "update", "--all", "--json");
     expect(run.code).toBe(EXIT_OK);
     expect(run.json<{ failed: unknown[] }>().failed).toEqual([]);
+  });
+
+  it("skills check <ref> fails when the check fails, not when there is nothing to do", async () => {
+    const broken = await box.cli("skills", "check", "broken", "--force", "--json");
+    expect(broken.code).toBe(EXIT_FAILED);
+    expect(broken.json<{ updateStatus: string }>().updateStatus).toBe("error");
+    expect((await box.cli("skills", "check", "healthy", "--force")).code).toBe(EXIT_OK);
+  });
+
+  it("says a failed check is unknown, not up to date", async () => {
+    const text = await box.cli("skills", "update", "--all");
+    expect(text.stdout).toContain(
+      "Could not check 1 skill, so whether they have updates is unknown:",
+    );
+  });
+});
+
+describe("a skill whose stored source cannot be read", () => {
+  it("fails skills update --all on its first check", async () => {
+    const alone = createSandbox();
+    try {
+      // As a damaged library row would hold it: a Git source with no usable address.
+      const core = createCore({
+        homeDir: alone.home,
+        logger: silentLogger,
+        safetyScannerPath: null,
+      });
+      try {
+        const skill = await core.api.install.fromPath(writeSkill(alone.root, "alpha"));
+        core.store.update(skill.id, {
+          sourceType: "git",
+          sourceUrl: "bad",
+          updateStatus: "up_to_date",
+          // Its last check is old enough to be asked again.
+          lastCheckedAt: null,
+        });
+      } finally {
+        core.close();
+      }
+      const run = await alone.cli("skills", "update", "--all", "--json");
+      expect(run.code).toBe(EXIT_FAILED);
+      expect(failedNames(run.json<{ failed: { name: string }[] }>().failed)).toEqual(["alpha"]);
+    } finally {
+      alone.cleanup();
+    }
   });
 });

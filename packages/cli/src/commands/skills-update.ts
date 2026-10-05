@@ -2,7 +2,13 @@ import { errorMessage, isRemoteSource } from "@loadout/core";
 import type { BatchUpdateResult, Skill, UpdateResult } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { failureLines, fields, plural, when } from "../output";
-import { type UpdatePlan, hasUpdateSource, planUpdate, updatePlanText } from "./skills-update-plan";
+import {
+  type UpdatePlan,
+  checkFailureLines,
+  hasUpdateSource,
+  planUpdate,
+  updatePlanText,
+} from "./skills-update-plan";
 import { ACCEPT_RISK_FLAG, DRY_RUN_FLAG, limitPositionals } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
@@ -60,7 +66,8 @@ async function check(context: CommandContext): Promise<CommandResult> {
       ["Problem", value.lastCheckError],
       ["Next", value.updateStatus === "source_missing" ? goneNext(value.name) : null],
     ]);
-    return { value, text };
+    // "error": the check itself failed, so nobody knows whether there is an update.
+    return { value, text, exitCode: exitCodeFor(value.updateStatus === "error") };
   }
   const batch = await core.api.updates.checkAll(force);
   const listed = await core.api.skills.list();
@@ -76,7 +83,7 @@ async function check(context: CommandContext): Promise<CommandResult> {
     lines.push(`Gone from their source (${gone.length}), so they cannot update:`);
     for (const skill of gone) lines.push(`  ${skill.name}: ${goneNext(skill.name)}`);
   }
-  lines.push(...failureLines(batch.failed));
+  lines.push(...checkFailureLines(batch.failed));
   return {
     value: {
       checked: batch.succeeded,
@@ -190,7 +197,7 @@ async function update(context: CommandContext): Promise<CommandResult> {
       `Held back because files would be deleted or edits replaced: ${value.heldBack.join(", ")}`,
     );
   }
-  lines.push(...failureLines(value.failed));
+  lines.push(...checkFailureLines(checked.failed), ...failureLines(updated.failed));
   return {
     value: { dryRun: false, ...value },
     text: lines.join("\n"),
