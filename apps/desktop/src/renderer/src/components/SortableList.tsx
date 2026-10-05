@@ -6,15 +6,18 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { ReactNode } from "react";
+import {
+  restrictToParentElement,
+  restrictToVerticalAxis,
+  translateCss,
+} from "@/components/sortable-modifiers";
 import { DRAG_ACTIVATION_DISTANCE_PX } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +52,7 @@ function SortableItem({
   return (
     <Comp
       ref={setNodeRef as (node: HTMLElement | null) => void}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
+      style={{ transform: translateCss(transform), transition }}
       className={cn(className, isDragging && "relative z-10 opacity-80")}
       {...listeners}
     >

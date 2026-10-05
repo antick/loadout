@@ -58,3 +58,24 @@ test("a preset pill on an agent page counts only what the preset would deploy th
   await expect(toasts(page).first()).toContainText("Removed 2 deployments");
   await expect(pill).toHaveAttribute("aria-pressed", "false");
 });
+
+test("dragging a preset's skill reorders it", async ({ page }) => {
+  await openApp(page, "/presets");
+  await main(page).getByRole("link", { name: "Open preset “Frontend work”" }).click();
+  const names = main(page).getByRole("link", {
+    name: /^(react-patterns|code-review|test-first)$/,
+  });
+  await expect(names).toHaveText(["react-patterns", "code-review", "test-first"]);
+
+  const first = await names.nth(0).boundingBox();
+  const second = await names.nth(1).boundingBox();
+  if (!first || !second) throw new Error("The rows are not on screen");
+  // Grab the row beside its name (the whole row is the handle), then pull it below the second.
+  const x = first.x + first.width + 40;
+  await page.mouse.move(x, first.y + first.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x + 200, first.y + first.height / 2 + 10, { steps: 5 });
+  await page.mouse.move(x + 200, second.y + second.height + 10, { steps: 10 });
+  await page.mouse.up();
+  await expect(names).toHaveText(["code-review", "react-patterns", "test-first"]);
+});
