@@ -250,6 +250,11 @@ export interface RepairReport {
   /** Deployments looked at: those of agents that are installed and switched on. */
   checked: number;
   repaired: RepairedDeployment[];
+  /**
+   * Deployments whose place now holds something Loadout did not put there: left alone, never
+   * overwritten, and not counted as failures. `doctor` reports them.
+   */
+  notOurs: RepairedDeployment[];
   failed: RepairFailure[];
   /** Deployments of agents not installed or switched off, left alone. */
   skippedAgents: number;

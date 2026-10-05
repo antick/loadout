@@ -81,7 +81,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - Block a skill for an agent: removed there and skipped by every deploy; backed up. `skills block`.
 - Deploy all: the whole library to chosen agents, skipping blocked skills and folders not ours. `skills deploy --all`.
 - Copies follow library changes, unless the copy was edited in the agent's folder.
-- Each start puts back missing or broken deployments, never over a folder not ours; a banner lists failures. `skills repair`.
+- Each start puts back missing or broken deployments; a folder not ours there is left alone and shown by `doctor`; a banner lists failures. `skills repair`.
 
 ## Instruction files
 

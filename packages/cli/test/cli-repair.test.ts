@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { RepairReport } from "@loadout/shared";
+import type { HealthFinding, RepairReport } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EXIT_FAILED, EXIT_OK } from "../src/run";
 import { AGENT, type Run, type Sandbox, createSandbox, writeSkill } from "./harness";
@@ -29,7 +29,7 @@ describe("skills repair", () => {
     expect((await cli("doctor")).code).toBe(EXIT_OK);
   });
 
-  it("lists what is in the way and exits 1", async () => {
+  it("lists what is in the way and exits 1; doctor and status agree", async () => {
     const link = join(sandbox.agentSkillsDir, "alpha");
     rmSync(link);
     mkdirSync(link);
@@ -38,8 +38,22 @@ describe("skills repair", () => {
     expect(run.code).toBe(EXIT_FAILED);
     const report = run.json<RepairReport>();
     expect(report.repaired).toEqual([]);
-    expect(report.failed).toHaveLength(1);
-    expect(report.failed[0]).toMatchObject({ skill: "alpha", agentKey: AGENT });
+    expect(report.failed).toEqual([]);
+    expect(report.notOurs).toEqual([expect.objectContaining({ skill: "alpha", agentKey: AGENT })]);
+    expect((await cli("skills", "repair")).stdout).toContain(`in the way: alpha (${AGENT})`);
+
+    const doctor = (await cli("doctor", "--json")).json<{ findings: HealthFinding[] }>();
+    const found = doctor.findings.filter((finding) => finding.area === "deployments");
+    expect(found).toEqual([
+      expect.objectContaining({ severity: "warning", skill: "alpha", agent: AGENT }),
+    ]);
+    const status = (await cli("skills", "status", "alpha", "--json")).json<{
+      agents: { agent: string; presentOnDisk: boolean; problem: string | null }[];
+    }>();
+    expect(status.agents.find((a) => a.agent === AGENT)).toMatchObject({
+      presentOnDisk: false,
+      problem: "not_ours",
+    });
   });
 });
 

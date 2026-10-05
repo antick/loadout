@@ -1,4 +1,4 @@
-import { deploymentProblem } from "@loadout/core";
+import { deploymentState } from "@loadout/core";
 import {
   REMOVED_KEEP_DAYS,
   SOURCE_TYPES,
@@ -178,7 +178,8 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
     .filter((agent) => agent.installed || byAgent.has(agent.key))
     .map((agent) => {
       const deployment = byAgent.get(agent.key);
-      const problem = deployment ? deploymentProblem(deployment.targetPath) : null;
+      const state = deployment ? deploymentState(deployment, skill) : null;
+      const problem = state === "ok" ? null : state;
       return {
         agent: agent.key,
         enabled: agent.enabled,

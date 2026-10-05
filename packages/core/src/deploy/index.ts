@@ -8,6 +8,7 @@ export {
 } from "./engine";
 export type { PairRef } from "./batch";
 export { pruneBrokenLinks } from "./prune";
+export { type DeploymentState, deploymentState } from "./state";
 export { type DeployRepair, createDeployRepair } from "./repair";
 export { createStaleCopyRefresher } from "./stale-refresh";
 export {

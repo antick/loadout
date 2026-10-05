@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import type {
   CoreApi,
   HealthArea,
@@ -10,9 +9,9 @@ import type {
   Skill,
   SyncStatus,
 } from "@loadout/shared";
-import { CLI_COMMANDS, LISTING_AGENT_KEY } from "@loadout/shared";
+import { APP_NAME, CLI_COMMANDS, LISTING_AGENT_KEY } from "@loadout/shared";
+import { type DeploymentState, deploymentState } from "../deploy/state";
 import { errorMessage } from "../errors";
-import { lstatOrNull } from "../util/fs";
 import { blockedFindings } from "./blocked";
 import { duplicateFindings } from "./duplicates";
 import { listingFindings } from "./listing";
@@ -46,31 +45,33 @@ function formatFindings(skills: readonly Skill[]): Finding[] {
   );
 }
 
-/** Why a deployment is not usable on disk. */
-type DeploymentProblem = "missing" | "broken";
-
-/** Nothing at the path: "missing". A link that leads nowhere: "broken". Otherwise null. */
-export function deploymentProblem(targetPath: string): DeploymentProblem | null {
-  const stat = lstatOrNull(targetPath);
-  if (stat === null) return "missing";
-  return stat.isSymbolicLink() && !existsSync(targetPath) ? "broken" : null;
-}
-
-const DEPLOYMENT_MESSAGES = {
-  missing: `Deployed, but not on disk. ${CLI_COMMANDS.repair} puts it back.`,
-  broken: `Deployed, but its link leads nowhere. ${CLI_COMMANDS.repair} puts it back.`,
-} as const;
+const DEPLOYMENT_FINDINGS: Record<
+  Exclude<DeploymentState, "ok">,
+  { severity: HealthSeverity; message: string }
+> = {
+  missing: {
+    severity: "error",
+    message: `Deployed, but not on disk. ${CLI_COMMANDS.repair} puts it back.`,
+  },
+  broken: {
+    severity: "error",
+    message: `Deployed, but its link leads nowhere or to another folder. ${CLI_COMMANDS.repair} puts it back.`,
+  },
+  not_ours: {
+    severity: "warning",
+    message: `Something ${APP_NAME} did not put there is in its place, so it is left alone. Move it away, then run ${CLI_COMMANDS.repair}.`,
+  },
+};
 
 function deploymentFindings(skills: readonly Skill[]): Finding[] {
   return skills.flatMap((skill) =>
     skill.deployments.flatMap((deployment) => {
-      const problem = deploymentProblem(deployment.targetPath);
-      if (!problem) return [];
+      const state = deploymentState(deployment, skill);
+      if (state === "ok") return [];
       return [
         {
           area: "deployments" as const,
-          severity: "error" as const,
-          message: DEPLOYMENT_MESSAGES[problem],
+          ...DEPLOYMENT_FINDINGS[state],
           skill: skill.name,
           agent: deployment.agentKey,
           path: deployment.targetPath,

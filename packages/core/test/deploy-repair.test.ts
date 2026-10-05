@@ -75,18 +75,20 @@ describe("repairing deployments", () => {
     expect(world.store.deployment(alpha.id, "claude_code")?.mode).toBe("copy");
   });
 
-  it("never replaces a folder it did not create, and says so", async () => {
+  it("never replaces a folder it did not create: left alone, not a failure", async () => {
     const alpha = world.addSkill("alpha");
     await world.deploy.api.deploy(alpha.id, "claude_code");
     rmSync(join(agentDir(), "alpha"));
     mkdirSync(join(agentDir(), "alpha"));
     writeFileSync(join(agentDir(), "alpha", "SKILL.md"), "# by hand\n");
 
-    const report = await repair().run();
-
-    expect(report.repaired).toEqual([]);
-    expect(report.failed).toHaveLength(1);
-    expect(report.failed[0]).toMatchObject({ skill: "alpha", agentKey: "claude_code" });
+    for (const report of [await repair().run(), await repair().run()]) {
+      expect(report.repaired).toEqual([]);
+      expect(report.failed).toEqual([]);
+      expect(report.notOurs).toEqual([
+        expect.objectContaining({ skill: "alpha", agentKey: "claude_code" }),
+      ]);
+    }
     expect(lstatSync(join(agentDir(), "alpha")).isSymbolicLink()).toBe(false);
   });
 

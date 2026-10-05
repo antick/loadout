@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
-import type { RepairFailure, RepairReport, RepairedDeployment, Skill } from "@loadout/shared";
+import type { RepairFailure, RepairReport, RepairedDeployment } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
-import type { DeploymentRecord, SkillStore } from "../skills/store";
-import { classifyTarget } from "./engine";
+import type { SkillStore } from "../skills/store";
+import { deploymentState } from "./state";
 import type { DeployService } from "./service";
 
 export interface DeployRepairDeps {
@@ -24,21 +24,10 @@ export interface DeployRepair {
 const SKILL_GONE = "The skill's folder is missing from the library.";
 
 /**
- * A recorded deployment that is no longer what was put there. A link row wants a link to the
- * skill: anything else (nothing, a link elsewhere, a folder) is broken. A copy row only counts
- * as broken when nothing is there: a copy that differs may hold the user's own edits, and the
- * stale-copy refresh handles that with care.
- */
-function isBroken(row: DeploymentRecord, skill: Skill): boolean {
-  const state = classifyTarget(row.targetPath, skill.libraryPath);
-  if (state === "absent") return true;
-  return row.mode === "symlink" && state !== "link_to_source";
-}
-
-/**
  * Deployments Loadout recorded whose entry went missing, or whose link leads elsewhere (the
- * library moved, a folder was cleared): each is deployed again the normal way, so a folder
- * Loadout did not create is never replaced, only reported. Agents that are not installed or
+ * library moved, a folder was cleared): each is deployed again the normal way (see
+ * `deploymentState`). Something Loadout did not put there is never replaced: it is listed apart
+ * from failures, so it is not retried as one at every start. Agents that are not installed or
  * switched off are left alone and counted. Runs when the app starts and on request.
  */
 export function createDeployRepair(ctx: CoreContext, deps: DeployRepairDeps): DeployRepair {
@@ -52,6 +41,7 @@ export function createDeployRepair(ctx: CoreContext, deps: DeployRepairDeps): De
     const names = new Map(agents.map((agent) => [agent.key, agent.displayName]));
     const agentName = (key: string): string => names.get(key) ?? key;
     const repaired: RepairedDeployment[] = [];
+    const notOurs: RepairedDeployment[] = [];
     const failed: RepairFailure[] = [];
     let checked = 0;
     let skippedAgents = 0;
@@ -62,13 +52,19 @@ export function createDeployRepair(ctx: CoreContext, deps: DeployRepairDeps): De
       }
       checked += 1;
       const skill = deps.store.find(row.skillId);
-      if (!skill || !isBroken(row, skill)) continue;
+      const state = skill ? deploymentState(row, skill) : "ok";
+      if (!skill || state === "ok") continue;
       const entry = {
         skill: skill.name,
         agentKey: row.agentKey,
         agent: agentName(row.agentKey),
         path: row.targetPath,
       };
+      // Not Loadout's to replace, so trying again at every start would only fail again.
+      if (state === "not_ours") {
+        notOurs.push(entry);
+        continue;
+      }
       if (!existsSync(skill.libraryPath)) {
         failed.push({ ...entry, message: SKILL_GONE });
         continue;
@@ -81,7 +77,7 @@ export function createDeployRepair(ctx: CoreContext, deps: DeployRepairDeps): De
         failed.push({ ...entry, message: errorMessage(error) });
       }
     }
-    last = { ranAt: Date.now(), checked, repaired, failed, skippedAgents };
+    last = { ranAt: Date.now(), checked, repaired, notOurs, failed, skippedAgents };
     if (repaired.length > 0) {
       ctx.log.info(`Put back ${repaired.length} deployments that were missing`);
     }
