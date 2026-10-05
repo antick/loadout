@@ -6,10 +6,10 @@ import {
   type SafetyFinding,
   type SafetyReport,
   type SafetySeverity,
-  type SafetyVerdict,
 } from "@loadout/shared";
 import { exec } from "../util/exec";
 import { isDirectory, statOrNull } from "../util/fs";
+import { buildReport, isBlockingSeverity, shorten } from "./report";
 
 /**
  * Running NVIDIA SkillSpector: finding the program, and turning its JSON report into ours. It is
@@ -26,11 +26,6 @@ const SCAN_TIMEOUT_MS = 120_000;
 const VERSION_TIMEOUT_MS = 20_000;
 /** Exit 0: clean; 1: findings or a high score. Both come with a report. 2 is a failed scan. */
 const REPORT_EXIT_CODES: ReadonlySet<number> = new Set([0, 1]);
-/** The scanner's own triage line: a score above this is not safe to install. */
-export const SAFETY_RISK_THRESHOLD = 50;
-const BLOCKING_SEVERITIES: ReadonlySet<string> = new Set(["HIGH", "CRITICAL"]);
-const MAX_FINDINGS = 100;
-const MAX_EXCERPT = 240;
 const MAX_TEXT = 1_000;
 const VERSION_PATTERN = /(\d+\.\d+\.\d+)/;
 
@@ -117,11 +112,6 @@ const asText = (value: unknown): string => (typeof value === "string" ? value : 
 const asNumber = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
-function shorten(text: string, max: number): string {
-  const flat = text.trim();
-  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
-}
-
 function severityOf(value: unknown): SafetySeverity | null {
   const upper = asText(value).toUpperCase();
   return SAFETY_SEVERITIES.find((severity) => severity === upper) ?? null;
@@ -141,20 +131,10 @@ function findingOf(raw: unknown): SafetyFinding | null {
     confidence: asNumber(issue.confidence) ?? 0,
     file: asText(location.file),
     line: line !== null && line > 0 ? line : null,
-    excerpt: shorten(asText(issue.finding), MAX_EXCERPT),
+    excerpt: shorten(asText(issue.finding)),
     explanation: shorten(asText(issue.explanation), MAX_TEXT),
     remediation: shorten(asText(issue.remediation), MAX_TEXT),
   };
-}
-
-const SEVERITY_RANK: Record<SafetySeverity, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-
-/** The scanner's own rule: over the score threshold, or any high or critical finding. */
-function verdictOf(score: number, worst: string, findings: number): SafetyVerdict {
-  if (score > SAFETY_RISK_THRESHOLD || BLOCKING_SEVERITIES.has(worst.toUpperCase())) {
-    return "unsafe";
-  }
-  return findings > 0 ? "caution" : "safe";
 }
 
 /** Our report from the scanner's JSON. It may print text before the JSON, so that is skipped. */
@@ -170,28 +150,18 @@ export function parseReport(stdout: string, scannedAt: number): SafetyReport {
   const score = asNumber(risk.score);
   if (score === null) throw new Error("SkillSpector's report has no risk score.");
 
-  const all = (Array.isArray(data.issues) ? data.issues : []).flatMap((raw) => {
+  const findings = (Array.isArray(data.issues) ? data.issues : []).flatMap((raw) => {
     const finding = findingOf(raw);
     return finding ? [finding] : [];
   });
-  const counts: Record<SafetySeverity, number> = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
-  for (const finding of all) counts[finding.severity] += 1;
-  const findings = [...all]
-    .sort(
-      (a, b) =>
-        SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || b.confidence - a.confidence,
-    )
-    .slice(0, MAX_FINDINGS);
-  const metadata = asObject(data.metadata);
-
-  return {
+  return buildReport({
     engine: "skillspector",
-    verdict: verdictOf(score, asText(risk.max_issue_severity), all.length),
-    score,
-    recommendation: asText(risk.recommendation),
-    counts,
     findings,
-    scannerVersion: asText(metadata.skillspector_version) || null,
+    score,
+    // The scanner's own rule: any high or critical finding, whatever its confidence.
+    blocking: isBlockingSeverity(asText(risk.max_issue_severity)),
+    recommendation: asText(risk.recommendation),
+    scannerVersion: asText(asObject(data.metadata).skillspector_version) || null,
     scannedAt,
-  };
+  });
 }

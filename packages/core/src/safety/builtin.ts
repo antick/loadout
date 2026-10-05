@@ -1,4 +1,4 @@
-import type { SafetyFinding, SafetyReport, SafetySeverity, SafetyVerdict } from "@loadout/shared";
+import type { SafetyFinding, SafetyReport, SafetySeverity } from "@loadout/shared";
 import { isNeverCopiedName } from "../util/fs";
 import { type ContentFile, listContentFiles } from "../util/hash";
 import { createLineSplitter, readTextChunks } from "../util/text-stream";
@@ -9,7 +9,7 @@ import {
   type SafetyRule,
   UNCHECKED_CATEGORY,
 } from "./rules";
-import { SAFETY_RISK_THRESHOLD } from "./scanner";
+import { MAX_EXCERPT, buildReport, isBlockingSeverity, shorten } from "./report";
 
 /**
  * A line longer than this is checked in pieces this long, each repeating the last
@@ -18,8 +18,6 @@ import { SAFETY_RISK_THRESHOLD } from "./scanner";
  */
 const PIECE_CHARS = 4000;
 const PIECE_OVERLAP = 1000;
-const MAX_FINDINGS = 100;
-const MAX_EXCERPT = 240;
 /** Media nothing runs: not read, unless marked executable. */
 const SKIPPED_EXTENSIONS = new Set([
   ".png",
@@ -88,10 +86,8 @@ const SEVERITY_WEIGHT: Record<SafetySeverity, number> = {
   MEDIUM: 12,
   LOW: 4,
 };
-const SEVERITY_RANK: Record<SafetySeverity, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 /** A high or critical hit stops an install only when the context left it this sure. */
 const BLOCKING_CONFIDENCE = 0.6;
-const BLOCKING_SEVERITIES: ReadonlySet<SafetySeverity> = new Set(["CRITICAL", "HIGH"]);
 /**
  * A file that could not be read as text proves nothing either way: below blocking, so it alone
  * never stops an install, but a report with one is never "safe".
@@ -105,11 +101,6 @@ function extensionOf(path: string): string {
   const name = path.slice(path.lastIndexOf("/") + 1);
   const dot = name.lastIndexOf(".");
   return dot <= 0 ? "" : name.slice(dot).toLowerCase();
-}
-
-function shorten(text: string): string {
-  const flat = text.trim();
-  return flat.length > MAX_EXCERPT ? `${flat.slice(0, MAX_EXCERPT - 1)}…` : flat;
 }
 
 function round(value: number): number {
@@ -254,21 +245,6 @@ function scanFile(file: ContentFile): SafetyFinding[] {
   return [uncheckedFinding(file, "binary", runnable), ...(runnable ? scan.end() : [])];
 }
 
-function verdictOf(score: number, findings: readonly SafetyFinding[]): SafetyVerdict {
-  const blocking = findings.some(
-    (finding) =>
-      BLOCKING_SEVERITIES.has(finding.severity) && finding.confidence >= BLOCKING_CONFIDENCE,
-  );
-  if (score > SAFETY_RISK_THRESHOLD || blocking) return "unsafe";
-  return findings.length > 0 ? "caution" : "safe";
-}
-
-const RECOMMENDATIONS: Record<SafetyVerdict, string> = {
-  safe: "SAFE",
-  caution: "CAUTION",
-  unsafe: "DO_NOT_INSTALL",
-};
-
 /**
  * The rules over every file copied with a skill, whatever its size, as one report. What cannot
  * be read as text is named in it, never passed as safe. Reads, never writes.
@@ -276,30 +252,21 @@ const RECOMMENDATIONS: Record<SafetyVerdict, string> = {
 export function scanWithRules(dir: string, scannedAt = Date.now()): SafetyReport {
   const all: SafetyFinding[] = [];
   for (const file of listContentFiles(dir, isNeverCopiedName)) all.push(...scanFile(file));
-  const counts: Record<SafetySeverity, number> = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
   let weight = 0;
   for (const finding of all) {
-    counts[finding.severity] += 1;
     // Nothing of an unchecked file was read, so it adds nothing to the risk score.
     if (finding.id.startsWith(UNCHECKED_PREFIX)) continue;
     weight += SEVERITY_WEIGHT[finding.severity] * finding.confidence;
   }
-  const score = Math.min(100, Math.round(weight));
-  const findings = [...all]
-    .sort(
-      (a, b) =>
-        SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || b.confidence - a.confidence,
-    )
-    .slice(0, MAX_FINDINGS);
-  const verdict = verdictOf(score, all);
-  return {
+  return buildReport({
     engine: "builtin",
-    verdict,
-    score,
-    recommendation: RECOMMENDATIONS[verdict],
-    counts,
-    findings,
+    findings: all,
+    score: Math.min(100, Math.round(weight)),
+    blocking: all.some(
+      (finding) =>
+        isBlockingSeverity(finding.severity) && finding.confidence >= BLOCKING_CONFIDENCE,
+    ),
     scannerVersion: BUILTIN_RULES_VERSION,
     scannedAt,
-  };
+  });
 }
