@@ -1,8 +1,8 @@
-import { appendFileSync, existsSync, renameSync, statSync, unlinkSync } from "node:fs";
+import { appendFileSync, existsSync, renameSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { APP_SLUG, formatTimestampIso } from "@loadout/shared";
 import { errorMessage } from "./errors";
-import { ensureDir } from "./util/fs";
+import { ensureDir, statOrNull } from "./util/fs";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -20,7 +20,7 @@ const KEEP_ROTATED = 3;
 
 function rotate(filePath: string): void {
   try {
-    if (!existsSync(filePath) || statSync(filePath).size < ROTATE_BYTES) return;
+    if ((statOrNull(filePath)?.size ?? 0) < ROTATE_BYTES) return;
     const oldest = `${filePath}.${KEEP_ROTATED}`;
     if (existsSync(oldest)) unlinkSync(oldest);
     for (let i = KEEP_ROTATED - 1; i >= 1; i -= 1) {

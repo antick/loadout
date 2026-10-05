@@ -1,8 +1,9 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { closeSync, openSync, readFileSync, statSync, unlinkSync, writeSync } from "node:fs";
+import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from "node:fs";
 import { hostname } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "./errors";
+import { statOrNull } from "./util/fs";
 
 const WAIT_MS = 20_000;
 const POLL_MS = 50;
@@ -65,12 +66,7 @@ export class RepoLock {
 
   /** Another process holds the lock right now (a lock it left behind does not count). */
   heldElsewhere(): boolean {
-    if (this.#current !== null) return false;
-    try {
-      statSync(this.#path);
-    } catch {
-      return false;
-    }
+    if (this.#current !== null || !statOrNull(this.#path)) return false;
     return !this.#abandoned(this.#readHolder());
   }
 
@@ -84,11 +80,8 @@ export class RepoLock {
 
   #abandoned(holder: LockInfo | null): boolean {
     if (holder === null) {
-      try {
-        return Date.now() - statSync(this.#path).mtimeMs > UNREADABLE_STALE_MS;
-      } catch {
-        return false;
-      }
+      const stat = statOrNull(this.#path);
+      return stat !== null && Date.now() - stat.mtimeMs > UNREADABLE_STALE_MS;
     }
     return holder.host === hostname() && holder.pid !== process.pid && !processAlive(holder.pid);
   }
