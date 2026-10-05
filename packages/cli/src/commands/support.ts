@@ -1,6 +1,13 @@
 import { existsSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
-import { type Core, type ResolvedAgent, invalid, notFound, targetConflict } from "@loadout/core";
+import { resolve } from "node:path";
+import {
+  type Core,
+  type ResolvedAgent,
+  expandHome,
+  invalid,
+  notFound,
+  targetConflict,
+} from "@loadout/core";
 import type { ApplyResult, Preset, Skill } from "@loadout/shared";
 import { type FlagSpec, type ParsedArgs, UsageError, flagBoolean, flagList } from "../args";
 import { exitCodeFor } from "../exit-codes";
@@ -124,10 +131,7 @@ export function requireYes(args: ParsedArgs, action: string): void {
 
 /** `~`, relative and absolute paths, as a shell user expects them. */
 export function resolveUserPath(input: string, cwd: string, homeDir: string): string {
-  const text = input.trim();
-  if (text === "~") return homeDir;
-  if (text.startsWith("~/") || text.startsWith("~\\")) return join(homeDir, text.slice(2));
-  return isAbsolute(text) ? resolve(text) : resolve(cwd, text);
+  return resolve(cwd, expandHome(input, homeDir));
 }
 
 export function resolveSkills(core: Core, refs: readonly string[]): Skill[] {

@@ -19,7 +19,7 @@ export type { ResolvedAgent } from "./agents/registry";
 export { LIBRARY_LOCATION, isRemoteSource } from "./updates";
 export { diffTrees } from "./updates/diff";
 export { checkHealth, deploymentProblem } from "./health/doctor";
-export { canonicalPath, isInside, writeFileAtomic } from "./util/fs";
+export { canonicalPath, expandHome, isInside, writeFileAtomic } from "./util/fs";
 export { previewLibrary } from "./install/fetched-preview";
 export { parseSkillsCommand } from "./install/skills-command";
 export { readSkillIdentity } from "./skills/metadata";
