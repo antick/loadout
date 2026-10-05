@@ -68,8 +68,14 @@ function defaultHost(home: string): HostBridge {
   };
 }
 
-/** Open the library and build the shared context every service receives. */
-export function createContext(options: CoreOptions = {}): ContextBundle {
+/**
+ * Open the library and build the shared context every service receives. `onLibraryChanged` runs
+ * on every change to skills or presets.
+ */
+export function createContext(
+  options: CoreOptions = {},
+  onLibraryChanged: () => void = () => undefined,
+): ContextBundle {
   const home = options.homeDir ?? homedir();
   const resolved = resolveLibrary({
     homeDir: home,
@@ -167,7 +173,10 @@ export function createContext(options: CoreOptions = {}): ContextBundle {
     emit,
     touched: (...scope) => {
       for (const item of scope) pendingScopes.add(item);
-      if (scope.includes("skills") || scope.includes("presets")) metadataDirty = true;
+      if (scope.includes("skills") || scope.includes("presets")) {
+        metadataDirty = true;
+        onLibraryChanged();
+      }
       if (scheduled) return;
       scheduled = true;
       // Its own turn at the lock: called inside an operation, it waits for that one to finish.

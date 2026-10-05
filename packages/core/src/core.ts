@@ -87,7 +87,10 @@ export interface Core {
 
 /** Open the library and wire every service. The only place services are constructed. */
 export function createCore(options: CoreCreateOptions = {}): Core {
-  const bundle = createContext(options);
+  // Any change to the library restarts the quiet period before the next automatic backup, once
+  // there is one: until then automatic backup has not started.
+  let notifyBackup: (() => void) | null = null;
+  const bundle = createContext(options, () => notifyBackup?.());
   const { ctx, store, portable } = bundle;
 
   const registry = new AgentRegistry(ctx);
@@ -188,6 +191,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       await deploy.refreshStaleCopies();
     },
   });
+  notifyBackup = backup.auto.notifyChanged;
   const system = createSystemService(ctx, { store, install, deploy, registry, repair });
 
   const skillsFile = createSkillsFileService(ctx, {
@@ -292,15 +296,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       bundle.flush();
       await backup.auto.runOnQuit();
     },
-  };
-
-  // Any change to the library restarts the quiet period before the next automatic backup.
-  const touched = ctx.touched;
-  ctx.touched = (...scope) => {
-    touched(...scope);
-    if (scope.includes("skills") || scope.includes("presets")) {
-      backup.auto.notifyChanged();
-    }
   };
 
   return {
