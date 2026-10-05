@@ -266,6 +266,41 @@ describe("backup ignore rules", () => {
     expect(await b.api.sync()).toMatchObject({ pushed: true });
   });
 
+  it("keeps a left-out file in Recently removed when a restore point has a file at its path", async () => {
+    // Tracked past the rules in an older version, left out since.
+    writeFile(join(b.skillsDir, "alpha", ".env"), "OLD=1");
+    b.git("add", "-f", "alpha/.env");
+    b.git("commit", "--quiet", "-m", "backup: with env");
+    const point = b.git("rev-parse", "--short=12", "HEAD");
+    b.git("rm", "--quiet", "--cached", "alpha/.env");
+    b.git("commit", "--quiet", "-m", "backup: env left out");
+    writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+    writeFile(join(b.skillsDir, "alpha", "node_modules", "dep.js"), "local dependency");
+
+    await b.api.restore(point);
+    expect(b.read("alpha", ".env")).toBe("OLD=1");
+    expect(keptEnv()).toEqual(["SECRET=1"]);
+    // What the restore point has no file at stays put.
+    expect(b.read("alpha", "node_modules/dep.js")).toBe("local dependency");
+  });
+
+  it("refuses a restore that would overwrite a left-out file at the top of the library", async () => {
+    writeFile(join(b.skillsDir, ".env"), "OLD=1");
+    b.git("add", "-f", ".env");
+    b.git("commit", "--quiet", "-m", "backup: with env");
+    const point = b.git("rev-parse", "--short=12", "HEAD");
+    b.git("rm", "--quiet", "--cached", ".env");
+    b.git("commit", "--quiet", "-m", "backup: env left out");
+    writeFile(join(b.skillsDir, ".env"), "SECRET=1");
+    const head = b.git("rev-parse", "HEAD");
+
+    const error = await rejection(b.api.restore(point));
+    expect(error.code).toBe("GIT");
+    expect(error.details).toMatchObject({ paths: [".env"] });
+    expect(readFileSync(join(b.skillsDir, ".env"), "utf8")).toBe("SECRET=1");
+    expect(b.git("rev-parse", "HEAD")).toBe(head);
+  });
+
   it("never lets a line merge overwrite a left-out file, and names it", async () => {
     // Someone tracks a file by hand where B keeps a left-out one; the push lacks the metadata.
     pushByHand(world.dir, world.remote, basename(a.ctx.paths.metadataDir), (dir) => {

@@ -177,3 +177,29 @@ export async function leftOutInTheWay(env: BackupEnv, commit: string): Promise<s
       (folders.has(entry) && [...files].some((file) => blocks(entry, file))),
   );
 }
+
+/**
+ * Before a restore puts `commit`'s files in place, which overwrites whatever is at their paths:
+ * each skill folder holding a left-out entry the commit has a file at is copied to Recently
+ * removed first, so the local version waits there, as a sync keeps it. A left-out file at the top
+ * of the library has no folder to go with, so the restore is refused instead.
+ */
+export async function keepLeftOutBeforeRestore(env: BackupEnv, commit: string): Promise<void> {
+  const inTheWay = await leftOutInTheWay(env, commit);
+  if (inTheWay.length === 0) return;
+  const folders = [...new Set(inTheWay.map((entry) => entry.split("/")[0] ?? entry))];
+  const loose = folders.filter((folder) => !lstatOrNull(join(env.repoDir, folder))?.isDirectory());
+  if (loose.length > 0) {
+    throw new AppError(
+      "GIT",
+      `This backup version has files where this library keeps files left out of the backup, and restoring it would overwrite them: ${loose.join(", ")}. Move them out of the library folder, restore again, then put back what you still need.`,
+      { paths: loose },
+    );
+  }
+  for (const folder of folders) {
+    const path = join(env.repoDir, folder);
+    env.removed.keepCopy(path, { place: LIBRARY_PLACE, reason: "replaced" });
+    env.ctx.log.warn(`Kept local files of ${path} in Recently removed before a restore`, inTheWay);
+    env.ctx.activity.record("backup", folder, KEPT_DETAIL);
+  }
+}

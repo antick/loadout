@@ -3,6 +3,7 @@ import { invalid, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { assertReadable, schemaAt } from "./compat";
 import type { BackupEnv } from "./env";
+import { keepLeftOutBeforeRestore } from "./ignored";
 import { commitLibrary, commitStaged, commitTimeMs, inHistory, resolveCommit } from "./repo";
 
 /**
@@ -90,6 +91,8 @@ export async function restoreSnapshot(env: BackupEnv, id: string): Promise<strin
 
   await commitLibrary(env, BEFORE_RESTORE_MESSAGE);
   const safety = await safetyPoint(env);
+  // The restore overwrites files left out of the backup where the restore point has a file.
+  await keepLeftOutBeforeRestore(env, commit);
   const restored = (await restorePointId(env, commit)) ?? id;
   try {
     // Makes the index and the folder match the restore point exactly, deletions included,

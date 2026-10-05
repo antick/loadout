@@ -149,7 +149,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - A sync that would delete many skills here stops and waits for you to review it, even for a remote without Loadout's skill details.
 - Every backup, merge and restore is a version you can go back to (a commit, no tags); automatic backup after changes.
 - Blocks pushing anything that looks like a key or token, in text files of any size.
-- `node_modules/`, `venv/`, `.env` and `.env.*` (not `.env.example`), logs and your own patterns stay out of the backup, and stay put when a sync updates the skill (or wait in Recently removed when the new version has a file at their path). Publishing leaves out the same list.
+- `node_modules/`, `venv/`, `.env` and `.env.*` (not `.env.example`), logs and your own patterns stay out of the backup, and stay put when a sync or restore updates the skill (or wait in Recently removed when the new version has a file at their path). Publishing leaves out the same list.
 
 ## Command line
 
