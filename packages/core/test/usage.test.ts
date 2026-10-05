@@ -1,6 +1,6 @@
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { claudeCodeReader, codexReader } from "../src/usage/parse";
 import { readMarkedLines } from "../src/usage/log-files";
 import { type UsageService, createUsageService } from "../src/usage";
@@ -172,8 +172,10 @@ describe("usage service", () => {
   let codexLog: string;
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
     world = createTestWorld();
-    usage = createUsageService(world.ctx, { store: world.store, now: () => NOW });
+    usage = createUsageService(world.ctx, { store: world.store });
     const claudeDir = join(world.home, ".claude", "projects", "-work-shop");
     const codexDir = join(world.home, ".codex", "sessions", "2026", "09", "20");
     mkdirSync(claudeDir, { recursive: true });
@@ -203,7 +205,10 @@ describe("usage service", () => {
       await install.api.fromPath(makeSkill(join(world.root, "src"), name));
     }
   });
-  afterEach(() => world.cleanup());
+  afterEach(() => {
+    vi.useRealTimers();
+    world.cleanup();
+  });
 
   const idOf = (name: string): string => world.store.findByName(name)[0]!.id;
 

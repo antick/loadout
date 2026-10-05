@@ -227,16 +227,14 @@ describe("checking library skills", () => {
   });
 
   it("reuses the result while the content hash stays the same", () => {
-    let runs = 0;
-    const inspector = createSkillInspector(() => {
-      runs += 1;
-      return { issues: [], manualOnly: false, traits: [], behaviorFields: [] };
-    });
-    const skill = { id: "a", libraryPath: "/x", contentHash: "h1" };
-    inspector.factsOf(skill);
-    inspector.factsOf(skill);
-    expect(runs).toBe(1);
-    inspector.factsOf({ ...skill, contentHash: "h2" });
-    expect(runs).toBe(2);
+    const inspector = createSkillInspector();
+    const skill = addSkill("pdf", doc("name: pdf"));
+    expect(codes(inspector.factsOf(skill).issues)).toEqual(["description_missing"]);
+
+    // The folder changed but the hash did not: the kept result is answered, the folder not read.
+    writeFile(join(skill.libraryPath, "SKILL.md"), doc(`name: pdf\ndescription: ${DESCRIPTION}`));
+    expect(codes(inspector.factsOf(skill).issues)).toEqual(["description_missing"]);
+    const rehashed = { ...skill, contentHash: hashDir(skill.libraryPath) };
+    expect(inspector.factsOf(rehashed).issues).toEqual([]);
   });
 });

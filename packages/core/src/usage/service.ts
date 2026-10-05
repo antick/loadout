@@ -20,8 +20,6 @@ import { type NameCount, type NameProject, type UsageStore, createUsageStore } f
 
 export interface UsageServiceDeps {
   store: SkillStore;
-  /** Time source, replaced in tests. */
-  now?: () => number;
 }
 
 export interface UsageService {
@@ -82,7 +80,6 @@ function toSkillUsage(
  */
 export function createUsageService(ctx: CoreContext, deps: UsageServiceDeps): UsageService {
   const usage: UsageStore = createUsageStore(ctx.db);
-  const now = deps.now ?? Date.now;
   let running: Promise<void> | null = null;
 
   const enabled = (): boolean => ctx.settings.get("usageTracking");
@@ -99,7 +96,7 @@ export function createUsageService(ctx: CoreContext, deps: UsageServiceDeps): Us
     const scannedAt = ctx.settings.getRaw<number | null>(INTERNAL_KEYS.usageScannedAt, null);
     const skills = toSkillUsage(
       deps.store.list(),
-      usage.counts(now() - USAGE_RECENT_MS),
+      usage.counts(Date.now() - USAGE_RECENT_MS),
       usage.projects(),
     );
     return { enabled: true, scannedAt, skills, logs: logs() };
@@ -132,7 +129,7 @@ export function createUsageService(ctx: CoreContext, deps: UsageServiceDeps): Us
 
   async function scan(): Promise<void> {
     for (const reader of LOG_READERS) await readLogs(reader);
-    ctx.settings.setRaw(INTERNAL_KEYS.usageScannedAt, now());
+    ctx.settings.setRaw(INTERNAL_KEYS.usageScannedAt, Date.now());
     ctx.touched("usage");
   }
 

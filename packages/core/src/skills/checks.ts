@@ -65,7 +65,7 @@ function inspectSkillFacts(dir: string): SkillFacts {
   };
 }
 
-export function createSkillInspector(inspect = inspectSkillFacts): SkillInspector {
+export function createSkillInspector(): SkillInspector {
   const cache = new Map<string, { key: string; facts: SkillFacts }>();
   return {
     factsOf: (skill) => {
@@ -75,7 +75,7 @@ export function createSkillInspector(inspect = inspectSkillFacts): SkillInspecto
       if (key && cached?.key === key) return cached.facts;
       let facts: SkillFacts;
       try {
-        facts = inspect(skill.libraryPath);
+        facts = inspectSkillFacts(skill.libraryPath);
       } catch (error) {
         // One unreadable skill must never stop the whole library from listing.
         const reason = errorMessage(error);
