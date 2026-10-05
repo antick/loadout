@@ -1,3 +1,4 @@
+import { DAY_MS, MINUTE_MS } from "@loadout/shared";
 import { INTERNAL_KEYS, type SettingsStore } from "../settings/store";
 
 /**
@@ -7,9 +8,9 @@ import { INTERNAL_KEYS, type SettingsStore } from "../settings/store";
  */
 
 /** Opens older than this no longer count. */
-export const PROJECT_OPENS_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+export const PROJECT_OPENS_WINDOW_MS = 30 * DAY_MS;
 /** Coming back sooner than this is the same visit, not another open. */
-const SAME_VISIT_MS = 15 * 60 * 1000;
+const SAME_VISIT_MS = 15 * MINUTE_MS;
 /** Opens kept per project; more than a month's worth for anyone. */
 const MAX_OPENS_KEPT = 200;
 

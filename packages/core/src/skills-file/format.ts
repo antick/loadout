@@ -11,6 +11,7 @@ import {
   type SkillsFileSource,
   type SkillsFileSpec,
   type SkillsLock,
+  isRecord,
 } from "@loadout/shared";
 import { TomlError, parse, stringify } from "smol-toml";
 import { invalid } from "../errors";
@@ -139,7 +140,7 @@ function readLock(path: string): SkillsLock | null {
     if (!statOrNull(path)) return null;
     throw invalid(`${path} is not valid JSON: ${error instanceof Error ? error.message : ""}`);
   }
-  const record = (typeof raw === "object" && raw !== null ? raw : {}) as Record<string, unknown>;
+  const record = isRecord(raw) ? raw : {};
   return {
     version: typeof record.version === "number" ? record.version : LOCK_VERSION,
     sources: Array.isArray(record.sources) ? record.sources.filter(isLockedSource) : [],

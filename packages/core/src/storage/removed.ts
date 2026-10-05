@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import {
+  DAY_MS,
+  HOUR_MS,
   REMOVED_KEEP_DAYS,
   type RemovedFolder,
   type RemovedReason,
@@ -33,13 +35,12 @@ import {
 
 const CONTENT_DIR = "content";
 const META_FILE = "removed.json";
-const DAY_MS = 24 * 60 * 60 * 1000;
 const KEEP_MS = REMOVED_KEEP_DAYS * DAY_MS;
 /**
  * An entry missing its content or its JSON is either left from a crash or still being written by
  * another process (a copy across disks can take a while): only clear it once it is this old.
  */
-const HALF_WRITTEN_GRACE_MS = 60 * 60 * 1000;
+const HALF_WRITTEN_GRACE_MS = HOUR_MS;
 /** Entry folders are named by `randomUUID`; anything else is refused before it becomes a path. */
 const ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
