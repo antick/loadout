@@ -1,9 +1,9 @@
 import type { Skill } from "@loadout/shared";
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AgentAvatar } from "@/components/AgentAvatar";
+import { deployPlan, missingCount } from "@/components/agent-checklist";
+import { AgentChecklist } from "@/components/AgentChecklist";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,12 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useAvailableAgents } from "@/hooks/queries/agents";
-import { cn } from "@/lib/utils";
-import { SECTION_LABEL } from "@/lib/styles";
 
 export interface BatchDeployDialogProps {
   open: boolean;
@@ -31,11 +28,6 @@ export interface BatchDeployDialogProps {
   all?: boolean;
 }
 
-/** The agent does not have the skill yet, and the skill is not blocked for it. */
-const canReceive = (skill: Skill, agentKey: string): boolean =>
-  !skill.deployments.some((d) => d.agentKey === agentKey) &&
-  !skill.blockedAgents.includes(agentKey);
-
 /** The form lives in its own component so every opening starts with no agent ticked. */
 function BatchDeployForm({
   onOpenChange,
@@ -48,50 +40,28 @@ function BatchDeployForm({
   const apply = useApplySkills();
   const [picked, setChosen] = useState<ReadonlySet<string> | null>(null);
 
-  /** Per agent: how many of the selected skills it does not have yet and may get. */
-  const missingByAgent = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const agent of agents.data ?? []) {
-      counts.set(agent.key, skills.filter((skill) => canReceive(skill, agent.key)).length);
-    }
-    return counts;
-  }, [agents.data, skills]);
-
-  const list = agents.data ?? [];
   // For the whole library, every agent that is missing something starts ticked; the user's own
   // choice replaces that as soon as they make one.
   const defaults = useMemo<ReadonlySet<string>>(
     () =>
-      all
-        ? new Set(
-            list.filter((agent) => (missingByAgent.get(agent.key) ?? 0) > 0).map((a) => a.key),
-          )
-        : new Set<string>(),
-    // `list` is rebuilt every render; `agents.data` is what it comes from.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-    [all, agents.data, missingByAgent],
+      new Set(
+        all
+          ? (agents.data ?? [])
+              .filter((agent) => missingCount(skills, agent.key) > 0)
+              .map((agent) => agent.key)
+          : [],
+      ),
+    [all, agents.data, skills],
   );
   const chosen = picked ?? defaults;
-  const pairsToAdd = [...chosen].reduce((sum, key) => sum + (missingByAgent.get(key) ?? 0), 0);
-  const allChosen = list.length > 0 && chosen.size === list.length;
-
-  const toggle = (agentKey: string): void => {
-    const next = new Set(chosen);
-    if (next.has(agentKey)) next.delete(agentKey);
-    else next.add(agentKey);
-    setChosen(next);
-  };
+  const plan = deployPlan(skills, chosen);
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
-    const agentKeys = [...chosen].filter((key) => (missingByAgent.get(key) ?? 0) > 0);
+    if (plan.pairs === 0) return;
     // Only skills that are missing somewhere are sent; the backend skips pairs already in place.
-    const skillIds = skills
-      .filter((skill) => agentKeys.some((key) => canReceive(skill, key)))
-      .map((skill) => skill.id);
-    if (skillIds.length === 0 || agentKeys.length === 0) return;
     apply.mutate(
-      { skillIds, agentKeys, action: "add", skipConflicts: all },
+      { skillIds: plan.skillIds, agentKeys: plan.agentKeys, action: "add", skipConflicts: all },
       {
         onSuccess: () => {
           onOpenChange(false);
@@ -112,68 +82,24 @@ function BatchDeployForm({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="flex items-center justify-between">
-        <p className={SECTION_LABEL}>{t("batchDeploy.agents")}</p>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          disabled={list.length === 0}
-          onClick={() => setChosen(allChosen ? new Set() : new Set(list.map((a) => a.key)))}
-        >
-          {allChosen ? t("selection.selectNone") : t("selection.selectAll")}
-        </Button>
-      </div>
-
-      {agents.isPending ? (
-        <div className="flex flex-col gap-1">
-          {[0, 1, 2].map((row) => (
-            <Skeleton key={row} className="h-10 w-full" />
-          ))}
-        </div>
-      ) : list.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-          {t("batchDeploy.noAgents")}
-        </p>
-      ) : (
-        <ul className="-mx-1 flex max-h-72 flex-col gap-0.5 overflow-y-auto px-1">
-          {list.map((agent) => {
-            const missing = missingByAgent.get(agent.key) ?? 0;
-            const checked = chosen.has(agent.key);
-            return (
-              <li key={agent.key}>
-                <label
-                  className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-accent/60",
-                    checked && "bg-primary/5",
-                  )}
-                >
-                  <Checkbox checked={checked} onCheckedChange={() => toggle(agent.key)} />
-                  <AgentAvatar agentKey={agent.key} name={agent.displayName} size="sm" />
-                  <span className="min-w-0 flex-1 truncate text-sm">{agent.displayName}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {missing === 0
-                      ? t("batchDeploy.hasAll")
-                      : t("batchDeploy.missing", { count: missing })}
-                  </span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <AgentChecklist
+        skills={skills}
+        chosen={chosen}
+        onChange={setChosen}
+        listClassName="max-h-72"
+      />
 
       <DialogFooter className="items-center sm:justify-between">
         <p className="text-xs text-muted-foreground" aria-live="polite">
           {chosen.size === 0
             ? t("batchDeploy.pickHint")
-            : t("batchDeploy.summary", { count: pairsToAdd })}
+            : t("batchDeploy.summary", { count: plan.pairs })}
         </p>
         <div className="flex gap-2">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
-          <Button type="submit" disabled={pairsToAdd === 0 || apply.isPending}>
+          <Button type="submit" disabled={plan.pairs === 0 || apply.isPending}>
             {apply.isPending ? <Spinner /> : null}
             {t("batchDeploy.submit")}
           </Button>

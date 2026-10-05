@@ -82,7 +82,6 @@
       "title": "Deploy to agents",
       "skillCount_one": "{{count}} new skill",
       "skillCount_other": "{{count}} new skills",
-      "noAgents": "No agent is available. Enable one in Settings first.",
       "confirmNone": "Deploy",
       "confirm_one": "Deploy to {{count}} agent",
       "confirm_other": "Deploy to {{count}} agents"

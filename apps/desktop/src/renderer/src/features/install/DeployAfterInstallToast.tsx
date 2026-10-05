@@ -2,11 +2,10 @@ import type { Skill } from "@loadout/shared";
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AgentAvatar } from "@/components/AgentAvatar";
+import { deployPlan } from "@/components/agent-checklist";
+import { AgentChecklist } from "@/components/AgentChecklist";
 import { IconButton } from "@/components/IconButton";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useAvailableAgents } from "@/hooks/queries/agents";
@@ -37,8 +36,6 @@ export function DeployAfterInstallToast({
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
   const seeded = useRef(false);
 
-  const all = agents.data ?? [];
-
   // Tick what the source asked for once the agent list is known, and only once.
   useEffect(() => {
     if (seeded.current || !preselect || !agents.data) return;
@@ -46,19 +43,13 @@ export function DeployAfterInstallToast({
     const keys = agents.data.map((agent) => agent.key);
     setChosen(new Set(preselect === "all" ? keys : keys.filter((key) => preselect.includes(key))));
   }, [agents.data, preselect]);
-  const allChosen = all.length > 0 && chosen.size === all.length;
 
-  const toggle = (agentKey: string): void => {
-    setChosen((previous) => {
-      const next = new Set(previous);
-      if (!next.delete(agentKey)) next.add(agentKey);
-      return next;
-    });
-  };
+  // Agents the skills are blocked for, or that already have them, get nothing.
+  const plan = deployPlan(skills, chosen);
 
   const deploy = (): void => {
     apply.mutate(
-      { skillIds: skills.map((skill) => skill.id), agentKeys: [...chosen], action: "add" },
+      { skillIds: plan.skillIds, agentKeys: plan.agentKeys, action: "add" },
       { onSuccess: onClose },
     );
   };
@@ -77,43 +68,24 @@ export function DeployAfterInstallToast({
         <IconButton size="icon-xs" label={t("common.dismiss")} icon={<X />} onClick={onClose} />
       </div>
 
-      {agents.isPending ? (
-        <Skeleton className="h-16 w-full" />
-      ) : all.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{t("install.deploy.noAgents")}</p>
-      ) : (
-        <ul className="-mx-1 flex max-h-48 flex-col overflow-y-auto">
-          {all.map((agent) => (
-            <li key={agent.key}>
-              <label className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm hover:bg-accent/60">
-                <Checkbox
-                  checked={chosen.has(agent.key)}
-                  onCheckedChange={() => toggle(agent.key)}
-                />
-                <AgentAvatar agentKey={agent.key} name={agent.displayName} size="sm" />
-                <span className="truncate">{agent.displayName}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      )}
+      <AgentChecklist
+        skills={skills}
+        chosen={chosen}
+        onChange={setChosen}
+        listClassName="max-h-48"
+      />
 
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={all.length === 0}
-          onClick={() => setChosen(allChosen ? new Set() : new Set(all.map((agent) => agent.key)))}
-        >
-          {t(allChosen ? "selection.selectNone" : "selection.selectAll")}
-        </Button>
-        <Button size="sm" disabled={chosen.size === 0 || apply.isPending} onClick={deploy}>
-          {apply.isPending ? <Spinner /> : null}
-          {chosen.size === 0
-            ? t("install.deploy.confirmNone")
-            : t("install.deploy.confirm", { count: chosen.size })}
-        </Button>
-      </div>
+      <Button
+        size="sm"
+        className="self-end"
+        disabled={plan.pairs === 0 || apply.isPending}
+        onClick={deploy}
+      >
+        {apply.isPending ? <Spinner /> : null}
+        {plan.agentKeys.length === 0
+          ? t("install.deploy.confirmNone")
+          : t("install.deploy.confirm", { count: plan.agentKeys.length })}
+      </Button>
     </div>
   );
 }
