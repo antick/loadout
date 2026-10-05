@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { type Plugin, normalizePath } from "vite";
+import { refuseRequest } from "./request-guard";
 import {
   DEV_API_PREFIX,
   DEV_DEFAULT_SESSION,
@@ -17,12 +18,14 @@ import {
  * none) is its own Node process running `createCore` on a seeded temporary home, so git settings
  * and folders never mix. Routes under `/__loadout`: `invoke` answers like the IPC bridge, `events`
  * streams core's app events, `reset` puts the session back to its seed, `setup` runs a scenario.
+ * Only the preview's own page may call them (`request-guard.ts`).
  */
 const SESSION_ENTRY = join(__dirname, "session", "main.ts");
 const SESSION_LOADER = pathToFileURL(join(__dirname, "session", "register.ts")).href;
 /** Vite serves files outside the page's folder under `/@fs/`, with forward slashes. */
 const BRIDGE_URL = `/@fs/${normalizePath(join(__dirname, "browser", "bridge.ts")).replace(/^\//, "")}`;
 const SESSION_ID = /^[\w-]{1,64}$/;
+const FORBIDDEN = 403;
 const STREAM_HEADERS = {
   "content-type": "text/event-stream",
   "cache-control": "no-cache",
@@ -85,17 +88,25 @@ export function loadoutDevServer(): Plugin {
 
   const handle = async (req: IncomingMessage, res: ServerResponse): Promise<boolean> => {
     const route = (req.url ?? "").split("?")[0] ?? "";
+    const streaming = route === DEV_ROUTES.events && req.method === "GET";
+    const kind = COMMANDS[route];
+    if (!streaming && (req.method !== "POST" || !kind)) return false;
+    // Checked before a session starts: another site's request must not even fork one.
+    const refusal = refuseRequest(req);
+    if (refusal) {
+      res.writeHead(FORBIDDEN, { "content-type": "text/plain" });
+      res.end(refusal);
+      return true;
+    }
     const name = sessionName(req);
     const session = sessions.get(name) ?? start(name);
-    if (route === DEV_ROUTES.events) {
+    if (streaming) {
       res.writeHead(200, STREAM_HEADERS);
       res.write(": listening\n\n");
       session.streams.add(res);
       req.on("close", () => session.streams.delete(res));
       return true;
     }
-    const kind = COMMANDS[route];
-    if (req.method !== "POST" || !kind) return false;
     const body = (fromWire(await readBody(req)) ?? {}) as Record<string, unknown>;
     const reply = await command(session, { ...body, kind });
     res.setHeader("content-type", "application/json");

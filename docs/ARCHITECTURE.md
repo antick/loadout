@@ -101,6 +101,7 @@ imports none of it.
 | Path                   | Owns                                                                                       |
 | ---------------------- | ------------------------------------------------------------------------------------------ |
 | `plugin.ts`            | Vite plugin: injects the bridge, routes `/__loadout/*` to one session process per cookie   |
+| `request-guard.ts`     | Runs only the preview page's own requests, and only JSON POSTs                             |
 | `browser/bridge.ts`    | `window.loadout` over `fetch` (`invoke`) and server-sent events (`on`)                     |
 | `session/main.ts`      | `createCore` on a temporary home; answers like the IPC bridge (`main/dispatch.ts`)         |
 | `session/world.ts`     | The temporary home; git, `HOME` and temp files pointed into it; the seed kept and restored |

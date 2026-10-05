@@ -4,6 +4,7 @@ import { DEV_API_PREFIX, DEV_ROUTES, DEV_SESSION_COOKIE, fromWire } from "../dev
 
 /** The first test of a worker waits for its session to seed a library (a few seconds). */
 const SESSION_TIMEOUT_MS = 120_000;
+/** Posted with an empty JSON body: the dev server refuses any other kind of POST. */
 const RESET_URL = `${DEV_API_PREFIX}${DEV_ROUTES.reset}`;
 
 /** A dev server reply that must be `ok`; its error message otherwise fails the test. */
@@ -29,7 +30,7 @@ export const test = base.extend<
         baseURL: workerInfo.project.use.baseURL,
         extraHTTPHeaders: { cookie: `${DEV_SESSION_COOKIE}=${session}` },
       });
-      await expectOk(await request.post(RESET_URL, { timeout: SESSION_TIMEOUT_MS }));
+      await expectOk(await request.post(RESET_URL, { data: {}, timeout: SESSION_TIMEOUT_MS }));
       await request.dispose();
       await use(session);
     },
@@ -38,7 +39,7 @@ export const test = base.extend<
   session: [
     async ({ context, baseURL, workerSession }, use) => {
       await context.addCookies([{ name: DEV_SESSION_COOKIE, value: workerSession, url: baseURL }]);
-      await expectOk(await context.request.post(RESET_URL));
+      await expectOk(await context.request.post(RESET_URL, { data: {} }));
       await use(workerSession);
     },
     { auto: true },
