@@ -103,7 +103,8 @@ describe("traits of a skill folder", () => {
     expect(skillTraits(dir)).toEqual([]);
   });
 
-  it("counts an executable file without an extension", () => {
+  // Windows files have no executable bit to count.
+  it.skipIf(process.platform === "win32")("counts an executable file without an extension", () => {
     const dir = makeSkill(temp.dir, "binary", { files: { "bin/tool": "#!/bin/sh\n" } });
     chmodSync(join(dir, "bin", "tool"), 0o755);
     expect(skillTraits(dir)[0]?.params).toEqual({ count: 1, examples: "bin/tool" });

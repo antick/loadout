@@ -110,7 +110,8 @@ describe("publish", () => {
     ]);
   });
 
-  it("keeps a script executable", async () => {
+  // Windows files have no executable bit to keep.
+  it.skipIf(process.platform === "win32")("keeps a script executable", async () => {
     const pdf = world.addSkill("pdf", { "run.sh": "#!/bin/sh\n" });
     const script = join(pdf.libraryPath, "run.sh");
     const { chmodSync } = await import("node:fs");

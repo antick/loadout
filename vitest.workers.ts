@@ -8,3 +8,9 @@
  * worker: there vitest picks its own default and the packages run side by side.
  */
 export const TEST_MAX_WORKERS: string | undefined = process.env.CI ? undefined : "30%";
+
+/**
+ * How long one test, or one set-up, may take. Tests start real git and open real libraries on
+ * disk; a Windows runner starts processes several times slower than macOS or Linux.
+ */
+export const TEST_TIMEOUT_MS = process.platform === "win32" ? 120_000 : 30_000;

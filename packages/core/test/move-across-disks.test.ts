@@ -75,7 +75,8 @@ describe("moving across disks", () => {
     expect(existsSync(from)).toBe(false);
     expect(readFileSync(join(to, "refs", "deep", "a.md"), "utf8")).toBe("deep");
     expect(lstatSync(join(to, "link.md")).isSymbolicLink()).toBe(true);
-    expect(fs.readlinkSync(join(to, "link.md"))).toBe("refs/deep/a.md");
+    // Windows stores a link's target with its own separator.
+    expect(fs.readlinkSync(join(to, "link.md")).replaceAll("\\", "/")).toBe("refs/deep/a.md");
   });
 
   it("reports an original it cannot remove instead of failing, the copy being whole", () => {
@@ -102,22 +103,26 @@ describe("moving across disks", () => {
     expect(existsSync(join(to, "refs"))).toBe(false);
   });
 
-  it("removes a copy that failed halfway and leaves the original alone", () => {
-    const from = makeSkill(root, "notes");
-    const unreadable = join(from, "secret.md");
-    writeFileSync(unreadable, "x");
-    fs.chmodSync(unreadable, 0o000);
-    const to = join(root, "other-disk", "moved");
-    try {
-      // Root can read anything: there is no halfway to test.
-      if (process.getuid?.() === 0) return;
-      expect(() => moveEntrySync(from, to)).toThrow();
-      expect(existsSync(to)).toBe(false);
-      expect(existsSync(join(from, "SKILL.md"))).toBe(true);
-    } finally {
-      fs.chmodSync(unreadable, 0o600);
-    }
-  });
+  // Windows has no permission bits to make a file unreadable with.
+  it.skipIf(process.platform === "win32")(
+    "removes a copy that failed halfway and leaves the original alone",
+    () => {
+      const from = makeSkill(root, "notes");
+      const unreadable = join(from, "secret.md");
+      writeFileSync(unreadable, "x");
+      fs.chmodSync(unreadable, 0o000);
+      const to = join(root, "other-disk", "moved");
+      try {
+        // Root can read anything: there is no halfway to test.
+        if (process.getuid?.() === 0) return;
+        expect(() => moveEntrySync(from, to)).toThrow();
+        expect(existsSync(to)).toBe(false);
+        expect(existsSync(join(from, "SKILL.md"))).toBe(true);
+      } finally {
+        fs.chmodSync(unreadable, 0o600);
+      }
+    },
+  );
 });
 
 describe("Recently removed on another disk", () => {
