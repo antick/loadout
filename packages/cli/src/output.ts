@@ -1,4 +1,5 @@
-import { type BatchFailure, type ErrorShape, formatDateTime, terminalSafe } from "@loadout/shared";
+import { type BatchFailure, type ErrorShape, formatDateTime } from "@loadout/shared";
+import { terminalSafe } from "./terminal-text";
 
 export interface CliIo {
   stdout(text: string): void;

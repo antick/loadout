@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { terminalSafe } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EXIT_OK } from "../src/run";
+import { terminalSafe } from "../src/terminal-text";
 import { type Run, type Sandbox, createSandbox } from "./harness";
 
 /** Text a repository supplies never reaches the terminal with its escape sequences. */

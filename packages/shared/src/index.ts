@@ -47,4 +47,3 @@ export * from "./frontmatter";
 export * from "./frontmatter-fix";
 export * from "./skill-notes";
 export * from "./editors";
-export * from "./terminal-text";

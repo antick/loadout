@@ -1,4 +1,5 @@
-import { runsCode, terminalSafe } from "@loadout/shared";
+import { runsCode } from "@loadout/shared";
+import { terminalSafe } from "../terminal-text";
 import { outcomeLabel } from "../install-outcome";
 import { plural } from "../output";
 import { type PickerLine, type PickerState, folderState, outcomesOf, visibleLines } from "./state";
