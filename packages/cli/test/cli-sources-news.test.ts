@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceCheckResult } from "@loadout/shared";
 import { afterEach, beforeEach, expect, it } from "vitest";
@@ -57,4 +57,18 @@ it("finds skills a repository gained, lists them, and dismisses them", async () 
   const unknown = await box.cli("sources", "dismiss", "nobody/nothing");
   expect(unknown.code).not.toBe(0);
   expect(unknown.stderr).toContain("No repository called");
+});
+
+it("exits 1 and does not claim nothing is new when a source cannot be checked", async () => {
+  expect((await box.cli("skills", "install", "acme/skills", "--skill", "pdf")).code).toBe(0);
+  rmSync(repo, { recursive: true, force: true });
+
+  const run = await box.cli("sources", "check");
+  expect(run.code).toBe(1);
+  expect(run.stdout).toContain("Could not check github.com/acme/skills");
+  expect(run.stdout).not.toContain("Nothing new in these sources.");
+
+  const json = await box.cli("sources", "check", "--json");
+  expect(json.code).toBe(1);
+  expect(json.json<SourceCheckResult>().failed).toMatchObject([{ name: "github.com/acme/skills" }]);
 });

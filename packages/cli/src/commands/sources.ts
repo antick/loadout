@@ -10,6 +10,7 @@ import { plural, table, when } from "../output";
 import { limitPositionals, positional } from "./support";
 import { originCommands } from "./sources-origin";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
+import { exitCodeFor } from "../exit-codes";
 
 const PATH_FLAG = {
   name: "path",
@@ -17,6 +18,9 @@ const PATH_FLAG = {
   value: "path",
   description: "Only this new skill (its folder in the repository). Repeat for several.",
 } as const;
+
+const NOTHING_NEW = "Nothing new in these sources.";
+const NOTHING_NEW_IN_CHECKED = "Nothing new in the sources that could be checked.";
 
 /** How a source is named on the command line: as `sources list` shows it, or its key or address. */
 function sourceName(source: SkillSource): string {
@@ -91,7 +95,10 @@ async function check({ core, args }: CommandContext): Promise<CommandResult> {
     const name = source ? sourceName(source) : entry.sourceKey;
     return entry.skills.map((skill) => [name, skill.name, skill.path]);
   });
-  const lines = [table(["source", "new skill", "path"], rows, "Nothing new in these sources.")];
+  const failed = result.failed.length > 0;
+  // A source that could not be checked may well have something new: say only what is known.
+  const empty = failed ? NOTHING_NEW_IN_CHECKED : NOTHING_NEW;
+  const lines = [table(["source", "new skill", "path"], rows, empty)];
   if (result.added.length > 0) lines.push(`Added to the library: ${result.added.join(", ")}.`);
   for (const failure of result.failed)
     lines.push(`Could not check ${failure.name}: ${failure.message}`);
@@ -100,7 +107,11 @@ async function check({ core, args }: CommandContext): Promise<CommandResult> {
       "Add them: skills install <location> --skill <name>. Stop showing them: sources dismiss <source>.",
     );
   }
-  return { value: { ...result, news: shown }, text: lines.join("\n") };
+  return {
+    value: { ...result, news: shown },
+    text: lines.join("\n"),
+    exitCode: exitCodeFor(failed),
+  };
 }
 
 /** Stop showing a repository's new skills: all of them, or the ones named with `--path`. */

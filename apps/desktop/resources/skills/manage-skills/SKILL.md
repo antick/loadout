@@ -146,7 +146,7 @@ loadout presets undeploy "Docs work" --json        # presets deploy puts it back
 loadout skills install owner/repo --all --dry-run --json   # names each skill would get
 loadout skills update --all --dry-run --json               # files each update would change
 loadout sources list --json                                # repositories, archives and links in use
-loadout sources check --json                               # skills repositories gained since last look
+loadout sources check --json                               # skills repositories gained since last look; exit 1 when one could not be checked (read `failed`)
 loadout sources dismiss owner/repo                         # stop showing a repository's new skills
 loadout sources find --json                                # where skills without a source came from (changes nothing)
 loadout sources link <skill> [owner/repo]                  # follow a repository; a copy that differs needs --yes
