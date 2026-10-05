@@ -1,4 +1,8 @@
-import { DEFAULT_BACKUP_REPO_NAME, type GithubConnectResult } from "@loadout/shared";
+import {
+  DEFAULT_BACKUP_REPO_NAME,
+  type GithubConnectResult,
+  REPO_NAME_PATTERN,
+} from "@loadout/shared";
 import { ExternalLink, KeyRound } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useGithubConnect } from "@/features/backup/backup-mutations";
 import { useGithubDeviceAvailable } from "@/features/backup/backup-queries";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { GITHUB_NEW_TOKEN_URL, REPO_NAME_PATTERN } from "./constants";
+import { GITHUB_NEW_TOKEN_URL } from "./constants";
 import { DeviceSignIn } from "./DeviceSignIn";
 import { useDeviceFlow } from "./use-device-flow";
 import { usePublicRepoConfirm } from "./use-public-repo-confirm";

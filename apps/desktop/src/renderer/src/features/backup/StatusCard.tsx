@@ -1,4 +1,9 @@
-import { type BackupStage, type BackupStatus, formatRelative } from "@loadout/shared";
+import {
+  type BackupStage,
+  type BackupStatus,
+  DEVICE_NAME_MAX_LENGTH,
+  formatRelative,
+} from "@loadout/shared";
 import {
   CircleAlert,
   CircleCheck,
@@ -19,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { BACKUP_MODE_TONES, type BackupMode, type BackupModeKind } from "@/lib/backup-mode";
-import { DEVICE_NAME_MAX_LENGTH } from "./constants";
 import { BackupStageText } from "./BackupStageText";
 
 export interface StatusCardProps {
