@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
 import {
   APP_SLUG,
+  MIB,
   TAR_SUFFIXES,
   archiveSuffixOf,
   formatBytes,
@@ -33,7 +34,7 @@ const EXTRACT_DIR_PREFIX = `${APP_SLUG}-archive-`;
 const FALLBACK_ARCHIVE_NAME = "archive";
 const SKILL_SEARCH_DEPTH = 4;
 /** Refuse to unpack more than this: a small zip can expand to fill the disk. */
-const MAX_UNPACKED_BYTES = 512 * 1024 * 1024;
+const MAX_UNPACKED_BYTES = 512 * MIB;
 const ZIP_MAGIC = [0x50, 0x4b] as const;
 
 // ZIP central directory layout (APPNOTE 4.3.12 / 4.3.16).

@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 
 import { join, relative } from "node:path";
 
-import { APP_SLUG, type ErrorCode, normalizeSourceUrl, redactUrl } from "@loadout/shared";
+import { APP_SLUG, type ErrorCode, MIB, normalizeSourceUrl, redactUrl } from "@loadout/shared";
 
 import type { CoreContext } from "../context";
 
@@ -114,7 +114,7 @@ export interface GitClient {
  * needed a second trip for one long SKILL.md; at 256 KB it clones as fast as a full clone.
  */
 const CLONE_FILTER = "--filter=blob:limit=256k";
-const CACHE_LIMIT_BYTES = 1024 * 1024 * 1024;
+const CACHE_LIMIT_BYTES = 1024 * MIB;
 const REPOS_DIR_NAME = "repos";
 /** Prefix of every temporary working copy we hand out. */
 export const CLONE_DIR_PREFIX = `${APP_SLUG}-clone-`;

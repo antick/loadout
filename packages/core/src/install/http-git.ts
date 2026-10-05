@@ -1,4 +1,4 @@
-import { COMMIT_ID_PATTERN, isCommitId, redactUrl } from "@loadout/shared";
+import { COMMIT_ID_PATTERN, MIB, isCommitId, redactUrl } from "@loadout/shared";
 import { renameSync } from "node:fs";
 
 import { mkdtemp } from "node:fs/promises";
@@ -64,7 +64,7 @@ const HTTPS = "https:";
 const REFS_PATH = "/info/refs?service=git-upload-pack";
 const ADVERTISEMENT_TYPE = "application/x-git-upload-pack-advertisement";
 /** A ref advertisement is small; a huge one is not what we asked for. */
-const MAX_ADVERTISEMENT_BYTES = 32 * 1024 * 1024;
+const MAX_ADVERTISEMENT_BYTES = 32 * MIB;
 const PKT_LENGTH_DIGITS = 4;
 const HEX_RADIX = 16;
 const ZERO_SHA = /^0+$/;
