@@ -51,6 +51,8 @@ export interface EditorServiceDeps {
 }
 
 const LIBRARY_ONLY = "Files can be added, renamed or deleted only in library skills";
+const INSTRUCTIONS_LOCK_LABEL = "an instruction file";
+const UNKNOWN_LOCK_LABEL = "a file";
 /** How the activity history words a file change. */
 const CHANGE_DETAIL = {
   create: (change: FolderChange) => `Created ${change.path}`,
@@ -76,7 +78,25 @@ export interface EditorService {
  */
 export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): EditorService {
   const { store, history } = deps;
-  const resolve = createLocationResolver(ctx, deps);
+  const { resolve, describeTarget } = createLocationResolver(ctx, deps);
+
+  /**
+   * What the lock held for an edit is called (another process's BUSY message names it), from the
+   * location alone: the folder itself is resolved once, under the lock.
+   */
+  function lockLabel(location: SkillLocation): string {
+    switch (location?.kind) {
+      case "library":
+        return store.find(location.skillId)?.name ?? location.skillId;
+      case "agent":
+      case "project":
+        return location.relativePath;
+      case "instructions":
+        return INSTRUCTIONS_LOCK_LABEL;
+      default:
+        return UNKNOWN_LOCK_LABEL;
+    }
+  }
 
   /** Library bookkeeping after a change: name, description, hash, edit marks, copies. */
   async function afterLibraryChange(
@@ -106,9 +126,7 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
     apply: (folder: EditableFolder) => FolderChange,
     detail: (change: FolderChange) => string,
   ): Promise<SkillFileChangeResult> {
-    const first = resolve(location);
-    if (!first.librarySkill) throw unsupported(LIBRARY_ONLY);
-    const result = await ctx.lock.run(`edit ${first.folder.label}`, async () => {
+    const result = await ctx.lock.run(`edit ${lockLabel(location)}`, async () => {
       const resolved = resolve(location);
       if (!resolved.librarySkill) throw unsupported(LIBRARY_ONLY);
       const change = apply(resolved.folder);
@@ -131,7 +149,7 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
   }
 
   const api: EditorApi = {
-    target: async (location) => resolve(location).target,
+    target: async (location) => describeTarget(resolve(location)),
 
     files: async (location) => {
       const resolved = resolve(location);
@@ -141,8 +159,8 @@ export function createEditorService(ctx: CoreContext, deps: EditorServiceDeps): 
     readFile: async (location, path) => readFileAt(resolve(location).folder, path),
 
     saveFile: async (location, input) => {
-      const { label } = resolve(location).folder;
-      const result = await ctx.lock.run(`edit ${label}`, async (): Promise<SaveSkillFileResult> => {
+      const label = `edit ${lockLabel(location)}`;
+      const result = await ctx.lock.run(label, async (): Promise<SaveSkillFileResult> => {
         const resolved = resolve(location);
         const outcome = writeFileAt(resolved.folder, input, history);
         const base: SaveSkillFileResult = {

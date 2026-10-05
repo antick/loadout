@@ -13,6 +13,7 @@ import {
   canonicalPath,
   isDirectory,
   isSkillDir,
+  listTopLevel,
   lstatOrNull,
   removePathSync,
   replaceDirAtomic,
@@ -23,6 +24,7 @@ import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import {
   type LibraryIndex,
   type LocalEntry,
+  type LocalSkillDir,
   type MatchMode,
   classifySync,
   describeLocalSkill,
@@ -80,11 +82,16 @@ export function toLocalSkill(
   };
 }
 
-/** The skill folder at a caller-supplied relative path, which may not leave `root`. */
-export function requireLocalSkill(root: string, relativePath: string): LocalEntry {
+/** The skill folder at a caller-supplied relative path, which may not leave `root`. Reads nothing. */
+export function requireLocalSkillDir(root: string, relativePath: string): LocalSkillDir {
   const path = resolveInside(root, relativePath);
   if (!isSkillDir(path)) throw notFound(`No skill found at ${relativePath}`);
-  return describeLocalSkill({ path, relativePath: toPosix(relative(root, path)) });
+  return { path, relativePath: toPosix(relative(root, path)) };
+}
+
+/** `requireLocalSkillDir`, described: its document read and its content hashed. */
+export function requireLocalSkill(root: string, relativePath: string): LocalEntry {
+  return describeLocalSkill(requireLocalSkillDir(root, relativePath));
 }
 
 /**
@@ -92,12 +99,12 @@ export function requireLocalSkill(root: string, relativePath: string): LocalEntr
  * the skill's own real folder when the whole skill is a link (a deployed library skill).
  */
 export function readLocalDocument(root: string, relativePath: string): SkillDocument {
-  const entry = requireLocalSkill(root, relativePath);
+  const entry = requireLocalSkillDir(root, relativePath);
   const found = readSkillDocument(entry.path, root) ?? readSkillDocument(entry.path);
   return {
     filename: found?.filename ?? "",
     content: found?.content ?? "",
-    files: entry.files,
+    files: listTopLevel(entry.path),
     path: entry.path,
   };
 }
