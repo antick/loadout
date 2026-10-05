@@ -1,9 +1,9 @@
-import { existsSync, readFileSync, renameSync } from "node:fs";
+import { existsSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
 import { formatTimestampCompact, firstFreeName } from "@loadout/shared";
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
-import type { PortableSkill } from "../skills/portable";
+import { readPortableSkillFiles } from "../skills/portable";
 import { GIT_DIR, copyDir, isSkillDir, readDirSafe, removePath, statOrNull } from "../util/fs";
 import { hashDir, hashFile, holdsUncopiedEntries, sameUnhashedEntries } from "../util/hash";
 import { assertReadable, schemaAt } from "./compat";
@@ -41,15 +41,10 @@ function freeSibling(env: BackupEnv, prefix: string): string {
 /** Folder name → skill id, from the clone's portable metadata. */
 function remoteSkillIds(env: BackupEnv, cloneDir: string): Map<string, string> {
   const ids = new Map<string, string>();
-  const dir = join(cloneDir, env.metadataName, SKILL_METADATA_SUBDIR);
-  for (const entry of readDirSafe(dir)) {
-    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
-    try {
-      const file = JSON.parse(readFileSync(join(dir, entry.name), "utf8")) as PortableSkill;
-      if (typeof file.path === "string" && typeof file.id === "string") ids.set(file.path, file.id);
-    } catch {
-      // The rebuild skips unreadable metadata as well.
-    }
+  for (const { file } of readPortableSkillFiles(
+    join(cloneDir, env.metadataName, SKILL_METADATA_SUBDIR),
+  )) {
+    if (typeof file.path === "string" && typeof file.id === "string") ids.set(file.path, file.id);
   }
   return ids;
 }

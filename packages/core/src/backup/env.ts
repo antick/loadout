@@ -1,17 +1,22 @@
-import { readFileSync, unlinkSync } from "node:fs";
+import { unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { GIT_DEFAULT_BRANCH, GIT_REMOTE_NAME, isRecord } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { INTERNAL_KEYS } from "../settings/store";
-import type { PortableMetadata, PortableSkill } from "../skills/portable";
+import {
+  type PortableMetadata,
+  type PortableSkillFile,
+  readPortableSkillFiles,
+} from "../skills/portable";
 import type { SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
-import { readDirSafe } from "../util/fs";
 import { trySanitizeSkillName } from "../util/names";
 import { readDeviceName } from "./device";
 import { BACKUP_ERROR_TEXT, BACKUP_GIT_CONFIG, type Git, createGit } from "./git";
 
-export const REMOTE_NAME = "origin";
-export const DEFAULT_BRANCH = "main";
+/** The backup's remote and branch: the git conventions every Loadout repository follows. */
+export const REMOTE_NAME = GIT_REMOTE_NAME;
+export const DEFAULT_BRANCH = GIT_DEFAULT_BRANCH;
 /** Folder names inside the repository that belong to the app, not to a skill. */
 export const SKILL_METADATA_SUBDIR = "skills";
 export const PRESET_METADATA_SUBDIR = "presets";
@@ -33,13 +38,6 @@ export interface BackupDeps {
   /** Core refreshes copy-mode deployments here after skill content was replaced. */
   afterContentChange: () => Promise<void> | void;
   fetchImpl?: typeof fetch;
-  hooks?: BackupHooks;
-}
-
-/** Seams for tests that need to act in a race window. Unused in the app. */
-export interface BackupHooks {
-  /** Runs after the merge step and right before each push attempt. */
-  beforePush?: (attempt: number) => Promise<void>;
 }
 
 /** What every backup module works with. Built once per service. */
@@ -55,7 +53,6 @@ export interface BackupEnv {
   siblingDir: string;
   /** Name of the portable metadata folder inside the repository. */
   metadataName: string;
-  hooks: BackupHooks;
   deviceName(): string;
   remoteUrl(): string | null;
   /**
@@ -71,22 +68,8 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
   const remoteUrl = (): string | null =>
     ctx.settings.getRaw<string | null>(INTERNAL_KEYS.backupRemoteUrl, null) || null;
 
-  function metadataFiles(): { path: string; file: PortableSkill }[] {
-    const dir = join(ctx.paths.metadataDir, SKILL_METADATA_SUBDIR);
-    const found: { path: string; file: PortableSkill }[] = [];
-    for (const entry of readDirSafe(dir)) {
-      if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
-      const path = join(dir, entry.name);
-      try {
-        const file: unknown = JSON.parse(readFileSync(path, "utf8"));
-        if (typeof file === "object" && file !== null)
-          found.push({ path, file: file as PortableSkill });
-      } catch {
-        // The rebuild skips unreadable metadata too.
-      }
-    }
-    return found;
-  }
+  const metadataFiles = (): PortableSkillFile[] =>
+    readPortableSkillFiles(join(ctx.paths.metadataDir, SKILL_METADATA_SUBDIR));
 
   /**
    * Metadata that came in with a clone, merge or restore is another device's word. The rebuild
@@ -109,7 +92,10 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
   function adoptRevisions(): void {
     for (const { file } of metadataFiles()) {
       const skill = typeof file.id === "string" ? deps.store.find(file.id) : null;
-      const revision = typeof file.source?.revision === "string" ? file.source.revision : null;
+      const revision =
+        isRecord(file.source) && typeof file.source.revision === "string"
+          ? file.source.revision
+          : null;
       if (!skill || skill.sourceRevision === revision) continue;
       deps.store.update(skill.id, { sourceRevision: revision });
     }
@@ -123,7 +109,6 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
     repoDir,
     siblingDir: dirname(repoDir),
     metadataName: ctx.paths.metadataDir.slice(repoDir.length + 1),
-    hooks: deps.hooks ?? {},
     deviceName,
     remoteUrl,
     git: createGit({

@@ -200,20 +200,50 @@ export function readPortablePreset(value: unknown): PortablePreset | null {
   };
 }
 
+const JSON_SUFFIX = ".json";
+
+/** Every `.json` file in `dir`, parsed; `value` is undefined for one that is not JSON. */
+function readJsonFiles(dir: string): { path: string; value: unknown }[] {
+  const files: { path: string; value: unknown }[] = [];
+  for (const entry of readDirSafe(dir)) {
+    if (!entry.isFile() || !entry.name.endsWith(JSON_SUFFIX)) continue;
+    const path = join(dir, entry.name);
+    let value: unknown;
+    try {
+      value = JSON.parse(readFileSync(path, "utf8"));
+    } catch {
+      // Not JSON: callers treat it as unusable.
+    }
+    files.push({ path, value });
+  }
+  return files;
+}
+
 /** Every metadata file in `dir` that `read` accepts; the rest are skipped and logged. */
 export function readJsonDir<T>(dir: string, read: (value: unknown) => T | null, log: Logger): T[] {
   const items: T[] = [];
-  for (const entry of readDirSafe(dir)) {
-    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
-    let item: T | null = null;
-    try {
-      item = read(JSON.parse(readFileSync(join(dir, entry.name), "utf8")));
-    } catch {
-      // Not JSON: handled as unusable below.
-    }
+  for (const { path, value } of readJsonFiles(dir)) {
+    const item = value === undefined ? null : read(value);
     // A half-merged or hand-edited file is skipped rather than failing the whole rebuild.
     if (item) items.push(item);
-    else log.warn(`Skipped unreadable metadata file: ${join(dir, entry.name)}`);
+    else log.warn(`Skipped unreadable metadata file: ${path}`);
   }
   return items;
+}
+
+/** A skill metadata file as it is on disk, with its fields as yet unchecked. */
+export interface PortableSkillFile {
+  path: string;
+  file: Record<string, unknown>;
+}
+
+/**
+ * The skill metadata files of `dir` as they are, for callers that judge single fields (a folder
+ * outside the library, a revision to carry over). Files that are not JSON objects are left out,
+ * as the rebuild leaves them.
+ */
+export function readPortableSkillFiles(dir: string): PortableSkillFile[] {
+  return readJsonFiles(dir).flatMap(({ path, value }) =>
+    isRecord(value) ? [{ path, file: value }] : [],
+  );
 }

@@ -3,7 +3,7 @@ import { cpSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { AppEvents, BackupApi, Skill } from "@loadout/shared";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
-import { type BackupHooks, type BackupService, createBackupService } from "../src/backup";
+import { type BackupService, createBackupService } from "../src/backup";
 import type { SecretStore } from "../src/context";
 import { initBareRepository, rawGit } from "./git-fixtures";
 import { type ContextBundle, createContext } from "../src/create-context";
@@ -68,7 +68,6 @@ export interface Device extends ContextBundle {
 }
 
 export interface DeviceOptions {
-  hooks?: BackupHooks;
   fetchImpl?: typeof fetch;
   secrets?: MemorySecrets;
   /** App version this device runs; the context default when left out. */
@@ -98,7 +97,6 @@ export function createDevice(root: string, name: string, options: DeviceOptions 
     portable: bundle.portable,
     removed,
     fetchImpl: options.fetchImpl,
-    hooks: options.hooks,
     afterContentChange: () => {
       contentChanges.count += 1;
     },

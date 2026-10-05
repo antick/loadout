@@ -12,6 +12,18 @@ import {
   useTempDevices,
 } from "./backup-world";
 import { writeFile } from "./helpers";
+import { racingRemote } from "./racing-remote";
+
+/** A shell snippet: device A edits `alpha`, commits as itself and pushes, outside the API. */
+function pushFrom(a: Device, text: string): string {
+  return [
+    `cd '${a.skillsDir}'`,
+    `printf '%s' "${text}" > alpha/notes.md`,
+    "git add -A",
+    `git -c user.name='Device A' -c user.email=a@loadout.local commit -qm race`,
+    "git push -q origin main",
+  ].join(" && ");
+}
 
 function presetNames(device: Device): string[] {
   return device.ctx.db
@@ -124,51 +136,41 @@ describe("backup sync", () => {
     expect(a.git("tag", "--list")).toBe(oldTag);
   });
 
-  it("retries when another device pushes between fetch and push", async () => {
+  it.skipIf(process.platform === "win32")(
+    "retries when another device pushes between fetch and push",
+    async () => {
+      const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
+      track(a);
+      // Device A's push lands the moment B's first push connects, once.
+      const racing = racingRemote(temp.dir, remote, pushFrom(a, "raced in"), { times: 1 });
+      try {
+        const b = track(await joinRemote(temp.dir, racing.url, "B"));
+        b.editSkill("beta", "from B");
+        const outcome = await b.api.sync();
+
+        expect(racing.count()).toBe(1);
+        expect(outcome.pushed).toBe(true);
+        expect(outcome.merge?.updated).toEqual([{ name: "alpha", fromDevice: "Device A" }]);
+        expect(b.read("alpha")).toBe("raced in");
+        expect(rawGit(remote, "rev-parse", "refs/heads/main")).toBe(b.git("rev-parse", "HEAD"));
+      } finally {
+        racing.stop();
+      }
+    },
+  );
+
+  it.skipIf(process.platform === "win32")("gives up after three rejected pushes", async () => {
     const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
     track(a);
-    const attempts: number[] = [];
-    const b = track(
-      await joinRemote(temp.dir, remote, "B", {
-        hooks: {
-          beforePush: async (attempt) => {
-            attempts.push(attempt);
-            if (attempt > 1) return;
-            a.editSkill("alpha", "raced in");
-            await a.api.sync();
-          },
-        },
-      }),
-    );
-
-    b.editSkill("beta", "from B");
-    const outcome = await b.api.sync();
-
-    expect(attempts).toEqual([1, 2]);
-    expect(outcome.pushed).toBe(true);
-    expect(outcome.merge?.updated).toEqual([{ name: "alpha", fromDevice: "Device A" }]);
-    expect(b.read("alpha")).toBe("raced in");
-    expect(rawGit(remote, "rev-parse", "refs/heads/main")).toBe(b.git("rev-parse", "HEAD"));
-  });
-
-  it("gives up after three rejected pushes", async () => {
-    const { a, remote } = await seedRemote(temp.dir, ["alpha", "beta"]);
-    track(a);
-    let round = 0;
-    const b = track(
-      await joinRemote(temp.dir, remote, "B", {
-        hooks: {
-          beforePush: async () => {
-            round += 1;
-            a.editSkill("alpha", `race ${round}`);
-            await a.api.sync();
-          },
-        },
-      }),
-    );
-    b.editSkill("beta", "from B");
-    await expect(b.api.sync()).rejects.toMatchObject({ code: "GIT_REJECTED" });
-    expect(round).toBe(3);
+    const racing = racingRemote(temp.dir, remote, pushFrom(a, "race $ROUND"));
+    try {
+      const b = track(await joinRemote(temp.dir, racing.url, "B"));
+      b.editSkill("beta", "from B");
+      await expect(b.api.sync()).rejects.toMatchObject({ code: "GIT_REJECTED" });
+      expect(racing.count()).toBe(3);
+    } finally {
+      racing.stop();
+    }
   });
 
   it("restores a snapshot as a new commit after taking a safety snapshot", async () => {

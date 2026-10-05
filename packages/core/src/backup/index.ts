@@ -5,7 +5,7 @@ import { type BackupDeps, createBackupEnv } from "./env";
 import { createBackupOperations } from "./service";
 
 export type { AutoBackup } from "./auto";
-export type { BackupDeps, BackupHooks } from "./env";
+export type { BackupDeps } from "./env";
 
 export interface BackupService {
   api: BackupApi;
