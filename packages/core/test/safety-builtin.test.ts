@@ -2,12 +2,9 @@ import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
-import {
-  BUILTIN_RULES_VERSION,
-  SAFETY_RULES,
-  createSafetyService,
-  scanWithRules,
-} from "../src/safety";
+import { createSafetyService } from "../src/safety";
+import { scanWithRules } from "../src/safety/builtin";
+import { BUILTIN_RULES_VERSION, SAFETY_RULES } from "../src/safety/rules";
 import { createTestWorld, makeSkill, tempDir, type TestWorld, createTestCore } from "./helpers";
 import { type InstallHarness, createInstallHarness } from "./install-fixtures";
 

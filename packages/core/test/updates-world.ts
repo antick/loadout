@@ -1,7 +1,8 @@
 import { rmSync } from "node:fs";
 import { join } from "node:path";
 import type { Skill } from "@loadout/shared";
-import type { GitClient, InstallServiceDeps } from "../src/install";
+import type { GitClient } from "../src/install";
+import type { InstallServiceDeps } from "../src/install/service";
 import { type RemovedStore, createRemovedStore } from "../src/storage";
 import { type UpdatesService, createUpdatesService } from "../src/updates";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";

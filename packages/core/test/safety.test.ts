@@ -2,13 +2,8 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "n
 import { join } from "node:path";
 import type { SafetyReport } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  type SafetyService,
-  createSafetyService,
-  findScanner,
-  parseReport,
-  runScanner,
-} from "../src/safety";
+import { findScanner, parseReport, runScanner } from "../src/safety/scanner";
+import { type SafetyService, createSafetyService } from "../src/safety/service";
 import { type TestWorld, createTestWorld, makeSkill, rejection } from "./helpers";
 import {
   type InstallHarness,

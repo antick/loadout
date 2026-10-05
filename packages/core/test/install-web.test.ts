@@ -2,15 +2,14 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { skillFileLink } from "../src/install/archive-link";
+import { crossSiteHost, siteOf } from "../src/install/redirects";
 import {
-  crossSiteHost,
   findWellKnownIndex,
   isSiteCandidate,
   parseWellKnownIndex,
   sha256Digest,
-  siteOf,
-  skillFileLink,
-} from "../src/install";
+} from "../src/install/well-known";
 import { createDownload } from "../src/install/download";
 import { leftoverCheckouts, tarBuffer } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";

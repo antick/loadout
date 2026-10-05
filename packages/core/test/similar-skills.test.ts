@@ -8,7 +8,7 @@ import {
   findSimilarPairs,
   findSimilarPairsInSlices,
   nameSimilarity,
-} from "../src/duplicates";
+} from "../src/duplicates/similar";
 import { AppError } from "../src/errors";
 import { makeSkill, tempDir, createTestCore } from "./helpers";
 

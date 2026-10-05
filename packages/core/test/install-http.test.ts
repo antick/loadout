@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { GIT_NEEDED, createDownload, parseAdvertisement } from "../src/install";
+import { createDownload } from "../src/install/download";
+import { GIT_NEEDED } from "../src/install/git-fallback";
+import { parseAdvertisement } from "../src/install/http-git";
 import { type TestWorld, createTestWorld } from "./helpers";
 import {
   type InstallHarness,

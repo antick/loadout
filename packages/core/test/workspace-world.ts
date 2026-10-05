@@ -5,7 +5,7 @@ import { type PresetsService, createPresetsService } from "../src/presets";
 import { type ProjectsService, createProjectsService } from "../src/projects";
 import { type RemovedStore, createRemovedStore } from "../src/storage";
 import { listContentFiles } from "../src/util/hash";
-import { type WorkspaceService, createWorkspaceService } from "../src/workspace";
+import { type WorkspaceService, createWorkspaceService } from "../src/workspace/service";
 import { type DeployWorld, createDeployWorld } from "./deploy-world";
 
 export interface WorkspaceWorld extends DeployWorld {

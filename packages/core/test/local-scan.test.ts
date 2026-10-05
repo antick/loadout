@@ -11,7 +11,7 @@ import {
   matchLibrarySkill,
   scanSkillRoot,
   walkSkillRoot,
-} from "../src/workspace";
+} from "../src/workspace/local-scan";
 import { makeSkill, tempDir, writeFile } from "./helpers";
 import { setContentMtime } from "./workspace-world";
 
