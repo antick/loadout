@@ -2,6 +2,7 @@ import { isRecord } from "@loadout/shared";
 import { AppError } from "../errors";
 import type { PortablePreset, PortableSkill } from "../skills/portable";
 import { GIT_DIR } from "../util/fs";
+import { batchInput, parseBatch } from "../util/git-batch";
 import {
   type BackupEnv,
   PRESET_METADATA_SUBDIR,
@@ -14,8 +15,6 @@ import type { PresetVersion, SkillSide } from "./merge-plan";
 
 const JSON_SUFFIX = ".json";
 const SAFE_ID = /^[\w-]+$/;
-const BATCH_HEADER = /^[0-9a-f]+ (\w+) (\d+)$/;
-const NEWLINE = 0x0a;
 
 export interface CommitSnapshot {
   commit: string;
@@ -58,29 +57,23 @@ async function readFiles(
 ): Promise<Map<string, string>> {
   const files = new Map<string, string>();
   if (paths.length === 0) return files;
-  const input = paths.map((path) => `${commit}:${path}\n`).join("");
-  // Read as bytes: the sizes in the headers count bytes, and a file that is not valid UTF-8
-  // (decoded and encoded back, it would grow) must not shift every offset after it.
+  const input = batchInput(paths.map((path) => `${commit}:${path}`));
+  // Read as bytes: a file that is not valid UTF-8 (decoded and encoded back, it would grow)
+  // must not shift every offset after it.
   const result = await env.git.run(["cat-file", "--batch"], { input, encoding: "buffer" });
-  const bytes = result.stdoutBytes ?? Buffer.alloc(0);
-  let offset = 0;
-  for (const path of paths) {
-    const lineEnd = bytes.indexOf(NEWLINE, offset);
-    if (lineEnd === -1) break;
-    const header = bytes.subarray(offset, lineEnd).toString("utf8");
-    offset = lineEnd + 1;
-    if (header.endsWith(" missing")) continue;
-    const match = BATCH_HEADER.exec(header);
-    if (!match?.[2]) {
-      // Guessing past a garbled answer could make a skill look deleted. Stop instead.
-      throw new AppError("GIT", "The backup history could not be read, so nothing was merged.", {
+  const contents = parseBatch(
+    result.stdoutBytes ?? Buffer.alloc(0),
+    paths.length,
+    // Guessing past a garbled answer could make a skill look deleted. Stop instead.
+    (header) =>
+      new AppError("GIT", "The backup history could not be read, so nothing was merged.", {
         detail: header,
-      });
-    }
-    const size = Number(match[2]);
-    files.set(path, bytes.subarray(offset, offset + size).toString("utf8"));
-    offset += size + 1;
-  }
+      }),
+  );
+  paths.forEach((path, index) => {
+    const content = contents[index];
+    if (content) files.set(path, content.toString("utf8"));
+  });
   return files;
 }
 

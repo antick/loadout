@@ -216,6 +216,32 @@ describe("backup push check", () => {
     expect(await a.api.sync()).toMatchObject({ pushed: true });
   });
 
+  it("reads every committed file of the history, skipping binary ones", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    await a.api.init();
+    a.addSkill("mixed");
+    const dir = join(a.ctx.paths.skillsDir, "mixed");
+    // Not valid UTF-8 first, so a wrong byte count would shift every file read after it.
+    writeFileSync(join(dir, "a-latin.txt"), Buffer.from([0xe9, 0xe8, 0x0a]));
+    writeFileSync(
+      join(dir, "b-image.bin"),
+      Buffer.concat([Buffer.from([0]), Buffer.from(GITHUB_TOKEN)]),
+    );
+    writeFile(join(dir, "c-notes.md"), `Use ${OPENAI_KEY} here.\n`);
+    writeFile(join(dir, "d-empty.md"), "");
+    writeFile(join(dir, "e-more.md"), `And ${ANTHROPIC_KEY} there.\n`);
+    a.git("add", "--all");
+    a.git("commit", "--quiet", "-m", "backup: snapshot");
+    await a.api.setRemote(remote);
+    const findings = await a.api.secretFindings();
+    expect(findings.map((finding) => [finding.file, finding.committed]).sort()).toEqual([
+      ["mixed/c-notes.md", true],
+      ["mixed/e-more.md", true],
+    ]);
+  });
+
   it("cleans a removed key out of unpushed history, so the push never carries it", async () => {
     const remote = createBareRemote(temp.dir);
     const a = createDevice(temp.dir, "A");

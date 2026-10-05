@@ -3,6 +3,7 @@ import type { SecretFinding } from "@loadout/shared";
 import { AppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { statOrNull } from "../util/fs";
+import { batchInput, parseBatch } from "../util/git-batch";
 import type { BackupEnv } from "./env";
 import { resolveCommit, upstreamCommit } from "./repo";
 import { findSecrets, findSecretsInFile, secretsHeldBack } from "./secret-scan";
@@ -15,6 +16,8 @@ import { findSecrets, findSecretsInFile, secretsHeldBack } from "./secret-scan";
 
 /** Regular files in git trees; links and submodules hold no text of ours. */
 const FILE_MODES: ReadonlySet<string> = new Set(["100644", "100755"]);
+/** Blobs read by one git process: few processes, and a bounded amount held at once. */
+const BLOBS_PER_READ = 500;
 /** One `--raw -z` record: modes, blob ids, status, then the path. */
 const RAW_RECORD = /:(\d{6}) (\d{6}) ([0-9a-f]+) ([0-9a-f]+) ([A-Z])\d*\0([^\0]+)\0/g;
 
@@ -77,17 +80,40 @@ async function scanCommitted(env: BackupEnv, branch: string): Promise<SecretFind
     }
   }
   const findings: SecretFinding[] = [];
-  for (const [key, blob] of blobs) {
-    const file = key.slice(blob.length + 1);
-    const content = await env.git.probe(["cat-file", "blob", blob]);
-    if (content.code !== 0) throw new AppError("GIT", `Could not read ${file} from the backup.`);
-    // Binary content is not text; anything else is searched whatever its size.
-    if (content.stdout.includes("\0")) continue;
-    findings.push(
-      ...findSecrets(file, join(env.repoDir, ...file.split("/")), content.stdout, true),
-    );
+  const entries = [...blobs].map(([key, blob]) => ({ blob, file: key.slice(blob.length + 1) }));
+  for (let start = 0; start < entries.length; start += BLOBS_PER_READ) {
+    const batch = entries.slice(start, start + BLOBS_PER_READ);
+    const contents = await readBlobs(env, batch);
+    batch.forEach(({ file }, index) => {
+      const content = contents[index];
+      // Binary content is not text; anything else is searched whatever its size.
+      if (!content || content.includes(0)) return;
+      const text = content.toString("utf8");
+      findings.push(...findSecrets(file, join(env.repoDir, ...file.split("/")), text, true));
+    });
   }
   return findings;
+}
+
+/** The contents of these blobs, from one git process; every one must be there. */
+async function readBlobs(
+  env: BackupEnv,
+  entries: readonly { blob: string; file: string }[],
+): Promise<Buffer[]> {
+  const unreadable = (file: string | undefined): AppError =>
+    new AppError("GIT", `Could not read ${file ?? "a file"} from the backup.`);
+  const result = await env.git.probe(["cat-file", "--batch"], {
+    input: batchInput(entries.map(({ blob }) => blob)),
+    encoding: "buffer",
+  });
+  if (result.code !== 0) throw unreadable(entries[0]?.file);
+  const contents = parseBatch(result.stdoutBytes ?? Buffer.alloc(0), entries.length, () =>
+    unreadable(entries[0]?.file),
+  );
+  return contents.map((content, index) => {
+    if (!content) throw unreadable(entries[index]?.file);
+    return content;
+  });
 }
 
 /** Every file content (blob id) in a commit's tree. */
