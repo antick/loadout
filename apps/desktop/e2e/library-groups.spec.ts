@@ -30,3 +30,24 @@ test("group the library by source, fold a section, and deploy one section", asyn
   await content.getByRole("button", { name: "Group by source" }).click();
   await expect(repo).toHaveCount(0);
 });
+
+test("select all leaves out the skills of a folded section", async ({ page }) => {
+  await openApp(page, "/library");
+  const content = main(page);
+  await content.getByRole("button", { name: "Group by source" }).click();
+  await content.getByRole("button", { name: "Fold or unfold example.com/acme/skills" }).click();
+  await expect(content.getByRole("heading", { name: "code-review", level: 3 })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Select", exact: true }).click();
+  const toolbar = page.getByRole("toolbar", { name: "Selection actions" });
+  await toolbar.getByRole("button", { name: "Select all" }).click();
+  const shown = await content.getByRole("checkbox", { name: /^Select / }).count();
+  expect(shown).toBeGreaterThan(0);
+  await expect(toolbar).toContainText(`${shown} selected`);
+  await expect(toolbar.getByRole("button", { name: "Select none" })).toBeVisible();
+
+  // Unfolded again, its skills are there but were never ticked.
+  await content.getByRole("button", { name: "Fold or unfold example.com/acme/skills" }).click();
+  await expect(content.getByRole("checkbox", { name: "Select code-review" })).not.toBeChecked();
+  await expect(toolbar).toContainText(`${shown} selected`);
+});

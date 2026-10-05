@@ -1,7 +1,7 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, FolderOpen, Send } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BatchDeployDialog } from "@/components/BatchDeployDialog";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -13,8 +13,24 @@ import { cn } from "@/lib/utils";
 
 const OPEN_STORAGE_KEY = "library.groups-open";
 
+/** Group key → folded. Groups not in it are open. */
+export type FoldedGroups = Partial<Record<string, boolean>>;
+
+/** Which library sections are folded, remembered across restarts. */
+export function useFoldedGroups(): [FoldedGroups, (key: string, folded: boolean) => void] {
+  const [folded, setFolded] = usePersistedState<FoldedGroups>(OPEN_STORAGE_KEY, {});
+  const setOne = useCallback(
+    (key: string, next: boolean) => setFolded((previous) => ({ ...previous, [key]: next })),
+    [setFolded],
+  );
+  return [folded, setOne];
+}
+
 export interface LibraryGroupsProps {
   groups: readonly LibraryGroup[];
+  /** From `useFoldedGroups`, held by the page so selection can leave folded skills out. */
+  folded: FoldedGroups;
+  onFoldedChange: (key: string, folded: boolean) => void;
   /** Grid or list classes for the items of one group. */
   itemsClassName: string;
   renderItem: (skill: Skill) => ReactNode;
@@ -27,14 +43,12 @@ export interface LibraryGroupsProps {
  */
 export function LibraryGroups({
   groups,
+  folded,
+  onFoldedChange,
   itemsClassName,
   renderItem,
 }: LibraryGroupsProps): ReactNode {
   const { t } = useTranslation();
-  const [folded, setFolded] = usePersistedState<Partial<Record<string, boolean>>>(
-    OPEN_STORAGE_KEY,
-    {},
-  );
   const [deploying, setDeploying] = useState<LibraryGroup | null>(null);
 
   return (
@@ -47,7 +61,7 @@ export function LibraryGroups({
           <Collapsible
             key={group.key}
             open={open}
-            onOpenChange={(next) => setFolded((previous) => ({ ...previous, [group.key]: !next }))}
+            onOpenChange={(next) => onFoldedChange(group.key, !next)}
             className="rounded-lg border bg-card/50"
             asChild
           >

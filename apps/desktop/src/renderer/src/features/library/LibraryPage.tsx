@@ -38,7 +38,7 @@ import { DuplicatesDialog } from "@/features/library/duplicates/DuplicatesDialog
 import { useCheckAllUpdates } from "@/features/library/library-mutations";
 import { LibraryBanners } from "@/features/library/LibraryBanners";
 import { groupLibraryBySource } from "@/features/library/library-groups";
-import { LibraryGroups } from "@/features/library/LibraryGroups";
+import { LibraryGroups, useFoldedGroups } from "@/features/library/LibraryGroups";
 import { LibrarySkillItem } from "@/features/library/LibrarySkillItem";
 import { LibraryMatrix } from "@/features/library/matrix/LibraryMatrix";
 import { SkillAgentBadges } from "@/features/library/SkillAgentBadges";
@@ -183,9 +183,14 @@ export function LibraryPage({
     () => (groupBySource && viewMode !== "matrix" ? groupLibraryBySource(visible) : null),
     [groupBySource, viewMode, visible],
   );
+  const [foldedGroups, setGroupFolded] = useFoldedGroups();
+  // Skills in a folded section are out of sight, so Select all, ranges and batch actions skip them.
   const visibleIds = useMemo(
-    () => (groups ?? [{ skills: visible }]).flatMap((group) => group.skills.map((s) => s.id)),
-    [groups, visible],
+    () =>
+      (groups ?? [{ key: "", skills: visible }])
+        .filter((group) => !groups || !foldedGroups[group.key])
+        .flatMap((group) => group.skills.map((s) => s.id)),
+    [groups, visible, foldedGroups],
   );
   const selection = useSelection(visibleIds);
   const selected = useMemo(
@@ -286,6 +291,8 @@ export function LibraryPage({
       ) : groups ? (
         <LibraryGroups
           groups={groups}
+          folded={foldedGroups}
+          onFoldedChange={setGroupFolded}
           itemsClassName={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}
           renderItem={renderItem}
         />
