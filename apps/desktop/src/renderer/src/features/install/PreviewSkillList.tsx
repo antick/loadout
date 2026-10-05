@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OutcomeBadge, PreviewRow } from "@/features/install/PreviewRow";
 import { cn } from "@/lib/utils";
+import { setMany, toggleIn } from "@/lib/sets";
 
 const OUTCOME_ORDER: readonly InstallOutcomeKind[] = [
   "new",
@@ -140,21 +141,17 @@ export function PreviewSkillList({
   const allShownChecked = shown.length > 0 && shown.every((row) => checked.has(row.relPath));
   const anyNotNew = [...outcomes.values()].some((outcome) => outcome.kind !== "new");
 
-  const setTicks = (rows: readonly RepoSkillPreview[], tick: boolean): void => {
-    const next = new Set(checked);
-    for (const row of rows) {
-      if (tick) next.add(row.relPath);
-      else next.delete(row.relPath);
-    }
-    onCheckedChange(next);
-  };
+  const setTicks = (rows: readonly RepoSkillPreview[], tick: boolean): void =>
+    onCheckedChange(
+      setMany(
+        checked,
+        rows.map((row) => row.relPath),
+        tick,
+      ),
+    );
 
   const toggleOpen = (folder: string): void => {
-    setCollapsed((previous) => {
-      const next = new Set(previous);
-      if (!next.delete(folder)) next.add(folder);
-      return next;
-    });
+    setCollapsed((previous) => toggleIn(previous, folder));
   };
 
   const renderRow = (skill: RepoSkillPreview): ReactNode => {

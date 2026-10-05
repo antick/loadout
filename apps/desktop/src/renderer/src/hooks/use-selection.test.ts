@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { pruneSelected, toggledSelection, withShown } from "@/hooks/use-selection";
+import { pruneSelected, toggledSelection } from "@/hooks/use-selection";
+import { setMany } from "@/lib/sets";
 
 const ALL = ["a", "b", "c", "d"];
 
@@ -26,8 +27,8 @@ describe("selection state", () => {
   });
 
   it("ticks and unticks the shown ids, leaving the hidden ticks alone", () => {
-    const ticked = withShown(new Set(["a"]), ["c", "d"], true);
+    const ticked = setMany(new Set(["a"]), ["c", "d"], true);
     expect([...ticked].sort()).toEqual(["a", "c", "d"]);
-    expect([...withShown(ticked, ["c", "d"], false)]).toEqual(["a"]);
+    expect([...setMany(ticked, ["c", "d"], false)]).toEqual(["a"]);
   });
 });

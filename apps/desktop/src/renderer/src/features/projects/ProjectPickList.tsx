@@ -13,6 +13,7 @@ import {
   useAddScannedProjects,
 } from "@/features/projects/project-mutations";
 import { errorMessage } from "@/lib/toast";
+import { setMany, toggleIn } from "@/lib/sets";
 
 /**
  * The pieces the Scan and Suggested tabs of "Link a project" share: a list of folders to tick,
@@ -48,20 +49,15 @@ export function ProjectPickList({
   const { t } = useTranslation();
   const allPicked = items.length > 0 && items.every((item) => picked.has(item.path));
 
-  const toggle = (path: string): void => {
-    const next = new Set(picked);
-    if (next.has(path)) next.delete(path);
-    else next.add(path);
-    onPickedChange(next);
-  };
-  const toggleAll = (): void => {
-    const next = new Set(picked);
-    for (const item of items) {
-      if (allPicked) next.delete(item.path);
-      else next.add(item.path);
-    }
-    onPickedChange(next);
-  };
+  const toggle = (path: string): void => onPickedChange(toggleIn(picked, path));
+  const toggleAll = (): void =>
+    onPickedChange(
+      setMany(
+        picked,
+        items.map((item) => item.path),
+        !allPicked,
+      ),
+    );
 
   return (
     <div className="flex min-h-0 flex-col gap-1.5">

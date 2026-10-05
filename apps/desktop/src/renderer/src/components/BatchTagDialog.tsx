@@ -17,6 +17,7 @@ import { useSetSkillTags } from "@/hooks/mutations/skills";
 import { useAllTags } from "@/hooks/queries/skills";
 import { toastSuccess } from "@/lib/toast";
 import { SECTION_LABEL } from "@/lib/styles";
+import { toggleIn } from "@/lib/sets";
 
 export interface BatchTagDialogProps {
   open: boolean;
@@ -107,14 +108,7 @@ function BatchTagForm({
                 tag={tag}
                 count={count}
                 struck={removing.has(tag)}
-                onClick={() =>
-                  setRemoving((previous) => {
-                    const next = new Set(previous);
-                    if (next.has(tag)) next.delete(tag);
-                    else next.add(tag);
-                    return next;
-                  })
-                }
+                onClick={() => setRemoving((previous) => toggleIn(previous, tag))}
               />
             ))}
           </div>

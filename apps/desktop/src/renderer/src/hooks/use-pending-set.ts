@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { setMany } from "@/lib/sets";
 
 export interface PendingSet {
   /** Keys with work running, e.g. agents whose switch is busy. */
@@ -10,12 +11,7 @@ export interface PendingSet {
 export function usePendingSet(): PendingSet {
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const mark = useCallback((key: string, on: boolean) => {
-    setPending((previous) => {
-      const next = new Set(previous);
-      if (on) next.add(key);
-      else next.delete(key);
-      return next;
-    });
+    setPending((previous) => setMany(previous, [key], on));
   }, []);
   return { pending, mark };
 }

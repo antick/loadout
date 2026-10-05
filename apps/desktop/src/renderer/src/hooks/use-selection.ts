@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isDialogOpen, isTypingTarget } from "@/hooks/use-hotkey";
+import { setMany, toggleIn } from "@/lib/sets";
 
 export interface Selection {
   /** Selection mode is on (checkboxes visible). */
@@ -52,30 +53,12 @@ export function toggledSelection(
   id: string,
   shiftKey = false,
 ): ReadonlySet<string> {
-  const next = new Set(selected);
   const from = anchor === null ? -1 : orderedIds.indexOf(anchor);
   const to = orderedIds.indexOf(id);
   if (shiftKey && from !== -1 && to !== -1) {
-    for (const rangeId of orderedIds.slice(Math.min(from, to), Math.max(from, to) + 1)) {
-      next.add(rangeId);
-    }
-  } else if (next.has(id)) next.delete(id);
-  else next.add(id);
-  return next;
-}
-
-/** Tick (or untick) every shown id, keeping ticks outside the shown list as they are. */
-export function withShown(
-  selected: ReadonlySet<string>,
-  shownIds: readonly string[],
-  on: boolean,
-): ReadonlySet<string> {
-  const next = new Set(selected);
-  for (const id of shownIds) {
-    if (on) next.add(id);
-    else next.delete(id);
+    return setMany(selected, orderedIds.slice(Math.min(from, to), Math.max(from, to) + 1), true);
   }
-  return next;
+  return toggleIn(selected, id);
 }
 
 /**
@@ -132,11 +115,11 @@ export function useSelection(
 
   const selectAll = useCallback(() => {
     setActive(true);
-    setSelected((previous) => withShown(previous, orderedIds, true));
+    setSelected((previous) => setMany(previous, orderedIds, true));
   }, [orderedIds]);
 
   const deselectAll = useCallback(() => {
-    setSelected((previous) => withShown(previous, orderedIds, false));
+    setSelected((previous) => setMany(previous, orderedIds, false));
     anchor.current = null;
   }, [orderedIds]);
 

@@ -25,6 +25,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useImportPreset, usePreviewPresetImport } from "@/features/presets/preset-mutations";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/toast";
+import { setMany } from "@/lib/sets";
 
 const STATE_TONES: Record<PresetImportSkillState, StatusTone> = {
   library: "success",
@@ -132,14 +133,8 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
     });
   };
 
-  const changeReuse = (skillName: string, used: boolean): void => {
-    setReuse((current) => {
-      const next = new Set(current);
-      if (used) next.add(skillName);
-      else next.delete(skillName);
-      return next;
-    });
-  };
+  const changeReuse = (skillName: string, used: boolean): void =>
+    setReuse((current) => setMany(current, [skillName], used));
 
   const choose = async (): Promise<void> => {
     const path = await api.app.pickFile(

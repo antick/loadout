@@ -21,6 +21,7 @@ import { useSaveSkillFile } from "@/hooks/mutations/editor";
 import { api } from "@/lib/api";
 import { EDITOR_DRAFT_SAVE_MS } from "@/lib/constants";
 import { locationKey } from "@/lib/skill-location";
+import { setMany } from "@/lib/sets";
 
 type SaveOutcome =
   | { kind: "saved"; result: SaveSkillFileResult }
@@ -135,11 +136,7 @@ export function useEditorSession(location: SkillLocation): EditorSession {
         }
         return { kind: "failed", error };
       } finally {
-        setSaving((previous) => {
-          const next = new Set(previous);
-          next.delete(path);
-          return next;
-        });
+        setSaving((previous) => setMany(previous, [path], false));
       }
     },
     [draftKey, location, mutateAsync, update],

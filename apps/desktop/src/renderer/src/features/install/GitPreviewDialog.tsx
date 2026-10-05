@@ -24,6 +24,7 @@ import {
 import { PreviewSkillList } from "@/features/install/PreviewSkillList";
 import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
 import { useAgentNames } from "@/hooks/queries/agents";
+import { setMany } from "@/lib/sets";
 
 export interface GitPreviewDialogProps {
   /** The cloned repository to choose from; null keeps the dialog closed. */
@@ -184,12 +185,7 @@ function PreviewForm({
         onRename={(relPath, name) => setNames((previous) => ({ ...previous, [relPath]: name }))}
         replacing={replacing}
         onReplaceChange={(relPath, replace) =>
-          setReplacing((previous) => {
-            const next = new Set(previous);
-            if (replace) next.add(relPath);
-            else next.delete(relPath);
-            return next;
-          })
+          setReplacing((previous) => setMany(previous, [relPath], replace))
         }
       />
 

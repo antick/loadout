@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { SECTION_LABEL } from "@/lib/styles";
+import { toggleIn } from "@/lib/sets";
 
 const SKELETON_ROWS = 3;
 
@@ -80,11 +81,7 @@ export function AgentPicker({
   listClassName,
 }: AgentPickerProps): ReactNode {
   const { t } = useTranslation();
-  const toggle = (key: string): void => {
-    const next = new Set(selected);
-    if (!next.delete(key)) next.add(key);
-    onChange(next);
-  };
+  const toggle = (key: string): void => onChange(toggleIn(selected, key));
   const selectAll = (): void => onChange(new Set(items.map((item) => item.key)));
   const selectNone = (): void => onChange(new Set());
 

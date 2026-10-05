@@ -24,6 +24,7 @@ import { BackupStageText } from "./BackupStageText";
 import { REVIEW_SEARCH_MIN_ITEMS } from "./constants";
 import { type ReviewLists, filterReview, reviewSize } from "./review-filter";
 import { type DeleteChoice, SyncReviewRow } from "./SyncReviewRow";
+import { setMany } from "@/lib/sets";
 
 export interface SyncReviewDialogProps {
   /** Null keeps the dialog closed. */
@@ -82,20 +83,16 @@ function ReviewBody({
   const allDeletions = preview.incoming.filter((item) => item.change === "deleted").length;
   // "Keep all" and "Delete all" answer for the deletions in view only.
   const deletions = lists.incoming.filter((item) => item.change === "deleted");
-  const choose = (item: SyncPreviewItem, choice: DeleteChoice): void => {
-    const next = new Set(kept);
-    if (choice === "keep") next.add(item.id);
-    else next.delete(item.id);
-    onKept(next);
-  };
-  const setAll = (choice: DeleteChoice): void => {
-    const next = new Set(kept);
-    for (const item of deletions) {
-      if (choice === "keep") next.add(item.id);
-      else next.delete(item.id);
-    }
-    onKept(next);
-  };
+  const choose = (item: SyncPreviewItem, choice: DeleteChoice): void =>
+    onKept(setMany(kept, [item.id], choice === "keep"));
+  const setAll = (choice: DeleteChoice): void =>
+    onKept(
+      setMany(
+        kept,
+        deletions.map((item) => item.id),
+        choice === "keep",
+      ),
+    );
   const empty = reviewSize(lists) === 0 && reviewSize(preview) > 0;
 
   if (!preview.perSkill) {
