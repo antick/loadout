@@ -44,3 +44,20 @@ test("an agent's page finds a skill by the starts of its name's parts", async ({
   await expect(content.getByRole("heading", { name: "api-docs", level: 3 })).toHaveCount(0);
   await expect(content.getByRole("heading", { level: 3 })).toHaveText(["test-first"]);
 });
+
+test("section and settings shortcuts wait while a dialog is open", async ({ page }) => {
+  await openApp(page, "/library");
+  await main(page).getByRole("button", { name: "code-review", exact: true }).click();
+  const panel = page.getByRole("dialog", { name: "code-review" });
+  await expect(panel).toBeVisible();
+
+  await page.keyboard.press("ControlOrMeta+3");
+  await page.keyboard.press("ControlOrMeta+,");
+  await expect(panel).toBeVisible();
+  expect(page.url()).toContain("#/library");
+
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await page.keyboard.press("ControlOrMeta+,");
+  await expect(page).toHaveURL(/#\/settings/);
+});

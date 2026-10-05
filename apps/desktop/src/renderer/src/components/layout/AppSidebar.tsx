@@ -108,11 +108,13 @@ export function AppSidebar({ width, maxWidth, onWidth }: AppSidebarProps): React
     event.preventDefault();
     show(next);
   };
-  useHotkey(SHORTCUT_KEYS.sectionHome, hotkey("home"));
-  useHotkey(SHORTCUT_KEYS.sectionLibrary, hotkey("library"));
-  useHotkey(SHORTCUT_KEYS.sectionAgents, hotkey("agents"));
-  useHotkey(SHORTCUT_KEYS.sectionPresets, hotkey("presets"));
-  useHotkey(SHORTCUT_KEYS.sectionProjects, hotkey("projects"));
+  // Switching section navigates, which would unmount an open dialog from under the user.
+  const sectionKey = { blockedByDialogs: true };
+  useHotkey(SHORTCUT_KEYS.sectionHome, hotkey("home"), sectionKey);
+  useHotkey(SHORTCUT_KEYS.sectionLibrary, hotkey("library"), sectionKey);
+  useHotkey(SHORTCUT_KEYS.sectionAgents, hotkey("agents"), sectionKey);
+  useHotkey(SHORTCUT_KEYS.sectionPresets, hotkey("presets"), sectionKey);
+  useHotkey(SHORTCUT_KEYS.sectionProjects, hotkey("projects"), sectionKey);
 
   const Panel = PANELS[section];
 

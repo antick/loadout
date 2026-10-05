@@ -121,14 +121,23 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     event.preventDefault();
     setPaletteMode((mode) => (mode === "edit" ? null : "edit"));
   });
-  useHotkey(SHORTCUT_KEYS.settings, (event) => {
-    event.preventDefault();
-    void navigate({ to: "/settings" });
-  });
-  useHotkey(SHORTCUT_KEYS.sidebar, (event) => {
-    event.preventDefault();
-    setSidebarOpen((shown) => !shown);
-  });
+  // Neither acts behind an open dialog: one navigates away from it, the other moves the page.
+  useHotkey(
+    SHORTCUT_KEYS.settings,
+    (event) => {
+      event.preventDefault();
+      void navigate({ to: "/settings" });
+    },
+    { blockedByDialogs: true },
+  );
+  useHotkey(
+    SHORTCUT_KEYS.sidebar,
+    (event) => {
+      event.preventDefault();
+      setSidebarOpen((shown) => !shown);
+    },
+    { blockedByDialogs: true },
+  );
 
   return (
     <ShellContext.Provider value={shell}>
