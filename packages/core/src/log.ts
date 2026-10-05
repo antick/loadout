@@ -17,6 +17,8 @@ export interface Logger {
 export const LOG_FILE_NAME = `${APP_SLUG}.log`;
 const ROTATE_BYTES = 5 * 1024 * 1024;
 const KEEP_ROTATED = 3;
+/** A long-running process (the app) checks the size again after this many lines. */
+export const ROTATE_CHECK_LINES = 500;
 
 function rotate(filePath: string): void {
   try {
@@ -32,12 +34,18 @@ function rotate(filePath: string): void {
   }
 }
 
-/** Append-only file logger with size rotation. Also mirrors to the console when `echo` is set. */
+/**
+ * Append-only file logger with size rotation, at start and every `ROTATE_CHECK_LINES` lines.
+ * Also mirrors to the console when `echo` is set.
+ */
 export function createFileLogger(logsDir: string, echo = false): Logger {
   ensureDir(logsDir);
   const filePath = join(logsDir, LOG_FILE_NAME);
   rotate(filePath);
+  let lines = 0;
   const write = (level: LogLevel, message: string, error?: unknown): void => {
+    lines += 1;
+    if (lines % ROTATE_CHECK_LINES === 0) rotate(filePath);
     const suffix = error === undefined ? "" : `: ${errorMessage(error)}`;
     const line = `${formatTimestampIso(Date.now())} ${level.toUpperCase().padEnd(5)} ${message}${suffix}\n`;
     try {
