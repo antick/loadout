@@ -52,7 +52,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 ## Install
 
 - From a folder, an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`), drag and drop, or a whole folder of skills.
-- From a link to an archive or a `SKILL.md`, or a site publishing `/.well-known/agent-skills/`.
+- From a link to an archive or a `SKILL.md`, or a site publishing `/.well-known/agent-skills/` (or the older `/.well-known/skills/`).
 - From Git: URLs, `owner/repo`, tree links, `#branch`, `owner/repo@skill`, and pasted `npx skills add …` commands.
 - Works without Git for public GitHub and GitLab repositories.
 - Private GitHub repositories via `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth login`, used only after your own Git sign-in.
@@ -167,6 +167,16 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - Tab completion: `eval "$(loadout completion bash)"` or `zsh`.
 - Published to `~/.loadout/bin` by the app; also on npm (`@antick/loadout`) and as standalone binaries.
 - A bundled skill teaches your agents to use the CLI.
+- `--library <path>` on any command works on the library in that folder instead of the saved one.
+- `repo show`, `repo set <path>`, `repo init <path>`, `repo reset`: where the library is; move it, make a new empty one, go back to the default.
+- `skills adopt <dir>` copies every skill in an agent's folder into the library and manages them from there.
+- `skills suggest-for <ref> --add <pattern>` sets the file patterns a skill is suggested for.
+- `skills export <ref>… | --all --out <file>` packs skills into one `.zip`.
+- `skills usage --unused` lists the skills no agent ran in 30 days.
+- `presets export <preset>` writes a preset to a file; `presets import <file | link>` creates it here, installing what the library lacks.
+- `git pull` merges what other devices pushed without pushing; `git versions` lists versions, `git restore <version>` goes back to one, `git remote <url>` sets where backups go.
+- `--accept-risk` installs or updates a skill the safety check flagged; `--approve-removals` lets an update delete files or replace your edits.
+- `--allow-secrets` backs up or publishes what looks like a key anyway; `--allow-deletes` lets a sync delete many skills here.
 
 ## Recently removed
 
@@ -185,6 +195,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - Dashboard, command palette (`⌘K`), quick-start guide.
 - Four colour palettes in light and dark, four text sizes.
 - Tray icon; updates itself with a checksum check.
+- Closing the window asks, hides to the tray or quits, as set in Settings.
 - Logs, diagnostics and crash notice.
 
 ## Current limitations
