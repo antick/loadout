@@ -191,6 +191,31 @@ describe("check", () => {
     expect(world.store.get(broken.id).updateStatus).toBe("error");
     expect(world.store.get(fresh.id).updateStatus).toBe("local_only");
   });
+
+  it("checks only the chosen skills, asking their repository once", async () => {
+    const pdf = await world.installFromGit("pdf");
+    const docx = await world.installFromGit("docx");
+    const broken = world.store.update(world.addSkill("broken").id, {
+      sourceType: "git",
+      sourceUrl: join(world.root, "no-such-repo.git"),
+      sourceRevision: "0".repeat(40),
+      updateStatus: "unknown",
+    });
+    changePdfUpstream();
+
+    const before = world.lookups();
+    const result = await world.updates.api.checkAll(true, {
+      skillIds: [pdf.id, docx.id, "gone"],
+    });
+    expect(world.lookups()).toBe(before + 1);
+    expect(result).toEqual({ succeeded: 2, failed: [] });
+    expect(world.store.get(pdf.id).updateStatus).toBe("update_available");
+    // Not chosen: never looked at.
+    expect(world.store.get(broken.id).updateStatus).toBe("unknown");
+
+    const failing = await world.updates.api.checkAll(true, { skillIds: [broken.id] });
+    expect(failing.failed.map((failure) => failure.name)).toEqual(["broken"]);
+  });
 });
 
 describe("update", () => {

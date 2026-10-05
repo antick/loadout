@@ -1,4 +1,4 @@
-import type { BatchResult, Skill, UpdateStatus } from "@loadout/shared";
+import type { BatchResult, CheckAllOptions, Skill, UpdateStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
 import { errorMessage, isAppError } from "../errors";
@@ -36,10 +36,14 @@ export interface CheckOptions {
   lockMode?: LockMode;
 }
 
+export interface CheckRoundOptions extends CheckAllOptions {
+  /** `"try"` for background rounds: a skill whose library is busy is skipped. */
+  lockMode?: LockMode;
+}
+
 export interface Checker {
   check(skillId: string, options?: CheckOptions): Promise<Skill>;
-  /** `lockMode: "try"` for background rounds: a skill whose library is busy is skipped. */
-  checkAll(force?: boolean, options?: { lockMode?: LockMode }): Promise<BatchResult>;
+  checkAll(force?: boolean, options?: CheckRoundOptions): Promise<BatchResult>;
 }
 
 const MAX_CONCURRENT_LOOKUPS = 8;
@@ -265,7 +269,8 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     },
 
     checkAll: async (force = false, options = {}) => {
-      const skills = store.list();
+      const chosen = options.skillIds ? new Set(options.skillIds) : null;
+      const skills = chosen ? store.list().filter((skill) => chosen.has(skill.id)) : store.list();
       const now = Date.now();
       const due = force ? skills : skills.filter((skill) => !isFresh(skill, ttl(), now));
 

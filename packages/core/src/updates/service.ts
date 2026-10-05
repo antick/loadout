@@ -91,7 +91,7 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
 
   const api: UpdatesApi = {
     check: (skillId, force) => checker.check(skillId, { force }),
-    checkAll: (force) => checker.checkAll(force),
+    checkAll: (force, options) => checker.checkAll(force, { skillIds: options?.skillIds }),
     update: (skillId, approval, options) =>
       updater.update(skillId, approval, {
         acceptRisk: options?.acceptRisk,

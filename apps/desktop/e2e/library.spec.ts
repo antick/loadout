@@ -84,6 +84,18 @@ test("the Sources page groups skills by where they came from and opens them in t
   await expect(content.getByRole("heading", { name: "api-docs", level: 3 })).toHaveCount(0);
 });
 
+test("checking one source looks only at its skills and says what it found", async ({ page }) => {
+  await openApp(page, "/library");
+  await activityBar(page).getByRole("button", { name: "Library" }).click();
+  await page.getByRole("link", { name: /^Sources/ }).click();
+  const source = main(page).getByRole("article", { name: "example.com/acme/skills" });
+  await source.getByRole("button", { name: "Check", exact: true }).click();
+  await expect(
+    toasts(page).getByText("Checked example.com/acme/skills: 1 update available"),
+  ).toBeVisible();
+  await expect(source.getByRole("button", { name: "Check", exact: true })).toBeEnabled();
+});
+
 test("a source card shows new skills, opens them ticked, and forgets them on request", async ({
   page,
 }) => {

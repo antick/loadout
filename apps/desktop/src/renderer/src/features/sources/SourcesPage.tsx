@@ -20,9 +20,9 @@ import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { useDeleteSkills } from "@/features/library/use-delete-skills";
 import { FindSourcesDialog } from "@/features/origin/FindSourcesDialog";
 import {
-  useCheckSkills,
   useCheckSources,
   useDismissSourceNews,
+  useSourceChecks,
 } from "@/features/sources/source-mutations";
 import { useSourceNews } from "@/features/sources/source-queries";
 import { SourceCard } from "@/features/sources/SourceCard";
@@ -43,7 +43,7 @@ export function SourcesPage(): ReactNode {
   const navigate = useNavigate();
   const skills = useSkills();
   const browse = useBrowseSource();
-  const check = useCheckSkills();
+  const checks = useSourceChecks();
   const update = useUpdateSkills();
   const copy = useCopyText();
   const deleteSkills = useDeleteSkills();
@@ -80,11 +80,8 @@ export function SourcesPage(): ReactNode {
         {t("origin.batch.notice", { count: searchable.length })}
       </InlineNotice>
     ) : null;
-  const allLabel = t("sources.allSources");
-  const checkingAll = check.isPending && check.variables?.label === allLabel;
-
   const checkEverything = (): void => {
-    check.mutate({ skillIds: sources.flatMap((source) => source.skillIds), label: allLabel });
+    checks.checkAll();
     checkSources.mutate(undefined);
   };
 
@@ -99,9 +96,9 @@ export function SourcesPage(): ReactNode {
               size="sm"
               variant="outline"
               onClick={checkEverything}
-              disabled={check.isPending}
+              disabled={checks.checkingAll}
             >
-              {checkingAll ? <Spinner /> : <RefreshCw />}
+              {checks.checkingAll ? <Spinner /> : <RefreshCw />}
               {t("sources.checkAll")}
             </Button>
           ) : undefined
@@ -134,10 +131,10 @@ export function SourcesPage(): ReactNode {
                 source={source}
                 skills={own}
                 browsing={browse.busyKey === source.key}
-                checking={check.isPending && check.variables?.label === source.label}
+                checking={checks.isChecking(source.key)}
                 onBrowse={() => void browse.browse(source)}
                 onCheck={() => {
-                  check.mutate({ skillIds: source.skillIds, label: source.label });
+                  checks.check(source);
                   if (source.kind === "repository") checkSources.mutate([source.key]);
                 }}
                 onUpdate={() =>

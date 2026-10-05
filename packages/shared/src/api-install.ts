@@ -84,9 +84,17 @@ export interface UpdateRequestOptions extends RefreshOptions {
   expectedRevision?: string | null;
 }
 
+export interface CheckAllOptions {
+  /**
+   * Only these skills (every skill when omitted). Each repository and branch among them is still
+   * asked once. Ids of skills no longer in the library are skipped.
+   */
+  skillIds?: string[];
+}
+
 export interface UpdatesApi {
   check(skillId: string, force?: boolean): Promise<Skill>;
-  checkAll(force?: boolean): Promise<BatchResult>;
+  checkAll(force?: boolean, options?: CheckAllOptions): Promise<BatchResult>;
   /**
    * The new version goes through the safety check first: flagged, it throws UNSAFE with the
    * findings and nothing changes, unless `options.acceptRisk` (the user said update anyway).

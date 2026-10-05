@@ -1,42 +1,91 @@
-import { type Skill, type SourceCheckResult } from "@loadout/shared";
+import { type BatchResult, type SkillSource, type SourceCheckResult } from "@loadout/shared";
 import { type UseMutationResult } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { usePendingSet } from "@/hooks/use-pending-set";
 import { api } from "@/lib/api";
-import { describeFailures, FAILURE_LIST_CLASS } from "@/lib/batch";
-import { GENERIC_ERROR_KEY, toastSuccess } from "@/lib/toast";
+import { toastBatchOutcome } from "@/lib/batch";
+import { GENERIC_ERROR_KEY } from "@/lib/toast";
 
-/** Look upstream for several skills, such as everything from one source, with one toast. */
-export function useCheckSkills(): UseMutationResult<
-  Skill[],
-  unknown,
-  { skillIds: readonly string[]; label: string }
-> {
+/** What a check of several skills found: the batch outcome, and how many now have an update. */
+interface SkillsChecked extends BatchResult {
+  updates: number;
+}
+
+interface CheckSkillsInput {
+  /** The skills to look at; every skill when omitted. */
+  skillIds?: readonly string[];
+  /** Names the checked sources in the toast. */
+  label: string;
+}
+
+/**
+ * Look upstream for several skills, such as everything from one source, with one toast. One
+ * backend round: each repository among them is asked once.
+ */
+function useCheckSkills(): UseMutationResult<SkillsChecked, unknown, CheckSkillsInput> {
   const { t } = useTranslation();
   return useApiMutation({
     fn: async ({ skillIds }) => {
-      const checked: Skill[] = [];
-      for (const skillId of skillIds) checked.push(await api.updates.check(skillId, true));
-      return checked;
+      const result = await api.updates.checkAll(
+        true,
+        skillIds ? { skillIds: [...skillIds] } : undefined,
+      );
+      const chosen = skillIds ? new Set(skillIds) : null;
+      const updates = (await api.skills.list()).filter(
+        (skill) => (!chosen || chosen.has(skill.id)) && skill.updateStatus === "update_available",
+      ).length;
+      return { ...result, updates };
     },
-    onSuccess: (checked, { label }) => {
-      const updates = checked.filter((skill) => skill.updateStatus === "update_available");
-      const failed = checked.filter((skill) => skill.updateStatus === "error");
-      const summary = t("sources.checkedToast", { source: label, count: updates.length });
-      if (failed.length === 0) {
-        toastSuccess(summary);
-        return;
-      }
-      toast.warning(summary, {
-        description: describeFailures(
-          failed.map((skill) => ({ name: skill.name, message: skill.lastCheckError ?? "" })),
-        ),
-        descriptionClassName: FAILURE_LIST_CLASS,
-      });
-    },
+    onSuccess: (checked, { label }) =>
+      toastBatchOutcome(
+        t("sources.checkedToast", { source: label, count: checked.updates }),
+        checked.failed,
+      ),
     error: "library.errors.check",
   });
+}
+
+export interface SourceChecks {
+  /** True while this source is being checked, on its own or as part of "Check all". */
+  isChecking(sourceKey: string): boolean;
+  checkingAll: boolean;
+  check(source: SkillSource): void;
+  checkAll(): void;
+}
+
+/**
+ * Update checks of the Sources page, tracked per source key: two cards checked one after the
+ * other each keep their own spinner until their own check ends.
+ */
+export function useSourceChecks(): SourceChecks {
+  const { t } = useTranslation();
+  const checkSkills = useCheckSkills();
+  const { pending, mark } = usePendingSet();
+  const [checkingAll, setCheckingAll] = useState(false);
+  // `mutateAsync`, not per-call callbacks: TanStack Query only calls those for the latest call,
+  // so a second card checked meanwhile would end the first one's spinner early. A failure is
+  // toasted by the mutation itself.
+  const run = (input: CheckSkillsInput, done: () => void): void => {
+    checkSkills
+      .mutateAsync(input)
+      .catch(() => undefined)
+      .finally(done);
+  };
+  return {
+    isChecking: (sourceKey) => checkingAll || pending.has(sourceKey),
+    checkingAll,
+    check: (source) => {
+      mark(source.key, true);
+      run({ skillIds: source.skillIds, label: source.label }, () => mark(source.key, false));
+    },
+    checkAll: () => {
+      setCheckingAll(true);
+      run({ label: t("sources.allSources") }, () => setCheckingAll(false));
+    },
+  };
 }
 
 /**
