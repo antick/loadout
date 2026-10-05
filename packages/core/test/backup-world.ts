@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { cpSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -6,6 +5,7 @@ import type { AppEvents, BackupApi, Skill } from "@loadout/shared";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { type BackupHooks, type BackupService, createBackupService } from "../src/backup";
 import type { SecretStore } from "../src/context";
+import { initBareRepository, rawGit } from "./git-fixtures";
 import { type ContextBundle, createContext } from "../src/create-context";
 import { silentLogger } from "../src/log";
 import { INTERNAL_KEYS } from "../src/settings/store";
@@ -13,6 +13,8 @@ import { type RemovedStore, createRemovedStore } from "../src/storage/removed";
 import { removePathSync } from "../src/util/fs";
 import { hashDir } from "../src/util/hash";
 import { makeSkill, tempDir, writeFile } from "./helpers";
+
+export { rawGit } from "./git-fixtures";
 
 /** Two or more "devices" (each a full library) sharing one bare remote on local disk. */
 
@@ -35,15 +37,8 @@ export function memorySecrets(available = true): MemorySecrets {
   };
 }
 
-export function rawGit(cwd: string, ...args: string[]): string {
-  return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
-}
-
 export function createBareRemote(root: string, name = "remote.git"): string {
-  const dir = join(root, name);
-  mkdirSync(dir, { recursive: true });
-  rawGit(dir, "init", "-q", "--bare");
-  return dir;
+  return initBareRepository(join(root, name));
 }
 
 export interface RecordedEvent {

@@ -1,8 +1,14 @@
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import {
+  GIT_FIXTURE_BRANCH,
+  gitRunner,
+  initBareRepository,
+} from "../../../../packages/core/test/git-fixtures.ts";
 import type { Files } from "./fixtures-skills.ts";
 import type { World } from "./world.ts";
+
+export { initBareRepository as initBare };
 
 /** Fixture commits carry one author and date, so their revisions are the same on every run. */
 const FIXTURE_GIT_ENV = {
@@ -13,7 +19,8 @@ const FIXTURE_GIT_ENV = {
   GIT_COMMITTER_EMAIL: "dev@example.com",
   GIT_COMMITTER_DATE: "2026-09-01T09:00:00Z",
 };
-const BRANCH = "main";
+const BRANCH = GIT_FIXTURE_BRANCH;
+const run = gitRunner(FIXTURE_GIT_ENV);
 
 /** Write each file under `dir`; a null entry removes that file or folder. */
 export function writeFiles(dir: string, files: Record<string, string | null>): void {
@@ -36,11 +43,7 @@ export function under(prefix: string, files: Files): Files {
 }
 
 export function git(cwd: string, args: string[]): string {
-  return execFileSync("git", args, {
-    cwd,
-    encoding: "utf8",
-    env: { ...process.env, ...FIXTURE_GIT_ENV },
-  }).trim();
+  return run(cwd, ...args);
 }
 
 /** Where the bare repository for an `https://<host>/<path>` address lives in the world. */
@@ -50,18 +53,9 @@ export function remotePath(world: World, url: string): string {
   return join(world.remotes, host, `${path}.git`);
 }
 
-/** An empty bare repository in `dir`, unless one is there already. Returns `dir`. */
-export function initBare(dir: string): string {
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-    git(dir, ["init", "--quiet", "--bare", `--initial-branch=${BRANCH}`]);
-  }
-  return dir;
-}
-
 /** The bare repository behind `url`, created empty when new. Returns its folder. */
 export function createRepository(world: World, url: string): string {
-  return initBare(remotePath(world, url));
+  return initBareRepository(remotePath(world, url));
 }
 
 /**

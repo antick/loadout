@@ -11,6 +11,10 @@ import { cp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type SecretStore, createFileSecretStore } from "@loadout/core";
+import {
+  GIT_FIXTURE_CONFIG,
+  gitRewriteConfig,
+} from "../../../../packages/core/test/git-fixtures.ts";
 
 /**
  * One session's temporary world. Everything it changes lives under `live`, at the same path for
@@ -29,9 +33,6 @@ export interface World {
 
 /** Hosts whose Git addresses go to `remotes/<host>/` instead of the network. */
 const GIT_HOSTS = ["github.com", "example.com"];
-/** Git's own upkeep after commits and fetches is a process per call and helps nothing here. */
-const GIT_QUIET =
-  "[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n[init]\n\tdefaultBranch = main\n";
 
 export function createWorld(session: string): World {
   const root = realpathSync(mkdtempSync(join(tmpdir(), `loadout-${session}-`)));
@@ -56,10 +57,10 @@ export function emptyLive(world: World): void {
   for (const dir of [world.home, world.remotes, join(world.live, "tmp")]) {
     mkdirSync(dir, { recursive: true });
   }
-  const rewrites = GIT_HOSTS.map(
-    (host) => `[url "${join(world.remotes, host)}/"]\n\tinsteadOf = https://${host}/\n`,
+  writeFileSync(
+    gitConfigPath(world),
+    GIT_FIXTURE_CONFIG + gitRewriteConfig(world.remotes, GIT_HOSTS),
   );
-  writeFileSync(gitConfigPath(world), GIT_QUIET + rewrites.join(""));
 }
 
 /** Git, temp files and the home folder of this process all point into the world. */

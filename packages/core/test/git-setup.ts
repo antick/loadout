@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeEach } from "vitest";
+import { GIT_FIXTURE_CONFIG } from "./git-fixtures";
 
 /**
  * Vitest setup file of core and cli (`setupFiles`). Every git process a test starts, the
@@ -10,17 +11,9 @@ import { afterAll, beforeEach } from "vitest";
  * a test and commits have a name on any computer. The identity is config, not GIT_AUTHOR_*
  * variables, which would outrank the names Loadout itself gives its commits.
  */
-const GIT_CONFIG = [
-  "[user]",
-  "\tname = Loadout Test",
-  "\temail = test@loadout.invalid",
-  // Git's own background upkeep after commits and fetches is a process per call and tests nothing.
-  "[maintenance]",
-  "\tauto = false",
-  "[gc]",
-  "\tauto = 0",
-  "",
-].join("\n");
+const GIT_CONFIG =
+  ["[user]", "\tname = Loadout Test", "\temail = test@loadout.invalid", ""].join("\n") +
+  GIT_FIXTURE_CONFIG;
 
 const dir = mkdtempSync(join(tmpdir(), "loadout-git-"));
 const config = join(dir, "gitconfig");
