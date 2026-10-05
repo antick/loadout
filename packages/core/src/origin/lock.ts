@@ -1,4 +1,4 @@
-import { redactUrl } from "@loadout/shared";
+import { MIB, isRecord, redactUrl } from "@loadout/shared";
 import { readFileSync, statSync } from "node:fs";
 
 import { dirname, join } from "node:path";
@@ -21,7 +21,7 @@ const LOCK_FILE = ".skill-lock.json";
 const LOCAL_SOURCE_TYPES: ReadonlySet<string> = new Set(["local", "file"]);
 const SKILL_FILE_TAIL = /(?:^|\/)skill\.md$/i;
 /** A lock file is a few kilobytes per skill; anything far larger is not one. */
-const MAX_LOCK_BYTES = 8 * 1024 * 1024;
+const MAX_LOCK_BYTES = 8 * MIB;
 
 /** Where `npx skills` keeps the file: under `$XDG_STATE_HOME/skills` when set, else `~/.agents`. */
 export function lockFilePaths(homeDir: string, env: Readonly<Record<string, string | undefined>>) {
@@ -42,10 +42,8 @@ function readEntries(path: string): Record<string, LockEntry> | null {
   try {
     if (statSync(path).size > MAX_LOCK_BYTES) return null;
     const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-    const skills = (parsed as { skills?: unknown } | null)?.skills;
-    return typeof skills === "object" && skills !== null && !Array.isArray(skills)
-      ? (skills as Record<string, LockEntry>)
-      : null;
+    const skills = isRecord(parsed) ? parsed.skills : null;
+    return isRecord(skills) ? (skills as Record<string, LockEntry>) : null;
   } catch {
     return null;
   }

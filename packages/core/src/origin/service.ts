@@ -123,10 +123,6 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
       }));
   }
 
-  function compare(skill: Skill, lead: SourceLead): Promise<ComparedLead> {
-    return compareLead(git, skill, lead);
-  }
-
   /**
    * Link the skill to what `compared` saw, while the library copy is still what it compared.
    * The files stay as they are; what the source holds becomes the "as installed" snapshot, so
@@ -178,7 +174,7 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
     }
     const compared = await mapLimit(leads, MAX_CONCURRENT_COMPARES, async (lead) => {
       try {
-        return (await compare(skill, lead)).candidate;
+        return (await compareLead(git, skill, lead)).candidate;
       } catch (error) {
         failures.push(`${lead.input}: ${errorMessage(error)}`);
         return null;
@@ -214,7 +210,7 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
       for (const lead of machineLeads(skill, sourcePath)) {
         let compared: ComparedLead;
         try {
-          compared = await compare(skill, lead);
+          compared = await compareLead(git, skill, lead);
         } catch {
           continue;
         }
@@ -232,13 +228,13 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
 
     lookUp: async (skillId, input) => {
       const skill = requireLinkable(skillId);
-      return (await compare(skill, { input, evidence: "pasted" })).candidate;
+      return (await compareLead(git, skill, { input, evidence: "pasted" })).candidate;
     },
 
     attach: async (skillId, choice) => {
       const skill = requireLinkable(skillId);
       const locator = choice.marketRef?.split("/").pop() ?? null;
-      const compared = await compare(skill, {
+      const compared = await compareLead(git, skill, {
         input: choice.url,
         evidence: choice.evidence,
         branch: choice.branch,

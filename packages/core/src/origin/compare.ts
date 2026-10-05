@@ -49,12 +49,11 @@ export interface ComparedLead {
 const EOL_INSENSITIVE = { ignoreLineEndings: true } as const;
 const NUMBERED = /^(.+)-\d+$/;
 
+/** A target that always knows which skill to look for. */
+type LocatedTarget = RemoteTarget & { locator: string };
+
 /** Where a lead points, once a tree link's branch and folder are told apart. */
-async function targetOf(
-  git: GitClient,
-  lead: SourceLead,
-  skillName: string,
-): Promise<RemoteTarget> {
+async function targetOf(git: GitClient, lead: SourceLead, skillName: string): Promise<LocatedTarget> {
   const parsed = await resolveGitSource(git, lead.input);
   // A numbered library copy (`pdf-2`) is still called `pdf` upstream.
   const baseName = NUMBERED.exec(skillName)?.[1] ?? skillName;
@@ -73,9 +72,9 @@ async function targetOf(
  */
 async function revisionOf(
   git: GitClient,
-  target: RemoteTarget,
+  target: LocatedTarget,
   lead: SourceLead,
-): Promise<{ target: RemoteTarget; revision: string }> {
+): Promise<{ target: LocatedTarget; revision: string }> {
   if (lead.evidence === "git_folder" && target.branch) {
     const sha = await git.lsRemote(target.url, { branch: target.branch });
     if (sha) return { target, revision: sha };
@@ -126,7 +125,7 @@ export async function compareLead(
 ): Promise<ComparedLead> {
   const aimed = await targetOf(git, lead, skill.name);
   const { target, revision } = await revisionOf(git, aimed, lead);
-  const source = await open(git, target, revision, target.locator ?? skill.name);
+  const source = await open(git, target, revision, target.locator);
   try {
     const libraryHash = hashDir(skill.libraryPath);
     const overrides = libraryCopyOverrides(source.dir, skill.dirName);
