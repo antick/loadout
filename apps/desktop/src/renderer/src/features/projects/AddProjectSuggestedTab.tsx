@@ -7,7 +7,7 @@ import { InlineNotice } from "@/components/InlineNotice";
 import { SearchInput } from "@/components/SearchInput";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeletons } from "@/components/Skeletons";
 import { Spinner } from "@/components/ui/spinner";
 import { useProjectSuggestions } from "@/features/projects/project-queries";
 import { useAppInfo } from "@/hooks/queries/app";
@@ -23,7 +23,7 @@ import {
 } from "./ProjectPickList";
 
 const SUGGESTED_ITEM_ID_PREFIX = "suggested-project-";
-const SKELETON_ROWS = [0, 1, 2, 3];
+const SKELETON_ROWS = 4;
 /** Taller than the Scan list: each row here has two lines. */
 const LIST_CLASS = "max-h-72 overflow-y-auto rounded-lg border";
 
@@ -92,9 +92,7 @@ export function AddProjectSuggestedTab({ onCancel, onAdded }: AddProjectTabProps
   if (suggestions.isPending) {
     body = (
       <div className="flex flex-col gap-2 rounded-lg border p-3">
-        {SKELETON_ROWS.map((row) => (
-          <Skeleton key={row} className="h-10 w-full" />
-        ))}
+        <Skeletons count={SKELETON_ROWS} className="h-10 w-full" />
       </div>
     );
   } else if (suggestions.isError) {

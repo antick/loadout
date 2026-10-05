@@ -1,11 +1,11 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeletons } from "@/components/Skeletons";
 import { cn } from "@/lib/utils";
 
 /** Grid of cards on an overview page: as many columns as fit. */
 export const CARD_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-3";
-const SKELETON_CARDS = [0, 1, 2, 3];
+const SKELETON_CARDS = 4;
 
 export interface LinkCardProps {
   link: LinkProps;
@@ -41,9 +41,7 @@ export function LinkCard({ link, label, children, className }: LinkCardProps): R
 export function CardGridSkeleton(): ReactNode {
   return (
     <div aria-hidden="true" className={CARD_GRID_CLASS}>
-      {SKELETON_CARDS.map((card) => (
-        <Skeleton key={card} className="h-32 rounded-lg" />
-      ))}
+      <Skeletons count={SKELETON_CARDS} className="h-32 rounded-lg" />
     </div>
   );
 }

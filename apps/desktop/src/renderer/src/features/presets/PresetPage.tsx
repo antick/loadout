@@ -14,6 +14,7 @@ import { PageSection } from "@/components/PageSection";
 import { PresetIcon } from "@/components/PresetIcon";
 import { SortableList } from "@/components/SortableList";
 import { Button } from "@/components/ui/button";
+import { Skeletons } from "@/components/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -33,6 +34,7 @@ import { moveId } from "@/lib/utils";
 const FALLBACK_ROUTE = "/presets";
 /** Presets hold skills, not agents, so the picker shows no target row. */
 const PICKER_TARGET = { kind: "none" } as const;
+const SKELETON_ROWS = 3;
 
 function PresetSkeleton(): ReactNode {
   return (
@@ -44,9 +46,7 @@ function PresetSkeleton(): ReactNode {
           <Skeleton className="h-4 w-72" />
         </div>
       </div>
-      {[0, 1, 2].map((row) => (
-        <Skeleton key={row} className="h-14 w-full rounded-lg" />
-      ))}
+      <Skeletons count={SKELETON_ROWS} className="h-14 w-full rounded-lg" />
     </div>
   );
 }

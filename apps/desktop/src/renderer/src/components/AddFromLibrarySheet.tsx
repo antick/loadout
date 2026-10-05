@@ -37,7 +37,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeletons } from "@/components/Skeletons";
 import { Spinner } from "@/components/ui/spinner";
 import { useAgents } from "@/hooks/queries/agents";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
@@ -91,6 +91,7 @@ export interface AddFromLibrarySheetProps {
 }
 
 const SOURCE_FILTER_ALL = "all";
+const SKELETON_ROWS = 5;
 const STATE_TONES: Record<Exclude<PickerRowState, "available">, StatusTone> = {
   installed: "success",
   conflict: "warning",
@@ -322,9 +323,7 @@ export function AddFromLibrarySheet({
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
           {skills.isPending ? (
             <div className="flex flex-col gap-1 px-2">
-              {[0, 1, 2, 3, 4].map((row) => (
-                <Skeleton key={row} className="h-11 w-full" />
-              ))}
+              <Skeletons count={SKELETON_ROWS} className="h-11 w-full" />
             </div>
           ) : rows.length === 0 ? (
             <EmptyState

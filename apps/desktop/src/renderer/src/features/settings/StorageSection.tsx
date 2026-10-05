@@ -5,6 +5,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { Panel } from "@/components/Panel";
 import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
+import { Skeletons } from "@/components/Skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStorageReport } from "@/features/settings/storage-queries";
 import { clearStored, countStored } from "@/lib/interface-state";
@@ -15,6 +16,7 @@ import { RemoveAllDataPanel } from "./RemoveAllDataPanel";
 import { StorageAreaList } from "./StorageAreaList";
 
 const OUTSIDE_ITEMS = ["agents", "projects", "backup", "keychain", "system"] as const;
+const SKELETON_ROWS = 3;
 
 /** Where Loadout keeps its data, how much, and the ways to clean it up. */
 export function StorageSection(): ReactNode {
@@ -54,9 +56,7 @@ export function StorageSection(): ReactNode {
           <StorageAreaList entries={data.entries} />
         ) : (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+            <Skeletons count={SKELETON_ROWS} className="h-10 w-full" />
           </div>
         )}
       </Panel>
