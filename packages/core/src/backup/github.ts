@@ -233,16 +233,17 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
     await ctx.secrets.set(GITHUB_TOKEN_KEY, cleanToken);
     await deps.saveRemote(url);
     ctx.settings.setRaw(INTERNAL_KEYS.githubAuthMethod, method);
-    ctx.touched("backup");
-
-    return {
-      url,
-      login,
-      repoCreated,
-      remoteHasContent: repoCreated
+    let hasContent: boolean;
+    try {
+      hasContent = repoCreated
         ? false
-        : await remoteHasContent(cleanToken, fullName, repo.body.size),
-    };
+        : await remoteHasContent(cleanToken, fullName, repo.body.size);
+    } finally {
+      // Told only once this call is answered: the app refetches the backup state on it, which
+      // closes the connect panel that waits for this answer to start the first backup.
+      ctx.touched("backup");
+    }
+    return { url, login, repoCreated, remoteHasContent: hasContent };
   }
 
   return {

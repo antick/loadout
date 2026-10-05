@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { APP_SLUG } from "@loadout/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GITHUB_TOKEN_KEY } from "../src/backup/credentials";
 import { INTERNAL_KEYS } from "../src/settings/store";
 import { type Device, createDevice, memorySecrets } from "./backup-world";
@@ -122,6 +122,35 @@ describe("GitHub connect", () => {
       remoteHasContent: true,
     });
     expect(device.ctx.settings.getRaw(INTERNAL_KEYS.backupRemoteUrl, "")).toBe(result.url);
+  });
+
+  it("says the backup changed only once it knows whether the repository has content", async () => {
+    const { fetchImpl } = stubFetch({
+      [`GET ${API}/user`]: { status: 200, body: { login: "octo" } },
+      [`GET ${API}/repos/octo/backup`]: {
+        status: 200,
+        body: { full_name: "octo/backup", private: true, size: 0 },
+      },
+      [`GET ${API}/repos/octo/backup/commits?per_page=1`]: [{ status: 200, body: [] }],
+    });
+    let touchedBeforeAnswer: boolean | null = null;
+    const watching = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).includes("/commits")) touchedBeforeAnswer = touched.mock.calls.length > 0;
+      return fetchImpl(input, init);
+    }) as typeof fetch;
+    device = createDevice(temp.dir, "A", { fetchImpl: watching });
+    const touched = vi.spyOn(device.ctx, "touched");
+    await device.api.githubConnect(TOKEN, "backup");
+    expect(touchedBeforeAnswer).toBe(false);
+    expect(touched).toHaveBeenCalledWith("backup");
+
+    // The remote is saved even when that question goes unanswered, so the app still hears of it.
+    touched.mockClear();
+    const error = await device.api
+      .githubConnect(TOKEN, "backup")
+      .catch((thrown: unknown) => thrown);
+    expect(error).toMatchObject({ code: "NETWORK" });
+    expect(touched).toHaveBeenCalledWith("backup");
   });
 
   it("saves nothing for a public repository until the user agrees", async () => {

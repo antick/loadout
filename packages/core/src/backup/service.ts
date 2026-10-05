@@ -39,14 +39,16 @@ export function createBackupOperations(
   const { ctx } = env;
   let fetching: Promise<void> | null = null;
 
-  /** Point `origin` at the URL when there is a repository; always remember it. */
+  /**
+   * Point `origin` at the URL when there is a repository; always remember it. The caller says
+   * the backup changed, once it has its whole answer.
+   */
   async function saveRemote(url: string): Promise<void> {
     if (isRepo(env)) {
       const verb = (await originUrl(env)) ? "set-url" : "add";
       await env.git.run(["remote", verb, REMOTE_NAME, url]);
     }
     ctx.settings.setRaw(INTERNAL_KEYS.backupRemoteUrl, url);
-    ctx.touched("backup");
   }
 
   const github = createGithubService(ctx, { fetchImpl, saveRemote });
@@ -82,6 +84,7 @@ export function createBackupOperations(
     setRemote: async (url) => {
       const clean = await sanitizeRemoteUrl(ctx.secrets, url);
       await saveRemote(clean);
+      ctx.touched("backup");
       return clean;
     },
 
