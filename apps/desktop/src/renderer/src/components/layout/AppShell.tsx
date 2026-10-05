@@ -125,6 +125,10 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     event.preventDefault();
     void navigate({ to: "/settings" });
   });
+  useHotkey(SHORTCUT_KEYS.sidebar, (event) => {
+    event.preventDefault();
+    setSidebarOpen((shown) => !shown);
+  });
 
   return (
     <ShellContext.Provider value={shell}>
