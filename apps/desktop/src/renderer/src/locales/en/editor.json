@@ -143,9 +143,5 @@
       "copies_one": "Also in {{agents}} in this project.",
       "copies_other": "Also in {{agents}} in this project."
     }
-  },
-  "skills": {
-    "edited": "Edited",
-    "editedHint": "You changed this skill in the app. An update asks before replacing your edits."
   }
 }

@@ -99,17 +99,5 @@
       "linux": "Linux"
     },
     "bugBody": "Loadout version: {{version}}\nSystem: {{system}}\n\n## What happened\n\n\n## What you expected\n\n\n## Steps to reproduce\n\n1. \n"
-  },
-  "help": {
-    "shortcuts": {
-      "save": "Save the file open in the editor",
-      "sectionHome": "Show home in the sidebar",
-      "sectionLibrary": "Show the library in the sidebar",
-      "sectionAgents": "Show agents in the sidebar",
-      "sectionPresets": "Show presets in the sidebar",
-      "sectionProjects": "Show projects in the sidebar",
-      "editorView": "Switch the editor between text, text and preview, and preview",
-      "editorWrap": "Wrap long lines in the editor, or stop wrapping"
-    }
   }
 }

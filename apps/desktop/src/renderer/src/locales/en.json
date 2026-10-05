@@ -93,7 +93,9 @@
     "removed_one": "Removed {{count}} skill",
     "removed_other": "Removed {{count}} skills",
     "removedKept_one": "You can put it back from Settings → Storage → Recently removed for {{days}} days.",
-    "removedKept_other": "You can put them back from Settings → Storage → Recently removed for {{days}} days."
+    "removedKept_other": "You can put them back from Settings → Storage → Recently removed for {{days}} days.",
+    "edited": "Edited",
+    "editedHint": "You changed this skill in the app. An update asks before replacing your edits."
   },
   "deploy": {
     "appliedAdd_one": "Added {{count}} deployment, skipped {{skipped}}",
@@ -265,72 +267,6 @@
     "editSkill": "Open a skill in the editor",
     "editTitle": "Open a skill",
     "editDescription": "Type part of a skill's name to open it in the editor."
-  },
-  "help": {
-    "title": "Quick start",
-    "intro": "{{app}} keeps your agent skills in one library and installs them wherever you need them.",
-    "sections": {
-      "library": {
-        "title": "One library",
-        "body": "Every skill lives once in the library. Tag skills, read their documents and see which agents have them."
-      },
-      "install": {
-        "title": "Get skills",
-        "body": "Install from the marketplace, a Git repository, a folder or an archive, or scan this computer and import what your agents already have."
-      },
-      "agents": {
-        "title": "Install for agents",
-        "body": "Click an agent badge on a skill to install or remove it for that agent. An agent's page shows everything in its skills folder, managed or not."
-      },
-      "presets": {
-        "title": "Presets",
-        "body": "Group skills into presets and add a whole set to an agent or a project with one click. Editing a preset never changes files by itself."
-      },
-      "projects": {
-        "title": "Projects",
-        "body": "Link a project folder to manage the skills inside it, compare them with the library and move changes either way."
-      },
-      "backup": {
-        "title": "Backup",
-        "body": "Back the library up to a Git repository to restore it later or keep several computers in step."
-      }
-    },
-    "workflowsTitle": "Recommended workflows",
-    "workflows": {
-      "oneAgent": {
-        "title": "One agent",
-        "steps": [
-          "Install skills into the library from Install.",
-          "Open the agent's page and add skills with Add from library, or click its badge on a skill card.",
-          "Keep only what you use: remove a skill from the agent and it stays in the library for later."
-        ]
-      },
-      "projects": {
-        "title": "Several projects",
-        "steps": [
-          "Group the skills each kind of project needs into a preset.",
-          "Link each project folder, then apply the preset to add those skills to the project's agents.",
-          "Edited a skill inside a project? Use Update library, then Pull from library in the other projects."
-        ]
-      },
-      "devices": {
-        "title": "Several computers",
-        "steps": [
-          "On the first computer, open Backup and connect a private Git repository.",
-          "On the next computer, choose to restore from a backup when {{app}} first starts, or connect the same repository from Backup.",
-          "Changes sync in the background. If both computers edit the same skill, pick which version to keep under Needs attention."
-        ]
-      }
-    },
-    "shortcutsTitle": "Keyboard shortcuts",
-    "shortcuts": {
-      "palette": "Open the command palette",
-      "find": "Search the current page",
-      "sidebar": "Fold the sidebar away or bring it back",
-      "settings": "Open settings",
-      "escape": "Leave selection mode or close a dialog",
-      "quickOpen": "Open a skill in the editor"
-    }
   },
   "closeDialog": {
     "title": "Close {{app}}?",

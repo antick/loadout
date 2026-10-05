@@ -1,31 +1,76 @@
 {
-  "help": {
-    "safety": {
-      "title": "How your files are kept safe",
-      "agentFolders": {
-        "title": "Agent folders",
-        "body": "{{app}} never overwrites or deletes anything in an agent's folder that it did not put there; a clash is reported with the exact path instead. A folder several agents share is cleaned up only when none of them still uses it."
-      },
-      "editor": {
-        "title": "Editing",
-        "body": "A save never overwrites a change made on disk after you opened the file: you see both and choose. Every save keeps the version it replaced (the last 20), and unsaved text survives closing the window."
-      },
-      "copies": {
-        "title": "Copies in agent folders",
-        "body": "Saving a library skill refreshes its copies, except a copy that was changed in the agent's folder: that one is left alone and reported."
-      },
-      "updates": {
-        "title": "Updates",
-        "body": "Before an update deletes a file you see which ones and approve. Automatic updates never delete files, and hold back skills you edited."
-      },
-      "backup": {
-        "title": "Backup",
-        "body": "A conflict never blocks a sync: your version stays until you choose, and a safety snapshot is taken first. Restoring a snapshot saves the current state first. Your GitHub token is encrypted with the system keychain."
-      },
-      "library": {
-        "title": "Your data",
-        "body": "Everything lives in ~/.loadout. Moving the library goes only into an empty folder and moves all or nothing. Removing all data takes {{app}}'s links out of agent folders first and never touches project folders."
-      }
+  "safety": {
+    "verdict": {
+      "safe": "Passed",
+      "caution": "Review",
+      "unsafe": "Flagged"
+    },
+    "staleLabel": "{{verdict}}, changed since",
+    "staleHint": "The skill changed after this check. Check it again to be sure.",
+    "score": "Risk {{score}}/100",
+    "countOf": {
+      "CRITICAL_one": "{{count}} critical",
+      "CRITICAL_other": "{{count}} critical",
+      "HIGH_one": "{{count}} high",
+      "HIGH_other": "{{count}} high",
+      "MEDIUM_one": "{{count}} medium",
+      "MEDIUM_other": "{{count}} medium",
+      "LOW_one": "{{count}} low",
+      "LOW_other": "{{count}} low"
+    },
+    "severity": {
+      "CRITICAL": "Critical",
+      "HIGH": "High",
+      "MEDIUM": "Medium",
+      "LOW": "Low"
+    },
+    "scannedAt": "Checked {{when}} · SkillSpector {{version}}",
+    "scannedAtBuiltin": "Checked {{when}} · {{app}} rules",
+    "noFindings": "No findings.",
+    "prompt": {
+      "titleOne": "The safety check flagged {{name}}",
+      "titleMany_one": "The safety check flagged {{count}} skill",
+      "titleMany_other": "The safety check flagged {{count}} skills",
+      "uncheckedTitleOne": "The safety check could not finish on {{name}}",
+      "uncheckedTitleMany_one": "The safety check could not finish on {{count}} skill",
+      "uncheckedTitleMany_other": "The safety check could not finish on {{count}} skills",
+      "uncheckedReason": "The check stopped before it had an answer ({{reason}}). A skill can do that on purpose to avoid being checked.",
+      "description": "The safety check found things a skill should not do, such as overriding your agent's instructions, reading credentials or running downloaded code. Nothing has been installed. Install anyway only if you know and trust where it comes from.",
+      "updateDescription": "The safety check found things a skill should not do in its new version, such as overriding your agent's instructions, reading credentials or running downloaded code. The version you have now is unchanged. Update anyway only if you know and trust where it comes from.",
+      "dontInstall": "Don't install",
+      "installAnyway": "Install anyway",
+      "dontUpdate": "Don't update",
+      "updateAnyway": "Update anyway",
+      "notUpdated": "Not updated. The version you have is unchanged.",
+      "notInstalled": "Not installed"
+    },
+    "scanned": {
+      "safe": "Safety check passed",
+      "caution": "Safety check: worth a look",
+      "unsafe": "Safety check flagged this skill"
+    },
+    "library": {
+      "running": "Checking the library",
+      "done_one": "Checked {{count}} skill",
+      "done_other": "Checked {{count}} skills",
+      "upToDate": "Every report is current",
+      "unsafe_one": "{{count}} flagged",
+      "unsafe_other": "{{count}} flagged",
+      "caution_one": "{{count}} to review",
+      "caution_other": "{{count}} to review",
+      "failed_one": "{{count}} could not be checked",
+      "failed_other": "{{count}} could not be checked"
+    },
+    "detail": {
+      "title": "Safety check",
+      "none": "Not checked yet.",
+      "check": "Check now",
+      "checkAgain": "Check again",
+      "needsScanner": "No safety check is available here. Install SkillSpector to check skills for prompt injection, credential theft and risky scripts.",
+      "openSettings": "Set it up"
+    },
+    "errors": {
+      "scan": "Could not run the safety check."
     }
   }
 }
