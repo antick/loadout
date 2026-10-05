@@ -76,28 +76,21 @@ test("several conflicts take one choice for all, after a confirmation", async ({
   await expect(content.getByRole("heading", { name: "Needs attention" })).toHaveCount(0);
 });
 
-test("a long review can be searched and filtered; keep-all answers for the rows shown", async ({
-  page,
-}) => {
+test("a long review can be searched; keep-all answers for the rows shown", async ({ page }) => {
   // Work Laptop deleted six skills and changed commit-helper.
   await openBackup(page, "backup-many-deletions");
   await main(page).getByRole("button", { name: "Sync now" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Review the sync" });
-  await dialog.getByRole("combobox", { name: "Kind of change" }).click();
-  await page.getByRole("option", { name: /^Deleted/ }).click();
-  await expect(dialog.getByText("commit-helper")).toHaveCount(0);
-
-  await dialog.getByRole("searchbox", { name: "Search skills or devices" }).fill("er");
+  const search = dialog.getByRole("searchbox", { name: "Search skills or devices" });
+  await search.fill("er");
   await expect(dialog.getByRole("radiogroup")).toHaveCount(2);
   await dialog.getByRole("button", { name: "Keep all" }).click();
   if (SCREENSHOTS) await page.screenshot({ path: `${SCREENSHOTS}/sync-review-filter.png` });
 
-  await dialog.getByRole("searchbox", { name: "Search skills or devices" }).fill("nothing-like-it");
-  await expect(
-    dialog.getByText("No skill in this sync fits the search and the filter."),
-  ).toBeVisible();
-  await dialog.getByRole("button", { name: "Clear filters" }).click();
+  await search.fill("nothing-like-it");
+  await expect(dialog.getByText("No skill in this sync fits the search.")).toBeVisible();
+  await dialog.getByRole("button", { name: "Clear search" }).click();
   await expect(dialog.getByText("commit-helper")).toBeVisible();
   const answer = (name: string) =>
     dialog.getByRole("radiogroup", { name: `What to do with ${name}` });

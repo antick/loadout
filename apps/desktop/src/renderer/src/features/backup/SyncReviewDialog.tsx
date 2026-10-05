@@ -9,6 +9,7 @@ import { Info, RefreshCw, TriangleAlert } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
+import { SearchInput } from "@/components/SearchInput";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,9 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { BackupStageText } from "./BackupStageText";
-import { REVIEW_FILTER_MIN_ITEMS } from "./constants";
-import { type ReviewFilter, type ReviewLists, countReview, filterReview } from "./review-filter";
-import { SyncReviewFilters } from "./SyncReviewFilters";
+import { REVIEW_SEARCH_MIN_ITEMS } from "./constants";
+import { type ReviewLists, filterReview, reviewSize } from "./review-filter";
 import { type DeleteChoice, SyncReviewRow } from "./SyncReviewRow";
 
 export interface SyncReviewDialogProps {
@@ -64,21 +64,19 @@ function Section({
   );
 }
 
-/** The review's lists as narrowed by the search and filter; choices are kept for hidden rows. */
+/** The review's lists as narrowed by the search; choices are kept for hidden rows. */
 function ReviewBody({
   preview,
   lists,
   remoteCommit,
   kept,
   onKept,
-  onClearFilters,
 }: {
   preview: SyncPreview;
   lists: ReviewLists;
   remoteCommit: string;
   kept: ReadonlySet<string>;
   onKept(next: Set<string>): void;
-  onClearFilters(): void;
 }): ReactNode {
   const { t } = useTranslation();
   const allDeletions = preview.incoming.filter((item) => item.change === "deleted").length;
@@ -98,9 +96,7 @@ function ReviewBody({
     }
     onKept(next);
   };
-  const empty =
-    lists.incoming.length + lists.outgoing.length + lists.conflicts.length === 0 &&
-    preview.incoming.length + preview.outgoing.length + preview.conflicts.length > 0;
+  const empty = reviewSize(lists) === 0 && reviewSize(preview) > 0;
 
   if (!preview.perSkill) {
     return (
@@ -128,12 +124,9 @@ function ReviewBody({
         </InlineNotice>
       ) : null}
       {empty ? (
-        <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
-          <p>{t("backupSync.review.noMatch")}</p>
-          <Button size="sm" variant="outline" onClick={onClearFilters}>
-            {t("backupSync.review.clearFilters")}
-          </Button>
-        </div>
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          {t("backupSync.review.noMatch")}
+        </p>
       ) : null}
       {lists.incoming.length > 0 ? (
         <Section
@@ -217,33 +210,22 @@ export function SyncReviewDialog({
   const [kept, setKept] = useState<Set<string>>(new Set());
   const [reviewed, setReviewed] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<ReviewFilter>("all");
   const [wasOpen, setWasOpen] = useState(false);
   const remoteCommit = preview?.remoteCommit ?? null;
-  const clearFilters = (): void => {
-    setQuery("");
-    setFilter("all");
-  };
   // A new preview starts with every deletion going ahead, as an unreviewed sync would.
   if (remoteCommit !== reviewed) {
     setReviewed(remoteCommit);
     setKept(new Set());
-    clearFilters();
+    setQuery("");
   }
   // Opened again for the same remote state: the choices stay, an old search does not.
   if ((preview !== null) !== wasOpen) {
     setWasOpen(preview !== null);
-    if (preview) clearFilters();
+    if (preview) setQuery("");
   }
-  const counts = useMemo(() => (preview ? countReview(preview) : null), [preview]);
-  const lists = useMemo(
-    () => (preview ? filterReview(preview, query, filter) : null),
-    [preview, query, filter],
-  );
-  const filterable =
-    preview?.perSkill === true &&
-    counts !== null &&
-    (counts.all >= REVIEW_FILTER_MIN_ITEMS || query !== "" || filter !== "all");
+  const lists = useMemo(() => (preview ? filterReview(preview, query) : null), [preview, query]);
+  const searchable =
+    preview?.perSkill === true && (reviewSize(preview) >= REVIEW_SEARCH_MIN_ITEMS || query !== "");
 
   return (
     <Dialog open={preview !== null} onOpenChange={(open) => !open && !syncing && onCancel()}>
@@ -267,13 +249,12 @@ export function SyncReviewDialog({
             {t("backupSync.review.stale")}
           </InlineNotice>
         ) : null}
-        {filterable ? (
-          <SyncReviewFilters
-            query={query}
-            onQuery={setQuery}
-            filter={filter}
-            onFilter={setFilter}
-            counts={counts}
+        {searchable ? (
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder={t("backupSync.review.search")}
+            focusHotkey={false}
           />
         ) : null}
         <div className="-mx-1 max-h-[60vh] min-w-0 overflow-y-auto px-1">
@@ -284,7 +265,6 @@ export function SyncReviewDialog({
               remoteCommit={remoteCommit}
               kept={kept}
               onKept={setKept}
-              onClearFilters={clearFilters}
             />
           ) : null}
         </div>

@@ -1,6 +1,6 @@
 import type { SyncPreview, SyncPreviewItem } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
-import { countReview, filterReview } from "./review-filter";
+import { filterReview, reviewSize } from "./review-filter";
 
 const item = (
   name: string,
@@ -38,37 +38,22 @@ const names = (lists: ReturnType<typeof filterReview>): string[][] => [
   lists.conflicts.map((entry) => entry.name),
 ];
 
-describe("sync review filter", () => {
-  it("keeps everything with no search and no filter", () => {
-    expect(names(filterReview(preview, "  ", "all"))).toEqual([
+describe("sync review search", () => {
+  it("keeps everything with no search", () => {
+    expect(names(filterReview(preview, "  "))).toEqual([
       ["pdf-tools", "code-review", "old-notes"],
       ["writing-style", "scratch"],
       ["commit-helper"],
     ]);
   });
 
-  it("narrows every list to one kind of change", () => {
-    expect(names(filterReview(preview, "", "deleted"))).toEqual([["old-notes"], ["scratch"], []]);
-    // Conflicts are their own kind, even though they are changes too.
-    expect(names(filterReview(preview, "", "changed"))).toEqual([[], ["writing-style"], []]);
-    expect(names(filterReview(preview, "", "conflict"))).toEqual([[], [], ["commit-helper"]]);
-  });
-
   it("searches the name, the old folder name and the device", () => {
-    expect(names(filterReview(preview, "REVIEW", "all"))).toEqual([["code-review"], [], []]);
-    expect(names(filterReview(preview, "work lap", "all"))).toEqual([["pdf-tools"], [], []]);
-    expect(names(filterReview(preview, "notes", "renamed"))).toEqual([[], [], []]);
+    expect(names(filterReview(preview, "REVIEW"))).toEqual([["code-review"], [], []]);
+    expect(names(filterReview(preview, "work lap"))).toEqual([["pdf-tools"], [], []]);
+    expect(names(filterReview(preview, "helper"))).toEqual([[], [], ["commit-helper"]]);
   });
 
-  it("counts each kind across both directions", () => {
-    expect(countReview(preview)).toEqual({
-      all: 6,
-      added: 1,
-      changed: 1,
-      renamed: 1,
-      details: 0,
-      deleted: 2,
-      conflict: 1,
-    });
+  it("counts the rows of both directions and the conflicts", () => {
+    expect(reviewSize(preview)).toBe(6);
   });
 });

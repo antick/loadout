@@ -56,12 +56,7 @@
       "notPerSkill_other": "The backup remote lacks Loadout's skill details, so these {{count}} backups are merged by Git line by line and cannot be listed skill by skill.",
       "sync": "Sync",
       "search": "Search skills or devices",
-      "filter": {
-        "label": "Kind of change",
-        "all": "All changes"
-      },
-      "noMatch": "No skill in this sync fits the search and the filter.",
-      "clearFilters": "Clear filters",
+      "noMatch": "No skill in this sync fits the search.",
       "stale": "Skills on this computer changed since this review. Recheck to see what the sync does now.",
       "recheck": "Recheck"
     },
