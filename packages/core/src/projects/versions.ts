@@ -23,7 +23,11 @@ export function groupByContent(copies: readonly LocalSkill[]): VersionGroup[] {
     group.copies.push(copy);
     groups.set(key, group);
   }
-  return [...groups.values()].sort((a, b) => (changedAt(b) ?? 0) - (changedAt(a) ?? 0));
+  // Each group's newest change walks its folder once, not once per comparison.
+  return [...groups.values()]
+    .map((group) => ({ group, at: changedAt(group) ?? 0 }))
+    .sort((a, b) => b.at - a.at)
+    .map(({ group }) => group);
 }
 
 function changedAt(group: VersionGroup): number | null {
