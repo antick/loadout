@@ -142,6 +142,8 @@ export interface UpdatesApi {
   sourceDiff(skillId: string, options?: SourceDiffOptions): Promise<SourceDiff>;
   /** `sourceDiff` and `sourceDocument` from one look at the source (one checkout). */
   compareSource(skillId: string, options?: SourceDiffOptions): Promise<SourceComparison>;
+  /** When the last background update round finished (ms since the epoch); null when never. */
+  lastAutoRunAt(): Promise<number | null>;
   /** New skills repositories gained, as the last look found them. No network. */
   sourceNews(): Promise<SourceNews[]>;
   /** Look at these repositories (all when omitted) for new skills; may add them (setting). */

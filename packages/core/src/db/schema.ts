@@ -211,4 +211,15 @@ export const MIGRATIONS: readonly string[] = [
   -- Update checks count as fresh for a fixed hour: the setting for it is gone.
   DELETE FROM settings WHERE key = 'updateCheckTtlMinutes';
   `,
+  `
+  -- Runtime state moves out of the user settings into core's own keys; the answers are kept.
+  UPDATE settings SET key = 'updates.lastRunAt' WHERE key = 'autoUpdateLastRunAt' AND value <> '0';
+  UPDATE settings SET key = 'backup.lastAutoError' WHERE key = 'backupLastAutoError' AND value <> '""';
+  UPDATE settings SET key = 'backup.firstRunAnswered', value = 'true'
+    WHERE key = 'backupFirstRunPrompt' AND value <> '""';
+  UPDATE settings SET key = 'system.agentControlDismissed', value = 'true'
+    WHERE key = 'agentControlPrompt' AND value = '"dismissed"';
+  DELETE FROM settings
+    WHERE key IN ('autoUpdateLastRunAt', 'backupLastAutoError', 'backupFirstRunPrompt', 'agentControlPrompt');
+  `,
 ];

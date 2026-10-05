@@ -5,6 +5,7 @@ import { InlineNotice } from "@/components/InlineNotice";
 import { Panel } from "@/components/Panel";
 import { Switch } from "@/components/ui/switch";
 import { useSetSetting } from "@/hooks/mutations/settings";
+import { useBackupStatus } from "@/hooks/queries/app";
 import { useSetting } from "@/hooks/queries/settings";
 
 /** The automatic backup switch, with the reason the last automatic round failed. */
@@ -12,7 +13,7 @@ export function AutoBackupCard(): ReactNode {
   const { t } = useTranslation();
   const switchId = useId();
   const enabled = useSetting("backupAutoEnabled");
-  const lastError = useSetting("backupLastAutoError");
+  const lastError = useBackupStatus().data?.lastAutoError;
   const setSetting = useSetSetting();
 
   return (

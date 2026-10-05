@@ -358,7 +358,6 @@ describe("agent control", () => {
       skillId: skill.id,
       dismissed: false,
     });
-    expect(world.ctx.settings.get("agentControlPrompt")).toBe("installed");
   });
 
   it("refreshes the same skill when run again after the bundle changed", async () => {
@@ -381,7 +380,6 @@ describe("agent control", () => {
       code: "INVALID_INPUT",
     });
     expect(world.store.list()).toHaveLength(0);
-    expect(world.ctx.settings.get("agentControlPrompt")).toBe("");
   });
 
   it("ships a real skill under the expected name", async () => {

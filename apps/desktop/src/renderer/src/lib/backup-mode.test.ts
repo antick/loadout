@@ -17,6 +17,8 @@ const healthy: BackupStatus = {
   upstreamHealth: "healthy",
   gitAvailable: true,
   newerAppVersion: null,
+  lastAutoError: null,
+  firstRunAnswered: false,
 };
 
 describe("deriveBackupMode", () => {

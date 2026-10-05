@@ -5,6 +5,7 @@ import type { CoreContext } from "../context";
 import { AppError, invalid, notFound, targetConflict, unsupported } from "../errors";
 import type { DeployService } from "../deploy";
 import type { InstallService } from "../install";
+import { INTERNAL_KEYS } from "../settings/store";
 import type { SkillStore } from "../skills/store";
 import { isSkillDir } from "../util/fs";
 
@@ -34,7 +35,7 @@ export function createAgentControl(ctx: CoreContext, deps: AgentControlDeps): Ag
     return {
       installed: skill !== null,
       skillId: skill?.id ?? null,
-      dismissed: ctx.settings.get("agentControlPrompt") === "dismissed",
+      dismissed: ctx.settings.getRaw<boolean>(INTERNAL_KEYS.agentControlDismissed, false) === true,
     };
   }
 
@@ -70,7 +71,8 @@ export function createAgentControl(ctx: CoreContext, deps: AgentControlDeps): Ag
         replaceSkillId: installedSkill()?.id ?? null,
       },
     });
-    ctx.settings.set("agentControlPrompt", "installed");
+    // Set up once, the suggestion may come back if the skill is removed later.
+    ctx.settings.deleteRaw(INTERNAL_KEYS.agentControlDismissed);
     ctx.touched("settings");
 
     if (keys.length > 0) {
@@ -85,7 +87,7 @@ export function createAgentControl(ctx: CoreContext, deps: AgentControlDeps): Ag
   }
 
   function dismiss(): void {
-    ctx.settings.set("agentControlPrompt", "dismissed");
+    ctx.settings.setRaw(INTERNAL_KEYS.agentControlDismissed, true);
     ctx.touched("settings");
   }
 

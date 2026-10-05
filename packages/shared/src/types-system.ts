@@ -26,6 +26,10 @@ export interface BackupStatus {
   gitAvailable: boolean;
   /** A newer app version has written to this backup: this computer should update. */
   newerAppVersion: string | null;
+  /** Why the last automatic backup failed; null once one succeeds. */
+  lastAutoError: string | null;
+  /** The first-run question (start fresh or restore) was answered on this computer. */
+  firstRunAnswered: boolean;
 }
 
 /** A restore point: one commit of the backup branch. */

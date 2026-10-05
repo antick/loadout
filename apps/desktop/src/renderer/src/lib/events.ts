@@ -100,14 +100,15 @@ export function subscribeAppEvents(
   const offData = onAppEvent("data:changed", ({ scope }) => invalidateScopes(queryClient, scope));
   const offNavigate = onAppEvent("app:navigate", ({ to }) => navigate(to));
   const offBackup = onAppEvent("backup:auto-completed", () =>
-    invalidateScopes(queryClient, ["backup", "settings"]),
+    invalidateScopes(queryClient, ["backup"]),
   );
   // Kept in the cache for the Library's banner, which may not be on screen when a round runs.
   // Nothing can fetch it again, so it never expires.
   queryClient.setQueryDefaults(keys.updates.autoRun, { gcTime: Infinity });
   const offUpdates = onAppEvent("updates:auto-ran", (summary) => {
     queryClient.setQueryData(keys.updates.autoRun, summary);
-    invalidateScopes(queryClient, ["skills", "settings"]);
+    queryClient.setQueryData(keys.updates.lastAutoRun, summary.ranAt);
+    invalidateScopes(queryClient, ["skills"]);
   });
   const offAppUpdate = onAppEvent("app-update:status", (status) =>
     queryClient.setQueryData(keys.app.update, status),

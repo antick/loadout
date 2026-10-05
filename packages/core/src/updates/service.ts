@@ -110,6 +110,7 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
     sourceDocument: preview.sourceDocument,
     sourceDiff: preview.sourceDiff,
     compareSource: preview.compareSource,
+    lastAutoRunAt: async () => auto.lastRunAt() || null,
     sourceNews: async () => sources.news(),
     checkSources: (sourceKeys) => sources.check(sourceKeys),
     dismissSourceNews: async (sourceKey, paths) => sourceNews.dismiss(sourceKey, paths),

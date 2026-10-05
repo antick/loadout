@@ -55,8 +55,13 @@ async function upstreamHealth(
 export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
   const gitAvailable = await env.git.available();
   const savedRemote = env.remoteUrl();
+  const { settings } = env.ctx;
   const restoredFrom =
-    env.ctx.settings.getRaw<string | null>(INTERNAL_KEYS.backupRestoredFrom, null) || null;
+    settings.getRaw<string | null>(INTERNAL_KEYS.backupRestoredFrom, null) || null;
+  const lastAutoError =
+    settings.getRaw<string | null>(INTERNAL_KEYS.backupLastAutoError, null) || null;
+  const firstRunAnswered =
+    settings.getRaw<boolean>(INTERNAL_KEYS.backupFirstRunAnswered, false) === true;
   if (!gitAvailable || !isRepo(env)) {
     return {
       // Without git the folder can still be seen to be a repository; the UI then asks for git.
@@ -74,6 +79,8 @@ export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
       upstreamHealth: "no_remote",
       gitAvailable,
       newerAppVersion: null,
+      lastAutoError,
+      firstRunAnswered,
     };
   }
 
@@ -109,5 +116,7 @@ export async function readStatus(env: BackupEnv): Promise<BackupStatus> {
       ]),
       env.ctx.host.appVersion,
     ),
+    lastAutoError,
+    firstRunAnswered,
   };
 }

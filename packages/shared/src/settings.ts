@@ -18,10 +18,6 @@ export const CLOSE_ACTIONS = ["ask", "hide", "quit"] as const;
 export type CloseActionSetting = (typeof CLOSE_ACTIONS)[number];
 export const AUTO_UPDATE_INTERVALS = ["off", "1h", "6h", "24h"] as const;
 export type AutoUpdateInterval = (typeof AUTO_UPDATE_INTERVALS)[number];
-export const FIRST_RUN_CHOICES = ["", "fresh", "restored"] as const;
-export type FirstRunChoice = (typeof FIRST_RUN_CHOICES)[number];
-export const AGENT_CONTROL_PROMPTS = ["", "dismissed", "installed"] as const;
-export type AgentControlPrompt = (typeof AGENT_CONTROL_PROMPTS)[number];
 
 /** Every user-facing setting, with its value type. Stored as JSON strings in the settings table. */
 export interface Settings {
@@ -36,12 +32,7 @@ export interface Settings {
   autoUpdateApply: boolean;
   /** Add skills a repository gains to the library by themselves when a check finds them. */
   autoAddNewSkills: boolean;
-  /** Epoch ms of the last background update round, 0 when never run. */
-  autoUpdateLastRunAt: number;
   backupAutoEnabled: boolean;
-  backupLastAutoError: string;
-  backupFirstRunPrompt: FirstRunChoice;
-  agentControlPrompt: AgentControlPrompt;
   /** Run the safety check on every install, before anything is written. */
   safetyScanOnInstall: boolean;
   /** The SkillSpector program to run; empty looks for it on this machine. */
@@ -68,11 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoUpdateInterval: "off",
   autoUpdateApply: false,
   autoAddNewSkills: false,
-  autoUpdateLastRunAt: 0,
   backupAutoEnabled: true,
-  backupLastAutoError: "",
-  backupFirstRunPrompt: "",
-  agentControlPrompt: "",
   safetyScanOnInstall: true,
   safetyScannerPath: "",
   usageTracking: false,
@@ -109,17 +96,12 @@ export const SETTING_CHOICES: Partial<Record<SettingKey, readonly string[]>> = {
   textSize: TEXT_SIZES,
   closeAction: CLOSE_ACTIONS,
   autoUpdateInterval: AUTO_UPDATE_INTERVALS,
-  backupFirstRunPrompt: FIRST_RUN_CHOICES,
-  agentControlPrompt: AGENT_CONTROL_PROMPTS,
   skillListingWindow: LISTING_WINDOW_CHOICES,
 };
 
-/** Whether `value` is one the setting `key` accepts: its type, its choices, no negative number. */
+/** Whether `value` is one the setting `key` accepts: its type and its choices. */
 export function isValidSetting(key: SettingKey, value: unknown): boolean {
-  const fallback = DEFAULT_SETTINGS[key];
-  if (typeof value !== typeof fallback) return false;
+  if (typeof value !== typeof DEFAULT_SETTINGS[key]) return false;
   const choices = SETTING_CHOICES[key];
-  if (choices && !choices.includes(value as string)) return false;
-  if (typeof value === "number") return Number.isFinite(value) && value >= 0;
-  return true;
+  return !choices || choices.includes(value as string);
 }

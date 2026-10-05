@@ -8,6 +8,7 @@ import {
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { isAppError } from "../errors";
+import { INTERNAL_KEYS } from "../settings/store";
 import { pause } from "../util/async";
 import { type KnownRevision, checkedSince } from "../sources";
 import type { LockMode } from "./locking";
@@ -43,6 +44,8 @@ export interface AutoUpdater {
   stop(): void;
   /** Run a round right now, whatever the interval says. Joins a round already running. */
   runNow(): Promise<AutoRunSummary>;
+  /** When the last round finished (epoch ms), 0 when none has. */
+  lastRunAt(): number;
 }
 
 type Visit = "updated" | "available" | "failed" | "none";
@@ -66,10 +69,14 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
     timer = setTimeout(() => void tick(), delayMs).unref();
   }
 
+  function lastRunAt(): number {
+    return ctx.settings.getRaw(INTERNAL_KEYS.autoUpdateLastRunAt, 0);
+  }
+
   function isDue(now: number): boolean {
     const every = AUTO_UPDATE_INTERVAL_MS[ctx.settings.get("autoUpdateInterval")];
     if (every <= 0) return false;
-    const last = ctx.settings.get("autoUpdateLastRunAt");
+    const last = lastRunAt();
     return last === 0 || last + every <= now;
   }
 
@@ -132,8 +139,7 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
       ctx.log.warn("Looking for new skills in sources failed", error);
     }
     summary.ranAt = Date.now();
-    ctx.settings.set("autoUpdateLastRunAt", summary.ranAt);
-    ctx.touched("settings");
+    ctx.settings.setRaw(INTERNAL_KEYS.autoUpdateLastRunAt, summary.ranAt);
     ctx.emit("updates:auto-ran", summary);
     return summary;
   }
@@ -171,5 +177,6 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
     },
 
     runNow,
+    lastRunAt,
   };
 }

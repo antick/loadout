@@ -55,12 +55,8 @@ export class SettingsStore {
     if (!SETTING_KEYS.includes(key)) throw invalid(`Unknown setting: ${key}`);
     if (typeof value !== typeof DEFAULT_SETTINGS[key]) throw invalid(`Wrong value type for ${key}`);
     if (!isValidSetting(key, value)) {
-      const choices = SETTING_CHOICES[key];
-      throw invalid(
-        choices
-          ? `${key} must be one of: ${choices.map((choice) => choice || '""').join(", ")}`
-          : `${key} must be a number of 0 or more`,
-      );
+      const choices = SETTING_CHOICES[key] ?? [];
+      throw invalid(`${key} must be one of: ${choices.map((choice) => choice || '""').join(", ")}`);
     }
     if (key === "proxyUrl") {
       const url = String(value).trim();
@@ -97,6 +93,14 @@ export const INTERNAL_KEYS = {
   /** Findings the user chose to back up anyway (ids), this computer only. */
   backupAllowedSecrets: "backup.allowedSecrets",
   githubAuthMethod: "backup.githubAuthMethod",
+  /** Why the last automatic backup failed; absent once one succeeds. */
+  backupLastAutoError: "backup.lastAutoError",
+  /** True once the first-run question (start fresh or restore) was answered. */
+  backupFirstRunAnswered: "backup.firstRunAnswered",
+  /** When the last background update round finished (epoch ms). */
+  autoUpdateLastRunAt: "updates.lastRunAt",
+  /** True once the user hid the agent-control suggestion. */
+  agentControlDismissed: "system.agentControlDismissed",
   projectExportAgents: (projectId: string) => `projects.exportAgents:${projectId}`,
   projectActivity: "projects.activity",
   /** Per project: library skills the user said are not for it. */

@@ -7,12 +7,14 @@ import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSettings } from "@/hooks/queries/settings";
+import { useLastAutoUpdateRun } from "./settings-queries";
 
 /** How often skills are checked against their sources, and whether updates install themselves. */
 export function UpdatesSection(): ReactNode {
   const { t } = useTranslation();
-  // `updates:auto-ran` invalidates settings app-wide, so "last checked" refreshes by itself.
   const { data: settings } = useSettings();
+  // `updates:auto-ran` refreshes it app-wide, so "last checked" updates by itself.
+  const lastRunAt = useLastAutoUpdateRun().data;
   const setSetting = useSetSetting();
   const intervalId = useId();
   const applyId = useId();
@@ -26,10 +28,8 @@ export function UpdatesSection(): ReactNode {
         <SettingRow
           label={t("settings.updates.frequency")}
           description={
-            settings.autoUpdateLastRunAt
-              ? t("settings.updates.lastChecked", {
-                  when: formatRelative(settings.autoUpdateLastRunAt),
-                })
+            lastRunAt
+              ? t("settings.updates.lastChecked", { when: formatRelative(lastRunAt) })
               : t("settings.updates.neverChecked")
           }
           htmlFor={intervalId}

@@ -10,6 +10,7 @@ import {
   createAutoBackup,
 } from "../src/backup/auto";
 import { AppError } from "../src/errors";
+import { INTERNAL_KEYS } from "../src/settings/store";
 import { type Device, createDevice } from "./backup-world";
 import { tempDir } from "./helpers";
 
@@ -107,7 +108,7 @@ describe("automatic backup", () => {
     auto.start();
     await vi.advanceTimersByTimeAsync(AUTO_FIRST_CHECK_MS);
     expect(sync).toHaveBeenCalledTimes(1);
-    expect(device.ctx.settings.get("backupLastAutoError")).toBe(
+    expect(device.ctx.settings.getRaw(INTERNAL_KEYS.backupLastAutoError, "")).toBe(
       "Could not reach the backup remote.",
     );
     expect(completed()).toEqual([
@@ -126,7 +127,7 @@ describe("automatic backup", () => {
     pending = 2;
     await vi.advanceTimersByTimeAsync(AUTO_QUIET_MS * 8);
     expect(sync).toHaveBeenCalledTimes(4);
-    expect(device.ctx.settings.get("backupLastAutoError")).toBe("");
+    expect(device.ctx.settings.getRaw(INTERNAL_KEYS.backupLastAutoError, "")).toBe("");
     expect(completed().at(-1)).toEqual({ ok: true, pending: true, error: null });
 
     expect(backoffDelay(1)).toBe(AUTO_QUIET_MS * 2);
@@ -138,7 +139,7 @@ describe("automatic backup", () => {
     auto.start();
     await vi.advanceTimersByTimeAsync(AUTO_FIRST_CHECK_MS);
     expect(completed()).toEqual([]);
-    expect(device.ctx.settings.get("backupLastAutoError")).toBe("");
+    expect(device.ctx.settings.getRaw(INTERNAL_KEYS.backupLastAutoError, "")).toBe("");
     await vi.advanceTimersByTimeAsync(AUTO_QUIET_MS);
     expect(sync).toHaveBeenCalledTimes(2);
   });

@@ -85,6 +85,8 @@ export const keys = {
     news: ["updates", "source-news"] as const,
     /** The last background update round, from its event (no fetch). */
     autoRun: ["updates", "auto-run"] as const,
+    /** When the last background update round finished. */
+    lastAutoRun: ["updates", "last-auto-run"] as const,
   },
   usage: {
     root: ["usage"] as const,

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { Skill, UpdateResult } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "../src/errors";
+import { INTERNAL_KEYS } from "../src/settings/store";
 import {
   AUTO_FIRST_TICK_MS,
   AUTO_SKILL_PAUSE_MS,
@@ -96,7 +97,7 @@ describe("auto-updater schedule", () => {
     await vi.advanceTimersByTimeAsync(1 + AUTO_SKILL_PAUSE_MS);
     expect(calls).toEqual(["checkAll:true:try"]);
     expect(events).toHaveLength(1);
-    const firstRun = world.ctx.settings.get("autoUpdateLastRunAt");
+    const firstRun = world.ctx.settings.getRaw(INTERNAL_KEYS.autoUpdateLastRunAt, 0);
     expect(firstRun).toBeGreaterThan(0);
 
     // Three more ticks fall inside the hour: nothing runs.
@@ -105,7 +106,7 @@ describe("auto-updater schedule", () => {
     // The tick after the hour has passed runs the next round.
     await vi.advanceTimersByTimeAsync(AUTO_TICK_MS + AUTO_SKILL_PAUSE_MS);
     expect(events).toHaveLength(2);
-    expect(world.ctx.settings.get("autoUpdateLastRunAt")).toBeGreaterThanOrEqual(
+    expect(world.ctx.settings.getRaw(INTERNAL_KEYS.autoUpdateLastRunAt, 0)).toBeGreaterThanOrEqual(
       firstRun + HOUR_MS,
     );
 
@@ -184,7 +185,7 @@ describe("auto-updater schedule", () => {
     // The check, and the first update; the second waited out its pause and stopped.
     expect(calls.map((call) => call.split(":")[0])).toEqual(["checkAll", "update"]);
     expect(events).toEqual([]);
-    expect(world.ctx.settings.get("autoUpdateLastRunAt")).toBe(0);
+    expect(world.ctx.settings.getRaw(INTERNAL_KEYS.autoUpdateLastRunAt, 0)).toBe(0);
   });
 });
 
@@ -213,7 +214,7 @@ describe("auto-updater round over real services", () => {
     expect(summary).toMatchObject({ updated: 1, available: 2, failed: 0 });
     // One lookup checks both skills of the repository; the updates and the news use its answer.
     expect(world.lookups() - before).toBe(1);
-    expect(world.ctx.settings.get("autoUpdateLastRunAt")).toBe(summary.ranAt);
+    expect(world.ctx.settings.getRaw(INTERNAL_KEYS.autoUpdateLastRunAt, 0)).toBe(summary.ranAt);
     expect(world.install.events.filter(({ event }) => event === "updates:auto-ran")).toEqual([
       { event: "updates:auto-ran", payload: summary },
     ]);

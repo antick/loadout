@@ -173,6 +173,11 @@ export function createBackupOperations(
 
     deviceName: async () => env.deviceName(),
 
+    answerFirstRun: async () => {
+      ctx.settings.setRaw(INTERNAL_KEYS.backupFirstRunAnswered, true);
+      ctx.touched("backup");
+    },
+
     setDeviceName: async (name) => {
       const saved = writeDeviceName(ctx.settings, name);
       ctx.touched("backup");

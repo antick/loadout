@@ -1,6 +1,10 @@
+import { join } from "node:path";
 import { isNewerVersion } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type TestWorld, createTestWorld } from "./helpers";
+import { Database } from "../src/db/database";
+import { MIGRATIONS } from "../src/db/schema";
+import { INTERNAL_KEYS, SettingsStore } from "../src/settings/store";
+import { type TestWorld, createTestWorld, tempDir } from "./helpers";
 
 describe("setting values", () => {
   let world: TestWorld;
@@ -13,14 +17,44 @@ describe("setting values", () => {
     const { settings } = world.ctx;
     expect(() => settings.set("deployMode", "foo" as "copy")).toThrow(/symlink, copy/);
     expect(() => settings.set("autoUpdateInterval", "5m" as "1h")).toThrow();
-    expect(() => settings.set("autoUpdateLastRunAt", -5)).toThrow();
     settings.set("deployMode", "copy");
     expect(settings.get("deployMode")).toBe("copy");
 
     settings.setRaw("autoUpdateInterval", "5m");
     expect(settings.get("autoUpdateInterval")).toBe("off");
-    settings.setRaw("autoUpdateLastRunAt", Number.NaN);
-    expect(settings.get("autoUpdateLastRunAt")).toBe(0);
+  });
+});
+
+describe("settings that became app state", () => {
+  it("keep their saved answers under core's own keys", () => {
+    const temp = tempDir();
+    const path = join(temp.dir, "loadout.db");
+    const old = new Database(path);
+    const saved: Record<string, string> = {
+      autoUpdateLastRunAt: "1700000000000",
+      backupLastAutoError: '"Could not reach the backup remote."',
+      backupFirstRunPrompt: '"restored"',
+      agentControlPrompt: '"dismissed"',
+    };
+    for (const [key, value] of Object.entries(saved)) {
+      old.run("INSERT INTO settings(key, value) VALUES(?, ?)", key, value);
+    }
+    // As a database from before the move: the move runs again on the next open.
+    const move = MIGRATIONS.findIndex((sql) => sql.includes("'backupFirstRunPrompt'"));
+    old.exec(`PRAGMA user_version = ${move}`);
+    old.close();
+
+    const db = new Database(path);
+    const settings = new SettingsStore(db);
+    expect(settings.getRaw(INTERNAL_KEYS.autoUpdateLastRunAt, 0)).toBe(1_700_000_000_000);
+    expect(settings.getRaw(INTERNAL_KEYS.backupLastAutoError, "")).toBe(
+      "Could not reach the backup remote.",
+    );
+    expect(settings.getRaw(INTERNAL_KEYS.backupFirstRunAnswered, false)).toBe(true);
+    expect(settings.getRaw(INTERNAL_KEYS.agentControlDismissed, false)).toBe(true);
+    for (const key of Object.keys(saved)) expect(settings.getRaw(key, null)).toBeNull();
+    db.close();
+    temp.cleanup();
   });
 });
 

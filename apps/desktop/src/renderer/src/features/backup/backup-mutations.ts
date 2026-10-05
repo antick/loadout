@@ -27,6 +27,11 @@ export function refreshAfterSync(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: keys.backup.root });
 }
 
+/** The first-run question was answered: never ask it again on this computer. */
+export function useAnswerFirstRun(): UseMutationResult<void, unknown, void> {
+  return useApiMutation({ fn: () => api.backup.answerFirstRun(), error: false });
+}
+
 /** Quietly look at the remote so "behind" is current. Failures (offline) are not worth a toast. */
 export function useFetchBackup(): UseMutationResult<void, unknown, void> {
   return useApiMutation({

@@ -79,6 +79,8 @@ export interface BackupApi {
    * the files leaves the history the next push sends. Refuses while a key is still in the files.
    */
   cleanUpUnpushed(): Promise<void>;
+  /** Remember that the first-run question was answered, so it is not asked again. */
+  answerFirstRun(): Promise<void>;
   deviceName(): Promise<string>;
   setDeviceName(name: string): Promise<string>;
   githubConnect(token: string, repoName: string): Promise<GithubConnectResult>;

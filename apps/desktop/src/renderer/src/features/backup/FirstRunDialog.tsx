@@ -14,10 +14,8 @@ import {
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useRestoreFromRemote } from "@/features/backup/backup-mutations";
-import { useSetSetting } from "@/hooks/mutations/settings";
+import { useAnswerFirstRun, useRestoreFromRemote } from "@/features/backup/backup-mutations";
 import { useBackupStatus } from "@/hooks/queries/app";
-import { useSettings } from "@/hooks/queries/settings";
 import { useSkills } from "@/hooks/queries/skills";
 import { backupErrorText } from "@/lib/backup-errors";
 
@@ -29,17 +27,16 @@ export function FirstRunDialog(): ReactNode {
   const { t } = useTranslation();
   const urlId = useId();
   const skills = useSkills();
-  const settings = useSettings();
   const status = useBackupStatus();
-  const setSetting = useSetSetting();
+  const answer = useAnswerFirstRun();
   const restore = useRestoreFromRemote();
   const [url, setUrl] = useState("");
   const [closed, setClosed] = useState(false);
 
   const untouched =
     skills.data?.length === 0 &&
-    settings.data?.backupFirstRunPrompt === "" &&
     status.data !== undefined &&
+    !status.data.firstRunAnswered &&
     !status.data.isRepo &&
     status.data.remoteUrl === null;
   // Stay up while a restore runs, even though the first restored skill ends "untouched".
@@ -47,7 +44,7 @@ export function FirstRunDialog(): ReactNode {
   const gitMissing = status.data?.gitAvailable === false;
 
   const startFresh = (): void => {
-    setSetting.mutate({ key: "backupFirstRunPrompt", value: "fresh" });
+    answer.mutate();
     setClosed(true);
   };
 
@@ -57,7 +54,7 @@ export function FirstRunDialog(): ReactNode {
     if (!remote) return;
     restore.mutate(remote, {
       onSuccess: () => {
-        setSetting.mutate({ key: "backupFirstRunPrompt", value: "restored" });
+        answer.mutate();
         setClosed(true);
       },
     });

@@ -127,7 +127,7 @@ async function runSync(
 
   // The restore point this sync made or sent; none when nothing changed.
   const snapshot = changed || pushed ? await restorePointId(env, "HEAD") : null;
-  if (pushed) settings.set("backupLastAutoError", "");
+  if (pushed) settings.deleteRaw(INTERNAL_KEYS.backupLastAutoError);
   // The "restored from" note describes the state until it is backed up again.
   settings.deleteRaw(INTERNAL_KEYS.backupRestoredFrom);
   const merged = merge && !merge.upToDate ? `, merged ${merge.updated.length} updated` : "";

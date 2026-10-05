@@ -1,6 +1,7 @@
 import type { SyncOutcome } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { errorMessage, isAppError } from "../errors";
+import { INTERNAL_KEYS } from "../settings/store";
 
 /**
  * Automatic backup: once the library has been quiet for a while, run the same sync the button
@@ -61,7 +62,7 @@ export function createAutoBackup(target: AutoBackupTarget, ctx: CoreContext): Au
     try {
       await target.sync(AUTO_COMMIT_MESSAGE);
       failures = 0;
-      ctx.settings.set("backupLastAutoError", "");
+      ctx.settings.deleteRaw(INTERNAL_KEYS.backupLastAutoError);
       ctx.emit("backup:auto-completed", {
         ok: true,
         pending: target.pendingConflicts() > 0,
@@ -74,7 +75,7 @@ export function createAutoBackup(target: AutoBackupTarget, ctx: CoreContext): Au
       } else {
         failures += 1;
         const message = errorMessage(error);
-        ctx.settings.set("backupLastAutoError", message);
+        ctx.settings.setRaw(INTERNAL_KEYS.backupLastAutoError, message);
         ctx.log.warn("Automatic backup failed", error);
         ctx.emit("backup:auto-completed", { ok: false, pending: true, error: message });
         schedule(backoffDelay(failures));
