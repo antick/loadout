@@ -177,6 +177,15 @@ describe("reading SkillSpector reports", () => {
     expect(findScanner(world.home, program)).toBe(program);
     expect(findScanner(world.home, join(bin, "missing"))).toBeNull();
   });
+
+  it("refuses a Windows script as the scanner, which only a shell can start", async () => {
+    const script = join(world.home, "skillspector.cmd");
+    writeFileSync(script, "@echo off\n");
+    chmodSync(script, 0o755);
+    const error = await rejection(runScanner(script, world.home));
+    expect(error.code).toBe("UNSUPPORTED");
+    expect(error.message).toMatch(/needs a shell to start.*skillspector\.exe/);
+  });
 });
 
 describe("the safety check on install", () => {

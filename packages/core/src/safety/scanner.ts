@@ -10,7 +10,7 @@ import {
   type SafetySeverity,
   isRecord,
 } from "@loadout/shared";
-import { AppError, invalid } from "../errors";
+import { AppError, invalid, unsupported } from "../errors";
 import { exec } from "../util/exec";
 import { isDirectory, statOrNull } from "../util/fs";
 import { buildReport, isBlockingSeverity, shorten } from "./report";
@@ -22,7 +22,9 @@ import { buildReport, isBlockingSeverity, shorten } from "./report";
  */
 
 const PROGRAM = "skillspector";
-const WINDOWS_SUFFIXES = [".exe", ".cmd", ".bat"];
+const WINDOWS_SUFFIXES = [".exe"];
+/** Windows scripts Node starts only through a shell, which Loadout never uses. */
+const SHELL_ONLY_SUFFIXES = [".cmd", ".bat"];
 /** Where `uv` and `pipx` put programs, looked in besides `SYSTEM_BIN_DIRS`. */
 const HOME_BIN_DIRS = [join(".local", "bin")];
 /** Static scans take a couple of seconds; the cap is for a skill that makes the scanner hang. */
@@ -84,8 +86,18 @@ export async function scannerVersion(path: string): Promise<string | null> {
   }
 }
 
+/** Refuses a scanner set in Settings that only a shell can start. */
+function requireStartable(path: string): void {
+  const lower = path.toLowerCase();
+  if (!SHELL_ONLY_SUFFIXES.some((suffix) => lower.endsWith(suffix))) return;
+  throw unsupported(
+    `SkillSpector at ${path} is a Windows script that needs a shell to start, and Loadout runs programs without one. Set the path to skillspector.exe instead.`,
+  );
+}
+
 /** Run a static scan of one skill folder. Throws with the scanner's own words when it fails. */
 export async function runScanner(path: string, skillDir: string): Promise<SafetyReport> {
+  requireStartable(path);
   const result = await exec(path, ["scan", skillDir, "--format", "json", "--no-llm"], {
     timeoutMs: SCAN_TIMEOUT_MS,
     // Plain text only: its messages end up in the app.
