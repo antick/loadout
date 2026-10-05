@@ -133,10 +133,11 @@ function buildPaths(baseDir: string, defaultBaseDir: string): LibraryPaths {
   };
 }
 
+/** The saved location config; `warnings` and `notes`, when given, hear about an unreadable file. */
 function readConfig(
   configPath: string,
-  warnings: LibraryWarning[],
-  notes: string[],
+  warnings?: LibraryWarning[],
+  notes?: string[],
 ): LocationConfig {
   const empty: LocationConfig = { libraryPath: null, pendingMigrationFrom: null };
   if (!existsSync(configPath)) return empty;
@@ -148,8 +149,8 @@ function readConfig(
         typeof parsed.pendingMigrationFrom === "string" ? parsed.pendingMigrationFrom : null,
     };
   } catch (error) {
-    warnings.push("config_unreadable");
-    notes.push(`Library config unreadable: ${errorMessage(error)}`);
+    warnings?.push("config_unreadable");
+    notes?.push(`Library config unreadable: ${errorMessage(error)}`);
     return empty;
   }
 }
@@ -350,7 +351,7 @@ export function ensureLibraryDirs(paths: LibraryPaths): void {
 /** Queue a library move for the next launch. `null` goes back to the default location. */
 export function setLibraryPath(paths: LibraryPaths, input: string | null): string | null {
   const next = input === null ? null : normalizeAbsolutePath(input, "Library path");
-  const config = readConfig(paths.configPath, [], []);
+  const config = readConfig(paths.configPath);
   const target = next ?? paths.defaultBaseDir;
   // An earlier unsatisfied move still names where the data really is.
   const from = config.pendingMigrationFrom ?? paths.baseDir;
@@ -362,7 +363,7 @@ export function setLibraryPath(paths: LibraryPaths, input: string | null): strin
 }
 
 export function describeLocation(paths: LibraryPaths, warnings: LibraryWarning[]): LibraryLocation {
-  const config = readConfig(paths.configPath, [], []);
+  const config = readConfig(paths.configPath);
   const configured = config.libraryPath ?? paths.defaultBaseDir;
   return {
     path: paths.baseDir,
