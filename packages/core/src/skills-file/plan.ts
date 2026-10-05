@@ -12,7 +12,7 @@ import { invalid } from "../errors";
 import type { GitClient } from "../install/git-client";
 import type { FoundSkill } from "../install/repo-scan";
 import { lstatOrNull } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { type HashOptions, hashDir } from "../util/hash";
 import { sanitizeSkillName } from "../util/names";
 import { type FetchedSource, chooseSkills, fetchSource } from "./fetch";
 import {
@@ -69,10 +69,35 @@ function agentFolders(
   return { folders, unknown };
 }
 
+/**
+ * The hash a lock file records. The lock is committed and shared, so the hash must be the same on
+ * every system: line endings (Git may turn LF into CRLF on checkout) and the executable bit
+ * (Windows has none) are left out.
+ */
+const LOCK_HASH: HashOptions = { ignoreLineEndings: true, ignoreExecutable: true };
+
+export function lockHash(dir: string): string | null {
+  return hashDir(dir, LOCK_HASH);
+}
+
+interface Current {
+  exists: boolean;
+  /** The lock hash of a plain folder; null for anything else. */
+  hash: string | null;
+  /** The folder holds what the lock recorded, by today's hash or the one older locks hold. */
+  matches(locked: LockedFolder): boolean;
+}
+
 /** What is at `path` now: nothing, a plain folder with this hash, or something else (null hash). */
-function current(path: string): { exists: boolean; hash: string | null } {
-  if (!lstatOrNull(path)) return { exists: false, hash: null };
-  return { exists: true, hash: isPlainFolder(path) ? hashDir(path) : null };
+function current(path: string): Current {
+  if (!lstatOrNull(path)) return { exists: false, hash: null, matches: () => false };
+  const hash = isPlainFolder(path) ? lockHash(path) : null;
+  return {
+    exists: true,
+    hash,
+    // A lock written before the hash left line endings and the executable bit out.
+    matches: (locked) => hash !== null && (locked.hash === hash || locked.hash === hashDir(path)),
+  };
 }
 
 /**
@@ -86,7 +111,7 @@ export function actionFor(
   const now = current(wanted.path);
   if (!now.exists) return "add";
   if (now.hash !== null && now.hash === wanted.hash) return "same";
-  if (locked && now.hash !== null && now.hash === locked.hash) return "update";
+  if (locked && now.matches(locked)) return "update";
   return "edited";
 }
 
@@ -94,7 +119,7 @@ export function actionFor(
 export function removalFor(path: string, locked: LockedFolder): SkillsFileAction | null {
   const now = current(path);
   if (!now.exists) return null;
-  return now.hash !== null && now.hash === locked.hash ? "remove" : "keep_edited";
+  return now.matches(locked) ? "remove" : "keep_edited";
 }
 
 /**
@@ -134,7 +159,7 @@ export async function preparePlan(
       });
       for (const skill of chosen) {
         const name = sanitizeSkillName(skill.name);
-        const hash = hashDir(skill.dir);
+        const hash = lockHash(skill.dir);
         if (hash === null) continue;
         for (const [dir, agents] of folders) {
           const folder = `${dir}/${name}`;

@@ -127,15 +127,18 @@ export function looksBinary(bytes: Uint8Array): boolean {
 }
 
 export interface HashOptions {
-  /** Treat CRLF and LF as equal in text files. Used only as a tie-breaker. */
+  /** Treat CRLF and LF as equal in text files. */
   ignoreLineEndings?: boolean;
+  /** Leave the executable bit out: Windows never has it, so a hash shared across systems must. */
+  ignoreExecutable?: boolean;
   /** Hash these files (by `/` separated relative path) as if they held this text instead. */
   overrides?: ReadonlyMap<string, string>;
 }
 
 /**
  * Stable hash of a skill folder: relative paths, file bytes and the executable bit, length framed.
- * Returns null for a missing or empty tree.
+ * Returns null for a missing or empty tree. The executable bit is framed even when ignored, as
+ * "-", so an ignoring hash of a folder without one equals the plain hash.
  */
 export function hashDir(root: string, options: HashOptions = {}): string | null {
   const files = listContentFiles(root);
@@ -154,7 +157,7 @@ export function hashDir(root: string, options: HashOptions = {}): string | null 
     }
     frame(hash, file.relativePath);
     frame(hash, bytes);
-    frame(hash, file.executable ? "x" : "-");
+    frame(hash, file.executable && !options.ignoreExecutable ? "x" : "-");
   }
   return hash.digest("hex");
 }

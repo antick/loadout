@@ -1,4 +1,5 @@
 import {
+  chmodSync,
   cpSync,
   existsSync,
   lstatSync,
@@ -19,6 +20,7 @@ import { preparePlan } from "../src/skills-file/plan";
 import { createSafetyService } from "../src/safety";
 import { createSkillsFileService } from "../src/skills-file/service";
 import { createRemovedStore } from "../src/storage";
+import { hashDir } from "../src/util/hash";
 import { type TestWorld, createTestWorld, makeSkill, passingSafety, writeFile } from "./helpers";
 import {
   commitAll,
@@ -171,6 +173,55 @@ describe("apply", () => {
     await api.apply(project, { update: true });
     expect(read(".claude", "skills", "pdf", "scripts", "run.sh")).toBe("echo two\n");
     expect(lock().sources[0]?.revision).not.toBe(first);
+  });
+
+  it("judges a copy by content alone, whatever system checked it out", async () => {
+    const script = join(remote, "skills", "pdf", "scripts", "run.sh");
+    chmodSync(script, 0o755);
+    commitAll(remote, "runnable");
+    await api.apply(project);
+    // As Git on Windows checks the project out: CRLF line endings, no executable bit.
+    const copy = join(project, ".claude", "skills", "pdf");
+    writeFileSync(
+      join(copy, "SKILL.md"),
+      read(".claude", "skills", "pdf", "SKILL.md").replaceAll("\n", "\r\n"),
+    );
+    chmodSync(join(copy, "scripts", "run.sh"), 0o644);
+    expect(actions(await api.plan(project))).toEqual([
+      [".claude/skills/pdf", "same"],
+      [".agents/skills/pdf", "same"],
+    ]);
+    writeFile(script, "echo two\n");
+    commitAll(remote, "newer");
+    expect(actions(await api.plan(project, { update: true }))).toEqual([
+      [".claude/skills/pdf", "update"],
+      [".agents/skills/pdf", "update"],
+    ]);
+  });
+
+  it("reads hashes of older lock files, and writes today's on the next apply", async () => {
+    chmodSync(join(remote, "skills", "pdf", "scripts", "run.sh"), 0o755);
+    commitAll(remote, "runnable");
+    await api.apply(project);
+    const written = lock();
+    const today = written.folders.map((entry) => entry.hash);
+    // Written by an older version, whose hash held the executable bit.
+    const older = written.folders.map((entry) => ({
+      ...entry,
+      hash: hashDir(join(project, entry.folder)) ?? "",
+    }));
+    expect(older.map((entry) => entry.hash)).not.toEqual(today);
+    writeFileSync(join(project, SKILLS_LOCK_NAME), JSON.stringify({ ...written, folders: older }));
+
+    writeFile(join(remote, "skills", "pdf", "scripts", "run.sh"), "echo two\n");
+    commitAll(remote, "newer");
+    expect(actions(await api.plan(project, { update: true }))).toEqual([
+      [".claude/skills/pdf", "update"],
+      [".agents/skills/pdf", "update"],
+    ]);
+    const updated = await api.apply(project, { update: true });
+    expect(updated.kept).toEqual([]);
+    expect(lock().folders.map((entry) => entry.hash)).not.toContain(older[0]?.hash);
   });
 
   it("never replaces a folder changed by hand unless forced, and keeps the old one", async () => {
