@@ -42,8 +42,6 @@ const SKIPPED_DIR_NAMES: ReadonlySet<string> = new Set([
 /** Where a named skill usually lives, tried before searching the whole repository. */
 const LOCATOR_DIRS = ["", "skills", ".agents/skills"] as const;
 const LOCATOR_SEARCH_DEPTH = 6;
-/** Conventional containers, tried when a repository has no skill at its root. */
-const CONTAINER_DIRS = ["skills", "skill"] as const;
 /** Hidden folders every agent reads, so a skill inside one is not tied to a single agent. */
 const SHARED_HIDDEN_DIRS: ReadonlySet<string> = new Set([".agents"]);
 
@@ -156,7 +154,8 @@ function locate(repoDir: string, locatorId: string): string {
 /**
  * The folder to install (or to scan) inside a checked-out repository.
  * - `subpath` alone: that folder. - `locatorId`: the skill with that folder or frontmatter name.
- * - neither: the root when it is a skill, else `skills/`, else `skill/`, else the root.
+ * - neither: the root. A list scans all of it, as the source check does, so a skill outside
+ *   `skills/` is offered now instead of turning up as new after the next commit.
  */
 export function resolveSkillDir(
   repoDir: string,
@@ -178,11 +177,7 @@ export function resolveSkillDir(
     }
   }
   if (!resolved && locator) resolved = locate(repoDir, locator);
-  if (!resolved) {
-    resolved = isSkillDir(repoDir)
-      ? repoDir
-      : (CONTAINER_DIRS.map((name) => join(repoDir, name)).find(isDirectory) ?? repoDir);
-  }
+  if (!resolved) resolved = repoDir;
   assertInside(repoDir, resolved, toPosix(relative(repoDir, resolved)) || ".");
   return resolved;
 }

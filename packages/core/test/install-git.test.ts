@@ -55,8 +55,8 @@ function cacheSlots(): string[] {
 describe("named skills and refs in the typed text", () => {
   it("ticks the skill named after @ and says which names the repository lacks", async () => {
     const named = await install.api.previewGit("acme/skills@pdf");
-    expect(named.skills.map((skill) => skill.relPath)).toEqual(["docx", "pdf"]);
-    expect(named).toMatchObject({ selected: ["pdf"], missing: [] });
+    expect(named.skills.map((skill) => skill.relPath)).toEqual(["skills/docx", "skills/pdf"]);
+    expect(named).toMatchObject({ selected: ["skills/pdf"], missing: [] });
     await install.api.cancelPreview(named.previewId);
 
     const typo = await install.api.previewGit("acme/skills#main@pfd");
@@ -74,7 +74,7 @@ describe("named skills and refs in the typed text", () => {
     );
     expect(preview).toMatchObject({
       repoUrl: "https://github.com/acme/skills.git",
-      selected: ["pdf"],
+      selected: ["skills/pdf"],
       missing: [],
       agents: ["claude_code"],
       unknownAgents: ["nobody-knows"],
@@ -83,7 +83,9 @@ describe("named skills and refs in the typed text", () => {
     expect(
       install.progressFor("npx skills add acme/skills --skill pdf -a claude-code nobody-knows"),
     ).toContain("cloning");
-    const [pdf] = await install.api.confirmGit(preview.previewId, [{ relPath: "pdf", name: "" }]);
+    const [pdf] = await install.api.confirmGit(preview.previewId, [
+      { relPath: "skills/pdf", name: "" },
+    ]);
     // The source is what the command installs from, not the whole command.
     expect(pdf).toMatchObject({ sourceRef: "acme/skills", sourceSubpath: "skills/pdf" });
 
@@ -115,7 +117,7 @@ describe("git preview and confirm", () => {
     expect(preview).toMatchObject({ repoUrl: remote, branch: null, revision: head });
     expect(preview.skills).toEqual([
       {
-        relPath: "docx",
+        relPath: "skills/docx",
         name: "docx",
         description: "Test skill docx",
         manualOnly: false,
@@ -123,7 +125,7 @@ describe("git preview and confirm", () => {
         alreadyInstalled: false,
       },
       {
-        relPath: "pdf",
+        relPath: "skills/pdf",
         name: "pdf",
         description: "Test skill pdf",
         manualOnly: false,
@@ -135,8 +137,8 @@ describe("git preview and confirm", () => {
     expect(leftoverCheckouts(tmp)).toHaveLength(1);
 
     const installed = await install.api.confirmGit(preview.previewId, [
-      { relPath: "pdf", name: "  My PDF  " },
-      { relPath: "docx", name: "   " },
+      { relPath: "skills/pdf", name: "  My PDF  " },
+      { relPath: "skills/docx", name: "   " },
     ]);
 
     expect(installed.map((s) => s.name)).toEqual(["My PDF", "docx"]);
@@ -191,9 +193,9 @@ describe("git preview and confirm", () => {
     const preview = await install.api.previewGit(remote);
     await expect(
       install.api.confirmGit(preview.previewId, [
-        { relPath: "pdf", name: "" },
+        { relPath: "skills/pdf", name: "" },
         { relPath: "../../outside", name: "" },
-        { relPath: "docx", name: "" },
+        { relPath: "skills/docx", name: "" },
       ]),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     expect(world.store.list().map((s) => s.name)).toEqual(["pdf"]);

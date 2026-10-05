@@ -65,6 +65,24 @@ describe("new skills in a repository", () => {
     expect(await newPaths()).toEqual([]);
   });
 
+  it("lists skills outside skills/ at import, so they are never news later", async () => {
+    makeSkill(`${world.remote}/tools`, "xlsx");
+    commitAll(world.remote, "add a skill outside skills/");
+    const install = createInstallHarness(world, { sourceNews: createSourceNewsStore(world.ctx) });
+    const preview = await install.api.previewGit(world.remote);
+    expect(preview.skills.map((skill) => skill.relPath)).toEqual([
+      "skills/docx",
+      "skills/pdf",
+      "tools/xlsx",
+    ]);
+    await install.api.confirmGit(preview.previewId, [{ relPath: "skills/pdf", name: "" }]);
+
+    publish("csv");
+    expect(await newPaths()).toEqual([]);
+    await world.updates.api.checkSources();
+    expect(await newPaths()).toEqual(["skills/csv"]);
+  });
+
   it("adds new skills by itself when that is switched on, never over a name in use", async () => {
     await world.installFromGit("pdf");
     await world.updates.api.checkSources();

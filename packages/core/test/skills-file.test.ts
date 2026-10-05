@@ -352,7 +352,7 @@ describe("create and suggest", () => {
   it("lists the project's skills the library knows from a repository", async () => {
     const install = createInstallHarness(world);
     const preview = await install.api.previewGit("acme/skills");
-    await install.api.confirmGit(preview.previewId, [{ relPath: "pdf", name: "pdf" }]);
+    await install.api.confirmGit(preview.previewId, [{ relPath: "skills/pdf", name: "pdf" }]);
     const elsewhere = join(world.root, "other");
     makeSkill(join(elsewhere, ".claude", "skills"), "pdf");
     makeSkill(join(elsewhere, ".claude", "skills"), "unknown");

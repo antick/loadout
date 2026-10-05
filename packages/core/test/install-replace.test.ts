@@ -68,7 +68,7 @@ describe("replacing the library skill that holds a name", () => {
     ).toEqual(["new", "replaces"]);
 
     const [pdf] = await install.api.confirmGit(preview.previewId, [
-      { relPath: "pdf", name: "pdf", replace: true },
+      { relPath: "skills/pdf", name: "pdf", replace: true },
     ]);
 
     expect(pdf).toMatchObject({ id: own.id, name: "pdf", dirName: "pdf", sourceType: "git" });
@@ -90,8 +90,8 @@ describe("replacing the library skill that holds a name", () => {
     await installOwnPdf();
     const preview = await install.api.previewGit(remote);
     const installed = await install.api.confirmGit(preview.previewId, [
-      { relPath: "docx", name: "docx", replace: true },
-      { relPath: "pdf", name: "pdf" },
+      { relPath: "skills/docx", name: "docx", replace: true },
+      { relPath: "skills/pdf", name: "pdf" },
     ]);
 
     expect(installed.map((skill) => skill.name)).toEqual(["docx", "pdf-2"]);
@@ -102,11 +102,11 @@ describe("replacing the library skill that holds a name", () => {
   it("keeps nothing aside when the incoming skill is identical", async () => {
     const preview = await install.api.previewGit(remote);
     const [first] = await install.api.confirmGit(preview.previewId, [
-      { relPath: "pdf", name: "pdf" },
+      { relPath: "skills/pdf", name: "pdf" },
     ]);
     const again = await install.api.previewGit(remote);
     const [second] = await install.api.confirmGit(again.previewId, [
-      { relPath: "pdf", name: "pdf", replace: true },
+      { relPath: "skills/pdf", name: "pdf", replace: true },
     ]);
 
     expect(second?.id).toBe(first?.id);

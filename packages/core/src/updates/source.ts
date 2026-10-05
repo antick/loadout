@@ -366,7 +366,7 @@ export async function openRemoteSource(
   });
   try {
     const dir = resolveSkillDir(checkout.dir, target.subpath, target.locator);
-    // Without a locator the resolver may hand back a container folder; that is not the skill.
+    // Without a locator the resolver hands back the repository root, which may not be a skill.
     if (!isSkillDir(dir)) throw notFound("The skill is no longer in the repository");
     await checkout.materialize([dir]);
     return {

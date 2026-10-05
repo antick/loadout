@@ -222,7 +222,7 @@ describe("update", () => {
   it("swaps the content and keeps the id, name, tags and deployments", async () => {
     const preview = await world.install.api.previewGit(world.remote);
     const [pdf] = await world.install.api.confirmGit(preview.previewId, [
-      { relPath: "pdf", name: "My PDF" },
+      { relPath: "skills/pdf", name: "My PDF" },
     ]);
     if (!pdf) throw new Error("not installed");
     world.store.setTags(pdf.id, ["docs"]);

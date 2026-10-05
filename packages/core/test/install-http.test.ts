@@ -122,10 +122,10 @@ describe("without git", () => {
       branch: null,
       revision: MAIN_SHA,
     });
-    expect(preview.skills.map((skill) => skill.relPath)).toEqual(["docx", "pdf"]);
+    expect(preview.skills.map((skill) => skill.relPath)).toEqual(["skills/docx", "skills/pdf"]);
 
     const [skill] = await install.api.confirmGit(preview.previewId, [
-      { relPath: "pdf", name: "pdf" },
+      { relPath: "skills/pdf", name: "pdf" },
     ]);
     expect(skill).toMatchObject({
       name: "pdf",

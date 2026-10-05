@@ -28,7 +28,8 @@ export interface UpdatesWorld extends DeployWorld {
   remote: string;
   /** How often the remote was asked for its revision. */
   lookups(): number;
-  installFromGit(relPath: string): Promise<Skill>;
+  /** Install the remote's skill of that name from a list of the whole repository. */
+  installFromGit(name: string): Promise<Skill>;
   /** Build a second service over the same world with some git calls replaced. */
   withGit(overrides: Partial<GitClient>): UpdatesService;
   claudeTarget(dirName: string): string;
@@ -79,10 +80,11 @@ export function createUpdatesWorld(installDeps: Partial<InstallServiceDeps> = {}
     tmp,
     remote,
     lookups: () => lookupCount,
-    installFromGit: async (relPath) => {
+    installFromGit: async (name) => {
       const preview = await install.api.previewGit(remote);
+      const relPath = preview.skills.find((skill) => skill.name === name)?.relPath ?? name;
       const [skill] = await install.api.confirmGit(preview.previewId, [{ relPath, name: "" }]);
-      if (!skill) throw new Error(`Fixture skill not installed: ${relPath}`);
+      if (!skill) throw new Error(`Fixture skill not installed: ${name}`);
       return skill;
     },
     withGit: (overrides) => serviceWith({ ...countingGit, ...overrides }),

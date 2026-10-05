@@ -313,15 +313,18 @@ describe("finding skills in a repository", () => {
     expect(listRepoSkills(join(repo, "skills", "pdf")).map((s) => s.relPath)).toEqual(["pdf"]);
   });
 
-  it("picks the scan root: root skill, else skills/, else skill/, else the root", () => {
-    expect(resolveSkillDir(repo)).toBe(join(repo, "skills"));
+  it("scans from the root without a subpath, never only a skills/ container", () => {
+    expect(resolveSkillDir(repo)).toBe(repo);
     const single = makeSkill(world.root, "single");
     expect(resolveSkillDir(single)).toBe(single);
     const bare = join(world.root, "bare");
-    mkdirSync(join(bare, "skill"), { recursive: true });
-    expect(resolveSkillDir(bare)).toBe(join(bare, "skill"));
-    mkdirSync(join(world.root, "empty"));
-    expect(resolveSkillDir(join(world.root, "empty"))).toBe(join(world.root, "empty"));
+    makeSkill(join(bare, "skill"), "inner");
+    makeSkill(join(bare, "tools"), "outer");
+    expect(resolveSkillDir(bare)).toBe(bare);
+    expect(listRepoSkills(resolveSkillDir(bare)).map((s) => s.relPath)).toEqual([
+      "skill/inner",
+      "tools/outer",
+    ]);
   });
 
   it("keeps a subpath inside the repository", () => {
