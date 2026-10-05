@@ -29,7 +29,7 @@ import type { CommandResult } from "./types";
  * A few commands also take --yes to answer their own yes/no question that a script must answer
  * on purpose (a download that moved to another site, a source that differs); they describe it.
  */
-export const YES_FLAG: FlagSpec = {
+const YES_FLAG: FlagSpec = {
   name: "yes",
   short: "y",
   type: "boolean",
@@ -176,11 +176,11 @@ const blockedNote = (result: ApplyResult): string =>
   result.blocked > 0 ? `, ${result.blocked} blocked` : "";
 
 /** A dry run's counts: what would change, and a reminder that nothing did. */
-export function describeDryApply(result: ApplyResult): string {
+function describeDryApply(result: ApplyResult): string {
   return `Would add ${plural(result.added, "deployment")} and remove ${result.removed}; ${result.skipped} already as wanted${blockedNote(result)}. Nothing was changed.`;
 }
 
-export function describeApply(result: ApplyResult): string {
+function describeApply(result: ApplyResult): string {
   const lines = [
     `${plural(result.added, "deployment")} added, ${result.removed} removed, ${result.skipped} already as wanted${blockedNote(result)}.`,
   ];

@@ -10,7 +10,7 @@ import { type CompletionSpec, valueKinds } from "./spec";
  * `compgen -W`, which expands `$(…)` inside the word list).
  */
 
-export const SHELLS = ["bash", "zsh"] as const;
+const SHELLS = ["bash", "zsh"] as const;
 export type Shell = (typeof SHELLS)[number];
 
 /** Prefix of every shell function the scripts define, so they never clash with others. */
