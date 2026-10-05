@@ -10,10 +10,10 @@ import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { describeFailures, runSequentially, runWithUndo, toastBatchOutcome } from "@/lib/batch";
+import { runBatch, runWithUndo, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
-import { FAILURE_LIST_CLASS } from "@/lib/toast";
+import { describeFailures, FAILURE_LIST_CLASS, toastError } from "@/lib/toast";
 
 /** One logical skill of a project: every per-agent copy at this relative path. */
 export interface ProjectSkillRef {
@@ -22,13 +22,12 @@ export interface ProjectSkillRef {
   name: string;
 }
 
-export interface ExportSkillInput {
-  projectId: string;
+export interface ExportJob {
   skillId: string;
   name: string;
   /** Target keys to write to. */
   agentKeys: string[];
-  /** Shown in the toast, e.g. the target's display name. */
+  /** Shown in the toast of a single job, e.g. the target's display name. */
   targetName?: string;
 }
 
@@ -43,8 +42,22 @@ export interface PullFromLibraryInput extends ProjectSkillRef {
   restore?: boolean;
 }
 
-export interface SetEnabledInput extends ProjectSkillRef {
-  enabled: boolean;
+export interface PushToLibraryInput extends ProjectSkillRef {
+  /** Which version to add, and whether the other copies follow; see `PushToLibraryOptions`. */
+  options?: PushToLibraryOptions;
+}
+
+export interface BatchPushResult {
+  updated: number;
+  /** Names left alone because several copies may each hold content of their own. */
+  conflicting: string[];
+  /** Names pushed, but not every other copy could be brought back in line. */
+  realignFailed: string[];
+  failed: BatchResult["failed"];
+  /** Other versions the realign replaced, kept in Recently removed. */
+  removedIds: string[];
+  /** The disagreeing copies of a batch of one skill, for the user to pick from. */
+  versions: SkillVersion[];
 }
 
 /** Refetch one project's skills and targets, plus the project list (the Refresh button). */
@@ -59,99 +72,130 @@ export function useRefreshProject(): (projectId: string) => Promise<void> {
   };
 }
 
-/** Copy one library skill into a project for the given targets. */
-export function useExportSkill(): UseMutationResult<void, unknown, ExportSkillInput> {
+/**
+ * Copy library skills into a project, one skill × target job after the other, and toast one
+ * summary. Rejects when nothing could be added, so a picker stays open with the selection intact.
+ */
+export function useExportSkills(): UseMutationResult<
+  BatchResult,
+  unknown,
+  { projectId: string; jobs: readonly ExportJob[] }
+> {
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useApiMutation({
-    fn: ({ skillId, projectId, agentKeys }: ExportSkillInput) =>
-      api.projects.exportSkill(skillId, projectId, agentKeys),
-    success: (_result, { name, targetName }) =>
-      targetName
-        ? t("projectPage.toast.exportedTo", { name, target: targetName })
-        : t("projectPage.toast.exported", { name }),
-    error: "projectPage.errors.export",
+    fn: async ({ projectId, jobs }) => {
+      const result = await runBatch(
+        jobs,
+        (job) => job.name,
+        (job) => api.projects.exportSkill(job.skillId, projectId, job.agentKeys),
+      ).catch((error: unknown) => {
+        toastError(error, "projectPage.errors.export");
+        throw error;
+      });
+      const [only] = jobs;
+      const summary =
+        only && jobs.length === 1
+          ? only.targetName
+            ? t("projectPage.toast.exportedTo", { name: only.name, target: only.targetName })
+            : t("projectPage.toast.exported", { name: only.name })
+          : t("projectPage.toast.exportedMany", { count: result.succeeded });
+      const agentKeys = jobs.flatMap((job) => job.agentKeys);
+      toastBatchOutcome(summary, result.failed, {
+        description: result.succeeded > 0 ? reloadHintFor(queryClient, agentKeys) : null,
+      });
+      if (result.succeeded === 0 && result.failed.length > 0) {
+        throw new Error(t("projectPage.errors.export"));
+      }
+      return result;
+    },
+    error: false,
   });
 }
 
-/** Delete one copy of a project skill, or every copy when no target is given. */
-export function useDeleteProjectSkill(): UseMutationResult<
-  string[],
+/** Delete project skills: one target's copy each when `agentKey` is set, else every copy. */
+export function useDeleteProjectSkills(): UseMutationResult<
+  BatchResult,
   unknown,
-  DeleteProjectSkillInput
+  readonly DeleteProjectSkillInput[]
 > {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: ({ projectId, relativePath, agentKey }: DeleteProjectSkillInput) =>
-      api.projects.deleteSkill(projectId, relativePath, agentKey),
-    onSuccess: (removedIds, { name, targetName }) =>
-      toastWithUndo(
-        targetName
-          ? t("projectPage.toast.removedFrom", { name, target: targetName })
-          : t("projectPage.toast.deleted", { name }),
-        removedIds,
+    fn: (jobs) =>
+      runWithUndo(
+        jobs,
+        (job) => job.name,
+        (job) => api.projects.deleteSkill(job.projectId, job.relativePath, job.agentKey),
+        (count) => {
+          const [only] = jobs;
+          if (only && jobs.length === 1) {
+            return only.targetName
+              ? t("projectPage.toast.removedFrom", { name: only.name, target: only.targetName })
+              : t("projectPage.toast.deleted", { name: only.name });
+          }
+          const copies = jobs.every((job) => job.agentKey !== undefined);
+          return t(copies ? "projectPage.toast.removedCopies" : "projectPage.toast.deletedMany", {
+            count,
+          });
+        },
       ),
     error: "projectPage.errors.delete",
   });
 }
 
-export interface PushToLibraryInput extends ProjectSkillRef {
-  /** Which version to add, and whether the other copies follow; see `PushToLibraryOptions`. */
-  options?: PushToLibraryOptions;
-}
-
-/**
- * Push a project skill to the library. When its copies disagree nothing is written and
- * `onChooseVersion` gets the versions, so the user can pick one.
- */
-export function usePushToLibrary(
-  onChooseVersion?: (ref: ProjectSkillRef, versions: SkillVersion[]) => void,
-): UseMutationResult<PushToLibraryResult, unknown, PushToLibraryInput> {
+/** Replace every copy of project skills with the library version. */
+export function usePullFromLibrary(): UseMutationResult<
+  BatchResult,
+  unknown,
+  readonly PullFromLibraryInput[]
+> {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: ({ projectId, relativePath, options }: PushToLibraryInput) =>
-      api.projects.pushToLibrary(projectId, relativePath, options),
-    onSuccess: (result, { projectId, relativePath, name }) => {
-      if (result.conflictingVariants > 0) {
-        if (onChooseVersion) onChooseVersion({ projectId, relativePath, name }, result.versions);
-        else {
-          toast.warning(t("projectPage.toast.pushConflictTitle", { name }), {
-            description: t("projectPage.toast.pushConflict"),
-          });
-        }
-      } else if (result.realignFailed > 0) {
-        toast.warning(t("projectPage.toast.pushed", { name }), {
-          description: t("projectPage.toast.realignFailed", { count: result.realignFailed }),
-          action: undoAction(result.removedIds),
-        });
-      } else toastWithUndo(t("projectPage.toast.pushed", { name }), result.removedIds);
-    },
-    error: "projectPage.errors.push",
-  });
-}
-
-/** Replace every copy of a project skill with the library version. */
-export function usePullFromLibrary(): UseMutationResult<string[], unknown, PullFromLibraryInput> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: ({ projectId, relativePath }: PullFromLibraryInput) =>
-      api.projects.pullFromLibrary(projectId, relativePath),
-    onSuccess: (removedIds, { name, restore }) =>
-      toastWithUndo(
-        t(restore ? "projectPage.toast.restored" : "projectPage.toast.pulled", { name }),
-        removedIds,
+    fn: (jobs) =>
+      runWithUndo(
+        jobs,
+        (job) => job.name,
+        (job) => api.projects.pullFromLibrary(job.projectId, job.relativePath),
+        (count) => {
+          const [only] = jobs;
+          if (only && jobs.length === 1) {
+            return t(only.restore ? "projectPage.toast.restored" : "projectPage.toast.pulled", {
+              name: only.name,
+            });
+          }
+          return t("projectPage.toast.pulledMany", { count });
+        },
       ),
     error: "projectPage.errors.pull",
   });
 }
 
-/** Switch every copy of a project skill on or off. */
-export function useSetProjectSkillEnabled(): UseMutationResult<void, unknown, SetEnabledInput> {
+/** Switch every copy of project skills on or off. */
+export function useSetProjectSkillsEnabled(): UseMutationResult<
+  BatchResult,
+  unknown,
+  { refs: readonly ProjectSkillRef[]; enabled: boolean }
+> {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: ({ projectId, relativePath, enabled }: SetEnabledInput) =>
-      api.projects.setSkillEnabled(projectId, relativePath, enabled),
-    success: (_result, { name, enabled }) =>
-      t(enabled ? "projectPage.toast.enabled" : "projectPage.toast.disabled", { name }),
+    fn: ({ refs, enabled }) =>
+      runBatch(
+        refs,
+        (ref) => ref.name,
+        (ref) => api.projects.setSkillEnabled(ref.projectId, ref.relativePath, enabled),
+      ),
+    onSuccess: (result, { refs, enabled }) => {
+      const [only] = refs;
+      const summary =
+        only && refs.length === 1
+          ? t(enabled ? "projectPage.toast.enabled" : "projectPage.toast.disabled", {
+              name: only.name,
+            })
+          : t(enabled ? "projectPage.toast.enabledMany" : "projectPage.toast.disabledMany", {
+              count: result.succeeded,
+            });
+      toastBatchOutcome(summary, result.failed);
+    },
     error: "projectPage.errors.toggle",
   });
 }
@@ -171,179 +215,76 @@ export function useSetLastExportAgents(): UseMutationResult<
   });
 }
 
-// ── Batches ──
-
-export interface ExportJob {
-  skillId: string;
-  name: string;
-  agentKeys: string[];
-}
-
-export interface DeleteVariantJob {
-  relativePath: string;
-  agentKey: string;
-  name: string;
-}
-
-export interface BatchPushResult {
-  updated: number;
-  /** Names left alone because several copies may each hold content of their own. */
-  conflicting: string[];
-  /** Names pushed, but not every other copy could be brought back in line. */
-  realignFailed: string[];
-  failed: BatchResult["failed"];
-  /** Other versions the realign replaced, kept in Recently removed. */
-  removedIds: string[];
+/** The toasts of a push of one skill: its own wording, and a version choice when copies differ. */
+function toastSinglePush(
+  t: ReturnType<typeof useTranslation>["t"],
+  job: PushToLibraryInput,
+  outcome: BatchPushResult,
+  onChooseVersion?: (ref: ProjectSkillRef, versions: SkillVersion[]) => void,
+): void {
+  const { projectId, relativePath, name } = job;
+  if (outcome.conflicting.length > 0) {
+    if (onChooseVersion) onChooseVersion({ projectId, relativePath, name }, outcome.versions);
+    else {
+      toast.warning(t("projectPage.toast.pushConflictTitle", { name }), {
+        description: t("projectPage.toast.pushConflict"),
+      });
+    }
+  } else if (outcome.realignFailed.length > 0) {
+    toast.warning(t("projectPage.toast.pushed", { name }), {
+      description: t("projectPage.toast.realignFailed", { count: outcome.realignFailed.length }),
+      action: undoAction(outcome.removedIds),
+    });
+  } else toastWithUndo(t("projectPage.toast.pushed", { name }), outcome.removedIds);
 }
 
 /**
- * Export many skill × target jobs one after the other and toast one summary. Rejects when nothing
- * could be added, so a picker stays open with the selection intact.
+ * Push project skills to the library. Updated, conflicting and failed are told apart. When the
+ * copies of a single skill disagree nothing is written and `onChooseVersion` gets the versions,
+ * so the user can pick one.
  */
-export function useExportSkills(): UseMutationResult<
-  BatchResult,
-  unknown,
-  { projectId: string; jobs: readonly ExportJob[] }
-> {
-  const queryClient = useQueryClient();
+export function usePushToLibrary(
+  onChooseVersion?: (ref: ProjectSkillRef, versions: SkillVersion[]) => void,
+): UseMutationResult<BatchPushResult, unknown, readonly PushToLibraryInput[]> {
   const { t } = useTranslation();
   return useApiMutation({
-    fn: async ({ projectId, jobs }) => {
-      const result = await runSequentially(
-        jobs,
-        (job) => job.name,
-        (job) => api.projects.exportSkill(job.skillId, projectId, job.agentKeys),
-      );
-      const agentKeys = jobs.flatMap((job) => job.agentKeys);
-      toastBatchOutcome(
-        t("projectPage.toast.exportedMany", { count: result.succeeded }),
-        result.failed,
-        { description: result.succeeded > 0 ? reloadHintFor(queryClient, agentKeys) : null },
-      );
-      if (result.succeeded === 0 && result.failed.length > 0) {
-        throw new Error(t("projectPage.errors.export"));
-      }
-      return result;
-    },
-    error: false,
-  });
-}
-
-/** Delete many single copies (skill × target), e.g. when a preset is taken out of a project. */
-export function useDeleteVariants(): UseMutationResult<
-  BatchResult,
-  unknown,
-  { projectId: string; jobs: readonly DeleteVariantJob[] }
-> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: ({ projectId, jobs }) =>
-      runWithUndo(
-        jobs,
-        (job) => job.name,
-        (job) => api.projects.deleteSkill(projectId, job.relativePath, job.agentKey),
-        (count) => t("projectPage.toast.removedCopies", { count }),
-      ),
-    error: "projectPage.errors.delete",
-  });
-}
-
-/** Delete every copy of several project skills. */
-export function useDeleteProjectSkills(): UseMutationResult<
-  BatchResult,
-  unknown,
-  ProjectSkillRef[]
-> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: (refs: ProjectSkillRef[]) =>
-      runWithUndo(
-        refs,
-        (ref) => ref.name,
-        (ref) => api.projects.deleteSkill(ref.projectId, ref.relativePath),
-        (count) => t("projectPage.toast.deletedMany", { count }),
-      ),
-    error: "projectPage.errors.delete",
-  });
-}
-
-/** Switch several project skills on or off. */
-export function useSetProjectSkillsEnabled(): UseMutationResult<
-  BatchResult,
-  unknown,
-  { refs: ProjectSkillRef[]; enabled: boolean }
-> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: ({ refs, enabled }) =>
-      runSequentially(
-        refs,
-        (ref) => ref.name,
-        (ref) => api.projects.setSkillEnabled(ref.projectId, ref.relativePath, enabled),
-      ),
-    onSuccess: (result, { enabled }) =>
-      toastBatchOutcome(
-        t(enabled ? "projectPage.toast.enabledMany" : "projectPage.toast.disabledMany", {
-          count: result.succeeded,
-        }),
-        result.failed,
-      ),
-    error: "projectPage.errors.toggle",
-  });
-}
-
-/** Replace several project skills with their library versions. */
-export function usePullManyFromLibrary(): UseMutationResult<
-  BatchResult,
-  unknown,
-  ProjectSkillRef[]
-> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: (refs: ProjectSkillRef[]) =>
-      runWithUndo(
-        refs,
-        (ref) => ref.name,
-        (ref) => api.projects.pullFromLibrary(ref.projectId, ref.relativePath),
-        (count) => t("projectPage.toast.pulledMany", { count }),
-      ),
-    error: "projectPage.errors.pull",
-  });
-}
-
-/** Push several project skills to the library. Updated, conflicting and failed are told apart. */
-export function usePushManyToLibrary(): UseMutationResult<
-  BatchPushResult,
-  unknown,
-  ProjectSkillRef[]
-> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: async (refs: ProjectSkillRef[]) => {
+    fn: async (jobs) => {
       const outcome: BatchPushResult = {
         updated: 0,
         conflicting: [],
         realignFailed: [],
         failed: [],
         removedIds: [],
+        versions: [],
       };
-      const run = await runSequentially(
-        refs,
-        (ref) => ref.name,
-        async (ref) => {
-          const result = await api.projects.pushToLibrary(ref.projectId, ref.relativePath);
+      const run = await runBatch(
+        jobs,
+        (job) => job.name,
+        async (job) => {
+          const result: PushToLibraryResult = await api.projects.pushToLibrary(
+            job.projectId,
+            job.relativePath,
+            job.options,
+          );
           outcome.removedIds.push(...result.removedIds);
-          if (result.conflictingVariants > 0) outcome.conflicting.push(ref.name);
-          else {
+          if (result.conflictingVariants > 0) {
+            outcome.conflicting.push(job.name);
+            outcome.versions = result.versions;
+          } else {
             outcome.updated += 1;
-            if (result.realignFailed > 0) outcome.realignFailed.push(ref.name);
+            if (result.realignFailed > 0) outcome.realignFailed.push(job.name);
           }
         },
       );
       outcome.failed = run.failed;
       return outcome;
     },
-    onSuccess: (outcome) => {
+    onSuccess: (outcome, jobs) => {
+      const [only] = jobs;
+      if (only && jobs.length === 1) {
+        toastSinglePush(t, only, outcome, onChooseVersion);
+        return;
+      }
       if (outcome.updated > 0) {
         toastWithUndo(
           t("projectPage.toast.pushedMany", { count: outcome.updated }),

@@ -9,8 +9,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   type ProjectSkillRef,
   useDeleteProjectSkills,
-  usePullManyFromLibrary,
-  usePushManyToLibrary,
+  usePullFromLibrary,
+  usePushToLibrary,
   useSetProjectSkillsEnabled,
 } from "@/features/projects/project-skill-mutations";
 import { useSkills } from "@/hooks/queries/skills";
@@ -32,8 +32,8 @@ export function ProjectSelectionActions({
   const confirm = useConfirm();
   const library = useSkills();
   const setEnabled = useSetProjectSkillsEnabled();
-  const pullMany = usePullManyFromLibrary();
-  const pushMany = usePushManyToLibrary();
+  const pullMany = usePullFromLibrary();
+  const pushMany = usePushToLibrary();
   const deleteMany = useDeleteProjectSkills();
   const [tagging, setTagging] = useState(false);
 

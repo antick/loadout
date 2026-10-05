@@ -58,10 +58,9 @@ function VersionForm({ choice, onClose }: { choice: VersionChoice; onClose(): vo
   const otherAgents = others.map(agentsOf).join(", ");
 
   const confirm = (): void => {
-    push.mutate(
-      { ...ref, options: { version: chosenId, realign } },
-      { onSuccess: (result) => (result.conflictingVariants === 0 ? onClose() : undefined) },
-    );
+    push.mutate([{ ...ref, options: { version: chosenId, realign } }], {
+      onSuccess: (result) => (result.conflicting.length === 0 ? onClose() : undefined),
+    });
   };
 
   return (

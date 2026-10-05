@@ -3,7 +3,10 @@ import { type ReactNode, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { PresetBarSection } from "@/features/local-skills/PresetBarSection";
-import { useDeleteVariants, useExportSkills } from "@/features/projects/project-skill-mutations";
+import {
+  useDeleteProjectSkills,
+  useExportSkills,
+} from "@/features/projects/project-skill-mutations";
 import { usePresets } from "@/hooks/queries/presets";
 import { useSkills } from "@/hooks/queries/skills";
 import type { SkillAgentPair } from "@/lib/preset-state";
@@ -32,7 +35,7 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
   const presets = usePresets();
   const skills = useSkills();
   const { mutateAsync: exportSkills } = useExportSkills();
-  const { mutateAsync: deleteVariants } = useDeleteVariants();
+  const { mutateAsync: deleteSkills } = useDeleteProjectSkills();
 
   const targetKeys = useMemo(
     () => orderedAvailableTargets(targets ?? []).map((target) => target.key),
@@ -66,6 +69,7 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
               variant.librarySkillId === pair.skillId && variant.agentKey === pair.agentKey,
           )
           .map((variant) => ({
+            projectId: project.id,
             relativePath: variant.relativePath,
             agentKey: variant.agentKey,
             name: variant.name,
@@ -84,7 +88,7 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
       destructive: true,
     });
     if (!ok) return undefined;
-    return deleteVariants({ projectId: project.id, jobs });
+    return deleteSkills(jobs);
   };
 
   return (

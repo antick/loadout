@@ -8,11 +8,11 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import type { SkillAction } from "@/components/skill-action";
 import {
   type ProjectSkillRef,
-  useDeleteProjectSkill,
-  useExportSkill,
+  useDeleteProjectSkills,
+  useExportSkills,
   usePullFromLibrary,
   usePushToLibrary,
-  useSetProjectSkillEnabled,
+  useSetProjectSkillsEnabled,
 } from "@/features/projects/project-skill-mutations";
 import { usePendingSet } from "@/hooks/use-pending-set";
 import { editLink } from "@/lib/skill-location";
@@ -59,11 +59,11 @@ export function useProjectSkillActions(
     }, []),
   );
   const { mutate: pull } = usePullFromLibrary();
-  const { mutate: setEnabled } = useSetProjectSkillEnabled();
+  const { mutate: setEnabled } = useSetProjectSkillsEnabled();
   // `mutateAsync`, not per-call callbacks: TanStack Query only calls those for the latest call of
   // a mutation, so a quick second toggle would leave the first switch spinning for good.
-  const { mutateAsync: exportSkill } = useExportSkill();
-  const { mutateAsync: deleteSkill } = useDeleteProjectSkill();
+  const { mutateAsync: exportSkills } = useExportSkills();
+  const { mutateAsync: deleteSkills } = useDeleteProjectSkills();
   const { pending: pendingTargets, mark: markPending } = usePendingSet();
   const projectId = project.id;
 
@@ -103,7 +103,7 @@ export function useProjectSkillActions(
           ),
           icon: ArrowUpFromLine,
           primary: true,
-          run: () => push(ref),
+          run: () => push([ref]),
         });
       }
       if (rules.pull) {
@@ -124,7 +124,7 @@ export function useProjectSkillActions(
               });
               if (!ok) return;
             }
-            pull(ref);
+            pull([ref]);
           },
         });
       }
@@ -141,7 +141,7 @@ export function useProjectSkillActions(
               confirmLabel: t("projectPage.actions.restore"),
               destructive: true,
             });
-            if (ok) pull({ ...ref, restore: true });
+            if (ok) pull([{ ...ref, restore: true }]);
           },
         });
       }
@@ -161,7 +161,7 @@ export function useProjectSkillActions(
             destructive: true,
           });
           if (ok) {
-            void deleteSkill(ref)
+            void deleteSkills([ref])
               .then(() => onGone?.(group))
               .catch(() => undefined);
           }
@@ -169,15 +169,13 @@ export function useProjectSkillActions(
       });
       return actions;
     },
-    [t, confirm, navigate, push, pull, deleteSkill, projectId, onGone],
+    [t, confirm, navigate, push, pull, deleteSkills, projectId, onGone],
   );
 
   const toggleEnabled = useCallback(
     (group: ProjectSkillGroup) =>
       setEnabled({
-        projectId,
-        relativePath: group.relativePath,
-        name: group.name,
+        refs: [{ projectId, relativePath: group.relativePath, name: group.name }],
         enabled: group.enabledState !== "all",
       }),
     [setEnabled, projectId],
@@ -204,12 +202,16 @@ export function useProjectSkillActions(
         }
         markPending(pendingId, true);
         void settle(
-          exportSkill({
+          exportSkills({
             projectId,
-            skillId: group.librarySkillId,
-            name: group.name,
-            agentKeys: [target.key],
-            targetName: target.displayName,
+            jobs: [
+              {
+                skillId: group.librarySkillId,
+                name: group.name,
+                agentKeys: [target.key],
+                targetName: target.displayName,
+              },
+            ],
           }),
         );
         return;
@@ -236,18 +238,20 @@ export function useProjectSkillActions(
       }
       markPending(pendingId, true);
       void settle(
-        deleteSkill({
-          projectId,
-          relativePath: variant.relativePath,
-          name: group.name,
-          agentKey: target.key,
-          targetName: target.displayName,
-        }).then(() => {
+        deleteSkills([
+          {
+            projectId,
+            relativePath: variant.relativePath,
+            name: group.name,
+            agentKey: target.key,
+            targetName: target.displayName,
+          },
+        ]).then(() => {
           if (last) onGone?.(group);
         }),
       );
     },
-    [t, confirm, exportSkill, deleteSkill, markPending, projectId, onGone],
+    [t, confirm, exportSkills, deleteSkills, markPending, projectId, onGone],
   );
 
   return {
