@@ -79,7 +79,6 @@
   },
   "updateStatus": {
     "unknown": "Not checked",
-    "checking": "Checking",
     "up_to_date": "Up to date",
     "update_available": "Update available",
     "error": "Check failed",

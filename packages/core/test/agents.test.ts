@@ -36,7 +36,6 @@ describe("agents service", () => {
     });
     expect((await info("cursor")).installed).toBe(false);
     expect((await info("cline")).sharesDirWith).toEqual(["warp", "dexto", "zed"]);
-    expect(list[0]).not.toHaveProperty("extraScanDirs");
     expect(list[0]).not.toHaveProperty("projectExtraScanDirs");
   });
 

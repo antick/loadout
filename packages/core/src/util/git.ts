@@ -1,6 +1,5 @@
 import { AppError, isAppError } from "../errors";
 import { type ExecResult, exec } from "./exec";
-import { BYTE_EXACT_CONFIG, configFlags, proxyConfig } from "./git-config";
 import type { GitHubSignIn } from "./github-token";
 
 /**
@@ -21,7 +20,9 @@ const MISSING_MESSAGE = "Git is not installed on this computer. Install Git and 
  * refuses paths that only look harmless on a case-folding (macOS) or NTFS (Windows) disk.
  */
 export const SAFE_GIT_CONFIG = [
-  ...BYTE_EXACT_CONFIG,
+  // Files stay byte for byte as in the repository. Otherwise Git for Windows (autocrlf on by
+  // default) turns LF into CRLF, the same skill hashes differently per machine and scripts break.
+  "core.autocrlf=false",
   "core.fsmonitor=false",
   "core.hooksPath=/dev/null",
   "core.protectHFS=true",
@@ -50,6 +51,14 @@ const INHERITED_IDENTITY_ENV: readonly string[] = [
   "GIT_COMMITTER_NAME",
   "GIT_COMMITTER_EMAIL",
 ];
+
+/** `-c key=value` pairs for the front of a git command line. */
+const configFlags = (entries: readonly string[]): string[] =>
+  entries.flatMap((entry) => ["-c", entry]);
+
+/** Settings that send Git's HTTP(S) traffic through `proxy`. None without one. */
+const proxyConfig = (proxy: string | null | undefined): string[] =>
+  proxy ? [`http.proxy=${proxy}`, `https.proxy=${proxy}`] : [];
 
 /** The process environment without the identity variables (see `INHERITED_IDENTITY_ENV`). */
 function inheritedEnvironment(): NodeJS.ProcessEnv {

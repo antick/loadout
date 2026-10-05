@@ -4,6 +4,7 @@ import {
   REMOVED_KEEP_DAYS,
   type PendingRemoval,
   type Skill,
+  updateProgressKey,
 } from "@loadout/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,7 +12,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type SkillRefreshRequest,
-  updateProgressKey,
   useCancelInstall,
   useRefreshSkill,
 } from "@/features/library/detail/skill-mutations";

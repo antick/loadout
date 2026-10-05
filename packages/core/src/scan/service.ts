@@ -79,7 +79,7 @@ function scanRoots(agents: readonly ResolvedAgent[]): ScanRoot[] {
 
   const readers = new Map<string, ResolvedAgent[]>();
   for (const agent of agents) {
-    for (const extra of agent.extraScanDirs) {
+    for (const extra of agent.alsoReads) {
       const dir = resolve(extra);
       if (owned.has(dir) || !isDirectory(dir)) continue;
       readers.set(dir, [...(readers.get(dir) ?? []), agent]);

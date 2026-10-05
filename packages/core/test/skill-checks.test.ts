@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { type SkillIssue, checkSkillDocument, findReferences } from "@loadout/shared";
+import { type SkillIssue, checkSkillDocument } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createSkillInspector, inspectSkillFolder } from "../src/skills/checks";
 import { hashDir } from "../src/util/hash";
@@ -123,10 +123,9 @@ describe("links in SKILL.md", () => {
       "```",
       '[spaced](<my%20notes.md> "title")',
     ].join("\n");
-    expect(findReferences(body)).toEqual({
-      references: ["assets/chart.png", "my notes.md", "references/guide.md"],
-      outside: [],
-    });
+    const result = checkSkillDocument(doc(`name: pdf\ndescription: ${DESCRIPTION}`, body), "pdf");
+    expect(result.references).toEqual(["assets/chart.png", "my notes.md", "references/guide.md"]);
+    expect(result.issues).toEqual([]);
   });
 
   it("flags links that climb out of the skill", () => {

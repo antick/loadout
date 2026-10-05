@@ -306,7 +306,6 @@ export interface ProjectsApi {
 
 export interface SettingsApi {
   all(): Promise<Settings>;
-  get<K extends SettingKey>(key: K): Promise<SettingValue<K>>;
   set<K extends SettingKey>(key: K, value: SettingValue<K>): Promise<void>;
 }
 

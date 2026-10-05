@@ -2,7 +2,7 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelled } from "../src/errors";
-import { updateCancelKey } from "../src/updates";
+import { updateProgressKey } from "@loadout/shared";
 import { writeFile, rejection } from "./helpers";
 import { commitAll, git, leftoverCheckouts } from "./install-fixtures";
 import {
@@ -123,7 +123,7 @@ describe("check", () => {
       },
     });
     await expect(broken.api.update(pdf.id)).rejects.toThrow();
-    expect(world.install.progressFor(updateCancelKey(pdf.id)).at(-1)).toBe("done");
+    expect(world.install.progressFor(updateProgressKey(pdf.id)).at(-1)).toBe("done");
   });
 
   it("records a failed lookup and keeps the last revision it saw", async () => {
@@ -339,7 +339,7 @@ describe("update", () => {
 
   it("can be cancelled through the install cancel registry", async () => {
     const pdf = await world.installFromGit("pdf");
-    expect(await world.install.api.cancel(updateCancelKey(pdf.id))).toBe(false);
+    expect(await world.install.api.cancel(updateProgressKey(pdf.id))).toBe(false);
     let asked = false;
     const updates = world.withGit({
       lsRemote: (_url, options) =>
@@ -350,10 +350,10 @@ describe("update", () => {
     });
     const pending = rejection(updates.api.update(pdf.id));
     await vi.waitFor(() => expect(asked).toBe(true));
-    expect(await world.install.api.cancel(updateCancelKey(pdf.id))).toBe(true);
+    expect(await world.install.api.cancel(updateProgressKey(pdf.id))).toBe(true);
     expect((await pending).code).toBe("CANCELLED");
     // Stopping is not a failure of the source.
     expect(world.store.get(pdf.id).updateStatus).toBe("up_to_date");
-    expect(await world.install.api.cancel(updateCancelKey(pdf.id))).toBe(false);
+    expect(await world.install.api.cancel(updateProgressKey(pdf.id))).toBe(false);
   });
 });

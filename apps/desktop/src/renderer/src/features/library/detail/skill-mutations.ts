@@ -45,11 +45,6 @@ export interface RefreshSkillInput {
   expectedRevision?: string | null;
 }
 
-/** Key the backend reports progress under, and the key that cancels a running update. */
-export function updateProgressKey(skillId: string): string {
-  return `update:${skillId}`;
-}
-
 /**
  * Update, re-import or relink one skill. Silent: the answer may list files that would be removed,
  * in which case nothing changed and the caller asks the user before calling again with `approval`.

@@ -19,4 +19,4 @@ export {
   sortRemovals,
 } from "./removals";
 export { type RemoteTarget, isRemoteSource } from "./source";
-export { type UpdateOptions, type Updater, updateCancelKey } from "./update";
+export type { UpdateOptions, Updater } from "./update";

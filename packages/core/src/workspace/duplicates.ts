@@ -48,7 +48,7 @@ export function withSharedFolderDuplicates(
   agent: ResolvedAgent,
   skills: LocalSkill[],
 ): LocalSkill[] {
-  const shared = agent.extraScanDirs
+  const shared = agent.alsoReads
     .filter((dir) => !samePath(dir, agent.skillsDir))
     .map((dir) => copiesIn(dir, false));
   if (shared.length === 0) return skills;
@@ -123,7 +123,7 @@ export function withProjectDuplicates(
       const who = { agentKey: agent.key, agentDisplayName: agent.displayName };
       const globalRoots = [
         { root: agent.skillsDir, recursive: agent.recursiveScan },
-        ...agent.extraScanDirs.map((root) => ({ root, recursive: false })),
+        ...agent.alsoReads.map((root) => ({ root, recursive: false })),
       ];
       for (const { root, recursive } of globalRoots) {
         const path = otherCopy(skill, copiesAt(root, recursive));

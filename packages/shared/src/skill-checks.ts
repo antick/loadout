@@ -186,11 +186,7 @@ function scanLinks(body: string): FoundLink[] {
   return found;
 }
 
-/** Relative links of a Markdown body, outside code blocks and inline code. */
-export function findReferences(body: string): { references: string[]; outside: string[] } {
-  return referencesOf(scanLinks(body));
-}
-
+/** Relative links found in a Markdown body: inside the skill, and climbing out of it. */
 function referencesOf(links: readonly FoundLink[]): { references: string[]; outside: string[] } {
   const pick = (outside: boolean): string[] => [
     ...new Set(links.filter((link) => link.outside === outside).map((link) => link.path)),

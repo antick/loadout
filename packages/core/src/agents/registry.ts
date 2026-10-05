@@ -26,8 +26,6 @@ export interface CustomAgentRecord {
 
 /** An agent with every path resolved for this machine. */
 export interface ResolvedAgent extends AgentInfo {
-  /** Extra folders the agent reads that exist on this machine. Discovery only. */
-  extraScanDirs: string[];
   /** Other project-relative folders the agent reads, `/` separated. Discovery only. */
   projectExtraScanDirs: string[];
   recursiveScan: boolean;
@@ -144,9 +142,6 @@ export class AgentRegistry {
       envHome && homeEnv
         ? join(envHome.value, homeEnv.skillsDir)
         : this.#firstExisting(definition.skillsDir);
-    const extraScanDirs = (definition.extraScanDirs ?? [])
-      .flatMap((relative) => this.#candidates(relative))
-      .filter((path, index, all) => existsSync(path) && all.indexOf(path) === index);
     return {
       key: definition.key,
       displayName: definition.displayName,
@@ -159,11 +154,13 @@ export class AgentRegistry {
       projectSkillsDir: projectOverride ?? definition.projectSkillsDir ?? definition.skillsDir,
       hasProjectPathOverride: Boolean(projectOverride),
       sharesDirWith: [],
-      alsoReads: extraScanDirs,
+      // Extra folders the agent reads that exist on this machine. Discovery only.
+      alsoReads: (definition.extraScanDirs ?? [])
+        .flatMap((relative) => this.#candidates(relative))
+        .filter((path, index, all) => existsSync(path) && all.indexOf(path) === index),
       homeEnv: override ? null : envHome,
       reload: definition.reload ?? null,
       detection,
-      extraScanDirs,
       projectExtraScanDirs: (definition.projectExtraScanDirs ?? []).map(relativeDir),
       recursiveScan: definition.recursiveScan ?? false,
       pluginsDir: found && definition.pluginsDir ? join(found, definition.pluginsDir) : null,
@@ -187,7 +184,6 @@ export class AgentRegistry {
       homeEnv: null,
       reload: null,
       detection: { reason: "custom", path: null },
-      extraScanDirs: [],
       projectExtraScanDirs: [],
       recursiveScan: false,
       pluginsDir: null,
@@ -261,17 +257,8 @@ export class AgentRegistry {
     return this.list().filter((agent) => agent.installed && agent.enabled);
   }
 
-  isBuiltIn(key: string): boolean {
-    return BUILT_IN_AGENTS.some((agent) => agent.key === key);
-  }
-
   toInfo(agent: ResolvedAgent): AgentInfo {
-    const {
-      extraScanDirs: _extra,
-      projectExtraScanDirs: _projectExtra,
-      recursiveScan: _recursive,
-      ...info
-    } = agent;
+    const { projectExtraScanDirs: _projectExtra, recursiveScan: _recursive, ...info } = agent;
     return info;
   }
 }

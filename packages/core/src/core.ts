@@ -213,7 +213,6 @@ export function createCore(options: CoreCreateOptions = {}): Core {
 
   const settings: SettingsApi = {
     all: async () => ctx.settings.all(),
-    get: async (key) => ctx.settings.get(key),
     set: async (key, value) => {
       ctx.settings.set(key, value);
       ctx.touched("settings");

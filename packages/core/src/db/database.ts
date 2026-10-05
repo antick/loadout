@@ -51,10 +51,6 @@ export class Database {
     return Number(this.#db.prepare(sql).run(...params).changes);
   }
 
-  exec(sql: string): void {
-    this.#db.exec(sql);
-  }
-
   /** Run `fn` atomically. Nested calls join the outer transaction. */
   transaction<T>(fn: () => T): T {
     if (this.#db.isTransaction) return fn();

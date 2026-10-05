@@ -37,10 +37,6 @@ export class SafetyStore {
     }
   }
 
-  get(skillId: string): StoredReport | null {
-    return this.all()[skillId] ?? null;
-  }
-
   put(skillId: string, entry: StoredReport): void {
     this.#write({ ...this.all(), [skillId]: entry });
   }

@@ -130,16 +130,6 @@ export class PresetStore {
       .map((row) => row.skill_id);
   }
 
-  hasSkill(presetId: string, skillId: string): boolean {
-    return (
-      this.#db.get(
-        "SELECT 1 AS found FROM preset_skills WHERE preset_id = ? AND skill_id = ?",
-        presetId,
-        skillId,
-      ) !== undefined
-    );
-  }
-
   /** Skills already in the preset keep their place; new ones go to the end in the given order. */
   addSkills(presetId: string, skillIds: string[]): void {
     this.#db.transaction(() => {

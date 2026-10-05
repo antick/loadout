@@ -33,7 +33,6 @@ export interface CheckerDeps {
 export interface CheckOptions {
   /** Look even when the last answer is still fresh. */
   force?: boolean;
-  lockMode?: LockMode;
 }
 
 export interface CheckRoundOptions extends CheckAllOptions {
@@ -260,7 +259,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     check: async (skillId, options = {}) => {
       const skill = store.get(skillId);
       if (!options.force && isFresh(skill, ttl(), Date.now())) return skill;
-      return apply(skill, await investigate(skill), options.lockMode ?? "wait");
+      return apply(skill, await investigate(skill), "wait");
     },
 
     checkAll: async (force = false, options = {}) => {

@@ -1,10 +1,11 @@
-import type {
-  BatchUpdateResult,
-  ErrorCode,
-  SafetyReport,
-  Skill,
-  UpdateManyOptions,
-  UpdateResult,
+import {
+  type BatchUpdateResult,
+  type ErrorCode,
+  type SafetyReport,
+  type Skill,
+  type UpdateManyOptions,
+  type UpdateResult,
+  updateProgressKey,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
@@ -106,7 +107,6 @@ export interface Updater {
   updateMany(skillIds: string[], options?: UpdateManyOptions): Promise<BatchUpdateResult>;
 }
 
-const UPDATE_CANCEL_PREFIX = "update:";
 /** Token domain of a re-import: there is no revision, and the path is already on the row. */
 const REIMPORT_DOMAIN = "reimport";
 const NOT_LOCAL =
@@ -116,11 +116,6 @@ const INSIDE_LIBRARY = "That folder is already inside the skill library";
 const NO_CHANGES_DETAIL = "No file changes";
 const MOVED_SINCE_COMPARED =
   "The source changed again since you compared it. Look at Compare again, then update.";
-
-/** Key for `install.cancel(...)` that stops a running update of this skill. */
-export function updateCancelKey(skillId: string): string {
-  return `${UPDATE_CANCEL_PREFIX}${skillId}`;
-}
 
 /** One replacement of a skill's library content, whatever the new content comes from. */
 interface Replacement {
@@ -208,7 +203,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     if (hashAsLibraryCopy(plan.sourceDir, current.dirName) === current.contentHash) return null;
     const [report] = await deps.safety.check([{ name: current.name, dir: plan.sourceDir }], {
       acceptRisk: plan.acceptRisk,
-      progressKey: updateCancelKey(plan.skillId),
+      progressKey: updateProgressKey(plan.skillId),
     });
     return report ?? null;
   }
@@ -326,7 +321,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       if (!skill.sourceRef) throw unsupported(CANNOT_REFRESH);
       return reimport(skillId, approval, options);
     }
-    const key = updateCancelKey(skillId);
+    const key = updateProgressKey(skillId);
     const handle = cancels.register(key);
     try {
       ctx.emit("install:progress", { key, phase: "cloning", name: skill.name });

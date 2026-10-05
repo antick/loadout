@@ -63,7 +63,6 @@ export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export type UpdateStatus =
   | "unknown"
-  | "checking"
   | "up_to_date"
   | "update_available"
   | "error"

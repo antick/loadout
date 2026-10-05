@@ -101,6 +101,11 @@ export interface InstallProgress {
   name?: string;
 }
 
+/** Progress key of a running update of one skill, also the key that cancels it. */
+export function updateProgressKey(skillId: string): string {
+  return `update:${skillId}`;
+}
+
 export interface BatchImportResult {
   imported: number;
   skipped: number;

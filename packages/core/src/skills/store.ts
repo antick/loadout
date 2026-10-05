@@ -194,12 +194,6 @@ export class SkillStore {
     return this.#hydrate(rows)[0] ?? null;
   }
 
-  findByHash(contentHash: string): Skill[] {
-    return this.#hydrate(
-      this.#db.all<SkillRow>("SELECT * FROM skills WHERE content_hash = ?", contentHash),
-    );
-  }
-
   insert(input: NewSkill): Skill {
     const now = Date.now();
     const id = input.id ?? randomUUID();
