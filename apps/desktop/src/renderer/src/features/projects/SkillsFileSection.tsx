@@ -26,6 +26,7 @@ import {
 } from "@/features/projects/skills-file-queries";
 import { SkillsFilePlanDialog } from "@/features/projects/SkillsFilePlanDialog";
 import { useRevealPath } from "@/hooks/mutations/app";
+import { errorMessage } from "@/lib/toast";
 
 /** Offer to write `skills.toml` from what the project holds, after showing what it would list. */
 function CreateDialog({
@@ -115,7 +116,28 @@ export function SkillsFileSection({ dir }: { dir: string }): ReactNode {
   const reveal = useRevealPath();
   const [mode, setMode] = useState<SkillsFileMode | null>(null);
   const [creating, setCreating] = useState(false);
-  if (file.isPending || file.error) return null;
+  if (file.isPending) return null;
+  // A file that cannot be read (a TOML syntax error, a missing key) says why, path included, so
+  // the user can fix it and look again.
+  if (file.error) {
+    return (
+      <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed border-danger/40 px-3 py-2">
+        <h2 className="font-mono text-xs font-medium text-muted-foreground">{SKILLS_FILE_NAME}</h2>
+        <p role="alert" className="min-w-0 flex-1 text-xs break-words text-danger">
+          {t("skillsFile.broken", { message: errorMessage(file.error) })}
+        </p>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={file.isFetching}
+          onClick={() => void file.refetch()}
+        >
+          {file.isFetching ? <Spinner /> : <RefreshCw />}
+          {t("common.retry")}
+        </Button>
+      </section>
+    );
+  }
   const info = file.data;
   // A skills file above the project folder belongs to a bigger project: not this page's to run.
   const own = info !== null && info.root === dir;

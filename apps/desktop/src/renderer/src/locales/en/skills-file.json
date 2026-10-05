@@ -1,5 +1,6 @@
 {
   "skillsFile": {
+    "broken": "Cannot read it: {{message}}",
     "offer": "Share this project's skills: a file listing them, so everyone who opens the project gets the same ones.",
     "createShort": "Create…",
     "createTitle": "Create {{file}}",

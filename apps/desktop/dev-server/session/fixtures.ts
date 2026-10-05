@@ -186,3 +186,9 @@ export const PROJECTS: {
 /** A linked workspace whose folder is gone, to show how a missing project looks. */
 export const MISSING_PROJECT = "legacy-tools";
 export const PROJECTS_DIR = "code";
+
+/** A project's `skills.toml` someone broke by hand: a table header left open. */
+export const BROKEN_SKILLS_FILE = {
+  project: "shop-web",
+  text: 'agents = ["claude_code"]\n[[sources\n',
+};

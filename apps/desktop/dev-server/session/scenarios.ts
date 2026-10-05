@@ -12,10 +12,12 @@ import { writeFiles } from "./files.ts";
 import {
   BACKUP_REPOSITORY,
   BROKEN_DEPLOYMENT,
+  BROKEN_SKILLS_FILE,
   CLAWHUB_TOKEN,
   CONFLICTING,
   MANY_DELETED,
   OTHER_DEVICE_NAME,
+  PROJECTS_DIR,
   SCENARIO_SKILLS,
 } from "./fixtures.ts";
 import { skillDocument } from "./fixtures-skills.ts";
@@ -122,6 +124,13 @@ const SCENARIOS: Record<string, Scenario> = {
   },
 
   "clawhub-signed-in": (_world, api) => api.publish.setClawhubToken(CLAWHUB_TOKEN),
+
+  /** A `skills.toml` in shop-web that is not valid TOML. */
+  "skills-file-broken": async (world) => {
+    writeFiles(join(world.home, PROJECTS_DIR, BROKEN_SKILLS_FILE.project), {
+      "skills.toml": BROKEN_SKILLS_FILE.text,
+    });
+  },
 };
 
 export async function runScenario(name: string, world: World, api: CoreApi): Promise<unknown> {

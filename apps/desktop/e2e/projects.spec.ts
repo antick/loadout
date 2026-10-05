@@ -1,4 +1,4 @@
-import { expect, main, openApp, test, toasts } from "./app";
+import { expect, main, openApp, setUp, test, toasts } from "./app";
 
 test("create a project's skills.toml, look at the plan, and apply it", async ({ page }) => {
   // shop-web has code-review for Claude Code and sql-migrations for Cursor, copied in by hand
@@ -24,6 +24,17 @@ test("create a project's skills.toml, look at the plan, and apply it", async ({ 
   await expect(toasts(page).getByText("Applied skills.toml: 2 folders written")).toBeVisible();
   // The two written and the one already the same; the edited copy stays out of the lock.
   await expect(content.getByText("1 source · 3 folders applied")).toBeVisible();
+});
+
+test("a broken skills.toml says why instead of disappearing", async ({ page }) => {
+  await setUp(page, "skills-file-broken");
+  await openApp(page, "/projects");
+  await main(page)
+    .getByRole("link", { name: "Open project “shop-web”" })
+    .click({ position: { x: 12, y: 12 } });
+  const alert = main(page).getByRole("alert").filter({ hasText: "Cannot read it:" });
+  await expect(alert).toContainText("skills.toml: not valid TOML");
+  await expect(main(page).getByRole("button", { name: "Retry" })).toBeVisible();
 });
 
 test("a picked folder lists the projects under it, or is linked as a new one", async ({ page }) => {
