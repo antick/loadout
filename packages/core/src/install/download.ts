@@ -221,10 +221,6 @@ export function downloadWith(request: HttpRequest): Download {
   return async (url, options) => (await request(url, options)).body;
 }
 
-export function createDownload(fetchImpl: typeof fetch = fetch): Download {
-  return downloadWith(createRequest(fetchImpl));
-}
-
 /** Options for an API call answered in JSON: that `Accept` and the JSON size cap. */
 export function jsonOptions(options: RequestOptions = {}): RequestOptions {
   return { accept: JSON_TYPE, maxBytes: MAX_ANSWER_BYTES, ...options };

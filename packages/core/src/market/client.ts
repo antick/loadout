@@ -37,7 +37,6 @@ export interface MarketServiceDeps {
 
 export interface MarketService {
   api: MarketApi;
-  clawhub: ClawhubClient;
 }
 
 const BOARD_PATHS: Partial<Record<MarketBoard, string>> = {
@@ -72,9 +71,9 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
   /** Every marketplace call: its name in messages, and a short timeout. */
   const marketplace = { label: MARKETPLACE_NAME, timeoutMs: REQUEST_TIMEOUT_MS } as const;
 
-  function readCache<T = MarketEntry[]>(
+  function readCache<T>(
     key: string,
-    ttlMs = BOARD_CACHE_TTL_MS,
+    ttlMs: number,
   ): { entries: T; fresh: boolean; fetchedAt: number } | null {
     const row = ctx.db.get<CacheRow>(
       "SELECT data, fetched_at FROM market_cache WHERE cache_key = ?",
@@ -113,69 +112,62 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     }
   }
 
-  function live(entries: MarketEntry[]): MarketListing {
-    return { skills: withInstalled(entries), cachedAt: null };
-  }
-
-  /** Offline with an earlier answer beats an error page; the caller says how old it is. */
-  function orCached(
-    error: unknown,
-    cached: { entries: MarketEntry[]; fetchedAt: number } | null,
-    what: string,
-  ): MarketListing {
-    if (!cached || !isAppError(error)) throw error;
-    ctx.log.warn(`Showing a cached ${MARKETPLACE_NAME} ${what}`, error);
-    return { skills: withInstalled(cached.entries), cachedAt: cached.fetchedAt };
-  }
-
-  /** `installed` is worked out on every call, never cached: the library changes under the cache. */
-  function withInstalled(entries: MarketEntry[]): MarketSkill[] {
+  /**
+   * `installed` from the library, by `owner/repo/skill` or `owner/slug`. Worked out on every call,
+   * never cached: the library changes under the cache.
+   */
+  function withInstalled(
+    sourceType: "marketplace" | "clawhub",
+    skills: ClawhubEntry[],
+  ): MarketSkill[] {
     const installed = new Set(
       store
         .list()
-        .flatMap((s) => (s.sourceType === "marketplace" && s.sourceRef ? [s.sourceRef] : [])),
+        .flatMap((s) => (s.sourceType === sourceType && s.sourceRef ? [s.sourceRef] : [])),
     );
-    return entries.map((entry) => {
-      const id = `${entry.source}/${entry.skillId}`;
-      return {
-        provider: "skills_sh" as const,
-        id,
-        ...entry,
-        installed: installed.has(id),
-        summary: null,
-        version: null,
-      };
-    });
-  }
-
-  /** ClawHub entries with `installed` from the library, by `owner/slug`. */
-  function withClawhubInstalled(entries: ClawhubEntry[]): MarketSkill[] {
-    const installed = new Set(
-      store.list().flatMap((s) => (s.sourceType === "clawhub" && s.sourceRef ? [s.sourceRef] : [])),
-    );
-    return entries.map((entry) => ({
-      ...entry,
-      installed: installed.has(`${entry.source}/${entry.skillId}`),
+    return skills.map((skill) => ({
+      ...skill,
+      installed: installed.has(`${skill.source}/${skill.skillId}`),
     }));
   }
 
-  /** A ClawHub listing, cached like a skills.sh one and served from the cache when offline. */
-  async function clawhubListing(
+  /** skills.sh entries as listed skills. */
+  function skillsSh(entries: MarketEntry[]): MarketSkill[] {
+    const skills = entries.map((entry) => ({
+      provider: "skills_sh" as const,
+      id: `${entry.source}/${entry.skillId}`,
+      ...entry,
+      summary: null,
+      version: null,
+    }));
+    return withInstalled("marketplace", skills);
+  }
+
+  function clawhubSkills(entries: ClawhubEntry[]): MarketSkill[] {
+    return withInstalled("clawhub", entries);
+  }
+
+  /**
+   * A listing from the cache while it is younger than `ttlMs`, else fetched and cached. Offline
+   * with an earlier answer beats an error page: the listing says how old it is.
+   */
+  async function cachedListing<T>(
     key: string,
     ttlMs: number,
-    fetchEntries: () => Promise<ClawhubEntry[]>,
+    fetchEntries: () => Promise<T[]>,
+    decorate: (entries: T[]) => MarketSkill[],
     what: string,
   ): Promise<MarketListing> {
-    const cached = readCache<ClawhubEntry[]>(key, ttlMs);
-    if (cached?.fresh) return { skills: withClawhubInstalled(cached.entries), cachedAt: null };
+    const cached = readCache<T[]>(key, ttlMs);
+    if (cached?.fresh) return { skills: decorate(cached.entries), cachedAt: null };
     try {
       const entries = await fetchEntries();
       writeCache(key, entries);
-      return { skills: withClawhubInstalled(entries), cachedAt: null };
+      return { skills: decorate(entries), cachedAt: null };
     } catch (error) {
       if (!cached || !isAppError(error)) throw error;
-      ctx.log.warn(`Showing a cached ${CLAWHUB_NAME} ${what}`, error);
-      return { skills: withClawhubInstalled(cached.entries), cachedAt: cached.fetchedAt };
+      ctx.log.warn(`Showing a cached ${what}`, error);
+      return { skills: decorate(cached.entries), cachedAt: cached.fetchedAt };
     }
   }
 
@@ -233,25 +225,24 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
 
   const api: MarketApi = {
     board: async (board, provider: MarketProvider = "skills_sh") => {
+      const key = `${BOARD_CACHE_PREFIX}${board}`;
       if (provider === "clawhub") {
-        return clawhubListing(
-          `${CLAWHUB_CACHE_PREFIX}${BOARD_CACHE_PREFIX}${board}`,
+        return cachedListing(
+          `${CLAWHUB_CACHE_PREFIX}${key}`,
           BOARD_CACHE_TTL_MS,
           () => clawhub.list(board),
-          "board",
+          clawhubSkills,
+          `${CLAWHUB_NAME} board`,
         );
       }
       if (!(board in BOARD_PATHS)) throw invalid(`Unknown marketplace board: ${board}`);
-      const key = `${BOARD_CACHE_PREFIX}${board}`;
-      const cached = readCache(key);
-      if (cached?.fresh) return live(cached.entries);
-      try {
-        const entries = await fetchBoard(board);
-        writeCache(key, entries);
-        return live(entries);
-      } catch (error) {
-        return orCached(error, cached, "board");
-      }
+      return cachedListing(
+        key,
+        BOARD_CACHE_TTL_MS,
+        () => fetchBoard(board),
+        skillsSh,
+        `${MARKETPLACE_NAME} board`,
+      );
     },
 
     search: async (query, limit = MARKET_SEARCH_DEFAULT_LIMIT, provider = "skills_sh") => {
@@ -261,28 +252,36 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
         Math.max(Math.floor(limit) || MARKET_SEARCH_DEFAULT_LIMIT, 1),
         MAX_SEARCH_LIMIT,
       );
-      if (provider === "clawhub") {
-        const listing = await clawhubListing(
-          `${CLAWHUB_CACHE_PREFIX}${SEARCH_CACHE_PREFIX}${capped}:${q.toLowerCase()}`,
-          BOARD_CACHE_TTL_MS,
-          () => clawhub.search(q, capped),
-          "search",
-        );
-        pruneSearches();
-        return listing;
-      }
-      const url = `${MARKETPLACE_URL}${SEARCH_PATH}?q=${encodeURIComponent(q)}&limit=${capped}`;
       const key = `${SEARCH_CACHE_PREFIX}${capped}:${q.toLowerCase()}`;
-      try {
-        const answer = await request(url, jsonOptions({ ...marketplace, subject: "The search" }));
-        const body = readJson(answer.body, MARKETPLACE_NAME);
-        const entries = parseSearchResponse(body).slice(0, capped);
-        writeCache(key, entries);
-        pruneSearches();
-        return live(entries);
-      } catch (error) {
-        return orCached(error, readCache(key), "search");
-      }
+      const listing =
+        provider === "clawhub"
+          ? await cachedListing(
+              `${CLAWHUB_CACHE_PREFIX}${key}`,
+              BOARD_CACHE_TTL_MS,
+              () => clawhub.search(q, capped),
+              clawhubSkills,
+              `${CLAWHUB_NAME} search`,
+            )
+          : await cachedListing(
+              key,
+              // skills.sh is always asked; its answers are kept for offline use only.
+              0,
+              async () => {
+                const url = `${MARKETPLACE_URL}${SEARCH_PATH}?q=${encodeURIComponent(q)}&limit=${capped}`;
+                const answer = await request(
+                  url,
+                  jsonOptions({ ...marketplace, subject: "The search" }),
+                );
+                return parseSearchResponse(readJson(answer.body, MARKETPLACE_NAME)).slice(
+                  0,
+                  capped,
+                );
+              },
+              skillsSh,
+              `${MARKETPLACE_NAME} search`,
+            );
+      pruneSearches();
+      return listing;
     },
 
     detail: async (source, skillId, provider = "skills_sh") => {
@@ -304,5 +303,5 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     },
   };
 
-  return { api, clawhub };
+  return { api };
 }

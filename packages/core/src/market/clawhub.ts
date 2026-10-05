@@ -28,7 +28,6 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const DOWNLOAD_TIMEOUT_MS = 60_000;
 const PUBLISH_TIMEOUT_MS = 120_000;
 const LIST_LIMIT = 50;
-const MAX_SEARCH_LIMIT = 200;
 /** Sort each board asks the registry for. */
 const BOARD_SORTS: Partial<Record<MarketBoard, string>> = {
   trending: "trending",
@@ -55,6 +54,7 @@ export interface ClawhubDetail extends MarketDetailParts {
 
 export interface ClawhubClient {
   list(board: MarketBoard): Promise<ClawhubEntry[]>;
+  /** `limit` comes clamped by the marketplace service. */
   search(query: string, limit: number): Promise<ClawhubEntry[]>;
   /** The skill, its latest version and its SKILL.md. With `owner` unset, the registry's first match. */
   detail(owner: string | null, slug: string): Promise<ClawhubDetail>;
@@ -245,15 +245,14 @@ export function createClawhubClient(deps: ClawhubClientDeps = {}): ClawhubClient
     },
 
     search: async (text, limit) => {
-      const capped = Math.min(Math.max(Math.floor(limit) || LIST_LIMIT, 1), MAX_SEARCH_LIMIT);
-      const { body } = await json(`/search${query({ q: text, limit: String(capped) })}`);
+      const { body } = await json(`/search${query({ q: text, limit: String(limit) })}`);
       const results = Array.isArray(body.results) ? body.results : [];
       return results
         .flatMap((raw) => {
           const entry = entryOf(raw);
           return entry ? [entry] : [];
         })
-        .slice(0, capped);
+        .slice(0, limit);
     },
 
     detail,

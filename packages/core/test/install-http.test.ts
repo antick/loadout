@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDownload } from "../src/install/download";
+import { createRequest, downloadWith } from "../src/install/download";
 import { GIT_NEEDED } from "../src/install/git-fallback";
 import { parseAdvertisement } from "../src/install/http-git";
 import { type TestWorld, createTestWorld } from "./helpers";
@@ -224,7 +224,9 @@ describe("download", () => {
         ? new Response("busy", { status: 406 })
         : new Response(Buffer.from("zip"), { status: 200 });
     }) as unknown as typeof fetch;
-    const body = await createDownload(flaky)("https://gitlab.com/a/b/-/archive/x/b-x.zip");
+    const body = await downloadWith(createRequest(flaky))(
+      "https://gitlab.com/a/b/-/archive/x/b-x.zip",
+    );
     expect(body.toString()).toBe("zip");
     expect(calls).toBe(2);
   });
@@ -233,14 +235,14 @@ describe("download", () => {
     const big = (async () =>
       new Response(Buffer.alloc(64), { status: 200 })) as unknown as typeof fetch;
     await expect(
-      createDownload(big)("https://example.com/a.zip", { maxBytes: 10 }),
+      downloadWith(createRequest(big))("https://example.com/a.zip", { maxBytes: 10 }),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     const failing = (async () => {
       throw new Error("socket hang up");
     }) as unknown as typeof fetch;
-    const error = await createDownload(failing)("https://user:secret@example.com/a.zip").catch(
-      (caught: unknown) => caught,
-    );
+    const error = await downloadWith(createRequest(failing))(
+      "https://user:secret@example.com/a.zip",
+    ).catch((caught: unknown) => caught);
     expect(error).toMatchObject({ code: "NETWORK" });
     expect(String((error as Error).message)).not.toContain("secret");
   });

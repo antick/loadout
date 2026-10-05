@@ -10,7 +10,7 @@ import {
   parseWellKnownIndex,
   sha256Digest,
 } from "../src/install/well-known";
-import { createDownload } from "../src/install/download";
+import { createRequest, downloadWith } from "../src/install/download";
 import { leftoverCheckouts, tarBuffer } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -290,7 +290,7 @@ describe("a site that publishes skills", () => {
       `${SHOP}/.well-known/agent-skills/index.json`,
       json({ skills: [{ name: "orders", description: "Handle orders", files: ["SKILL.md"] }] }),
     );
-    const download = createDownload(web.fetchImpl);
+    const download = downloadWith(createRequest(web.fetchImpl));
     await expect(findWellKnownIndex(download, `${SHOP}/team/list`)).rejects.toMatchObject({
       code: "NOT_FOUND",
       message: `${SHOP} publishes skills, but none below /team/list. Paste ${SHOP} to see them all.`,
