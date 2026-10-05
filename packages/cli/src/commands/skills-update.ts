@@ -147,7 +147,8 @@ async function planUpdates(context: CommandContext, one: Skill | null): Promise<
   let skills: Skill[] = one ? [one] : [];
   const value: UpdatePlan = { dryRun: true, skills: [], failed: [] };
   if (!one) {
-    value.failed = (await core.api.updates.checkAll(false)).failed;
+    // Asked to update everything: look upstream now, never at an answer kept from earlier.
+    value.failed = (await core.api.updates.checkAll(true)).failed;
     skills = (await core.api.skills.list()).filter(
       (skill) => hasUpdateSource(skill) && skill.updateStatus === "update_available",
     );
@@ -184,8 +185,9 @@ async function update(context: CommandContext): Promise<CommandResult> {
     return { value: { dryRun: false, ...value }, text: lines.join("\n") };
   }
 
-  // A skill whose check failed is not due, so it would otherwise go unmentioned.
-  const checked = await core.api.updates.checkAll(false);
+  // Asked to update everything: look upstream now, never at an answer kept from earlier. A skill
+  // whose check failed is not due, so it would otherwise go unmentioned.
+  const checked = await core.api.updates.checkAll(true);
   const due = (await core.api.skills.list()).filter((s) => s.updateStatus === "update_available");
   const updated = flagBoolean(args, APPROVE_FLAG.name)
     ? await updateEachApproved(context, due)

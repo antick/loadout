@@ -113,7 +113,7 @@ loadout skills diff <ref> --upstream --json
 # Updates: check first, then update; exit 1 when a source check or update failed (read `failed`, or `updateStatus: "error"` for one skill): updates are then unknown, not absent
 loadout skills check --all --json
 loadout skills update <ref> --json
-loadout skills update --all --json
+loadout skills update --all --json                      # checks every source fresh first
 
 # Safety check: built-in rules always; SkillSpector when the user has it installed; exit code 1 when one is unsafe or could not be checked
 # Both print { scanned, unsafe, caution, failed, records }: records are this run's reports

@@ -70,10 +70,7 @@ describe("skills update --dry-run", () => {
     expect(run.stdout).toContain("+ new.md");
     expect(run.stdout).toContain("- old.md");
     expect(run.stdout).toContain("Held back without --approve-removals");
-    // `--all` looks at what a check finds, like the real run: fresh from install, nothing yet.
-    const fresh = await box.cli("skills", "update", "--all", "--dry-run", "--json");
-    expect(fresh.json<UpdatePlan>().skills).toEqual([]);
-    await box.cli("skills", "check", "--all", "--force");
+    // `--all` looks upstream now, like the real run, even right after the install.
     const json = (
       await box.cli("skills", "update", "--all", "--dry-run", "--json")
     ).json<UpdatePlan>();
