@@ -1,4 +1,10 @@
-import type { BatchResult, CheckAllOptions, Skill, UpdateStatus } from "@loadout/shared";
+import {
+  type BatchResult,
+  type CheckAllOptions,
+  type Skill,
+  UPDATE_CHECK_FRESH_MS,
+  type UpdateStatus,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
 import { errorMessage, isAppError } from "../errors";
@@ -46,7 +52,6 @@ export interface Checker {
 }
 
 const MAX_CONCURRENT_LOOKUPS = 8;
-const MS_PER_MINUTE = 60_000;
 /** Statuses that are an answer. Anything else is looked up again whatever the age. */
 const SETTLED: ReadonlySet<UpdateStatus> = new Set([
   "up_to_date",
@@ -69,9 +74,9 @@ interface Finding {
 }
 
 /** True while the last check still counts, so an unforced check can be skipped. */
-function isFresh(skill: Skill, ttlMinutes: number, now: number): boolean {
+function isFresh(skill: Skill, now: number): boolean {
   if (!SETTLED.has(skill.updateStatus) || skill.lastCheckedAt === null) return false;
-  return now - skill.lastCheckedAt < ttlMinutes * MS_PER_MINUTE;
+  return now - skill.lastCheckedAt < UPDATE_CHECK_FRESH_MS;
 }
 
 /** What the skill points at, read again after a lookup: a different answer drops the result. */
@@ -251,14 +256,10 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     return applied;
   }
 
-  function ttl(): number {
-    return ctx.settings.get("updateCheckTtlMinutes");
-  }
-
   return {
     check: async (skillId, options = {}) => {
       const skill = store.get(skillId);
-      if (!options.force && isFresh(skill, ttl(), Date.now())) return skill;
+      if (!options.force && isFresh(skill, Date.now())) return skill;
       return apply(skill, await investigate(skill), "wait");
     },
 
@@ -266,7 +267,7 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       const chosen = options.skillIds ? new Set(options.skillIds) : null;
       const skills = chosen ? store.list().filter((skill) => chosen.has(skill.id)) : store.list();
       const now = Date.now();
-      const due = force ? skills : skills.filter((skill) => !isFresh(skill, ttl(), now));
+      const due = force ? skills : skills.filter((skill) => !isFresh(skill, now));
 
       // Many skills come from one repository: ask each (url, branch) once.
       const targets = new Map<string, RemoteTarget>();

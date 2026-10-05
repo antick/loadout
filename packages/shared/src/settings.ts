@@ -38,7 +38,6 @@ export interface Settings {
   autoAddNewSkills: boolean;
   /** Epoch ms of the last background update round, 0 when never run. */
   autoUpdateLastRunAt: number;
-  updateCheckTtlMinutes: number;
   backupAutoEnabled: boolean;
   backupLastAutoError: string;
   backupFirstRunPrompt: FirstRunChoice;
@@ -70,7 +69,6 @@ export const DEFAULT_SETTINGS: Settings = {
   autoUpdateApply: false,
   autoAddNewSkills: false,
   autoUpdateLastRunAt: 0,
-  updateCheckTtlMinutes: 60,
   backupAutoEnabled: true,
   backupLastAutoError: "",
   backupFirstRunPrompt: "",

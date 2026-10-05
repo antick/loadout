@@ -207,4 +207,8 @@ export const MIGRATIONS: readonly string[] = [
   -- The GitHub sign-in client id comes only from the build's environment now.
   DELETE FROM settings WHERE key = 'githubClientId';
   `,
+  `
+  -- Update checks count as fresh for a fixed hour: the setting for it is gone.
+  DELETE FROM settings WHERE key = 'updateCheckTtlMinutes';
+  `,
 ];

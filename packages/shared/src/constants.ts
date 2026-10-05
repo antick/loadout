@@ -109,6 +109,8 @@ export const SYNC_STATUS_SEVERITY = {
   diverged: 5,
 } as const;
 
+/** A skill checked for updates this recently is not asked again unless the check is forced. */
+export const UPDATE_CHECK_FRESH_MS = 60 * 60 * 1000;
 /** `loadout doctor` names a source whose skills were not checked for updates in this long. */
 export const SOURCE_STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 

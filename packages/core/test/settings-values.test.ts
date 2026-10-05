@@ -13,14 +13,14 @@ describe("setting values", () => {
     const { settings } = world.ctx;
     expect(() => settings.set("deployMode", "foo" as "copy")).toThrow(/symlink, copy/);
     expect(() => settings.set("autoUpdateInterval", "5m" as "1h")).toThrow();
-    expect(() => settings.set("updateCheckTtlMinutes", -5)).toThrow();
+    expect(() => settings.set("autoUpdateLastRunAt", -5)).toThrow();
     settings.set("deployMode", "copy");
     expect(settings.get("deployMode")).toBe("copy");
 
     settings.setRaw("autoUpdateInterval", "5m");
     expect(settings.get("autoUpdateInterval")).toBe("off");
-    settings.setRaw("updateCheckTtlMinutes", Number.NaN);
-    expect(settings.get("updateCheckTtlMinutes")).toBe(60);
+    settings.setRaw("autoUpdateLastRunAt", Number.NaN);
+    expect(settings.get("autoUpdateLastRunAt")).toBe(0);
   });
 });
 
