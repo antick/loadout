@@ -136,6 +136,21 @@ test("a skill removed elsewhere while its panel is open closes the panel", async
   await expect(panel).toHaveCount(0);
 });
 
+test("the skill panel's menu has the right-click menu's actions and deletes and closes", async ({
+  page,
+}) => {
+  await openApp(page, "/library");
+  await main(page).getByRole("button", { name: "code-review", exact: true }).click();
+  const panel = page.getByRole("dialog", { name: "code-review" });
+  await panel.getByRole("button", { name: "Actions for code-review" }).click();
+  await expect(page.getByRole("menuitem", { name: "Publish to ClawHub…" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Check now" })).toBeVisible();
+  await page.getByRole("menuitem", { name: "Delete skill" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete skill" }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(toasts(page).getByRole("button", { name: "Undo" })).toBeVisible();
+});
+
 test("the skill panel offers Compare only for a skill with a source", async ({ page }) => {
   await openApp(page, "/library");
   const content = main(page);

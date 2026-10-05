@@ -1,46 +1,38 @@
 import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import {
-  AppWindow,
-  CodeXml,
-  FileArchive,
-  FolderOpen,
-  PencilLine,
-  TextCursorInput,
-  Trash2,
-} from "lucide-react";
+import { PencilLine } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { IconButton } from "@/components/IconButton";
-import { useShell } from "@/components/layout/shell-context";
 import { SkillIndicators } from "@/components/SkillIndicators";
 import { SourceBadge } from "@/components/SourceBadge";
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SkillTagsEditor } from "@/features/library/detail/SkillTagsEditor";
 import { SkillUsageSummary } from "@/features/library/detail/SkillUsageSummary";
-import { Spinner } from "@/components/ui/spinner";
-import { useExportSkills, useRevealSkill } from "@/features/library/library-mutations";
-import { useOpenInEditor } from "@/hooks/mutations/app";
-import { useDefaultEditor } from "@/hooks/use-default-editor";
+import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
+import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
+
+/** Menu entries the header already shows as buttons of their own. */
+const HEADER_BUTTON_ACTIONS = new Set(["edit", "favorite"]);
 
 export interface SkillDetailHeaderProps {
   skill: Skill;
+  /** Delete from the panel, which also closes it. */
   onDelete: () => void;
 }
 
 /**
- * Top of the detail panel: name, description, source and update badges, tags, and the edit,
- * favourite, rename, reveal, open-in-editor, export and delete actions.
+ * Top of the detail panel: name, description, source and update badges, tags, the edit and
+ * favourite buttons, and the rest of the skill's actions (the same as its right-click menu).
  */
 export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): ReactNode {
   const { t } = useTranslation();
-  const reveal = useRevealSkill();
-  const exportSkills = useExportSkills();
-  const openInEditor = useOpenInEditor();
-  const editor = useDefaultEditor();
-  const shell = useShell();
+  const actionsFor = useLibrarySkillActions();
+  const actions = actionsFor(skill).filter((action) => !HEADER_BUTTON_ACTIONS.has(action.id));
+  // A fresh list each call, so the delete entry can be pointed at the panel's own delete.
+  const remove = actions.find((action) => action.id === "delete");
+  if (remove) remove.run = onDelete;
 
   return (
     <SheetHeader className="gap-3 border-b px-6 pt-5 pb-4">
@@ -62,33 +54,7 @@ export function SkillDetailHeader({ skill, onDelete }: SkillDetailHeaderProps): 
             </Link>
           </Button>
           <FavoriteButton skill={skill} size="icon-sm" />
-          <IconButton
-            label={t("library.rename.action")}
-            icon={<TextCursorInput />}
-            onClick={() => shell.openRenameSkill(skill)}
-          />
-          <IconButton
-            label={t("library.detail.reveal")}
-            icon={<FolderOpen />}
-            onClick={() => reveal.mutate(skill.id)}
-          />
-          <IconButton
-            label={editor.label}
-            icon={editor.id === "system" ? <AppWindow /> : <CodeXml />}
-            onClick={() => openInEditor.mutate({ editor: editor.id, path: skill.libraryPath })}
-          />
-          <IconButton
-            label={t("library.export.action")}
-            icon={exportSkills.isPending ? <Spinner /> : <FileArchive />}
-            disabled={exportSkills.isPending}
-            onClick={() => exportSkills.mutate([skill])}
-          />
-          <IconButton
-            label={t("library.detail.delete")}
-            icon={<Trash2 />}
-            className="text-muted-foreground hover:text-danger"
-            onClick={onDelete}
-          />
+          <SkillActionMenu actions={actions} name={skill.name} size="icon-sm" />
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">

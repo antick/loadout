@@ -5,7 +5,7 @@ test("pick the editor the open buttons use", async ({ page }) => {
   const content = main(page);
   await content.getByRole("button", { name: "code-review", exact: true }).click();
   const panel = page.getByRole("dialog", { name: "code-review" });
-  // The header has one; the file path row under Document has another.
+  // The file path row under Document has one.
   await expect(panel.getByRole("button", { name: "Open in default app" }).first()).toBeVisible();
   await page.keyboard.press("Escape");
 

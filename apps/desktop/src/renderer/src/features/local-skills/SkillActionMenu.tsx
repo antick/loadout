@@ -1,7 +1,7 @@
 import { MoreHorizontal } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { IconButton } from "@/components/IconButton";
+import { IconButton, type IconButtonProps } from "@/components/IconButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,10 +29,12 @@ function menuEntry(action: SkillAction): ReactNode {
 export function SkillActionMenu({
   actions,
   name,
+  size = "icon-xs",
 }: {
   actions: readonly SkillAction[];
   /** Skill name, for the button's accessible label. */
   name: string;
+  size?: IconButtonProps["size"];
 }): ReactNode {
   const { t } = useTranslation();
   if (actions.length === 0) return null;
@@ -42,7 +44,7 @@ export function SkillActionMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <IconButton
-          size="icon-xs"
+          size={size}
           label={t("localSkills.actionsFor", { name })}
           icon={<MoreHorizontal />}
         />
