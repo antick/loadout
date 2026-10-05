@@ -4,6 +4,9 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { pickShellEnv, readShellEnv } from "./shell-env";
 
+/** The stand-in shells are `#!/bin/sh` scripts; Windows has no login shell to ask anyway. */
+const NO_POSIX_SHELL = process.platform === "win32";
+
 describe("shell environment", () => {
   let dir: string | null = null;
   afterEach(() => {
@@ -35,7 +38,7 @@ describe("shell environment", () => {
     expect(pickShellEnv("no marker at all", ["CODEX_HOME"])).toBeNull();
   });
 
-  it("asks the login shell and reads what it exports", async () => {
+  it.skipIf(NO_POSIX_SHELL)("asks the login shell and reads what it exports", async () => {
     const shell = fakeShell(
       `echo "profile noise"; printf '%s' __LOADOUT_SHELL_ENV__; printf 'CODEX_HOME=/work/codex\\0FLAG=%s\\0' "$LOADOUT_RESOLVING_SHELL_ENV"`,
     );
@@ -45,8 +48,11 @@ describe("shell environment", () => {
     });
   });
 
-  it("gives nothing on Windows, and null for a failing shell or a hung one", async () => {
+  it("gives nothing on Windows", async () => {
     expect(await readShellEnv(["CODEX_HOME"], { platform: "win32" })).toEqual({});
+  });
+
+  it.skipIf(NO_POSIX_SHELL)("gives null for a failing shell or a hung one", async () => {
     const failing = fakeShell("exit 3");
     expect(await readShellEnv(["CODEX_HOME"], { shell: failing, platform: "linux" })).toBeNull();
     // Ignores SIGTERM and waits on stdin, like a stubborn interactive profile.

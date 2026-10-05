@@ -4,7 +4,8 @@
 // variable every CI service sets) the runner does nothing else, so they run side by side.
 import { spawnSync } from "node:child_process";
 
-const args = ["run", "test", ...(process.env.CI ? [] : ["--concurrency=1"])];
+// On CI every package runs to the end, so one failure never hides another package's results.
+const args = ["run", "test", ...(process.env.CI ? ["--continue"] : ["--concurrency=1"])];
 const result = spawnSync("turbo", [...args, ...process.argv.slice(2)], {
   stdio: "inherit",
   // `turbo` is a .cmd shim on Windows, which only a shell can start.
