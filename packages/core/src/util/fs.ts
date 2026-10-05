@@ -273,13 +273,15 @@ export async function replaceDirAtomic(
 
 /**
  * Write through a temp file and rename, so readers never see a half-written file. `mode` sets the
- * permission bits exactly (the umask does not apply), e.g. to keep a script executable.
+ * permission bits exactly (the umask does not apply), e.g. to keep a script executable. The temp
+ * file is created with `mode` already, so a private file is never readable by others, even for
+ * a moment.
  */
 export function writeFileAtomic(path: string, content: string | Uint8Array, mode?: number): void {
   ensureDir(dirname(path));
   const temp = `${path}.tmp.${randomUUID()}`;
   try {
-    writeFileSync(temp, content);
+    writeFileSync(temp, content, mode === undefined ? undefined : { mode });
     if (mode !== undefined) chmodSync(temp, mode);
     renameSync(temp, path);
   } catch (error) {
