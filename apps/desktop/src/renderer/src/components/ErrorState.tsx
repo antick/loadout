@@ -16,12 +16,20 @@ export interface ErrorStateProps {
   error: unknown;
   /** Usually `query.refetch`. */
   onRetry?: () => void;
+  /** The retry button's label; "Retry" by default. */
+  retryLabel?: string;
   title?: string;
   className?: string;
 }
 
 /** A failed load: the message and a Retry button. */
-export function ErrorState({ error, onRetry, title, className }: ErrorStateProps): ReactNode {
+export function ErrorState({
+  error,
+  onRetry,
+  retryLabel,
+  title,
+  className,
+}: ErrorStateProps): ReactNode {
   const { t } = useTranslation();
   return (
     <Empty className={className} role="alert">
@@ -36,7 +44,7 @@ export function ErrorState({ error, onRetry, title, className }: ErrorStateProps
         <EmptyContent>
           <Button variant="outline" size="sm" onClick={onRetry}>
             <RotateCw />
-            {t("common.retry")}
+            {retryLabel ?? t("common.retry")}
           </Button>
         </EmptyContent>
       ) : null}

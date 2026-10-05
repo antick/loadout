@@ -55,6 +55,11 @@ export interface AppApi {
    * are left alone. Deletion finishes after the app has exited.
    */
   removeAllData(options: RemoveAllDataOptions): Promise<void>;
+  /**
+   * The page got `window:close-requested` and is about to ask. False when the answer came too
+   * late: the app already went ahead without asking, so the question must not be shown.
+   */
+  acknowledgeClose(): Promise<boolean>;
   /** Answer the "close or minimise?" prompt raised by `window:close-requested`. */
   resolveClose(action: "hide" | "quit", remember: boolean): Promise<void>;
 }

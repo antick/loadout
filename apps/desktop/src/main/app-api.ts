@@ -11,6 +11,8 @@ import { isWebUrl } from "./links";
 export interface AppApiDeps {
   window(): BrowserWindow | null;
   quit(): void;
+  /** The page took the close question; false when the app already went ahead without it. */
+  acknowledgeClose(): boolean;
   resolveClose(action: "hide" | "quit", remember: boolean): void;
   /** Clean agent folders, close the library, start the clean-up process and exit. */
   removeAllData(options: RemoveAllDataOptions): Promise<void>;
@@ -80,6 +82,7 @@ export function createAppApi(deps: AppApiDeps): AppApi {
       app.relaunch();
       deps.quit();
     },
+    acknowledgeClose: async () => deps.acknowledgeClose(),
     resolveClose: async (action, remember) => deps.resolveClose(action, remember),
     clearAppCache: async () => {
       const web = session.defaultSession;

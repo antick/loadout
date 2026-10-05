@@ -68,6 +68,7 @@ export function createAppStub(world: World): AppApi {
     restart: nothing,
     clearAppCache: nothing,
     removeAllData: nothing,
+    acknowledgeClose: async () => true,
     resolveClose: nothing,
   };
 }

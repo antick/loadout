@@ -12,9 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useResolveClose } from "@/hooks/mutations/app";
+import { api } from "@/lib/api";
 import { useAppEvent } from "@/lib/events";
 
-/** Asks "quit or keep running in the tray?" when the main process reports a window close. */
+/**
+ * Asks "quit or keep running in the tray?" when the main process reports a window close. Mounted
+ * by the app shell and by the root error screen, so the close button always gets an answer.
+ */
 export function CloseDialog(): ReactNode {
   const { t } = useTranslation();
   const resolveClose = useResolveClose();
@@ -23,8 +27,16 @@ export function CloseDialog(): ReactNode {
   const rememberId = useId();
 
   useAppEvent("window:close-requested", () => {
-    setRemember(false);
-    setOpen(true);
+    // The main process hides the window by itself unless the page takes the question in time.
+    void api.app
+      .acknowledgeClose()
+      .then((asking) => {
+        if (!asking) return;
+        setRemember(false);
+        setOpen(true);
+      })
+      // Unanswered, the main process goes ahead without asking.
+      .catch(() => undefined);
   });
 
   const answer = (action: "hide" | "quit"): void => {

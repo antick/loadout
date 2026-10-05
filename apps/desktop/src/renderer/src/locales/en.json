@@ -7,6 +7,7 @@
     "delete": "Delete",
     "save": "Save",
     "retry": "Retry",
+    "reload": "Reload",
     "dismiss": "Dismiss",
     "clear": "Clear",
     "copied": "Copied to clipboard",
@@ -26,6 +27,7 @@
   "errors": {
     "generic": "Something went wrong.",
     "loadFailed": "Could not load this",
+    "appFailed": "{{app}} could not show this window",
     "saveSetting": "Could not save the setting.",
     "deploy": "Could not add the skill to the agent.",
     "undeploy": "Could not remove the skill from the agent.",
