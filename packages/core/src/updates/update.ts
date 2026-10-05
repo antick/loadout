@@ -158,8 +158,6 @@ function requireLocal(skill: Skill): void {
 export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   const { store, git, download, cancels } = deps;
   const clients = { git, clawhub: deps.clawhub };
-  /** Failures the library installer already wrote to the history. */
-  const recordedFailures = new WeakSet<object>();
 
   function insideLibrary(path: string): boolean {
     return isInside(canonicalPath(ctx.paths.skillsDir), canonicalPath(path));
@@ -167,7 +165,6 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
 
   function recordFailure(name: string, error: unknown): void {
     if (isAppError(error, "CANCELLED")) return;
-    if (typeof error === "object" && error !== null && recordedFailures.has(error)) return;
     ctx.activity.record("update", name, errorMessage(error), false);
   }
 
@@ -176,18 +173,15 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     sourceDir: string,
     record: InstallRecord,
   ): Promise<Skill> {
-    try {
-      return await deps.installIntoLibrary({
-        sourceDir,
-        // The user may have renamed the skill at install time; an update never renames it back.
-        name: fresh.name,
-        record: { ...record, replaceSkillId: fresh.id },
-        activityKind: "update",
-      });
-    } catch (error) {
-      if (typeof error === "object" && error !== null) recordedFailures.add(error);
-      throw error;
-    }
+    return deps.installIntoLibrary({
+      sourceDir,
+      // The user may have renamed the skill at install time; an update never renames it back.
+      name: fresh.name,
+      record: { ...record, replaceSkillId: fresh.id },
+      activityKind: "update",
+      // The caller writes the failure once, with every other way an update can fail.
+      recordFailure: false,
+    });
   }
 
   /**

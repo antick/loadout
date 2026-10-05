@@ -55,6 +55,8 @@ export interface InstallRequest {
   keepExisting?: boolean;
   /** History entry kind. Defaults to "install". */
   activityKind?: ActivityKind;
+  /** Write a failure to the history (default true). Updates write their own entry. */
+  recordFailure?: boolean;
 }
 
 /** Bound form handed to other services. */
@@ -144,7 +146,8 @@ export async function installIntoLibrary(
     }
     return outcome.skill;
   } catch (error) {
-    ctx.activity.record(kind, name, errorMessage(error), false);
+    if (request.recordFailure !== false)
+      ctx.activity.record(kind, name, errorMessage(error), false);
     throw error;
   }
 }
