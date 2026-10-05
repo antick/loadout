@@ -310,7 +310,6 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         // copy lacks (other content, a `.git` folder, links) goes to Recently removed first.
         const stat = lstatOrNull(pair.targetPath);
         if (
-          deps.removed &&
           stat?.isDirectory() &&
           !stat.isSymbolicLink() &&
           (hashDir(pair.targetPath) !== skill.contentHash || holdsUncopiedEntries(pair.targetPath))
