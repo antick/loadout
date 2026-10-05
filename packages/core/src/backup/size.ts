@@ -165,9 +165,13 @@ export function customLines(text: string): string[] {
  * standard lines always come first, in their own order, so a line added in a newer version (and
  * a `!` line among them) lands where it belongs and the user's own lines still have the last say.
  */
-export async function refreshIgnoreFile(env: BackupEnv): Promise<void> {
+export async function refreshIgnoreFile(
+  env: BackupEnv,
+  /** The user's own lines to write; those of the file as it is when left out. */
+  custom?: readonly string[],
+): Promise<void> {
   const current = readIgnoreText(env) ?? "";
-  const custom = customLines(current);
+  custom ??= customLines(current);
   const lines = [...BASE_IGNORE_LINES, ...(custom.length > 0 ? ["", ...custom] : [])];
 
   const { oversized } = await findOversized(env);

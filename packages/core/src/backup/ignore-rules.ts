@@ -9,7 +9,6 @@ import { writeFileAtomic } from "../util/fs";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import { assertRepo } from "./repo";
 import {
-  BASE_IGNORE_LINES,
   DEFAULT_IGNORE_LINES,
   IGNORE_FILE,
   customLines,
@@ -89,11 +88,9 @@ export async function writeIgnoreRules(
   const lines = cleanInput(custom);
   const path = ignoreFilePath(env);
   const previous = readIgnoreText(env);
-  const body = lines.length > 0 ? ["", ...lines] : [];
-  writeFileAtomic(path, `${[...BASE_IGNORE_LINES, ...body].join("\n")}\n`);
   try {
-    // Puts the managed size block back.
-    await refreshIgnoreFile(env);
+    // The standard lines, the user's, and the managed size block, in one write.
+    await refreshIgnoreFile(env, lines);
     const blocking = await blockingPattern(env);
     if (blocking !== null) {
       throw invalid(
