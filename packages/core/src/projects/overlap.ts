@@ -3,28 +3,47 @@ import { APP_NAME } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { invalid } from "../errors";
-import { canonicalPath, pathsOverlap } from "../util/fs";
+import { pathsOverlap, realPathOf } from "../util/fs";
 import { projectSkillDirs } from "./targets";
 
-interface Guarded {
+/** A folder no workspace or project skills folder may be, lie inside, or hold. */
+export interface GuardedFolder {
+  /** Its real path. */
   path: string;
+  /** What it is, for people. */
   what: string;
 }
 
-/** Folders the app already manages: the library, and every agent's own skills folder. */
-function guardedFolders(ctx: CoreContext, registry: AgentRegistry): Guarded[] {
+/**
+ * Folders the app already manages: the library's whole folder, and every agent's own skills
+ * folder. One folder reached two ways would be two places to the app, and its copies and
+ * removals would reach into the other.
+ */
+export function guardedFolders(libraryDir: string, registry: AgentRegistry): GuardedFolder[] {
   return [
-    { path: ctx.paths.baseDir, what: `the ${APP_NAME} library` },
+    { path: realPathOf(libraryDir), what: `the ${APP_NAME} library` },
     ...registry.list().map((agent) => ({
-      path: agent.skillsDir,
+      path: realPathOf(agent.skillsDir),
       what: `the skills folder of ${agent.displayName}`,
     })),
   ];
 }
 
-function refuseOverlap(guarded: readonly Guarded[], path: string, label: string): void {
-  const mine = canonicalPath(path);
-  const hit = guarded.find((folder) => pathsOverlap(mine, canonicalPath(folder.path)));
+/**
+ * The guarded folder `path` is, lies inside or holds; null when it is clear of them all. Links
+ * are followed in whatever part of `path` exists, so a folder not made yet is judged by where it
+ * would really be.
+ */
+export function overlappingFolder(
+  guarded: readonly GuardedFolder[],
+  path: string,
+): GuardedFolder | null {
+  const real = realPathOf(path);
+  return guarded.find((folder) => pathsOverlap(real, folder.path)) ?? null;
+}
+
+function refuseOverlap(guarded: readonly GuardedFolder[], path: string, label: string): void {
+  const hit = overlappingFolder(guarded, path);
   if (hit) {
     throw invalid(
       `${label} ${path} overlaps ${hit.what} (${hit.path}). ${APP_NAME} manages that folder already: pick another.`,
@@ -32,18 +51,14 @@ function refuseOverlap(guarded: readonly Guarded[], path: string, label: string)
   }
 }
 
-/**
- * A linked workspace's folders must stay clear of the library and of agents' own folders: the
- * app would otherwise treat one folder as two places, and its copies and removals would reach
- * into the other.
- */
+/** A linked workspace's folders must stay clear of the library and of agents' own folders. */
 export function refuseLinkedOverlap(
   ctx: CoreContext,
   registry: AgentRegistry,
   root: string,
   disabledRoot: string | null,
 ): void {
-  const guarded = guardedFolders(ctx, registry);
+  const guarded = guardedFolders(ctx.paths.baseDir, registry);
   refuseOverlap(guarded, root, "The skills folder");
   if (disabledRoot) refuseOverlap(guarded, disabledRoot, "The disabled skills folder");
 }
@@ -57,7 +72,7 @@ export function refuseProjectOverlap(
   registry: AgentRegistry,
   root: string,
 ): void {
-  const [library, ...agents] = guardedFolders(ctx, registry);
+  const [library, ...agents] = guardedFolders(ctx.paths.baseDir, registry);
   if (library) refuseOverlap([library], root, "The project");
   for (const dir of projectSkillDirs(registry)) {
     refuseOverlap(agents, join(root, dir), "Its skills folder");

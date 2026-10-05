@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
-import { realpathSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { isAbsolute, join } from "node:path";
 import {
   DEFAULT_PUBLISH_LAYER,
   PUBLISH_LAYERS,
@@ -12,7 +11,7 @@ import { type ParsedRemote, parseRemoteUrl } from "../backup/credentials";
 import type { CoreContext } from "../context";
 import { invalid } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
-import { pathsOverlap } from "../util/fs";
+import { pathsOverlap, realPathOf } from "../util/fs";
 
 /** Where a publish goes, with every part of the input checked. */
 
@@ -40,20 +39,6 @@ export interface ResolvedTarget {
   layerDir: string;
   /** Where the working copy for this repository is kept between publishes. */
   cacheDir: string;
-}
-
-/**
- * The real path of the deepest part that exists, with the rest appended: two spellings of one
- * place (`/var` and `/private/var`) compare equal even when the folder is not there yet.
- */
-function realPathOf(path: string): string {
-  const full = resolve(path);
-  try {
-    return realpathSync(full);
-  } catch {
-    const parent = dirname(full);
-    return parent === full ? full : join(realPathOf(parent), basename(full));
-  }
 }
 
 /** The spelling of an address that two spellings of one repository share. */

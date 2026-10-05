@@ -20,7 +20,7 @@ import { indexLibrary, matchLibrarySkill, scanSkillRoot } from "../workspace/loc
 import { applyPlan, skillsToWrite } from "./apply";
 import { findSkillsFile, loadSkillsFile, stringifySkillsFile } from "./format";
 import { preparePlan } from "./plan";
-import { realPathOf } from "./safety";
+import { realPathOf } from "../util/fs";
 
 export interface SkillsFileDeps {
   git: GitClient;
@@ -46,7 +46,7 @@ export function createSkillsFileService(
   ctx: CoreContext,
   deps: SkillsFileDeps,
 ): { api: SkillsFileApi } {
-  const planDeps = { git: deps.git, registry: deps.registry, libraryDir: ctx.paths.skillsDir };
+  const planDeps = { git: deps.git, registry: deps.registry, libraryDir: ctx.paths.baseDir };
 
   /** The skills file for `dir`; one in the home folder would name the agents' global folders. */
   const load = (dir: string): SkillsFileInfo => {

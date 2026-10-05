@@ -1,7 +1,8 @@
-import { basename, dirname, join, resolve } from "node:path";
+import { join } from "node:path";
 import type { AgentRegistry } from "../agents/registry";
 import { invalid } from "../errors";
-import { canonicalPath, isInside, lstatOrNull } from "../util/fs";
+import { type GuardedFolder, guardedFolders, overlappingFolder } from "../projects/overlap";
+import { isInside, lstatOrNull, realPathOf } from "../util/fs";
 import { holdsUncopiedEntries } from "../util/hash";
 
 /**
@@ -13,25 +14,13 @@ import { holdsUncopiedEntries } from "../util/hash";
 export interface FolderRules {
   root: string;
   realRoot: string;
-  /** Real paths no project folder may be, or be inside, or hold. */
-  forbidden: string[];
+  /** Folders no project folder may be, or be inside, or hold. */
+  forbidden: GuardedFolder[];
   /** Every agent's project skills folder, `/` separated. */
   projectDirs: Set<string>;
 }
 
-/** The real path of `path`, following links in whatever part of it exists yet. */
-export function realPathOf(path: string): string {
-  let existing = resolve(path);
-  const rest: string[] = [];
-  while (!lstatOrNull(existing)) {
-    const parent = dirname(existing);
-    if (parent === existing) break;
-    rest.unshift(basename(existing));
-    existing = parent;
-  }
-  return join(canonicalPath(existing), ...rest);
-}
-
+/** `libraryDir`: the library's whole folder, not only its skills. */
 export function folderRules(
   root: string,
   registry: AgentRegistry,
@@ -41,7 +30,7 @@ export function folderRules(
   return {
     root,
     realRoot: realPathOf(root),
-    forbidden: [...agents.map((agent) => realPathOf(agent.skillsDir)), realPathOf(libraryDir)],
+    forbidden: guardedFolders(libraryDir, registry),
     projectDirs: new Set(
       agents.flatMap((agent) => {
         const dir = agent.projectSkillsDir;
@@ -57,10 +46,8 @@ function refusal(rules: FolderRules, dir: string): string | null {
   if (!isInside(rules.realRoot, real) || real === rules.realRoot) {
     return `${dir} leads outside the project (to ${real})`;
   }
-  const clash = rules.forbidden.find((path) => isInside(path, real) || isInside(real, path));
-  return clash
-    ? `${dir} is, or holds, an agent's own skills folder or the library (${clash})`
-    : null;
+  const clash = overlappingFolder(rules.forbidden, real);
+  return clash ? `${dir} is, or holds, ${clash.what} (${clash.path})` : null;
 }
 
 /** Throw when the file would make Loadout write into `dir` (a project skills folder). */

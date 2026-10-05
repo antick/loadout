@@ -21,7 +21,14 @@ import { createSafetyService } from "../src/safety";
 import { createSkillsFileService } from "../src/skills-file/service";
 import { createRemovedStore } from "../src/storage";
 import { hashDir } from "../src/util/hash";
-import { type TestWorld, createTestWorld, makeSkill, passingSafety, writeFile } from "./helpers";
+import {
+  type TestWorld,
+  createTestWorld,
+  makeSkill,
+  passingSafety,
+  rejection,
+  writeFile,
+} from "./helpers";
 import {
   commitAll,
   createInstallHarness,
@@ -317,6 +324,14 @@ describe("apply", () => {
     await expect(api.apply(project)).rejects.toMatchObject({ code: "INVALID_INPUT" });
     expect(existsSync(join(elsewhere, "skills"))).toBe(false);
     expect(existsSync(join(project, ".agents"))).toBe(false);
+  });
+
+  it("refuses to write anywhere in the library's folder, not only beside its skills", async () => {
+    const base = world.ctx.paths.baseDir;
+    writeFileSync(join(base, SKILLS_FILE_NAME), TOML);
+    const refused = await rejection(api.apply(base));
+    expect(refused.message).toContain("the Loadout library");
+    expect(existsSync(join(base, ".claude"))).toBe(false);
   });
 
   it("keeps a folder edited after the plan was made, before it was applied", async () => {

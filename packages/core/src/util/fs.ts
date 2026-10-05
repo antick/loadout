@@ -18,7 +18,7 @@ import {
 } from "node:fs";
 import { cp, mkdir, rm } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 import { SKILL_MARKER_FILES } from "@loadout/shared";
 import { invalid } from "../errors";
 
@@ -90,6 +90,22 @@ export function canonicalPath(path: string): string {
   } catch {
     return resolve(path);
   }
+}
+
+/**
+ * The real path of `path`, following links in whatever part of it exists yet: two spellings of
+ * one place (`/var` and `/private/var`, a linked parent) compare equal before the folder is made.
+ */
+export function realPathOf(path: string): string {
+  let existing = resolve(path);
+  const rest: string[] = [];
+  while (!lstatOrNull(existing)) {
+    const parent = dirname(existing);
+    if (parent === existing) break;
+    rest.unshift(basename(existing));
+    existing = parent;
+  }
+  return join(canonicalPath(existing), ...rest);
 }
 
 /** Canonical parent + verbatim last segment: identifies a deploy target without following it. */

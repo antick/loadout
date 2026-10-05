@@ -347,6 +347,17 @@ describe("projects", () => {
       expect(await api().list()).toEqual([]);
     });
 
+    it("follows links to judge a skills folder that is not there yet", async () => {
+      // The project's `.cursor` is the user's own: its `skills` would be Cursor's folder.
+      mkdirSync(join(world.home, ".cursor"), { recursive: true });
+      const project = join(world.root, "linked-project");
+      mkdirSync(project);
+      symlinkSync(join(world.home, ".cursor"), join(project, ".cursor"));
+      const refused = await rejection(api().add(project));
+      expect(refused.message).toContain("overlaps the skills folder of Cursor");
+      expect(await api().list()).toEqual([]);
+    });
+
     it("waits for the library lock before moving a skill", async () => {
       const project = await api().addLinked("Vault", skillsRoot);
       makeSkill(skillsRoot, "alpha");
