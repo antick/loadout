@@ -1,14 +1,15 @@
+import { existsSync } from "node:fs";
 import { basename, dirname } from "node:path";
-import type { EditTarget, Skill, SkillCopy, SkillLocation } from "@loadout/shared";
+import type { EditTarget, InstructionFile, Skill, SkillCopy, SkillLocation } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
-import { invalid, notFound } from "../errors";
+import { invalid, notFound, unsupported } from "../errors";
 import type { InstructionFinder, InstructionLocation } from "../instructions/finder";
-import type { ProjectStore } from "../projects/store";
+import type { ProjectRecord, ProjectStore } from "../projects/store";
 import { findVariants } from "../projects/scan";
 import { findTarget, resolveTargets } from "../projects/targets";
 import type { SkillStore } from "../skills/store";
-import { canonicalPath, isInside } from "../util/fs";
+import { canonicalPath, isInside, lstatOrNull, targetIdentity } from "../util/fs";
 import { requireLocalSkill } from "../workspace/local-actions";
 import { describeLocalSkill, indexLibrary, matchLibrarySkill } from "../workspace/local-scan";
 import type { EditableFolder } from "./files";
@@ -50,6 +51,21 @@ function library(skill: Skill): ResolvedLocation {
       otherCopies: [],
     },
   };
+}
+
+/**
+ * An instruction file that does not exist yet opens as a new one, unless nothing could be saved
+ * there: a link to a missing file, something that is not a file, or a project folder that is gone
+ * (never brought back by a save).
+ */
+function requireCreatable(file: InstructionFile, project: ProjectRecord | null): void {
+  if (file.linkTarget !== null) {
+    throw unsupported(`${file.path} links to ${file.linkTarget}, which does not exist`);
+  }
+  if (lstatOrNull(file.path)) throw invalid(`${file.path} is not a file`);
+  if (project && !existsSync(project.path)) {
+    throw notFound(`The project folder is missing: ${project.path}`);
+  }
 }
 
 export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
@@ -161,12 +177,15 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
     };
   }
 
-  /** An agent's instruction file: its folder, limited to that one file. Links are followed. */
+  /**
+   * An agent's instruction file: its folder, limited to that one file. Links are followed. A file
+   * that does not exist yet reads as empty, and its first save creates it.
+   */
   function instructionFile(location: InstructionLocation): ResolvedLocation {
     const file = instructions.find(location);
-    if (!file.exists) throw notFound(`${file.path} does not exist yet`);
-    const real = canonicalPath(file.path);
     const project = instructions.projectOf(location);
+    if (!file.exists) requireCreatable(file, project);
+    const real = file.exists ? canonicalPath(file.path) : targetIdentity(file.path);
     const readers = file.readers.map((reader) => reader.agentName).join(", ");
     const placeLabel = project ? `${project.name}${PLACE_SEPARATOR}${readers}` : readers;
     return {
@@ -176,6 +195,7 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps) {
         label: file.name,
         historyKey: `instructions:${real}`,
         only: basename(real),
+        creatable: !file.exists,
       },
       librarySkill: null,
       otherCopies: [],

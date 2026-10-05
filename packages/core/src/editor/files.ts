@@ -1,10 +1,16 @@
-import { type Stats, readFileSync } from "node:fs";
+import { type Stats, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import type { SaveSkillFileInput, SkillFile, SkillFileEntry } from "@loadout/shared";
+import {
+  NEW_FILE_HASH,
+  type SaveSkillFileInput,
+  type SkillFile,
+  type SkillFileEntry,
+} from "@loadout/shared";
 import { AppError, invalid, notFound, unsupported } from "../errors";
 import { readSkillDocument } from "../skills/metadata";
 import {
   canonicalPath,
+  ensureDir,
   isInside,
   lstatOrNull,
   resolveInside,
@@ -40,6 +46,11 @@ export interface EditableFolder {
   historyKey: string;
   /** Only this file of the folder can be listed or edited (an instruction file in `~/.claude`). */
   only?: string;
+  /**
+   * `only` may not exist yet: it then reads as a new, empty file, and the first save creates it
+   * (and its folders). Nothing is written before that save.
+   */
+  creatable?: boolean;
 }
 
 export interface LocatedFile {
@@ -58,13 +69,19 @@ export interface WriteOutcome {
   after: Buffer;
 }
 
+/** A file of a `creatable` folder that is not on disk yet. */
+interface MissingFile {
+  relative: string;
+  absolute: string;
+}
+
 /** Split a relative path the way both separators are written, without empty segments. */
 export function segmentsOf(path: string): string[] {
   return path.split(/[\\/]+/).filter(Boolean);
 }
 
-/** Resolve a file of the folder, refusing anything outside it, links and ignored names. */
-function locate(folder: EditableFolder, path: unknown): LocatedFile {
+/** The `/` separated path of a file the folder may hold; refuses ignored names and other files. */
+function relativeIn(folder: EditableFolder, path: unknown): string {
   if (typeof path !== "string" || !path.trim()) throw invalid("A file path is required");
   const segments = segmentsOf(path);
   const relative = segments.join("/");
@@ -72,7 +89,21 @@ function locate(folder: EditableFolder, path: unknown): LocatedFile {
   if (folder.only !== undefined && relative !== folder.only) {
     throw invalid(`${relative} is not part of ${folder.label}`);
   }
-  const absolute = resolveInside(folder.dir, path);
+  return relative;
+}
+
+/** The folder's one file when it may be created and nothing is there yet; null otherwise. */
+function missingIn(folder: EditableFolder, path: unknown): MissingFile | null {
+  if (!folder.creatable) return null;
+  const relative = relativeIn(folder, path);
+  const absolute = resolveInside(folder.dir, relative);
+  return lstatOrNull(absolute) ? null : { relative, absolute };
+}
+
+/** Resolve a file of the folder, refusing anything outside it, links and ignored names. */
+function locate(folder: EditableFolder, path: unknown): LocatedFile {
+  const relative = relativeIn(folder, path);
+  const absolute = resolveInside(folder.dir, relative);
   const stat = lstatOrNull(absolute);
   if (!stat) throw notFound(`${relative} no longer exists in ${folder.label}`);
   if (stat.isSymbolicLink() || !stat.isFile()) {
@@ -136,6 +167,10 @@ export function listFolderFiles(
   edited: ReadonlySet<string> = new Set(),
 ): SkillFileEntry[] {
   if (folder.only === undefined) return listFiles(folder.dir, edited);
+  const missing = missingIn(folder, folder.only);
+  if (missing) {
+    return [{ path: missing.relative, size: 0, locked: null, main: true, edited: false }];
+  }
   const file = locate(folder, folder.only);
   return [
     {
@@ -169,6 +204,11 @@ function listFiles(dir: string, edited: ReadonlySet<string> = new Set()): SkillF
 }
 
 export function readFileAt(folder: EditableFolder, path: string): SkillFile {
+  const missing = missingIn(folder, path);
+  if (missing) {
+    const empty = { content: "", hash: NEW_FILE_HASH, eol: "lf", modifiedAt: 0 } as const;
+    return { path: missing.relative, ...empty, isNew: true };
+  }
   const file = locate(folder, path);
   return toSkillFile(file.relative, readLocated(file), file.stat);
 }
@@ -181,6 +221,8 @@ export function writeFileAt(
 ): WriteOutcome {
   if (typeof input?.content !== "string") throw invalid("File content is required");
   if (typeof input.baseHash !== "string") throw invalid("The version being edited is missing");
+  const missing = missingIn(folder, input.path);
+  if (missing) return createFileAt(folder, missing, input);
   const file = locate(folder, input.path);
   const current = readLocated(file);
   const currentHash = hashBytes(current);
@@ -213,6 +255,40 @@ export function writeFileAt(
     file: toSkillFile(saved.relative, readFileSync(saved.absolute), saved.stat),
     written: true,
     before: current,
+    after: next,
+  };
+}
+
+/**
+ * The first save of a file that was not on disk: its folders are made, and the file is written
+ * only if it still does not exist, so a file created meanwhile is never overwritten unseen.
+ */
+function createFileAt(
+  folder: EditableFolder,
+  missing: MissingFile,
+  input: SaveSkillFileInput,
+): WriteOutcome {
+  // The editor had an existing file open, deleted since: a change on disk like any other.
+  if (input.baseHash !== NEW_FILE_HASH && !input.overwrite) {
+    throw changedOnDisk(missing.relative, NEW_FILE_HASH);
+  }
+  const next = encodeText(input.content, "lf", false);
+  if (next.length > MAX_EDITABLE_BYTES) throw invalid(`${missing.relative} is too large to save`);
+  ensureDir(dirname(missing.absolute));
+  if (!staysInside(folder.dir, missing.absolute)) {
+    throw invalid(`${missing.relative} is outside the skill folder`);
+  }
+  try {
+    writeFileSync(missing.absolute, next, { flag: "wx" });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    throw changedOnDisk(missing.relative, hashBytes(readFileSync(missing.absolute)));
+  }
+  const saved = locate(folder, missing.relative);
+  return {
+    file: toSkillFile(saved.relative, readFileSync(saved.absolute), saved.stat),
+    written: true,
+    before: Buffer.alloc(0),
     after: next,
   };
 }

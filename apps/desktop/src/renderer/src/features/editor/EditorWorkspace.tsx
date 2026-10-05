@@ -331,6 +331,7 @@ export function EditorWorkspace({
             onCarryToCopies={setCarryToCopies}
             path={activePath}
             deleted={deleted}
+            isNew={current?.disk.isNew ?? false}
             diskChanged={current ? hasDiskChange(current) : false}
             restored={current?.restored ?? false}
             problems={problems}

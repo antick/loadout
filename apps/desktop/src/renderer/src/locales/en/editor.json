@@ -74,6 +74,7 @@
     },
     "notice": {
       "deleted": "{{path}} was deleted on disk. Your text is still here: copy it before you leave.",
+      "new": "{{path}} does not exist yet. It is created when you save.",
       "diskChanged": "{{path}} changed on disk while you were editing it. Your text has not been saved.",
       "compare": "Compare",
       "keepMine": "Keep mine",

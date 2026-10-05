@@ -122,3 +122,9 @@ export function archiveSuffixOf(path: string): (typeof ARCHIVE_SUFFIXES)[number]
 export function isArchivePath(path: string): boolean {
   return archiveSuffixOf(path) !== null;
 }
+
+/**
+ * `SkillFile.hash` of a file that is not on disk yet. Saving with it as the base creates the file;
+ * when a file appeared there meanwhile, the save is refused as a change on disk.
+ */
+export const NEW_FILE_HASH = "";

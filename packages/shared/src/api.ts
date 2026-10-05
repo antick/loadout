@@ -158,10 +158,11 @@ export interface EditorApi {
 
 /** Instruction files (`CLAUDE.md`, `AGENTS.md`, …) of the available agents. Edited via `editor`. */
 export interface InstructionsApi {
-  /** Global files when `projectId` is null, else that project's. One entry per distinct file. */
+  /**
+   * Global files when `projectId` is null, else that project's. One entry per distinct file. One
+   * that does not exist yet opens in the editor as new; its first save creates it.
+   */
   list(projectId: string | null): Promise<InstructionFile[]>;
-  /** Create the (empty) file a location points at. Does nothing when it already exists. */
-  create(location: SkillLocation): Promise<InstructionFile>;
 }
 
 export interface DeployApi {

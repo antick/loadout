@@ -1,5 +1,5 @@
 import { hasSkillErrors, type Skill, type SkillCopy, type SkillIssue } from "@loadout/shared";
-import { Copy, FileWarning, GitBranch, History, TriangleAlert } from "lucide-react";
+import { Copy, FilePlus, FileWarning, GitBranch, History, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -19,6 +19,8 @@ export interface EditorNoticesProps {
   path: string;
   /** The open file is gone from disk. */
   deleted: boolean;
+  /** The open file is not on disk yet: saving creates it. */
+  isNew: boolean;
   /** The file changed on disk and differs from the edit. */
   diskChanged: boolean;
   /** Unsaved text came back from an earlier session. */
@@ -43,6 +45,7 @@ export function EditorNotices({
   onCarryToCopies,
   path,
   deleted,
+  isNew,
   diskChanged,
   restored,
   problems,
@@ -82,6 +85,14 @@ export function EditorNotices({
         }
       >
         {t("editor.notice.diskChanged", { path })}
+      </InlineNotice>,
+    );
+  }
+
+  if (isNew && !diskChanged && !deleted) {
+    notices.push(
+      <InlineNotice key="new" tone="info" icon={FilePlus}>
+        {t("editor.notice.new", { path })}
       </InlineNotice>,
     );
   }

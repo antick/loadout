@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { InstructionFile, SkillLocation } from "@loadout/shared";
+import { type InstructionFile, NEW_FILE_HASH, type SkillLocation } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type EditorService, createEditorService, createFileHistory } from "../src/editor";
 import {
@@ -101,24 +101,74 @@ describe("listing", () => {
 });
 
 describe("creating", () => {
-  it("creates a missing global file with its folders", async () => {
+  it("opens a missing file as new and writes nothing until it is saved", async () => {
     world.installAgents(".gemini");
-    const file = await instructions.api.create(globalOf("gemini_cli"));
-    expect(file.exists).toBe(true);
-    expect(readFileSync(join(world.home, ".gemini/GEMINI.md"), "utf8")).toBe("");
+    const location = globalOf("gemini_cli");
+    const path = join(world.home, ".gemini/GEMINI.md");
+
+    expect(await editor.api.target(location)).toMatchObject({ name: "GEMINI.md", path });
+    expect((await editor.api.files(location)).map((file) => file.path)).toEqual(["GEMINI.md"]);
+    const opened = await editor.api.readFile(location, "GEMINI.md");
+    expect(opened).toMatchObject({ content: "", hash: NEW_FILE_HASH, isNew: true });
+    expect(existsSync(path)).toBe(false);
+
+    const saved = await editor.api.saveFile(location, {
+      path: "GEMINI.md",
+      content: "# Rules\n",
+      baseHash: opened.hash,
+    });
+    expect(saved.written).toBe(true);
+    expect(saved.file.isNew).toBeUndefined();
+    expect(readFileSync(path, "utf8")).toBe("# Rules\n");
+    expect(byName(await instructions.api.list(null), "GEMINI.md")?.exists).toBe(true);
   });
 
-  it("leaves an existing file alone", async () => {
+  it("makes the folders a new file needs on its first save", async () => {
+    world.installAgents(".copilot");
+    const project = await newProject();
+    const location: SkillLocation = {
+      kind: "instructions",
+      agentKey: "github_copilot",
+      projectId: project.id,
+    };
+    const opened = await editor.api.readFile(location, "copilot-instructions.md");
+    expect(existsSync(join(project.path, ".github"))).toBe(false);
+
+    await editor.api.saveFile(location, {
+      path: "copilot-instructions.md",
+      content: "Be brief.\n",
+      baseHash: opened.hash,
+    });
+    const written = join(project.path, ".github/copilot-instructions.md");
+    expect(readFileSync(written, "utf8")).toBe("Be brief.\n");
+  });
+
+  it("never overwrites a file that appeared after it was opened as new", async () => {
     world.installAgents(".claude");
-    writeFile(join(world.home, ".claude/CLAUDE.md"), "keep\n");
-    await instructions.api.create(globalOf("claude_code"));
-    expect(readFileSync(join(world.home, ".claude/CLAUDE.md"), "utf8")).toBe("keep\n");
+    const location = globalOf("claude_code");
+    const opened = await editor.api.readFile(location, "CLAUDE.md");
+    writeFile(join(world.home, ".claude/CLAUDE.md"), "theirs\n");
+
+    const save = editor.api.saveFile(location, {
+      path: "CLAUDE.md",
+      content: "mine\n",
+      baseHash: opened.hash,
+    });
+    expect((await rejection(save)).code).toBe("CHANGED_ON_DISK");
+    expect(readFileSync(join(world.home, ".claude/CLAUDE.md"), "utf8")).toBe("theirs\n");
   });
 
   it("refuses an agent without a file for that place", async () => {
     world.installAgents(".cursor");
-    const error = await rejection(instructions.api.create(globalOf("cursor")));
+    const error = await rejection(editor.api.target(globalOf("cursor")));
     expect(error.code).toBe("NOT_FOUND");
+  });
+
+  it("refuses a new file behind a link to nothing", async () => {
+    world.installAgents(".claude");
+    symlinkSync(join(world.root, "gone.md"), join(world.home, ".claude/CLAUDE.md"));
+    const error = await rejection(editor.api.readFile(globalOf("claude_code"), "CLAUDE.md"));
+    expect(error.code).toBe("UNSUPPORTED");
   });
 
   it("does not bring back a deleted project folder", async () => {
@@ -130,8 +180,12 @@ describe("creating", () => {
       agentKey: "claude_code",
       projectId: project.id,
     };
-    const error = await rejection(instructions.api.create(location));
-    expect(error.code).toBe("NOT_FOUND");
+    const save = editor.api.saveFile(location, {
+      path: "CLAUDE.md",
+      content: "rules\n",
+      baseHash: NEW_FILE_HASH,
+    });
+    expect((await rejection(save)).code).toBe("NOT_FOUND");
     expect(existsSync(project.path)).toBe(false);
   });
 });
@@ -193,9 +247,19 @@ describe("editing", () => {
     expect(readFileSync(join(project.path, "CLAUDE.md"), "utf8")).toBe("changed\n");
   });
 
-  it("reports a missing file as not found", async () => {
+  it("reports a file deleted while open as a change on disk", async () => {
     world.installAgents(".claude");
-    const error = await rejection(editor.api.target(globalOf("claude_code")));
-    expect(error.code).toBe("NOT_FOUND");
+    writeFile(join(world.home, ".claude/CLAUDE.md"), "one\n");
+    const location = globalOf("claude_code");
+    const opened = await editor.api.readFile(location, "CLAUDE.md");
+    rmSync(join(world.home, ".claude/CLAUDE.md"));
+
+    const save = editor.api.saveFile(location, {
+      path: "CLAUDE.md",
+      content: "two\n",
+      baseHash: opened.hash,
+    });
+    expect((await rejection(save)).code).toBe("CHANGED_ON_DISK");
+    expect(existsSync(join(world.home, ".claude/CLAUDE.md"))).toBe(false);
   });
 });

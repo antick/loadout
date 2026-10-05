@@ -27,6 +27,11 @@ export interface SkillFile {
   hash: string;
   eol: LineEnding;
   modifiedAt: number;
+  /**
+   * Not on disk yet (an instruction file nobody wrote): it reads as empty with `NEW_FILE_HASH`,
+   * and the first save creates it. A file that appeared meanwhile is a change on disk.
+   */
+  isNew?: boolean;
 }
 
 /**
