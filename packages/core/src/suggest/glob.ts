@@ -1,10 +1,10 @@
+import { escapeRegExp } from "../util/text";
+
 /**
  * The small glob language of suggest-for patterns, like `.gitignore`: `*` is anything but `/`,
  * `**` any number of folders, `?` one character. A pattern without a `/` matches a file or folder
  * name anywhere; one with a `/` matches a path from the project's top.
  */
-
-const SPECIAL = /[.+^${}()|[\]\\]/g;
 
 function toRegExp(pattern: string): RegExp {
   let source = "";
@@ -16,7 +16,7 @@ function toRegExp(pattern: string): RegExp {
       index += slash ? 2 : 1;
     } else if (char === "*") source += "[^/]*";
     else if (char === "?") source += "[^/]";
-    else source += char.replace(SPECIAL, "\\$&");
+    else source += escapeRegExp(char);
   }
   return new RegExp(`^${source}$`, "i");
 }

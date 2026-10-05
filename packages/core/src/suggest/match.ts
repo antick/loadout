@@ -1,6 +1,7 @@
 import type { Skill, SkillSuggestion, SuggestionReason } from "@loadout/shared";
 import { firstMatch } from "./glob";
 import type { ProjectFiles } from "./project-files";
+import { escapeRegExp } from "../util/text";
 import { TECHS, type Tech } from "./tech";
 
 /** Technologies the project shows, in table order. */
@@ -13,14 +14,13 @@ function detectTechs(files: ProjectFiles): Tech[] {
 }
 
 const WORD_EDGE = "[a-z0-9]";
-const SPECIAL = /[.*+?^${}()|[\]\\]/g;
 
 /** `name-like_text` → "name like text", lower case, so words match across separators. */
 const normalize = (text: string): string => text.toLowerCase().replace(/[-_/]+/g, " ");
 
 /** Whether `word` stands on its own in `text` (not inside a longer word). */
 function hasWord(text: string, word: string): boolean {
-  const escaped = normalize(word).replace(SPECIAL, "\\$&");
+  const escaped = escapeRegExp(normalize(word));
   return new RegExp(`(?<!${WORD_EDGE})${escaped}(?!${WORD_EDGE})`).test(text);
 }
 

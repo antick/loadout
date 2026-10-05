@@ -1,3 +1,5 @@
+import { escapeRegExp } from "./text";
+
 /**
  * What never leaves this computer: kept out of the backup and out of a published copy alike.
  * Only names that are never skill content: tool output, installed dependencies and local
@@ -34,10 +36,7 @@ interface Rule {
 
 /** A name-only `.gitignore` pattern (`*` and literal text) as an anchored regular expression. */
 function namePattern(glob: string): RegExp {
-  const source = glob
-    .split("*")
-    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
-    .join(".*");
+  const source = glob.split("*").map(escapeRegExp).join(".*");
   // Case is ignored, as on the macOS and Windows disks most libraries live on.
   return new RegExp(`^${source}$`, "i");
 }
