@@ -1,4 +1,5 @@
 import {
+  cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -354,7 +355,10 @@ describe("create and suggest", () => {
     const preview = await install.api.previewGit("acme/skills");
     await install.api.confirmGit(preview.previewId, [{ relPath: "skills/pdf", name: "pdf" }]);
     const elsewhere = join(world.root, "other");
-    makeSkill(join(elsewhere, ".claude", "skills"), "pdf");
+    // Copied in by hand from the repository: the same files as the library's pdf.
+    cpSync(join(remote, "skills", "pdf"), join(elsewhere, ".claude", "skills", "pdf"), {
+      recursive: true,
+    });
     makeSkill(join(elsewhere, ".claude", "skills"), "unknown");
     const init = await api.suggest(elsewhere);
     expect(init.agents).toEqual(["claude_code"]);
@@ -364,5 +368,15 @@ describe("create and suggest", () => {
     const info = await api.create(elsewhere, init);
     expect(readFileSync(info.path, "utf8")).toContain('skills = [ "pdf" ]');
     await expect(api.create(elsewhere, init)).rejects.toMatchObject({ code: "ALREADY_EXISTS" });
+  });
+
+  it("never suggests a library skill that only shares the project skill's name", async () => {
+    const install = createInstallHarness(world);
+    const preview = await install.api.previewGit("acme/skills");
+    await install.api.confirmGit(preview.previewId, [{ relPath: "skills/pdf", name: "pdf" }]);
+    // This project's pdf is another skill (from another repository, or its own).
+    const own = join(world.root, "own");
+    makeSkill(join(own, ".claude", "skills"), "pdf", { body: "# A different pdf\n" });
+    expect(await api.suggest(own)).toEqual({ agents: [], sources: [] });
   });
 });

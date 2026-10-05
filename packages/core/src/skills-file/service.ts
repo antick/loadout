@@ -13,12 +13,11 @@ import { normalizeProjectDir } from "../agents/service";
 import type { CoreContext } from "../context";
 import { exists, invalid, notFound } from "../errors";
 import type { GitClient } from "../install/git-client";
-import { findSkillDirs } from "../install/repo-scan";
-import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import type { SafetyService } from "../safety/service";
 import type { RemovedStore } from "../storage/removed";
 import { writeFileAtomic } from "../util/fs";
+import { indexLibrary, matchLibrarySkill, scanSkillRoot } from "../workspace/local-scan";
 import { applyPlan, skillsToWrite } from "./apply";
 import { findSkillsFile, loadSkillsFile, stringifySkillsFile } from "./format";
 import { preparePlan } from "./plan";
@@ -42,8 +41,8 @@ function locate(dir: string): string {
   return path;
 }
 
-/** Skill folders directly inside a project's agent folder. */
-const PROJECT_SCAN_DEPTH = 1;
+/** Skill folders directly inside a project's agent folder: where applying the file writes them. */
+const PROJECT_SCAN = { recursive: false } as const;
 
 /** Apply a project's `skills.toml`: see `shared/types-skills-file.ts`. */
 export function createSkillsFileService(
@@ -65,17 +64,19 @@ export function createSkillsFileService(
 
   /**
    * What a skills file for `dir` would say today: every skill in its agents' folders that the
-   * library knows from a repository, grouped by that repository.
+   * library knows from a repository, grouped by that repository. Only proof makes a folder the
+   * library's skill: Loadout put it there, or it holds the same files. A library skill that only
+   * shares its name may come from another repository, and writing that one would swap the skill.
    */
   function suggest(dir: string): SkillsFileInit {
     const agents = new Set<string>();
     const libraryIds = new Set<string>();
+    const library = indexLibrary(deps.store.list(), deps.store.deployments());
     for (const agent of deps.registry.list()) {
       const relative = normalizeProjectDir(agent.projectSkillsDir);
       if (!relative) continue;
-      for (const skillDir of findSkillDirs(join(dir, relative), { maxDepth: PROJECT_SCAN_DEPTH })) {
-        const name = readSkillIdentity(skillDir).name;
-        const match = deps.store.findByName(name)[0];
+      for (const entry of scanSkillRoot(join(dir, relative), PROJECT_SCAN)) {
+        const match = matchLibrarySkill(entry, library, "strict");
         if (!match) continue;
         libraryIds.add(match.id);
         agents.add(agent.key);
