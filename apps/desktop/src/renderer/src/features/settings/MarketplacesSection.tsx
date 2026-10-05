@@ -13,8 +13,11 @@ import { useSetClawhubToken } from "@/features/settings/settings-mutations";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useClawhubAccount } from "@/hooks/queries/publish";
 
-/** The ClawHub token: who it signs in as, saving a new one, and taking it away. */
-function ClawhubAccountPanel(): ReactNode {
+/**
+ * Marketplaces skills come from and go to. For now, the ClawHub token: who it signs in as, saving
+ * a new one, and taking it away.
+ */
+export function MarketplacesSection(): ReactNode {
   const { t } = useTranslation();
   const account = useClawhubAccount();
   const setToken = useSetClawhubToken();
@@ -120,9 +123,4 @@ function ClawhubAccountPanel(): ReactNode {
       </form>
     </Panel>
   );
-}
-
-/** Marketplaces skills come from and go to: for now, the ClawHub account. */
-export function MarketplacesSection(): ReactNode {
-  return <ClawhubAccountPanel />;
 }
