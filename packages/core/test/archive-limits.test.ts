@@ -2,15 +2,20 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createFileHistory } from "../src/editor";
-import { readTar } from "../src/install/tar";
+import { MAX_ARCHIVE_ENTRIES, readTar } from "../src/install/tar";
 import { tempDir } from "./helpers";
 import { tarBuffer } from "./install-fixtures";
 
 describe("archive limits", () => {
   it("refuses a tar holding more entries than allowed, however small", () => {
-    const tar = tarBuffer([{ name: "a" }, { name: "b" }, { name: "c" }]);
-    expect(readTar(tar, 1_000_000, 3)).toHaveLength(3);
-    expect(() => readTar(tar, 1_000_000, 2)).toThrow("more than 2 entries");
+    const entries = Array.from({ length: MAX_ARCHIVE_ENTRIES }, (_, index) => ({
+      name: `f${index}`,
+    }));
+    expect(readTar(tarBuffer(entries), 1_000_000)).toHaveLength(MAX_ARCHIVE_ENTRIES);
+    const oneMore = tarBuffer([...entries, { name: "one-more" }]);
+    expect(() => readTar(oneMore, 1_000_000)).toThrow(
+      `more than ${MAX_ARCHIVE_ENTRIES} entries`,
+    );
   });
 });
 
