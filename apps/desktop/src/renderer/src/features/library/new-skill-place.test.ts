@@ -1,6 +1,6 @@
 import type { LocalSkill, Project, ProjectTarget } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
-import { projectTargetChips } from "../../components/AgentTargetChips";
+import { projectTargetChips } from "../../components/AgentPicker";
 import { defaultChipKeys, placeTargets, takenInFolders } from "./new-skill-place";
 
 function target(key: string, extra: Partial<ProjectTarget> = {}): ProjectTarget {

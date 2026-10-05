@@ -1,6 +1,6 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
-import { AgentTargetChips } from "@/components/AgentTargetChips";
+import { AgentPicker } from "@/components/AgentPicker";
 import { OptionSelect } from "@/components/OptionSelect";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { LIBRARY_PLACE } from "./new-skill-place";
@@ -28,9 +28,10 @@ export function NewSkillPlaceField({ place }: { place: NewSkillPlace }): ReactNo
         onChange={place.setPlaceId}
       />
       {place.chips.length > 0 ? (
-        <AgentTargetChips
+        <AgentPicker
+          layout="chips"
           label={t("library.create.place.agents")}
-          chips={place.chips}
+          items={place.chips}
           selected={place.selected}
           onChange={place.setSelected}
         />

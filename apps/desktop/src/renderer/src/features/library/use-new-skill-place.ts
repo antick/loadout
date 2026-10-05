@@ -4,7 +4,7 @@ import {
   type AgentTargetChip,
   chosenAgentKeys,
   projectTargetChips,
-} from "@/components/AgentTargetChips";
+} from "@/components/AgentPicker";
 import {
   useLastExportAgents,
   useProjectSkills,

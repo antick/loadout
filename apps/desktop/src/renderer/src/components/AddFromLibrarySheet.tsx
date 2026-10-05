@@ -9,12 +9,12 @@ import { Library } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  AgentPicker,
   type AgentTargetChip,
-  AgentTargetChips,
   chosenAgentKeys,
   initialChipKeys,
   projectTargetChips,
-} from "@/components/AgentTargetChips";
+} from "@/components/AgentPicker";
 import { EmptyState } from "@/components/EmptyState";
 import { SearchInput } from "@/components/SearchInput";
 import { SourceBadge } from "@/components/SourceBadge";
@@ -306,9 +306,10 @@ export function AddFromLibrarySheet({
                 : t("picker.tagSelectRest", { count: rest, tag, agent: agentLabel });
             }}
           />
-          <AgentTargetChips
+          <AgentPicker
+            layout="chips"
             label={t("picker.targets")}
-            chips={chips}
+            items={chips}
             selected={chipKeys}
             onChange={setChipKeys}
             locked={target.kind === "agent"}
