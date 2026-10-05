@@ -30,8 +30,10 @@ export function useAgentSkillActions(
   // `mutate` is stable across renders; the mutation objects are not.
   const { mutate: upload } = useUploadLocalSkill();
   const { mutate: pull } = usePullLocalSkill();
-  const { mutate: remove } = useUndeploySkill();
-  const { mutate: deleteLocal } = useDeleteLocalSkill();
+  // `mutateAsync`, not per-call callbacks: TanStack Query only calls those for the latest call of
+  // a mutation, so a quick second removal would lose the first one's toast and leave its sheet open.
+  const { mutateAsync: remove } = useUndeploySkill();
+  const { mutateAsync: deleteLocal } = useDeleteLocalSkill();
 
   return useCallback(
     (skill: LocalSkill): SkillAction[] => {
@@ -115,15 +117,13 @@ export function useAgentSkillActions(
               });
               if (!ok) return;
             }
-            remove(
-              { agentKey: skill.agentKey, skillId },
-              {
-                onSuccess: () => {
-                  toastSuccess(t("agents.toast.removed", { name: skill.name }));
-                  onGone?.(skill);
-                },
-              },
-            );
+            // The mutation toasts a failure itself.
+            void remove({ agentKey: skill.agentKey, skillId })
+              .then(() => {
+                toastSuccess(t("agents.toast.removed", { name: skill.name }));
+                onGone?.(skill);
+              })
+              .catch(() => undefined);
           },
         });
       }
@@ -142,7 +142,11 @@ export function useAgentSkillActions(
               confirmLabel: t("agents.actions.deleteShort"),
               destructive: true,
             });
-            if (ok) deleteLocal(ref, { onSuccess: () => onGone?.(skill) });
+            if (ok) {
+              void deleteLocal(ref)
+                .then(() => onGone?.(skill))
+                .catch(() => undefined);
+            }
           },
         });
       }
