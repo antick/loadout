@@ -2,6 +2,7 @@ import type {
   ApplyResult,
   Preset,
   PresetApplyOptions,
+  PresetRemoveOptions,
   PresetAgentToggle,
   PresetInput,
   PresetsApi,
@@ -85,8 +86,7 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
 
   /**
    * Preset skills × the agents to take them out of: `agentKeys` when given, else every agent
-   * that currently holds one of the skills. Switches are not consulted: a removal must not leave
-   * a copy behind because its switch is off.
+   * that currently holds one of the skills. Switches are not consulted.
    */
   function heldPairs(preset: Preset, agentKeys?: readonly string[]): PairRef[] {
     const keys = agentKeys ?? [
@@ -107,13 +107,14 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
   async function applyWanted(
     preset: Preset,
     action: "add" | "remove",
-    options: PresetApplyOptions = {},
+    options: PresetRemoveOptions = {},
   ): Promise<ApplyResult> {
-    const { agentKeys, ...applyOptions } = options;
+    const { agentKeys, everyHolder, ...applyOptions } = options;
     const record = (detail: string, ok: boolean): void => {
       if (!applyOptions.dryRun) ctx.activity.record("preset", preset.name, detail, ok);
     };
-    const pairs = action === "add" ? wantedPairs(preset, agentKeys) : heldPairs(preset, agentKeys);
+    const held = action === "remove" && (agentKeys !== undefined || everyHolder === true);
+    const pairs = held ? heldPairs(preset, agentKeys) : wantedPairs(preset, agentKeys);
     try {
       const result = await deploy.applyPairs(pairs, action, applyOptions);
       const clean = result.conflicts.length === 0 && result.failed.length === 0;

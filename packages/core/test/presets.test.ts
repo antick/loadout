@@ -206,9 +206,13 @@ describe("presets", () => {
     });
     expect(world.store.deployments().map((d) => d.agentKey)).toEqual(["claude_code"]);
 
-    // A switch turned off after the deploy does not leave the copy behind.
+    // By default a switched-off agent is left alone; `everyHolder` takes the copy out too.
     await api().setToggle(preset.id, one.id, "claude_code", false);
-    expect(await api().removeFromDefault(preset.id)).toMatchObject({ removed: 1 });
+    expect(await api().removeFromDefault(preset.id)).toMatchObject({ removed: 0 });
+    expect(world.store.deployments()).toHaveLength(1);
+    expect(await api().removeFromDefault(preset.id, { everyHolder: true })).toMatchObject({
+      removed: 1,
+    });
     expect(world.store.deployments()).toEqual([]);
   });
 

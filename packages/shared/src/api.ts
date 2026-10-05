@@ -21,6 +21,7 @@ import type {
   PresetDeployStatus,
   PresetApplyOptions,
   PresetInput,
+  PresetRemoveOptions,
   Project,
   ProjectCopyRef,
   ProjectSuggestion,
@@ -217,10 +218,10 @@ export interface PresetsApi {
    */
   applyToDefault(id: string, options?: PresetApplyOptions): Promise<ApplyResult>;
   /**
-   * Undo `applyToDefault`: remove the preset's skills from every agent that holds one (or from
-   * `agentKeys`), switches aside. `dryRun` works as in `DeployApi.apply`.
+   * Undo `applyToDefault`: remove the preset's skills from the switched-on agents, or from
+   * `agentKeys` or every holder when asked. `dryRun` works as in `DeployApi.apply`.
    */
-  removeFromDefault(id: string, options?: PresetApplyOptions): Promise<ApplyResult>;
+  removeFromDefault(id: string, options?: PresetRemoveOptions): Promise<ApplyResult>;
   /** Deployment progress of every preset across the enabled agents, in preset order. */
   deployStatus(): Promise<PresetDeployStatus[]>;
   /** Write the preset to a file others can import: skills by source, or with their files. */

@@ -130,7 +130,7 @@ async function undeploy({ core, args }: CommandContext): Promise<CommandResult> 
   const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
   const value = await core.api.presets.removeFromDefault(preset.id, {
     dryRun,
-    ...(keys.length > 0 ? { agentKeys: keys } : {}),
+    ...(keys.length > 0 ? { agentKeys: keys } : { everyHolder: true }),
   });
   return applyOutcome(value, { dryRun, skipConflicts: false, subject: preset.name });
 }

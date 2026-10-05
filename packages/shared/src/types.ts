@@ -356,6 +356,16 @@ export interface PresetApplyOptions extends ApplyOptions {
   agentKeys?: string[];
 }
 
+export interface PresetRemoveOptions extends ApplyOptions {
+  /** Only these agents, switches aside; otherwise as `everyHolder` says. */
+  agentKeys?: string[];
+  /**
+   * Take the skills out of every agent that holds one, switches aside (the CLI's default).
+   * Otherwise the switched-on agents only, undoing exactly what `applyToDefault` put there.
+   */
+  everyHolder?: boolean;
+}
+
 export interface ApplyResult {
   added: number;
   removed: number;
