@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PRESET_FILE_FORMAT, type PresetFile } from "@loadout/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Core } from "../src/core";
 import { parsePresetFile } from "../src/presets/share-file";
 import { makeSkill, tempDir, createTestCore } from "./helpers";
@@ -114,6 +114,30 @@ describe("importing a preset", () => {
     expect(second.preset.name).toBe("Team 2");
     const named = await bob.api.presets.importFile(file, { name: "Mine" });
     expect(named.preset.name).toBe("Mine");
+  });
+
+  it("clones a repository once, however the file spells its address", async () => {
+    const remote = join(temp.dir, "remotes", "acme", "skills.git");
+    makeSkill(join(remote, "skills"), "docx");
+    commitAll(remote, "docx");
+    const file = join(temp.dir, "spelled.json");
+    writeFileSync(
+      file,
+      JSON.stringify({
+        format: PRESET_FILE_FORMAT,
+        version: 1,
+        name: "Spelled",
+        skills: [
+          { name: "pdf", source: { url: REPO, subpath: "skills/pdf" } },
+          { name: "docx", source: { url: `${REPO}.git/`, subpath: "skills/docx" } },
+        ],
+      }),
+    );
+    const bob = newCore("bob");
+    const previews = vi.spyOn(bob.api.install, "previewGit");
+    const result = await bob.api.presets.importFile(file);
+    expect(result).toMatchObject({ installed: ["pdf", "docx"], failed: [] });
+    expect(previews).toHaveBeenCalledTimes(1);
   });
 
   it("names skills it cannot get, and still makes the preset", async () => {

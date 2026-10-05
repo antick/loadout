@@ -184,13 +184,15 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
         return [{ entry, relPath: found.relPath, name: found.name }];
       });
       if (picks.length === 0) return;
+      // Entries naming one folder (its source spelled two ways) share one install.
+      const folders = [...new Map(picks.map((pick) => [pick.relPath, pick])).values()];
       const installed = await deps.install.confirmGit(
         preview.previewId,
-        picks.map(({ relPath, name }) => ({ relPath, name })),
+        folders.map(({ relPath, name }) => ({ relPath, name })),
         { acceptRisk: options.acceptRisk },
       );
-      for (const [index, pick] of picks.entries()) {
-        const skill = installed[index];
+      for (const pick of picks) {
+        const skill = installed[folders.findIndex((folder) => folder.relPath === pick.relPath)];
         if (skill) result.ids.set(pick.entry, skill.id);
       }
     } finally {
@@ -261,7 +263,8 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
           ids.set(entry, step.librarySkillId);
           reused.push(entry.name);
         } else if (step?.state === "source" && entry.source) {
-          const key = `${entry.source.url}\u0000${entry.source.branch ?? ""}`;
+          // One repository spelled two ways is still one clone.
+          const key = `${normalizeSourceUrl(entry.source.url)}\u0000${entry.source.branch ?? ""}`;
           bySource.set(key, [...(bySource.get(key) ?? []), entry]);
         } else if (step?.state === "missing") {
           failed.push({
