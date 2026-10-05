@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { SECOND_MS, isRecord } from "@loadout/shared";
 import { AppError } from "../errors";
-import { processAlive } from "../lock";
+import { writerGone } from "../lock";
 import { LIBRARY_PLACE } from "../storage/removed-library";
 import {
   GIT_DIR,
@@ -28,8 +28,9 @@ import { PREVIEW_INDEX_PREFIX } from "./extract";
 const INTERRUPTED_MARKERS = ["MERGE_HEAD", "index.lock", "rebase-merge", "rebase-apply"] as const;
 /**
  * Written into `.git` while Loadout merges: its process id on the first line, then the merge's
- * journal, one JSON entry per line. A leftover note from a process that is gone was Loadout's own
- * merge, cut off by a crash or a power cut, and is safe to undo. Without the note a leftover
+ * journal, one JSON entry per line. A leftover note from a process that is gone (or written
+ * before this computer started, when its pid may belong to another program now) was Loadout's
+ * own merge, cut off by a crash or a power cut, and is safe to undo. Without the note a leftover
  * merge may be someone's work in a terminal: never touched.
  */
 const OWN_MERGE_NOTE = "loadout-merging";
@@ -82,13 +83,15 @@ function parseEntry(line: string): Record<string, unknown> | null {
 /** The journal of a Loadout merge whose process is gone; null for anything else. */
 function abandonedOwnMerge(env: BackupEnv): Journal | null {
   let lines: string[];
+  const note = gitPath(env, OWN_MERGE_NOTE);
   try {
-    lines = readFileSync(gitPath(env, OWN_MERGE_NOTE), "utf8").split(/\r?\n/);
+    lines = readFileSync(note, "utf8").split(/\r?\n/);
   } catch {
     return null;
   }
   const pid = Number(lines[0]?.trim());
-  if (!Number.isInteger(pid) || pid <= 0 || processAlive(pid)) return null;
+  const writtenAt = statOrNull(note)?.mtimeMs ?? Date.now();
+  if (!Number.isInteger(pid) || pid <= 0 || !writerGone(pid, writtenAt)) return null;
   const journal: Journal = { head: null, stages: [], moves: [] };
   for (const entry of lines.slice(1).map(parseEntry)) {
     if (typeof entry?.head === "string" && typeof entry.stage === "string") {

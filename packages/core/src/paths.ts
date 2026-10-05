@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, renameSync, rmdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, renameSync, rmdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -15,7 +15,7 @@ import {
   type LibraryWarning,
 } from "@loadout/shared";
 import { errorMessage } from "./errors";
-import { RepoLock, processAlive } from "./lock";
+import { RepoLock, writerGone } from "./lock";
 import {
   canonicalPath,
   copyEntrySync,
@@ -336,8 +336,10 @@ export function isLibraryDir(baseDir: string): boolean {
 export function isAppRunning(home: string): boolean {
   return [APP_DATA_DIR_NAME, DEV_APP_DATA_DIR_NAME].some((dir) => {
     try {
-      const pid = Number(readFileSync(join(home, LIBRARY_DIR_NAME, dir, APP_RUNNING_FILE), "utf8"));
-      return Number.isInteger(pid) && pid > 0 && pid !== process.pid && processAlive(pid);
+      const file = join(home, LIBRARY_DIR_NAME, dir, APP_RUNNING_FILE);
+      const pid = Number(readFileSync(file, "utf8"));
+      const writtenAt = statSync(file).mtimeMs;
+      return Number.isInteger(pid) && pid > 0 && pid !== process.pid && !writerGone(pid, writtenAt);
     } catch {
       return false;
     }

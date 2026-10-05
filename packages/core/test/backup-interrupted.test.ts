@@ -7,6 +7,7 @@ import {
   utimesSync,
   writeFileSync,
 } from "node:fs";
+import { uptime } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { type Device, joinRemote, seedRemote, useTempDevices } from "./backup-world";
@@ -100,6 +101,17 @@ describe("a backup merge that did not finish", () => {
     writeFileSync(join(b.skillsDir, ".git", "loadout-merging"), String(process.ppid));
     await expect(b.api.sync()).rejects.toMatchObject({ code: "GIT" });
     expect(existsSync(join(b.skillsDir, ".git", "MERGE_HEAD"))).toBe(true);
+  });
+
+  it("is undone when written before this computer started, though its pid runs again", async () => {
+    const b = await halfMerged();
+    const note = join(b.skillsDir, ".git", "loadout-merging");
+    writeFileSync(note, String(process.ppid));
+    const beforeBoot = new Date(Date.now() - (uptime() + 60) * 1000);
+    utimesSync(note, beforeBoot, beforeBoot);
+    await b.api.sync();
+    expect(existsSync(join(b.skillsDir, ".git", "MERGE_HEAD"))).toBe(false);
+    expect(existsSync(note)).toBe(false);
   });
 
   it("waits for a git command that is still running, such as an editor's git view", async () => {

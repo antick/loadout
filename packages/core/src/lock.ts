@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from "node:fs";
-import { hostname } from "node:os";
+import { closeSync, openSync, readFileSync, unlinkSync, utimesSync, writeSync } from "node:fs";
+import { hostname, uptime } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "./errors";
 import { statOrNull } from "./util/fs";
@@ -9,15 +9,27 @@ const WAIT_MS = 20_000;
 const POLL_MS = 50;
 /**
  * A lock file that cannot be read (a crash between creating and writing it) is treated as
- * abandoned once it is this old. A readable one is abandoned only when its process is gone.
+ * abandoned once it is this old.
  */
 const UNREADABLE_STALE_MS = 60_000;
+/** While a lock is held, its file's modification time is moved on this often. */
+const HEARTBEAT_MS = 5_000;
+/**
+ * A lock file not moved on for this long was left behind: its holder crashed, hangs, or sits on
+ * a computer whose process this one cannot ask about (another host name, which on macOS also
+ * happens when the network changes). Many heartbeats long, so a busy holder never loses it.
+ */
+const STALE_MS = 2 * 60_000;
+const MS_PER_SECOND = 1000;
 
 export interface RepoLockOptions {
   /** How long `run` waits for another process before giving up. */
   waitMs?: number;
   /** What the BUSY error says is busy. */
   subject?: string;
+  /** Tests only: heartbeat and stale limit, instead of the constants above. */
+  heartbeatMs?: number;
+  staleMs?: number;
 }
 
 const DEFAULT_SUBJECT = "The skill library";
@@ -36,6 +48,21 @@ export function processAlive(pid: number): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === "EPERM";
   }
+}
+
+/** When this computer last started, in epoch ms. */
+export function bootTime(): number {
+  return Date.now() - uptime() * MS_PER_SECOND;
+}
+
+/**
+ * A process that wrote a record of itself (a pid in a file last written at `writtenAt`) is gone:
+ * the record is older than this computer's start, so the pid may well belong to another program
+ * now, or the process is not running. This process itself always counts as running.
+ */
+export function writerGone(pid: number, writtenAt: number): boolean {
+  if (writtenAt < bootTime()) return true;
+  return pid !== process.pid && !processAlive(pid);
 }
 
 /**
@@ -57,11 +84,16 @@ export class RepoLock {
   /** `startedAt` written into the file we created, to release only our own lock. */
   #ownStartedAt: number | null = null;
   #queue: Promise<unknown> = Promise.resolve();
+  readonly #heartbeatMs: number;
+  readonly #staleMs: number;
+  #heartbeat: ReturnType<typeof setInterval> | null = null;
 
   constructor(path: string, options: RepoLockOptions = {}) {
     this.#path = path;
     this.#waitMs = options.waitMs ?? WAIT_MS;
     this.#subject = options.subject ?? DEFAULT_SUBJECT;
+    this.#heartbeatMs = options.heartbeatMs ?? HEARTBEAT_MS;
+    this.#staleMs = options.staleMs ?? STALE_MS;
   }
 
   /** Another process holds the lock right now (a lock it left behind does not count). */
@@ -78,12 +110,30 @@ export class RepoLock {
     }
   }
 
+  /**
+   * Left behind, never in use: the holder of a live lock moves its time on every heartbeat. A
+   * lock is abandoned when it is older than this computer's start (its pid may be reused), when
+   * no heartbeat moved it for the stale limit, or when its process on this host is gone.
+   */
   #abandoned(holder: LockInfo | null): boolean {
-    if (holder === null) {
-      const stat = statOrNull(this.#path);
-      return stat !== null && Date.now() - stat.mtimeMs > UNREADABLE_STALE_MS;
-    }
+    const stat = statOrNull(this.#path);
+    if (!stat) return false;
+    const age = Date.now() - stat.mtimeMs;
+    if (holder === null) return age > UNREADABLE_STALE_MS;
+    if (age > this.#staleMs || stat.mtimeMs < bootTime()) return true;
     return holder.host === hostname() && holder.pid !== process.pid && !processAlive(holder.pid);
+  }
+
+  /** Move the lock file's time on while it is still ours, so nobody takes it for abandoned. */
+  #beat(): void {
+    const holder = this.#readHolder();
+    if (holder?.pid !== process.pid || holder.startedAt !== this.#ownStartedAt) return;
+    try {
+      const now = new Date();
+      utimesSync(this.#path, now, now);
+    } catch {
+      // Gone already; the release that follows has nothing to do.
+    }
   }
 
   #tryAcquire(operation: string): boolean {
@@ -135,10 +185,14 @@ export class RepoLock {
   #enter(): object {
     const hold = {};
     this.#current = hold;
+    this.#heartbeat = setInterval(() => this.#beat(), this.#heartbeatMs);
+    this.#heartbeat.unref();
     return hold;
   }
 
   #leave(): void {
+    if (this.#heartbeat) clearInterval(this.#heartbeat);
+    this.#heartbeat = null;
     this.#current = null;
     this.#release();
   }

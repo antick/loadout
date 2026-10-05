@@ -1,5 +1,5 @@
-import { existsSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
-import { hostname, tmpdir } from "node:os";
+import { existsSync, mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir, uptime } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RepoLock } from "../src/lock";
@@ -78,7 +78,7 @@ describe("library lock", () => {
     expect(order).toEqual(["a start", "a end", "later"]);
   });
 
-  it("keeps a live process's lock however old, and clears a dead or unreadable one", async () => {
+  it("keeps a live process's lock however long held, and clears a dead or unreadable one", async () => {
     const lock = new RepoLock(path);
     const old = Date.now() - 60 * 60 * 1000;
     // This test's own parent process is alive: its lock stands.
@@ -100,6 +100,44 @@ describe("library lock", () => {
     utimesSync(path, when, when);
     await lock.tryRun("mine", () => "ran");
     expect(await lock.tryRun("mine", () => "ran")).toBe("ran");
+  });
+
+  it("clears a lock older than this computer's start, though its pid now runs again", async () => {
+    const lock = new RepoLock(path);
+    // The pid of a live process: after a restart another program may well have it.
+    writeFileSync(
+      path,
+      JSON.stringify({ pid: process.ppid, host: hostname(), operation: "x", startedAt: 0 }),
+    );
+    const beforeBoot = new Date(Date.now() - (uptime() + 60) * 1000);
+    utimesSync(path, beforeBoot, beforeBoot);
+    await lock.tryRun("mine", () => "ran");
+    expect(await lock.tryRun("mine", () => "ran")).toBe("ran");
+  });
+
+  it("clears a lock of another host only once no heartbeat moved it on", async () => {
+    const lock = new RepoLock(path, { staleMs: 1000 });
+    const other = { pid: process.ppid, host: "renamed-host.local", operation: "x", startedAt: 0 };
+    writeFileSync(path, JSON.stringify(other));
+    expect(await lock.tryRun("mine", () => "ran")).toBeNull();
+
+    const stale = new Date(Date.now() - 5000);
+    utimesSync(path, stale, stale);
+    await lock.tryRun("mine", () => "ran");
+    expect(await lock.tryRun("mine", () => "ran")).toBe("ran");
+  });
+
+  it("keeps a held lock fresh with a heartbeat, so a long operation never loses it", async () => {
+    const holder = new RepoLock(path, { heartbeatMs: 10 });
+    const waiter = new RepoLock(path, { staleMs: 200, waitMs: 0 });
+    await holder.run("long operation", async () => {
+      const old = new Date(Date.now() - 10_000);
+      utimesSync(path, old, old);
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      expect(Date.now() - statSync(path).mtimeMs).toBeLessThan(200);
+      expect(await waiter.tryRun("other", () => "stole it")).toBeNull();
+    });
+    expect(existsSync(path)).toBe(false);
   });
 
   it("writes metadata asked for inside an operation only once that operation is done", async () => {
