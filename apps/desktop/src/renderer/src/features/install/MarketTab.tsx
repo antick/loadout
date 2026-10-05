@@ -201,7 +201,7 @@ export function MarketTab(): ReactNode {
         </Select>
 
         {active.isFetching && !active.isPending ? (
-          <Spinner className="size-4 text-muted-foreground" />
+          <Spinner label={t("common.loading")} className="size-4 text-muted-foreground" />
         ) : null}
 
         <Button
