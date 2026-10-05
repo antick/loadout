@@ -14,7 +14,7 @@ import type { CancelRegistry } from "./cancel";
 import { type Download, type DownloadOptions, percentReporter } from "./download";
 import type { FetchedFolder, FetchedPreviewOptions } from "./fetched-preview";
 import { emitProgress } from "./preview-sessions";
-import { crossSiteHost } from "./redirects";
+import { downloadWatched } from "./redirects";
 import {
   type WellKnownEntry,
   type WellKnownIndex,
@@ -74,22 +74,6 @@ export async function skillFileFolder(link: string, data: Buffer): Promise<Fetch
   mkdirSync(root, { recursive: true });
   writeFileSync(join(root, SKILL_FILE), data);
   return { root, cleanup: () => removePath(parent).catch(() => undefined) };
-}
-
-/** Download with every hop watched; says which other site, if any, the file finally came from. */
-async function downloadWatched(
-  download: Download,
-  link: string,
-  options: DownloadOptions,
-): Promise<{ data: Buffer; redirectedTo: string | null }> {
-  let final = link;
-  const data = await download(link, {
-    ...options,
-    onRedirect: (to) => {
-      final = to;
-    },
-  });
-  return { data, redirectedTo: crossSiteHost(link, final) };
 }
 
 export function createWebPreviews(ctx: CoreContext, deps: WebPreviewDeps): WebPreviews {
@@ -219,7 +203,8 @@ async function fetchSite(
     if (failures.length === index.entries.length) {
       throw new AppError("NETWORK", `None of the skills could be downloaded. ${failures[0]}`);
     }
-    return { root, cleanup };
+    // The user confirms another site the index moved to; updates then follow it there only.
+    return { root, cleanup, redirectedTo: index.redirectedTo };
   } catch (error) {
     await cleanup();
     throw error;

@@ -6,6 +6,7 @@ import { AppError, invalid, isAppError, notFound } from "../errors";
 import { resolveInside } from "../util/fs";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
 import type { Download } from "./download";
+import { downloadWatched } from "./redirects";
 
 /**
  * Skills a website publishes at a well-known address (RFC 8615): `/.well-known/agent-skills/` or
@@ -28,6 +29,8 @@ export interface WellKnownEntry {
 export interface WellKnownIndex {
   indexUrl: string;
   entries: WellKnownEntry[];
+  /** Host of another site the index address sent the download on to; null when it stayed. */
+  redirectedTo: string | null;
 }
 
 const WELL_KNOWN_PATHS = [".well-known/agent-skills", ".well-known/skills"] as const;
@@ -160,15 +163,15 @@ export function parseWellKnownIndex(raw: unknown, indexUrl: string): WellKnownEn
     : null;
 }
 
-/** Download and read one index; null when there is none at that address. */
+/** Download and read one index, watching where it moves; null when there is none there. */
 async function readWellKnownIndex(
   download: Download,
   indexUrl: string,
   signal?: AbortSignal,
-): Promise<WellKnownEntry[] | null> {
-  let data: Buffer;
+): Promise<Omit<WellKnownIndex, "indexUrl"> | null> {
+  let fetched: Awaited<ReturnType<typeof downloadWatched>>;
   try {
-    data = await download(indexUrl, {
+    fetched = await downloadWatched(download, indexUrl, {
       signal,
       accept: JSON_ACCEPT,
       maxBytes: MAX_INDEX_BYTES,
@@ -179,11 +182,13 @@ async function readWellKnownIndex(
     if (isAppError(error, "CANCELLED")) throw error;
     return null;
   }
+  let entries: WellKnownEntry[] | null;
   try {
-    return parseWellKnownIndex(JSON.parse(data.toString("utf8")), indexUrl);
+    entries = parseWellKnownIndex(JSON.parse(fetched.data.toString("utf8")), indexUrl);
   } catch {
     return null;
   }
+  return entries ? { entries, redirectedTo: fetched.redirectedTo } : null;
 }
 
 interface Candidate {
@@ -220,9 +225,9 @@ export async function findWellKnownIndex(
   const wantsScope = all.some((candidate) => candidate.scoped);
   let rootFound = false;
   for (const candidate of all) {
-    const entries = await readWellKnownIndex(download, candidate.indexUrl, signal);
-    if (!entries) continue;
-    if (candidate.scoped || !wantsScope) return { indexUrl: candidate.indexUrl, entries };
+    const found = await readWellKnownIndex(download, candidate.indexUrl, signal);
+    if (!found) continue;
+    if (candidate.scoped || !wantsScope) return { indexUrl: candidate.indexUrl, ...found };
     rootFound = true;
   }
   if (rootFound) {

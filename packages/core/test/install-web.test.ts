@@ -326,4 +326,49 @@ describe("downloads that move to another site", () => {
     });
     expect(pdf).toMatchObject({ name: "pdf", sourceRef: file });
   });
+
+  it("asks before a site whose index moved elsewhere, then updates from there only", async () => {
+    const site = "https://skills.acme.dev";
+    const moved = "https://acme-skills.pages.dev/.well-known/agent-skills/index.json";
+    const pdfUrl = "https://acme-skills.pages.dev/pdf.md";
+    const publish = (body: string): void => {
+      const pdf = Buffer.from(skillMd("pdf", body));
+      web.served.set(pdfUrl, pdf);
+      const skills = [
+        {
+          name: "pdf",
+          type: "skill-md",
+          description: "PDF",
+          url: pdfUrl,
+          digest: sha256Digest(pdf),
+        },
+      ];
+      web.served.set(moved, json({ $schema: SCHEMA, skills }));
+    };
+    publish("");
+    web.redirects.set(`${site}/.well-known/agent-skills/index.json`, moved);
+
+    const preview = await world.install.api.previewGit(site);
+    expect(preview).toMatchObject({ kind: "site", redirectedTo: "acme-skills.pages.dev" });
+    const items = [{ relPath: "pdf", name: "" }];
+    await expect(world.install.api.confirmGit(preview.previewId, items)).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    const [pdf] = await world.install.api.confirmGit(preview.previewId, items, {
+      acceptRedirect: true,
+    });
+    if (!pdf) throw new Error("not installed");
+    expect(pdf).toMatchObject({ sourceTrustedHost: "acme-skills.pages.dev" });
+
+    expect((await world.updates.api.check(pdf.id, true)).updateStatus).toBe("up_to_date");
+    publish("Changed.\n");
+    expect((await world.updates.api.check(pdf.id, true)).updateStatus).toBe("update_available");
+
+    // Moved on again to a site nobody agreed to: refused, nothing fetched from there.
+    web.redirects.set(`${site}/.well-known/agent-skills/index.json`, "https://evil.example/i.json");
+    const refused = await world.updates.api.check(pdf.id, true);
+    expect(refused.updateStatus).toBe("error");
+    expect(refused.lastCheckError).toContain("now leads to evil.example");
+    expect(web.requests).not.toContain("https://evil.example/i.json");
+  });
 });

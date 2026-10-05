@@ -1,3 +1,5 @@
+import type { Download, DownloadOptions } from "./download";
+
 /**
  * Whether a download that was redirected ended up on another site. A move within one site
  * (`github.com` to `codeload.github.com`) is normal and never asked about; a move to another site
@@ -77,4 +79,20 @@ export function crossSiteHost(from: string, to: string): string | null {
   const end = hostOf(to);
   if (!start || !end) return end;
   return siteOf(start) === siteOf(end) ? null : end;
+}
+
+/** Download with every hop watched; says which other site, if any, the file finally came from. */
+export async function downloadWatched(
+  download: Download,
+  link: string,
+  options: DownloadOptions,
+): Promise<{ data: Buffer; redirectedTo: string | null }> {
+  let final = link;
+  const data = await download(link, {
+    ...options,
+    onRedirect: (to) => {
+      final = to;
+    },
+  });
+  return { data, redirectedTo: crossSiteHost(link, final) };
 }
