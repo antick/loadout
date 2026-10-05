@@ -16,7 +16,14 @@ import {
   isRecord,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { AppError, invalid, notFound } from "../errors";
+import { AppError, invalid, isUnanswered, notFound } from "../errors";
+import {
+  type HttpAnswer,
+  JSON_TYPE,
+  createRequest,
+  jsonOptions,
+  readJson,
+} from "../install/download";
 import { INTERNAL_KEYS } from "../settings/store";
 import { GITHUB_TOKEN_KEY } from "./credentials";
 
@@ -107,41 +114,42 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
     }
   };
 
+  const send = createRequest(deps.fetchImpl);
+
   async function request(url: string, options: RequestOptions = {}): Promise<Reply> {
-    const send = deps.fetchImpl ?? fetch;
-    const headers: Record<string, string> = {
-      Accept: options.form ? "application/json" : API_ACCEPT,
-      "User-Agent": APP_NAME,
-    };
+    const headers: Record<string, string> = { "User-Agent": APP_NAME };
     if (!options.form) headers["X-GitHub-Api-Version"] = API_VERSION;
     if (options.token) headers.Authorization = `Bearer ${options.token}`;
     if (options.json !== undefined) headers["Content-Type"] = "application/json";
-    let response: Response;
+    let answer: HttpAnswer;
     try {
-      response = await send(url, {
-        method: options.method ?? "GET",
-        headers,
-        body: options.form
-          ? new URLSearchParams(options.form)
-          : options.json === undefined
-            ? undefined
-            : JSON.stringify(options.json),
-        signal: AbortSignal.timeout(API_TIMEOUT_MS),
-      });
-    } catch {
+      answer = await send(
+        url,
+        jsonOptions({
+          method: options.method ?? "GET",
+          accept: options.form ? JSON_TYPE : API_ACCEPT,
+          headers,
+          body: options.form
+            ? new URLSearchParams(options.form)
+            : options.json === undefined
+              ? undefined
+              : JSON.stringify(options.json),
+          timeoutMs: API_TIMEOUT_MS,
+          // Every status is read here: each one means something for the connect.
+          answers: () => true,
+        }),
+      );
+    } catch (error) {
+      if (!isUnanswered(error)) throw error;
       throw new AppError(
         "NETWORK",
         "Could not reach GitHub. Check your internet connection, or connect with a personal access token instead.",
       );
     }
-    let body: unknown = null;
-    try {
-      body = await response.json();
-    } catch {
-      // Some answers have no body; the status code carries the meaning.
-    }
+    // Some answers have no body; the status code carries the meaning.
+    const body = readJson(answer.body, url, true);
     return {
-      status: response.status,
+      status: answer.status,
       body: Array.isArray(body) ? { items: body } : isRecord(body) ? body : {},
     };
   }

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { APP_SLUG } from "@loadout/shared";
+import { APP_NAME, APP_SLUG } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GITHUB_TOKEN_KEY } from "../src/backup/credentials";
 import { INTERNAL_KEYS } from "../src/settings/store";
@@ -149,8 +149,26 @@ describe("GitHub connect", () => {
     const error = await device.api
       .githubConnect(TOKEN, "backup")
       .catch((thrown: unknown) => thrown);
-    expect(error).toMatchObject({ code: "NETWORK" });
+    expect(error).toMatchObject({
+      code: "NETWORK",
+      message:
+        "Could not reach GitHub. Check your internet connection, or connect with a personal access token instead.",
+    });
     expect(touched).toHaveBeenCalledWith("backup");
+  });
+
+  it("names the status of an answer it does not expect, and sends the API's headers", async () => {
+    const { fetchImpl, calls } = stubFetch({ [`GET ${API}/user`]: { status: 500 } });
+    device = createDevice(temp.dir, "A", { fetchImpl });
+    await expect(device.api.githubConnect(TOKEN, "backup")).rejects.toMatchObject({
+      code: "NETWORK",
+      message: "GitHub could not identify the account (status 500). Try again later.",
+    });
+    expect(calls[0]?.headers).toMatchObject({
+      Accept: "application/vnd.github+json",
+      "User-Agent": APP_NAME,
+      "X-GitHub-Api-Version": "2022-11-28",
+    });
   });
 
   it("saves nothing for a public repository until the user agrees", async () => {
