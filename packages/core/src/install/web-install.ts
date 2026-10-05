@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, posix } from "node:path";
-import { APP_SLUG, type GitPreview } from "@loadout/shared";
+import { APP_SLUG, type GitPreview, MAX_SKILL_FILE_BYTES, SKILL_FILE } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, cancelled, errorMessage, isAppError } from "../errors";
 import { mapLimit } from "../util/async";
@@ -11,7 +11,13 @@ import { trySanitizeSkillName } from "../util/names";
 import { unpackArchive } from "./archive";
 import { archiveLinkName } from "./archive-link";
 import type { Task } from "./cancel";
-import { type Download, type DownloadOptions, PERCENT_TOTAL, percentReporter } from "./download";
+import {
+  type Download,
+  type DownloadOptions,
+  PERCENT_TOTAL,
+  parseUrl,
+  percentReporter,
+} from "./download";
 import type { FetchedFolder, FetchedPreviewOptions } from "./fetched-preview";
 import { emitProgress } from "./preview-sessions";
 import { downloadWatched } from "./redirects";
@@ -49,18 +55,17 @@ export interface WebPreviews {
 const SITE_DIR_PREFIX = `${APP_SLUG}-site-`;
 const FILE_DIR_PREFIX = `${APP_SLUG}-file-`;
 const FALLBACK_SKILL_NAME = "skill";
-const SKILL_FILE = "SKILL.md";
-const MAX_SKILL_FILE_BYTES = 2 * 1024 * 1024;
 /** Skills of one site downloaded at once. */
 const SITE_CONCURRENCY = 4;
 
 /** Folder name for a lone `SKILL.md`: the folder it sits in on the web, else `skill`. */
 function skillFileFolderName(link: string): string {
+  const path = parseUrl(link)?.pathname ?? "";
   let segments: string[] = [];
   try {
-    segments = decodeURIComponent(new URL(link).pathname).split("/").filter(Boolean);
+    segments = decodeURIComponent(path).split("/").filter(Boolean);
   } catch {
-    // Not a readable URL: the fallback name is fine.
+    // Not decodable: the fallback name is fine.
   }
   return trySanitizeSkillName(segments.at(-2) ?? "") ?? FALLBACK_SKILL_NAME;
 }

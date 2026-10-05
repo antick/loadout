@@ -1,11 +1,18 @@
-import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { formatBytes, isRecord } from "@loadout/shared";
+import {
+  MAX_SKILL_FILE_BYTES,
+  MIB,
+  SECOND_MS,
+  SKILL_FILE,
+  formatBytes,
+  isRecord,
+} from "@loadout/shared";
 import { AppError, invalid, isAppError, notFound } from "../errors";
 import { resolveInside } from "../util/fs";
+import { sha256Hex } from "../util/hash";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
-import { type Download, WEB_PROTOCOLS, parseUrl } from "./download";
+import { type Download, WEB_PROTOCOLS, jsonOptions, parseUrl } from "./download";
 import { downloadWatched } from "./redirects";
 
 /**
@@ -44,17 +51,15 @@ const REPOSITORY_HOSTS: ReadonlySet<string> = new Set([
   "huggingface.co",
 ]);
 const GIT_SUFFIX = ".git";
-const PROBE_TIMEOUT_MS = 10_000;
-const MAX_INDEX_BYTES = 2 * 1024 * 1024;
-const MAX_SKILL_FILE_BYTES = 2 * 1024 * 1024;
-const MAX_ARTIFACT_BYTES = 64 * 1024 * 1024;
+const PROBE_TIMEOUT_MS = 10 * SECOND_MS;
+const MAX_INDEX_BYTES = 2 * MIB;
+const MAX_ARTIFACT_BYTES = 64 * MIB;
 const MAX_FILES = 1000;
 const MAX_DESCRIPTION = 1024;
 const NAME_MAX = 64;
 const SAFE_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
-const SKILL_FILE = "SKILL.md";
-const JSON_ACCEPT = "application/json";
+const DIGEST_PREFIX = "sha256:";
 
 /** A web address that may be a site publishing skills, rather than a repository or a file. */
 export function isSiteCandidate(input: string): boolean {
@@ -158,13 +163,16 @@ async function readWellKnownIndex(
 ): Promise<Omit<WellKnownIndex, "indexUrl"> | null> {
   let fetched: Awaited<ReturnType<typeof downloadWatched>>;
   try {
-    fetched = await downloadWatched(download, indexUrl, {
-      signal,
-      accept: JSON_ACCEPT,
-      maxBytes: MAX_INDEX_BYTES,
-      timeoutMs: PROBE_TIMEOUT_MS,
-      subject: "The skills index",
-    });
+    fetched = await downloadWatched(
+      download,
+      indexUrl,
+      jsonOptions({
+        signal,
+        maxBytes: MAX_INDEX_BYTES,
+        timeoutMs: PROBE_TIMEOUT_MS,
+        subject: "The skills index",
+      }),
+    );
   } catch (error) {
     if (isAppError(error, "CANCELLED")) throw error;
     return null;
@@ -227,7 +235,7 @@ export async function findWellKnownIndex(
 }
 
 export function sha256Digest(data: Buffer): string {
-  return `sha256:${createHash("sha256").update(data).digest("hex")}`;
+  return `${DIGEST_PREFIX}${sha256Hex(data)}`;
 }
 
 function writeInside(root: string, relativePath: string, data: Buffer): void {

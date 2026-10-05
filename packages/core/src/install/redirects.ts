@@ -1,9 +1,15 @@
-import type { Download, DownloadOptions } from "./download";
+import { type Download, type DownloadOptions, parseUrl } from "./download";
 
 /**
  * Whether a download that was redirected ended up on another site. A move within one site
  * (`github.com` to `codeload.github.com`) is normal and never asked about; a move to another site
  * is shown before anything is installed, because the link no longer says where the files come from.
+ */
+
+/*
+ * The site rule, as data: which hosts count as one site. `COUNTRY_SECOND_LEVELS` and
+ * `SHARED_HOSTING` decide how many labels of a host name make the site; `SAME_OWNER` folds a
+ * download domain into the site that owns it.
  */
 
 /** Second-level labels under which country domains register names (`example.co.uk`). */
@@ -66,11 +72,7 @@ export function siteOf(host: string): string {
 }
 
 function hostOf(url: string): string | null {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return null;
-  }
+  return parseUrl(url)?.hostname ?? null;
 }
 
 /** The host `to` is on when it is another site than `from`; null when both are the same site. */

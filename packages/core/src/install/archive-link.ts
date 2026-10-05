@@ -1,5 +1,5 @@
 import { posix } from "node:path";
-import { isArchivePath } from "@loadout/shared";
+import { SKILL_MARKER_FILES, isArchivePath } from "@loadout/shared";
 import { WEB_PROTOCOLS, parseUrl } from "./download";
 
 /**
@@ -8,7 +8,6 @@ import { WEB_PROTOCOLS, parseUrl } from "./download";
  * fragment does not hide it, and a repository URL never matches.
  */
 
-const SKILL_FILE = "skill.md";
 /** Pages that show a file rather than serve it; Git sources read those. */
 const FILE_PAGE_HOSTS: ReadonlySet<string> = new Set(["github.com", "www.github.com"]);
 const GITLAB_FILE_PAGE = "/-/blob/";
@@ -38,7 +37,8 @@ export function skillFileLink(input: string): string | null {
   if (FILE_PAGE_HOSTS.has(url.hostname.toLowerCase())) return null;
   const path = decodedPath(url);
   if (path.includes(GITLAB_FILE_PAGE)) return null;
-  return posix.basename(path).toLowerCase() === SKILL_FILE ? input.trim() : null;
+  const name = posix.basename(path).toLowerCase();
+  return SKILL_MARKER_FILES.some((marker) => marker.toLowerCase() === name) ? input.trim() : null;
 }
 
 /** File name of the archive a link points at, e.g. `pdf-tools.zip`. */
