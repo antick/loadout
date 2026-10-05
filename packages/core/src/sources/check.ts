@@ -44,7 +44,6 @@ export function checkedSince(since: number): KnownRevision {
 /** One repository the library has skills from. */
 interface Repository {
   key: string;
-  label: string;
   skills: Skill[];
 }
 
@@ -64,7 +63,7 @@ function repositories(skills: readonly Skill[]): Repository[] {
   for (const skill of skills) {
     const key = repositoryKeyOf(skill);
     if (!key) continue;
-    const repository = byKey.get(key) ?? { key, label: key, skills: [] };
+    const repository = byKey.get(key) ?? { key, skills: [] };
     repository.skills.push(skill);
     byKey.set(key, repository);
   }
@@ -198,7 +197,7 @@ export function createSourceChecker(ctx: CoreContext, deps: SourceCheckerDeps): 
         try {
           await look(repository, result, known);
         } catch (error) {
-          result.failed.push({ name: repository.label, message: errorMessage(error) });
+          result.failed.push({ name: repository.key, message: errorMessage(error) });
         }
       }
       result.news = currentNews();
