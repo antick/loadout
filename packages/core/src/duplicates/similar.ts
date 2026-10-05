@@ -90,7 +90,7 @@ function editDistance(left: string, right: string): number {
 }
 
 /** How alike two skill names are, 0 to 1, without regard to letter case. */
-export function nameSimilarity(left: string, right: string): number {
+function nameSimilarity(left: string, right: string): number {
   const a = left.trim().toLowerCase();
   const b = right.trim().toLowerCase();
   const longest = Math.max(a.length, b.length);
@@ -200,22 +200,9 @@ function* comparePairs(
 
 /**
  * Every pair of skills that may be one, strongest first. Pure: the caller reads the files. A skill
- * is compared with every other, so a group of three copies lists all three pairs.
- */
-export function findSimilarPairs(
-  skills: readonly SimilarityInput[],
-  { similarText = true }: SimilarOptions = {},
-): SimilarPair[] {
-  const steps = comparePairs(skills, similarText);
-  for (;;) {
-    const step = steps.next();
-    if (step.done) return step.value;
-  }
-}
-
-/**
- * `findSimilarPairs`, giving the event loop a turn every `SLICE_MS`: a big library takes a while,
- * and the app's other calls must not wait for it. Null when `stillWanted` said to stop.
+ * is compared with every other, so a group of three copies lists all three pairs. The event loop
+ * gets a turn every `SLICE_MS`: a big library takes a while, and the app's other calls must not
+ * wait for it. Null when `stillWanted` said to stop.
  */
 export async function findSimilarPairsInSlices(
   skills: readonly SimilarityInput[],

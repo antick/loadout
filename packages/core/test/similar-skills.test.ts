@@ -4,10 +4,9 @@ import { duplicatePairKey } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
 import {
+  type SimilarPair,
   type SimilarityInput,
-  findSimilarPairs,
   findSimilarPairsInSlices,
-  nameSimilarity,
 } from "../src/duplicates/similar";
 import { AppError } from "../src/errors";
 import { makeSkill, tempDir, createTestCore } from "./helpers";
@@ -32,18 +31,30 @@ function input(id: string, over: Partial<SimilarityInput> = {}): SimilarityInput
   return { id, name: id, description: null, document: "", contentHash: null, ...over };
 }
 
+/** Every pair found, over the whole library: nothing asked it to stop. */
+async function compare(
+  skills: readonly SimilarityInput[],
+  options?: Parameters<typeof findSimilarPairsInSlices>[1],
+): Promise<SimilarPair[]> {
+  const pairs = await findSimilarPairsInSlices(skills, options);
+  expect(pairs).not.toBeNull();
+  return pairs ?? [];
+}
+
 describe("comparing names", () => {
-  it("is 1 for the same name in any letter case and falls as they differ", () => {
-    expect(nameSimilarity("PDF-Tools", "pdf-tools")).toBe(1);
-    expect(nameSimilarity("pdf-tools", "pdf-tool")).toBeGreaterThan(0.85);
-    expect(nameSimilarity("pdf-tools", "docker")).toBeLessThan(0.3);
-    expect(nameSimilarity("", "")).toBe(1);
+  it("scores the same name in any letter case as 1 and lower as they differ", async () => {
+    const description = "Read, merge and split PDF documents for reports";
+    const pairsOf = (left: string, right: string) =>
+      compare([input("a", { name: left, description }), input("b", { name: right, description })]);
+    expect((await pairsOf("PDF-Tools", "pdf-tools"))[0]?.nameScore).toBe(1);
+    expect((await pairsOf("pdf-tools", "pdf-tool"))[0]?.nameScore).toBeGreaterThan(0.85);
+    expect(await pairsOf("pdf-tools", "docker")).toEqual([]);
   });
 });
 
 describe("finding skills that may be one", () => {
-  it("lists skills with the same files as identical, even when the text differs by nothing else", () => {
-    const [pair] = findSimilarPairs([
+  it("lists skills with the same files as identical, even when the text differs by nothing else", async () => {
+    const [pair] = await compare([
       input("b", { name: "one", contentHash: "same" }),
       input("a", { name: "two", contentHash: "same" }),
     ]);
@@ -51,9 +62,9 @@ describe("finding skills that may be one", () => {
     expect(pair?.key).toBe(duplicatePairKey("b", "a"));
   });
 
-  it("lists documents that are mostly the same lines", () => {
+  it("lists documents that are mostly the same lines", async () => {
     const edited = GUIDE.replace("Ask before deleting pages.", "Ask first, then delete pages.");
-    const [pair] = findSimilarPairs([
+    const [pair] = await compare([
       input("a", { name: "pdf-tools", document: GUIDE }),
       input("b", { name: "acrobat-helper", document: edited }),
     ]);
@@ -61,25 +72,25 @@ describe("finding skills that may be one", () => {
     expect(pair?.contentScore).toBeGreaterThan(0.8);
   });
 
-  it("lists alike names only when the descriptions agree as well", () => {
+  it("lists alike names only when the descriptions agree as well", async () => {
     const description = "Read, merge and split PDF documents for reports";
-    const same = findSimilarPairs([
+    const same = await compare([
       input("a", { name: "pdf-tools", description }),
       input("b", { name: "pdf-toolkit", description: `${description} quickly` }),
     ]);
     expect(same).toHaveLength(1);
     expect(same[0]?.reason).toBe("name");
 
-    const different = findSimilarPairs([
+    const different = await compare([
       input("a", { name: "pdf-tools", description }),
       input("b", { name: "pdf-tool", description: "Deploy containers to a cluster" }),
     ]);
     expect(different).toEqual([]);
   });
 
-  it("leaves unrelated skills, empty documents and no-hash skills alone", () => {
+  it("leaves unrelated skills, empty documents and no-hash skills alone", async () => {
     expect(
-      findSimilarPairs([
+      await compare([
         input("a", { name: "pdf-tools", document: GUIDE }),
         input("b", { name: "docker", document: "# Docker\n\nBuild images.\nPush them." }),
         input("c", { name: "empty-one" }),
@@ -88,10 +99,10 @@ describe("finding skills that may be one", () => {
     ).toEqual([]);
   });
 
-  it("puts identical copies first, then the closest documents", () => {
+  it("puts identical copies first, then the closest documents", async () => {
     const close = GUIDE.replace("Ask before deleting pages.", "Ask first.");
     const farther = `${GUIDE}\n\n## Extra\nOne more section.\nAnd another.\nAnd a third.\nAnd a fourth.`;
-    const pairs = findSimilarPairs([
+    const pairs = await compare([
       input("a", { document: GUIDE }),
       input("b", { document: close }),
       input("c", { document: farther }),
@@ -124,10 +135,10 @@ const skill = (
   });
 
 describe("comparing a whole library", () => {
-  it("finds the same pairs, with the same scores, as comparing every pair in full", () => {
+  it("finds the same pairs, with the same scores, as comparing every pair in full", async () => {
     const base = ["# Review", "", ...steps(60, "Review")];
     const big = steps(2100, "Big");
-    const pairs = findSimilarPairs([
+    const pairs = await compare([
       skill("a", "review", base),
       skill("b", "code-check", rewrite(base, 6, "b")),
       skill("c", "reviews", rewrite(base, 2, "c")),
@@ -167,15 +178,14 @@ describe("comparing a whole library", () => {
     const tickedBeforeDone = ticked;
     clearTimeout(timer);
     expect(tickedBeforeDone).toBe(true);
-    expect(sliced).toEqual(findSimilarPairs(library));
     expect(sliced).toHaveLength((80 * 79) / 2);
   });
 });
 
 describe("looking without the text", () => {
-  it("finds the same files and alike names, never alike documents", () => {
+  it("finds the same files and alike names, never alike documents", async () => {
     const description = "Read, merge and split PDF documents for reports";
-    const pairs = findSimilarPairs(
+    const pairs = await compare(
       [
         input("a", { name: "one", contentHash: "same", document: GUIDE }),
         input("b", { name: "two", contentHash: "same", document: GUIDE }),
