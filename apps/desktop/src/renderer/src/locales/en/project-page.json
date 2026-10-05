@@ -187,7 +187,7 @@
     }
   },
   "addProject": {
-    "description": "Link a project folder, pick one you already work in, find projects under a folder, or link a standalone skills folder.",
+    "description": "Link a project folder or the projects under one, pick one you already work in, or link a standalone skills folder.",
     "close": "Close",
     "linkedOne": "Linked “{{name}}”",
     "linkedMany_one": "Linked {{count}} project",
@@ -195,15 +195,16 @@
     "tabs": {
       "folder": "Folder",
       "suggested": "Suggested",
-      "scan": "Scan",
       "linked": "Linked workspace"
     },
     "folder": {
       "label": "Project folder",
       "placeholder": "/path/to/project",
       "pickerTitle": "Choose a project folder",
-      "hint": "Skills are read from the agent folders inside it, such as .claude/skills. Those for the default agent are created when missing.",
-      "submit": "Link project"
+      "hint": "A folder with an agent's skills folder, such as .claude/skills, is linked as it is. Otherwise the projects up to four levels under it are listed.",
+      "submit": "Link project",
+      "none": "No project with agent skills was found in or under this folder. Link it anyway to start one; the default agent's skills folder is created in it.",
+      "linkAnyway": "Link this folder"
     },
     "suggested": {
       "hint": "Folders from Claude Code, Cursor, VS Code and Windsurf history, and Git repositories in ~/Projects, ~/code and similar folders.",
@@ -213,7 +214,7 @@
       "shown": "{{shown}} of {{count}}",
       "refresh": "Look again",
       "noneTitle": "Nothing to suggest",
-      "noneBody": "No project turned up that is not linked already. Use Folder or Scan to add one by hand.",
+      "noneBody": "No project turned up that is not linked already. Use Folder to add one by hand.",
       "noMatch": "No suggestion matches the filter.",
       "sources": {
         "claude_code": "Claude Code",
@@ -227,12 +228,6 @@
       "error": "Could not look for projects."
     },
     "scan": {
-      "label": "Folder to search",
-      "placeholder": "/path/to/code",
-      "pickerTitle": "Choose the folder to search",
-      "hint": "Finds folders that already contain an agent's skills folder, up to four levels deep.",
-      "run": "Scan",
-      "none": "No project with agent skills was found under this folder.",
       "found_one": "{{count}} project found",
       "found_other": "{{count}} projects found",
       "submit_one": "Add selected ({{count}})",

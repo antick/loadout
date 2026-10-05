@@ -113,7 +113,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 
 ## Projects
 
-- Link project folders, scan for them, or pick from suggested ones.
+- Link a project folder (or the projects found under one), or pick from suggested ones.
 - Every skill in the project's agent folders, with status against the library.
 - Enable, disable, update either way, add library skills, create new project skills.
 - Suggested skills from a project's technologies and file patterns; add in one click or hide. `project suggest`.

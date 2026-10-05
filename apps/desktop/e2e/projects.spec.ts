@@ -25,3 +25,33 @@ test("create a project's skills.toml, look at the plan, and apply it", async ({ 
   // The two written and the one already the same; the edited copy stays out of the lock.
   await expect(content.getByText("1 source · 3 folders applied")).toBeVisible();
 });
+
+test("a picked folder lists the projects under it, or is linked as a new one", async ({ page }) => {
+  await openApp(page, "/");
+  await page.getByRole("button", { name: "Link a project" }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Link a project" });
+  const folder = dialog.getByLabel("Project folder");
+
+  // The folder picker answers with ~/code/new-project; its parent holds the seeded projects.
+  await dialog.getByRole("button", { name: "Browse" }).click();
+  await expect(folder).not.toHaveValue("");
+  const picked = await folder.inputValue();
+  const separator = picked.includes("\\") ? "\\" : "/";
+  const code = picked.slice(0, picked.lastIndexOf(separator));
+  await folder.fill(code);
+  await dialog.getByRole("button", { name: "Link project" }).click();
+  await expect(dialog.getByText("6 projects found")).toBeVisible();
+  await expect(dialog.getByText("shop-web")).toBeVisible();
+
+  // A folder with agent skills is linked straight away, here refused as it is linked already.
+  await folder.fill(`${code}${separator}shop-web`);
+  await dialog.getByRole("button", { name: "Link project" }).click();
+  await expect(dialog.getByText(/already a workspace/)).toBeVisible();
+
+  // An empty folder has nothing under it: it can still become a project of its own.
+  await folder.fill(picked);
+  await dialog.getByRole("button", { name: "Link project" }).click();
+  await expect(dialog.getByText(/No project with agent skills was found/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Link this folder" }).click();
+  await expect(toasts(page).getByText("Linked “new-project”")).toBeVisible();
+});
