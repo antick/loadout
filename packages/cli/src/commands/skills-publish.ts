@@ -144,7 +144,7 @@ export const publishCommand: CommandSpec = {
   notes: [
     "Only the skill folders are copied: no tags, agents or backup data. Dependencies (node_modules), .env files, logs and links are left out.",
     "Anyone can then run: npx skills add <owner/repo> --skill <name>. The repository can be public or private.",
-    "Signs in with your SSH key or your Git credential helper (the app also uses the token saved in Settings → Backup). It never forces a push, and it will not publish to this library's own backup repository.",
+    "Signs in with your SSH key or your Git credential helper (the app also uses the token saved on the Backup page). It never forces a push, and it will not publish to this library's own backup repository.",
     "The commit is made under your own Git name and e-mail.",
     "Without --repo, the repository, branch and layer of the last publish are used.",
   ],

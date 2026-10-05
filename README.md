@@ -119,7 +119,7 @@ is `~/.loadout`; development uses your real library and agent folders.
    Installing into the library alone does not deploy a skill to an agent.
 4. Use **Presets** to group skills, or add a project to manage its project-local skills.
 5. Optionally configure Git backup. A personal access token or Git remote URL works now;
-   GitHub device sign-in requires an OAuth Client ID in **Settings → Backup**.
+   GitHub device sign-in needs a build with an OAuth client id (`LOADOUT_GITHUB_CLIENT_ID`).
 
 ## CLI examples
 

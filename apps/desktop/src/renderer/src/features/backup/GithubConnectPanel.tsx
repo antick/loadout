@@ -1,5 +1,4 @@
 import { DEFAULT_BACKUP_REPO_NAME, type GithubConnectResult } from "@loadout/shared";
-import { Link } from "@tanstack/react-router";
 import { ExternalLink, KeyRound } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -149,19 +148,6 @@ export function GithubConnectPanel({
           </FieldDescription>
         </Field>
       </form>
-
-      {deviceAvailable.data === false ? (
-        <p className="text-xs text-muted-foreground">
-          {t("backupPage.github.signInUnavailable")}{" "}
-          <Link
-            to="/settings"
-            search={{ section: "backup" }}
-            className="text-primary underline-offset-4 hover:underline"
-          >
-            {t("backupPage.github.openSettings")}
-          </Link>
-        </p>
-      ) : null}
     </Panel>
   );
 }

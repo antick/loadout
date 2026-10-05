@@ -128,8 +128,6 @@
       "tokenHint": "Needs the “repo” scope. It goes straight to the system keychain and is never shown again.",
       "createToken": "Create a token",
       "connect": "Connect",
-      "signInUnavailable": "Sign in with GitHub appears here once an OAuth client id is set.",
-      "openSettings": "Open backup settings",
       "repoCreated": "Created {{repo}}",
       "repoFound": "Connected to {{repo}}",
       "connectedAs": "Signed in as {{login}}"
@@ -254,7 +252,7 @@
       "GITHUB_SCOPE": "The token may not create or read that repository. Create one with the “repo” scope.",
       "GITHUB_DEVICE_EXPIRED": "The sign-in code expired. Start again to get a new one.",
       "GITHUB_DEVICE_DENIED": "The sign-in was declined on GitHub.",
-      "GITHUB_NOT_CONFIGURED": "Sign in with GitHub is not set up. Use an access token, or add an OAuth client id in Settings.",
+      "GITHUB_NOT_CONFIGURED": "Sign in with GitHub is not set up. Use an access token instead.",
       "CREDENTIALS_UNAVAILABLE": "The system keychain is not available, so the access could not be stored safely."
     },
     "newerApp": "Another computer backs up with {{app}} {{version}}. Update {{app}} here so both keep reading the backup the same way.",

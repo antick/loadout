@@ -9,9 +9,6 @@ export const GITHUB_TOKENS_URL = `${GITHUB_WEB}/settings/tokens`;
 /** Token form with the one scope the backup needs already ticked. */
 export const GITHUB_NEW_TOKEN_URL = `${GITHUB_TOKENS_URL}/new?scopes=repo&description=${encodeURIComponent(`${APP_NAME} backup`)}`;
 export const GITHUB_AUTHORIZED_APPS_URL = `${GITHUB_WEB}/settings/applications`;
-/** Page of one authorised OAuth app, where its access can be revoked. */
-export const githubOauthAppUrl = (clientId: string): string =>
-  `${GITHUB_WEB}/settings/connections/applications/${encodeURIComponent(clientId)}`;
 export const REPO_DANGER_ZONE_PATH = "/settings#danger-zone";
 export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
 

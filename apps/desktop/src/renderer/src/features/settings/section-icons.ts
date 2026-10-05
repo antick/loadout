@@ -1,6 +1,5 @@
 import {
   Bot,
-  CloudUpload,
   HardDrive,
   Info,
   type LucideIcon,
@@ -22,7 +21,6 @@ export const SETTINGS_SECTION_ICONS: Record<SettingsSection, LucideIcon> = {
   updates: RefreshCw,
   marketplaces: Store,
   safety: ShieldCheck,
-  backup: CloudUpload,
   cli: TerminalSquare,
   about: Info,
 };

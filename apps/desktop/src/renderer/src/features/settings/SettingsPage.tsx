@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AboutSection } from "./AboutSection";
 import { AgentControlSection } from "./AgentControlSection";
 import { AgentsSection } from "./AgentsSection";
-import { BackupSection } from "./BackupSection";
 import type { SettingsSection } from "./constants";
 import { GeneralSection } from "./GeneralSection";
 import { MarketplacesSection } from "./MarketplacesSection";
@@ -21,7 +20,6 @@ const SECTION_VIEWS: Record<SettingsSection, () => ReactNode> = {
   updates: UpdatesSection,
   marketplaces: MarketplacesSection,
   safety: SafetySection,
-  backup: BackupSection,
   cli: AgentControlSection,
   about: AboutSection,
 };

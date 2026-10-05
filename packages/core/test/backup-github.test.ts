@@ -256,7 +256,7 @@ describe("GitHub connect", () => {
       code: "GITHUB_NOT_CONFIGURED",
     });
 
-    device.ctx.settings.set("githubClientId", "client-abc");
+    process.env[CLIENT_ID_ENV] = "client-abc";
     expect(await device.api.githubDeviceAvailable()).toBe(true);
     const start = await device.api.githubDeviceStart();
     expect(start).toEqual({
@@ -297,7 +297,7 @@ describe("GitHub connect", () => {
       },
     });
     device = createDevice(temp.dir, "A", { fetchImpl });
-    device.ctx.settings.set("githubClientId", "client-abc");
+    process.env[CLIENT_ID_ENV] = "client-abc";
 
     const refused = await device.api
       .githubDevicePoll("dev-123", "backup")

@@ -42,8 +42,6 @@ export interface Settings {
   backupAutoEnabled: boolean;
   backupLastAutoError: string;
   backupFirstRunPrompt: FirstRunChoice;
-  /** OAuth app client id for GitHub device sign-in. Empty hides that option. */
-  githubClientId: string;
   agentControlPrompt: AgentControlPrompt;
   /** Run the safety check on every install, before anything is written. */
   safetyScanOnInstall: boolean;
@@ -76,7 +74,6 @@ export const DEFAULT_SETTINGS: Settings = {
   backupAutoEnabled: true,
   backupLastAutoError: "",
   backupFirstRunPrompt: "",
-  githubClientId: "",
   agentControlPrompt: "",
   safetyScanOnInstall: true,
   safetyScannerPath: "",

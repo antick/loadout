@@ -4,13 +4,13 @@ Work we decided on but have not started. Done items move to [FEATURES.md](FEATUR
 
 ## GitHub sign-in through a GitHub App
 
-**Why.** "Sign in with GitHub" (Settings → Backup) is built but hidden, because it needs a client
+**Why.** "Sign in with GitHub" (Backup page) is built but hidden, because it needs a client
 id that is not set up yet. It asks GitHub for the `repo` scope, which gives Loadout read and write
 access to every repository the user owns. A GitHub App can instead be limited to the one backup
 repository, with only "Contents: read and write" and "Metadata: read".
 
 **What is there today.** `packages/core/src/backup/github.ts`: device flow against an OAuth App
-(`OAUTH_SCOPE = "repo"`), client id from the `githubClientId` setting or the
+(`OAUTH_SCOPE = "repo"`), client id from the
 `LOADOUT_GITHUB_CLIENT_ID` environment variable. Personal access tokens and any Git URL keep working
 and are not affected.
 
@@ -29,7 +29,7 @@ and are not affected.
       when the refresh token is rejected.
 - [ ] Git over HTTPS with the user token (`x-access-token`), through the existing `extraHeader`
       path in `credentials.ts`. Check it works for push, fetch and tags.
-- [ ] Settings → Backup shows the account, the repository, "Change repository access" (opens the
+- [ ] The Backup page shows the account, the repository, "Change repository access" (opens the
       App's installation page) and "Disconnect".
 - [ ] Update FEATURES.md, and drop the "needs an OAuth client id" line from Current
       limitations.

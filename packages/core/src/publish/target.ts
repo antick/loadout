@@ -28,7 +28,7 @@ export function publishCacheRoot(ctx: CoreContext): string {
   return join(ctx.paths.cacheDir, PUBLISH_CACHE_DIR);
 }
 const TOKEN_IN_ADDRESS =
-  "Leave the token out of the address. Loadout sends the token saved for that host in Settings → Backup, or uses your SSH key or Git credential helper.";
+  "Leave the token out of the address. Loadout sends the token saved for that host on the Backup page, or uses your SSH key or Git credential helper.";
 const OWN_BACKUP =
   "That is this library's own backup repository. Publishing there would mix a few skills into the backup. Choose another repository.";
 const OWN_LIBRARY = "That folder is inside this library. Choose a repository outside it.";

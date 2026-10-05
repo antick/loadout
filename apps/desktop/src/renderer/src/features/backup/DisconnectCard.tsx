@@ -8,21 +8,14 @@ import { Button } from "@/components/ui/button";
 import { useRemoveBackupRemote } from "@/features/backup/backup-mutations";
 import { useGithubAuthMethod } from "@/features/backup/backup-queries";
 import { useOpenExternal } from "@/hooks/mutations/app";
-import { useSetting } from "@/hooks/queries/settings";
-import {
-  GITHUB_AUTHORIZED_APPS_URL,
-  GITHUB_TOKENS_URL,
-  githubOauthAppUrl,
-  REPO_DANGER_ZONE_PATH,
-} from "./constants";
+import { GITHUB_AUTHORIZED_APPS_URL, GITHUB_TOKENS_URL, REPO_DANGER_ZONE_PATH } from "./constants";
 import { isGithubRemote, remoteWebUrl } from "./remote-url";
 
 /** GitHub pages where the access this app was given can be taken back. */
-function revokePages(method: GithubAuthMethod | undefined, clientId: string): string[] {
-  const oauthPage = clientId ? githubOauthAppUrl(clientId) : GITHUB_AUTHORIZED_APPS_URL;
+function revokePages(method: GithubAuthMethod | undefined): string[] {
   if (method === "pat") return [GITHUB_TOKENS_URL];
-  if (method === "oauth") return [oauthPage];
-  return [GITHUB_TOKENS_URL, oauthPage];
+  if (method === "oauth") return [GITHUB_AUTHORIZED_APPS_URL];
+  return [GITHUB_TOKENS_URL, GITHUB_AUTHORIZED_APPS_URL];
 }
 
 function Level({
@@ -58,7 +51,6 @@ export function DisconnectCard({
   const openExternal = useOpenExternal();
   const removeRemote = useRemoveBackupRemote();
   const authMethod = useGithubAuthMethod();
-  const clientId = useSetting("githubClientId").trim();
   const onGithub = isGithubRemote(remoteUrl);
   const webUrl = remoteWebUrl(remoteUrl);
 
@@ -81,7 +73,7 @@ export function DisconnectCard({
       destructive: true,
     });
     if (!confirmed) return;
-    for (const page of revokePages(authMethod.data, clientId)) openExternal.mutate(page);
+    for (const page of revokePages(authMethod.data)) openExternal.mutate(page);
     removeRemote.mutate(undefined, { onSuccess: onDisconnected });
   };
 

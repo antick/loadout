@@ -203,4 +203,8 @@ export const MIGRATIONS: readonly string[] = [
   -- The UI ships in English only: the language picker is gone.
   DELETE FROM settings WHERE key = 'language';
   `,
+  `
+  -- The GitHub sign-in client id comes only from the build's environment now.
+  DELETE FROM settings WHERE key = 'githubClientId';
+  `,
 ];

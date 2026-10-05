@@ -94,6 +94,9 @@ function unexpected(what: string, status: number): AppError {
   return new AppError("NETWORK", `GitHub could not ${what} (status ${status}). Try again later.`);
 }
 
+/** Only a build that ships a client id offers device sign-in. */
+const clientId = (): string => (process.env[CLIENT_ID_ENV] ?? "").trim();
+
 export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubService {
   const pendingPublic = new Map<string, PendingPublic>();
   const prunePending = (now = Date.now()): void => {
@@ -101,9 +104,6 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
       if (pending.expiresAt <= now) pendingPublic.delete(id);
     }
   };
-
-  const clientId = (): string =>
-    ctx.settings.get("githubClientId").trim() || (process.env[CLIENT_ID_ENV] ?? "").trim();
 
   async function request(url: string, options: RequestOptions = {}): Promise<Reply> {
     const send = deps.fetchImpl ?? fetch;

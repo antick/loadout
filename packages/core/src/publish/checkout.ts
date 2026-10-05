@@ -30,7 +30,7 @@ const SETUP_ERRORS = ["NETWORK", "GIT_AUTH", "GIT_MISSING"] as const;
 export const PUBLISH_ERROR_TEXT: GitErrorText = {
   NETWORK: "Could not reach the repository. Check your internet connection and proxy setting.",
   GIT_AUTH:
-    "The repository refused the sign-in. Publishing uses the token saved for its host in Settings → Backup, your SSH key, or your Git credential helper, and it needs permission to write.",
+    "The repository refused the sign-in. Publishing uses the token saved for its host on the Backup page, your SSH key, or your Git credential helper, and it needs permission to write.",
   GIT_UNRELATED:
     "The repository's history does not match the copy Loadout keeps of it. Try again, or publish to another branch.",
   GIT_REJECTED:

@@ -6,7 +6,6 @@ export const SETTINGS_SECTIONS = [
   "updates",
   "marketplaces",
   "safety",
-  "backup",
   "cli",
   "about",
 ] as const;
