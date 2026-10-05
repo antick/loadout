@@ -34,9 +34,13 @@ import { createListingService } from "./listing";
 import { createUsageService } from "./usage";
 import { createPublishService } from "./publish";
 import { logRedeployProblems } from "./deploy/report-log";
+import { routeWebRequestsThroughProxy } from "./util/proxy";
 
 export interface CoreCreateOptions extends CoreOptions {
-  /** Proxy-aware fetch supplied by the host. Defaults to the global `fetch`. */
+  /**
+   * Proxy-aware fetch supplied by the host. Defaults to the global `fetch`, sent through the
+   * proxy setting where this Node can.
+   */
   fetchImpl?: typeof fetch;
   /**
    * Tests only: the safety scanner program to use (null: none), instead of looking for one on
@@ -105,6 +109,11 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   let notifyBackup: (() => void) | null = null;
   const bundle = createContext(options, () => notifyBackup?.());
   const { ctx, store, portable } = bundle;
+  // The app brings a proxy-aware `fetch`; without one (the CLI), Node's own follows the setting.
+  const undoProxy =
+    options.fetchImpl === undefined
+      ? routeWebRequestsThroughProxy(ctx.settings.proxy(), (message) => ctx.log.warn(message))
+      : null;
 
   const registry = new AgentRegistry(ctx);
   // Pick up anything that changed while the app was closed (manual edits, CLI use, a restore),
@@ -360,11 +369,13 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       background.stop();
       install.dispose();
       bundle.close();
+      undoProxy?.();
     },
     abandon: () => {
       background.stop();
       install.dispose();
       bundle.abandon();
+      undoProxy?.();
     },
   };
 }
