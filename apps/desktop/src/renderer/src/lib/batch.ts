@@ -1,9 +1,8 @@
 import type { BatchFailure, BatchResult } from "@loadout/shared";
 import { toast } from "sonner";
-import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
-import { undoAction } from "@/lib/removed-undo";
-import { FAILURE_LIST_CLASS, type ToastAction, errorMessage } from "@/lib/toast";
+import { toastWithUndo, undoAction } from "@/lib/removed-undo";
+import { describeFailures, FAILURE_LIST_CLASS, type ToastAction, errorMessage } from "@/lib/toast";
 
 /**
  * Run one job per item, one after the other, and collect what failed. Used where the backend has
@@ -27,14 +26,19 @@ export async function runSequentially<T>(
   return { succeeded, failed };
 }
 
-/** Failures as toast lines, capped so the toast stays readable. */
-export function describeFailures(failed: readonly BatchFailure[]): string {
-  const lines = failed
-    .slice(0, TOAST_MAX_CONFLICT_PATHS)
-    .map((failure) => `${failure.name}: ${failure.message}`);
-  const rest = failed.length - lines.length;
-  if (rest > 0) lines.push(i18n.t("common.andMore", { count: rest }));
-  return lines.join("\n");
+/**
+ * `runSequentially`, except that a batch of one item is that action itself: its failure rejects,
+ * so the mutation's error toast shows it, instead of being collected into the result.
+ */
+export async function runBatch<T>(
+  items: readonly T[],
+  nameOf: (item: T) => string,
+  job: (item: T) => Promise<unknown>,
+): Promise<BatchResult> {
+  const [only] = items;
+  if (only === undefined || items.length !== 1) return runSequentially(items, nameOf, job);
+  await job(only);
+  return { succeeded: 1, failed: [] };
 }
 
 /** What a batch toast can carry besides its summary. */
@@ -66,7 +70,8 @@ export function toastBatchOutcome(
 
 /**
  * Run jobs that each set folders aside in Recently removed (resolving to their ids), one after
- * the other, then toast the outcome with one Undo that puts back everything set aside.
+ * the other, then toast the outcome with one Undo that puts back everything set aside. One item
+ * is toasted as the single action it is, with a note on what was kept.
  */
 export async function runWithUndo<T>(
   items: readonly T[],
@@ -75,9 +80,12 @@ export async function runWithUndo<T>(
   summary: (succeeded: number) => string,
 ): Promise<BatchResult> {
   const removedIds: string[] = [];
-  const result = await runSequentially(items, nameOf, async (item) => {
+  const result = await runBatch(items, nameOf, async (item) => {
     removedIds.push(...(await job(item)));
   });
-  toastBatchOutcome(summary(result.succeeded), result.failed, { action: undoAction(removedIds) });
+  if (items.length === 1) toastWithUndo(summary(result.succeeded), removedIds);
+  else {
+    toastBatchOutcome(summary(result.succeeded), result.failed, { action: undoAction(removedIds) });
+  }
   return result;
 }

@@ -1,4 +1,9 @@
-import { ApiError, type ApplyResult, type TargetConflict } from "@loadout/shared";
+import {
+  ApiError,
+  type ApplyResult,
+  type BatchFailure,
+  type TargetConflict,
+} from "@loadout/shared";
 import { toast } from "sonner";
 import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
@@ -18,6 +23,16 @@ function describeConflicts(conflicts: readonly TargetConflict[]): string {
   const rest = conflicts.length - shown.length;
   if (rest > 0) shown.push(i18n.t("common.andMore", { count: rest }));
   return shown.join("\n");
+}
+
+/** Failures as toast lines, capped so the toast stays readable. */
+export function describeFailures(failed: readonly BatchFailure[]): string {
+  const lines = failed
+    .slice(0, TOAST_MAX_CONFLICT_PATHS)
+    .map((failure) => `${failure.name}: ${failure.message}`);
+  const rest = failed.length - lines.length;
+  if (rest > 0) lines.push(i18n.t("common.andMore", { count: rest }));
+  return lines.join("\n");
 }
 
 /** i18n key of the message for a failure that says nothing itself. */
@@ -72,9 +87,7 @@ export function toastApplyResult(
   }
   const lines = [
     ...(result.conflicts.length > 0 ? [describeConflicts(result.conflicts)] : []),
-    ...result.failed
-      .slice(0, TOAST_MAX_CONFLICT_PATHS)
-      .map((failure) => `${failure.name}: ${failure.message}`),
+    ...(result.failed.length > 0 ? [describeFailures(result.failed)] : []),
     ...(description ? [description] : []),
   ];
   toast.warning(i18n.t("deploy.appliedWithProblems", { summary, count: problems }), {

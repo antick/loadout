@@ -48,3 +48,36 @@ describe("runWithUndo", () => {
     );
   });
 });
+
+describe("runWithUndo with one item", () => {
+  it("toasts it as the single action, with the note on what was kept", async () => {
+    vi.mocked(toast.success).mockClear();
+    await runWithUndo(
+      ["a"],
+      (name) => name,
+      async () => ["a-removed"],
+      () => "Deleted “a”",
+    );
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "Deleted “a”",
+      expect.objectContaining({
+        description: expect.stringContaining("Recently removed"),
+        action: expect.objectContaining({ label: "Undo" }),
+      }),
+    );
+  });
+
+  it("rejects with the failure instead of collecting it", async () => {
+    await expect(
+      runWithUndo(
+        ["a"],
+        (name) => name,
+        async () => {
+          throw new Error("in use");
+        },
+        () => "Deleted",
+      ),
+    ).rejects.toThrow("in use");
+  });
+});
