@@ -7,6 +7,7 @@ import {
   FilterX,
   Library,
   ListChecks,
+  MoreHorizontal,
   Plus,
   RefreshCw,
   ScanSearch,
@@ -18,11 +19,18 @@ import { BatchDeployDialog } from "@/components/BatchDeployDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
 import { UsageReadStatus } from "@/components/UsageReadStatus";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useDuplicates } from "@/features/library/duplicates/duplicate-queries";
@@ -307,17 +315,6 @@ export function LibraryPage({
         }
         actions={
           <>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={checkAll.isPending || total === 0}
-              onClick={() => checkAll.mutate()}
-              aria-label={t("library.checkUpdates")}
-              title={t("library.checkUpdates")}
-            >
-              {checkAll.isPending ? <Spinner /> : <RefreshCw />}
-              <span className="max-xl:sr-only">{t("library.checkUpdates")}</span>
-            </Button>
             {updatable.length > 0 ? (
               <Button
                 variant="outline"
@@ -330,16 +327,6 @@ export function LibraryPage({
               </Button>
             ) : null}
             <Button
-              variant="ghost"
-              size="sm"
-              disabled={total === 0}
-              onClick={() => setDeployAllOpen(true)}
-              title={t("library.deployAll")}
-            >
-              <Send />
-              <span className="max-xl:sr-only">{t("library.deployAll")}</span>
-            </Button>
-            <Button
               variant={selection.active ? "secondary" : "ghost"}
               size="sm"
               aria-pressed={selection.active}
@@ -350,16 +337,28 @@ export function LibraryPage({
               <ListChecks />
               <span className="max-xl:sr-only">{t("library.select")}</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={total < 2}
-              onClick={() => setDuplicatesOpen(true)}
-              title={t("duplicates.find")}
-            >
-              <CopyCheck />
-              <span className="max-xl:sr-only">{t("duplicates.find")}</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton label={t("library.more")} icon={<MoreHorizontal />} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  disabled={checkAll.isPending || total === 0}
+                  onSelect={() => checkAll.mutate()}
+                >
+                  <RefreshCw />
+                  {t("library.checkUpdates")}
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={total === 0} onSelect={() => setDeployAllOpen(true)}>
+                  <Send />
+                  {t("library.deployAll")}
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={total < 2} onSelect={() => setDuplicatesOpen(true)}>
+                  <CopyCheck />
+                  {t("duplicates.find")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               size="sm"

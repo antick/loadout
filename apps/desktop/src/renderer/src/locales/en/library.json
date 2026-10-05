@@ -23,6 +23,7 @@
     "select": "Select",
     "install": "Install",
     "newSkill": "New skill",
+    "more": "More library actions",
     "toolbar": {
       "search": "Search name, description, tags, notes or source",
       "source": "Filter by source",
