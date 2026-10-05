@@ -41,7 +41,7 @@ describe("settings that became app state", () => {
     }
     // As a database from before the move: the move runs again on the next open.
     const move = MIGRATIONS.findIndex((sql) => sql.includes("'backupFirstRunPrompt'"));
-    old.exec(`PRAGMA user_version = ${move}`);
+    old.run(`PRAGMA user_version = ${move}`);
     old.close();
 
     const db = new Database(path);
