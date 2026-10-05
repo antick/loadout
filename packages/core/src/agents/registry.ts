@@ -46,7 +46,7 @@ interface ResolveSettings {
  * `a\\b/./` → `a/b`: project-relative folders compare as `/` separated, with no trailing slash.
  * Null when nothing is left, or for a folder outside the project (never saved that way).
  */
-function relativeDir(dir: string | null | undefined): string | null {
+export function relativeDir(dir: string | null | undefined): string | null {
   const segments = segmentsOf(dir ?? "").filter((segment) => segment !== ".");
   return segments.length > 0 && !segments.includes("..") ? segments.join("/") : null;
 }

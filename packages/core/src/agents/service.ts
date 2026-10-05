@@ -6,7 +6,12 @@ import { invalid } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { canonicalPath, normalizeAbsolutePath, segmentsOf } from "../util/fs";
 import { agentKeyFromName } from "../util/names";
-import type { AgentRegistry, CustomAgentRecord, ResolvedAgent } from "./registry";
+import {
+  type AgentRegistry,
+  type CustomAgentRecord,
+  type ResolvedAgent,
+  relativeDir,
+} from "./registry";
 import { logRedeployProblems } from "../deploy/report-log";
 
 export interface AgentsServiceDeps {
@@ -31,11 +36,10 @@ export function normalizeProjectDir(input: string | null | undefined): string | 
   if (raw.startsWith(HOME_SHORTHAND) || posix.isAbsolute(raw) || win32.isAbsolute(raw)) {
     throw invalid("Project skills path must be relative to the project root");
   }
-  const segments = segmentsOf(raw).filter((segment) => segment !== ".");
-  if (segments.includes("..")) {
+  if (segmentsOf(raw).includes("..")) {
     throw invalid("Project skills path cannot contain parent directory segments");
   }
-  return segments.length > 0 ? segments.join("/") : null;
+  return relativeDir(raw);
 }
 
 function requireBuiltIn(agent: ResolvedAgent, what: string): void {
