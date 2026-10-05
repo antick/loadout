@@ -6,7 +6,7 @@ import {
   type DuplicateReason,
   duplicatePairKey,
 } from "@loadout/shared";
-import { comparedLines, lineCounts, linesSimilarity, sharedCount } from "../origin/similarity";
+import { comparedLines, lineCounts, linesSimilarity, sharedCount } from "../util/similarity";
 import { yieldToEventLoop } from "../util/async";
 
 /** What comparing two library skills needs to know about each. */

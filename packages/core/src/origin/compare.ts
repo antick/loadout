@@ -28,7 +28,7 @@ import { fileDigests, hashDir, sha256Hex } from "../util/hash";
 
 import type { SourceLead } from "./evidence";
 
-import { textSimilarity } from "./similarity";
+import { textSimilarity } from "../util/similarity";
 
 /** The library side of a comparison: the skill as it is on disk right now. */
 export interface LibrarySide {

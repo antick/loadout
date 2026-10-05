@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createOriginFinder } from "../src/origin";
 import { gitFolderLead, linkLeads, remoteUrlOf } from "../src/origin/evidence";
 import { lockFileLead, lockFilePaths } from "../src/origin/lock";
-import { textSimilarity } from "../src/origin/similarity";
 import { hashDir } from "../src/util/hash";
+import { textSimilarity } from "../src/util/similarity";
 import { makeSkill, writeFile, rejection } from "./helpers";
 import { commitAll, git, initRepo } from "./install-fixtures";
 import { MARKET_SOURCE, type UpdatesWorld, createUpdatesWorld } from "./updates-world";
@@ -96,6 +96,8 @@ describe("evidence", () => {
     expect(textSimilarity("a\nb\nc\n", "a\r\nb\r\nc")).toBe(1);
     expect(textSimilarity("a\nb\nc\nd", "a\nb\nc\nx")).toBe(0.75);
     expect(textSimilarity("a\nb", "c\nd")).toBe(0);
+    // A byte order mark is not part of the first line.
+    expect(textSimilarity("﻿a\nb", "a\nb")).toBe(1);
   });
 });
 

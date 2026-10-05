@@ -10,7 +10,7 @@ const MAX_ORDERED_LINES = 2000;
 /** The lines of a text as they are compared. */
 export function comparedLines(text: string): string[] {
   return text
-    .replace(/^﻿/, "")
+    .replace(/^\uFEFF/, "")
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter((line) => line.length > 0);
