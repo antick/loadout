@@ -193,6 +193,16 @@ describe("without git", () => {
     });
   });
 
+  it("says a pinned commit is gone, not that the repository is private", async () => {
+    const gone = "e".repeat(40);
+    await expect(
+      install.git.checkout("https://github.com/acme/skills.git", { revision: gone }),
+    ).rejects.toMatchObject({
+      code: "GIT",
+      message: `Revision ${gone} is no longer available from https://github.com/acme/skills.git`,
+    });
+  });
+
   it("asks for Git for hosts it cannot download from, and never sends credentials", async () => {
     for (const url of ["https://example.com/acme/skills.git", "git@github.com:acme/skills.git"]) {
       await expect(install.api.previewGit(url)).rejects.toMatchObject({

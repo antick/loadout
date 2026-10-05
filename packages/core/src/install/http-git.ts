@@ -1,4 +1,4 @@
-import { redactUrl } from "@loadout/shared";
+import { COMMIT_ID_PATTERN, isCommitId, redactUrl } from "@loadout/shared";
 import { renameSync } from "node:fs";
 
 import { mkdtemp } from "node:fs/promises";
@@ -68,7 +68,6 @@ const MAX_ADVERTISEMENT_BYTES = 32 * 1024 * 1024;
 const PKT_LENGTH_DIGITS = 4;
 const HEX_RADIX = 16;
 const ZERO_SHA = /^0+$/;
-const SHA = /^[0-9a-f]{40,64}$/i;
 
 /** `https://host/owner/repo(.git)` → host and the path without `.git`, or null. */
 function parseHttpsRemote(url: string): { host: string; path: string } | null {
@@ -97,7 +96,7 @@ export function parseAdvertisement(body: Buffer): Map<string, string> {
     if (line.startsWith("#")) continue;
     // The first ref line carries the capabilities after a NUL.
     const [sha, ref] = (line.split("\0")[0] ?? "").trim().split(" ");
-    if (sha && ref && SHA.test(sha) && !ZERO_SHA.test(sha)) refs.set(ref, sha);
+    if (sha && ref && COMMIT_ID_PATTERN.test(sha) && !ZERO_SHA.test(sha)) refs.set(ref, sha);
   }
   return refs;
 }
@@ -148,21 +147,34 @@ export function createHttpGit(download: Download): HttpGit {
       const target = archiveHost(url);
       if (!target) throw new AppError("GIT_MISSING", "Git is needed for this repository.");
       const wanted = options.revision?.trim();
-      const revision =
-        wanted && SHA.test(wanted)
-          ? wanted
-          : await lsRemote(url, { branch: options.branch, signal: options.signal });
+      const pinned = wanted !== undefined && isCommitId(wanted);
+      const revision = pinned
+        ? wanted
+        : await lsRemote(url, { branch: options.branch, signal: options.signal });
       if (!revision) {
         const what = options.branch ? `'${options.branch}'` : "The default branch";
         throw new AppError("GIT", `${what} does not exist in ${redactUrl(url)}`);
       }
       const repo = repoNameFromUrl(url);
-      const data = await download(target.host.archiveUrl(target.path, repo, revision), {
-        signal: options.signal,
-        subject: "The repository",
-        label: url,
-        onProgress: percentReporter(options.onPercent),
-      });
+      let data: Buffer;
+      try {
+        data = await download(target.host.archiveUrl(target.path, repo, revision), {
+          signal: options.signal,
+          subject: "The repository",
+          label: url,
+          onProgress: percentReporter(options.onPercent),
+        });
+      } catch (error) {
+        // The repository answered for its refs, so a missing archive is the commit gone (a
+        // rewritten branch), not a private repository: the same message as with Git.
+        if (pinned && isAppError(error, "NOT_FOUND")) {
+          throw new AppError(
+            "GIT",
+            `Revision ${revision} is no longer available from ${redactUrl(url)}`,
+          );
+        }
+        throw error;
+      }
       if (options.signal?.aborted) throw cancelled();
 
       const unpacked = await unpackArchive(data, repo);

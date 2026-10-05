@@ -1,6 +1,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { isCommitId } from "@loadout/shared";
 import type { ExecResult } from "../util/exec";
 import { removePath } from "../util/fs";
 
@@ -23,7 +24,6 @@ export type FolderTrees = Map<string, (string | null)[]>;
 const TREES_DIR_PREFIX = "trees-";
 /** Commits and trees only: every file's content stays on the server. */
 const TREES_FILTER = "--filter=blob:none";
-const SHA = /^[0-9a-f]{40,64}$/i;
 
 export async function readFolderTrees(
   run: Run,
@@ -35,7 +35,7 @@ export async function readFolderTrees(
 ): Promise<FolderTrees> {
   const trees: FolderTrees = new Map();
   // Only exact commits: a name could be read as an option or mean another ref by now.
-  const wanted = [...new Set(revisions)].filter((revision) => SHA.test(revision));
+  const wanted = [...new Set(revisions)].filter(isCommitId);
   if (wanted.length === 0 || paths.length === 0) return trees;
   const dir = mkdtempSync(join(tmpdir(), `${tempPrefix}${TREES_DIR_PREFIX}`));
   try {
