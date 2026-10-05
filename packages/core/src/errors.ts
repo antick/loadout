@@ -39,6 +39,11 @@ export function isAppError(error: unknown, code?: ErrorCode): error is AppError 
   return error instanceof AppError && (code === undefined || error.code === code);
 }
 
+/** A request that got no usable answer (offline, timed out, server trouble), not a "no" from it. */
+export function isUnanswered(error: unknown): boolean {
+  return isAppError(error, "NETWORK") || isAppError(error, "TIMEOUT");
+}
+
 export { errorMessage };
 
 /** Serialise any thrown value for IPC or CLI output. */

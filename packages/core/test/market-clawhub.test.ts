@@ -141,6 +141,13 @@ describe("ClawHub as a marketplace", () => {
     const stale = await core.api.market.board("trending", "clawhub");
     expect(stale.cachedAt).not.toBeNull();
     expect(stale.skills).toHaveLength(1);
+
+    // The detail is kept longer; past that it still shows offline, with its age.
+    const fetchedAt = Date.now() - 3_600_000;
+    core.ctx.db.run("UPDATE market_cache SET fetched_at = ?", fetchedAt);
+    const staleDetail = await core.api.market.detail("", SLUG, "clawhub");
+    expect(staleDetail).toMatchObject({ version: "1.0.0", cachedAt: fetchedAt });
+    expect(staleDetail.document).toContain("# v1.0.0");
   });
 
   it("installs a version, sees the next one, and updates to it", async () => {

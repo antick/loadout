@@ -5,9 +5,11 @@ import {
   type Skill,
   formatCount,
   formatDate,
+  formatRelative,
 } from "@loadout/shared";
 import {
   Check,
+  CloudOff,
   Download,
   ExternalLink,
   FileQuestion,
@@ -269,6 +271,29 @@ function DetailBody({
       </SheetHeader>
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4">
+        {detail.data?.cachedAt ? (
+          <InlineNotice
+            tone="warning"
+            icon={CloudOff}
+            actions={
+              <Button
+                variant="ghost"
+                size="xs"
+                disabled={detail.isFetching}
+                onClick={() => void detail.refetch()}
+              >
+                {detail.isFetching ? <Spinner /> : <RefreshCw />}
+                {t("install.market.retry")}
+              </Button>
+            }
+          >
+            {t("install.market.cached", {
+              marketplace,
+              when: formatRelative(detail.data.cachedAt),
+            })}
+          </InlineNotice>
+        ) : null}
+
         {copy ? <LibraryNote copy={copy} onOpen={() => onOpenLibrary(copy.id)} /> : null}
 
         {detail.data?.changelog ? (

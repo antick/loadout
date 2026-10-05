@@ -369,6 +369,38 @@ describe("marketplace skill detail", () => {
     });
   });
 
+  it("shows the older copy when offline, but takes a real answer over it", async () => {
+    const full = {
+      [AUDIT_URL]: () => json(AUDITS),
+      [TREE_URL]: () => json({ tree: [{ type: "blob", path: "skills/pdf/SKILL.md" }] }),
+      [RAW_URL]: () => html(DOCUMENT),
+    };
+    serve(full);
+    expect(await detail("acme/skills", "pdf")).toMatchObject({ cachedAt: null });
+    const fetchedAt = Date.now() - 3_600_000;
+    detailWorld.ctx.db.run("UPDATE market_cache SET fetched_at = ?", fetchedAt);
+
+    const offline = fakeFetch(() => Promise.reject(new TypeError("fetch failed")));
+    detail = createMarketService(detailWorld.ctx, {
+      store: detailWorld.store,
+      fetchImpl: offline.fetchImpl,
+    }).api.detail;
+    expect(await detail("acme/skills", "pdf")).toMatchObject({
+      document: DOCUMENT,
+      documentPath: "skills/pdf/SKILL.md",
+      audits: expect.arrayContaining([expect.objectContaining({ provider: "Socket" })]),
+      cachedAt: fetchedAt,
+    });
+
+    // Reached, and the skill is gone from both: that is the answer, not the old copy.
+    serve({});
+    expect(await detail("acme/skills", "pdf")).toMatchObject({
+      audits: [],
+      document: null,
+      cachedAt: null,
+    });
+  });
+
   it("finds a skill whose folder is named differently, by the name in its document", async () => {
     const prefix = "https://raw.githubusercontent.com/acme/skills/HEAD/skills";
     serve({

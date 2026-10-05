@@ -6,7 +6,7 @@ import {
   splitFrontmatter,
   textField,
 } from "@loadout/shared";
-import { invalid, isAppError } from "../errors";
+import { invalid, isAppError, isUnanswered } from "../errors";
 import { type Download, jsonOptions, readJson } from "../install/download";
 
 /**
@@ -108,9 +108,28 @@ export interface MarketDetailDeps {
   download: Download;
 }
 
+/** A detail as a provider answers it; the client adds whether it came from the cache. */
+export type MarketDetailParts = Omit<MarketSkillDetail, "cachedAt">;
+
+/** A fetched detail, and whether some part of it went unanswered (offline, server trouble). */
+export interface FetchedDetail {
+  detail: MarketDetailParts;
+  unanswered: boolean;
+}
+
+/** Whether any request of one document lookup went unanswered, so "no document" is not known. */
+interface LookupTrace {
+  unanswered: boolean;
+}
+
+/** Note a failed request on the trace. */
+function noteFailure(trace: LookupTrace, error: unknown): void {
+  if (isUnanswered(error)) trace.unanswered = true;
+}
+
 export function createMarketDetail(
   deps: MarketDetailDeps,
-): (source: string, skillId: string) => Promise<MarketSkillDetail> {
+): (source: string, skillId: string) => Promise<FetchedDetail> {
   const { download } = deps;
 
   async function json(url: string): Promise<unknown> {
@@ -137,7 +156,11 @@ export function createMarketDetail(
     return data.toString("utf8");
   }
 
-  async function listed(source: string, skillId: string): Promise<DocumentCandidates | null> {
+  async function listed(
+    source: string,
+    skillId: string,
+    trace: LookupTrace,
+  ): Promise<DocumentCandidates | null> {
     try {
       const body = await json(`${GITHUB_API}/${source}/git/trees/${TREE_REF}?recursive=1`);
       const tree = isRecord(body) && Array.isArray(body.tree) ? body.tree : [];
@@ -147,8 +170,9 @@ export function createMarketDetail(
           : [],
       );
       return documentCandidates(paths, skillId);
-    } catch {
+    } catch (error) {
       // Rate limited or offline: fall back to the usual places.
+      noteFailure(trace, error);
       return null;
     }
   }
@@ -158,14 +182,16 @@ export function createMarketDetail(
     source: string,
     paths: readonly string[],
     nameMustBe: string | null,
+    trace: LookupTrace,
   ): Promise<{ path: string; content: string } | null> {
     for (const path of paths) {
       try {
         const content = await raw(source, path);
         const name = frontmatterName(content)?.toLowerCase();
         if (nameMustBe === null || name === nameMustBe.toLowerCase()) return { path, content };
-      } catch {
+      } catch (error) {
         // Try the next place.
+        noteFailure(trace, error);
       }
     }
     return null;
@@ -174,14 +200,15 @@ export function createMarketDetail(
   async function document(
     source: string,
     skillId: string,
+    trace: LookupTrace,
   ): Promise<{ path: string; content: string } | null> {
-    const candidates = await listed(source, skillId);
+    const candidates = await listed(source, skillId, trace);
     if (!candidates) {
       const guesses = GUESSED_FOLDERS.map((folder) => `${folder}${skillId}/SKILL.md`);
-      return firstReadable(source, guesses, null);
+      return firstReadable(source, guesses, null, trace);
     }
-    if (candidates.sure) return firstReadable(source, [candidates.sure], null);
-    return firstReadable(source, candidates.maybe.slice(0, MAX_MAYBE_READS), skillId);
+    if (candidates.sure) return firstReadable(source, [candidates.sure], null, trace);
+    return firstReadable(source, candidates.maybe.slice(0, MAX_MAYBE_READS), skillId, trace);
   }
 
   return async (source, skillId) => {
@@ -190,22 +217,27 @@ export function createMarketDetail(
     if (!SOURCE_SHAPE.test(repo)) throw invalid(`Invalid marketplace source: '${source}'`);
     if (!SKILL_ID_SHAPE.test(id)) throw invalid(`Invalid marketplace skill id: '${skillId}'`);
     const pageUrl = `${MARKETPLACE_URL}/${repo}/${encodeURIComponent(id)}`;
+    const trace: LookupTrace = { unanswered: false };
     const [found, published] = await Promise.all([
-      document(repo, id),
+      document(repo, id, trace),
       audits(repo, encodeURIComponent(id), pageUrl),
     ]);
     return {
-      provider: "skills_sh",
-      id: `${repo}/${id}`,
-      source: repo,
-      skillId: id,
-      pageUrl,
-      repoUrl: `${GITHUB_WEB}/${repo}`,
-      version: null,
-      changelog: null,
-      audits: published,
-      document: found?.content ?? null,
-      documentPath: found?.path ?? null,
+      detail: {
+        provider: "skills_sh",
+        id: `${repo}/${id}`,
+        source: repo,
+        skillId: id,
+        pageUrl,
+        repoUrl: `${GITHUB_WEB}/${repo}`,
+        version: null,
+        changelog: null,
+        audits: published,
+        document: found?.content ?? null,
+        documentPath: found?.path ?? null,
+      },
+      // A document found anyway is known, whatever else went unanswered on the way.
+      unanswered: published === null || (found === null && trace.unanswered),
     };
   };
 }

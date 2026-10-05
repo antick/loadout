@@ -11,7 +11,7 @@ import {
   type MarketSkillDetail,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { AppError, invalid, isAppError } from "../errors";
+import { AppError, invalid, isAppError, isUnanswered } from "../errors";
 import {
   MAX_ANSWER_BYTES,
   createRequest,
@@ -21,7 +21,7 @@ import {
 } from "../install/download";
 import type { SkillStore } from "../skills/store";
 import { type ClawhubClient, type ClawhubEntry, createClawhubClient } from "./clawhub";
-import { createMarketDetail } from "./detail";
+import { type FetchedDetail, type MarketDetailParts, createMarketDetail } from "./detail";
 import { type MarketEntry, parseBoardHtml, parseSearchResponse } from "./parse";
 
 export interface MarketServiceDeps {
@@ -179,6 +179,41 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     }
   }
 
+  /**
+   * A skill's detail, fresh from the cache or fetched. When the fetch goes unanswered (offline,
+   * server trouble) an earlier full copy is shown with its age, as boards and searches are.
+   */
+  async function detailOrCached(
+    key: string,
+    marketplaceName: string,
+    fetchDetailParts: () => Promise<FetchedDetail>,
+  ): Promise<MarketSkillDetail> {
+    const cached = readCache<MarketDetailParts>(key, DETAIL_CACHE_TTL_MS);
+    if (cached?.fresh) return { ...cached.entries, cachedAt: null };
+    const stale = (error: unknown): MarketSkillDetail | null => {
+      if (!cached) return null;
+      ctx.log.warn(`Showing a cached ${marketplaceName} skill detail`, error);
+      return { ...cached.entries, cachedAt: cached.fetchedAt };
+    };
+    let fetched: FetchedDetail;
+    try {
+      fetched = await fetchDetailParts();
+    } catch (error) {
+      // A "no" from the marketplace (gone, ambiguous) is its answer; only silence falls back.
+      if (!isUnanswered(error)) throw error;
+      const older = stale(error);
+      if (older) return older;
+      throw error;
+    }
+    const { detail, unanswered } = fetched;
+    if (unanswered) {
+      // A half answer is shown only without an earlier copy, and never kept.
+      return stale(`${key} went partly unanswered`) ?? { ...detail, cachedAt: null };
+    }
+    if (detail.audits !== null && detail.document !== null) writeCache(key, detail);
+    return { ...detail, cachedAt: null };
+  }
+
   async function fetchBoard(board: MarketBoard): Promise<MarketEntry[]> {
     const path = BOARD_PATHS[board];
     if (!path) throw invalid(`Unknown marketplace board: ${board}`);
@@ -251,23 +286,21 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     },
 
     detail: async (source, skillId, provider = "skills_sh") => {
+      const id = `${source.trim()}/${skillId.trim()}`;
       if (provider === "clawhub") {
-        const key = `${CLAWHUB_CACHE_PREFIX}${DETAIL_CACHE_PREFIX}${source.trim()}/${skillId.trim()}`;
-        const cached = readCache<MarketSkillDetail>(key, DETAIL_CACHE_TTL_MS);
-        if (cached?.fresh) return cached.entries;
-        const found = await clawhub.detail(source.trim() || null, skillId.trim());
-        const audits = await clawhub.audits(found.owner, found.slug);
-        const detail: MarketSkillDetail = { ...found, audits };
-        if (audits !== null && detail.document !== null) writeCache(key, detail);
-        return detail;
+        return detailOrCached(
+          `${CLAWHUB_CACHE_PREFIX}${DETAIL_CACHE_PREFIX}${id}`,
+          CLAWHUB_NAME,
+          async () => {
+            const found = await clawhub.detail(source.trim() || null, skillId.trim());
+            const audits = await clawhub.audits(found.owner, found.slug);
+            return { detail: { ...found, audits }, unanswered: audits === null };
+          },
+        );
       }
-      const key = `${DETAIL_CACHE_PREFIX}${source.trim()}/${skillId.trim()}`;
-      const cached = readCache<MarketSkillDetail>(key, DETAIL_CACHE_TTL_MS);
-      if (cached?.fresh) return cached.entries;
-      const detail = await fetchDetail(source, skillId);
-      // A half answer (offline, rate limited) is shown but not kept, so the next look tries again.
-      if (detail.audits !== null && detail.document !== null) writeCache(key, detail);
-      return detail;
+      return detailOrCached(`${DETAIL_CACHE_PREFIX}${id}`, MARKETPLACE_NAME, () =>
+        fetchDetail(source, skillId),
+      );
     },
   };
 

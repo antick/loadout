@@ -4,7 +4,6 @@ import {
   type MarketAudit,
   type MarketBoard,
   type MarketSkill,
-  type MarketSkillDetail,
   clawhubMarketId,
   clawhubSkillUrl,
 } from "@loadout/shared";
@@ -17,6 +16,7 @@ import {
   jsonOptions,
   readJson,
 } from "../install/download";
+import type { MarketDetailParts } from "./detail";
 
 /**
  * The ClawHub registry (clawhub.ai): public read endpoints, no token. Skills are versioned and
@@ -48,7 +48,7 @@ const asNumber = (value: unknown): number | null =>
 /** A published skill as the registry lists it. */
 export type ClawhubEntry = Omit<MarketSkill, "installed">;
 
-export interface ClawhubDetail extends MarketSkillDetail {
+export interface ClawhubDetail extends MarketDetailParts {
   owner: string;
   slug: string;
 }

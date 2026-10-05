@@ -176,6 +176,11 @@ export interface MarketSkillDetail {
   document: string | null;
   /** Where that file sits in the repository. */
   documentPath: string | null;
+  /**
+   * Set when the marketplace could not be reached and an earlier copy is shown instead: when that
+   * copy was fetched (epoch ms). Null for a live answer.
+   */
+  cachedAt: number | null;
 }
 
 /** A marketplace board or search result. */
