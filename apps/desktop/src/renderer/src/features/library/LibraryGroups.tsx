@@ -1,15 +1,6 @@
-import type { Skill, SkillSourceKind } from "@loadout/shared";
+import type { Skill } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
-import {
-  ChevronRight,
-  FileArchive,
-  FolderOpen,
-  GitBranch,
-  Link2,
-  type LucideIcon,
-  Send,
-  Package,
-} from "lucide-react";
+import { ChevronRight, FolderOpen, Send } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BatchDeployDialog } from "@/components/BatchDeployDialog";
@@ -17,15 +8,10 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { LibraryGroup } from "@/features/library/library-groups";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { SOURCE_KIND_ICONS } from "@/lib/source-icons";
 import { cn } from "@/lib/utils";
 
 const OPEN_STORAGE_KEY = "library.groups-open";
-const KIND_ICONS: Record<SkillSourceKind, LucideIcon> = {
-  repository: GitBranch,
-  archive: FileArchive,
-  link: Link2,
-  registry: Package,
-};
 
 export interface LibraryGroupsProps {
   groups: readonly LibraryGroup[];
@@ -55,7 +41,7 @@ export function LibraryGroups({
     <div className="flex flex-col gap-3">
       {groups.map((group) => {
         const open = !folded[group.key];
-        const Icon = group.source ? KIND_ICONS[group.source.kind] : FolderOpen;
+        const Icon = group.source ? SOURCE_KIND_ICONS[group.source.kind] : FolderOpen;
         const label = group.source?.label ?? t("library.groups.noSource");
         return (
           <Collapsible

@@ -3,20 +3,15 @@ import {
   type NewSourceSkill,
   type Skill,
   type SkillSource,
-  type SkillSourceKind,
   formatRelative,
 } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import {
   CircleFadingArrowUp,
   Copy,
-  FileArchive,
   GitBranch,
   Library,
-  Link2,
-  type LucideIcon,
   MoreHorizontal,
-  Package,
   PackageSearch,
   RefreshCw,
   Sparkles,
@@ -35,13 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
-
-const KIND_ICONS: Record<SkillSourceKind, LucideIcon> = {
-  repository: GitBranch,
-  archive: FileArchive,
-  link: Link2,
-  registry: Package,
-};
+import { SOURCE_KIND_ICONS } from "@/lib/source-icons";
 
 /** Skill names listed on a card before "and N more". */
 const NAMES_SHOWN = 6;
@@ -82,7 +71,7 @@ export function SourceCard({
   onDismissNew,
 }: SourceCardProps): ReactNode {
   const { t } = useTranslation();
-  const KindIcon = KIND_ICONS[source.kind];
+  const KindIcon = SOURCE_KIND_ICONS[source.kind];
   const shown = skills.slice(0, NAMES_SHOWN);
   const hidden = skills.length - shown.length;
 
