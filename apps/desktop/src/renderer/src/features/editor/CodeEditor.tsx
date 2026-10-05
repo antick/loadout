@@ -14,6 +14,8 @@ import {
 import { type ReactNode, type Ref, useEffect, useImperativeHandle, useRef } from "react";
 import type { CodeLanguage } from "@/features/editor/code-languages";
 import { codeTheme } from "@/features/editor/code-theme";
+import { parkState } from "@/features/editor/parked-states";
+import { EDITOR_PARKED_STATES_MAX } from "@/lib/constants";
 
 export interface CursorPosition {
   line: number;
@@ -31,6 +33,8 @@ export interface CodeEditorHandle {
 export interface CodeEditorProps {
   /** Identity of the open document. Each keeps its own undo history and cursor. */
   docKey: string;
+  /** Documents with unsaved changes: their history is kept however many others are opened. */
+  unsavedKeys?: readonly string[];
   value: string;
   language: CodeLanguage;
   wrap: boolean;
@@ -60,6 +64,7 @@ function cursorOf(state: EditorState): CursorPosition {
  */
 export function CodeEditor({
   docKey,
+  unsavedKeys,
   value,
   language,
   wrap,
@@ -175,7 +180,13 @@ export function CodeEditor({
   useEffect(() => {
     const view = viewRef.current;
     if (!view || keyRef.current === docKey) return;
-    statesRef.current.set(keyRef.current, view.state);
+    parkState(
+      statesRef.current,
+      keyRef.current,
+      view.state,
+      EDITOR_PARKED_STATES_MAX,
+      new Set(unsavedKeys),
+    );
     keyRef.current = docKey;
     const parked = statesRef.current.get(docKey);
     const next = parked && parked.doc.toString() === value ? parked : createState(value);

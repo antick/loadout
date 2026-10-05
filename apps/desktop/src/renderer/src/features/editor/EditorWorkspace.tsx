@@ -368,6 +368,7 @@ export function EditorWorkspace({
                 <CodeEditor
                   ref={editorRef}
                   docKey={current.path}
+                  unsavedKeys={session.dirtyPaths}
                   value={current.draft}
                   language={language}
                   wrap={wrap}

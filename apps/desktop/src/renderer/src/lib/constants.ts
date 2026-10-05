@@ -27,6 +27,11 @@ export const EXPORT_MANY_PREFIX = `${APP_SLUG}-skills-`;
 export const EDITOR_DRAFT_PREFIX = "editor.draft:";
 /** Quiet time before an unsaved draft is written to localStorage. */
 export const EDITOR_DRAFT_SAVE_MS = 400;
+/**
+ * Files whose editor state (undo history, cursor) is kept after switching away, the most recently
+ * left first. Files with unsaved changes are always kept on top of these.
+ */
+export const EDITOR_PARKED_STATES_MAX = 20;
 /** Drafts older than this are dropped instead of restored. */
 export const EDITOR_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export const EDITOR_VIEWS = ["edit", "split", "preview"] as const;
