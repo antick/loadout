@@ -39,13 +39,7 @@ describe("the background update banner", () => {
 
     const html = renderToStaticMarkup(
       <QueryClientProvider client={queryClient}>
-        <LibraryBanners
-          updateCount={0}
-          viewingUpdates={false}
-          onViewUpdates={() => undefined}
-          duplicateCount={0}
-          onReviewDuplicates={() => undefined}
-        />
+        <LibraryBanners duplicateCount={0} onReviewDuplicates={() => undefined} />
       </QueryClientProvider>,
     );
     expect(html).toContain("Background update check ran");

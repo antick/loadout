@@ -395,9 +395,6 @@ export function LibraryPage({
       />
 
       <LibraryBanners
-        updateCount={updatable.length}
-        viewingUpdates={filters.status === "updates"}
-        onViewUpdates={() => setRest({ ...EMPTY_FILTERS, status: "updates" })}
         duplicateCount={duplicates.data?.pairs.length ?? 0}
         onReviewDuplicates={() => setDuplicatesOpen(true)}
       />

@@ -1,6 +1,6 @@
 import { type AppEvents, formatRelative } from "@loadout/shared";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpCircle, Copy, History } from "lucide-react";
+import { Copy, History } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -10,24 +10,15 @@ import { keys } from "@/lib/query-keys";
 type AutoRun = AppEvents["updates:auto-ran"];
 
 export interface LibraryBannersProps {
-  /** Skills with an update waiting. */
-  updateCount: number;
-  /** The list is already filtered to those skills, so "View" would do nothing. */
-  viewingUpdates: boolean;
-  onViewUpdates: () => void;
   /** Pairs of skills that may be one skill installed twice. */
   duplicateCount: number;
   onReviewDuplicates: () => void;
 }
 
 /**
- * Notices above the library: updates waiting, possible duplicates, and the last background
- * update round.
+ * Notices above the library: possible duplicates and the last background update round.
  */
 export function LibraryBanners({
-  updateCount,
-  viewingUpdates,
-  onViewUpdates,
   duplicateCount,
   onReviewDuplicates,
 }: LibraryBannersProps): ReactNode {
@@ -39,25 +30,10 @@ export function LibraryBanners({
     queryFn: skipToken,
   });
 
-  if (updateCount === 0 && duplicateCount === 0 && !autoRun) return null;
+  if (duplicateCount === 0 && !autoRun) return null;
 
   return (
     <div className="flex flex-col gap-2">
-      {updateCount > 0 ? (
-        <InlineNotice
-          tone="info"
-          icon={ArrowUpCircle}
-          actions={
-            viewingUpdates ? null : (
-              <Button variant="ghost" size="xs" onClick={onViewUpdates}>
-                {t("library.banners.view")}
-              </Button>
-            )
-          }
-        >
-          {t("library.banners.updatesAvailable", { count: updateCount })}
-        </InlineNotice>
-      ) : null}
       {duplicateCount > 0 ? (
         <InlineNotice
           tone="neutral"
