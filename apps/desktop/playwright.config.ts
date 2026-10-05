@@ -14,10 +14,14 @@ const SERVER_STOP_TIMEOUT_MS = 10_000;
 // machine.
 const TEST_TIMEOUT_MS = 60_000;
 const EXPECT_TIMEOUT_MS = 15_000;
+// Each worker runs its own core and Git; more than two swamps an ordinary machine. CI keeps
+// Playwright's own choice for its runners.
+const LOCAL_WORKERS = 2;
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  workers: CI ? undefined : LOCAL_WORKERS,
   forbidOnly: CI,
   retries: CI ? 1 : 0,
   reporter: CI ? [["github"], ["list"]] : "list",
