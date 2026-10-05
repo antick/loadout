@@ -57,6 +57,7 @@ describe("auto-updater schedule", () => {
         pendingRemovals: [],
         approval: null,
         removedIds: [],
+        sourceDiff: null,
         ...updateOutcome(skillId),
       };
     },

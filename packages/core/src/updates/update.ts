@@ -37,10 +37,13 @@ import {
   isSkillDir,
   normalizeAbsolutePath,
 } from "../util/fs";
+import { detachSkill } from "./detach";
 import { type LockMode, runLocked } from "./locking";
 import { assessReplacement } from "./pending";
+import { diffWithSource } from "./preview";
 import { LIBRARY_LOCATION, approvalToken, isApproved } from "./removals";
 import {
+  type OpenedSource,
   isRemoteSource,
   openLocalSource,
   openRemoteSource,
@@ -49,6 +52,9 @@ import {
   resolveRemoteRevision,
 } from "./source";
 import { logRedeployProblems } from "../deploy/report-log";
+import { CANNOT_REFRESH, FLAGGED_UPDATE, updateEach } from "./update-many";
+
+export { FLAGGED_UPDATE } from "./update-many";
 
 export interface UpdaterDeps {
   store: SkillStore;
@@ -102,19 +108,13 @@ export interface Updater {
 const UPDATE_CANCEL_PREFIX = "update:";
 /** Token domain of a re-import: there is no revision, and the path is already on the row. */
 const REIMPORT_DOMAIN = "reimport";
-const CANNOT_REFRESH = "Source type cannot be refreshed";
 const NOT_LOCAL =
   "Only local, imported and linked skills can do this. Use update for this skill instead.";
 const SOURCE_MOVED = "This skill's source changed while it was being updated. Try again.";
 const INSIDE_LIBRARY = "That folder is already inside the skill library";
 const NO_CHANGES_DETAIL = "No file changes";
-const DETACHED_DETAIL = "Detached from its source";
-const KEPT_AS_MINE_DETAIL = "Detached from its source and marked as yours";
-/** Where a flagged update is explained: it stays "update available" and nothing changed. */
 const MOVED_SINCE_COMPARED =
   "The source changed again since you compared it. Look at Compare again, then update.";
-export const FLAGGED_UPDATE =
-  "Held back: the safety check flagged the new version. Update it on its own to read the findings.";
 
 /** Key for `install.cancel(...)` that stops a running update of this skill. */
 export function updateCancelKey(skillId: string): string {
@@ -133,6 +133,8 @@ interface Replacement {
   acceptRisk?: boolean;
   /** Work out the removals and stop: nothing is written. */
   dryRun?: boolean;
+  /** What a dry run compares the library with; there even when `sourceDir` is null. */
+  preview?: OpenedSource | null;
   /** Throw when the row no longer describes the source the new content was taken from. */
   verify(fresh: Skill): void;
   /** Source fields of the row once the replacement is in. */
@@ -222,6 +224,9 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         pendingRemovals: removals,
         approval: null,
         removedIds: [],
+        sourceDiff: plan.preview
+          ? diffWithSource(fresh, plan.preview, { asLibraryCopy: true })
+          : null,
       };
     }
     const safetyReport = await checkNewVersion(plan);
@@ -240,7 +245,14 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           ? store.update(fresh.id, { ...patch, updatedAt: fresh.updatedAt })
           : fresh;
         const approval = approvalToken(plan.domain, removals);
-        return { skill, contentChanged, pendingRemovals: removals, approval, removedIds: [] };
+        return {
+          skill,
+          contentChanged,
+          pendingRemovals: removals,
+          approval,
+          removedIds: [],
+          sourceDiff: null,
+        };
       }
 
       const record = plan.record(fresh);
@@ -272,6 +284,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         pendingRemovals: [],
         approval: null,
         removedIds: kept ? [kept] : [],
+        sourceDiff: null,
       };
     });
     ctx.touched("skills");
@@ -323,9 +336,11 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       if (options.expectedRevision && revision !== options.expectedRevision) {
         throw new AppError("CHANGED_ON_DISK", MOVED_SINCE_COMPARED);
       }
-      // Same commit as installed: nothing to download, only the row to settle.
+      // Same commit as installed: nothing to download, only the row to settle. A dry run still
+      // fetches it once, for the comparison it hands back.
+      const same = revision === skill.sourceRevision;
       const source =
-        revision === skill.sourceRevision
+        same && !options.dryRun
           ? null
           : await openRemoteSource(clients, target, revision, handle.signal);
       try {
@@ -333,12 +348,13 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         ctx.emit("install:progress", { key, phase: "installing", name: skill.name });
         return await replace({
           skillId,
-          sourceDir: source?.dir ?? null,
+          sourceDir: same ? null : (source?.dir ?? null),
           domain: revision,
           approval,
           lockMode: options.lockMode ?? "wait",
           acceptRisk: options.acceptRisk,
           dryRun: options.dryRun,
+          preview: source,
           verify: (fresh) => {
             const still = isRemoteSource(fresh) && remoteKey(remoteTargetOf(fresh, deps.gitInput));
             if (still !== remoteKey(target)) throw invalid(SOURCE_MOVED);
@@ -364,8 +380,11 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         await source?.cleanup();
       }
     } catch (error) {
-      recordFailure(skill.name, error);
-      markFailed(skillId, error);
+      // A dry run writes nothing, not even that it failed.
+      if (!options.dryRun) {
+        recordFailure(skill.name, error);
+        markFailed(skillId, error);
+      }
       throw error;
     } finally {
       handle.done();
@@ -393,6 +412,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           lockMode: "wait",
           acceptRisk: options.acceptRisk,
           dryRun: options.dryRun,
+          preview: source,
           verify: (fresh) => {
             if (fresh.sourceRef !== skill.sourceRef) throw invalid(SOURCE_MOVED);
           },
@@ -410,6 +430,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         await source.cleanup();
       }
     } catch (error) {
+      if (options.dryRun) throw error;
       recordFailure(skill.name, error);
       if (isAppError(error, "NOT_FOUND") && store.find(skillId)) {
         store.update(skillId, {
@@ -454,48 +475,11 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     }
   }
 
-  async function detach(skillId: string, options: { markAuthored?: boolean } = {}): Promise<Skill> {
-    const mine = options.markAuthored === true;
-    const detached = await ctx.lock.run(`detach ${store.get(skillId).name}`, () =>
-      store.update(skillId, {
-        ...(mine ? { authored: true } : {}),
-        sourceType: "local",
-        sourceRef: null,
-        sourceUrl: null,
-        sourceTrustedHost: null,
-        sourceSubpath: null,
-        sourceBranch: null,
-        sourceRevision: null,
-        remoteRevision: null,
-        updateStatus: "local_only",
-        lastCheckError: null,
-      }),
-    );
-    ctx.activity.record("update", detached.name, mine ? KEPT_AS_MINE_DETAIL : DETACHED_DETAIL);
-    ctx.touched("skills");
-    return detached;
-  }
-
-  async function updateMany(skillIds: string[]): Promise<BatchUpdateResult> {
-    const result: BatchUpdateResult = { updated: 0, unchanged: 0, heldBack: [], failed: [] };
-    for (const skillId of skillIds) {
-      const skill = store.find(skillId);
-      try {
-        if (!skill) throw notFound(`Skill not found: ${skillId}`);
-        if (!isRemoteSource(skill) && !skill.sourceRef) throw unsupported(CANNOT_REFRESH);
-        // A batch never approves removals: those skills wait for the user to look at the list.
-        const outcome = isRemoteSource(skill) ? await update(skillId) : await reimport(skillId);
-        if (outcome.pendingRemovals.length > 0) result.heldBack.push(skill.name);
-        else if (outcome.contentChanged) result.updated += 1;
-        else result.unchanged += 1;
-      } catch (error) {
-        // A batch never asks about findings: a flagged skill waits for its own update.
-        const message = isAppError(error, "UNSAFE") ? FLAGGED_UPDATE : errorMessage(error);
-        result.failed.push({ name: skill?.name ?? skillId, message });
-      }
-    }
-    return result;
-  }
-
-  return { update, reimport, relink, detach, updateMany };
+  return {
+    update,
+    reimport,
+    relink,
+    detach: (skillId, options) => detachSkill(ctx, store, skillId, options),
+    updateMany: (skillIds) => updateEach(store, { update, reimport }, skillIds),
+  };
 }

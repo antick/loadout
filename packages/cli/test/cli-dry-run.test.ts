@@ -1,5 +1,6 @@
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { InstallPlan } from "../src/commands/skills-install-plan";
 import type { UpdatePlan } from "../src/commands/skills-update-plan";
@@ -113,6 +114,33 @@ describe("skills update --dry-run", () => {
     const run = await box.cli("skills", "update", "gone", "--dry-run");
     expect(run.code).toBe(1);
     expect(run.stdout).toContain("gone: could not read its source");
+    // A dry run writes nothing, not even that the source is missing.
+    const shown = await box.cli("skills", "show", "gone", "--json");
+    expect(shown.json<{ updateStatus: string }>().updateStatus).toBe("local_only");
+  });
+
+  it("reads each source once", async () => {
+    let downloads = 0;
+    const archive = zipSync({ "SKILL.md": strToU8("---\nname: notes\ndescription: Notes\n---\n") });
+    const fetched = createSandbox({
+      fetchImpl: (async () => {
+        downloads += 1;
+        return new Response(Buffer.from(archive), {
+          headers: { "content-type": "application/zip" },
+        });
+      }) as typeof fetch,
+    });
+    try {
+      expect((await fetched.cli("skills", "install", "https://example.com/notes.zip")).code).toBe(
+        0,
+      );
+      downloads = 0;
+      const plan = await fetched.cli("skills", "update", "notes", "--dry-run", "--json");
+      expect(plan.json<UpdatePlan>().skills[0]).toMatchObject({ name: "notes", error: null });
+      expect(downloads).toBe(1);
+    } finally {
+      fetched.cleanup();
+    }
   });
 });
 

@@ -46,7 +46,12 @@ function documentOf(skill: Skill, source: OpenedSource): SourceDocument {
   };
 }
 
-function diffOf(skill: Skill, source: OpenedSource, options: SourceDiffOptions): SourceDiff {
+/** The library copy of `skill` against the source opened for it, file by file. */
+export function diffWithSource(
+  skill: Skill,
+  source: OpenedSource,
+  options: SourceDiffOptions = {},
+): SourceDiff {
   return {
     skillId: skill.id,
     sourceLabel: sourceLabel(skill),
@@ -84,10 +89,10 @@ export function createSourcePreview(deps: SourcePreviewDeps): SourcePreview {
   return {
     sourceDocument: (skillId) => withSource(skillId, documentOf),
     sourceDiff: (skillId, options = {}) =>
-      withSource(skillId, (skill, source) => diffOf(skill, source, options)),
+      withSource(skillId, (skill, source) => diffWithSource(skill, source, options)),
     compareSource: (skillId, options = {}) =>
       withSource(skillId, (skill, source) => ({
-        diff: diffOf(skill, source, options),
+        diff: diffWithSource(skill, source, options),
         document: documentOf(skill, source),
       })),
   };

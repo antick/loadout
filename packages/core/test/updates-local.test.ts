@@ -174,6 +174,12 @@ describe("reimport, relink, detach", () => {
     );
     const skill = await installLocal();
     rmSync(sourceDir, { recursive: true });
+    // A dry run writes nothing, not even that the source is gone.
+    const history = world.ctx.activity.list().length;
+    const dry = world.updates.api.reimport(skill.id, null, { dryRun: true });
+    expect((await rejection(dry)).code).toBe("NOT_FOUND");
+    expect(world.store.get(skill.id)).toEqual(skill);
+    expect(world.ctx.activity.list()).toHaveLength(history);
     expect((await rejection(world.updates.api.reimport(skill.id))).code).toBe("NOT_FOUND");
     expect(world.store.get(skill.id).updateStatus).toBe("source_missing");
 

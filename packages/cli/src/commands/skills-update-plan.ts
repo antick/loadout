@@ -1,5 +1,11 @@
 import { redactUrl, formatRevision } from "@loadout/shared";
-import { type Core, LIBRARY_LOCATION, errorMessage, isRemoteSource } from "@loadout/core";
+import {
+  type Core,
+  LIBRARY_LOCATION,
+  errorMessage,
+  isRemoteSource,
+  unsupported,
+} from "@loadout/core";
 import type { BatchFailure, FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
 
 import { failureLines, plural } from "../output";
@@ -53,18 +59,20 @@ const heldBackPath = (removal: PendingRemoval): string =>
   removal.location === LIBRARY_LOCATION ? removal.path : `${removal.location}: ${removal.path}`;
 
 /**
- * Compare one skill with its source, the way the Compare tab does. What it would hold back comes
- * from the update itself, run dry, so it is the same rule the real update uses.
+ * Compare one skill with its source, the way the Compare tab does. Both the comparison and what
+ * it would hold back come from the update itself, run dry: one fetch, and the same rule the real
+ * update uses.
  */
 export async function planUpdate(core: Core, skill: Skill): Promise<UpdatePlanRow> {
   const empty = { added: [], modified: [], removed: [], heldBack: [] };
   try {
-    const diff = await core.api.updates.sourceDiff(skill.id, { asLibraryCopy: true });
-    const removed = pathsWith(diff.entries, "removed");
-    const modified = pathsWith(diff.entries, "modified");
     const dry = isRemoteSource(skill)
       ? await core.api.updates.update(skill.id, null, { dryRun: true })
       : await core.api.updates.reimport(skill.id, null, { dryRun: true });
+    const diff = dry.sourceDiff;
+    if (!diff) throw unsupported("This skill's source cannot be compared");
+    const removed = pathsWith(diff.entries, "removed");
+    const modified = pathsWith(diff.entries, "modified");
     return {
       id: skill.id,
       name: skill.name,

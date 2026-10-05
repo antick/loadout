@@ -240,6 +240,11 @@ export interface UpdateResult {
   approval: string | null;
   /** The edited library version this update replaced, kept in Recently removed. */
   removedIds: string[];
+  /**
+   * A dry run's comparison of the source with the library copy, as an update would copy it in
+   * (`asLibraryCopy`), from the same fetch. Null when not a dry run.
+   */
+  sourceDiff: SourceDiff | null;
 }
 
 /** Options of an update from the source, or a re-import of a folder or archive. */

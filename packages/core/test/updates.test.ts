@@ -435,6 +435,41 @@ describe("removal guard", () => {
     });
   });
 
+  it("hands back on a dry run the comparison a preview would show, from one fetch", async () => {
+    const pdf = await world.installFromGit("pdf");
+    dropNotesUpstream();
+    const before = world.lookups();
+    const dry = await world.updates.api.update(pdf.id, null, { dryRun: true });
+    expect(world.lookups()).toBe(before + 1);
+    const shown = await world.updates.api.sourceDiff(pdf.id, { asLibraryCopy: true });
+    expect(dry.sourceDiff).toEqual(shown);
+    expect(dry.sourceDiff?.entries.map((entry) => [entry.path, entry.status])).toEqual([
+      ["notes/old.md", "removed"],
+    ]);
+    // Nothing new upstream: still compared, so edits made here show.
+    const docx = await world.installFromGit("docx");
+    writeFile(join(docx.libraryPath, "mine.md"), "my notes\n");
+    const same = await world.updates.api.update(docx.id, null, { dryRun: true });
+    expect(same).toMatchObject({ contentChanged: false, pendingRemovals: [] });
+    expect(same.sourceDiff?.entries.map((entry) => [entry.path, entry.status])).toEqual([
+      ["mine.md", "removed"],
+    ]);
+  });
+
+  it("writes nothing when a dry run fails, not even the failure", async () => {
+    const pdf = await world.installFromGit("pdf");
+    const before = world.store.get(pdf.id);
+    const history = world.ctx.activity.list().length;
+    rmSync(pdfInRemote(), { recursive: true });
+    commitAll(world.remote, "drop pdf");
+    const gone = await rejection(world.updates.api.update(pdf.id, null, { dryRun: true }));
+    expect(gone.code).toBe("NOT_FOUND");
+    rmSync(world.remote, { recursive: true });
+    await rejection(world.updates.api.update(pdf.id, null, { dryRun: true }));
+    expect(world.store.get(pdf.id)).toEqual(before);
+    expect(world.ctx.activity.list()).toHaveLength(history);
+  });
+
   it("asks again when the remote moved after the list was shown", async () => {
     const pdf = await world.installFromGit("pdf");
     dropNotesUpstream();
