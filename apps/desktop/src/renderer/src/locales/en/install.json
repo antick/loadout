@@ -240,7 +240,8 @@
     },
     "scan": {
       "loadFailed": "Could not scan this computer",
-      "explanation": "Importing copies a skill into the library. The agent's own folder is not changed, moved or deleted.",
+      "explanation_one": "Looked through {{count}} agent. Importing copies a skill into the library; the agent's own folder is not changed, moved or deleted.",
+      "explanation_other": "Looked through {{count}} agents. Importing copies a skill into the library; the agent's own folder is not changed, moved or deleted.",
       "rescan": "Scan again",
       "import": "Import",
       "importAll_one": "Import all ({{count}})",
@@ -258,15 +259,7 @@
       "importedTitle": "Already in the library · {{count}}",
       "allImported": "Everything your agents have is already in the library.",
       "emptyTitle": "No skills found",
-      "emptyDescription": "None of your agents has a skill folder that the library does not already manage.",
-      "stats": {
-        "agents": "Agents scanned",
-        "found": "Skills found",
-        "foundHint_one": "in {{count}} folder",
-        "foundHint_other": "across {{count}} folders",
-        "pending": "Waiting to import",
-        "imported": "In the library"
-      }
+      "emptyDescription": "None of your agents has a skill folder that the library does not already manage."
     }
   },
   "pager": {

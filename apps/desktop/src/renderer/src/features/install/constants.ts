@@ -34,8 +34,6 @@ export const MARKET_SEARCH_MIN_CHARS = 2;
 export const MARKET_SEARCH_DEBOUNCE_MS = 350;
 export const MARKET_SKELETON_COUNT = 12;
 export const SCAN_SKELETON_COUNT = 5;
-/** Stat cards at the top of the Scan tab, for its skeleton. */
-export const SCAN_STAT_COUNT = 4;
 
 /** Value of the contributor filter that means "no filter". */
 export const SOURCE_FILTER_ALL = "__all__";

@@ -1,16 +1,15 @@
 import type { BatchImportResult, DiscoveredSkill } from "@loadout/shared";
-import { Bot, Check, Clock, FolderSearch, Info, PackagePlus, Radar, RotateCw } from "lucide-react";
+import { Check, Info, PackagePlus, Radar, RotateCw } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageSection } from "@/components/PageSection";
-import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { BatchResultSummary } from "@/features/install/BatchResultSummary";
-import { SCAN_SKELETON_COUNT, SCAN_STAT_COUNT } from "@/features/install/constants";
+import { SCAN_SKELETON_COUNT } from "@/features/install/constants";
 import { DiscoveredSkillRow, type SkillVersionPlace } from "@/features/install/DiscoveredSkillRow";
 import {
   IMPORT_ALL_DISCOVERED_KEY,
@@ -21,9 +20,6 @@ import {
 import { useScanLocal } from "@/features/install/install-queries";
 import { useInstallTask } from "@/features/install/use-install-task";
 import { useAgents } from "@/hooks/queries/agents";
-import { Skeletons } from "@/components/Skeletons";
-
-const STATS_GRID_CLASS = "grid grid-cols-2 gap-3 lg:grid-cols-4";
 
 /** Stable identity of a discovered group across rescans. */
 function groupKey(skill: DiscoveredSkill): string {
@@ -52,21 +48,16 @@ function versionsOf(groups: readonly DiscoveredSkill[]): Map<string, SkillVersio
 
 function ScanSkeleton(): ReactNode {
   return (
-    <div className="flex flex-col gap-6" aria-hidden="true">
-      <div className={STATS_GRID_CLASS}>
-        <Skeletons count={SCAN_STAT_COUNT} className="h-20 rounded-lg" />
-      </div>
-      <div className="divide-y rounded-lg border bg-card">
-        {Array.from({ length: SCAN_SKELETON_COUNT }, (_, index) => (
-          <div key={index} className="flex items-center gap-4 px-4 py-3">
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-3 w-80 max-w-full" />
-            </div>
-            <Skeleton className="h-8 w-20" />
+    <div className="divide-y rounded-lg border bg-card" aria-hidden="true">
+      {Array.from({ length: SCAN_SKELETON_COUNT }, (_, index) => (
+        <div key={index} className="flex items-center gap-4 px-4 py-3">
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-80 max-w-full" />
           </div>
-        ))}
-      </div>
+          <Skeleton className="h-8 w-20" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -141,37 +132,10 @@ export function ScanTab(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className={STATS_GRID_CLASS}>
-        <StatCard
-          label={t("install.scan.stats.agents")}
-          value={scan.data.agentsScanned}
-          icon={Bot}
-        />
-        <StatCard
-          label={t("install.scan.stats.found")}
-          value={groups.length}
-          icon={FolderSearch}
-          tone="info"
-          hint={t("install.scan.stats.foundHint", { count: scan.data.skillsFound })}
-        />
-        <StatCard
-          label={t("install.scan.stats.pending")}
-          value={pending.length}
-          icon={Clock}
-          tone={pending.length > 0 ? "warning" : "neutral"}
-        />
-        <StatCard
-          label={t("install.scan.stats.imported")}
-          value={imported.length}
-          icon={Check}
-          tone="success"
-        />
-      </div>
-
       <div className="flex flex-wrap items-center gap-3">
         <p className="flex min-w-0 flex-1 basis-80 items-start gap-2 text-xs leading-5 text-muted-foreground">
           <Info className="mt-0.5 size-3.5 shrink-0" />
-          {t("install.scan.explanation")}
+          {t("install.scan.explanation", { count: scan.data.agentsScanned })}
         </p>
         <Button
           variant="outline"
