@@ -104,12 +104,6 @@ describe("update service", () => {
     }
   });
 
-  it("reads an unsigned test feed only when no release key is required", async () => {
-    const fetchImpl = fakeFetch(feed(), 200, PACKAGE, null);
-    const status = await service({ fetchImpl, feedPublicKey: null }).updates.check();
-    expect(status).toMatchObject({ phase: "available", latestVersion: "1.1.0" });
-  });
-
   it("treats a missing feed (nothing published yet) as up to date", async () => {
     const { updates } = service({ fetchImpl: fakeFetch({}, 404) });
     const status = await updates.check();

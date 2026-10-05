@@ -47,11 +47,6 @@ export const UPDATE_STALL_MS = 30_000;
 export const UPDATE_DOWNLOAD_ATTEMPTS = 5;
 /** How long the replacement waits for the app to exit (the backup on quit runs first). */
 export const UPDATE_EXIT_WAIT_SECONDS = 180;
-/**
- * A test feed instead of the published one, e.g. `http://127.0.0.1:8080/latest.json`. Also the
- * only way a development build checks for updates.
- */
-export const UPDATE_FEED_OVERRIDE_ENV = "LOADOUT_UPDATE_FEED";
 /** Inside the app data folder: downloaded updates. */
 export const UPDATES_DIR = "updates";
 /** Inside the updates folder: the checked download waiting to be installed. */

@@ -30,13 +30,10 @@ export interface UpdateServiceDeps {
   platform: NodeJS.Platform;
   arch: string;
   location: AppLocation;
-  /** Null when this build has no feed (a development build without a test feed). */
+  /** Null when this build has no feed (a development build). */
   feedUrl: string | null;
-  /**
-   * The release key's public half: the feed must come with a signature from it. Null only for a
-   * development build reading a test feed.
-   */
-  feedPublicKey: string | null;
+  /** The release key's public half: the feed must come with a signature from it. */
+  feedPublicKey: string;
   /** Downloads and working copies; the service owns everything inside. */
   updatesDir: string;
   logsDir: string;
@@ -193,9 +190,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       }
       if (!response.ok) throw new Error(`The update check failed (${response.status})`);
       const bytes = new Uint8Array(await response.arrayBuffer());
-      const signature = deps.feedPublicKey
-        ? await requireSignature(deps.feedUrl, bytes, deps.feedPublicKey)
-        : "";
+      const signature = await requireSignature(deps.feedUrl, bytes, deps.feedPublicKey);
       feed = parseUpdateFeed(JSON.parse(new TextDecoder().decode(bytes)), deps.feedUrl);
       feedCopy = { bytes, signature };
     } catch (error) {
@@ -295,11 +290,9 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     if (!saved.archive || !target) throw new Error(REVERIFY_FAILED);
     const dir = dirname(saved.archive);
     const bytes = new Uint8Array(await readFile(join(dir, FEED_COPY_FILE)));
-    if (deps.feedPublicKey) {
-      const signaturePath = join(dir, `${FEED_COPY_FILE}${UPDATE_FEED_SIGNATURE_SUFFIX}`);
-      const signature = await readFile(signaturePath, "utf8");
-      if (!isFeedSignedBy(bytes, signature, deps.feedPublicKey)) throw new Error(REVERIFY_FAILED);
-    }
+    const signaturePath = join(dir, `${FEED_COPY_FILE}${UPDATE_FEED_SIGNATURE_SUFFIX}`);
+    const signature = await readFile(signaturePath, "utf8");
+    if (!isFeedSignedBy(bytes, signature, deps.feedPublicKey)) throw new Error(REVERIFY_FAILED);
     const copy = parseUpdateFeed(JSON.parse(new TextDecoder().decode(bytes)), deps.feedUrl ?? "");
     const file = copy.files[target];
     const matches =

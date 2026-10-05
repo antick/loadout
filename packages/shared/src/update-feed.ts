@@ -5,7 +5,6 @@
 interface ParsedUrl {
   origin: string;
   protocol: string;
-  hostname: string;
 }
 declare const URL: new (url: string) => ParsedUrl;
 
@@ -40,15 +39,14 @@ export interface UpdateFeed {
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const FILE_NAME_PATTERN = /^[\w.-]+$/;
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**
- * Downloads must come from where the feed came from: a feed cannot send the app to another
- * site. Plain HTTP is accepted only for a feed on this computer (a local test server).
+ * Downloads must come over HTTPS from where the feed came from: a feed cannot send the app to
+ * another site.
  */
 function isAllowedUrl(url: string, feedUrl: string): boolean {
   let file: ParsedUrl;
@@ -59,10 +57,7 @@ function isAllowedUrl(url: string, feedUrl: string): boolean {
   } catch {
     return false;
   }
-  if (file.origin !== feed.origin) return false;
-  return (
-    file.protocol === "https:" || (file.protocol === "http:" && LOCAL_HOSTS.has(file.hostname))
-  );
+  return file.origin === feed.origin && file.protocol === "https:";
 }
 
 function parseFile(raw: unknown, feedUrl: string): UpdateFeedFile | null {

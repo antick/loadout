@@ -165,7 +165,7 @@ export type AppUpdateMethod = "replace" | "installer" | "package";
 
 /** Why this copy cannot update itself. The release page is offered instead. */
 export type AppUpdateBlocker =
-  /** A development build with no test feed set. */
+  /** A development build: it has no feed to check. */
   | "not_configured"
   /** A development build: it checks, but never replaces itself. */
   | "development"

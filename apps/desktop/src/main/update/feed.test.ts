@@ -71,15 +71,6 @@ describe("parseUpdateFeed", () => {
     expect(feed.files).toEqual({});
   });
 
-  it("accepts plain HTTP only for a feed on this computer", () => {
-    const local = "http://127.0.0.1:8080/latest.json";
-    const feed = parseUpdateFeed(
-      { version: "1.0.0", files: { "darwin-arm64": file("http://127.0.0.1:8080/a.zip") } },
-      local,
-    );
-    expect(feed.files["darwin-arm64"]).toBeDefined();
-  });
-
   it("refuses a feed without a proper version", () => {
     expect(() => parseUpdateFeed({ version: "latest" }, FEED_URL)).toThrow(/version/);
     expect(() => parseUpdateFeed([], FEED_URL)).toThrow(/version/);

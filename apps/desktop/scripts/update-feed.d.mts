@@ -4,11 +4,10 @@ export declare function targetForFile(name: string): string | null;
 export declare function buildFeed(options: {
   dir: string;
   version: string;
-  repo?: string;
-  baseUrl?: string;
+  repo: string;
 }): Promise<{
   version: string;
   releasedAt: string;
-  releaseUrl: string | null;
+  releaseUrl: string;
   files: Record<string, { name: string; url: string; sha256: string; size: number }>;
 }>;

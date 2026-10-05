@@ -2,7 +2,6 @@
 // Writes `latest.json`, the update feed the app reads, for the installers in a folder.
 //
 //   node apps/desktop/scripts/update-feed.mjs <folder> --version 0.2.0 --repo owner/name
-//   node apps/desktop/scripts/update-feed.mjs <folder> --version 0.2.0 --base-url http://127.0.0.1:8080
 //
 // The file names come from `artifactName` in electron-builder.yml. The keys match
 // `UpdateTarget` in src/main/update/feed.ts.
@@ -40,10 +39,10 @@ function sha256(path) {
 }
 
 /** Build the feed object for every installer in `dir`. */
-export async function buildFeed({ dir, version, repo, baseUrl }) {
+export async function buildFeed({ dir, version, repo }) {
   const tag = `v${version}`;
-  const releaseUrl = repo ? `https://github.com/${repo}/releases/tag/${tag}` : null;
-  const downloadBase = baseUrl ?? `https://github.com/${repo}/releases/download/${tag}`;
+  const releaseUrl = `https://github.com/${repo}/releases/tag/${tag}`;
+  const downloadBase = `https://github.com/${repo}/releases/download/${tag}`;
   const files = {};
   for (const name of readdirSync(dir).sort()) {
     const target = targetForFile(name);
@@ -66,23 +65,15 @@ async function main() {
     options: {
       version: { type: "string" },
       repo: { type: "string" },
-      "base-url": { type: "string" },
       require: { type: "string", multiple: true, default: [] },
     },
   });
   const dir = positionals[0];
-  if (!dir || !values.version || (!values.repo && !values["base-url"])) {
-    console.error(
-      "Usage: update-feed.mjs <folder> --version X.Y.Z (--repo owner/name | --base-url URL)",
-    );
+  if (!dir || !values.version || !values.repo) {
+    console.error("Usage: update-feed.mjs <folder> --version X.Y.Z --repo owner/name");
     process.exit(2);
   }
-  const feed = await buildFeed({
-    dir,
-    version: values.version,
-    repo: values.repo,
-    baseUrl: values["base-url"],
-  });
+  const feed = await buildFeed({ dir, version: values.version, repo: values.repo });
   const missing = values.require.filter((target) => !feed.files[target]);
   if (missing.length > 0) {
     console.error(`No installer found for: ${missing.join(", ")}`);

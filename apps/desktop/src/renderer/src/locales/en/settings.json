@@ -323,7 +323,7 @@
       "viewRelease": "What's new",
       "updateFailed": "Could not check for updates.",
       "blockers": {
-        "not_configured": "This development build does not check for updates. Set LOADOUT_UPDATE_FEED to try it against a test feed.",
+        "not_configured": "This development build does not check for updates.",
         "development": "This development build checks for updates but never replaces itself.",
         "translocated": "macOS is running {{app}} from a temporary copy, so it cannot update itself. Move {{app}} to the Applications folder, open it from there, and updates install themselves from then on.",
         "disk_image": "{{app}} is running from the disk image. Drag it to the Applications folder, open it from there, and updates install themselves from then on.",

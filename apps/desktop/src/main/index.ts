@@ -31,7 +31,6 @@ import {
   SECRETS_FILE,
   UPDATES_DIR,
   UPDATE_CHECK_DELAY_MS,
-  UPDATE_FEED_OVERRIDE_ENV,
   UPDATE_RECHECK_MS,
 } from "./constants";
 import { createEventSender, registerIpc } from "./ipc";
@@ -218,10 +217,8 @@ function openWindow(): void {
   });
 }
 
-/** Self-update: a published build checks the release feed; a development build only a test feed. */
+/** Self-update: a published build checks the release feed; a development build does not. */
 function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService {
-  // A test feed is for development builds only; a published build always reads the real one.
-  const override = app.isPackaged ? undefined : process.env[UPDATE_FEED_OVERRIDE_ENV];
   const updates = createUpdateService({
     currentVersion: app.getVersion(),
     platform: process.platform,
@@ -232,9 +229,8 @@ function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService 
       appImage: process.env.APPIMAGE,
       packaged: app.isPackaged,
     }),
-    feedUrl: override || (app.isPackaged ? UPDATE_FEED_URL : null),
-    // Only a development build's test feed goes unsigned.
-    feedPublicKey: override ? null : UPDATE_FEED_PUBLIC_KEY,
+    feedUrl: app.isPackaged ? UPDATE_FEED_URL : null,
+    feedPublicKey: UPDATE_FEED_PUBLIC_KEY,
     updatesDir: join(appDataDir, UPDATES_DIR),
     logsDir,
     fetchImpl: appFetch,
