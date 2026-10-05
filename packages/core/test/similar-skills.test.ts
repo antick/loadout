@@ -3,7 +3,12 @@ import { join } from "node:path";
 import { duplicatePairKey } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
-import { type SimilarityInput, findSimilarPairs, nameSimilarity } from "../src/duplicates";
+import {
+  type SimilarityInput,
+  findSimilarPairs,
+  findSimilarPairsInSlices,
+  nameSimilarity,
+} from "../src/duplicates";
 import { AppError } from "../src/errors";
 import { makeSkill, tempDir, createTestCore } from "./helpers";
 
@@ -97,6 +102,73 @@ describe("finding skills that may be one", () => {
     const scores = pairs.slice(1).map((pair) => pair.contentScore);
     expect(scores).toEqual([...scores].sort((left, right) => right - left));
     expect(pairs.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+const steps = (count: number, label: string): string[] =>
+  Array.from({ length: count }, (_, i) => `${label} step ${i}: do part ${i} of the job.`);
+const rewrite = (base: string[], every: number, tag: string): string[] =>
+  base.map((line, i) => (i % every === 0 ? `${tag} rewrote line ${i}.` : line));
+const skill = (
+  id: string,
+  name: string,
+  document: string[],
+  over: Partial<SimilarityInput> = {},
+): SimilarityInput =>
+  input(id, {
+    name,
+    description: "Review a change before it is merged",
+    document: document.join("\n"),
+    contentHash: `hash-${id}`,
+    ...over,
+  });
+
+describe("comparing a whole library", () => {
+  it("finds the same pairs, with the same scores, as comparing every pair in full", () => {
+    const base = ["# Review", "", ...steps(60, "Review")];
+    const big = steps(2100, "Big");
+    const pairs = findSimilarPairs([
+      skill("a", "review", base),
+      skill("b", "code-check", rewrite(base, 6, "b")),
+      skill("c", "reviews", rewrite(base, 2, "c")),
+      // Every line in common but in the opposite order: alike by lines, not by text.
+      skill("d", "backwards", base.toReversed(), { description: "Something else" }),
+      skill("e", "same-one", ["# Same"], { contentHash: "same" }),
+      skill("f", "same-two", ["# Other text"], { contentHash: "same" }),
+      skill("g", "deploy", steps(20, "Deploy"), { description: "Ship containers to the cluster" }),
+      // Past the size compared in order: lines in common in any order.
+      skill("h", "big", big),
+      skill("i", "big-copy", [...big.slice(100), ...big.slice(0, 100)]),
+      skill("j", "deploys", steps(20, "Other"), { description: "Ship containers to the cluster" }),
+      skill("k", "empty", [], { contentHash: null }),
+    ]);
+    // Worked out by the full comparison of every pair, before it was made faster.
+    expect(pairs.map((pair) => [pair.key, pair.reason, pair.contentScore, pair.nameScore])).toEqual(
+      [
+        ["e:f", "identical", 1, 0.625],
+        ["h:i", "content", 1, 0.375],
+        ["a:b", "content", 0.819672131147541, 0.19999999999999996],
+        ["a:c", "name", 0.4918032786885246, 0.8571428571428572],
+        ["g:j", "name", 0, 0.8571428571428572],
+      ],
+    );
+  });
+
+  it("lets other work run while it compares, and finds the same pairs", async () => {
+    const base = steps(200, "Template");
+    const library = Array.from({ length: 80 }, (_, k) =>
+      skill(`s${k}`, `review-${k}`, rewrite(base, 5, `s${k}`)),
+    );
+    let ticked = false;
+    const timer = setTimeout(() => {
+      ticked = true;
+    }, 0);
+    const sliced = await findSimilarPairsInSlices(library);
+    const tickedBeforeDone = ticked;
+    clearTimeout(timer);
+    expect(tickedBeforeDone).toBe(true);
+    expect(sliced).toEqual(findSimilarPairs(library));
+    expect(sliced).toHaveLength((80 * 79) / 2);
   });
 });
 

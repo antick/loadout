@@ -22,6 +22,13 @@ export async function mapLimit<T, R>(
   return results;
 }
 
+/** Let timers, I/O and other callers run before going on with long work. */
+export function yieldToEventLoop(): Promise<void> {
+  return new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
 /** Wait without keeping the process alive: background work must never block an exit. */
 export function pause(ms: number): Promise<void> {
   return new Promise((resolve) => {

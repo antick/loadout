@@ -6,7 +6,8 @@ import {
   type DuplicateReason,
   duplicatePairKey,
 } from "@loadout/shared";
-import { textSimilarity } from "../origin/similarity";
+import { comparedLines, lineCounts, linesSimilarity, sharedCount } from "../origin/similarity";
+import { yieldToEventLoop } from "../util/async";
 
 /** What comparing two library skills needs to know about each. */
 export interface SimilarityInput {
@@ -35,6 +36,8 @@ export interface SimilarPair {
  * under what `DUPLICATE_CONTENT_MIN` needs.
  */
 const SHARED_LINES_PREFILTER = 0.3;
+/** Longest stretch of comparing before other work gets a turn. */
+const SLICE_MS = 10;
 
 function lineSet(text: string): Set<string> {
   const lines = new Set<string>();
@@ -87,10 +90,37 @@ function wordSet(text: string | null): Set<string> {
   return new Set(words.filter((word) => word.length >= DUPLICATE_WORD_MIN_LENGTH));
 }
 
+/** What a skill is compared by, worked out once rather than once for every other skill. */
 interface Prepared {
   input: SimilarityInput;
   lines: Set<string>;
   words: Set<string>;
+  /** The document's lines as `textSimilarity` reads them, each line as a number. */
+  ordered: number[];
+  counts: Map<number, number>;
+}
+
+function prepare(skills: readonly SimilarityInput[]): Prepared[] {
+  // One number per distinct line across the library: numbers compare faster than text.
+  const numbers = new Map<string, number>();
+  const numberOf = (line: string): number => {
+    let found = numbers.get(line);
+    if (found === undefined) {
+      found = numbers.size;
+      numbers.set(line, found);
+    }
+    return found;
+  };
+  return skills.map((input) => {
+    const ordered = comparedLines(input.document).map(numberOf);
+    return {
+      input,
+      lines: lineSet(input.document),
+      words: wordSet(input.description),
+      ordered,
+      counts: lineCounts(ordered),
+    };
+  });
 }
 
 function classify(left: Prepared, right: Prepared): Omit<SimilarPair, "key" | "a" | "b"> | null {
@@ -99,21 +129,25 @@ function classify(left: Prepared, right: Prepared): Omit<SimilarPair, "key" | "a
   if (hash !== null && hash === right.input.contentHash) {
     return { reason: "identical", contentScore: 1, nameScore };
   }
+  const alikeNames = (): boolean =>
+    nameScore >= DUPLICATE_NAME_MIN &&
+    jaccard(left.words, right.words) >= DUPLICATE_DESCRIPTION_MIN;
   let contentScore = 0;
   if (
     left.lines.size > 0 &&
     right.lines.size > 0 &&
     jaccard(left.lines, right.lines) >= SHARED_LINES_PREFILTER
   ) {
-    contentScore = textSimilarity(left.input.document, right.input.document);
+    // Lines in common in any order are never fewer than in order. Below the bar, the ordered
+    // comparison runs only for a pair listed for its names, whose score is shown all the same.
+    const total = left.ordered.length + right.ordered.length;
+    const bound = total === 0 ? 1 : (2 * sharedCount(left.counts, right.counts)) / total;
+    if (bound >= DUPLICATE_CONTENT_MIN || alikeNames()) {
+      contentScore = linesSimilarity(left.ordered, right.ordered);
+    }
   }
   if (contentScore >= DUPLICATE_CONTENT_MIN) return { reason: "content", contentScore, nameScore };
-  if (
-    nameScore >= DUPLICATE_NAME_MIN &&
-    jaccard(left.words, right.words) >= DUPLICATE_DESCRIPTION_MIN
-  ) {
-    return { reason: "name", contentScore, nameScore };
-  }
+  if (alikeNames()) return { reason: "name", contentScore, nameScore };
   return null;
 }
 
@@ -123,16 +157,9 @@ function strength(pair: SimilarPair): number {
   return pair.reason === "content" ? pair.contentScore : pair.nameScore * pair.contentScore;
 }
 
-/**
- * Every pair of skills that may be one, strongest first. Pure: the caller reads the files. A skill
- * is compared with every other, so a group of three copies lists all three pairs.
- */
-export function findSimilarPairs(skills: readonly SimilarityInput[]): SimilarPair[] {
-  const prepared: Prepared[] = skills.map((input) => ({
-    input,
-    lines: lineSet(input.document),
-    words: wordSet(input.description),
-  }));
+/** Compares every pair, pausing (`yield`) after each one so a caller can let other work run. */
+function* comparePairs(skills: readonly SimilarityInput[]): Generator<void, SimilarPair[]> {
+  const prepared = prepare(skills);
   const pairs: SimilarPair[] = [];
   for (let i = 0; i < prepared.length; i += 1) {
     for (let j = i + 1; j < prepared.length; j += 1) {
@@ -140,6 +167,7 @@ export function findSimilarPairs(skills: readonly SimilarityInput[]): SimilarPai
       const right = prepared[j];
       if (!left || !right) continue;
       const found = classify(left, right);
+      yield;
       if (!found) continue;
       const [a, b] = left.input.id < right.input.id ? [left, right] : [right, left];
       pairs.push({
@@ -151,4 +179,35 @@ export function findSimilarPairs(skills: readonly SimilarityInput[]): SimilarPai
     }
   }
   return pairs.sort((x, y) => strength(y) - strength(x) || (x.key < y.key ? -1 : 1));
+}
+
+/**
+ * Every pair of skills that may be one, strongest first. Pure: the caller reads the files. A skill
+ * is compared with every other, so a group of three copies lists all three pairs.
+ */
+export function findSimilarPairs(skills: readonly SimilarityInput[]): SimilarPair[] {
+  const steps = comparePairs(skills);
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+  }
+}
+
+/**
+ * `findSimilarPairs`, giving the event loop a turn every `SLICE_MS`: a big library takes a while,
+ * and the app's other calls must not wait for it.
+ */
+export async function findSimilarPairsInSlices(
+  skills: readonly SimilarityInput[],
+): Promise<SimilarPair[]> {
+  const steps = comparePairs(skills);
+  let sliceStart = performance.now();
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+    if (performance.now() - sliceStart >= SLICE_MS) {
+      await yieldToEventLoop();
+      sliceStart = performance.now();
+    }
+  }
 }

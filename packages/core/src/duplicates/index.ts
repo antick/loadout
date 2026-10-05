@@ -3,5 +3,6 @@ export {
   type SimilarPair,
   type SimilarityInput,
   findSimilarPairs,
+  findSimilarPairsInSlices,
   nameSimilarity,
 } from "./similar";

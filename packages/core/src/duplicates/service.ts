@@ -11,7 +11,7 @@ import { AppError, invalid, targetConflict } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { readSkillDocument } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
-import { type SimilarPair, type SimilarityInput, findSimilarPairs } from "./similar";
+import { type SimilarPair, type SimilarityInput, findSimilarPairsInSlices } from "./similar";
 
 /** The parts of the other services a merge is made of. */
 export type DuplicatesDeps = {
@@ -49,10 +49,11 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
   /**
    * The pairs of the last look, kept while no skill's files, name or description changed: the app
    * asks whenever the library changes, and deploying a skill must not read every document again.
+   * A look still running is shared by everyone asking about the same library.
    */
-  let remembered: { fingerprint: string; pairs: SimilarPair[] } | null = null;
+  let remembered: { fingerprint: string; pairs: Promise<SimilarPair[]> } | null = null;
 
-  function similarPairs(): SimilarPair[] {
+  function similarPairs(): Promise<SimilarPair[]> {
     const library = store.list();
     const fingerprint = library
       .map((skill) =>
@@ -70,8 +71,14 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
       document: readSkillDocument(skill.libraryPath)?.content ?? "",
       contentHash: skill.contentHash,
     }));
-    remembered = { fingerprint, pairs: findSimilarPairs(inputs) };
-    return remembered.pairs;
+    // Compared in slices without the library lock, so other calls go on meanwhile.
+    const pairs = findSimilarPairsInSlices(inputs);
+    const look = { fingerprint, pairs };
+    remembered = look;
+    pairs.catch(() => {
+      if (remembered === look) remembered = null;
+    });
+    return pairs;
   }
 
   function changeDismissed(idA: string, idB: string, dismissed: boolean): void {
@@ -122,7 +129,7 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
     find: async (options = {}) => {
       const dismissed = dismissedKeys();
       const pairs: DuplicatePair[] = [];
-      for (const pair of similarPairs()) {
+      for (const pair of await similarPairs()) {
         const isDismissed = dismissed.has(pair.key);
         if (options.includeDismissed === true || !isDismissed) {
           pairs.push({ ...pair, dismissed: isDismissed });
