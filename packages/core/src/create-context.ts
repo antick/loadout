@@ -122,8 +122,9 @@ export function createContext(
   };
 
   /**
-   * Write pending metadata now, and tell the UI. Never without the lock: a backup merge in another
-   * process must not see its metadata files rewritten under it.
+   * Write pending metadata, and tell the UI. Never without the lock: a backup merge in another
+   * process must not see its metadata files rewritten, or pruned, under it. When the library is
+   * busy the metadata stays pending, and the next change carries it.
    */
   const flush = async (): Promise<void> => {
     scheduled = false;
@@ -164,23 +165,12 @@ export function createContext(
   };
 
   /**
-   * The scheduled write takes the library lock: another operation (a backup merge between its
-   * steps) must never see its metadata files rewritten, or pruned, under it.
+   * The scheduled write, on its own turn at the lock. The UI hears of the change at once, not
+   * only once a busy library lets the metadata be written.
    */
   const flushLater = (): void => {
-    scheduled = false;
     if (abandoned || closed) return;
-    if (metadataDirty) {
-      metadataDirty = false;
-      void lock
-        .run("write metadata", () => {
-          if (!abandoned && !closed) writeMetadata();
-        })
-        .catch((error: unknown) => {
-          metadataDirty = true;
-          log.warn("Metadata not written yet; will retry on the next change", error);
-        });
-    }
+    void flush();
     announce();
   };
 
