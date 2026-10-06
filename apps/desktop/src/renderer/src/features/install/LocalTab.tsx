@@ -14,6 +14,7 @@ import { BatchResultSummary } from "@/features/install/BatchResultSummary";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import {
   useCancelPreview,
+  useCancelPreviewOnLeave,
   useConfirmGit,
   useImportFolder,
   useInstallFromPath,
@@ -49,6 +50,7 @@ export function LocalTab(): ReactNode {
   const archiveChoice = usePreviewChoice();
 
   const [picked, setPicked] = useState<PickedSource | null>(null);
+  useCancelPreviewOnLeave(picked?.preview);
   const [name, setName] = useState("");
   const [bulk, setBulk] = useState<{ folder: string; result: BatchImportResult | null } | null>(
     null,

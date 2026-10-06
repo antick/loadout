@@ -9,7 +9,7 @@ import type {
   Skill,
 } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { InstallTaskSuccess } from "@/features/install/install-tasks";
 import { guessSource, hostOf } from "@/features/install/source-guess";
@@ -298,4 +298,23 @@ export function useCancelPreview(): UseMutationResult<void, unknown, string> {
     fn: (previewId: string) => api.install.cancelPreview(previewId),
     error: false,
   });
+}
+
+/**
+ * Throw away the checkout of a preview still open when the component goes (the page was left),
+ * as dismissing it would. A preview confirmed or dismissed first is left to that.
+ */
+export function useCancelPreviewOnLeave(preview: GitPreview | null | undefined): void {
+  const { mutate: cancel } = useCancelPreview();
+  const openId = useRef<string | null>(null);
+  const id = preview?.previewId ?? null;
+  useEffect(() => {
+    openId.current = id;
+  }, [id]);
+  useEffect(
+    () => () => {
+      if (openId.current) cancel(openId.current);
+    },
+    [cancel],
+  );
 }

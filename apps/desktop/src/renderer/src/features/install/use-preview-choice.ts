@@ -1,6 +1,10 @@
 import type { ConfirmOptions, GitPreview, InstallSelection, Skill } from "@loadout/shared";
 import { useState } from "react";
-import { useCancelPreview, useConfirmGit } from "@/features/install/install-mutations";
+import {
+  useCancelPreview,
+  useCancelPreviewOnLeave,
+  useConfirmGit,
+} from "@/features/install/install-mutations";
 
 /** A fetched source waiting for the user to pick from it in `GitPreviewDialog`. */
 export interface PreviewChoice {
@@ -20,6 +24,7 @@ export function usePreviewChoice(): PreviewChoice {
   const confirmGit = useConfirmGit();
   const cancelPreview = useCancelPreview();
   const [preview, setPreview] = useState<GitPreview | null>(null);
+  useCancelPreviewOnLeave(preview);
   return {
     preview,
     show: setPreview,

@@ -122,3 +122,23 @@ test("the Backup page lists what is held back and backs it up anyway", async ({ 
   await confirm.getByRole("button", { name: "Back up anyway" }).click();
   await expect(heldBack).toHaveCount(0);
 });
+
+test("leaving the page with the import list open throws its checkout away", async ({ page }) => {
+  await openApp(page, "/install");
+  const content = main(page);
+  await content.getByRole("tab", { name: "Git or link" }).click();
+  await content.getByLabel("Repository, site or link").fill(SOURCE);
+  await content.getByRole("button", { name: "Preview" }).click();
+  await expect(
+    page.getByRole("dialog").getByRole("heading", { name: "6 skills found" }),
+  ).toBeVisible();
+
+  const cancelled = page.waitForRequest((request) =>
+    (request.postData() ?? "").includes("install.cancelPreview"),
+  );
+  // As a keyboard shortcut or the tray would: straight to another page, the list still open.
+  await page.evaluate(() => {
+    window.location.hash = "#/library";
+  });
+  await cancelled;
+});
