@@ -19,14 +19,13 @@ import {
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
 import { buildAppMenu } from "./app-menu";
-import { closeOutcome, createCloseRequests, shouldReloadPage } from "./close-request";
+import { CLOSE_QUESTION, closeChoice, closeOutcome, shouldReloadPage } from "./close-request";
 import { createCrashHandlers } from "./crash";
 import { keychainServiceToRemove, startRemoval } from "./remover";
 import { revealInFileManager } from "./reveal";
 import { readShellEnv } from "./shell-env";
 import {
   APP_ICON_FILE,
-  CLOSE_ACK_TIMEOUT_MS,
   CRASH_DUMPS_DIR,
   PAGE_RELOAD_MIN_INTERVAL_MS,
   SECRETS_FILE,
@@ -137,16 +136,23 @@ function syncTray(): void {
   tray.setVisible(core?.ctx.settings.get("showTrayIcon") ?? true);
 }
 
-/** The page asks "quit or keep in tray?"; when it cannot, the app decides without asking. */
-const closeRequests = createCloseRequests({
-  send: () => send("window:close-requested", {}),
-  fallback: () => {
-    core?.ctx.log.warn("The page did not take the close question; closing without asking");
-    if (core?.ctx.settings.get("showTrayIcon") ?? true) hideToTray();
-    else quit();
-  },
-  timeoutMs: CLOSE_ACK_TIMEOUT_MS,
-});
+let askingHowToClose = false;
+
+/** Ask whether to keep running in the tray or quit, remembering the answer when asked to. */
+async function askHowToClose(): Promise<void> {
+  if (askingHowToClose || !mainWindow) return;
+  askingHowToClose = true;
+  try {
+    const { response, checkboxChecked } = await dialog.showMessageBox(mainWindow, CLOSE_QUESTION);
+    const choice = closeChoice(response);
+    if (!choice) return;
+    if (checkboxChecked) core?.ctx.settings.set("closeAction", choice);
+    if (choice === "quit") quit();
+    else hideToTray();
+  } finally {
+    askingHowToClose = false;
+  }
+}
 
 /** The close button asks, hides or quits depending on the saved choice. */
 function handleClose(event: Electron.Event): void {
@@ -154,7 +160,6 @@ function handleClose(event: Electron.Event): void {
   const outcome = closeOutcome({
     trayVisible: core.ctx.settings.get("showTrayIcon"),
     closeAction: core.ctx.settings.get("closeAction"),
-    rendererAlive: Boolean(mainWindow && !mainWindow.webContents.isCrashed()),
   });
   if (outcome === "close") {
     quitting = true;
@@ -162,7 +167,7 @@ function handleClose(event: Electron.Event): void {
   }
   event.preventDefault();
   if (outcome === "hide") hideToTray();
-  else closeRequests.ask();
+  else void askHowToClose();
 }
 
 /**
@@ -213,7 +218,6 @@ function openWindow(): void {
   mainWindow = win;
   win.on("close", handleClose);
   win.on("closed", () => {
-    closeRequests.cancel();
     mainWindow = null;
   });
   // A crashed or killed page leaves an empty window: load it again.
@@ -333,12 +337,6 @@ function start(): void {
       updates: createUpdates(core.ctx.log, core.ctx.paths.logsDir),
       // The shell's PATH wins here: a Dock launch has a bare one without the editors on it.
       env: () => ({ ...process.env, ...shellEnv }),
-      acknowledgeClose: () => closeRequests.acknowledge(),
-      resolveClose: (action, remember) => {
-        if (remember) core?.ctx.settings.set("closeAction", action);
-        if (action === "quit") quit();
-        else hideToTray();
-      },
     }),
   };
   registerIpc(

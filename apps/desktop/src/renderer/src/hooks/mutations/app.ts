@@ -58,19 +58,6 @@ export function useOpenExternal(): UseMutationResult<void, unknown, string> {
   });
 }
 
-/** Answer the close-or-minimise prompt. */
-export function useResolveClose(): UseMutationResult<
-  void,
-  unknown,
-  { action: "hide" | "quit"; remember: boolean }
-> {
-  return useApiMutation({
-    fn: ({ action, remember }) => api.app.resolveClose(action, remember),
-    error: GENERIC_ERROR_KEY,
-    invalidate: [keys.settings.root],
-  });
-}
-
 /** Forget the crash recorded by the previous run. */
 export function useClearLastCrash(): UseMutationResult<void, unknown, void> {
   return useApiMutation({

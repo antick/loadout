@@ -1,4 +1,5 @@
-import type { CloseActionSetting } from "@loadout/shared";
+import type { MessageBoxOptions } from "electron";
+import { APP_NAME, type CloseActionSetting } from "@loadout/shared";
 
 /** What the close button does: let the window close (and the app quit), hide it, or ask. */
 export type CloseOutcome = "close" | "hide" | "ask";
@@ -6,68 +7,37 @@ export type CloseOutcome = "close" | "hide" | "ask";
 export interface CloseInputs {
   trayVisible: boolean;
   closeAction: CloseActionSetting;
-  /** The page's process runs, so it can show the question. */
-  rendererAlive: boolean;
 }
 
-/**
- * Without a tray icon there is nothing to hide to, so the window closes. Asking needs a page to
- * ask on: when it is gone, the window hides, as if the person had chosen the tray.
- */
-export function closeOutcome({
-  trayVisible,
-  closeAction,
-  rendererAlive,
-}: CloseInputs): CloseOutcome {
+/** Without a tray icon there is nothing to hide to, so the window closes. */
+export function closeOutcome({ trayVisible, closeAction }: CloseInputs): CloseOutcome {
   if (!trayVisible || closeAction === "quit") return "close";
-  if (closeAction === "hide") return "hide";
-  return rendererAlive ? "ask" : "hide";
+  return closeAction === "hide" ? "hide" : "ask";
 }
 
-export interface CloseRequestDeps {
-  /** Send `window:close-requested` to the page. */
-  send(): void;
-  /** The page did not take the question in time: close without asking. */
-  fallback(): void;
-  timeoutMs: number;
-}
-
-export interface CloseRequests {
-  /** Ask the page; falls back when it does not acknowledge within the timeout. */
-  ask(): void;
-  /** The page will ask. False when it came too late and the fallback already ran. */
-  acknowledge(): boolean;
-  /** Forget a question in flight (the window went away). */
-  cancel(): void;
-}
+/** The answers of the close question, in the order of its buttons; the last one is Cancel. */
+const CLOSE_CHOICES = ["hide", "quit"] as const;
+export type CloseChoice = (typeof CLOSE_CHOICES)[number];
 
 /**
- * The question is the page's to show, but the close button must never depend on it: a page that
- * failed to render, hangs or never loaded leaves the main process to decide on its own.
+ * "Close or keep in the tray?" as a native dialog of the window: it needs nothing from the page,
+ * so a page that failed to load or hangs never leaves the close button without an answer.
  */
-export function createCloseRequests(deps: CloseRequestDeps): CloseRequests {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  const cancel = (): void => {
-    if (timer) clearTimeout(timer);
-    timer = null;
-  };
-  return {
-    ask: () => {
-      // Pressing the button again does not give a stuck page more time.
-      if (timer) return;
-      timer = setTimeout(() => {
-        timer = null;
-        deps.fallback();
-      }, deps.timeoutMs);
-      deps.send();
-    },
-    acknowledge: () => {
-      if (!timer) return false;
-      cancel();
-      return true;
-    },
-    cancel,
-  };
+export const CLOSE_QUESTION: MessageBoxOptions = {
+  type: "question",
+  message: `Close ${APP_NAME}?`,
+  detail:
+    "Keep it in the tray to continue automatic backups and update checks, or quit completely.",
+  buttons: ["Keep in tray", "Quit", "Cancel"],
+  defaultId: 0,
+  cancelId: CLOSE_CHOICES.length,
+  checkboxLabel: "Remember my choice",
+  noLink: true,
+};
+
+/** The choice behind the button pressed; null for Cancel (the window stays). */
+export function closeChoice(response: number): CloseChoice | null {
+  return CLOSE_CHOICES[response] ?? null;
 }
 
 /**

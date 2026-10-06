@@ -19,11 +19,6 @@ export interface AppEvents {
   "backup:auto-completed": AutoBackupEvent;
   /** A sync or its review moved to another stage, manual or automatic. */
   "backup:progress": BackupProgress;
-  /**
-   * The window close button was pressed and the user has not chosen a default yet. The page
-   * answers with `app.acknowledgeClose()`; without that the app hides to the tray by itself.
-   */
-  "window:close-requested": Record<string, never>;
   /** Tray or menu asked the UI to go somewhere. */
   "app:navigate": { to: string };
   /** The library folder or its database was deleted while the app ran. */

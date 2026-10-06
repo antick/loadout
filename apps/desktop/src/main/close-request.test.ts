@@ -1,96 +1,25 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { closeOutcome, createCloseRequests, shouldReloadPage } from "./close-request";
-
-const TIMEOUT_MS = 2000;
+import { describe, expect, it } from "vitest";
+import { CLOSE_QUESTION, closeChoice, closeOutcome, shouldReloadPage } from "./close-request";
 
 describe("closeOutcome", () => {
   it("closes when there is no tray to hide to, whatever the setting", () => {
     for (const closeAction of ["ask", "hide", "quit"] as const) {
-      expect(closeOutcome({ trayVisible: false, closeAction, rendererAlive: true })).toBe("close");
+      expect(closeOutcome({ trayVisible: false, closeAction })).toBe("close");
     }
   });
 
   it("follows the saved choice", () => {
-    expect(closeOutcome({ trayVisible: true, closeAction: "quit", rendererAlive: true })).toBe(
-      "close",
-    );
-    expect(closeOutcome({ trayVisible: true, closeAction: "hide", rendererAlive: true })).toBe(
-      "hide",
-    );
-    expect(closeOutcome({ trayVisible: true, closeAction: "ask", rendererAlive: true })).toBe(
-      "ask",
-    );
-  });
-
-  it("hides instead of asking a page that is gone", () => {
-    expect(closeOutcome({ trayVisible: true, closeAction: "ask", rendererAlive: false })).toBe(
-      "hide",
-    );
+    expect(closeOutcome({ trayVisible: true, closeAction: "quit" })).toBe("close");
+    expect(closeOutcome({ trayVisible: true, closeAction: "hide" })).toBe("hide");
+    expect(closeOutcome({ trayVisible: true, closeAction: "ask" })).toBe("ask");
   });
 });
 
-describe("createCloseRequests", () => {
-  let sent: number;
-  let fellBack: number;
-  const requests = () =>
-    createCloseRequests({
-      send: () => (sent += 1),
-      fallback: () => (fellBack += 1),
-      timeoutMs: TIMEOUT_MS,
-    });
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-    sent = 0;
-    fellBack = 0;
-  });
-  afterEach(() => vi.useRealTimers());
-
-  it("leaves the decision to the page once it acknowledges", () => {
-    const close = requests();
-    close.ask();
-    expect(sent).toBe(1);
-    expect(close.acknowledge()).toBe(true);
-    vi.advanceTimersByTime(TIMEOUT_MS * 2);
-    expect(fellBack).toBe(0);
-  });
-
-  it("falls back when the page never answers", () => {
-    const close = requests();
-    close.ask();
-    vi.advanceTimersByTime(TIMEOUT_MS - 1);
-    expect(fellBack).toBe(0);
-    vi.advanceTimersByTime(1);
-    expect(fellBack).toBe(1);
-    // Too late: the page must not show the question any more.
-    expect(close.acknowledge()).toBe(false);
-  });
-
-  it("does not give a stuck page more time when the button is pressed again", () => {
-    const close = requests();
-    close.ask();
-    vi.advanceTimersByTime(TIMEOUT_MS / 2);
-    close.ask();
-    expect(sent).toBe(1);
-    vi.advanceTimersByTime(TIMEOUT_MS / 2);
-    expect(fellBack).toBe(1);
-  });
-
-  it("asks again after an earlier question was settled", () => {
-    const close = requests();
-    close.ask();
-    close.acknowledge();
-    close.ask();
-    expect(sent).toBe(2);
-  });
-
-  it("drops a question in flight when cancelled", () => {
-    const close = requests();
-    close.ask();
-    close.cancel();
-    vi.advanceTimersByTime(TIMEOUT_MS * 2);
-    expect(fellBack).toBe(0);
-    expect(close.acknowledge()).toBe(false);
+describe("the close question", () => {
+  it("maps each button to its choice, and Cancel (or Escape) to staying open", () => {
+    const buttons = CLOSE_QUESTION.buttons ?? [];
+    expect(buttons.map((_, index) => closeChoice(index))).toEqual(["hide", "quit", null]);
+    expect(closeChoice(CLOSE_QUESTION.cancelId ?? -1)).toBeNull();
   });
 });
 

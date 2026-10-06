@@ -1,7 +1,6 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { CloseDialog } from "@/components/CloseDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { WindowDragRegion } from "@/components/layout/WindowDragRegion";
 import { TOP_BAR_HEIGHT_CLASS } from "@/lib/constants";
@@ -22,7 +21,6 @@ export function RootError({ error }: ErrorComponentProps): ReactNode {
         retryLabel={t("common.reload")}
         onRetry={() => window.location.reload()}
       />
-      <CloseDialog />
     </div>
   );
 }

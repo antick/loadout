@@ -2,7 +2,6 @@ import type { Preset, Skill } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } from "react";
 import { AppUpdateToast } from "@/components/AppUpdateToast";
-import { CloseDialog } from "@/components/CloseDialog";
 import { CommandPalette, type PaletteMode } from "@/components/CommandPalette";
 import { CrashBanner } from "@/components/CrashBanner";
 import { RepairBanner } from "@/components/RepairBanner";
@@ -207,7 +206,6 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               void navigate({ to: "/projects/$projectId", params: { projectId: project.id } })
             }
           />
-          <CloseDialog />
           <LibraryMissingDialog />
           <FirstRunDialog />
           <AppUpdateToast />

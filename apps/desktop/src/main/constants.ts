@@ -11,8 +11,6 @@ export const WINDOW_MIN_HEIGHT = 620;
  */
 export const TRAFFIC_LIGHT_POSITION = { x: 16, y: 14 };
 
-/** The page has this long to take the "close or keep in tray?" question before the app hides. */
-export const CLOSE_ACK_TIMEOUT_MS = 2000;
 /** The page's process died again sooner than this after a reload: leave it, do not loop. */
 export const PAGE_RELOAD_MIN_INTERVAL_MS = 10_000;
 

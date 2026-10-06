@@ -269,13 +269,6 @@
     "editTitle": "Open a skill",
     "editDescription": "Type part of a skill's name to open it in the editor."
   },
-  "closeDialog": {
-    "title": "Close {{app}}?",
-    "description": "Keep it in the tray to continue automatic backups and update checks, or quit completely.",
-    "remember": "Remember my choice",
-    "hide": "Keep in tray",
-    "quit": "Quit"
-  },
   "banners": {
     "crashTitle": "{{app}} closed unexpectedly {{when}}.",
     "viewLogs": "View logs",
