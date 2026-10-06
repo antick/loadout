@@ -12,6 +12,7 @@ import {
   HTTP_FORBIDDEN,
   HTTP_NOT_FOUND,
   HTTP_UNAUTHORIZED,
+  HTTP_UNPROCESSABLE,
   REPO_NAME_PATTERN,
   isRecord,
   HTTP_CREATED,
@@ -96,6 +97,18 @@ function scopeMissing(): AppError {
   return new AppError(
     "GITHUB_SCOPE",
     'This token may not create or open the backup repository. Create one with the "repo" scope and try again.',
+  );
+}
+
+/**
+ * GitHub refuses to create a repository whose name the account already uses. Seen right after
+ * the repository answered "not found": the token may not see that one (a fine-grained token not
+ * given it), and trying again never helps.
+ */
+function hiddenFromToken(fullName: string): AppError {
+  return new AppError(
+    "GITHUB_SCOPE",
+    `The repository ${fullName} exists, but this token cannot see it. Give the token access to it, or choose another name.`,
   );
 }
 
@@ -207,6 +220,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
       if (repo.status === HTTP_FORBIDDEN || repo.status === HTTP_NOT_FOUND) {
         throw scopeMissing();
       }
+      if (repo.status === HTTP_UNPROCESSABLE) throw hiddenFromToken(`${login}/${name}`);
       if (repo.status !== HTTP_CREATED) throw unexpected("create the repository", repo.status);
       repoCreated = true;
     } else if (repo.status === HTTP_UNAUTHORIZED) {

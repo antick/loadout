@@ -256,6 +256,19 @@ describe("GitHub connect", () => {
     expect(device.secrets.values.size).toBe(0);
     device.close();
 
+    // The name is taken by a repository this token is not given: say so, not "try again".
+    const hidden = stubFetch({
+      [`GET ${API}/user`]: { status: 200, body: { login: "octo" } },
+      [`GET ${API}/repos/octo/backup`]: { status: 404, body: {} },
+      [`POST ${API}/user/repos`]: { status: 422, body: {} },
+    });
+    device = createDevice(temp.dir, "D", { fetchImpl: hidden.fetchImpl });
+    await expect(device.api.githubConnect(TOKEN, "backup")).rejects.toMatchObject({
+      code: "GITHUB_SCOPE",
+      message: expect.stringContaining("octo/backup exists, but this token cannot see it"),
+    });
+    device.close();
+
     const offline = stubFetch({});
     device = createDevice(temp.dir, "C", { fetchImpl: offline.fetchImpl });
     await expect(device.api.githubConnect(TOKEN, "backup")).rejects.toMatchObject({
