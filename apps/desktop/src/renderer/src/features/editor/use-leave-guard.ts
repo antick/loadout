@@ -1,5 +1,6 @@
 import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { compareNames } from "@loadout/shared";
 
 export interface LeaveGuardOptions {
   dirtyPaths: readonly string[];
@@ -24,7 +25,7 @@ export interface LeaveGuard {
 export function editorTarget(location: { pathname: string; search: object }): string {
   const rest = Object.entries(location.search)
     .filter(([key, value]) => key !== "file" && value !== undefined)
-    .sort(([a], [b]) => a.localeCompare(b));
+    .sort(([a], [b]) => compareNames(a, b));
   return JSON.stringify([location.pathname, rest]);
 }
 

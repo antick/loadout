@@ -1,4 +1,4 @@
-import { MARKETPLACE_URL, type MarketSkill, clawhubSkillUrl } from "@loadout/shared";
+import { clawhubSkillUrl, compareNames, MARKETPLACE_URL, type MarketSkill } from "@loadout/shared";
 import { SOURCE_FILTER_ALL } from "@/features/install/constants";
 
 export interface SourceOption {
@@ -13,7 +13,7 @@ export function sourceOptions(skills: readonly MarketSkill[]): SourceOption[] {
   for (const skill of skills) counts.set(skill.source, (counts.get(skill.source) ?? 0) + 1);
   return [...counts]
     .map(([source, count]) => ({ source, count }))
-    .sort((a, b) => b.count - a.count || a.source.localeCompare(b.source));
+    .sort((a, b) => b.count - a.count || compareNames(a.source, b.source));
 }
 
 export function filterBySource(skills: readonly MarketSkill[], source: string): MarketSkill[] {

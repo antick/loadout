@@ -2,6 +2,7 @@ import type { BatchFailure, Skill, SourceType } from "./types";
 import { redactUrl } from "./secrets";
 import { isArchivePath } from "./constants";
 import { lastPathSegment } from "./skill-match";
+import { compareNames } from "./compare";
 
 /**
  * The places skills came from, grouped from the skills themselves: a Git repository (installed
@@ -208,9 +209,7 @@ export function groupSkillSources(skills: readonly Skill[]): SkillSource[] {
     }
     sources.set(found.key, source);
   }
-  return [...sources.values()].sort((a, b) =>
-    a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
-  );
+  return [...sources.values()].sort((a, b) => compareNames(a.label, b.label));
 }
 
 /** How many skills belong to no source (made here, or imported from a single folder). */

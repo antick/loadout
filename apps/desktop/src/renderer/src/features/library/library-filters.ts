@@ -1,14 +1,15 @@
 import {
-  SOURCE_TYPES,
-  type SafetyRecord,
-  type Skill,
-  type SkillUsage,
-  type SourceType,
-  type UpdateStatus,
+  compareNames,
   hasSkillErrors,
   isUnusedSkill,
   matchesSkillQuery,
   runsCode,
+  type SafetyRecord,
+  type Skill,
+  type SkillUsage,
+  SOURCE_TYPES,
+  type SourceType,
+  type UpdateStatus,
 } from "@loadout/shared";
 import { matchesTagFilter } from "@/lib/tag-filter";
 
@@ -144,8 +145,7 @@ function matchesStatus(
 
 type Comparator = (a: Skill, b: Skill) => number;
 
-const byName: Comparator = (a, b) =>
-  a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+const byName: Comparator = (a, b) => compareNames(a.name, b.name);
 
 function comparator(sort: SortMode, usage: UsageLookup): Comparator {
   const used = (skill: Skill): SkillUsage | undefined => usage.byId.get(skill.id);

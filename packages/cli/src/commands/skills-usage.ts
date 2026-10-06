@@ -1,9 +1,10 @@
 import {
-  USAGE_RECENT_DAYS,
-  type UsageReport,
+  compareNames,
   formatRelative,
   isUnusedSkill,
+  USAGE_RECENT_DAYS,
   usageById,
+  type UsageReport,
 } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { table } from "../output";
@@ -58,8 +59,7 @@ async function usage(context: CommandContext): Promise<CommandResult> {
     .map((skill) => ({ skill, used: byId.get(skill.id) }))
     .sort(
       (a, b) =>
-        (b.used?.uses ?? 0) - (a.used?.uses ?? 0) ||
-        a.skill.name.localeCompare(b.skill.name, undefined, { sensitivity: "base" }),
+        (b.used?.uses ?? 0) - (a.used?.uses ?? 0) || compareNames(a.skill.name, b.skill.name),
     );
   const rows = shown.map(({ skill, used }) => [
     skill.name,

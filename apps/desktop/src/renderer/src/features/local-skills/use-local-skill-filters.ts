@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { matchesTagFilter } from "@/lib/tag-filter";
-import { matchesNamedQuery } from "@loadout/shared";
+import { compareNames, matchesNamedQuery } from "@loadout/shared";
 import type { LocalSkillView } from "./local-skill-view";
 
 export interface LocalSkillFilters<T extends LocalSkillView> {
@@ -34,7 +34,7 @@ export function useLocalSkillFilters<T extends LocalSkillView>(
   const debouncedQuery = useDebouncedValue(query);
 
   const availableTags = useMemo(
-    () => [...new Set(items.flatMap((item) => item.tags))].sort((a, b) => a.localeCompare(b)),
+    () => [...new Set(items.flatMap((item) => item.tags))].sort(compareNames),
     [items],
   );
   const hasUntagged = useMemo(() => items.some((item) => item.tags.length === 0), [items]);

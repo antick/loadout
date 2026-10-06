@@ -1,4 +1,4 @@
-import type { SkillFileEntry } from "@loadout/shared";
+import { compareNames, type SkillFileEntry } from "@loadout/shared";
 
 /**
  * Paths in the editor's file list, all relative to the skill folder and `/` separated. Plain
@@ -100,6 +100,6 @@ export function groupByFolder(
     groups.set(folder, [...(groups.get(folder) ?? []), file]);
   }
   return [...groups.entries()]
-    .sort(([a], [b]) => (a === "" ? -1 : b === "" ? 1 : a.localeCompare(b)))
+    .sort(([a], [b]) => (a === "" ? -1 : b === "" ? 1 : compareNames(a, b)))
     .map(([folder, entries]) => ({ folder, files: entries }));
 }

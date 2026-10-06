@@ -8,6 +8,7 @@
 
 /** Claude Code's rule: the listing may take this share of the context window... */
 export const LISTING_BUDGET_FRACTION = 0.01;
+import { compareNames } from "./compare";
 /** ...counted in characters, at roughly this many characters per token. */
 export const LISTING_CHARS_PER_TOKEN = 4;
 /** Each entry's description text is cut at this many characters, whatever the budget. */
@@ -177,7 +178,7 @@ export function summarizeListing(
 ): SkillListingReport {
   const sorted = [...entries].sort(
     (a, b) =>
-      MODE_ORDER[a.mode] - MODE_ORDER[b.mode] || b.chars - a.chars || a.name.localeCompare(b.name),
+      MODE_ORDER[a.mode] - MODE_ORDER[b.mode] || b.chars - a.chars || compareNames(a.name, b.name),
   );
   const used = sorted.reduce((sum, entry) => sum + entry.chars, 0);
   const count = (mode: ListingMode): number => sorted.filter((entry) => entry.mode === mode).length;

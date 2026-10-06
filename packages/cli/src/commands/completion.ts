@@ -1,5 +1,5 @@
 import type { Core } from "@loadout/core";
-import { CLI_BINARY_NAME } from "@loadout/shared";
+import { CLI_BINARY_NAME, compareNames } from "@loadout/shared";
 import { type Shell, completionScript } from "../completion/scripts";
 import { LIBRARY_WORD_KINDS, type LibraryWordKind, completionSpec } from "../completion/spec";
 import { GLOBAL_FLAGS } from "../help";
@@ -12,7 +12,7 @@ const isWordKind = (value: string): value is LibraryWordKind =>
 
 /** Sorted, without repeats or blanks. */
 const tidy = (words: Iterable<string>): string[] =>
-  [...new Set(words)].filter((word) => word.trim()).sort((a, b) => a.localeCompare(b));
+  [...new Set(words)].filter((word) => word.trim()).sort(compareNames);
 
 async function wordsOf(core: Core, kind: LibraryWordKind): Promise<string[]> {
   if (kind === "agents") return tidy(core.registry.list().map((agent) => agent.key));

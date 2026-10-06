@@ -1,4 +1,4 @@
-import { editTags } from "@loadout/shared";
+import { compareNames, editTags } from "@loadout/shared";
 import type { Skill } from "@loadout/shared";
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -47,7 +47,7 @@ function BatchTagForm({
     const counts = new Map<string, number>();
     for (const skill of skills)
       for (const tag of skill.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
-    return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b));
+    return [...counts.entries()].sort(([a], [b]) => compareNames(a, b));
   }, [skills]);
 
   const suggestions = (allTags.data ?? [])

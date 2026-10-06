@@ -6,6 +6,7 @@ export * from "./api-install";
 export * from "./constants";
 export * from "./errors";
 export * from "./events";
+export * from "./compare";
 export * from "./format";
 export * from "./instructions";
 export * from "./settings";

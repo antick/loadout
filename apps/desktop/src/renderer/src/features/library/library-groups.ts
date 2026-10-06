@@ -1,4 +1,10 @@
-import { CLAWHUB_NAME, type Skill, type SkillSourceIdentity, skillSourceOf } from "@loadout/shared";
+import {
+  CLAWHUB_NAME,
+  compareNames,
+  type Skill,
+  type SkillSourceIdentity,
+  skillSourceOf,
+} from "@loadout/shared";
 
 /** Skills without a shared source (made here, imported from a folder) go under this key. */
 const NO_SOURCE_GROUP = "__none__";
@@ -14,9 +20,7 @@ export interface LibraryGroup {
 }
 
 function compareLabels(a: LibraryGroup, b: LibraryGroup): number {
-  return (a.source?.label ?? "").localeCompare(b.source?.label ?? "", undefined, {
-    sensitivity: "base",
-  });
+  return compareNames(a.source?.label ?? "", b.source?.label ?? "");
 }
 
 /** The library group a source belongs to: registry sources fold into one. */
