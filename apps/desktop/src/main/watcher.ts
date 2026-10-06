@@ -41,8 +41,8 @@ export function watchFolders(resolvePaths: () => string[], onChange: () => void)
       try {
         const watcher = watch(path, { recursive: true }, (_event, filename) => {
           const name = filename ? `${sep}${filename}${sep}` : "";
+          // Wrapped in separators, so `.git` itself and anything inside it both match.
           if (IGNORED_SEGMENTS.some((segment) => name.includes(segment))) return;
-          if (filename?.startsWith(`.git${sep}`) || filename === ".git") return;
           fire();
         });
         watcher.on("error", () => {
