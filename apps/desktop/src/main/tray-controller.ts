@@ -1,9 +1,9 @@
-import { Notification } from "electron";
+import { join } from "node:path";
+import { Menu, Notification, Tray, nativeImage } from "electron";
 import type { Core } from "@loadout/core";
-import { type ApplyResult, isAgentAvailable } from "@loadout/shared";
+import { APP_NAME, type ApplyResult, isAgentAvailable } from "@loadout/shared";
 import { TRAY_REFRESH_DEBOUNCE_MS } from "./constants";
-import { type TrayHandle, createTray } from "./tray";
-import type { TrayState } from "./tray-menu";
+import { type TrayActions, type TrayState, buildTrayMenu } from "./tray-menu";
 
 export interface TrayControllerDeps {
   resourcesDir: string;
@@ -24,6 +24,29 @@ export interface TrayController {
 }
 
 type CoreApi = Core["api"];
+
+interface TrayHandle {
+  /** Rebuild the menu for a new state. */
+  update(state: TrayState): void;
+  dispose(): void;
+}
+
+const TRAY_ICON_SIZE = 18;
+
+/** System tray icon whose menu is rebuilt from `update`. */
+function createTray(resourcesDir: string, initial: TrayState, actions: TrayActions): TrayHandle {
+  const image = nativeImage
+    .createFromPath(join(resourcesDir, "trayTemplate.png"))
+    .resize({ width: TRAY_ICON_SIZE, height: TRAY_ICON_SIZE });
+  image.setTemplateImage(true);
+  const tray = new Tray(image);
+  tray.setToolTip(APP_NAME);
+  const update = (state: TrayState): void =>
+    tray.setContextMenu(Menu.buildFromTemplate(buildTrayMenu(state, actions)));
+  update(initial);
+  tray.on("click", actions.show);
+  return { update, dispose: () => tray.destroy() };
+}
 
 const EMPTY_STATE: TrayState = {
   skillCount: 0,
