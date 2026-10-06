@@ -1,7 +1,7 @@
 // The handle is a focusable separator with a value, per the ARIA window splitter pattern; an
 // <hr> cannot be dragged or focused, so these two rules do not apply here.
 /* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/no-noninteractive-tabindex */
-import type { KeyboardEvent, PointerEvent, ReactNode } from "react";
+import { type KeyboardEvent, type PointerEvent, type ReactNode, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { clampTo } from "@/lib/resize";
 import { cn } from "@/lib/utils";
@@ -50,21 +50,39 @@ export function ResizeHandle({
   const { t } = useTranslation();
   const vertical = orientation === "vertical";
   const set = (next: number): void => onValue(clampTo(next, min, max));
+  // Ends a drag in progress; also when the handle goes away mid-drag (the view changed).
+  const endDrag = useRef<(() => void) | null>(null);
+  useEffect(() => () => endDrag.current?.(), []);
 
   const startDrag = (event: PointerEvent<HTMLDivElement>): void => {
     if (event.button !== 0) return;
     event.preventDefault();
+    endDrag.current?.();
     const origin = vertical ? event.clientX : event.clientY;
     const start = value;
     document.body.dataset.resizing = vertical ? "col" : "row";
-    const move = (next: globalThis.PointerEvent): void =>
-      set(fromDrag(start, (vertical ? next.clientX : next.clientY) - origin));
+    // One new size per frame, however many moves the pointer reports in it.
+    let latest: number | null = null;
+    let frame = 0;
+    const apply = (): void => {
+      frame = 0;
+      if (latest !== null) set(fromDrag(start, latest - origin));
+      latest = null;
+    };
+    const move = (next: globalThis.PointerEvent): void => {
+      latest = vertical ? next.clientX : next.clientY;
+      if (frame === 0) frame = requestAnimationFrame(apply);
+    };
     const stop = (): void => {
+      cancelAnimationFrame(frame);
+      apply();
+      endDrag.current = null;
       delete document.body.dataset.resizing;
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", stop);
       window.removeEventListener("pointercancel", stop);
     };
+    endDrag.current = stop;
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", stop);
     window.addEventListener("pointercancel", stop);
