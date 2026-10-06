@@ -14,6 +14,7 @@ import { toastSuccess } from "@/lib/toast";
 import { AddLinkedWorkspaceTab } from "./AddLinkedWorkspaceTab";
 import { AddProjectFolderTab } from "./AddProjectFolderTab";
 import { AddProjectSuggestedTab } from "./AddProjectSuggestedTab";
+import { soleItem } from "@/lib/batch";
 
 export interface AddProjectDialogProps {
   open: boolean;
@@ -37,7 +38,7 @@ function AddProjectBody({ onOpenChange, onAdded }: Omit<AddProjectDialogProps, "
     const first = projects[0];
     if (!first) return;
     toastSuccess(
-      projects.length === 1
+      soleItem(projects)
         ? t("addProject.linkedOne", { name: first.name })
         : t("addProject.linkedMany", { count: projects.length }),
       summary,

@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
-import { toastBatchOutcome } from "@/lib/batch";
+import { soleItem, toastBatchOutcome } from "@/lib/batch";
 import { undoAction } from "@/lib/removed-undo";
 
 /** Update several skills. Skills whose update would delete files are held back, never forced. */
@@ -65,11 +65,11 @@ export function useDeleteSkills(): (skills: readonly Skill[]) => Promise<boolean
     async (skills) => {
       if (skills.length === 0) return false;
       const deployed = skills.reduce((sum, skill) => sum + skill.deployments.length, 0);
+      const only = soleItem(skills);
       const ok = await confirm({
-        title:
-          skills.length === 1
-            ? t("library.delete.titleOne", { name: skills[0]?.name })
-            : t("library.delete.titleMany", { count: skills.length }),
+        title: only
+          ? t("library.delete.titleOne", { name: only.name })
+          : t("library.delete.titleMany", { count: skills.length }),
         description: [
           t("library.delete.description", { count: skills.length }),
           deployed > 0 ? t("library.delete.deployedCopies", { count: deployed }) : null,

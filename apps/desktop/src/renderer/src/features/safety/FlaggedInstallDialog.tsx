@@ -13,6 +13,7 @@ import {
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { getFlaggedPrompt, subscribeFlaggedPrompt } from "./flagged-prompt";
 import { SafetyReportView } from "./SafetyReportView";
+import { soleItem } from "@/lib/batch";
 
 /**
  * Shown when the safety check stopped an install: what it found in each flagged skill, and the
@@ -25,8 +26,8 @@ export function FlaggedInstallDialog(): ReactNode {
   const shown = useLastDefined(prompt);
   const flagged = shown?.flagged ?? [];
   const unchecked = shown?.unchecked ?? [];
-  const [only] = flagged;
-  const [onlyUnchecked] = unchecked;
+  const only = soleItem(flagged);
+  const onlyUnchecked = soleItem(unchecked);
   const safeChoice = useRef<HTMLButtonElement>(null);
   const update = shown?.action === "update";
 
@@ -46,11 +47,11 @@ export function FlaggedInstallDialog(): ReactNode {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldAlert className="size-5 shrink-0 text-danger" />
-            {flagged.length === 0 && onlyUnchecked
-              ? unchecked.length === 1
+            {flagged.length === 0 && unchecked.length > 0
+              ? onlyUnchecked
                 ? t("safety.prompt.uncheckedTitleOne", { name: onlyUnchecked.name })
                 : t("safety.prompt.uncheckedTitleMany", { count: unchecked.length })
-              : only && flagged.length === 1
+              : only
                 ? t("safety.prompt.titleOne", { name: only.name })
                 : t("safety.prompt.titleMany", { count: flagged.length })}
           </DialogTitle>

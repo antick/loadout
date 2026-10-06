@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { runBatch, runWithUndo, toastBatchOutcome } from "@/lib/batch";
+import { runBatch, runWithUndo, soleItem, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { describeFailures, FAILURE_LIST_CLASS, toastError } from "@/lib/toast";
@@ -93,13 +93,12 @@ export function useExportSkills(): UseMutationResult<
         toastError(error, "projectPage.errors.export");
         throw error;
       });
-      const [only] = jobs;
-      const summary =
-        only && jobs.length === 1
-          ? only.targetName
-            ? t("projectPage.toast.exportedTo", { name: only.name, target: only.targetName })
-            : t("projectPage.toast.exported", { name: only.name })
-          : t("projectPage.toast.exportedMany", { count: result.succeeded });
+      const only = soleItem(jobs);
+      const summary = only
+        ? only.targetName
+          ? t("projectPage.toast.exportedTo", { name: only.name, target: only.targetName })
+          : t("projectPage.toast.exported", { name: only.name })
+        : t("projectPage.toast.exportedMany", { count: result.succeeded });
       const agentKeys = jobs.flatMap((job) => job.agentKeys);
       toastBatchOutcome(summary, result.failed, {
         description: result.succeeded > 0 ? reloadHintFor(queryClient, agentKeys) : null,
@@ -127,8 +126,8 @@ export function useDeleteProjectSkills(): UseMutationResult<
         (job) => job.name,
         (job) => api.projects.deleteSkill(job.projectId, job.relativePath, job.agentKey),
         (count) => {
-          const [only] = jobs;
-          if (only && jobs.length === 1) {
+          const only = soleItem(jobs);
+          if (only) {
             return only.targetName
               ? t("projectPage.toast.removedFrom", { name: only.name, target: only.targetName })
               : t("projectPage.toast.deleted", { name: only.name });
@@ -157,8 +156,8 @@ export function usePullFromLibrary(): UseMutationResult<
         (job) => job.name,
         (job) => api.projects.pullFromLibrary(job.projectId, job.relativePath),
         (count) => {
-          const [only] = jobs;
-          if (only && jobs.length === 1) {
+          const only = soleItem(jobs);
+          if (only) {
             return t(only.restore ? "projectPage.toast.restored" : "projectPage.toast.pulled", {
               name: only.name,
             });
@@ -185,15 +184,14 @@ export function useSetProjectSkillsEnabled(): UseMutationResult<
         (ref) => api.projects.setSkillEnabled(ref.projectId, ref.relativePath, enabled),
       ),
     onSuccess: (result, { refs, enabled }) => {
-      const [only] = refs;
-      const summary =
-        only && refs.length === 1
-          ? t(enabled ? "projectPage.toast.enabled" : "projectPage.toast.disabled", {
-              name: only.name,
-            })
-          : t(enabled ? "projectPage.toast.enabledMany" : "projectPage.toast.disabledMany", {
-              count: result.succeeded,
-            });
+      const only = soleItem(refs);
+      const summary = only
+        ? t(enabled ? "projectPage.toast.enabled" : "projectPage.toast.disabled", {
+            name: only.name,
+          })
+        : t(enabled ? "projectPage.toast.enabledMany" : "projectPage.toast.disabledMany", {
+            count: result.succeeded,
+          });
       toastBatchOutcome(summary, result.failed);
     },
     error: "projectPage.errors.toggle",
@@ -280,8 +278,8 @@ export function usePushToLibrary(
       return outcome;
     },
     onSuccess: (outcome, jobs) => {
-      const [only] = jobs;
-      if (only && jobs.length === 1) {
+      const only = soleItem(jobs);
+      if (only) {
         toastSinglePush(t, only, outcome, onChooseVersion);
         return;
       }

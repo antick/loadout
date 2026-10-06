@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useAvailableAgents } from "@/hooks/queries/agents";
+import { soleItem } from "@/lib/batch";
 
 /** Agents to tick when the panel opens: some keys, or every agent. */
 export type DeployPreselection = readonly string[] | "all";
@@ -60,9 +61,7 @@ export function DeployAfterInstallToast({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">{t("install.deploy.title")}</p>
           <p className="truncate text-xs text-muted-foreground">
-            {skills.length === 1
-              ? skills[0]?.name
-              : t("install.deploy.skillCount", { count: skills.length })}
+            {soleItem(skills)?.name ?? t("install.deploy.skillCount", { count: skills.length })}
           </p>
         </div>
         <IconButton size="icon-xs" label={t("common.dismiss")} icon={<X />} onClick={onClose} />

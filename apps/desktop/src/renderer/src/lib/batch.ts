@@ -4,6 +4,11 @@ import { i18n } from "@/lib/i18n";
 import { toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { describeFailures, FAILURE_LIST_CLASS, type ToastAction, errorMessage } from "@/lib/toast";
 
+/** The item when there is exactly one, so a toast or a title can name it instead of counting. */
+export function soleItem<T>(items: readonly T[]): T | undefined {
+  return items.length === 1 ? items[0] : undefined;
+}
+
 /**
  * Run one job per item, one after the other, and collect what failed. Used where the backend has
  * no batch call and the jobs touch the same folders, so they must not overlap.
@@ -35,8 +40,8 @@ export async function runBatch<T>(
   nameOf: (item: T) => string,
   job: (item: T) => Promise<unknown>,
 ): Promise<BatchResult> {
-  const [only] = items;
-  if (only === undefined || items.length !== 1) return runSequentially(items, nameOf, job);
+  const only = soleItem(items);
+  if (only === undefined) return runSequentially(items, nameOf, job);
   await job(only);
   return { succeeded: 1, failed: [] };
 }

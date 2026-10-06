@@ -18,6 +18,7 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 import { GENERIC_ERROR_KEY } from "@/lib/toast";
+import { soleItem } from "@/lib/batch";
 
 /** Task key of "import everything the scan found"; the backend reports no progress for it. */
 export const IMPORT_ALL_DISCOVERED_KEY = "scan:import-all";
@@ -155,14 +156,13 @@ export function useConfirmGit(): (
         runAcceptingRisk: () =>
           api.install.confirmGit(preview.previewId, items, { ...options, acceptRisk: true }),
         success: (skills) => {
-          const [only] = skills;
-          const base =
-            only && skills.length === 1
-              ? installedOne(t, only)
-              : {
-                  message: t("install.toast.installedCount", { count: skills.length }),
-                  skills,
-                };
+          const only = soleItem(skills);
+          const base = only
+            ? installedOne(t, only)
+            : {
+                message: t("install.toast.installedCount", { count: skills.length }),
+                skills,
+              };
           const summary = withRenames(t, base, items, skills);
           const deployTo = preview.allAgents ? "all" : preview.agents;
           return deployTo.length > 0 ? { ...summary, deployTo } : summary;

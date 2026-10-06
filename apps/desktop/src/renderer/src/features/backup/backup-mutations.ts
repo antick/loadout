@@ -17,6 +17,7 @@ import { publicRepoDetails, toastBackupError } from "@/features/backup/backup-er
 import { toastSyncOutcome } from "@/features/backup/backup-toast";
 import { keys } from "@/lib/query-keys";
 import { toastSuccess } from "@/lib/toast";
+import { soleItem } from "@/lib/batch";
 
 interface BackupMutationOptions<TData, TVariables> extends Omit<
   ApiMutationOptions<TData, TVariables, unknown>,
@@ -158,12 +159,11 @@ export function useResolveBackupConflicts(): UseMutationResult<
         action,
       ),
     success: (safetyTag, { conflicts, action }) => {
-      const [only] = conflicts;
+      const only = soleItem(conflicts);
       return {
-        message:
-          only && conflicts.length === 1
-            ? t(`backupPage.conflicts.resolved.${action}`, { name: only.skillName })
-            : t(`backupPage.conflicts.resolvedAll.${action}`, { count: conflicts.length }),
+        message: only
+          ? t(`backupPage.conflicts.resolved.${action}`, { name: only.skillName })
+          : t(`backupPage.conflicts.resolvedAll.${action}`, { count: conflicts.length }),
         description: t("backupPage.toast.safetySnapshot", { tag: safetyTag }),
       };
     },

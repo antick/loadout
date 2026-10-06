@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
-import { toastBatchOutcome } from "@/lib/batch";
+import { soleItem, toastBatchOutcome } from "@/lib/batch";
 import { EXPORT_FILE_EXTENSION, EXPORT_MANY_PREFIX } from "@/lib/constants";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -97,11 +97,8 @@ export function useRevealSkill(): UseMutationResult<void, unknown, string> {
 
 /** File name "Save as" suggests: the skill's folder name, or a stamped name for several. */
 function exportFileName(skills: readonly Skill[]): string {
-  const [only] = skills;
-  const stem =
-    only && skills.length === 1
-      ? only.dirName
-      : `${EXPORT_MANY_PREFIX}${formatTimestampCompact(Date.now())}`;
+  const only = soleItem(skills);
+  const stem = only ? only.dirName : `${EXPORT_MANY_PREFIX}${formatTimestampCompact(Date.now())}`;
   return `${stem}${EXPORT_FILE_EXTENSION}`;
 }
 
