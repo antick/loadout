@@ -64,6 +64,16 @@ describe("skills use", () => {
     expect(await librarySize()).toBe(0);
   });
 
+  it("refuses --skill for a source that already names its skill, as install does", async () => {
+    for (const source of ["acme/skills@pdf", "@owner/slug"]) {
+      const used = await sandbox.cli("skills", "use", source, "--skill", "other");
+      const installed = await sandbox.cli("skills", "install", source, "--skill", "other");
+      expect(used.code, source).toBe(EXIT_USAGE);
+      expect(used.stderr).toContain("--skill is not supported");
+      expect(installed.code, source).toBe(EXIT_USAGE);
+    }
+  });
+
   it("gives the document and the report in --json", async () => {
     const run = await sandbox.cli("skills", "use", zip, "-s", "beta", "--json");
     expect(run.json()).toMatchObject({

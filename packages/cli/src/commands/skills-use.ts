@@ -78,6 +78,11 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const input = positional(args, 0, "the skill to read");
   const source = classifySource(input);
   const wanted = flagString(args, SKILL_FLAG.name);
+  // A source that already names its skill has nothing to pick; install refuses the same.
+  if (wanted !== undefined && (source.kind === "market" || source.kind === "clawhub")) {
+    const named = source.kind === "market" ? "owner/repo@skill" : "@owner/slug";
+    throw new UsageError(`--${SKILL_FLAG.name} is not supported for ${named}.`);
+  }
   const acceptRisk = flagBoolean(args, USE_RISK_FLAG.name);
   let read: PreviewedSkill;
   if (source.kind === "clawhub") {
@@ -85,7 +90,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
   } else if (source.kind === "market") {
     // `owner/repo@skill` names a GitHub repository and one skill in it.
     const preview = await core.api.install.previewGit(source.source);
-    read = await readFromPreview(context, preview, wanted ?? source.skillId);
+    read = await readFromPreview(context, preview, source.skillId);
   } else if (source.kind === "git") {
     read = await readFromPreview(context, await core.api.install.previewGit(source.url), wanted);
   } else {
