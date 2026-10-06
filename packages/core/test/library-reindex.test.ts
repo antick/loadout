@@ -128,6 +128,16 @@ describe("re-indexing skill folders that moved or went missing", () => {
     expect(resolve(readlinkSync(linkPath))).toBe(renamed);
   });
 
+  it("writes the new path of a renamed folder that has no links to follow", async () => {
+    const plain = await core.api.skills.create({ name: "plain", description: "Test skill" });
+    await core.flush();
+    const meta = join(core.ctx.paths.metadataDir, "skills", `${plain.id}.json`);
+    renameSync(plain.libraryPath, join(core.ctx.paths.skillsDir, "plain-renamed"));
+    await core.background.libraryChangedOnDisk();
+    await core.flush();
+    expect(JSON.parse(readFileSync(meta, "utf8"))).toMatchObject({ path: "plain-renamed" });
+  });
+
   it("follows a folder renamed while the app was closed", () => {
     core.close();
     const renamed = join(core.ctx.paths.skillsDir, "alpha-renamed");

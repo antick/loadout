@@ -348,13 +348,9 @@ function start(): void {
       () => (core ? core.watchPaths() : []),
       () => {
         if (!checkLibrary()) return;
+        // The re-index tells the windows what changed itself.
         const reindexed = core?.background.libraryChangedOnDisk() ?? Promise.resolve();
-        void reindexed.then(() => {
-          send("data:changed", {
-            scope: ["skills", "agents", "presets", "projects", "backup"],
-          });
-          tray?.refresh();
-        });
+        void reindexed.then(() => tray?.refresh());
       },
     ),
     watchFolders(

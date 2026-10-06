@@ -331,6 +331,9 @@ export function createCore(options: CoreCreateOptions = {}): Core {
           pruneBrokenLinks(ctx, { registry, store });
           // Links to a folder renamed by hand lead nowhere now: point them at its new name.
           await relinkMoved(moved);
+          // The index, deployments and presets may have changed: rewrite the metadata (a folder
+          // renamed by hand has a new path) and tell every window, the app's or the CLI's.
+          ctx.touched("skills", "agents", "presets", "projects", "backup");
         })
         .then(() => {
           staleCopies.request();
