@@ -40,14 +40,13 @@ export interface EditorSession {
   sessions: Readonly<Sessions>;
   /** A version of `file` was read from disk. */
   sync(file: SkillFile): void;
+  /** New text for a file, typed or put back from an earlier version: an unsaved change. */
   setDraft(path: string, draft: string): void;
   save(path: string, options?: SaveOptions): Promise<SaveOutcome>;
   /** Paths currently being saved. */
   saving: ReadonlySet<string>;
   revert(path: string): void;
   keepMine(path: string): void;
-  /** Put earlier text in the editor as an unsaved change. */
-  replaceDraft(path: string, content: string): void;
   /** Throw away every unsaved change, including the copies kept in localStorage. */
   discardAll(): void;
   dirtyPaths: string[];
@@ -182,7 +181,6 @@ export function useEditorSession(location: SkillLocation): EditorSession {
       clearDraft(draftKey, path);
     },
     keepMine: (path) => update(path, keepMine),
-    replaceDraft: (path, content) => update(path, (session) => withDraft(session, content)),
     discardAll: () => {
       discarded.current = true;
       for (const path of Object.keys(latest.current)) clearDraft(draftKey, path);

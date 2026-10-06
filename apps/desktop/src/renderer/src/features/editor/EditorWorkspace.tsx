@@ -241,7 +241,7 @@ export function EditorWorkspace({
     if (!activePath) return;
     try {
       const content = await api.editor.readFileVersion(location, activePath, versionId);
-      session.replaceDraft(activePath, content);
+      session.setDraft(activePath, content);
       editorRef.current?.focus();
       toast.info(t("editor.versions.loaded", { when: formatRelative(savedAt) }));
     } catch (error) {
