@@ -42,7 +42,6 @@ import { groupLibraryBySource } from "@/features/library/library-groups";
 import { LibraryGroups, useFoldedGroups } from "@/features/library/LibraryGroups";
 
 import { LibraryMatrix } from "@/features/library/matrix/LibraryMatrix";
-import { useAgentToggle } from "@/features/library/SkillAgentBadges";
 import { LibraryCard } from "@/features/library/LibraryCard";
 
 import {
@@ -61,6 +60,7 @@ import { LibrarySelectionActions } from "@/features/library/LibrarySelectionActi
 import { LibraryToolbar } from "@/features/library/LibraryToolbar";
 import { SkillDetailSheet } from "@/features/library/SkillDetailSheet";
 import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
+import { useAgentToggle } from "@/hooks/mutations/deploy";
 import { useUpdateSkills } from "@/hooks/mutations/library";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";

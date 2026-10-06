@@ -13,7 +13,7 @@ import {
 import { useSetBlocked } from "@/features/library/library-mutations";
 import { MatrixCell } from "@/features/library/matrix/MatrixCell";
 import { agentColumnCoverage, matrixCellState } from "@/features/library/matrix/matrix-state";
-import { useConfirmUndeploy, useDeploySkill, useUndeploySkill } from "@/hooks/mutations/deploy";
+import { useAgentToggle } from "@/hooks/mutations/deploy";
 import { cn } from "@/lib/utils";
 import { SECTION_LABEL } from "@/lib/styles";
 
@@ -53,9 +53,7 @@ export function LibraryMatrix({
   onOpen,
 }: LibraryMatrixProps): ReactNode {
   const { t } = useTranslation();
-  const deploy = useDeploySkill();
-  const undeploy = useUndeploySkill();
-  const confirmUndeploy = useConfirmUndeploy();
+  const toggleAgent = useAgentToggle();
   const setBlocked = useSetBlocked();
   // Set by the right-click that opens the menu, so its one item knows which square it is for.
   const [target, setTarget] = useState<CellTarget | null>(null);
@@ -86,17 +84,11 @@ export function LibraryMatrix({
       { agent: agent.displayName },
     )}`;
 
-  const toggle = (skill: Skill, agentKey: string): void => {
-    const pair = { skillId: skill.id, agentKey };
-    if (matrixCellState(skill, agentKey) !== "deployed") {
-      deploy.mutate(pair);
-      return;
-    }
-    const agentName = agents.find((agent) => agent.key === agentKey)?.displayName ?? agentKey;
-    void confirmUndeploy(skill, agentKey, agentName).then((ok) => {
-      if (ok) undeploy.mutate(pair);
-    });
-  };
+  // A failure is toasted by the mutation itself.
+  const toggle = (skill: Skill, agent: AgentInfo): void =>
+    void toggleAgent(skill, agent, matrixCellState(skill, agent.key) !== "deployed").catch(
+      () => undefined,
+    );
 
   /** Only a square has a menu; anywhere else the right-click does nothing. */
   const pickTarget = (event: MouseEvent): void => {
@@ -189,7 +181,7 @@ export function LibraryMatrix({
                         label={cellLabel(skill, agent)}
                         skillId={skill.id}
                         agentKey={agent.key}
-                        onToggle={() => toggle(skill, agent.key)}
+                        onToggle={() => toggle(skill, agent)}
                       />
                     </td>
                   ))}

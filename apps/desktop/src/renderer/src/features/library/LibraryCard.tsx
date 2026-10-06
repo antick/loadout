@@ -3,7 +3,8 @@ import { type ReactNode, memo, useMemo } from "react";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import type { SkillAction } from "@/components/skill-action";
 import { LibrarySkillItem } from "@/features/library/LibrarySkillItem";
-import { type AgentToggle, SkillAgentBadges } from "@/features/library/SkillAgentBadges";
+import { SkillAgentBadges } from "@/features/library/SkillAgentBadges";
+import type { AgentToggle } from "@/hooks/mutations/deploy";
 import { SkillUsageNote } from "@/features/library/SkillUsageNote";
 
 export interface LibraryCardProps {

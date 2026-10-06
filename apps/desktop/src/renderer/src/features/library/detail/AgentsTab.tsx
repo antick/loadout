@@ -20,12 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useSetBlocked } from "@/features/library/library-mutations";
-import {
-  useApplySkills,
-  useConfirmUndeploy,
-  useDeploySkill,
-  useUndeploySkill,
-} from "@/hooks/mutations/deploy";
+import { type AgentToggle, useAgentToggle, useApplySkills } from "@/hooks/mutations/deploy";
 import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
 import { useSkillAgentKeys } from "@/hooks/use-skill-agent-keys";
 import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
@@ -40,6 +35,8 @@ interface AgentRowProps {
   blocked: boolean;
   /** Why the agent cannot take new skills; undefined for available agents. */
   unavailableReason?: string;
+  /** Made once by the tab for every row. */
+  toggle: AgentToggle;
 }
 
 function AgentRow({
@@ -48,13 +45,12 @@ function AgentRow({
   deployed,
   blocked,
   unavailableReason,
+  toggle,
 }: AgentRowProps): ReactNode {
   const { t } = useTranslation();
-  const deploy = useDeploySkill();
-  const undeploy = useUndeploySkill();
-  const confirmUndeploy = useConfirmUndeploy();
+  const [toggling, setToggling] = useState(false);
   const setBlocked = useSetBlocked();
-  const pending = deploy.isPending || undeploy.isPending || setBlocked.isPending;
+  const pending = toggling || setBlocked.isPending;
   const isBlocked = blocked && !deployed;
   const target = skill.deployments.find((entry) => entry.agentKey === agent.key);
   const sharedWith = agent.sharesDirWith.length;
@@ -92,12 +88,11 @@ function AgentRow({
           agent: agent.displayName,
         })}
         onCheckedChange={(next) => {
-          const pair = { skillId: skill.id, agentKey: agent.key };
-          if (next) deploy.mutate(pair);
-          else
-            void confirmUndeploy(skill, agent.key, agent.displayName).then((ok) => {
-              if (ok) undeploy.mutate(pair);
-            });
+          setToggling(true);
+          // A failure is toasted by the mutation itself.
+          void toggle(skill, agent, next)
+            .catch(() => undefined)
+            .finally(() => setToggling(false));
         }}
       />
       <DropdownMenu>
@@ -134,6 +129,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
   const { t } = useTranslation();
   const agents = useAgents();
   const apply = useApplySkills();
+  const toggle = useAgentToggle();
   const [showUnavailable, setShowUnavailable] = useState(false);
   const { deployed: deployedKeys, blocked: blockedKeys } = useSkillAgentKeys(skill);
 
@@ -209,6 +205,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
               skill={skill}
               deployed={deployedKeys.has(agent.key)}
               blocked={blockedKeys.has(agent.key)}
+              toggle={toggle}
             />
           ))}
         </ul>
@@ -234,6 +231,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
                   skill={skill}
                   deployed={deployedKeys.has(agent.key)}
                   blocked={blockedKeys.has(agent.key)}
+                  toggle={toggle}
                   unavailableReason={t(
                     agent.installed
                       ? "library.agents.reasonDisabled"
