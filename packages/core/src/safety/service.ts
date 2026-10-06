@@ -270,11 +270,12 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
 
   /**
    * Check library skills that have no current report, quietly: no progress, no activity entry.
-   * For the app's start, with the built-in rules only; SkillSpector is a process per skill.
+   * For the app's start, with the built-in rules even where SkillSpector is found: it runs a
+   * process per skill, too slow for every start.
    */
   async function scanDueQuietly(): Promise<number> {
-    const engine = await currentEngine();
-    if (engine?.kind !== "builtin") return 0;
+    if (!builtin) return 0;
+    const engine: Engine = { kind: "builtin" };
     const scanned = await reports.batch(async () => {
       const skills = store.list();
       reports.retain(new Set(skills.map((skill) => skill.id)));

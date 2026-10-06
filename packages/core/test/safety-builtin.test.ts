@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
 import { createSafetyService } from "../src/safety";
 import { scanWithRules } from "../src/safety/builtin";
+import type { ScannerProgram } from "../src/safety/scanner";
 import { BUILTIN_RULES_VERSION, SAFETY_RULES } from "../src/safety/rules";
 import { createTestWorld, makeSkill, tempDir, type TestWorld, createTestCore } from "./helpers";
 import { type InstallHarness, createInstallHarness } from "./install-fixtures";
@@ -197,11 +198,11 @@ describe("the safety service with the built-in rules", () => {
   });
   afterEach(() => world.cleanup());
 
-  function setup(builtin: boolean) {
+  function setup(builtin: boolean, skillspector: ScannerProgram | null = null) {
     const safety = createSafetyService(world.ctx, {
       store: world.store,
       builtin,
-      findProgram: () => null,
+      findProgram: () => skillspector,
     });
     install = createInstallHarness(world, { safety });
     return safety;
@@ -241,6 +242,14 @@ describe("the safety service with the built-in rules", () => {
       "unsafe",
     ]);
     expect(await safety.scanDueQuietly()).toBe(0);
+  });
+
+  it("checks unchecked skills at start with the built-in rules, also beside SkillSpector", async () => {
+    world.ctx.settings.set("safetyScanOnInstall", false);
+    const safety = setup(true, { path: join(world.root, "no-skillspector"), version: "1" });
+    await install.api.fromPath(makeSkill(sources, "plain"));
+    expect(await safety.scanDueQuietly()).toBe(1);
+    expect((await safety.api.list())[0]).toMatchObject({ engine: "builtin", verdict: "safe" });
   });
 
   it("checks again a report made by an older set of rules", async () => {
