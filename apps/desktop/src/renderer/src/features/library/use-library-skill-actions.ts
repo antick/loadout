@@ -40,13 +40,15 @@ export function useLibrarySkillActions({ onDelete }: LibrarySkillActionsOptions 
 ) => SkillAction[] {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const reveal = useRevealSkill();
-  const check = useCheckSkillUpdate();
-  const exportSkills = useExportSkills();
+  // The mutations' `mutate` functions, not the mutation objects: those change on every state
+  // change, and the actions must stay the same function, or every card would draw again.
+  const { mutate: reveal } = useRevealSkill();
+  const { mutate: check } = useCheckSkillUpdate();
+  const { mutate: exportSkills } = useExportSkills();
   const deleteSkills = useDeleteSkills();
-  const setFavorite = useSetFavorite();
-  const openInEditor = useOpenInEditor();
-  const editor = useDefaultEditor();
+  const { mutate: setFavorite } = useSetFavorite();
+  const { mutate: openInEditor } = useOpenInEditor();
+  const { id: editorId, label: editorLabel } = useDefaultEditor();
   const shell = useShell();
 
   return useCallback(
@@ -68,13 +70,13 @@ export function useLibrarySkillActions({ onDelete }: LibrarySkillActionsOptions 
           id: "reveal",
           label: t("library.detail.reveal"),
           icon: FolderOpen,
-          run: () => reveal.mutate(skill.id),
+          run: () => reveal(skill.id),
         },
         {
           id: "open",
-          label: editor.label,
-          icon: editor.id === "system" ? AppWindow : CodeXml,
-          run: () => openInEditor.mutate({ editor: editor.id, path: skill.libraryPath }),
+          label: editorLabel,
+          icon: editorId === "system" ? AppWindow : CodeXml,
+          run: () => openInEditor({ editor: editorId, path: skill.libraryPath }),
         },
         {
           id: "favorite",
@@ -83,15 +85,14 @@ export function useLibrarySkillActions({ onDelete }: LibrarySkillActionsOptions 
             { name: skill.name },
           ),
           icon: skill.favoritedAt === null ? Star : StarOff,
-          run: () =>
-            setFavorite.mutate({ skillId: skill.id, favorite: skill.favoritedAt === null }),
+          run: () => setFavorite({ skillId: skill.id, favorite: skill.favoritedAt === null }),
         },
       ];
       actions.push({
         id: "export",
         label: t("library.export.action"),
         icon: FileArchive,
-        run: () => exportSkills.mutate([skill]),
+        run: () => exportSkills([skill]),
       });
       actions.push({
         id: "clawhub",
@@ -104,7 +105,7 @@ export function useLibrarySkillActions({ onDelete }: LibrarySkillActionsOptions 
           id: "check",
           label: t("library.source.checkNow"),
           icon: RefreshCw,
-          run: () => check.mutate(skill.id),
+          run: () => check(skill.id),
         });
       }
       actions.push({
@@ -126,7 +127,8 @@ export function useLibrarySkillActions({ onDelete }: LibrarySkillActionsOptions 
       onDelete,
       setFavorite,
       openInEditor,
-      editor,
+      editorId,
+      editorLabel,
       shell,
     ],
   );

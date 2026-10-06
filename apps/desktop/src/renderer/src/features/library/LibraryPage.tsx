@@ -1,3 +1,4 @@
+import type { AgentInfo } from "@loadout/shared";
 import type { Skill } from "@loadout/shared";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -13,12 +14,12 @@ import {
   ScanSearch,
   Send,
 } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BatchDeployDialog } from "@/components/BatchDeployDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { FavoriteButton } from "@/components/FavoriteButton";
+
 import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
@@ -39,10 +40,11 @@ import { useCheckAllUpdates } from "@/features/library/library-mutations";
 import { LibraryBanners } from "@/features/library/LibraryBanners";
 import { groupLibraryBySource } from "@/features/library/library-groups";
 import { LibraryGroups, useFoldedGroups } from "@/features/library/LibraryGroups";
-import { LibrarySkillItem } from "@/features/library/LibrarySkillItem";
+
 import { LibraryMatrix } from "@/features/library/matrix/LibraryMatrix";
-import { SkillAgentBadges } from "@/features/library/SkillAgentBadges";
-import { SkillUsageNote } from "@/features/library/SkillUsageNote";
+import { useAgentToggle } from "@/features/library/SkillAgentBadges";
+import { LibraryCard } from "@/features/library/LibraryCard";
+
 import {
   DEFAULT_SORT_MODE,
   EMPTY_FILTERS,
@@ -64,6 +66,7 @@ import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";
 import { useSafetyReports } from "@/hooks/queries/safety";
 import { useSkillUsage } from "@/hooks/queries/usage";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
@@ -73,6 +76,7 @@ import { cn } from "@/lib/utils";
 const VIEW_MODE_SCOPE = "library";
 const SORT_STORAGE_KEY = "library.sort";
 const GROUP_STORAGE_KEY = "library.group-by-source";
+const NO_AGENTS: readonly AgentInfo[] = [];
 const GRID_CLASS = "grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]";
 const LIST_CLASS = "flex flex-col gap-1.5";
 const SKELETON_COUNT = 6;
@@ -167,16 +171,18 @@ export function LibraryPage({
     [availableAgents.data],
   );
   const safety = useSafetyReports();
+  // The list follows the search once typing pauses, not on every key.
+  const searchQuery = useDebouncedValue(filters.query);
   const visible = useMemo(
     () =>
       filterSkills(
         all ?? [],
-        filters,
+        { ...filters, query: searchQuery },
         { enabled: usage.enabled, byId: usage.byId },
         availableKeys,
         safety,
       ),
-    [all, filters, usage.enabled, usage.byId, availableKeys, safety],
+    [all, filters, searchQuery, usage.enabled, usage.byId, availableKeys, safety],
   );
   // Sections change the order on screen; the selection follows it so shift-click ranges do too.
   const groups = useMemo(
@@ -205,25 +211,29 @@ export function LibraryPage({
   };
 
   const total = all?.length ?? 0;
+  const toggleAgent = useAgentToggle();
+  const { toggle: toggleSelected } = selection;
+  const toggleCard = useCallback(
+    (target: Skill, modifiers: { shiftKey: boolean }) => toggleSelected(target.id, modifiers),
+    [toggleSelected],
+  );
+  const openCard = useCallback((target: Skill) => onOpenSkill(target.id), [onOpenSkill]);
 
   const renderItem = (skill: Skill): ReactNode => (
-    <LibrarySkillItem
+    <LibraryCard
       key={skill.id}
       skill={skill}
       layout={viewMode === "list" ? "list" : "grid"}
       current={skill.id === openSkillId}
       selecting={selection.active}
       selected={selection.isSelected(skill.id)}
-      onSelectToggle={(target, modifiers) => selection.toggle(target.id, modifiers)}
-      onOpen={(target) => onOpenSkill(target.id)}
-      footer={
-        <div className="flex min-w-0 items-center gap-3">
-          <SkillAgentBadges skill={skill} />
-          {showUsage ? <SkillUsageNote usage={usage.byId.get(skill.id)} /> : null}
-        </div>
-      }
-      menuActions={actionsFor(skill)}
-      actions={<FavoriteButton skill={skill} />}
+      usage={usage.byId.get(skill.id)}
+      showUsage={showUsage}
+      agents={availableAgents.data ?? NO_AGENTS}
+      onToggleAgent={toggleAgent}
+      onSelectToggle={toggleCard}
+      onOpen={openCard}
+      actionsFor={actionsFor}
     />
   );
 
