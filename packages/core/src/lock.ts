@@ -42,7 +42,7 @@ interface LockInfo {
   startedAt: number;
 }
 
-export function processAlive(pid: number): boolean {
+function processAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
@@ -52,7 +52,7 @@ export function processAlive(pid: number): boolean {
 }
 
 /** When this computer last started, in epoch ms. */
-export function bootTime(): number {
+function bootTime(): number {
   return Date.now() - uptime() * MS_PER_SECOND;
 }
 
@@ -118,8 +118,10 @@ export class RepoLock {
     if (!stat) return false;
     const age = Date.now() - stat.mtimeMs;
     if (holder === null) return age > UNREADABLE_STALE_MS;
-    if (age > this.#staleMs || stat.mtimeMs < bootTime()) return true;
-    return holder.host === hostname() && holder.pid !== process.pid && !processAlive(holder.pid);
+    if (age > this.#staleMs) return true;
+    // Another computer's process cannot be asked about: only its age and this start count.
+    if (holder.host !== hostname()) return stat.mtimeMs < bootTime();
+    return writerGone(holder.pid, stat.mtimeMs);
   }
 
   /** Move the lock file's time on while it is still ours, so nobody takes it for abandoned. */

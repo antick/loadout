@@ -1,6 +1,6 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { isAbsolute, join, relative } from "node:path";
+import { isAbsolute, join } from "node:path";
 import {
   APP_SLUG,
   CLAWHUB_NAME,
@@ -34,8 +34,9 @@ import {
 } from "../install";
 import { openClawhubVersion } from "../install/clawhub-install";
 import { type ClawhubClient, parseClawhubRef } from "../market/clawhub";
-import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
+import { isSkillDir, removePath, statOrNull } from "../util/fs";
 import { readJson } from "../install/download";
+import { subpathOf } from "../install/fetched-preview";
 
 /**
  * Where a library skill's upstream lives and how to open it. Shared by check, update and the
@@ -336,7 +337,7 @@ export async function openRemoteSource(
     return {
       dir,
       revision: checkout.revision,
-      subpath: toPosix(relative(checkout.dir, dir)) || null,
+      subpath: subpathOf(checkout.dir, dir),
       cleanup: checkout.cleanup,
     };
   } catch (error) {

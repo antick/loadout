@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { normalizeSourceUrl } from "@loadout/shared";
 import { RepoLock } from "../lock";
-import { dirSize, ensureDir, readDirSafe, removePath, statOrNull } from "../util/fs";
+import { dirSize, ensureDir, readDirSafe, removePath, statOrNull, pathSize } from "../util/fs";
 import { sha256Hex } from "../util/hash";
 import { KeyedQueue } from "../util/queue";
 
@@ -104,7 +104,7 @@ export function createCloneCache(reposDir: string, limitBytes: number, waitMs: n
         const path = join(reposDir, entry.name);
         const owner = ownerOf(entry.name);
         if (!owner || inUse(path) || inUse(owner)) continue;
-        const size = entry.isDirectory() ? dirSize(path) : (statOrNull(path)?.size ?? 0);
+        const size = pathSize(path);
         await removePath(path);
         freed += size;
       }

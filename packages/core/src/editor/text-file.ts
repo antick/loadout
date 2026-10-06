@@ -1,6 +1,7 @@
 import type { LineEnding } from "@loadout/shared";
 import { diffArrays } from "diff";
 import { looksBinary } from "../util/hash";
+import { MIB } from "@loadout/shared";
 
 /**
  * How the editor sees a file on disk: UTF-8 text with `\n` line breaks. Whatever the file used
@@ -9,7 +10,7 @@ import { looksBinary } from "../util/hash";
  */
 
 /** Largest file the editor opens. Skill files are prose and small scripts. */
-export const MAX_EDITABLE_BYTES = 1024 * 1024;
+export const MAX_EDITABLE_BYTES = MIB;
 /** How much of a file is inspected to tell text from binary when only listing. */
 export const SNIFF_BYTES = 8192;
 /**

@@ -10,10 +10,10 @@ import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
 import { errorMessage, isAppError } from "../errors";
 import type { Download, GitClient } from "../install";
-import { hashAsLibraryCopy } from "../skills/numbered-name";
+import { hashAsLibraryCopy, sameTextAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { mapLimit } from "../util/async";
-import { hashDir } from "../util/hash";
+
 import { type FolderQuestion, type FolderUnchanged, folderComparer } from "./folder-check";
 import { type LockMode, runLocked } from "./locking";
 import {
@@ -58,7 +58,6 @@ const SETTLED: ReadonlySet<UpdateStatus> = new Set([
   "source_missing",
 ]);
 const CHECK_FAILED = "Could not check for updates";
-const EOL_INSENSITIVE = { ignoreLineEndings: true } as const;
 
 type RemoteOutcome = { revision: string } | { failure: string };
 
@@ -175,9 +174,7 @@ async function localFinding(
         return settled(skill, "up_to_date");
       }
       // A checkout that only flipped line endings is not an update worth offering.
-      const sourceText = hashAsLibraryCopy(source.dir, skill.dirName, EOL_INSENSITIVE);
-      const same =
-        sourceText !== null && sourceText === hashDir(skill.libraryPath, EOL_INSENSITIVE);
+      const same = sameTextAsLibraryCopy(source.dir, skill.dirName, skill.libraryPath);
       return settled(skill, same ? "up_to_date" : "update_available");
     } finally {
       await source.cleanup();

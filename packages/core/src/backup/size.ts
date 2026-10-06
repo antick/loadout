@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   APP_SLUG,
@@ -7,7 +6,15 @@ import {
   type OversizedSkill,
   type SizeReport,
 } from "@loadout/shared";
-import { GIT_DIR, dirSize, readDirSafe, statOrNull, writeFileAtomic } from "../util/fs";
+import {
+  GIT_DIR,
+  dirSize,
+  readDirSafe,
+  statOrNull,
+  writeFileAtomic,
+  GIT_IGNORE_FILE,
+  readTextOrNull,
+} from "../util/fs";
 import { LEFT_OUT_LINES } from "../util/left-out";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 
@@ -17,7 +24,6 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
  * every other device. The block is rebuilt before each commit, so a skill that shrank comes back.
  */
 
-export const IGNORE_FILE = ".gitignore";
 /**
  * `writeFileAtomic` writes `<file>.tmp.<uuid>` and renames it. Git must never pick one up: it can
  * vanish between git listing it and reading it, which fails the whole commit.
@@ -44,13 +50,12 @@ function escapeIgnorePath(name: string): string {
 }
 
 export function ignoreFilePath(env: BackupEnv): string {
-  return join(env.repoDir, IGNORE_FILE);
+  return join(env.repoDir, GIT_IGNORE_FILE);
 }
 
 /** The ignore file as it is now; null when there is none. */
 export function readIgnoreText(env: BackupEnv): string | null {
-  const path = ignoreFilePath(env);
-  return existsSync(path) ? readFileSync(path, "utf8") : null;
+  return readTextOrNull(ignoreFilePath(env));
 }
 
 /** An ignore file's lines: the user's own, as written, and the managed block's patterns. */

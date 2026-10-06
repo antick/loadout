@@ -24,6 +24,7 @@ import { invalid } from "../errors";
 
 /** The folder a git repository keeps its data in. */
 export const GIT_DIR = ".git";
+export const GIT_IGNORE_FILE = ".gitignore";
 /** Names never copied into or out of the library. */
 const COPY_SKIP_NAMES: ReadonlySet<string> = new Set([GIT_DIR, ".DS_Store"]);
 
@@ -345,4 +346,11 @@ const EXECUTABLE_BITS = 0o111;
 /** A file mode that lets someone run the file. Windows has no such bit: always false there. */
 export function isExecutableMode(mode: number): boolean {
   return process.platform !== "win32" && (mode & EXECUTABLE_BITS) !== 0;
+}
+
+/** Bytes a file, or everything in a folder, takes; 0 when nothing is there. */
+export function pathSize(path: string): number {
+  const stat = statOrNull(path);
+  if (!stat) return 0;
+  return stat.isDirectory() ? dirSize(path) : stat.size;
 }

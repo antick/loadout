@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, renameSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { APP_SLUG, formatTimestampIso } from "@loadout/shared";
+import { APP_SLUG, formatTimestampIso, MIB } from "@loadout/shared";
 import { errorMessage } from "./errors";
 import { ensureDir, statOrNull } from "./util/fs";
 
@@ -15,7 +15,7 @@ export interface Logger {
 }
 
 export const LOG_FILE_NAME = `${APP_SLUG}.log`;
-const ROTATE_BYTES = 5 * 1024 * 1024;
+const ROTATE_BYTES = 5 * MIB;
 const KEEP_ROTATED = 3;
 /** A long-running process (the app) checks the size again after this many lines. */
 export const ROTATE_CHECK_LINES = 500;

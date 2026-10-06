@@ -6,6 +6,12 @@ import { readSkillDocument, readSkillIdentity, setFrontmatterName } from "./meta
 
 /** `pdf-2`: a folder name the library gave a second, different skill called `pdf`. */
 const NUMBERED = /^(.+)-(\d+)$/;
+const EOL_INSENSITIVE = { ignoreLineEndings: true } as const;
+
+/** `pdf` for `pdf-2`: a numbered library copy is still called by its name upstream. */
+export function baseNameOf(name: string): string {
+  return NUMBERED.exec(name)?.[1] ?? name;
+}
 
 interface NameFix {
   /** The skill document, relative to the skill folder, `/` separated. */
@@ -39,6 +45,19 @@ export function hashAsLibraryCopy(
   const fix = nameFix(sourceDir, dirName);
   if (!fix) return hashDir(sourceDir, options);
   return hashDir(sourceDir, { ...options, overrides: new Map([[fix.filename, fix.content]]) });
+}
+
+/**
+ * `sourceDir`, made into a library copy called `dirName`, holds the same text as the folder at
+ * `libraryPath` once line endings are set aside: a checkout that only flipped them changed nothing.
+ */
+export function sameTextAsLibraryCopy(
+  sourceDir: string,
+  dirName: string,
+  libraryPath: string,
+): boolean {
+  const sourceText = hashAsLibraryCopy(sourceDir, dirName, EOL_INSENSITIVE);
+  return sourceText !== null && sourceText === hashDir(libraryPath, EOL_INSENSITIVE);
 }
 
 /**

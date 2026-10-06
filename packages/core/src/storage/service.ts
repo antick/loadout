@@ -15,7 +15,7 @@ import { logRedeployProblems } from "../deploy/report-log";
 import { AppError, invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
 import type { GitClient } from "../install/git-client";
-import { dirSize, lstatOrNull, removePathSync, statOrNull } from "../util/fs";
+import { lstatOrNull, removePathSync, pathSize } from "../util/fs";
 import type { PublishService } from "../publish/service";
 import { listLogFiles } from "../system/logs";
 import type { RemovedStore } from "./removed";
@@ -52,12 +52,6 @@ export interface StorageService {
 const isClearable = (area: StorageArea): area is ClearableArea =>
   (CLEARABLE_AREAS as readonly string[]).includes(area);
 
-function sizeOf(path: string): number {
-  const stat = statOrNull(path);
-  if (!stat) return 0;
-  return stat.isDirectory() ? dirSize(path) : stat.size;
-}
-
 /** Sizes of everything Loadout keeps, and emptying the parts that are rebuilt on demand. */
 export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps): StorageService {
   const { paths } = ctx;
@@ -78,7 +72,9 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
     const path = areaPaths[area]();
     if (path === null) return null;
     const bytes =
-      area === "database" ? dbFiles().reduce((sum, file) => sum + sizeOf(file), 0) : sizeOf(path);
+      area === "database"
+        ? dbFiles().reduce((sum, file) => sum + pathSize(file), 0)
+        : pathSize(path);
     return { area, path, bytes, exists: existsSync(path), clearable: isClearable(area) };
   }
 
@@ -90,7 +86,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
     let freed = 0;
     const current = ctx.log.filePath;
     for (const path of listLogFiles(paths.logsDir)) {
-      freed += sizeOf(path);
+      freed += pathSize(path);
       if (path === current) truncateSync(path, 0);
       else removePathSync(path);
     }
@@ -120,7 +116,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       } else if (area === "history") {
         // Saves record versions under the lock, so none is written halfway through.
         freed = await ctx.lock.run("clear editor history", async () => {
-          const size = sizeOf(paths.historyDir);
+          const size = pathSize(paths.historyDir);
           removePathSync(paths.historyDir);
           return size;
         });

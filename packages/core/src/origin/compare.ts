@@ -13,7 +13,12 @@ import type { InstalledSnapshot } from "../skills/store";
 
 import { readSkillDocument } from "../skills/metadata";
 
-import { hashAsLibraryCopy, libraryCopyOverrides } from "../skills/numbered-name";
+import {
+  hashAsLibraryCopy,
+  libraryCopyOverrides,
+  baseNameOf,
+  sameTextAsLibraryCopy,
+} from "../skills/numbered-name";
 
 import { diffTrees } from "../updates/diff";
 
@@ -46,9 +51,6 @@ export interface ComparedLead {
   upstream: InstalledSnapshot;
 }
 
-const EOL_INSENSITIVE = { ignoreLineEndings: true } as const;
-const NUMBERED = /^(.+)-\d+$/;
-
 /** A target that always knows which skill to look for. */
 type LocatedTarget = RemoteTarget & { locator: string };
 
@@ -60,7 +62,7 @@ async function targetOf(
 ): Promise<LocatedTarget> {
   const parsed = await resolveGitSource(git, lead.input);
   // A numbered library copy (`pdf-2`) is still called `pdf` upstream.
-  const baseName = NUMBERED.exec(skillName)?.[1] ?? skillName;
+  const baseName = baseNameOf(skillName);
   return {
     kind: "git",
     url: parsed.cloneUrl,
@@ -135,8 +137,7 @@ export async function compareLead(
     const overrides = libraryCopyOverrides(source.dir, skill.dirName);
     const identical =
       hashAsLibraryCopy(source.dir, skill.dirName) === libraryHash ||
-      hashAsLibraryCopy(source.dir, skill.dirName, EOL_INSENSITIVE) ===
-        hashDir(skill.libraryPath, EOL_INSENSITIVE);
+      sameTextAsLibraryCopy(source.dir, skill.dirName, skill.libraryPath);
     const changedFiles = identical
       ? []
       : diffTrees(skill.libraryPath, source.dir, overrides).map((entry) => entry.path);

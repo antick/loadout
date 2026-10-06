@@ -12,6 +12,7 @@ import {
   FILE_MODE,
 } from "../util/fs";
 import { listContentFiles } from "../util/hash";
+import { MAX_UNPACKED_BYTES } from "../install/archive";
 
 /**
  * Pack library skills into one `.zip` (or `.skill`) file: each skill in a folder named after its
@@ -19,7 +20,7 @@ import { listContentFiles } from "../util/hash";
  */
 
 /** Same ceiling the archive installer unpacks, so every export can be installed again. */
-const MAX_EXPORT_BYTES = 512 * 1024 * 1024;
+const MAX_EXPORT_BYTES = MAX_UNPACKED_BYTES;
 const UNIX_HOST = 3;
 const MODE_SHIFT = 16;
 const REGULAR_FILE = 0o100000;

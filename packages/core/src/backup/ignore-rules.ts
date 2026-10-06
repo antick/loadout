@@ -5,12 +5,11 @@ import {
   type BackupIgnoreRules,
 } from "@loadout/shared";
 import { invalid } from "../errors";
-import { writeFileAtomic } from "../util/fs";
+import { writeFileAtomic, GIT_IGNORE_FILE } from "../util/fs";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import { assertRepo } from "./repo";
 import {
   DEFAULT_IGNORE_LINES,
-  IGNORE_FILE,
   customLines,
   ignoreFilePath,
   readIgnoreText,
@@ -62,7 +61,7 @@ async function blockingPattern(env: BackupEnv): Promise<string | null> {
     `${PROBE_SKILL}/skill.md`,
     `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${PROBE_ID}.json`,
     `${env.metadataName}/${PRESET_METADATA_SUBDIR}/${PROBE_ID}.json`,
-    IGNORE_FILE,
+    GIT_IGNORE_FILE,
   ];
   const result = await env.git.probe(["check-ignore", "--no-index", "-v", "-z", "--stdin"], {
     input: probes.map((probe) => `${probe}\0`).join(""),
@@ -72,7 +71,7 @@ async function blockingPattern(env: BackupEnv): Promise<string | null> {
   for (let index = 0; index + 3 < fields.length; index += 4) {
     const pattern = fields[index + 2] ?? "";
     // Only the library's own file; a rule in the user's global git settings is not ours to judge.
-    if (fields[index] !== IGNORE_FILE) continue;
+    if (fields[index] !== GIT_IGNORE_FILE) continue;
     // A path matched by a `!pattern` is kept, not left out.
     if (pattern && !pattern.startsWith(NEGATION)) return pattern;
   }
