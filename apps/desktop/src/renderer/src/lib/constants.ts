@@ -27,6 +27,8 @@ export const STORAGE_KEYS = {
   libraryGroupBySource: "library.group-by-source",
   /** Folded source groups. The stored name says "open" from before; kept so choices survive. */
   libraryGroupsFolded: "library.groups-open",
+  /** Search and filters of the library page, kept while the app runs (sessionStorage). */
+  libraryFilters: "library.filters",
   marketProvider: "install.market-provider",
 } as const;
 

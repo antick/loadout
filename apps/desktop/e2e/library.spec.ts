@@ -181,3 +181,16 @@ test("the sidebar marks the recently changed skill whose panel is open", async (
   await recent.click();
   await expect(recent).toHaveAttribute("data-active", "true");
 });
+
+test("the library keeps its search after a visit to another page", async ({ page }) => {
+  await openApp(page, "/library");
+  const content = main(page);
+  const search = content.getByPlaceholder("Search name, description, tags, notes or source");
+  await search.fill("api-docs");
+  await expect(content.getByRole("heading", { level: 3 })).toHaveText(["api-docs"]);
+
+  await activityBar(page).getByRole("button", { name: "Settings" }).click();
+  await activityBar(page).getByRole("button", { name: "Library" }).click();
+  await expect(search).toHaveValue("api-docs");
+  await expect(content.getByRole("heading", { level: 3 })).toHaveText(["api-docs"]);
+});

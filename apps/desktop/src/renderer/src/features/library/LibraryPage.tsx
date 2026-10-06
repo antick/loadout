@@ -66,7 +66,7 @@ import { useAllTags, useSkills } from "@/hooks/queries/skills";
 import { useSafetyReports } from "@/hooks/queries/safety";
 import { useSkillUsage } from "@/hooks/queries/usage";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { usePersistedState } from "@/hooks/use-persisted-state";
+import { usePersistedState, useSessionState } from "@/hooks/use-persisted-state";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { FILTER_ALL, type LibraryViewMode, STORAGE_KEYS } from "@/lib/constants";
@@ -114,7 +114,8 @@ export function LibraryPage({
     STORAGE_KEYS.libraryGroupBySource,
     false,
   );
-  const [rest, setRest] = useState(EMPTY_FILTERS);
+  // Kept while the app runs, so a trip to the editor or another page comes back to the same list.
+  const [rest, setRest] = useSessionState(STORAGE_KEYS.libraryFilters, EMPTY_FILTERS);
   const [deployAllOpen, setDeployAllOpen] = useState(false);
   const [duplicatesOpen, setDuplicatesOpen] = useState(false);
   const duplicates = useDuplicates();

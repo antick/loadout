@@ -97,6 +97,7 @@ export function createPersistedStore(storage: () => Storage): PersistedStore {
 }
 
 const store = createPersistedStore(() => window.localStorage);
+const sessionStore = createPersistedStore(() => window.sessionStorage);
 let listeningToOtherWindows = false;
 
 function subscribeTo(storageKey: string, listener: Listener): () => void {
@@ -111,6 +112,39 @@ function subscribeTo(storageKey: string, listener: Listener): () => void {
   return store.subscribe(storageKey, listener);
 }
 
+function useStoredState<T>(
+  from: PersistedStore,
+  subscribeWith: (storageKey: string, listener: Listener) => () => void,
+  key: string,
+  fallback: T,
+): [T, (next: T | ((previous: T) => T)) => void] {
+  const storageKey = `${STORAGE_PREFIX}${key}`;
+  const subscribe = useCallback(
+    (listener: Listener) => subscribeWith(storageKey, listener),
+    [subscribeWith, storageKey],
+  );
+  const stored = useSyncExternalStore(subscribe, () => from.read(storageKey));
+  const value = stored === MISSING ? fallback : (stored as T);
+
+  const update = useCallback(
+    (next: T | ((previous: T) => T)) => {
+      // Read at call time, not from this render, so two quick updates both count.
+      const current = from.read(storageKey);
+      const previous = current === MISSING ? fallback : (current as T);
+      const resolved = typeof next === "function" ? (next as (p: T) => T)(previous) : next;
+      from.write(storageKey, resolved);
+    },
+    // `fallback` is often an inline literal; it only matters while nothing is stored.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+    [from, storageKey],
+  );
+
+  return [value, update];
+}
+
+const subscribeToSession = (storageKey: string, listener: Listener): (() => void) =>
+  sessionStore.subscribe(storageKey, listener);
+
 /**
  * `useState` that survives restarts through localStorage. `key` is prefixed automatically. Every
  * component using the same key shares one value.
@@ -119,26 +153,16 @@ export function usePersistedState<T>(
   key: string,
   fallback: T,
 ): [T, (next: T | ((previous: T) => T)) => void] {
-  const storageKey = `${STORAGE_PREFIX}${key}`;
-  const subscribe = useCallback(
-    (listener: Listener) => subscribeTo(storageKey, listener),
-    [storageKey],
-  );
-  const stored = useSyncExternalStore(subscribe, () => store.read(storageKey));
-  const value = stored === MISSING ? fallback : (stored as T);
+  return useStoredState(store, subscribeTo, key, fallback);
+}
 
-  const update = useCallback(
-    (next: T | ((previous: T) => T)) => {
-      // Read at call time, not from this render, so two quick updates both count.
-      const current = store.read(storageKey);
-      const previous = current === MISSING ? fallback : (current as T);
-      const resolved = typeof next === "function" ? (next as (p: T) => T)(previous) : next;
-      store.write(storageKey, resolved);
-    },
-    // `fallback` is often an inline literal; it only matters while nothing is stored.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-    [storageKey],
-  );
-
-  return [value, update];
+/**
+ * Like `usePersistedState`, but only until the app quits (sessionStorage): a page's choices
+ * survive leaving it and coming back, not a restart.
+ */
+export function useSessionState<T>(
+  key: string,
+  fallback: T,
+): [T, (next: T | ((previous: T) => T)) => void] {
+  return useStoredState(sessionStore, subscribeToSession, key, fallback);
 }
