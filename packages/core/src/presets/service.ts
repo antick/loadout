@@ -86,7 +86,7 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
       .available()
       .filter((agent) => agentKeys === undefined || agentKeys.includes(agent.key));
     return preset.skillIds.flatMap((skillId) => {
-      const off = presets.disabledAgents(preset.id, skillId);
+      const off = new Set(preset.switchedOff[skillId] ?? []);
       return agents
         .filter((agent) => !off.has(agent.key))
         .map((agent) => ({ skillId, agentKey: agent.key }));
@@ -169,8 +169,9 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
       edit(`reorder the preset ${presets.get(id).name}`, () => presets.reorderSkills(id, skillIds)),
 
     toggles: async (id, skillId): Promise<PresetAgentToggle[]> => {
-      requireMember(presets.get(id), skillId);
-      const off = presets.disabledAgents(id, skillId);
+      const preset = presets.get(id);
+      requireMember(preset, skillId);
+      const off = new Set(preset.switchedOff[skillId] ?? []);
       return registry.list().map((agent) => ({
         agentKey: agent.key,
         displayName: agent.displayName,

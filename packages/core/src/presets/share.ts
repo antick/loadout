@@ -238,7 +238,7 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
       const built = buildPresetFile(
         preset,
         skills,
-        (skillId) => [...deps.presets.disabledAgents(id, skillId)].sort(),
+        (skillId) => [...(preset.switchedOff[skillId] ?? [])].sort(),
         options.includeFiles !== false,
       );
       writeFileAtomic(path, `${JSON.stringify(built.file, null, 2)}\n`);

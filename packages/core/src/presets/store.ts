@@ -19,6 +19,18 @@ export interface PresetFields {
   icon: string | null;
 }
 
+/** A whole preset as another device or a file describes it, ready to be stored as it is. */
+export interface StoredPreset extends PresetFields {
+  id: string;
+  sortOrder: number;
+  /** Skill ids in display order; only ones in the library. */
+  skillIds: string[];
+  /** Agents switched off, by skill id. */
+  switchedOff: Record<string, string[]>;
+  createdAt: number;
+  updatedAt: number;
+}
+
 const PRESET_ORDER = "ORDER BY sort_order, created_at";
 const SKILL_ORDER = "ORDER BY sort_order, added_at";
 
@@ -109,6 +121,59 @@ export class PresetStore {
     this.#db.run("DELETE FROM presets WHERE id = ?", id);
   }
 
+  /** Delete every preset whose id is not in `keep`. */
+  deleteExcept(keep: ReadonlySet<string>): void {
+    for (const row of this.#db.all<{ id: string }>("SELECT id FROM presets")) {
+      if (!keep.has(row.id)) this.delete(row.id);
+    }
+  }
+
+  /**
+   * Store a preset as given, members and switches included, under its own id. A name another
+   * preset already holds (made separately on two devices) gets a short suffix.
+   */
+  put(preset: StoredPreset): void {
+    const clash = this.#db.get<{ id: string }>(
+      "SELECT id FROM presets WHERE name = ? AND id <> ?",
+      preset.name,
+      preset.id,
+    );
+    const name = clash ? `${preset.name} (${preset.id.slice(0, 4)})` : preset.name;
+    this.#db.run(
+      `INSERT INTO presets(id, name, description, icon, sort_order, created_at, updated_at)
+       VALUES(?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, description = excluded.description,
+         icon = excluded.icon, sort_order = excluded.sort_order, updated_at = excluded.updated_at`,
+      preset.id,
+      name,
+      preset.description,
+      preset.icon,
+      preset.sortOrder,
+      preset.createdAt,
+      preset.updatedAt,
+    );
+    this.#db.run("DELETE FROM preset_skills WHERE preset_id = ?", preset.id);
+    this.#db.run("DELETE FROM preset_skill_agents WHERE preset_id = ?", preset.id);
+    preset.skillIds.forEach((skillId, index) => {
+      this.#db.run(
+        "INSERT OR IGNORE INTO preset_skills(preset_id, skill_id, sort_order, added_at) VALUES(?, ?, ?, ?)",
+        preset.id,
+        skillId,
+        index,
+        preset.updatedAt,
+      );
+      for (const agentKey of preset.switchedOff[skillId] ?? []) {
+        this.#db.run(
+          "INSERT OR REPLACE INTO preset_skill_agents(preset_id, skill_id, agent_key, enabled, updated_at) VALUES(?, ?, ?, 0, ?)",
+          preset.id,
+          skillId,
+          agentKey,
+          preset.updatedAt,
+        );
+      }
+    });
+  }
+
   #touch(id: string): void {
     this.#db.run("UPDATE presets SET updated_at = ? WHERE id = ?", Date.now(), id);
   }
@@ -196,16 +261,6 @@ export class PresetStore {
     const off: Record<string, string[]> = {};
     for (const row of rows) (off[row.skill_id] ??= []).push(row.agent_key);
     return off;
-  }
-
-  /** Agents switched off for one skill of a preset. Everything not listed is on. */
-  disabledAgents(presetId: string, skillId: string): Set<string> {
-    const rows = this.#db.all<{ agent_key: string }>(
-      "SELECT agent_key FROM preset_skill_agents WHERE preset_id = ? AND skill_id = ? AND enabled = 0",
-      presetId,
-      skillId,
-    );
-    return new Set(rows.map((row) => row.agent_key));
   }
 
   setToggle(presetId: string, skillId: string, agentKey: string, enabled: boolean): void {

@@ -21,6 +21,7 @@ import {
   readSuggestFor,
   toPortableSkill,
 } from "./portable-format";
+import { PresetStore } from "../presets/store";
 import type { SkillStore } from "./store";
 
 export {
@@ -94,6 +95,7 @@ export class PortableMetadata {
   readonly #paths: LibraryPaths;
   readonly #db: Database;
   readonly #skills: SkillStore;
+  readonly #presets: PresetStore;
   readonly #log: Logger;
   readonly #appVersion: string;
 
@@ -107,6 +109,7 @@ export class PortableMetadata {
     this.#paths = paths;
     this.#db = db;
     this.#skills = skills;
+    this.#presets = new PresetStore(db);
     this.#log = log;
     this.#appVersion = appVersion;
   }
@@ -171,41 +174,17 @@ export class PortableMetadata {
   }
 
   #readPresets(): PortablePreset[] {
-    const rows = this.#db.all<{
-      id: string;
-      name: string;
-      description: string | null;
-      icon: string | null;
-      sort_order: number;
-      created_at: number;
-      updated_at: number;
-    }>("SELECT * FROM presets ORDER BY sort_order, created_at");
-    return rows.map((row) => {
-      const skills = this.#db
-        .all<{ skill_id: string }>(
-          "SELECT skill_id FROM preset_skills WHERE preset_id = ? ORDER BY sort_order, added_at",
-          row.id,
-        )
-        .map((r) => r.skill_id);
-      const disabledAgents: Record<string, string[]> = {};
-      for (const off of this.#db.all<{ skill_id: string; agent_key: string }>(
-        "SELECT skill_id, agent_key FROM preset_skill_agents WHERE preset_id = ? AND enabled = 0 ORDER BY skill_id, agent_key",
-        row.id,
-      )) {
-        disabledAgents[off.skill_id] = [...(disabledAgents[off.skill_id] ?? []), off.agent_key];
-      }
-      return {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        icon: row.icon,
-        sortOrder: row.sort_order,
-        skills,
-        disabledAgents,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      };
-    });
+    return this.#presets.list().map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      description: preset.description,
+      icon: preset.icon,
+      sortOrder: preset.sortOrder,
+      skills: preset.skillIds,
+      disabledAgents: preset.switchedOff,
+      createdAt: preset.createdAt,
+      updatedAt: preset.updatedAt,
+    }));
   }
 
   /**
@@ -433,56 +412,22 @@ export class PortableMetadata {
   }
 
   #replacePresets(files: PortablePreset[]): void {
-    const keep = new Set(files.map((f) => f.id));
-    for (const row of this.#db.all<{ id: string }>("SELECT id FROM presets")) {
-      if (!keep.has(row.id)) this.#db.run("DELETE FROM presets WHERE id = ?", row.id);
-    }
+    this.#presets.deleteExcept(new Set(files.map((f) => f.id)));
     for (const file of files) this.#upsertPreset(file, true);
   }
 
   #upsertPreset(file: PortablePreset, replaceMembers: boolean): void {
-    const existing = this.#db.get<{ id: string }>("SELECT id FROM presets WHERE id = ?", file.id);
-    if (existing && !replaceMembers) return;
-    // Another preset may already hold this name (created separately on two devices).
-    const clash = this.#db.get<{ id: string }>(
-      "SELECT id FROM presets WHERE name = ? AND id <> ?",
-      file.name,
-      file.id,
-    );
-    const name = clash ? `${file.name} (${file.id.slice(0, 4)})` : file.name;
-    this.#db.run(
-      `INSERT INTO presets(id, name, description, icon, sort_order, created_at, updated_at)
-       VALUES(?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET name = excluded.name, description = excluded.description,
-         icon = excluded.icon, sort_order = excluded.sort_order, updated_at = excluded.updated_at`,
-      file.id,
-      name,
-      file.description,
-      file.icon,
-      file.sortOrder,
-      file.createdAt,
-      file.updatedAt,
-    );
-    this.#db.run("DELETE FROM preset_skills WHERE preset_id = ?", file.id);
-    this.#db.run("DELETE FROM preset_skill_agents WHERE preset_id = ?", file.id);
-    file.skills.forEach((skillId, index) => {
-      if (!this.#skills.find(skillId)) return;
-      this.#db.run(
-        "INSERT OR IGNORE INTO preset_skills(preset_id, skill_id, sort_order, added_at) VALUES(?, ?, ?, ?)",
-        file.id,
-        skillId,
-        index,
-        file.updatedAt,
-      );
-      for (const agentKey of file.disabledAgents[skillId] ?? []) {
-        this.#db.run(
-          "INSERT OR REPLACE INTO preset_skill_agents(preset_id, skill_id, agent_key, enabled, updated_at) VALUES(?, ?, ?, 0, ?)",
-          file.id,
-          skillId,
-          agentKey,
-          file.updatedAt,
-        );
-      }
+    if (!replaceMembers && this.#presets.find(file.id)) return;
+    this.#presets.put({
+      id: file.id,
+      name: file.name,
+      description: file.description,
+      icon: file.icon,
+      sortOrder: file.sortOrder,
+      skillIds: file.skills.filter((skillId) => this.#skills.find(skillId) !== null),
+      switchedOff: file.disabledAgents,
+      createdAt: file.createdAt,
+      updatedAt: file.updatedAt,
     });
   }
 }
