@@ -10,6 +10,7 @@
  */
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { QUIET_SQLITE_WARNING } from "../build.mjs";
 
 const PACKAGE_NAME = "@antick/loadout";
 const BINARY = "loadout";
@@ -46,16 +47,9 @@ const manifest = {
   publishConfig: { access: "public" },
 };
 
-/**
- * Node 22 and 23 call \`node:sqlite\` experimental and say so on every run, before any code of
- * the bundle runs. The launcher drops that one warning, then loads the bundle.
- */
+/** The launcher drops Node's SQLite warning, then loads the bundle. */
 const launcher = `#!/usr/bin/env node
-const emitWarning = process.emitWarning;
-process.emitWarning = (warning, ...rest) =>
-  String(warning).includes("SQLite is an experimental feature")
-    ? undefined
-    : emitWarning.call(process, warning, ...rest);
+${QUIET_SQLITE_WARNING}
 await import("./${BUNDLE_NAME}");
 `;
 

@@ -14,6 +14,19 @@ const ESM_BANNER = [
 ].join("\n");
 
 /**
+ * Node 22 and 23 call `node:sqlite` experimental and say so on every run. This drops that one
+ * warning. It must run before `node:sqlite` loads: first in the CommonJS file a standalone binary
+ * runs, and in the npm package's launcher before it imports the ES module bundle.
+ */
+export const QUIET_SQLITE_WARNING = [
+  "const __emitWarning = process.emitWarning;",
+  "process.emitWarning = (warning, ...rest) =>",
+  '  String(warning).includes("SQLite is an experimental feature")',
+  "    ? undefined",
+  "    : __emitWarning.call(process, warning, ...rest);",
+].join("\n");
+
+/**
  * The one way the CLI is bundled, as the published ES module or as the CommonJS file a standalone
  * binary embeds (`scripts/standalone.mjs`), so the two never drift apart.
  */
@@ -26,7 +39,8 @@ export function bundleOptions(format, outfile) {
     target: NODE_TARGET,
     format,
     outfile,
-    ...(format === "esm" ? { banner: { js: ESM_BANNER } } : {}),
+    // The CommonJS file stays strict: the banner comes before esbuild's own "use strict".
+    banner: { js: format === "esm" ? ESM_BANNER : `"use strict";\n${QUIET_SQLITE_WARNING}` },
     logLevel: "info",
   };
 }
