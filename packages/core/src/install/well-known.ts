@@ -12,7 +12,7 @@ import { AppError, invalid, isAppError, isUnanswered, notFound } from "../errors
 import { isSafeRelativePath, resolveInside } from "../util/safe-path";
 import { sha256Hex } from "../util/hash";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
-import { type Download, WEB_PROTOCOLS, jsonOptions, parseUrl } from "./download";
+import { type Download, WEB_PROTOCOLS, jsonOptions, parseUrl, readJson } from "./download";
 import { type RedirectRule, downloadWatched } from "./redirects";
 
 /**
@@ -180,14 +180,8 @@ async function readWellKnownIndex(
     // Offline, timed out or failing: the other addresses are on the same host.
     return isUnanswered(error) ? "unanswered" : "none";
   }
-  let raw: unknown;
-  try {
-    raw = JSON.parse(fetched.data.toString("utf8"));
-  } catch {
-    return "none";
-  }
   // A skills index that breaks the rules is refused with its reason, not taken for "no index".
-  const entries = parseWellKnownIndex(raw, indexUrl);
+  const entries = parseWellKnownIndex(readJson(fetched.data, indexUrl, true), indexUrl);
   return entries ? { entries, redirectedTo: fetched.redirectedTo } : "none";
 }
 

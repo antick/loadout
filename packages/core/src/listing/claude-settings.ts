@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isRecord } from "@loadout/shared";
+import { readJsonOrNull } from "../util/fs";
 
 /**
  * What Claude Code's own `settings.json` says about its skill listing, read only. Values of the
@@ -26,12 +26,8 @@ function positive(value: unknown): number | null {
 }
 
 export function readListingSettings(configDir: string): ListingSettings {
-  let root: unknown = null;
-  try {
-    root = JSON.parse(readFileSync(join(configDir, SETTINGS_FILE), "utf8"));
-  } catch {
-    // Missing or unreadable: the agent's defaults apply.
-  }
+  // Missing or unreadable: the agent's defaults apply.
+  const root = readJsonOrNull(join(configDir, SETTINGS_FILE));
   const settings = isRecord(root) ? root : {};
   const overrides: Record<string, string> = {};
   if (isRecord(settings.skillOverrides)) {

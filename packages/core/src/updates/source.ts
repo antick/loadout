@@ -35,6 +35,7 @@ import {
 import { openClawhubVersion } from "../install/clawhub-install";
 import { type ClawhubClient, parseClawhubRef } from "../market/clawhub";
 import { isSkillDir, removePath, statOrNull, toPosix } from "../util/fs";
+import { readJson } from "../install/download";
 
 /**
  * Where a library skill's upstream lives and how to open it. Shared by check, update and the
@@ -225,13 +226,7 @@ async function openSiteSource(
   if (!name) throw invalid("This skill does not record its name on the site it came from");
   const rule = updateRule(skill);
   const data = await cachedDownload(download, indexUrl, "The skills index", rule, cache);
-  let raw: unknown;
-  try {
-    raw = JSON.parse(data.toString("utf8"));
-  } catch {
-    throw invalid(`The skills index at ${redactUrl(indexUrl)} could not be read`);
-  }
-  const entries = parseWellKnownIndex(raw, indexUrl);
+  const entries = parseWellKnownIndex(readJson(data, indexUrl), indexUrl);
   if (!entries) throw invalid(`${redactUrl(indexUrl)} is no longer a skills index`);
   const entry = entries.find((candidate) => candidate.name === name);
   if (!entry) throw notFound(`${name} is no longer published at ${new URL(indexUrl).host}`);

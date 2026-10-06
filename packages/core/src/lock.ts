@@ -1,9 +1,9 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { closeSync, openSync, readFileSync, unlinkSync, utimesSync, writeSync } from "node:fs";
+import { closeSync, openSync, unlinkSync, utimesSync, writeSync } from "node:fs";
 import { hostname, uptime } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "./errors";
-import { statOrNull } from "./util/fs";
+import { statOrNull, readJsonOrNull } from "./util/fs";
 import { createSerialQueue } from "./util/queue";
 
 const WAIT_MS = 20_000;
@@ -105,11 +105,7 @@ export class RepoLock {
   }
 
   #readHolder(): LockInfo | null {
-    try {
-      return JSON.parse(readFileSync(this.#path, "utf8")) as LockInfo;
-    } catch {
-      return null;
-    }
+    return readJsonOrNull(this.#path) as LockInfo | null;
   }
 
   /**

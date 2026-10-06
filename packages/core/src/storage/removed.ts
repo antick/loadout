@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import {
   DAY_MS,
@@ -24,6 +24,7 @@ import {
   removePathSync,
   statOrNull,
   writeJsonAtomic,
+  readJsonOrNull,
 } from "../util/fs";
 import { hashDir } from "../util/hash";
 import {
@@ -125,12 +126,8 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
 
   function readMeta(id: string): RemovedMeta | null {
     const dir = join(root(), id);
-    try {
-      const meta: unknown = JSON.parse(readFileSync(join(dir, META_FILE), "utf8"));
-      return isMeta(meta) && meta.id === id && existsSync(join(dir, CONTENT_DIR)) ? meta : null;
-    } catch {
-      return null;
-    }
+    const meta = readJsonOrNull(join(dir, META_FILE));
+    return isMeta(meta) && meta.id === id && existsSync(join(dir, CONTENT_DIR)) ? meta : null;
   }
 
   /** Where the entry goes back to: a library skill returns to the library as it is now. */

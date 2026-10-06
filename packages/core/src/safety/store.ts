@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SafetyReport } from "@loadout/shared";
-import { writeJsonAtomic } from "../util/fs";
+import { writeJsonAtomic, readJsonOrNull } from "../util/fs";
 
 /**
  * The last safety report of each library skill, in the library's cache folder. It is a cache: it
@@ -75,12 +74,8 @@ export class SafetyStore {
   }
 
   #read(): Record<string, StoredReport> {
-    try {
-      const file = JSON.parse(readFileSync(this.#path, "utf8")) as Partial<StoreFile>;
-      return file.version === FORMAT_VERSION && file.skills ? file.skills : {};
-    } catch {
-      return {};
-    }
+    const file = readJsonOrNull(this.#path) as Partial<StoreFile> | null;
+    return file?.version === FORMAT_VERSION && file.skills ? file.skills : {};
   }
 
   #write(skills: Record<string, StoredReport>): void {

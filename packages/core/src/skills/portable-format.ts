@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   SOURCE_TYPES,
@@ -10,7 +9,7 @@ import {
   isRecord,
 } from "@loadout/shared";
 import type { Logger } from "../log";
-import { readDirSafe } from "../util/fs";
+import { readDirSafe, readJsonOrNull } from "../util/fs";
 import { isSafeRelativePath, isSkillFolderName } from "../util/safe-path";
 
 /**
@@ -184,28 +183,21 @@ export function readPortablePreset(value: unknown): PortablePreset | null {
 
 const JSON_SUFFIX = ".json";
 
-/** Every `.json` file in `dir`, parsed; `value` is undefined for one that is not JSON. */
+/** Every `.json` file in `dir`, parsed; `value` is null for one that is not JSON. */
 function readJsonFiles(dir: string): { path: string; value: unknown }[] {
-  const files: { path: string; value: unknown }[] = [];
-  for (const entry of readDirSafe(dir)) {
-    if (!entry.isFile() || !entry.name.endsWith(JSON_SUFFIX)) continue;
-    const path = join(dir, entry.name);
-    let value: unknown;
-    try {
-      value = JSON.parse(readFileSync(path, "utf8"));
-    } catch {
-      // Not JSON: callers treat it as unusable.
-    }
-    files.push({ path, value });
-  }
-  return files;
+  return readDirSafe(dir)
+    .filter((entry) => entry.isFile() && entry.name.endsWith(JSON_SUFFIX))
+    .map((entry) => {
+      const path = join(dir, entry.name);
+      return { path, value: readJsonOrNull(path) };
+    });
 }
 
 /** Every metadata file in `dir` that `read` accepts; the rest are skipped and logged. */
 export function readJsonDir<T>(dir: string, read: (value: unknown) => T | null, log: Logger): T[] {
   const items: T[] = [];
   for (const { path, value } of readJsonFiles(dir)) {
-    const item = value === undefined ? null : read(value);
+    const item = value === null ? null : read(value);
     // A half-merged or hand-edited file is skipped rather than failing the whole rebuild.
     if (item) items.push(item);
     else log.warn(`Skipped unreadable metadata file: ${path}`);

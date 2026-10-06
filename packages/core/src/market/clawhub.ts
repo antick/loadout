@@ -94,11 +94,7 @@ const JSON_OPEN = "{".charCodeAt(0);
 function handoffUrl(data: Buffer): string | null {
   if (isZip(data)) return null;
   if (data.find((byte) => byte > 0x20) !== JSON_OPEN) return null;
-  try {
-    return asText(asObject(JSON.parse(data.toString("utf8"))).archiveUrl) ?? "";
-  } catch {
-    return "";
-  }
+  return asText(asObject(readJson(data, "", true)).archiveUrl) ?? "";
 }
 
 /** `owner/slug` → both parts; refused when either is missing or odd. */

@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import type { SecretStore } from "./context";
 import { AppError } from "./errors";
-import { writeFileAtomic } from "./util/fs";
+import { writeFileAtomic, readJsonOrNull } from "./util/fs";
 
 export interface FileSecretStoreOptions {
   /** Whether a value can be kept right now; `set` refuses when not. Always, by default. */
@@ -27,13 +26,8 @@ export function createFileSecretStore(
   const available = options.available ?? (() => true);
   const encode = options.encode ?? ((value: string) => value);
   const decode = options.decode ?? ((stored: string) => stored);
-  const read = (): Record<string, string> => {
-    try {
-      return JSON.parse(readFileSync(filePath, "utf8")) as Record<string, string>;
-    } catch {
-      return {};
-    }
-  };
+  const read = (): Record<string, string> =>
+    (readJsonOrNull(filePath) as Record<string, string> | null) ?? {};
   const write = (values: Record<string, string>): void =>
     writeFileAtomic(filePath, JSON.stringify(values, null, 2), options.mode);
 
