@@ -59,6 +59,12 @@ let shellEnv: Record<string, string> = {};
 /** When the window's page was last reloaded after its process died. */
 let lastPageReloadAt: number | null = null;
 
+/** Stop watching every folder; a later start makes new watchers. */
+function stopWatchers(): void {
+  for (const watcher of watchers) watcher.stop();
+  watchers = [];
+}
+
 const resourcesDir = app.isPackaged
   ? join(process.resourcesPath, "resources")
   : join(import.meta.dirname, "../../resources");
@@ -170,7 +176,7 @@ async function removeAllData(options: RemoveAllDataOptions): Promise<void> {
   closing.ctx.log.info(`Removing all data; ${plan.undeployed} deployments taken out of agents`);
   core = null;
   quitting = true;
-  for (const watcher of watchers) watcher.stop();
+  stopWatchers();
   tray?.dispose();
   tray = null;
   closing.background.stop();
@@ -196,8 +202,7 @@ function checkLibrary(): boolean {
   if (libraryGone) return false;
   if (!core || core.libraryPresent()) return true;
   libraryGone = true;
-  for (const watcher of watchers) watcher.stop();
-  watchers = [];
+  stopWatchers();
   core.background.stop();
   send("library:missing", { path: core.ctx.paths.baseDir });
   return false;
@@ -436,7 +441,7 @@ if (!app.requestSingleInstanceLock()) {
     const closing = core;
     core = null;
     event.preventDefault();
-    for (const watcher of watchers) watcher.stop();
+    stopWatchers();
     tray?.dispose();
     tray = null;
     if (libraryGone) {
