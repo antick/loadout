@@ -34,9 +34,6 @@ export const MARKET_SEARCH_DEBOUNCE_MS = 350;
 export const MARKET_SKELETON_COUNT = 12;
 export const SCAN_SKELETON_COUNT = 5;
 
-/** Value of the contributor filter that means "no filter". */
-export const SOURCE_FILTER_ALL = "__all__";
-
 /** Shown under the Git URL field; clicking one fills the field. Not translated: they are syntax. */
 export const GIT_URL_EXAMPLES = [
   "owner/repo",

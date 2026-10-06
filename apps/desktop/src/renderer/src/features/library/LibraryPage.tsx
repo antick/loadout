@@ -47,7 +47,6 @@ import { LibraryCard } from "@/features/library/LibraryCard";
 import {
   DEFAULT_SORT_MODE,
   EMPTY_FILTERS,
-  FILTER_ALL,
   filterSkills,
   hasUpdate,
   isFiltering,
@@ -70,7 +69,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
-import { type LibraryViewMode, STORAGE_KEYS } from "@/lib/constants";
+import { FILTER_ALL, type LibraryViewMode, STORAGE_KEYS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 const VIEW_MODE_SCOPE = "library";

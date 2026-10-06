@@ -1,5 +1,5 @@
 import { clawhubSkillUrl, compareNames, MARKETPLACE_URL, type MarketSkill } from "@loadout/shared";
-import { SOURCE_FILTER_ALL } from "@/features/install/constants";
+import { FILTER_ALL } from "@/lib/constants";
 
 export interface SourceOption {
   /** `owner/repo`. */
@@ -17,7 +17,7 @@ export function sourceOptions(skills: readonly MarketSkill[]): SourceOption[] {
 }
 
 export function filterBySource(skills: readonly MarketSkill[], source: string): MarketSkill[] {
-  return source === SOURCE_FILTER_ALL ? [...skills] : skills.filter((s) => s.source === source);
+  return source === FILTER_ALL ? [...skills] : skills.filter((s) => s.source === source);
 }
 
 /** The skill's page on its marketplace's website. */

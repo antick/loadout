@@ -11,9 +11,8 @@ import {
   type SourceType,
   type UpdateStatus,
 } from "@loadout/shared";
+import { FILTER_ALL } from "@/lib/constants";
 import { matchesTagFilter } from "@/lib/tag-filter";
-
-export const FILTER_ALL = "all";
 
 export const SOURCE_FILTERS = [FILTER_ALL, ...SOURCE_TYPES] as const;
 export type SourceFilter = typeof FILTER_ALL | SourceType;

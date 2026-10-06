@@ -39,7 +39,6 @@ import {
   MARKET_SEARCH_LIMIT_STEP,
   MARKET_SEARCH_MIN_CHARS,
   MARKET_SKELETON_COUNT,
-  SOURCE_FILTER_ALL,
 } from "@/features/install/constants";
 import { marketTaskKey, useInstallFromMarket } from "@/features/install/install-mutations";
 import { useMarketBoard, useMarketSearch } from "@/features/install/install-queries";
@@ -51,7 +50,7 @@ import { useOpenExternal } from "@/hooks/mutations/app";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { cn } from "@/lib/utils";
-import { STORAGE_KEYS } from "@/lib/constants";
+import { FILTER_ALL, STORAGE_KEYS } from "@/lib/constants";
 
 const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3";
 const PROVIDER_ICONS: Record<MarketProvider, typeof Store> = { skills_sh: Store, clawhub: Package };
@@ -69,7 +68,7 @@ export function MarketTab(): ReactNode {
   const marketplace = MARKET_PROVIDER_NAMES[provider];
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(MARKET_SEARCH_LIMIT_STEP);
-  const [source, setSource] = useState<string>(SOURCE_FILTER_ALL);
+  const [source, setSource] = useState<string>(FILTER_ALL);
   const [shown, setShown] = useState(MARKET_PAGE_SIZE);
   const [detailFor, setDetailFor] = useState<MarketSkill | null>(null);
   const navigate = useNavigate();
@@ -102,7 +101,7 @@ export function MarketTab(): ReactNode {
 
   const resetView = (): void => {
     setShown(MARKET_PAGE_SIZE);
-    setSource(SOURCE_FILTER_ALL);
+    setSource(FILTER_ALL);
   };
 
   const connectionError =
@@ -182,11 +181,11 @@ export function MarketTab(): ReactNode {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={SOURCE_FILTER_ALL} className="font-sans text-sm">
+            <SelectItem value={FILTER_ALL} className="font-sans text-sm">
               {t(`install.market.allSources.${provider}`)}
             </SelectItem>
             {sources.length > 0 ? <SelectSeparator /> : null}
-            {source !== SOURCE_FILTER_ALL && !sources.some((entry) => entry.source === source) ? (
+            {source !== FILTER_ALL && !sources.some((entry) => entry.source === source) ? (
               <SelectItem value={source} className="font-mono text-xs">
                 {source}
               </SelectItem>
@@ -270,15 +269,15 @@ export function MarketTab(): ReactNode {
           icon={results.length === 0 && !searching ? Store : SearchX}
           title={t("install.market.emptyTitle")}
           description={t(
-            source === SOURCE_FILTER_ALL
+            source === FILTER_ALL
               ? "install.market.emptyDescription"
               : "install.market.emptyFiltered",
           )}
           action={
-            source !== SOURCE_FILTER_ALL
+            source !== FILTER_ALL
               ? {
                   label: t("install.market.clearFilter"),
-                  onClick: () => setSource(SOURCE_FILTER_ALL),
+                  onClick: () => setSource(FILTER_ALL),
                 }
               : searching
                 ? { label: t("common.clearSearch"), onClick: () => setQuery("") }

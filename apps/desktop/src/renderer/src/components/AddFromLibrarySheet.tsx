@@ -45,6 +45,7 @@ import { agentColumnCoverage } from "@/features/library/matrix/matrix-state";
 import { useSelection } from "@/hooks/use-selection";
 import { matchesTagFilter } from "@/lib/tag-filter";
 import { cn } from "@/lib/utils";
+import { FILTER_ALL } from "@/lib/constants";
 
 type AddFromLibraryTarget =
   /** No agents involved (e.g. adding to a preset): the target row is hidden. */
@@ -90,7 +91,6 @@ export interface AddFromLibrarySheetProps {
   featured?: ReadonlyMap<string, string>;
 }
 
-const SOURCE_FILTER_ALL = "all";
 const SKELETON_ROWS = 5;
 const STATE_TONES: Record<Exclude<PickerRowState, "available">, StatusTone> = {
   installed: "success",
@@ -125,7 +125,7 @@ export function AddFromLibrarySheet({
   const agents = useAgents();
   const [query, setQuery] = useState("");
   const [tagFilter, setTagFilter] = useState<string[]>([]);
-  const [source, setSource] = useState<string>(SOURCE_FILTER_ALL);
+  const [source, setSource] = useState<string>(FILTER_ALL);
   const [chipKeys, setChipKeys] = useState<ReadonlySet<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
 
@@ -188,7 +188,7 @@ export function AddFromLibrarySheet({
         ({ skill }) =>
           matchesSkillQuery(skill, query) &&
           matchesTagFilter(skill.tags, tagFilter) &&
-          (source === SOURCE_FILTER_ALL || skill.sourceType === source),
+          (source === FILTER_ALL || skill.sourceType === source),
       ),
     [allRows, query, tagFilter, source],
   );
@@ -212,7 +212,7 @@ export function AddFromLibrarySheet({
     if (!open) return;
     setQuery("");
     setTagFilter([]);
-    setSource(SOURCE_FILTER_ALL);
+    setSource(FILTER_ALL);
     exit();
     setPendingSelect(
       initialSelectedIds && initialSelectedIds.length > 0 ? initialSelectedIds : null,
@@ -280,7 +280,7 @@ export function AddFromLibrarySheet({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={SOURCE_FILTER_ALL}>{t("picker.allSources")}</SelectItem>
+                <SelectItem value={FILTER_ALL}>{t("picker.allSources")}</SelectItem>
                 {SOURCE_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
                     {t(`source.${type}`)}

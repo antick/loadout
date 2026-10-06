@@ -5,6 +5,9 @@ export const STORAGE_PREFIX = `${APP_SLUG}:`;
 /** Local copy of the palette and mode, read before the first paint. */
 export const APPEARANCE_STORAGE_KEY = `${STORAGE_PREFIX}appearance`;
 
+/** The choice in a filter (status, source, contributor) that leaves nothing out. */
+export const FILTER_ALL = "all";
+
 /** Un-prefixed localStorage keys; always go through `usePersistedState`. */
 export const STORAGE_KEYS = {
   sidebarOpen: "sidebar.open",
