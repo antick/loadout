@@ -20,6 +20,8 @@ import { useDuplicates } from "@/features/library/duplicates/duplicate-queries";
 import { DuplicatePairCard } from "@/features/library/duplicates/DuplicatePairCard";
 import { useMergeDuplicate } from "@/features/library/duplicates/use-merge-duplicate";
 import { useSkills } from "@/hooks/queries/skills";
+import { DIALOG_TALL_CLASS } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 export interface DuplicatesDialogProps {
   open: boolean;
@@ -57,7 +59,7 @@ export function DuplicatesDialog({ open, onOpenChange }: DuplicatesDialogProps):
       }}
     >
       <DialogContent
-        className="flex max-h-[85vh] flex-col gap-4 sm:max-w-3xl"
+        className={cn(DIALOG_TALL_CLASS, "flex flex-col gap-4 sm:max-w-3xl")}
         onInteractOutside={(event) => {
           // Undo on the toast of a merge must not close the list it came from.
           if (event.target instanceof Element && event.target.closest("[data-sonner-toast]")) {

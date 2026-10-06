@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { useConflictDiff } from "@/features/backup/backup-queries";
 import { SyncDiffView } from "./SyncDiffView";
+import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 /** A conflicting skill here against the other device's version, before choosing one. */
 export function ConflictDiffDialog({
@@ -33,7 +35,7 @@ export function ConflictDiffDialog({
           </DialogTitle>
           <DialogDescription>{t("backupSync.conflictDiff.description")}</DialogDescription>
         </DialogHeader>
-        <div className="-mx-1 max-h-[60vh] min-w-0 overflow-y-auto px-1">
+        <div className={cn(DIALOG_BODY_SCROLL_CLASS, "-mx-1 min-w-0 px-1")}>
           {conflict ? <SyncDiffView diff={diff} /> : null}
         </div>
         <DialogFooter>

@@ -35,6 +35,7 @@ import { useClawhubAccount } from "@/hooks/queries/publish";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { errorMessage } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
 
 export interface ClawhubPublishDialogProps {
   skill: Skill | null;
@@ -145,7 +146,7 @@ function ClawhubPublishForm({
         <DialogDescription>{t("publish.clawhub.description")}</DialogDescription>
       </DialogHeader>
 
-      <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-0.5 pr-1">
+      <div className={cn(DIALOG_BODY_SCROLL_CLASS, "flex flex-col gap-4 px-0.5 pr-1")}>
         {account.isPending ? (
           <Spinner className="size-4" />
         ) : noToken ? (

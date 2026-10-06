@@ -23,6 +23,8 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Textarea } from "@/components/ui/textarea";
 import { useCopyText, useOpenExternal } from "@/hooks/mutations/app";
 import { useAppInfo } from "@/hooks/queries/app";
+import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 export interface ReportProblemDialogProps {
   /** The skill to report on; null keeps the dialog closed. */
@@ -79,7 +81,7 @@ function ReportProblemForm({ skill }: { skill: Skill }): ReactNode {
         </DialogDescription>
       </DialogHeader>
 
-      <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1">
+      <div className={cn(DIALOG_BODY_SCROLL_CLASS, "flex flex-col gap-4 pr-1")}>
         {draft.target ? (
           <p className="text-sm font-medium" data-selectable>
             {t("feedback.goesTo", { repository: draft.target.repository })}

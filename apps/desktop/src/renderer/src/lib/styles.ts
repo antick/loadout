@@ -15,3 +15,8 @@ export const LOCAL_SKILL_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(1
 export const SOURCE_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(24rem,1fr))] gap-3";
 /** The compact list of switched-off agents: columns only, the list sets its own spacing. */
 export const AGENT_LIST_COLUMNS_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]";
+
+/** The scrolling body of a dialog with a long form or list: the buttons stay in view. */
+export const DIALOG_BODY_SCROLL_CLASS = "max-h-[60vh] overflow-y-auto";
+/** A dialog that is all content (help, duplicates): as tall as the window allows. */
+export const DIALOG_TALL_CLASS = "max-h-[85vh]";

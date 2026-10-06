@@ -28,6 +28,8 @@ import { usePublishDefaults } from "@/features/library/publish/publish-queries";
 import { errorMessage } from "@/lib/toast";
 import { PublishPlanList } from "./PublishPlanList";
 import { PublishResultView } from "./PublishResultView";
+import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 export interface PublishDialogProps {
   open: boolean;
@@ -120,7 +122,7 @@ function PublishForm({
         <DialogDescription>{t("publish.description")}</DialogDescription>
       </DialogHeader>
 
-      <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-0.5 pr-1">
+      <div className={cn(DIALOG_BODY_SCROLL_CLASS, "flex flex-col gap-4 px-0.5 pr-1")}>
         <Field>
           <FieldLabel htmlFor={repoId}>{t("publish.repo")}</FieldLabel>
           <Input

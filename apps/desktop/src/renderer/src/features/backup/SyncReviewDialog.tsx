@@ -25,6 +25,8 @@ import { REVIEW_SEARCH_MIN_ITEMS } from "./constants";
 import { type ReviewLists, filterReview, reviewSize } from "./review-filter";
 import { type DeleteChoice, SyncReviewRow } from "./SyncReviewRow";
 import { setMany } from "@/lib/sets";
+import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 export interface SyncReviewDialogProps {
   /** Null keeps the dialog closed. */
@@ -254,7 +256,7 @@ export function SyncReviewDialog({
             focusHotkey={false}
           />
         ) : null}
-        <div className="-mx-1 max-h-[60vh] min-w-0 overflow-y-auto px-1">
+        <div className={cn(DIALOG_BODY_SCROLL_CLASS, "-mx-1 min-w-0 px-1")}>
           {preview && lists && remoteCommit ? (
             <ReviewBody
               preview={preview}

@@ -24,7 +24,7 @@ import { SafetyNotes } from "@/components/SafetyNotes";
 import { Kbd } from "@/components/ui/kbd";
 import { useAppInfo } from "@/hooks/queries/app";
 import { type ShortcutId, shortcutLabel } from "@/lib/shortcuts";
-import { SECTION_LABEL } from "@/lib/styles";
+import { DIALOG_TALL_CLASS, SECTION_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
 /** Quick-start sections; the text lives under `help.sections.<id>` in the locale file. */
@@ -80,7 +80,7 @@ export function HelpDialog({
   const platform = useAppInfo().data?.platform;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className={cn(DIALOG_TALL_CLASS, "overflow-y-auto sm:max-w-2xl")}>
         <DialogHeader>
           <DialogTitle>{t("help.title")}</DialogTitle>
           <DialogDescription>{t("help.intro")}</DialogDescription>
