@@ -207,12 +207,13 @@ export function createMarketDetail(
     trace: LookupTrace,
   ): Promise<{ path: string; content: string } | null> {
     const candidates = await listed(source, skillId, trace);
-    if (!candidates) {
-      const guesses = usualSkillPaths(skillId).map((dir) => `${dir}/${MAIN_MARKER}`);
-      return firstReadable(source, guesses, null, trace);
+    if (candidates?.sure) return firstReadable(source, [candidates.sure], null, trace);
+    if (candidates && candidates.maybe.length > 0) {
+      return firstReadable(source, candidates.maybe.slice(0, MAX_MAYBE_READS), skillId, trace);
     }
-    if (candidates.sure) return firstReadable(source, [candidates.sure], null, trace);
-    return firstReadable(source, candidates.maybe.slice(0, MAX_MAYBE_READS), skillId, trace);
+    // No listing, or one without the skill (GitHub cuts a big repository's listing short).
+    const guesses = usualSkillPaths(skillId).map((dir) => `${dir}/${MAIN_MARKER}`);
+    return firstReadable(source, guesses, null, trace);
   }
 
   return async (source, skillId) => {

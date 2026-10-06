@@ -362,6 +362,18 @@ describe("marketplace skill detail", () => {
     expect(calls).toEqual([]);
   });
 
+  it("guesses the usual folders when the listing does not hold the skill", async () => {
+    serve({
+      [AUDIT_URL]: () => json(AUDITS),
+      [TREE_URL]: () => json({ tree: [{ type: "blob", path: "README.md" }], truncated: true }),
+      [RAW_URL]: () => html(DOCUMENT),
+    });
+    expect(await detail("acme/skills", "pdf")).toMatchObject({
+      document: DOCUMENT,
+      documentPath: "skills/pdf/SKILL.md",
+    });
+  });
+
   it("keeps only the most recent details", async () => {
     const { fetchImpl } = fakeFetch((url) => {
       if (url.startsWith("https://raw.githubusercontent.com/")) return html(DOCUMENT);
