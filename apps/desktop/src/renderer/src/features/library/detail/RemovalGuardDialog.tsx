@@ -19,6 +19,7 @@ import { useAgentNames } from "@/hooks/queries/agents";
 import { SECTION_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import { REMOVAL_IN_LIBRARY } from "@loadout/shared";
+import { PathList } from "@/components/PathList";
 
 /** `PendingRemoval.location` of files inside the library copy; anything else is an agent key. */
 
@@ -95,14 +96,7 @@ export function RemovalGuardDialog({
                 {t("library.removalGuard.edits")}
                 <span className="tabular-nums opacity-70">{edits.length}</span>
               </h3>
-              <ul
-                data-selectable
-                className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 font-mono text-xs leading-5 break-all"
-              >
-                {edits.map((path) => (
-                  <li key={path}>{path}</li>
-                ))}
-              </ul>
+              <PathList paths={edits} tone="warning" />
             </section>
           ) : null}
           {groups.map(([location, paths]) => {
@@ -118,14 +112,7 @@ export function RemovalGuardDialog({
                   {location === REMOVAL_IN_LIBRARY ? t("library.removalGuard.library") : agentName}
                   <span className="tabular-nums opacity-70">{paths.length}</span>
                 </h3>
-                <ul
-                  data-selectable
-                  className="rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs leading-5 break-all"
-                >
-                  {paths.map((path) => (
-                    <li key={path}>{path}</li>
-                  ))}
-                </ul>
+                <PathList paths={paths} />
               </section>
             );
           })}

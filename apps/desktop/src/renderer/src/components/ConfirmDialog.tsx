@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
+import { PathList } from "@/components/PathList";
 
 export interface ConfirmOptions {
   title: string;
@@ -61,7 +62,6 @@ export function ConfirmProvider({ children }: { children: ReactNode }): ReactNod
   }, []);
 
   const items = options?.items ?? [];
-  const hiddenItems = items.length - MAX_LISTED_ITEMS;
   const value = useMemo(() => confirm, [confirm]);
 
   return (
@@ -76,19 +76,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }): ReactNod
             </AlertDialogDescription>
           </AlertDialogHeader>
           {items.length > 0 ? (
-            <ul
-              data-selectable
-              className="max-h-48 overflow-y-auto rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs leading-5 break-all"
-            >
-              {items.slice(0, MAX_LISTED_ITEMS).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-              {hiddenItems > 0 ? (
-                <li className="font-sans text-muted-foreground">
-                  {t("common.andMore", { count: hiddenItems })}
-                </li>
-              ) : null}
-            </ul>
+            <PathList paths={items} max={MAX_LISTED_ITEMS} className="max-h-48 overflow-y-auto" />
           ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => settle(false)}>

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { PathList } from "@/components/PathList";
 
 export interface LeaveEditorDialogProps {
   open: boolean;
@@ -39,14 +40,7 @@ export function LeaveEditorDialog({
           <AlertDialogTitle>{t("editor.leave.title", { count: paths.length })}</AlertDialogTitle>
           <AlertDialogDescription>{t("editor.leave.description")}</AlertDialogDescription>
         </AlertDialogHeader>
-        <ul
-          data-selectable
-          className="max-h-40 overflow-y-auto rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs leading-5 break-all"
-        >
-          {paths.map((path) => (
-            <li key={path}>{path}</li>
-          ))}
-        </ul>
+        <PathList paths={paths} className="max-h-40 overflow-y-auto" />
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy} onClick={onStay}>
             {t("editor.leave.stay")}
