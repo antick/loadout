@@ -29,6 +29,15 @@ describe("groupLibraryBySource", () => {
     ]);
   });
 
+  it("keeps the list's order inside the ClawHub group, whatever the sources' names", () => {
+    const skills = [
+      skill("two", { sourceType: "clawhub", sourceRef: "@bob/two" }),
+      skill("one", { sourceType: "clawhub", sourceRef: "@ada/one" }),
+    ];
+    const groups = groupLibraryBySource(skills);
+    expect(groups.map((group) => group.skills.map((entry) => entry.id))).toEqual([["two", "one"]]);
+  });
+
   it("has no loose group when every skill has a source", () => {
     const groups = groupLibraryBySource([skill("pdf", { sourceType: "git", sourceUrl: REPO })]);
     expect(groups).toHaveLength(1);

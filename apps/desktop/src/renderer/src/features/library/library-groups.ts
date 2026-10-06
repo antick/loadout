@@ -1,11 +1,4 @@
-import {
-  CLAWHUB_NAME,
-  type Skill,
-  type SkillSource,
-  type SkillSourceIdentity,
-  groupSkillSources,
-  skillSourceOf,
-} from "@loadout/shared";
+import { CLAWHUB_NAME, type Skill, type SkillSourceIdentity, skillSourceOf } from "@loadout/shared";
 
 /** Skills without a shared source (made here, imported from a folder) go under this key. */
 const NO_SOURCE_GROUP = "__none__";
@@ -26,11 +19,11 @@ function compareLabels(a: LibraryGroup, b: LibraryGroup): number {
   });
 }
 
-/** One library group per source, registry sources folded into one. */
-function groupOf(source: SkillSource): LibraryGroup {
-  const identity: SkillSourceIdentity =
-    source.kind === "registry" ? { ...source, key: REGISTRY_GROUP, label: CLAWHUB_NAME } : source;
-  return { key: identity.key, source: identity, skills: [] };
+/** The library group a source belongs to: registry sources fold into one. */
+function groupIdentity(source: SkillSourceIdentity): SkillSourceIdentity {
+  return source.kind === "registry"
+    ? { ...source, key: REGISTRY_GROUP, label: CLAWHUB_NAME }
+    : source;
 }
 
 /**
@@ -38,18 +31,20 @@ function groupOf(source: SkillSource): LibraryGroup {
  * by label, then everything without a source last. Skills keep the order they were given in.
  */
 export function groupLibraryBySource(skills: readonly Skill[]): LibraryGroup[] {
-  const byId = new Map(skills.map((skill) => [skill.id, skill]));
   const groups = new Map<string, LibraryGroup>();
-  for (const source of groupSkillSources(skills)) {
-    const group = groups.get(groupOf(source).key) ?? groupOf(source);
-    for (const skillId of source.skillIds) {
-      const skill = byId.get(skillId);
-      if (skill) group.skills.push(skill);
+  const unsourced: Skill[] = [];
+  for (const skill of skills) {
+    const found = skillSourceOf(skill);
+    if (!found) {
+      unsourced.push(skill);
+      continue;
     }
-    groups.set(group.key, group);
+    const source = groupIdentity(found);
+    const group = groups.get(source.key) ?? { key: source.key, source, skills: [] };
+    group.skills.push(skill);
+    groups.set(source.key, group);
   }
   const sorted = [...groups.values()].sort(compareLabels);
-  const unsourced = skills.filter((skill) => skillSourceOf(skill) === null);
   return unsourced.length > 0
     ? [...sorted, { key: NO_SOURCE_GROUP, source: null, skills: unsourced }]
     : sorted;
