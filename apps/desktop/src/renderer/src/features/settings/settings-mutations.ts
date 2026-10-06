@@ -19,7 +19,7 @@ import { toastError } from "@/lib/toast";
 
 /** Switch an agent on or off; the switch answers at once and flips back if saving fails. */
 export function useSetAgentEnabled(): UseMutationResult<
-  void,
+  { removed: string[] },
   unknown,
   { key: string; enabled: boolean },
   CacheSnapshot

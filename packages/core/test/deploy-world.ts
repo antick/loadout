@@ -27,7 +27,7 @@ export function createDeployWorld(): DeployWorld {
   const registry = new AgentRegistry(world.ctx);
   const removed = createRemovedStore(world.ctx, { store: world.store });
   const deploy = createDeployService(world.ctx, { store: world.store, registry, removed });
-  const agents = createAgentsService(world.ctx, { registry, deploy });
+  const agents = createAgentsService(world.ctx, { registry, deploy, store: world.store });
   return {
     ...world,
     registry,

@@ -26,18 +26,6 @@ async function list({ core, args }: CommandContext): Promise<CommandResult> {
   return { value, text };
 }
 
-/** Skills deployed to each of `keys`, by agent: what disabling them takes away. */
-function deployedTo(core: CommandContext["core"], keys: readonly string[]): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const skill of core.store.list()) {
-    for (const deployment of skill.deployments) {
-      if (!keys.includes(deployment.agentKey)) continue;
-      found.set(deployment.agentKey, [...(found.get(deployment.agentKey) ?? []), skill.name]);
-    }
-  }
-  return found;
-}
-
 function switcher(enabled: boolean) {
   return async ({ core, args }: CommandContext): Promise<CommandResult> => {
     const keys = [...new Set(positionalsFrom(args, 0, "an agent key"))];
@@ -62,10 +50,12 @@ function switcher(enabled: boolean) {
       await apply();
       return { value: { agents }, text: summary };
     }
-    const losing = deployedTo(
-      core,
-      keys.filter((key) => before.get(key)?.enabled),
-    );
+    // What switching each agent off takes away, as core works it out, before anything changes.
+    const losing = new Map<string, string[]>();
+    for (const key of keys) {
+      const { removed } = await core.api.agents.setEnabled(key, false, { dryRun: true });
+      if (removed.length > 0) losing.set(key, removed);
+    }
     const count = [...losing.values()].reduce((sum, names) => sum + names.length, 0);
     if (count > 0) {
       requireYes(

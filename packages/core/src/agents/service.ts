@@ -13,10 +13,12 @@ import {
   relativeDir,
 } from "./registry";
 import { logRedeployProblems } from "../deploy/report-log";
+import type { SkillStore } from "../skills/store";
 
 export interface AgentsServiceDeps {
   registry: AgentRegistry;
   deploy: Pick<DeployService, "removeAllForAgent" | "moveAgentDeployments">;
+  store: Pick<SkillStore, "deploymentsForAgent" | "nameOf">;
 }
 
 export interface AgentsService {
@@ -56,7 +58,14 @@ function defaultProjectDir(key: string): string | null {
 }
 
 export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): AgentsService {
-  const { registry, deploy } = deps;
+  const { registry, deploy, store } = deps;
+
+  /** Names of the skills deployed to an agent: what switching it off takes away. */
+  const deployedNames = (key: string): string[] =>
+    store
+      .deploymentsForAgent(key)
+      .map((row) => store.nameOf(row.skillId) ?? row.skillId)
+      .sort((a, b) => a.localeCompare(b));
   const { settings } = ctx;
 
   const changed = (): void => ctx.touched("agents", "skills");
@@ -93,8 +102,11 @@ export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): 
   const api: AgentsApi = {
     list: async () => registry.list().map((agent) => registry.toInfo(agent)),
 
-    setEnabled: async (key, enabled) => {
-      registry.get(key);
+    setEnabled: async (key, enabled, options = {}) => {
+      const agent = registry.get(key);
+      // Already off, nothing is deployed there to take away.
+      const removed = !enabled && agent.enabled ? deployedNames(key) : [];
+      if (options.dryRun) return { removed };
       const disabled = registry.disabledKeys();
       if (enabled) {
         disabled.delete(key);
@@ -104,6 +116,7 @@ export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): 
       }
       saveDisabled(disabled);
       changed();
+      return { removed };
     },
 
     setAllEnabled: async (enabled) => {

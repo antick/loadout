@@ -88,7 +88,16 @@ describe("agents service", () => {
     const handmade = join(world.home, ".claude", "skills", "handmade", "SKILL.md");
     writeFile(handmade, "not ours");
 
-    await world.agents.api.setEnabled("claude_code", false);
+    // A dry run names what would go and changes nothing.
+    expect(await world.agents.api.setEnabled("claude_code", false, { dryRun: true })).toEqual({
+      removed: ["alpha"],
+    });
+    expect(existsSync(join(world.home, ".claude", "skills", "alpha"))).toBe(true);
+    expect((await info("claude_code")).enabled).toBe(true);
+
+    expect(await world.agents.api.setEnabled("claude_code", false)).toEqual({
+      removed: ["alpha"],
+    });
     expect(existsSync(join(world.home, ".claude", "skills", "alpha"))).toBe(false);
     expect(readFileSync(handmade, "utf8")).toBe("not ours");
     expect((await info("claude_code")).enabled).toBe(false);

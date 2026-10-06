@@ -82,7 +82,15 @@ import type { SettingKey, SettingValue, Settings } from "./settings";
 
 export interface AgentsApi {
   list(): Promise<AgentInfo[]>;
-  setEnabled(key: string, enabled: boolean): Promise<void>;
+  /**
+   * Switch an agent on or off. Off takes every skill Loadout deployed there out of its folder:
+   * `removed` names them. A dry run changes nothing and names what it would take out.
+   */
+  setEnabled(
+    key: string,
+    enabled: boolean,
+    options?: { dryRun?: boolean },
+  ): Promise<{ removed: string[] }>;
   setAllEnabled(enabled: boolean): Promise<void>;
   setOrder(keys: string[]): Promise<void>;
   addCustom(input: CustomAgentInput): Promise<AgentInfo>;

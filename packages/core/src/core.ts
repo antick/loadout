@@ -133,7 +133,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
   const deploy = createDeployService(ctx, { store, registry, removed });
   const staleCopies = createStaleCopyRefresher(ctx, deploy);
   const repair = createDeployRepair(ctx, { store, registry, deploy });
-  const agents = createAgentsService(ctx, { registry, deploy });
+  const agents = createAgentsService(ctx, { registry, deploy, store });
   const history = createFileHistory(ctx.paths.historyDir, ctx.log);
   const safety = createSafetyService(ctx, {
     store,
