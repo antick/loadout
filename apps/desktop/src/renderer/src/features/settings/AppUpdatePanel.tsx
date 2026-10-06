@@ -1,4 +1,10 @@
-import { type AppUpdateStatus, formatBytes, formatRelative, isNewerVersion } from "@loadout/shared";
+import {
+  type AppUpdateStatus,
+  formatBytes,
+  formatRelative,
+  isDevelopmentBuild,
+  isNewerVersion,
+} from "@loadout/shared";
 import { Download, ExternalLink, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -67,10 +73,7 @@ export function AppUpdatePanel(): ReactNode {
     status?.phase === "downloading" ||
     status?.phase === "installing";
   const blockerShown =
-    status?.blocker &&
-    (status.blocker === "not_configured" ||
-      status.blocker === "development" ||
-      status.phase === "available");
+    status?.blocker && (isDevelopmentBuild(status.blocker) || status.phase === "available");
   const progress = status?.progress;
 
   return (

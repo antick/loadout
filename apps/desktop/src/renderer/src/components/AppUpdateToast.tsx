@@ -1,4 +1,4 @@
-import type { AppUpdateStatus } from "@loadout/shared";
+import { type AppUpdateStatus, isDevelopmentBuild } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,9 +6,6 @@ import { toast } from "sonner";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useDownloadAppUpdate, useInstallAppUpdate } from "@/hooks/mutations/app-update";
 import { useAppUpdate } from "@/hooks/queries/app";
-
-/** Blockers that mean "this is a development build": nothing to tell the user. */
-const QUIET_BLOCKERS = new Set(["not_configured", "development"]);
 
 /**
  * Tells the user about app updates the main process found: once when a version is available,
@@ -50,7 +47,7 @@ export function AppUpdateToast(): ReactNode {
         });
       }
     }
-    if (status.blocker && QUIET_BLOCKERS.has(status.blocker)) return;
+    if (isDevelopmentBuild(status.blocker)) return;
 
     if (status.phase === "available" && once(`available-${version}`)) {
       toast.info(t("appUpdate.available", { version }), {

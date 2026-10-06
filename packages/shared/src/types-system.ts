@@ -178,6 +178,11 @@ export type AppUpdateBlocker =
   /** The release has no build for this system. */
   | "no_build";
 
+/** A development build: nothing about updates is worth telling its user. */
+export function isDevelopmentBuild(blocker: AppUpdateBlocker | null | undefined): boolean {
+  return blocker === "not_configured" || blocker === "development";
+}
+
 export interface AppUpdateStatus {
   phase: AppUpdatePhase;
   currentVersion: string;
