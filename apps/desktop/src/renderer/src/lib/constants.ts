@@ -95,6 +95,8 @@ export const TOAST_MAX_LINES = 4;
 export const AGENT_BADGE_MAX_VISIBLE = 6;
 /** Tags shown on a skill card before "+N". */
 export const SKILL_CARD_MAX_TAGS = 3;
+/** Tags shown in a skill's detail panel before "+N": it has room for more. */
+export const SKILL_DETAIL_MAX_TAGS = 8;
 /** Tags shown on a skill row, where they share the line with the name. */
 export const SKILL_ROW_MAX_TAGS = 2;
 export const DIFF_CONTEXT_LINES = 3;

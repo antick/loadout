@@ -23,6 +23,7 @@ import { DuplicatesNotice } from "./DuplicatesNotice";
 import type { LocalSkillView } from "./local-skill-view";
 import { LocalSkillMeta } from "./LocalSkillMeta";
 import { SECTION_LABEL } from "@/lib/styles";
+import { SKILL_DETAIL_MAX_TAGS } from "@/lib/constants";
 
 export interface LocalSkillDetailSheetProps {
   /** The entry to show; null closes the sheet. */
@@ -90,7 +91,7 @@ export function LocalSkillDetailSheet({
               </SheetDescription>
               <LocalSkillMeta item={item} badges={badges} />
               {path ? <PathText path={path} /> : null}
-              <SkillTags tags={item.tags} max={8} />
+              <SkillTags tags={item.tags} max={SKILL_DETAIL_MAX_TAGS} />
               {actions ? (
                 <div className="flex flex-wrap items-center gap-2 pt-1">{actions}</div>
               ) : null}
