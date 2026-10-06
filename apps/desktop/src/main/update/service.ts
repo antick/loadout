@@ -337,6 +337,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       startWindowsInstaller({
         pid: process.pid,
         installer: ready.path,
+        logFile,
         waitSeconds: UPDATE_EXIT_WAIT_SECONDS,
       });
     } else {

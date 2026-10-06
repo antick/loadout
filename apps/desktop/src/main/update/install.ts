@@ -47,12 +47,18 @@ fi
 
 /**
  * Waits for the app to exit, then runs the installer silently. `--updated` tells the installer this
- * is an update and `--force-run` starts the app once it is done. Paths arrive through the
- * environment, so nothing needs quoting.
+ * is an update and `--force-run` starts the app once it is done. Like the swap script, it installs
+ * nothing while the app still runs, and notes each step in the update log. Paths arrive through
+ * the environment, so nothing needs quoting.
  */
-const WINDOWS_INSTALL_SCRIPT = [
+export const WINDOWS_INSTALL_SCRIPT = [
   "$ErrorActionPreference = 'SilentlyContinue'",
-  "Wait-Process -Id ([int]$env:LOADOUT_UPDATE_PID) -Timeout ([int]$env:LOADOUT_UPDATE_WAIT)",
+  "$appPid = [int]$env:LOADOUT_UPDATE_PID",
+  "function Note($text) { Add-Content -LiteralPath $env:LOADOUT_UPDATE_LOG -Value ((Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + ' update: ' + $text) }",
+  'Note "waiting for the app ($appPid) to exit"',
+  "Wait-Process -Id $appPid -Timeout ([int]$env:LOADOUT_UPDATE_WAIT)",
+  "if (Get-Process -Id $appPid) { Note 'the app did not exit; nothing was installed'; exit 1 }",
+  "Note 'starting the installer'",
   "Start-Process -FilePath $env:LOADOUT_UPDATE_INSTALLER -ArgumentList '--updated','/S','--force-run'",
 ].join("; ");
 
@@ -132,6 +138,7 @@ export function startSwap(job: SwapJob): void {
 export interface InstallerJob {
   pid: number;
   installer: string;
+  logFile: string;
   waitSeconds: number;
 }
 
@@ -157,6 +164,7 @@ export function startWindowsInstaller(job: InstallerJob): void {
         ...process.env,
         LOADOUT_UPDATE_PID: String(job.pid),
         LOADOUT_UPDATE_INSTALLER: job.installer,
+        LOADOUT_UPDATE_LOG: job.logFile,
         LOADOUT_UPDATE_WAIT: String(job.waitSeconds),
       },
     },

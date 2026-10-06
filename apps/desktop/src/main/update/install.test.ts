@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { SWAP_SCRIPT } from "./install";
+import { SWAP_SCRIPT, WINDOWS_INSTALL_SCRIPT } from "./install";
 
 let root: string;
 
@@ -65,5 +65,39 @@ describe.skipIf(process.platform === "win32")("swap script", () => {
     expect(readFileSync(target, "utf8")).toBe("old");
     expect(readFileSync(staged, "utf8")).toBe("new");
     expect(execFileSync("cat", [join(root, "update.log")]).toString()).toContain("did not exit");
+  });
+});
+
+/** Runs the Windows script as the app does, with a waiting time of `waitSeconds`. */
+function installOnWindows(pid: number, installer: string, waitSeconds: number): number {
+  const result = spawnSync(
+    "powershell.exe",
+    ["-NoProfile", "-NonInteractive", "-Command", WINDOWS_INSTALL_SCRIPT],
+    {
+      env: {
+        ...process.env,
+        LOADOUT_UPDATE_PID: String(pid),
+        LOADOUT_UPDATE_INSTALLER: installer,
+        LOADOUT_UPDATE_LOG: join(root, "update.log"),
+        LOADOUT_UPDATE_WAIT: String(waitSeconds),
+      },
+    },
+  );
+  return result.status ?? -1;
+}
+
+describe.runIf(process.platform === "win32")("Windows install script", () => {
+  it("starts nothing while the app still runs, and says so in the log", () => {
+    const installer = join(root, "Loadout-Setup.exe");
+    expect(installOnWindows(process.pid, installer, 1)).toBe(1);
+    const log = readFileSync(join(root, "update.log"), "utf8");
+    expect(log).toContain("did not exit");
+    expect(log).not.toContain("starting the installer");
+  });
+
+  it("starts the installer once the app has exited", () => {
+    const installer = join(root, "Loadout-Setup.exe");
+    installOnWindows(exitedPid(), installer, 5);
+    expect(readFileSync(join(root, "update.log"), "utf8")).toContain("starting the installer");
   });
 });
