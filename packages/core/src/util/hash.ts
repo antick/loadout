@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
 import { GIT_DIR, lstatOrNull, readDirSafe, toPosix, isExecutableMode } from "./fs";
+import { compareText } from "./text";
 
 const GIT_IGNORE_FILE = ".gitignore";
 /** Entries that never count as skill content: not hashed, not diffed, not reported as removed. */
@@ -112,7 +113,7 @@ export function listContentFiles(
     }
   };
   walk(root, "");
-  return files.sort((a, b) => (a.relativePath < b.relativePath ? -1 : 1));
+  return files.sort((a, b) => compareText(a.relativePath, b.relativePath));
 }
 
 function frame(hash: ReturnType<typeof createHash>, bytes: Buffer | string): void {

@@ -154,10 +154,19 @@ export const MAX_SKILL_FILE_BYTES = 2 * MIB;
 export const SKILL_FILE = SKILL_MARKER_FILES[0];
 
 /** HTTP status codes the clients branch on. */
+export const HTTP_OK = 200;
+export const HTTP_CREATED = 201;
+/** The last status that still means success. */
+export const HTTP_OK_MAX = 299;
 export const HTTP_UNAUTHORIZED = 401;
 export const HTTP_FORBIDDEN = 403;
 export const HTTP_NOT_FOUND = 404;
+export const HTTP_NOT_ACCEPTABLE = 406;
 export const HTTP_CONFLICT = 409;
+export const HTTP_TOO_MANY_REQUESTS = 429;
+export const HTTP_BAD_GATEWAY = 502;
+export const HTTP_UNAVAILABLE = 503;
+export const HTTP_GATEWAY_TIMEOUT = 504;
 /** How long one web API call (GitHub, ClawHub, skills.sh) may take. */
 export const API_TIMEOUT_MS = 15 * SECOND_MS;
 

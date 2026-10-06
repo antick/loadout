@@ -7,6 +7,7 @@ import type { AppError } from "../errors";
 import { lstatOrNull, readDirSafe, isExecutableMode } from "../util/fs";
 import { isIgnoredContentName } from "../util/hash";
 import { isLeftOut } from "../util/left-out";
+import { compareText } from "../util/text";
 
 /**
  * The files of a skill folder that go into a published copy. What never leaves this computer
@@ -64,7 +65,7 @@ export function collectFiles(root: string): CollectedFiles {
     }
   };
   walk(root, "");
-  files.sort((a, b) => (a.relativePath < b.relativePath ? -1 : 1));
+  files.sort((a, b) => compareText(a.relativePath, b.relativePath));
   return { files, leftOut, tooLarge };
 }
 

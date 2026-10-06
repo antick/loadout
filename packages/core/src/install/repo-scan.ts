@@ -14,6 +14,7 @@ import {
   toPosix,
 } from "../util/fs";
 import { isReallyInside } from "../util/safe-path";
+import { compareText } from "../util/text";
 
 /** A skill folder found under a scan root. */
 export interface FoundSkill {
@@ -89,7 +90,7 @@ export function findSkillDirs(root: string, options: FindOptions = {}): string[]
   };
 
   walk(root, 0);
-  return found.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return found.sort(compareText);
 }
 
 /** True when a path runs through one agent's own folder, such as `.claude/skills/pdf`. */

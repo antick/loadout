@@ -13,6 +13,9 @@ import {
   clawhubMarketId,
   clawhubSkillUrl,
   formatTimestampIso,
+  HTTP_OK,
+  HTTP_OK_MAX,
+  HTTP_TOO_MANY_REQUESTS,
 } from "@loadout/shared";
 import { AppError, invalid, notFound } from "../errors";
 import { isZip } from "../install/archive";
@@ -76,17 +79,14 @@ export interface ClawhubClient {
   ): Promise<{ status: "published" | "pending" }>;
 }
 
-const HTTP_OK_MIN = 200;
-const HTTP_OK_MAX = 299;
-const HTTP_TOO_MANY = 429;
 /** Statuses the registry explains in its own answer; the rest are mapped like any download. */
 const READ_STATUSES: ReadonlySet<number> = new Set([
   HTTP_UNAUTHORIZED,
   HTTP_NOT_FOUND,
   HTTP_CONFLICT,
-  HTTP_TOO_MANY,
+  HTTP_TOO_MANY_REQUESTS,
 ]);
-const isOk = (status: number): boolean => status >= HTTP_OK_MIN && status <= HTTP_OK_MAX;
+const isOk = (status: number): boolean => status >= HTTP_OK && status <= HTTP_OK_MAX;
 
 const JSON_OPEN = "{".charCodeAt(0);
 
@@ -175,7 +175,7 @@ export function createClawhubClient(request: HttpRequest): ClawhubClient {
     const body = asObject(readJson(data, CLAWHUB_NAME, !isOk(status)));
     if (status === HTTP_UNAUTHORIZED) throw invalid(`${CLAWHUB_NAME} refused the token`);
     if (status === HTTP_NOT_FOUND) throw notFound(asText(body.message) ?? `Not on ${CLAWHUB_NAME}`);
-    if (status === HTTP_TOO_MANY) {
+    if (status === HTTP_TOO_MANY_REQUESTS) {
       throw new AppError("NETWORK", `${CLAWHUB_NAME} is rate limiting requests; try again later`);
     }
     return { status, body };
@@ -320,7 +320,7 @@ export function createClawhubClient(request: HttpRequest): ClawhubClient {
       if (status === HTTP_UNAUTHORIZED || status === HTTP_FORBIDDEN) {
         throw invalid(`${CLAWHUB_NAME} refused the token, or it may not publish under that handle`);
       }
-      if (status === HTTP_TOO_MANY) {
+      if (status === HTTP_TOO_MANY_REQUESTS) {
         throw new AppError(
           "NETWORK",
           `${CLAWHUB_NAME} is rate limiting publishes; try again later`,

@@ -14,6 +14,8 @@ import {
   HTTP_UNAUTHORIZED,
   REPO_NAME_PATTERN,
   isRecord,
+  HTTP_CREATED,
+  HTTP_OK,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, invalid, isUnanswered, notFound } from "../errors";
@@ -44,9 +46,6 @@ const CLIENT_ID_ENV = `${APP_SLUG.toUpperCase()}_GITHUB_CLIENT_ID`;
 const REPO_DESCRIPTION = `${APP_NAME} backup`;
 const DEFAULT_EXPIRES_SECONDS = 900;
 const DEFAULT_INTERVAL_SECONDS = 5;
-
-const STATUS_OK = 200;
-const STATUS_CREATED = 201;
 
 export interface GithubDeps {
   /** Core's one HTTP client. */
@@ -163,7 +162,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
     if (typeof size === "number" && size > 0) return true;
     // `size` lags behind pushes, so ask for a commit. An empty repository answers 409.
     const commits = await request(`${API_BASE}/repos/${fullName}/commits?per_page=1`, { token });
-    return commits.status === STATUS_OK && Array.isArray(commits.body.items)
+    return commits.status === HTTP_OK && Array.isArray(commits.body.items)
       ? commits.body.items.length > 0
       : false;
   }
@@ -193,7 +192,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
       throw tokenInvalid();
     }
     const login = user.body.login;
-    if (user.status !== STATUS_OK || typeof login !== "string") {
+    if (user.status !== HTTP_OK || typeof login !== "string") {
       throw unexpected("identify the account", user.status);
     }
 
@@ -208,13 +207,13 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
       if (repo.status === HTTP_FORBIDDEN || repo.status === HTTP_NOT_FOUND) {
         throw scopeMissing();
       }
-      if (repo.status !== STATUS_CREATED) throw unexpected("create the repository", repo.status);
+      if (repo.status !== HTTP_CREATED) throw unexpected("create the repository", repo.status);
       repoCreated = true;
     } else if (repo.status === HTTP_UNAUTHORIZED) {
       throw tokenInvalid();
     } else if (repo.status === HTTP_FORBIDDEN) {
       throw scopeMissing();
-    } else if (repo.status !== STATUS_OK) {
+    } else if (repo.status !== HTTP_OK) {
       throw unexpected("open the repository", repo.status);
     }
 
@@ -286,7 +285,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
       });
       const { device_code, user_code, verification_uri, expires_in, interval } = reply.body;
       if (
-        reply.status !== STATUS_OK ||
+        reply.status !== HTTP_OK ||
         typeof device_code !== "string" ||
         typeof user_code !== "string" ||
         typeof verification_uri !== "string"

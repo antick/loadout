@@ -9,6 +9,11 @@ import {
   SECOND_MS,
   formatBytes,
   redactUrl,
+  HTTP_BAD_GATEWAY,
+  HTTP_GATEWAY_TIMEOUT,
+  HTTP_NOT_ACCEPTABLE,
+  HTTP_TOO_MANY_REQUESTS,
+  HTTP_UNAVAILABLE,
 } from "@loadout/shared";
 
 import { AppError, cancelled, errorMessage, invalid, notFound } from "../errors";
@@ -69,7 +74,13 @@ const HIDDEN_STATUSES: ReadonlySet<number> = new Set([
 ]);
 const DEFAULT_SUBJECT = "The file";
 /** Answers that often mean "busy, ask again": GitLab sends 406 while it builds an archive. */
-const RETRY_STATUSES: ReadonlySet<number> = new Set([406, 429, 502, 503, 504]);
+const RETRY_STATUSES: ReadonlySet<number> = new Set([
+  HTTP_NOT_ACCEPTABLE,
+  HTTP_TOO_MANY_REQUESTS,
+  HTTP_BAD_GATEWAY,
+  HTTP_UNAVAILABLE,
+  HTTP_GATEWAY_TIMEOUT,
+]);
 const RETRY_DELAY_MS = 2 * SECOND_MS;
 /** Hops followed when redirects are followed by hand; browsers stop at about the same. */
 const MAX_REDIRECTS = 10;
