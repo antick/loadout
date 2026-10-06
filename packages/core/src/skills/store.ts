@@ -162,6 +162,16 @@ export class SkillStore {
     return skill;
   }
 
+  /** How many skills there are, and how many have an update waiting, in one query. */
+  counts(): { total: number; updatesAvailable: number } {
+    const row = this.#db.get<{ total: number; updates: number | null }>(
+      `SELECT COUNT(*) AS total,
+         SUM(CASE WHEN update_status = 'update_available' THEN 1 ELSE 0 END) AS updates
+       FROM skills`,
+    );
+    return { total: row?.total ?? 0, updatesAvailable: row?.updates ?? 0 };
+  }
+
   /** One skill's content hash, without reading the rest of it; null for an unknown id. */
   contentHashOf(id: string): string | null {
     return (

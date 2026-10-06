@@ -1,12 +1,14 @@
 import { Equal } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { computeLineDiff, type DiffLineKind } from "@/lib/diff";
+import { type LineDiff, computeLineDiff, type DiffLineKind } from "@/lib/diff";
 import { cn } from "@/lib/utils";
 
 export interface DiffViewProps {
   before: string;
   after: string;
+  /** The diff of the two, when the caller worked it out already. */
+  diff?: LineDiff;
   className?: string;
 }
 
@@ -35,9 +37,9 @@ export function DiffStat({ added, removed }: { added: number; removed: number })
 }
 
 /** Unified line diff of two texts: hunks with context, both line numbers and +/- gutters. */
-export function DiffView({ before, after, className }: DiffViewProps): ReactNode {
+export function DiffView({ before, after, diff: given, className }: DiffViewProps): ReactNode {
   const { t } = useTranslation();
-  const diff = useMemo(() => computeLineDiff(before, after), [before, after]);
+  const diff = useMemo(() => given ?? computeLineDiff(before, after), [given, before, after]);
 
   if (diff.hunks.length === 0) {
     return (

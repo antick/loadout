@@ -95,6 +95,8 @@ export interface AgentsApi {
 
 export interface SkillsApi {
   list(): Promise<Skill[]>;
+  /** How many skills the library holds, and how many have an update; without reading them. */
+  counts(): Promise<{ total: number; updatesAvailable: number }>;
   get(skillId: string): Promise<Skill>;
   /** Write a new skill into the library from a name and description. ALREADY_EXISTS when taken. */
   create(input: CreateSkillInput): Promise<Skill>;

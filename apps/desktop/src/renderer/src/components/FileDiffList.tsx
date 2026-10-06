@@ -47,7 +47,12 @@ function FileDiffItem({
       </CollapsibleTrigger>
       <CollapsibleContent className="border-t p-2">
         {entry.kind === "text" ? (
-          <DiffView before={entry.before ?? ""} after={entry.after ?? ""} className="border-0" />
+          <DiffView
+            before={entry.before ?? ""}
+            after={entry.after ?? ""}
+            diff={stat ?? undefined}
+            className="border-0"
+          />
         ) : (
           <p className="px-1 py-2 text-sm text-muted-foreground">{summaries[entry.kind]}</p>
         )}

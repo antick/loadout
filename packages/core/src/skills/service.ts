@@ -75,6 +75,7 @@ export function createSkillsService(ctx: CoreContext, deps: SkillsServiceDeps): 
 
   const api: SkillsApi = {
     list: async () => store.list(),
+    counts: async () => store.counts(),
 
     get: async (skillId) => store.get(skillId),
 

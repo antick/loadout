@@ -39,17 +39,17 @@ const PRESET_INCOMPLETE = {
 } as const;
 
 async function loadState(api: CoreApi, checkingUpdates: boolean): Promise<TrayState> {
-  const [skills, agents, presets, status] = await Promise.all([
-    api.skills.list(),
+  const [counts, agents, presets, status] = await Promise.all([
+    api.skills.counts(),
     api.agents.list(),
     api.presets.list(),
     api.presets.deployStatus(),
   ]);
   const progress = new Map(status.map((entry) => [entry.presetId, entry]));
   return {
-    skillCount: skills.length,
+    skillCount: counts.total,
     agentCount: agents.filter((agent) => agent.installed && agent.enabled).length,
-    updateCount: skills.filter((skill) => skill.updateStatus === "update_available").length,
+    updateCount: counts.updatesAvailable,
     presets: presets.map((preset) => ({
       id: preset.id,
       name: preset.name,
