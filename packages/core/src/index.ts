@@ -16,7 +16,6 @@ export { type Core, type CoreCreateOptions, createCore } from "./core";
 export { type Logger, silentLogger } from "./log";
 export { isLibraryDir, pointLibraryAt, resolveLibrary } from "./paths";
 export type { ResolvedAgent } from "./agents/registry";
-export { LIBRARY_LOCATION, isRemoteSource } from "./updates";
 export { diffTrees } from "./updates/diff";
 export { checkHealth } from "./health/doctor";
 export { type DeploymentState, deploymentState } from "./deploy/state";

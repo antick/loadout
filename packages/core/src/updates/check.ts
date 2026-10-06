@@ -4,6 +4,7 @@ import {
   type Skill,
   UPDATE_CHECK_FRESH_MS,
   type UpdateStatus,
+  isRemoteSource,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
@@ -19,7 +20,6 @@ import {
   type DownloadCache,
   type RemoteTarget,
   SOURCE_PATH_GONE,
-  isRemoteSource,
   openLocalSource,
   remoteKey,
   remoteTargetOf,

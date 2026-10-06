@@ -49,7 +49,6 @@ const WORKSPACE_REVISION = "workspace";
 /** Revision label of an archive link: whatever the link serves right now. */
 const LINK_REVISION = "latest";
 
-const REMOTE_TYPES: ReadonlySet<SourceType> = new Set(["git", "marketplace", "clawhub"]);
 const SOURCE_LABELS: Record<SourceType, string> = {
   marketplace: MARKETPLACE_NAME,
   clawhub: CLAWHUB_NAME,
@@ -58,10 +57,6 @@ const SOURCE_LABELS: Record<SourceType, string> = {
   import: "Imported",
   url: "Link",
 };
-
-export function isRemoteSource(skill: Pick<Skill, "sourceType">): boolean {
-  return REMOTE_TYPES.has(skill.sourceType);
-}
 
 export function sourceLabel(skill: Pick<Skill, "sourceType">): string {
   return SOURCE_LABELS[skill.sourceType];

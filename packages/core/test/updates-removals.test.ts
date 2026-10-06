@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { LIBRARY_LOCATION } from "../src/updates";
+
 import { makeSkill, writeFile, rejection } from "./helpers";
 import { commitAll, leftoverCheckouts } from "./install-fixtures";
 import {
@@ -11,6 +11,7 @@ import {
   dropNotesUpstream,
   pdfInRemote,
 } from "./updates-world";
+import { REMOVAL_IN_LIBRARY } from "@loadout/shared";
 
 let world: UpdatesWorld;
 
@@ -32,7 +33,7 @@ describe("removal guard", () => {
     expect(asked.pendingRemovals).toEqual([
       { location: "claude_code", path: "notes/", kind: "removed" },
       { location: "claude_code", path: "scratch.txt", kind: "removed" },
-      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
+      { location: REMOVAL_IN_LIBRARY, path: "notes/", kind: "removed" },
     ]);
     expect(asked.approval).toMatch(/^[0-9a-f]{64}$/);
     // Nothing moved: files, hash and installed revision are as before.
@@ -158,7 +159,7 @@ describe("removal guard", () => {
     dropNotesUpstream(world);
     const asked = await world.updates.api.update(pdf.id);
     expect(asked.pendingRemovals).toEqual([
-      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
+      { location: REMOVAL_IN_LIBRARY, path: "notes/", kind: "removed" },
     ]);
 
     changePdfUpstream(world, "echo pdf v3\n");

@@ -6,6 +6,8 @@ import {
   type Skill,
   type SourceCheckResult,
   type UpdateResult,
+  hasTrackedSource,
+  isRemoteSource,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { isAppError } from "../errors";
@@ -13,7 +15,7 @@ import { INTERNAL_KEYS } from "../settings/store";
 import { pause } from "../util/async";
 import { type KnownRevision, checkedSince } from "../sources";
 import type { LockMode } from "./locking";
-import { isRemoteSource } from "./source";
+
 import type { UpdateOptions } from "./update";
 
 /**
@@ -52,11 +54,6 @@ export interface AutoUpdater {
 type Visit = "updated" | "available" | "failed" | "none";
 
 const BACKGROUND = { lockMode: "try" } as const;
-
-/** Skills with nothing upstream to look at are left out of a round. */
-function isTracked(skill: Skill): boolean {
-  return isRemoteSource(skill) || Boolean(skill.sourceRef);
-}
 
 export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): AutoUpdater {
   let timer: NodeJS.Timeout | null = null;
@@ -122,7 +119,7 @@ export function createAutoUpdater(ctx: CoreContext, target: AutoUpdateTarget): A
     } catch (error) {
       ctx.log.warn("Automatic update check failed", error);
     }
-    for (const skill of target.skills().filter(isTracked)) {
+    for (const skill of target.skills().filter(hasTrackedSource)) {
       // Stopped half way: leave the last-run time alone so the next launch finishes the job.
       if (abortRound) return summary;
       const outcome = await visit(skill, apply, known);

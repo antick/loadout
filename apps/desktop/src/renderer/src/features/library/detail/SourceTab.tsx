@@ -5,6 +5,7 @@ import {
   formatRelative,
   type Skill,
   formatRevision,
+  isRemoteSource,
 } from "@loadout/shared";
 import {
   ArrowUpCircle,
@@ -33,7 +34,7 @@ import { FindSourceSection } from "@/features/origin/FindSourceSection";
 import { useOpenExternal, usePickFolder } from "@/hooks/mutations/app";
 import { installPhaseText } from "@/features/install/install-tasks";
 import { looksAbsolute } from "@/lib/paths";
-import { hasSource, isRemoteSource } from "@/lib/skill-source";
+import { hasSource } from "@/lib/skill-source";
 
 function Row({ label, children }: { label: string; children: ReactNode }): ReactNode {
   return (

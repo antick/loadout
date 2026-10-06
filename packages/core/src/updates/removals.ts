@@ -13,8 +13,6 @@ import { isSafeRelativePath } from "../util/safe-path";
  * two trees it is asked to compare.
  */
 
-/** `location` of removals inside the library copy; any other location is an agent key. */
-export const LIBRARY_LOCATION = "library";
 const DIR_SUFFIX = "/";
 const SEPARATOR = "\0";
 

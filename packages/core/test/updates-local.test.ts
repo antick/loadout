@@ -1,9 +1,9 @@
 import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MARKETPLACE_NAME, type Skill } from "@loadout/shared";
+import { MARKETPLACE_NAME, type Skill, REMOVAL_IN_LIBRARY } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates/diff";
-import { LIBRARY_LOCATION } from "../src/updates/removals";
+
 import { hashDir } from "../src/util/hash";
 import { makeSkill, writeFile, rejection } from "./helpers";
 import { commitAll, installArchive, leftoverCheckouts, writeZip } from "./install-fixtures";
@@ -109,8 +109,8 @@ describe("edits made outside the app", () => {
 
     const asked = await world.updates.api.reimport(skill.id);
     expect(asked.pendingRemovals).toEqual([
-      { location: LIBRARY_LOCATION, path: "extra.md", kind: "edited" },
-      { location: LIBRARY_LOCATION, path: "scripts/run.sh", kind: "edited" },
+      { location: REMOVAL_IN_LIBRARY, path: "extra.md", kind: "edited" },
+      { location: REMOVAL_IN_LIBRARY, path: "scripts/run.sh", kind: "edited" },
     ]);
     expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe(
       "echo edited by hand\n",
@@ -154,7 +154,7 @@ describe("reimport, relink, detach", () => {
 
     const asked = await world.updates.api.reimport(skill.id);
     expect(asked.pendingRemovals).toEqual([
-      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
+      { location: REMOVAL_IN_LIBRARY, path: "notes/", kind: "removed" },
     ]);
     expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo one\n");
     // A declined re-import leaves the row exactly as it was.
@@ -205,7 +205,7 @@ describe("reimport, relink, detach", () => {
 
     const asked = await world.updates.api.relink(skill.id, moved);
     expect(asked.pendingRemovals).toEqual([
-      { location: LIBRARY_LOCATION, path: "notes/", kind: "removed" },
+      { location: REMOVAL_IN_LIBRARY, path: "notes/", kind: "removed" },
     ]);
     expect(world.store.get(skill.id).sourceRef).toBe(sourceDir);
     // The token belongs to that folder: it approves nothing for a plain re-import.

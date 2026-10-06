@@ -1,4 +1,10 @@
-import { hasSkillErrors, type Skill, type SkillCopy, type SkillIssue } from "@loadout/shared";
+import {
+  hasSkillErrors,
+  type Skill,
+  type SkillCopy,
+  type SkillIssue,
+  hasTrackedSource,
+} from "@loadout/shared";
 import { Copy, FilePlus, FileWarning, GitBranch, History, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +13,7 @@ import { SkillIssueList } from "@/components/SkillIssueList";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { hasTrackedSource, sourceLabelOf } from "@/lib/skill-source";
+import { sourceLabelOf } from "@/lib/skill-source";
 
 export interface EditorNoticesProps {
   /** Set when a library skill is edited. */

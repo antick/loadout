@@ -1,11 +1,5 @@
-import { redactUrl, formatRevision } from "@loadout/shared";
-import {
-  type Core,
-  LIBRARY_LOCATION,
-  errorMessage,
-  isRemoteSource,
-  unsupported,
-} from "@loadout/core";
+import { REMOVAL_IN_LIBRARY, formatRevision, isRemoteSource, redactUrl } from "@loadout/shared";
+import { type Core, errorMessage, unsupported } from "@loadout/core";
 import type { BatchFailure, FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
 
 import { failureLines, plural } from "../output";
@@ -51,7 +45,7 @@ const pathsWith = (entries: readonly FileDiffEntry[], status: FileDiffEntry["sta
 
 /** A file the update would delete or replace; one in an agent's copy names the agent. */
 const heldBackPath = (removal: PendingRemoval): string =>
-  removal.location === LIBRARY_LOCATION ? removal.path : `${removal.location}: ${removal.path}`;
+  removal.location === REMOVAL_IN_LIBRARY ? removal.path : `${removal.location}: ${removal.path}`;
 
 /**
  * Compare one skill with its source, the way the Compare tab does. Both the comparison and what

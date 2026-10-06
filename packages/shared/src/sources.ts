@@ -1,4 +1,4 @@
-import type { BatchFailure, Skill } from "./types";
+import type { BatchFailure, Skill, SourceType } from "./types";
 import { redactUrl } from "./secrets";
 import { isArchivePath } from "./constants";
 import { lastPathSegment } from "./skill-match";
@@ -10,6 +10,25 @@ import { lastPathSegment } from "./skill-match";
  */
 
 export type SkillSourceKind = "repository" | "archive" | "link" | "registry";
+
+/** Sources on the network: checked and updated by fetching, not by reading a local path. */
+const REMOTE_SOURCE_TYPES: ReadonlySet<SourceType> = new Set(["git", "marketplace", "clawhub"]);
+
+/** The skill came from a Git repository or a marketplace. */
+export function isRemoteSource(skill: Pick<Skill, "sourceType">): boolean {
+  return REMOTE_SOURCE_TYPES.has(skill.sourceType);
+}
+
+/**
+ * The skill has an upstream it can be updated from: a Git repository, a marketplace, or the
+ * folder, archive or link it was imported from. Edits to such a skill can be replaced by an update.
+ */
+export function hasTrackedSource(skill: Pick<Skill, "sourceType" | "sourceRef">): boolean {
+  return isRemoteSource(skill) || Boolean(skill.sourceRef);
+}
+
+/** `PendingRemoval.location` of a file in the library copy (the rest name an agent). */
+export const REMOVAL_IN_LIBRARY = "library";
 
 export interface SkillSource {
   /** Stable identity: the repository (and branch), the archive path or the link. */

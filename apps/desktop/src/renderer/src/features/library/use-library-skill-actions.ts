@@ -1,3 +1,4 @@
+import { hasTrackedSource } from "@loadout/shared";
 import type { Skill } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -26,7 +27,6 @@ import { useDeleteSkills } from "@/hooks/mutations/library";
 import { useOpenInEditor } from "@/hooks/mutations/app";
 import { useSetFavorite } from "@/hooks/mutations/skills";
 import { useDefaultEditor } from "@/hooks/use-default-editor";
-import { hasTrackedSource } from "@/lib/skill-source";
 import { editLink } from "@/lib/skill-location";
 
 export interface LibrarySkillActionsOptions {

@@ -18,9 +18,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAgentNames } from "@/hooks/queries/agents";
 import { SECTION_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
+import { REMOVAL_IN_LIBRARY } from "@loadout/shared";
 
 /** `PendingRemoval.location` of files inside the library copy; anything else is an agent key. */
-const LIBRARY_LOCATION = "library";
 
 export interface RemovalGuardDialogProps {
   skillName: string;
@@ -41,7 +41,7 @@ function groupByLocation(removals: readonly PendingRemoval[]): [string, string[]
   }
   // The library first, then agents in the order the backend listed them.
   return [...groups.entries()].sort(
-    ([a], [b]) => Number(b === LIBRARY_LOCATION) - Number(a === LIBRARY_LOCATION),
+    ([a], [b]) => Number(b === REMOVAL_IN_LIBRARY) - Number(a === REMOVAL_IN_LIBRARY),
   );
 }
 
@@ -110,12 +110,12 @@ export function RemovalGuardDialog({
             return (
               <section key={location} className="flex flex-col gap-1.5">
                 <h3 className={cn(SECTION_LABEL, "flex items-center gap-2")}>
-                  {location === LIBRARY_LOCATION ? (
+                  {location === REMOVAL_IN_LIBRARY ? (
                     <Library className="size-3.5" />
                   ) : (
                     <AgentAvatar agentKey={location} name={agentName} size="sm" />
                   )}
-                  {location === LIBRARY_LOCATION ? t("library.removalGuard.library") : agentName}
+                  {location === REMOVAL_IN_LIBRARY ? t("library.removalGuard.library") : agentName}
                   <span className="tabular-nums opacity-70">{paths.length}</span>
                 </h3>
                 <ul

@@ -6,6 +6,8 @@ import {
   type UpdateManyOptions,
   type UpdateResult,
   updateProgressKey,
+  REMOVAL_IN_LIBRARY,
+  isRemoteSource,
 } from "@loadout/shared";
 
 import type { CoreContext } from "../context";
@@ -44,11 +46,10 @@ import { assessReplacement } from "./pending";
 
 import { diffWithSource } from "./preview";
 
-import { LIBRARY_LOCATION, approvalToken, isApproved } from "./removals";
+import { approvalToken, isApproved } from "./removals";
 
 import {
   type OpenedSource,
-  isRemoteSource,
   openLocalSource,
   openRemoteSource,
   remoteKey,
@@ -246,7 +247,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       const record = plan.record(fresh);
       // The user agreed to lose edits: their version still waits in Recently removed.
       const replacesEdits = removals.some(
-        (removal) => removal.location === LIBRARY_LOCATION && removal.kind === "edited",
+        (removal) => removal.location === REMOVAL_IN_LIBRARY && removal.kind === "edited",
       );
       const kept =
         changedDir && replacesEdits

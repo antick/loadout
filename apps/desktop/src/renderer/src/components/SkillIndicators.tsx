@@ -1,3 +1,4 @@
+import { hasTrackedSource } from "@loadout/shared";
 import type { Skill } from "@loadout/shared";
 import { FileWarning, PencilLine, StickyNote, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
@@ -10,7 +11,6 @@ import { UpdateStatusBadge } from "@/components/UpdateStatusBadge";
 import { SafetyVerdictBadge } from "@/features/safety/SafetyReportView";
 import { useSafetyReports } from "@/hooks/queries/safety";
 import { editLink } from "@/lib/skill-location";
-import { hasTrackedSource } from "@/lib/skill-source";
 
 /**
  * Attention badges of a library skill: update state, a SKILL.md that breaks the format (a link to

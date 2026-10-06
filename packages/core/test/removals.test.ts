@@ -2,14 +2,9 @@ import { mkdirSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import type { PendingRemoval } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  LIBRARY_LOCATION,
-  approvalToken,
-  isApproved,
-  listRemovedPaths,
-  sortRemovals,
-} from "../src/updates/removals";
+import { approvalToken, isApproved, listRemovedPaths, sortRemovals } from "../src/updates/removals";
 import { tempDir, writeFile } from "./helpers";
+import { REMOVAL_IN_LIBRARY } from "@loadout/shared";
 
 let root: string;
 let current: string;
@@ -93,15 +88,15 @@ describe("listRemovedPaths", () => {
 describe("approval token", () => {
   const removals: PendingRemoval[] = [
     { location: "claude_code", path: "docs/", kind: "removed" },
-    { location: LIBRARY_LOCATION, path: "scripts/gone.sh", kind: "removed" },
-    { location: LIBRARY_LOCATION, path: "docs/", kind: "removed" },
+    { location: REMOVAL_IN_LIBRARY, path: "scripts/gone.sh", kind: "removed" },
+    { location: REMOVAL_IN_LIBRARY, path: "docs/", kind: "removed" },
   ];
 
   it("sorts by location, then path", () => {
     expect(sortRemovals(removals)).toEqual([
       { location: "claude_code", path: "docs/", kind: "removed" },
-      { location: LIBRARY_LOCATION, path: "docs/", kind: "removed" },
-      { location: LIBRARY_LOCATION, path: "scripts/gone.sh", kind: "removed" },
+      { location: REMOVAL_IN_LIBRARY, path: "docs/", kind: "removed" },
+      { location: REMOVAL_IN_LIBRARY, path: "scripts/gone.sh", kind: "removed" },
     ]);
   });
 

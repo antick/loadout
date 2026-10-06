@@ -13,13 +13,13 @@ import type { SkillStore } from "../skills/store";
 import { diffTrees } from "./diff";
 import {
   type OpenedSource,
-  isRemoteSource,
   openLocalSource,
   openRemoteSource,
   remoteTargetOf,
   resolveRemoteRevision,
   sourceLabel,
 } from "./source";
+import { isRemoteSource } from "@loadout/shared";
 
 export interface SourcePreviewDeps {
   store: SkillStore;

@@ -4,6 +4,7 @@ import {
   formatRelative,
   type Skill,
   type SkillFileEntry,
+  hasTrackedSource,
 } from "@loadout/shared";
 import { type LinkProps, useNavigate } from "@tanstack/react-router";
 import { FileX } from "lucide-react";
@@ -49,7 +50,6 @@ import { api } from "@/lib/api";
 import { DEFAULT_EDITOR_VIEW, EDITOR_VIEWS, type EditorView, STORAGE_KEYS } from "@/lib/constants";
 import { ALT_SHORTCUT_KEYS, SHORTCUT_KEYS } from "@/lib/shortcuts";
 import { locationKey } from "@/lib/skill-location";
-import { hasTrackedSource } from "@/lib/skill-source";
 import { toastError } from "@/lib/toast";
 
 export interface EditorWorkspaceProps {

@@ -5,7 +5,8 @@ import type { SkillStore } from "../skills/store";
 import { lstatOrNull, targetIdentity } from "../util/fs";
 import { fileDigests } from "../util/hash";
 import { compareText } from "../util/text";
-import { LIBRARY_LOCATION, listRemovedPaths, listReplacedEdits, sortRemovals } from "./removals";
+import { listRemovedPaths, listReplacedEdits, sortRemovals } from "./removals";
+import { REMOVAL_IN_LIBRARY } from "@loadout/shared";
 
 /**
  * Files in the library that differ from what the skill held when it last came from its source:
@@ -35,9 +36,10 @@ function pendingRemovals(
     const edited = [...fresh.editedFiles, ...changedSinceInstall(store, fresh)];
     const edits = listReplacedEdits(fresh.libraryPath, sourceDir, edited);
     const editSet = new Set(edits);
-    for (const path of edits) removals.push({ location: LIBRARY_LOCATION, path, kind: "edited" });
+    for (const path of edits) removals.push({ location: REMOVAL_IN_LIBRARY, path, kind: "edited" });
     for (const path of listRemovedPaths(fresh.libraryPath, sourceDir)) {
-      if (!editSet.has(path)) removals.push({ location: LIBRARY_LOCATION, path, kind: "removed" });
+      if (!editSet.has(path))
+        removals.push({ location: REMOVAL_IN_LIBRARY, path, kind: "removed" });
     }
   }
   const rebuiltFrom = sourceDir ?? fresh.libraryPath;

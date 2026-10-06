@@ -223,7 +223,7 @@ export interface SourceDocument {
  * caller approves the list.
  */
 export interface PendingRemoval {
-  /** "library" or the agent key whose deployed copy holds the file. */
+  /** `REMOVAL_IN_LIBRARY` or the agent key whose deployed copy holds the file. */
   location: string;
   path: string;
   /** `edited`: a file changed in the app that the new version replaces. */
