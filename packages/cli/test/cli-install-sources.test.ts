@@ -72,3 +72,21 @@ describe("skills install: every Git spelling the app takes", () => {
     expect(pdf).toMatchObject({ name: "pdf", sourceType: "git" });
   });
 });
+
+describe("skills install owner/repo@skill --dry-run", () => {
+  it("fetches the repository, so a skill it does not hold is refused like the real run", async () => {
+    const plan = await box.cli("skills", "install", "acme/skills@pdf", "--dry-run", "--json");
+    expect(plan.code).toBe(0);
+    expect(plan.json()).toMatchObject({
+      dryRun: true,
+      source: "acme/skills/pdf",
+      skills: [{ name: "pdf", outcome: { kind: "new" } }],
+    });
+
+    const missing = await box.cli("skills", "install", "acme/skills@nope", "--dry-run");
+    const real = await box.cli("skills", "install", "acme/skills@nope");
+    expect(missing.code).not.toBe(0);
+    expect(missing.code).toBe(real.code);
+    expect((await box.cli("skills", "list", "--json")).json()).toEqual([]);
+  });
+});

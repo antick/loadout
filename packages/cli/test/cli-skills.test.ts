@@ -149,6 +149,24 @@ describe.skipIf(process.platform === "win32")("skills scan and the safety check"
         },
       });
 
+      // The dry run runs the same check and refuses the same way.
+      const dry = await sandbox.cli("skills", "install", evil, "--dry-run");
+      expect(dry.code).toBe(EXIT_FAILED);
+      expect(dry.stderr).toContain("Error (UNSAFE)");
+      const accepted = await sandbox.cli(
+        "skills",
+        "install",
+        evil,
+        "--dry-run",
+        "--accept-risk",
+        "--json",
+      );
+      expect(accepted.code).toBe(EXIT_OK);
+      expect(accepted.json()).toMatchObject({
+        dryRun: true,
+        skills: [{ name: "evil", safety: { verdict: "unsafe" } }],
+      });
+
       expect((await sandbox.cli("skills", "install", evil, "--accept-risk")).code).toBe(EXIT_OK);
       const scan = await sandbox.cli("skills", "scan", "--all", "--force");
       expect(scan.code).toBe(EXIT_FAILED);

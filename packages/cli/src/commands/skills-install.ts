@@ -1,6 +1,12 @@
 import { isArchivePath, skillMatchesName } from "@loadout/shared";
-import { cancelled, notFound, parseSkillsCommand } from "@loadout/core";
-import type { GitPreview, InstallSelection, RepoSkillPreview, Skill } from "@loadout/shared";
+import { cancelled, notFound, parseSkillsCommand, requireSkillFolder } from "@loadout/core";
+import type {
+  GitPreview,
+  InstallSelection,
+  RepoSkillPreview,
+  SafetyReport,
+  Skill,
+} from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
 import {
@@ -179,12 +185,40 @@ async function chooseItems(
   return chosen.map((skill) => ({ relPath: skill.relPath, name: name ?? skill.name, replace }));
 }
 
-/** What a preview would install, without installing it; the preview is always thrown away. */
+/**
+ * The real install refuses a download that moved to another site unless the user accepted it;
+ * its dry run refuses it the same way.
+ */
+function requireRedirectAccepted(context: CommandContext, preview: GitPreview): boolean {
+  const acceptRedirect = flagBoolean(context.args, INSTALL_YES_FLAG.name);
+  if (preview.redirectedTo && !acceptRedirect) {
+    throw new UsageError(
+      `The download moved to ${preview.redirectedTo}, another site than the link names. Add --yes to install from it anyway.`,
+    );
+  }
+  return acceptRedirect;
+}
+
+/**
+ * What a preview would install, without installing it: the chosen skills go through the same
+ * redirect and safety checks as the real install. The preview is always thrown away.
+ */
 async function planFromPreview(context: CommandContext, preview: GitPreview): Promise<InstallPlan> {
+  const { core, args } = context;
   try {
-    return planPreview(preview, await chooseItems(context, preview));
+    const items = await chooseItems(context, preview);
+    requireRedirectAccepted(context, preview);
+    const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
+    const safety = new Map<string, SafetyReport | null>();
+    for (const item of items) {
+      const read = await core.api.install.readPreviewSkill(preview.previewId, item.relPath, {
+        acceptRisk,
+      });
+      safety.set(item.relPath, read.safety);
+    }
+    return planPreview(preview, items, safety);
   } finally {
-    await context.core.api.install.cancelPreview(preview.previewId).catch(() => undefined);
+    await core.api.install.cancelPreview(preview.previewId).catch(() => undefined);
   }
 }
 
@@ -196,12 +230,7 @@ async function installFromPreview(
   const { core, args } = context;
   try {
     const items = await chooseItems(context, preview);
-    const acceptRedirect = flagBoolean(args, INSTALL_YES_FLAG.name);
-    if (preview.redirectedTo && !acceptRedirect) {
-      throw new UsageError(
-        `The download moved to ${preview.redirectedTo}, another site than the link names. Add --yes to install from it anyway.`,
-      );
-    }
+    const acceptRedirect = requireRedirectAccepted(context, preview);
     const skills = await core.api.install.confirmGit(preview.previewId, items, {
       acceptRedirect,
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
@@ -258,19 +287,56 @@ function checkFlags(args: CommandContext["args"], source: InstallSource): void {
   }
 }
 
-/** `--dry-run`: fetch and list what would be added, under which names; install nothing. */
+/**
+ * `--dry-run`: fetch and safety-check what would be added, list it under the names it would get,
+ * and install nothing. It refuses what the real install refuses.
+ */
 async function plan(context: CommandContext, source: InstallSource): Promise<InstallPlan> {
   const { core, args, cwd } = context;
+  const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
   if (source.kind === "clawhub") {
-    return planMarket(core, source.owner, source.slug, "clawhub");
+    const read = await core.api.install.readClawhubSkill(source.owner, source.slug, {
+      acceptRisk,
+    });
+    const { owner: from, slug: skillId } = source;
+    return planMarket(core, { source: from, skillId, sourceType: "clawhub", safety: read.safety });
   }
-  if (source.kind === "market") return planMarket(core, source.source, source.skillId);
+  if (source.kind === "market") return planMarketSkill(context, source.source, source.skillId);
   if (source.kind === "git") {
     return planFromPreview(context, await core.api.install.previewGit(source.url));
   }
   const path = resolveUserPath(source.path, cwd, core.ctx.homeDir);
-  if (!isArchivePath(path)) return planFolder(core, path, flagString(args, NAME_FLAG.name));
-  return planFromPreview(context, await core.api.install.previewArchive(path));
+  if (isArchivePath(path)) {
+    return planFromPreview(context, await core.api.install.previewArchive(path));
+  }
+  const read = await core.api.install.readFolderSkill(requireSkillFolder(path), { acceptRisk });
+  return planFolder(core, path, flagString(args, NAME_FLAG.name), read.safety);
+}
+
+/** `owner/repo@skill`: the repository is fetched and the skill found and checked in it. */
+async function planMarketSkill(
+  context: CommandContext,
+  source: string,
+  skillId: string,
+): Promise<InstallPlan> {
+  const { core, args } = context;
+  const preview = await core.api.install.previewGit(source);
+  try {
+    const [row] = selectSkills(preview.skills, [skillId], false, preview.kind);
+    if (!row) throw notFound(`No skill called "${skillId}" in that ${preview.kind}.`);
+    const read = await core.api.install.readPreviewSkill(preview.previewId, row.relPath, {
+      acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
+    });
+    return planMarket(core, {
+      source,
+      skillId,
+      sourceType: "marketplace",
+      safety: read.safety,
+      row,
+    });
+  } finally {
+    await core.api.install.cancelPreview(preview.previewId).catch(() => undefined);
+  }
 }
 
 async function run(context: CommandContext): Promise<CommandResult> {
@@ -334,7 +400,8 @@ export const installCommand: CommandSpec = {
   notes: [
     "In a terminal, a source with several skills opens a picker to tick them; --skill or --all",
     "skip it, and scripts or --json never see it.",
-    "--dry-run fetches the source and lists what would be added and under which names.",
+    "--dry-run fetches and safety-checks the source and lists what would be added and under",
+    "which names; it refuses what the real install refuses.",
     "Sources: ./folder, ./archive.zip (.skill, .tar, .tar.gz, .tgz), a git URL, owner/repo,",
     "owner/repo#branch, owner/repo/path/in/repo, github:owner/repo, a pasted",
     "`npx skills add …` command, @owner/slug for a ClawHub skill,",

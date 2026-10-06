@@ -1,6 +1,6 @@
 import { isArchivePath } from "@loadout/shared";
 import { notFound } from "@loadout/core";
-import type { GitPreview, PreviewedSkill, RepoSkillPreview, SafetyReport } from "@loadout/shared";
+import type { GitPreview, PreviewedSkill, RepoSkillPreview } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString } from "../args";
 import { plural } from "../output";
 import { classifySource, selectSkills } from "./skills-install";
@@ -11,6 +11,7 @@ import {
   positional,
   resolveUserPath,
 } from "./support";
+import { safetySummary } from "./skills-install-plan";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 /**
@@ -75,13 +76,6 @@ async function readFromPreview(
   }
 }
 
-/** One line for stderr when the check found anything; stdout stays the document alone. */
-function safetyNotice(name: string, report: SafetyReport | null): string | undefined {
-  if (!report || report.verdict === "safe") return undefined;
-  const found = report.findings.length;
-  return `Safety check on ${name}: ${report.recommendation}, risk ${report.score}/100, ${plural(found, "finding")}. Run with --json to read them.`;
-}
-
 async function run(context: CommandContext): Promise<CommandResult> {
   const { core, args, cwd } = context;
   limitPositionals(args, 1);
@@ -114,7 +108,8 @@ async function run(context: CommandContext): Promise<CommandResult> {
   return {
     value: { source: input, ...read },
     text,
-    notice: safetyNotice(read.name, read.safety),
+    // One line for stderr when the check found anything; stdout stays the document alone.
+    notice: safetySummary(read.name, read.safety),
   };
 }
 

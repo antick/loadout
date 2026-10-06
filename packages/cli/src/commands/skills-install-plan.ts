@@ -9,6 +9,8 @@ import {
   type GitPreview,
   type InstallOutcome,
   type InstallSelection,
+  type RepoSkillPreview,
+  type SafetyReport,
   type Skill,
   type SkillTrait,
   type SkillTraitCode,
@@ -26,6 +28,8 @@ export interface InstallPlanRow {
   manualOnly: boolean;
   /** What installing it puts in reach of an agent: scripts, hooks, MCP servers, tools. */
   traits: SkillTrait[];
+  /** The safety check's report, as the real install would keep it; null when the check is off. */
+  safety: SafetyReport | null;
 }
 
 /** What `skills install --dry-run` reports. Nothing is written. */
@@ -49,8 +53,15 @@ const TRAIT_LABELS: Record<SkillTraitCode, string> = {
   tool_grants: "pre-approved tools",
 };
 
-/** The plan for chosen skills of a fetched preview. */
-export function planPreview(preview: GitPreview, items: readonly InstallSelection[]): InstallPlan {
+/** Safety reports by the folder a skill has in its source (`relPath`), or `""` for one skill. */
+export type SafetyByPath = ReadonlyMap<string, SafetyReport | null>;
+
+/** The plan for chosen skills of a fetched preview, each already safety-checked. */
+export function planPreview(
+  preview: GitPreview,
+  items: readonly InstallSelection[],
+  safety: SafetyByPath,
+): InstallPlan {
   const outcomes = planInstallNames(
     items.map((item) => item.name),
     preview.library,
@@ -71,6 +82,7 @@ export function planPreview(preview: GitPreview, items: readonly InstallSelectio
               outcome,
               manualOnly: row?.manualOnly ?? false,
               traits: row?.traits ?? [],
+              safety: safety.get(item.relPath) ?? null,
             },
           ]
         : [];
@@ -80,8 +92,13 @@ export function planPreview(preview: GitPreview, items: readonly InstallSelectio
   };
 }
 
-/** The plan for one folder on this computer, installed as a whole. */
-export function planFolder(core: Core, source: string, name: string | undefined): InstallPlan {
+/** The plan for one folder on this computer, installed as a whole, already safety-checked. */
+export function planFolder(
+  core: Core,
+  source: string,
+  name: string | undefined,
+  safety: SafetyReport | null,
+): InstallPlan {
   const path = requireSkillFolder(source);
   const identity = readSkillIdentity(path);
   const chosen = name?.trim() || identity.name;
@@ -102,6 +119,7 @@ export function planFolder(core: Core, source: string, name: string | undefined)
             outcome,
             manualOnly: identity.manualOnly,
             traits: skillTraits(path),
+            safety,
           },
         ]
       : [],
@@ -111,21 +129,26 @@ export function planFolder(core: Core, source: string, name: string | undefined)
 }
 
 /**
- * The plan for `owner/repo@skill` or `@owner/slug`. Nothing is fetched: a marketplace installs by
- * name, and installing one that is already here refreshes it in place.
+ * The plan for `owner/repo@skill` or `@owner/slug`, fetched and safety-checked. A marketplace
+ * installs by name, and installing one that is already here refreshes it in place.
  */
 export function planMarket(
   core: Core,
-  source: string,
-  skillId: string,
-  sourceType: "marketplace" | "clawhub" = "marketplace",
+  fetched: {
+    source: string;
+    skillId: string;
+    sourceType: "marketplace" | "clawhub";
+    safety: SafetyReport | null;
+    /** The skill as its repository lists it; ClawHub lists none. */
+    row?: RepoSkillPreview;
+  },
 ): InstallPlan {
-  const key = `${source.trim()}/${skillId.trim()}`;
+  const key = `${fetched.source.trim()}/${fetched.skillId.trim()}`;
   const installed = core.store
     .list()
-    .find((skill) => skill.sourceType === sourceType && skill.sourceRef === key);
+    .find((skill) => skill.sourceType === fetched.sourceType && skill.sourceRef === key);
   const library = previewLibrary(core.ctx, core.store, (skill) => skill.id === installed?.id);
-  const name = installed?.name ?? skillId;
+  const name = installed?.name ?? fetched.skillId;
   const [outcome] = planInstallNames([name], library);
   return {
     dryRun: true,
@@ -136,14 +159,22 @@ export function planMarket(
             name,
             relPath: null,
             outcome,
-            manualOnly: installed?.manualOnly ?? false,
-            traits: installed?.traits ?? [],
+            manualOnly: fetched.row?.manualOnly ?? installed?.manualOnly ?? false,
+            traits: fetched.row?.traits ?? installed?.traits ?? [],
+            safety: fetched.safety,
           },
         ]
       : [],
     refreshesInPlace: installed !== undefined,
     redirectedTo: null,
   };
+}
+
+/** One line about what the safety check found, when it found anything. */
+export function safetySummary(name: string, report: SafetyReport | null): string | undefined {
+  if (!report || report.verdict === "safe") return undefined;
+  const found = report.findings.length;
+  return `Safety check on ${name}: ${report.recommendation}, risk ${report.score}/100, ${plural(found, "finding")}. Run with --json to read them.`;
 }
 
 /** The plan as a person reads it. */
@@ -166,9 +197,11 @@ export function planText(plan: InstallPlan): string {
       "A skill identical to the one holding its name is not added twice: the library keeps one.",
     );
   }
-  if (plan.redirectedTo) {
-    lines.push(`The download moved to ${plan.redirectedTo}; installing needs --yes to accept it.`);
+  if (plan.redirectedTo) lines.push(`The download moved to ${plan.redirectedTo}.`);
+  for (const row of plan.skills) {
+    const line = safetySummary(row.name, row.safety);
+    if (line) lines.push(line);
   }
-  lines.push("A dry run skips the safety check; the real install still runs it.");
+  lines.push("Fetched and safety-checked as the real install would be.");
   return lines.join("\n");
 }
