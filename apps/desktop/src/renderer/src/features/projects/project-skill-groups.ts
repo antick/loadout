@@ -1,6 +1,7 @@
 import {
   isAgentAvailable,
   type LocalSkill,
+  type Preset,
   PROJECT_EXPORT_PRIORITY,
   type ProjectTarget,
   SYNC_STATUS_SEVERITY,
@@ -206,4 +207,19 @@ export function freeTargets(
       !hasSkill(presence, skill.id, target.key) &&
       isFolderFree(presence, skill.dirName, target.key),
   );
+}
+
+/**
+ * Whether a preset puts its skill in a project folder: unless it switched the skill off for every
+ * agent that reads the folder, as applying the preset to those agents would.
+ */
+export function presetWantsTarget(
+  preset: Pick<Preset, "switchedOff">,
+  targets: readonly ProjectTarget[],
+): (skillId: string, targetKey: string) => boolean {
+  return (skillId, targetKey) => {
+    const off = preset.switchedOff[skillId] ?? [];
+    const agents = targets.find((target) => target.key === targetKey)?.agentKeys ?? [];
+    return agents.some((agentKey) => !off.includes(agentKey));
+  };
 }

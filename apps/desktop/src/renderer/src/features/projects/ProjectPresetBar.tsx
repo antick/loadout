@@ -17,6 +17,7 @@ import {
   hasSkill,
   indexPresence,
   orderedAvailableTargets,
+  presetWantsTarget,
   type ProjectSkillGroup,
 } from "./project-skill-groups";
 
@@ -47,6 +48,7 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
     (skillId: string, targetKey: string) => hasSkill(presence, skillId, targetKey),
     [presence],
   );
+  const wanted = useCallback((preset: Preset) => presetWantsTarget(preset, available), [available]);
 
   if (!targets || !presets.data || !skills.data) return null;
   const library = skills.data;
@@ -59,11 +61,11 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
     for (const skillId of new Set(missing.map((pair) => pair.skillId))) {
       const skill = library.find((entry) => entry.id === skillId);
       if (!skill) continue;
-      const wanted = available.filter((target) =>
+      const skillTargets = available.filter((target) =>
         missing.some((pair) => pair.skillId === skillId && pair.agentKey === target.key),
       );
-      const free = freeTargets(presence, skill, wanted);
-      if (free.length < wanted.length) taken.push(skill.dirName);
+      const free = freeTargets(presence, skill, skillTargets);
+      if (free.length < skillTargets.length) taken.push(skill.dirName);
       if (free.length > 0) {
         jobs.push({ skillId, name: skill.name, agentKeys: free.map((target) => target.key) });
       }
@@ -111,6 +113,7 @@ export function ProjectPresetBar({ project, targets, groups }: ProjectPresetBarP
       skills={library}
       agentKeys={targetKeys}
       exists={exists}
+      wanted={wanted}
       mode="logical-skill"
       onActivate={activate}
       onDeactivate={deactivate}

@@ -9,6 +9,7 @@ import {
   matchesEnabledFilter,
   orderedAvailableTargets,
   preferredTargets,
+  presetWantsTarget,
   projectSkillRules,
   targetOfAgent,
   targetsOfAgents,
@@ -210,5 +211,20 @@ describe("where a library skill goes in a project", () => {
     );
     const skill = { id: "lib-review", dirName: "review" };
     expect(freeTargets(presence, skill, available)).toEqual([codex]);
+  });
+});
+
+describe("presetWantsTarget", () => {
+  const targets = [
+    target("claude", { agentKeys: ["claude_code"] }),
+    target("agents", { agentKeys: ["codex", "cursor"] }),
+  ];
+
+  it("leaves out a folder whose every agent the preset switched off", () => {
+    const wants = presetWantsTarget({ switchedOff: { pdf: ["claude_code", "codex"] } }, targets);
+    expect(wants("pdf", "claude")).toBe(false);
+    // Cursor still reads the shared folder, so the copy is still wanted there.
+    expect(wants("pdf", "agents")).toBe(true);
+    expect(wants("other", "claude")).toBe(true);
   });
 });
