@@ -77,8 +77,8 @@ export const QUERY_STALE_MS = 30_000;
 /** How often text such as "5 minutes ago" is worked out again while it stays on screen. */
 export const RELATIVE_TIME_TICK_MS = 60_000;
 export const TOAST_DURATION_MS = 4000;
-/** Paths listed in a conflict toast before the rest is summarised as "+N more". */
-export const TOAST_MAX_CONFLICT_PATHS = 4;
+/** Paths or failures listed in a toast before the rest is summarised as "and N more". */
+export const TOAST_MAX_LINES = 4;
 
 /** Agent avatars shown on a skill card before the rest collapse into a "+N" popover. */
 export const AGENT_BADGE_MAX_VISIBLE = 6;

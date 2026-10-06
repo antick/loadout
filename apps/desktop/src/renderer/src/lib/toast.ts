@@ -5,7 +5,7 @@ import {
   type TargetConflict,
 } from "@loadout/shared";
 import { toast } from "sonner";
-import { TOAST_MAX_CONFLICT_PATHS } from "@/lib/constants";
+import { TOAST_MAX_LINES } from "@/lib/constants";
 import { i18n } from "@/lib/i18n";
 
 /** Class of a toast description that lists failures or paths, one per line. */
@@ -17,22 +17,22 @@ export interface ToastAction {
   onClick: () => void;
 }
 
-/** Conflicting paths as a toast description, capped so the toast stays readable. */
-function describeConflicts(conflicts: readonly TargetConflict[]): string {
-  const shown = conflicts.slice(0, TOAST_MAX_CONFLICT_PATHS).map((c) => c.path);
-  const rest = conflicts.length - shown.length;
+/** Lines for a toast description, capped so the toast stays readable: "and 3 more" says the rest. */
+function capLines(lines: readonly string[]): string {
+  const shown = lines.slice(0, TOAST_MAX_LINES);
+  const rest = lines.length - shown.length;
   if (rest > 0) shown.push(i18n.t("common.andMore", { count: rest }));
   return shown.join("\n");
 }
 
-/** Failures as toast lines, capped so the toast stays readable. */
+/** Conflicting paths as a toast description. */
+function describeConflicts(conflicts: readonly TargetConflict[]): string {
+  return capLines(conflicts.map((conflict) => conflict.path));
+}
+
+/** Failures as toast lines. */
 export function describeFailures(failed: readonly BatchFailure[]): string {
-  const lines = failed
-    .slice(0, TOAST_MAX_CONFLICT_PATHS)
-    .map((failure) => `${failure.name}: ${failure.message}`);
-  const rest = failed.length - lines.length;
-  if (rest > 0) lines.push(i18n.t("common.andMore", { count: rest }));
-  return lines.join("\n");
+  return capLines(failed.map((failure) => `${failure.name}: ${failure.message}`));
 }
 
 /** i18n key of the message for a failure that says nothing itself. */
