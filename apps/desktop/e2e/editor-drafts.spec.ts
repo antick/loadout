@@ -58,7 +58,9 @@ test("discarding unsaved drafts in Settings asks first, saying how many", async 
   await openApp(page, "/settings?section=storage");
   await page.evaluate(() => {
     for (const path of ["SKILL.md", "notes.md"]) {
-      localStorage.setItem(`loadout:editor.draft:skill-1:${path}`, "{}");
+      // A real draft: the app drops unreadable or expired ones when it starts.
+      const draft = { baseHash: "h", content: "unsaved", savedAt: Date.now() };
+      localStorage.setItem(`loadout:editor.draft:skill-1:${path}`, JSON.stringify(draft));
     }
   });
   // Web storage is read when the section mounts.

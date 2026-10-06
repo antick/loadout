@@ -149,10 +149,14 @@ export function EditorWorkspace({
 
   const unsaved = useMemo(() => {
     const paths = new Set(session.dirtyPaths);
-    // Drafts from an earlier session count until their file is opened and settled.
-    for (const path of storedDrafts) if (!session.sessions[path]) paths.add(path);
+    // Drafts from an earlier session count until their file is opened and settled; one whose
+    // file is gone can never be settled, so it does not hold its folder back.
+    const listed = new Set((files.data ?? NO_FILES).map((entry) => entry.path));
+    for (const path of storedDrafts) {
+      if (!session.sessions[path] && listed.has(path)) paths.add(path);
+    }
     return paths;
-  }, [session.dirtyPaths, session.sessions, storedDrafts]);
+  }, [session.dirtyPaths, session.sessions, storedDrafts, files.data]);
 
   const fileActions = useFileActions({
     location,

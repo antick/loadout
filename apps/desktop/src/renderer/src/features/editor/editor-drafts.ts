@@ -82,17 +82,49 @@ export function storeDrafts(
   return stored;
 }
 
-/** Paths of the skill (by location key) that have a stored draft, for the file list dots. */
-export function draftPaths(draftKey: string): string[] {
-  const prefix = storageKey(draftKey, "");
-  const paths: string[] = [];
+/** Every localStorage key that starts with `prefix`, collected before any is removed. */
+function keysStartingWith(prefix: string): string[] {
+  const keys: string[] = [];
   try {
     for (let index = 0; index < window.localStorage.length; index += 1) {
       const key = window.localStorage.key(index);
-      if (key?.startsWith(prefix)) paths.push(key.slice(prefix.length));
+      if (key?.startsWith(prefix)) keys.push(key);
     }
   } catch {
     return [];
   }
-  return paths.sort();
+  return keys;
+}
+
+/**
+ * Paths of the skill (by location key) that have a stored draft, for the file list dots. An
+ * expired draft is removed here rather than listed.
+ */
+export function draftPaths(draftKey: string, now = Date.now()): string[] {
+  const prefix = storageKey(draftKey, "");
+  return keysStartingWith(prefix)
+    .map((key) => key.slice(prefix.length))
+    .filter((path) => readDraft(draftKey, path, now) !== null)
+    .sort();
+}
+
+/**
+ * Remove expired or unreadable drafts of every location, also those of skills, projects or files
+ * that are gone and so never opened again. Run once at start.
+ */
+export function pruneDrafts(now = Date.now()): void {
+  for (const key of keysStartingWith(`${STORAGE_PREFIX}${EDITOR_DRAFT_PREFIX}`)) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      const value: unknown = raw === null ? null : JSON.parse(raw);
+      if (isDraft(value) && now - value.savedAt <= EDITOR_DRAFT_MAX_AGE_MS) continue;
+    } catch {
+      // Not JSON: not a draft this version can use.
+    }
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Nothing to clean up when storage is unavailable.
+    }
+  }
 }
