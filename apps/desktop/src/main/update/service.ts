@@ -194,7 +194,9 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       feed = parseUpdateFeed(JSON.parse(new TextDecoder().decode(bytes)), deps.feedUrl);
       feedCopy = { bytes, signature };
     } catch (error) {
-      return set({ phase: before === "ready" ? "ready" : "error", error: errorMessage(error) });
+      // A release found earlier (or already downloaded) stays on offer: the last feed still holds.
+      const kept = before === "ready" || before === "available";
+      return set({ phase: kept ? before : "error", error: errorMessage(error) });
     }
     const releaseUrl = feed.releaseUrl ?? RELEASES_URL;
     const checkedAt = Date.now();

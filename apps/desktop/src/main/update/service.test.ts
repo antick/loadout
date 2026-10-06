@@ -127,6 +127,21 @@ describe("update service", () => {
     expect(await updates.check()).toMatchObject({ phase: "available", blocker: null });
   });
 
+  it("keeps a found release on offer when a later check fails", async () => {
+    let online = true;
+    const working = fakeFetch(feed());
+    const fetchImpl = (async (input: string) => {
+      if (!online) throw new Error("offline");
+      return working(input);
+    }) as typeof fetch;
+    const { updates } = service({ fetchImpl });
+    expect((await updates.check()).phase).toBe("available");
+    online = false;
+    expect(await updates.check()).toMatchObject({ phase: "available", error: "offline" });
+    online = true;
+    expect((await updates.download()).phase).toBe("ready");
+  });
+
   it("downloads once when asked twice while still checking", async () => {
     let packageRequests = 0;
     const base = fakeFetch(feed());
