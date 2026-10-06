@@ -53,3 +53,14 @@ describe("usage lines", () => {
     expect(commandUsage(find("doctor"))).toBe("[--all]");
   });
 });
+
+describe("read-only commands", () => {
+  it("are the ones that only read, never one that can install or change anything", () => {
+    const readOnly = commands
+      .filter((entry) => entry.command.readOnly === true)
+      .map((entry) => entry.path);
+    // Its picker installs what is ticked.
+    expect(readOnly).not.toContain("skills search");
+    expect(readOnly).toEqual(expect.arrayContaining(["repo show", "sources list"]));
+  });
+});

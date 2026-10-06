@@ -96,6 +96,7 @@ export const repoGroup: CommandGroup = {
       summary: "Show the library location and counts",
       usage: "",
       flags: [],
+      readOnly: true,
       run: show,
     },
     {

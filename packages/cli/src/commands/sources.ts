@@ -142,6 +142,7 @@ export const sourcesGroup: CommandGroup = {
       summary: "List repositories, archives and links, with skill, update and new-skill counts",
       usage: "",
       flags: [],
+      readOnly: true,
       run: list,
     },
     {
