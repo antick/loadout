@@ -1,20 +1,12 @@
 import { COMMIT_ID_PATTERN, MIB, isCommitId, redactUrl } from "@loadout/shared";
 import { renameSync } from "node:fs";
-
 import { mkdtemp } from "node:fs/promises";
-
 import { tmpdir } from "node:os";
-
 import { join } from "node:path";
-
 import { AppError, cancelled, isAppError } from "../errors";
-
 import { ensureDir, readDirSafe, removePath } from "../util/fs";
-
 import { unpackArchive } from "./archive";
-
 import { type Download, parseUrl, percentReporter } from "./download";
-
 import {
   CLONE_DIR_PREFIX,
   type Checkout,
@@ -22,9 +14,7 @@ import {
   type RemoteOptions,
   WHOLE_CHECKOUT,
 } from "./git-client";
-
 import { pickRevision, refCandidates, refLists } from "./git-refs";
-
 import { type RemoteRefs, checkoutFolderName, repoNameFromUrl, trimRepoUrl } from "./git-source";
 
 /**
