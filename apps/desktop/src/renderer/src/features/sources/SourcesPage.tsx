@@ -30,9 +30,9 @@ import { useBrowseSource } from "@/features/sources/use-browse-source";
 import { useCopyText } from "@/hooks/mutations/app";
 import { useUpdateSkills } from "@/hooks/mutations/library";
 import { useSkills } from "@/hooks/queries/skills";
+import { SOURCE_GRID_CLASS } from "@/lib/styles";
 
 /** Cards of sources, one column when narrow, two when there is room. */
-const SOURCE_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(24rem,1fr))] gap-3";
 
 /**
  * Where the library's skills came from, one card per repository, archive or link: what came

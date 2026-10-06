@@ -4,8 +4,8 @@ import type { Selection } from "@/hooks/use-selection";
 import type { ViewMode } from "@/lib/constants";
 import type { LocalSkillView } from "./local-skill-view";
 import { LocalSkillItem } from "./LocalSkillItem";
+import { LOCAL_SKILL_GRID_CLASS } from "@/lib/styles";
 
-export const LOCAL_SKILL_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-3";
 export const LOCAL_SKILL_LIST_CLASS = "flex flex-col gap-1.5";
 
 export interface LocalSkillCollectionProps<T extends LocalSkillView> {

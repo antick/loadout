@@ -6,13 +6,14 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
-import { CARD_GRID_CLASS, CardGridSkeleton, LinkCard } from "@/components/LinkCard";
+import { CardGridSkeleton, LinkCard } from "@/components/LinkCard";
 import { PathText } from "@/components/PathText";
 import { SKILL_ITEM_RAISED_CLASS } from "@/components/skill-item";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SYNC_STATUS_META } from "@/components/SyncStatusBadge";
 import { Button } from "@/components/ui/button";
 import { useProjects } from "@/hooks/queries/projects";
+import { CARD_GRID_CLASS } from "@/lib/styles";
 
 const STATUS_ORDER = Object.keys(SYNC_STATUS_META) as SyncStatus[];
 

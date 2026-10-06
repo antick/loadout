@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { PageSection } from "@/components/PageSection";
 import { buttonVariants } from "@/components/ui/button";
+import { AGENT_LIST_COLUMNS_CLASS } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 /** Installed agents that are switched off, and the way to Settings for every other agent. */
 export function SwitchedOffAgents({ agents }: { agents: readonly AgentInfo[] }): ReactNode {
@@ -32,7 +34,7 @@ export function SwitchedOffAgents({ agents }: { agents: readonly AgentInfo[] }):
       description={t("agents.switchedOff.hint")}
       actions={manage}
     >
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-4 rounded-lg border bg-card px-3 py-2">
+      <ul className={cn(AGENT_LIST_COLUMNS_CLASS, "gap-x-4 rounded-lg border bg-card px-3 py-2")}>
         {agents.map((agent) => (
           <li key={agent.key} className="flex items-center gap-2 py-1.5">
             <AgentAvatar agentKey={agent.key} name={agent.displayName} size="sm" status="off" />

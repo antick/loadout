@@ -51,8 +51,8 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { cn } from "@/lib/utils";
 import { FILTER_ALL, STORAGE_KEYS } from "@/lib/constants";
+import { MARKET_GRID_CLASS } from "@/lib/styles";
 
-const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3";
 const PROVIDER_ICONS: Record<MarketProvider, typeof Store> = { skills_sh: Store, clawhub: Package };
 const CONNECTION_ERROR_CODES: ReadonlySet<ErrorCode> = new Set(["NETWORK", "TIMEOUT"]);
 
@@ -241,7 +241,7 @@ export function MarketTab(): ReactNode {
       ) : null}
 
       {active.isPending ? (
-        <div className={GRID_CLASS} aria-hidden="true">
+        <div className={MARKET_GRID_CLASS} aria-hidden="true">
           <Skeletons count={MARKET_SKELETON_COUNT} className="h-28 rounded-lg" />
         </div>
       ) : active.isError ? (
@@ -288,7 +288,7 @@ export function MarketTab(): ReactNode {
         <>
           <div
             className={cn(
-              GRID_CLASS,
+              MARKET_GRID_CLASS,
               "transition-opacity duration-150",
               active.isPlaceholderData && "opacity-60",
             )}

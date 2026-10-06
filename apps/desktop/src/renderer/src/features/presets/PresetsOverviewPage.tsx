@@ -6,11 +6,12 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useShell } from "@/components/layout/shell-context";
-import { CARD_GRID_CLASS, CardGridSkeleton, LinkCard } from "@/components/LinkCard";
+import { CardGridSkeleton, LinkCard } from "@/components/LinkCard";
 import { PresetIcon } from "@/components/PresetIcon";
 import { Button } from "@/components/ui/button";
 import { usePresets } from "@/hooks/queries/presets";
 import { ImportPresetDialog } from "./ImportPresetDialog";
+import { CARD_GRID_CLASS } from "@/lib/styles";
 
 function PresetCard({ preset }: { preset: Preset }): ReactNode {
   const { t } = useTranslation();

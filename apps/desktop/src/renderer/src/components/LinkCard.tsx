@@ -2,9 +2,9 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Skeletons } from "@/components/Skeletons";
 import { cn } from "@/lib/utils";
+import { CARD_GRID_CLASS } from "@/lib/styles";
 
 /** Grid of cards on an overview page: as many columns as fit. */
-export const CARD_GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-3";
 const SKELETON_CARDS = 4;
 
 export interface LinkCardProps {

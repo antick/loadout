@@ -71,10 +71,10 @@ import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { FILTER_ALL, type LibraryViewMode, STORAGE_KEYS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { CARD_GRID_CLASS } from "@/lib/styles";
 
 const VIEW_MODE_SCOPE = "library";
 const NO_AGENTS: readonly AgentInfo[] = [];
-const GRID_CLASS = "grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]";
 const LIST_CLASS = "flex flex-col gap-1.5";
 const SKELETON_COUNT = 6;
 
@@ -240,7 +240,7 @@ export function LibraryPage({
   let content: ReactNode;
   if (skills.isPending) {
     content = (
-      <div className={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}>
+      <div className={viewMode === "grid" ? CARD_GRID_CLASS : LIST_CLASS}>
         <Skeletons
           count={SKELETON_COUNT}
           className={cn("rounded-lg", viewMode === "grid" ? "h-36" : "h-12")}
@@ -303,11 +303,11 @@ export function LibraryPage({
           groups={groups}
           folded={foldedGroups}
           onFoldedChange={setGroupFolded}
-          itemsClassName={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}
+          itemsClassName={viewMode === "grid" ? CARD_GRID_CLASS : LIST_CLASS}
           renderItem={renderItem}
         />
       ) : (
-        <div className={viewMode === "grid" ? GRID_CLASS : LIST_CLASS}>
+        <div className={viewMode === "grid" ? CARD_GRID_CLASS : LIST_CLASS}>
           {visible.map(renderItem)}
         </div>
       );
