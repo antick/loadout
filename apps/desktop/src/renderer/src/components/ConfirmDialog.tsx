@@ -1,12 +1,4 @@
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -62,10 +54,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }): ReactNod
   }, []);
 
   const items = options?.items ?? [];
-  const value = useMemo(() => confirm, [confirm]);
 
   return (
-    <ConfirmContext.Provider value={value}>
+    <ConfirmContext.Provider value={confirm}>
       {children}
       <AlertDialog open={open} onOpenChange={(next) => (next ? undefined : settle(false))}>
         <AlertDialogContent>
