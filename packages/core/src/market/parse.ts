@@ -1,5 +1,5 @@
 import { OWNER_REPO_PATTERN, isRecord } from "@loadout/shared";
-import { asTrimmedText } from "./json";
+import { asTrimmedText } from "../util/json";
 
 /** A marketplace listing entry before it is matched against the library. */
 export interface MarketEntry {

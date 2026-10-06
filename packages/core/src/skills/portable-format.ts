@@ -11,6 +11,7 @@ import {
 import type { Logger } from "../log";
 import { readDirSafe, readJsonOrNull } from "../util/fs";
 import { isSafeRelativePath, isSkillFolderName } from "../util/safe-path";
+import { asNumber, asStrings, asText } from "../util/json";
 
 /**
  * The format of the portable metadata files, and how they are read back. Files arrive from other
@@ -116,17 +117,7 @@ export function readFavoritedAt(value: unknown): number | null {
 
 const KNOWN_SOURCE_TYPES: ReadonlySet<unknown> = new Set(SOURCE_TYPES);
 
-function textOrNull(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
-}
-
-function strings(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
-}
-
-function timeOr(value: unknown, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
+const timeOr = (value: unknown, fallback: number): number => asNumber(value) ?? fallback;
 
 /**
  * A skill's metadata file as read from disk, where it may come from another device, a merge or a
@@ -142,15 +133,15 @@ export function readPortableSkill(value: unknown): PortableSkill | null {
     ...value,
     id: value.id,
     path: value.path,
-    tags: strings(value.tags),
+    tags: asStrings(value.tags),
     source: {
       type: source.type as SourceType,
-      ref: textOrNull(source.ref),
-      url: textOrNull(source.url),
-      subpath: textOrNull(source.subpath),
-      branch: textOrNull(source.branch),
-      revision: textOrNull(source.revision),
-      trustedHost: textOrNull(source.trustedHost),
+      ref: asText(source.ref),
+      url: asText(source.url),
+      subpath: asText(source.subpath),
+      branch: asText(source.branch),
+      revision: asText(source.revision),
+      trustedHost: asText(source.trustedHost),
     },
     createdAt: timeOr(value.createdAt, Date.now()),
   };
@@ -164,17 +155,17 @@ export function readPortablePreset(value: unknown): PortablePreset | null {
   const disabledAgents: Record<string, string[]> = {};
   if (isRecord(value.disabledAgents)) {
     for (const [skillId, keys] of Object.entries(value.disabledAgents)) {
-      disabledAgents[skillId] = strings(keys);
+      disabledAgents[skillId] = asStrings(keys);
     }
   }
   const createdAt = timeOr(value.createdAt, Date.now());
   return {
     id: value.id,
     name: value.name,
-    description: textOrNull(value.description),
-    icon: textOrNull(value.icon),
+    description: asText(value.description),
+    icon: asText(value.icon),
     sortOrder: timeOr(value.sortOrder, 0),
-    skills: strings(value.skills),
+    skills: asStrings(value.skills),
     disabledAgents,
     createdAt,
     updatedAt: timeOr(value.updatedAt, createdAt),

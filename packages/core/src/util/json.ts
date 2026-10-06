@@ -1,6 +1,9 @@
 import { isRecord } from "@loadout/shared";
 
-/** Reading the loosely shaped JSON the marketplaces answer with: a field or nothing, never a throw. */
+/**
+ * Reading loosely shaped JSON (a marketplace's answer, another device's metadata, an agent's
+ * logs): a field or nothing, never a throw.
+ */
 
 export type Json = Record<string, unknown>;
 
@@ -23,4 +26,9 @@ export function asTrimmedText(value: unknown): string | null {
 /** `value` when it is a finite number, else null. */
 export function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** The strings of `value` when it is an array, else none. */
+export function asStrings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
 }

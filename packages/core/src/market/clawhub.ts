@@ -24,7 +24,7 @@ import {
   readJson,
 } from "../install/download";
 import type { MarketDetailParts } from "./detail";
-import { type Json, asNumber, asObject, asText } from "./json";
+import { type Json, asNumber, asObject, asText } from "../util/json";
 
 /**
  * The ClawHub registry (clawhub.ai): public read endpoints, no token. Skills are versioned and

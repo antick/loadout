@@ -15,7 +15,7 @@ import {
 import { invalid, isAppError, isUnanswered } from "../errors";
 import { type Download, jsonOptions, readJson } from "../install/download";
 import { locateSkill, usualSkillPaths } from "../install/repo-scan";
-import { asTrimmedText as text } from "./json";
+import { asTrimmedText as text } from "../util/json";
 
 /**
  * What to read before installing a marketplace skill: the security audits the marketplace

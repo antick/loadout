@@ -1,4 +1,5 @@
 import { type UsageAgentKey, isRecord } from "@loadout/shared";
+import { type Json, asText } from "../util/json";
 
 /** One run of a skill found in a log. */
 export interface UsageEvent {
@@ -23,10 +24,6 @@ export interface LogReader {
   parse(line: string, state: LogFileState): UsageEvent[];
 }
 
-type Json = Record<string, unknown>;
-
-const text = (value: unknown): string | null => (typeof value === "string" ? value : null);
-
 function parseRecord(line: string): Json | null {
   try {
     const value: unknown = JSON.parse(line);
@@ -37,7 +34,7 @@ function parseRecord(line: string): Json | null {
 }
 
 function timeOf(record: Json): number | null {
-  const at = Date.parse(text(record.timestamp) ?? "");
+  const at = Date.parse(asText(record.timestamp) ?? "");
   return Number.isFinite(at) ? at : null;
 }
 
@@ -65,7 +62,7 @@ function userText(message: unknown): string {
   if (!Array.isArray(content)) return "";
   return content
     .filter((block) => isRecord(block) && block.type === "text")
-    .map((block) => text((block as Json).text) ?? "")
+    .map((block) => asText((block as Json).text) ?? "")
     .join("\n");
 }
 
@@ -75,8 +72,8 @@ function claudeSkillCalls(message: unknown): { id: string | null; name: string }
     if (!isRecord(block) || block.type !== "tool_use" || block.name !== CLAUDE_SKILL_TOOL) {
       return [];
     }
-    const name = isRecord(block.input) ? text(block.input.skill) : null;
-    return name ? [{ id: text(block.id), name }] : [];
+    const name = isRecord(block.input) ? asText(block.input.skill) : null;
+    return name ? [{ id: asText(block.id), name }] : [];
   });
 }
 
@@ -87,8 +84,8 @@ export const claudeCodeReader: LogReader = {
     const record = parseRecord(line);
     const usedAt = record ? timeOf(record) : null;
     if (!record || usedAt === null) return [];
-    const projectPath = text(record.cwd);
-    const recordId = text(record.uuid) ?? String(usedAt);
+    const projectPath = asText(record.cwd);
+    const recordId = asText(record.uuid) ?? String(usedAt);
     const found: UsageEvent[] = [];
     if (record.type === "assistant") {
       for (const call of claudeSkillCalls(record.message)) {
@@ -138,7 +135,7 @@ function codexSkillsRead(callText: string): string[] {
 }
 
 function codexCallText(payload: Json): string {
-  const parts = [text(payload.arguments), text(payload.input)];
+  const parts = [asText(payload.arguments), asText(payload.input)];
   if (isRecord(payload.action)) parts.push(JSON.stringify(payload.action));
   return parts.filter(Boolean).join("\n");
 }
@@ -151,16 +148,16 @@ export const codexReader: LogReader = {
     if (!record || !isRecord(record.payload)) return [];
     const { payload } = record;
     if (record.type === CODEX_META) {
-      state.projectPath = text(payload.cwd) ?? state.projectPath;
+      state.projectPath = asText(payload.cwd) ?? state.projectPath;
       return [];
     }
     const usedAt = timeOf(record);
-    const kind = text(payload.type) ?? "";
+    const kind = asText(payload.type) ?? "";
     if (record.type !== "response_item" || usedAt === null || !CODEX_CALL_TYPES.has(kind)) {
       return [];
     }
-    if (CODEX_WRITING_TOOLS.has(text(payload.name) ?? "")) return [];
-    const callId = text(payload.call_id) ?? text(payload.id) ?? String(usedAt);
+    if (CODEX_WRITING_TOOLS.has(asText(payload.name) ?? "")) return [];
+    const callId = asText(payload.call_id) ?? asText(payload.id) ?? String(usedAt);
     return codexSkillsRead(codexCallText(payload))
       .filter(isFolderSkillName)
       .map((name) => ({
