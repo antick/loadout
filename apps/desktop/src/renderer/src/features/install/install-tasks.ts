@@ -10,9 +10,9 @@ import { DECLINED, runWithRiskConsent } from "@/features/safety/flagged-prompt";
 import { onAppEvent } from "@/lib/events";
 import { i18n } from "@/lib/i18n";
 import { errorMessage } from "@/lib/toast";
+import { PERCENT } from "@/lib/constants";
 
 const TOAST_ID_PREFIX = "install:";
-const PERCENT = 100;
 
 /** One install that is running right now. Lives outside React so it survives leaving the page. */
 export interface InstallTask {

@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { StatCard } from "@/components/StatCard";
 import { BACKUP_MODE_TONES, deriveBackupMode } from "@/lib/backup-mode";
-import { PERCENT } from "./constants";
+import { PERCENT } from "@/lib/constants";
 
 export interface DashboardStatsProps {
   skills: readonly Skill[];

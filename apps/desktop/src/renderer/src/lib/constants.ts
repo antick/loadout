@@ -5,6 +5,9 @@ export const STORAGE_PREFIX = `${APP_SLUG}:`;
 /** Local copy of the palette and mode, read before the first paint. */
 export const APPEARANCE_STORAGE_KEY = `${STORAGE_PREFIX}appearance`;
 
+/** A share as a whole number of percent: `Math.round(part / whole * PERCENT)`. */
+export const PERCENT = 100;
+
 /** The choice in a filter (status, source, contributor) that leaves nothing out. */
 export const FILTER_ALL = "all";
 
