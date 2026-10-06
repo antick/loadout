@@ -246,14 +246,20 @@ function runOrAskAboutRisk<T>(
 /**
  * Run one install with a persistent progress toast (phase text, Cancel where possible) and a final
  * toast for the outcome. Resolves with the result, or null when it failed or was cancelled; the
- * failure has already been shown. A second call for a key that is still running is ignored.
+ * failure has already been shown. A second call for a key that is still running only brings its
+ * progress back into view and says so.
  */
 export async function runInstallTask<T>(
   options: InstallTaskOptions<T>,
   navigation: InstallTaskNavigation,
 ): Promise<T | null> {
   const { key, title, cancel, success } = options;
-  if (tasks.has(key)) return null;
+  const running = tasks.get(key);
+  if (running) {
+    showRunningToast(running);
+    toast.info(i18n.t("install.toast.alreadyRunning"));
+    return null;
+  }
 
   const id = `${TOAST_ID_PREFIX}${key}`;
   const task: InstallTask = {

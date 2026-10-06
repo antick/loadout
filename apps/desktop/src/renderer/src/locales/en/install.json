@@ -45,6 +45,7 @@
       "cloning": "Fetching the repository",
       "cancelling": "Stopping…",
       "cancelled": "Installation cancelled",
+      "alreadyRunning": "That install is still running.",
       "installed": "Installed {{name}}",
       "installedCount_one": "Installed {{count}} skill",
       "installedCount_other": "Installed {{count}} skills",
