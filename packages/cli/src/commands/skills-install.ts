@@ -23,6 +23,7 @@ import {
   limitPositionals,
   positional,
   resolveUserPath,
+  allSkillsFlag,
 } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
@@ -120,11 +121,7 @@ const REPLACE_FLAG = {
   type: "boolean",
   description: "When a library skill has the name, replace it instead of adding <name>-2.",
 } as const;
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Take every skill the repository or archive holds.",
-} as const;
+const ALL_FLAG = allSkillsFlag("Take every skill the repository or archive holds.");
 
 /**
  * The skills to install: named with `--skill`, all with `--all`, the only one, or (in a terminal a

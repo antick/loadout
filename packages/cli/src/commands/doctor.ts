@@ -2,15 +2,13 @@ import { checkHealth } from "@loadout/core";
 import { HEALTH_AREAS, type HealthArea, type HealthFinding } from "@loadout/shared";
 import { flagBoolean } from "../args";
 import { plural } from "../output";
-import { limitPositionals } from "./support";
+import { limitPositionals, showAllFlag } from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 import { exitCodeFor } from "../exit-codes";
 
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Also list findings that are only good to know (info), such as available updates.",
-} as const;
+const ALL_FLAG = showAllFlag(
+  "Also list findings that are only good to know (info), such as available updates.",
+);
 
 const AREA_TITLES: Record<HealthArea, string> = {
   library: "Library",

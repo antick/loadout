@@ -8,15 +8,11 @@ import {
   planUpdate,
   updatePlanText,
 } from "./skills-update-plan";
-import { ACCEPT_RISK_FLAG, DRY_RUN_FLAG, limitPositionals } from "./support";
+import { ACCEPT_RISK_FLAG, DRY_RUN_FLAG, allSkillsFlag, refsOrAll } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
 
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Every skill in the library.",
-} as const;
+const ALL_FLAG = allSkillsFlag();
 const FORCE_FLAG = {
   name: "force",
   type: "boolean",
@@ -31,10 +27,7 @@ const APPROVE_FLAG = {
 /** Exactly one of `<ref>` and `--all`. */
 function target(context: CommandContext): Skill | null {
   const { core, args } = context;
-  limitPositionals(args, 1);
-  const ref = args.positionals[0];
-  const all = flagBoolean(args, ALL_FLAG.name);
-  if ((ref === undefined) === !all) throw new UsageError("Give one skill, or --all.");
+  const [ref] = refsOrAll(args, "one skill", 1) ?? [];
   return ref === undefined ? null : core.store.resolve(ref);
 }
 

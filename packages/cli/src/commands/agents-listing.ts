@@ -9,14 +9,10 @@ import {
 } from "@loadout/shared";
 import { flagBoolean, flagChoice } from "../args";
 import { plural, table } from "../output";
-import { limitPositionals } from "./support";
+import { limitPositionals, showAllFlag } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "List every skill, not only the biggest.",
-} as const;
+const ALL_FLAG = showAllFlag("List every skill, not only the biggest.");
 
 const WINDOW_FLAG = {
   name: "window",

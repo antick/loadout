@@ -51,7 +51,7 @@ export const undoFlag = (description: string): FlagSpec => ({
 export const ACCEPT_RISK_FLAG: FlagSpec = {
   name: "accept-risk",
   type: "boolean",
-  description: "Install skills the safety check flags. Read the findings first.",
+  description: "Go ahead with a skill the safety check flags. Read the findings first.",
 };
 
 /** A download that moved to another site than the link names. */
@@ -64,8 +64,38 @@ export const ALLOW_REDIRECT_FLAG: FlagSpec = {
 export const ALLOW_SECRETS_FLAG: FlagSpec = {
   name: "allow-secrets",
   type: "boolean",
-  description: "Back up what looks like keys or tokens anyway. Read the findings first.",
+  description: "Send what looks like keys or tokens anyway. Read the findings first.",
 };
+
+/** `--all` on a command that otherwise takes skills by name. */
+export const allSkillsFlag = (description = "Every skill in the library."): FlagSpec => ({
+  name: "all",
+  type: "boolean",
+  description,
+});
+
+/** `--all` on a listing that otherwise shows only the part most worth a look. */
+export const showAllFlag = (description: string): FlagSpec => ({
+  name: "all",
+  type: "boolean",
+  description,
+});
+
+/**
+ * The skills a command was given, or null for `--all`: exactly one of the two, and at most `max`
+ * when it takes fewer than any number. `what` names the choice in the error.
+ */
+export function refsOrAll(
+  args: ParsedArgs,
+  what = "one or more skills",
+  max = Number.POSITIVE_INFINITY,
+): string[] | null {
+  if (Number.isFinite(max)) limitPositionals(args, max);
+  const refs = args.positionals;
+  const all = flagBoolean(args, "all");
+  if ((refs.length === 0) === !all) throw new UsageError(`Give ${what}, or --all.`);
+  return all ? null : refs;
+}
 
 export const DRY_RUN_FLAG: FlagSpec = {
   name: "dry-run",

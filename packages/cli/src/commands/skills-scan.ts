@@ -3,14 +3,10 @@ import type { SafetyRecord, SafetyScanSummary } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { plural } from "../output";
 import { exitCodeFor } from "../exit-codes";
-import { eachItem, resolveSkills } from "./support";
+import { eachItem, resolveSkills, allSkillsFlag, refsOrAll } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Every library skill that is new or changed since its last check.",
-} as const;
+const ALL_FLAG = allSkillsFlag("Every library skill that is new or changed since its last check.");
 const FORCE_FLAG = {
   name: "force",
   type: "boolean",
@@ -60,10 +56,7 @@ async function scanAll(core: Core, force: boolean): Promise<ScanResult> {
  */
 async function scan(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
-  const all = flagBoolean(args, ALL_FLAG.name);
-  if ((args.positionals.length === 0) === !all) {
-    throw new UsageError("Give one or more skills, or --all.");
-  }
+  const all = refsOrAll(args) === null;
   if (!all && flagBoolean(args, FORCE_FLAG.name)) {
     throw new UsageError("--force only works with --all; named skills are always checked again.");
   }

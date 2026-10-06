@@ -15,14 +15,11 @@ import {
   positional,
   requireYes,
   undoFlag,
+  showAllFlag,
 } from "./support";
 import type { CommandContext, CommandResult, CommandSpec, LibraryCommandSpec } from "./types";
 
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Also list the pairs marked as not duplicates.",
-} as const;
+const ALL_FLAG = showAllFlag("Also list the pairs marked as not duplicates.");
 const KEEP_FLAG = {
   name: "keep",
   type: "string",

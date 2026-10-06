@@ -45,6 +45,7 @@ import {
   requireAgents,
   requireYes,
   resolveSkills,
+  allSkillsFlag,
 } from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 import { exitCodeFor } from "../exit-codes";
@@ -291,11 +292,7 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
   };
 }
 
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Every skill in the library, instead of naming them.",
-} as const;
+const ALL_FLAG = allSkillsFlag("Every skill in the library, instead of naming them.");
 
 function deployer(action: "add" | "remove") {
   return async ({ core, args }: CommandContext): Promise<CommandResult> => {

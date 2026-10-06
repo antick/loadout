@@ -1,16 +1,12 @@
 import { type Core, type FolderCheck, checkSkillFolder, notFound } from "@loadout/core";
 import { APP_NAME, type Skill, type SkillIssue, hasSkillErrors } from "@loadout/shared";
-import { UsageError, flagBoolean } from "../args";
+
 import { plural } from "../output";
-import { limitPositionals, resolveUserPath } from "./support";
+import { resolveUserPath, allSkillsFlag, refsOrAll } from "./support";
 import type { CommandResult, FreeCommandContext, FreeCommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
 
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Every skill in the library.",
-} as const;
+const ALL_FLAG = allSkillsFlag();
 
 const view = (skill: Skill) => ({ id: skill.id, name: skill.name, issues: skill.issues });
 
@@ -98,10 +94,7 @@ function validateFolder(context: FreeCommandContext, input: string): CommandResu
  */
 async function validate(context: FreeCommandContext): Promise<CommandResult> {
   const { args } = context;
-  limitPositionals(args, 1);
-  const ref = args.positionals[0];
-  const all = flagBoolean(args, ALL_FLAG.name);
-  if ((ref === undefined) === !all) throw new UsageError("Give one skill, a folder, or --all.");
+  const [ref] = refsOrAll(args, "one skill, a folder", 1) ?? [];
   if (ref !== undefined && looksLikePath(ref)) return validateFolder(context, ref);
   return validateLibrary(openLibrary(context), ref);
 }

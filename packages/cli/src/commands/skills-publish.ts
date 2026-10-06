@@ -10,7 +10,15 @@ import {
 } from "@loadout/shared";
 import { UsageError, flagBoolean, flagChoice, flagString } from "../args";
 import { plural, table } from "../output";
-import { DRY_RUN_FLAG, REQUIRED_YES_FLAG, requireYes, resolveSkills } from "./support";
+import {
+  DRY_RUN_FLAG,
+  REQUIRED_YES_FLAG,
+  requireYes,
+  resolveSkills,
+  ALLOW_SECRETS_FLAG,
+  allSkillsFlag,
+  refsOrAll,
+} from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const REPO_FLAG = {
@@ -32,17 +40,7 @@ const LAYER_FLAG = {
   choices: PUBLISH_LAYERS,
   description: `Where in the repository: ${PUBLISH_LAYERS.join(", ")}. Default: root (skills/).`,
 } as const;
-const ALL_FLAG = {
-  name: "all",
-  type: "boolean",
-  description: "Every skill in the library.",
-} as const;
-const ALLOW_SECRETS_FLAG = {
-  name: "allow-secrets",
-  type: "boolean",
-  description: "Publish what looks like keys or tokens anyway. Read the findings first.",
-} as const;
-
+const ALL_FLAG = allSkillsFlag();
 function changesOf(skill: PublishSkillPlan): string {
   const { added, changed, removed } = skill.files;
   if (skill.status !== "changed") return "";
@@ -103,13 +101,11 @@ function layerOf(context: CommandContext): PublishLayer | undefined {
 /** Copy chosen library skills into another Git repository, so others can install them. */
 async function publish(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
-  const refs = args.positionals;
-  const all = flagBoolean(args, ALL_FLAG.name);
-  if ((refs.length === 0) === !all) throw new UsageError("Give one or more skills, or --all.");
+  const refs = refsOrAll(args);
   const saved = await core.api.publish.defaults();
   const repo = flagString(args, REPO_FLAG.name) ?? saved?.repo;
   if (!repo) throw new UsageError(`--${REPO_FLAG.name} <address> is required.`);
-  const skills = all ? await core.api.skills.list() : resolveSkills(core, refs);
+  const skills = refs ? resolveSkills(core, refs) : await core.api.skills.list();
   const explicitRepo = flagString(args, REPO_FLAG.name) !== undefined;
   const input = {
     skillIds: skills.map((skill) => skill.id),

@@ -28,11 +28,6 @@ const SKILL_FLAG = {
   description: "Skill to read when the source holds several.",
 } as const;
 
-const USE_RISK_FLAG = {
-  ...ACCEPT_RISK_FLAG,
-  description: "Print a skill the safety check flags anyway. Read the findings first.",
-};
-
 /** The one skill a preview should give: named, the one the typed text asked for, or the only one. */
 function pickSkill(preview: GitPreview, wanted: string | undefined): RepoSkillPreview {
   if (wanted !== undefined) {
@@ -64,7 +59,7 @@ async function readFromPreview(
     }
     const skill = pickSkill(preview, wanted);
     const read = await core.api.install.readPreviewSkill(preview.previewId, skill.relPath, {
-      acceptRisk: flagBoolean(args, USE_RISK_FLAG.name),
+      acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });
     return { ...read, name: skill.name };
   } finally {
@@ -83,7 +78,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
     const named = source.kind === "market" ? "owner/repo@skill" : "@owner/slug";
     throw new UsageError(`--${SKILL_FLAG.name} is not supported for ${named}.`);
   }
-  const acceptRisk = flagBoolean(args, USE_RISK_FLAG.name);
+  const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
   let read: PreviewedSkill;
   if (source.kind === "clawhub") {
     read = await core.api.install.readClawhubSkill(source.owner, source.slug, { acceptRisk });
@@ -118,7 +113,7 @@ export const useCommand: CommandSpec = {
   name: "use",
   summary: "Print a skill's SKILL.md without installing it, to pipe into an agent",
   usage: "<source>",
-  flags: [SKILL_FLAG, ALLOW_REDIRECT_FLAG, USE_RISK_FLAG],
+  flags: [SKILL_FLAG, ALLOW_REDIRECT_FLAG, ACCEPT_RISK_FLAG],
   notes: [
     "Takes the same sources as `skills install`: ./folder, owner/repo@skill, owner/repo, a git",
     "URL, a link, an archive, or @owner/slug for ClawHub. Nothing is added to the library.",
