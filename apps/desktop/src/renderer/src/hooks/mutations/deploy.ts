@@ -6,7 +6,8 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
+import { type CacheSnapshot, patchCachedSkill, skillInSnapshot } from "@/lib/optimistic";
+import { keys } from "@/lib/query-keys";
 import { toastWithUndo } from "@/lib/removed-undo";
 import { toastApplyResult } from "@/lib/toast";
 
@@ -29,7 +30,7 @@ export interface ApplySkillsInput {
 export const PENDING_DEPLOYMENT_PREFIX = "pending:";
 
 /** Flip one skill × agent badge wherever the skill is cached, before the backend answers. */
-function flipDeployment(
+export function flipDeployment(
   queryClient: QueryClient,
   { skillId, agentKey }: DeployPairInput,
   deployed: boolean,
@@ -49,6 +50,29 @@ function flipDeployment(
   });
 }
 
+/**
+ * Take back one flip the backend refused: only that skill × agent goes back to what it was, so a
+ * badge clicked meanwhile keeps its own state. Then fetch the truth.
+ */
+export async function revertDeployment(
+  queryClient: QueryClient,
+  { skillId, agentKey }: DeployPairInput,
+  snapshot: CacheSnapshot | undefined,
+): Promise<void> {
+  const before = skillInSnapshot(snapshot, skillId)?.deployments.find(
+    (d) => d.agentKey === agentKey,
+  );
+  await patchCachedSkill(queryClient, skillId, (skill) => ({
+    ...skill,
+    deployments: [
+      ...skill.deployments.filter((d) => d.agentKey !== agentKey),
+      ...(before ? [before] : []),
+    ],
+  }));
+  await queryClient.invalidateQueries({ queryKey: keys.skills.all });
+  await queryClient.invalidateQueries({ queryKey: keys.skills.detail(skillId) });
+}
+
 /** Deploy one skill to one agent; the badge flips immediately and rolls back on failure. */
 export function useDeploySkill(): UseMutationResult<void, unknown, DeployPairInput, CacheSnapshot> {
   const queryClient = useQueryClient();
@@ -56,7 +80,7 @@ export function useDeploySkill(): UseMutationResult<void, unknown, DeployPairInp
     fn: ({ skillId, agentKey }: DeployPairInput) => api.deploy.deploy(skillId, agentKey),
     onMutate: (input) => flipDeployment(queryClient, input, true),
     error: "errors.deploy",
-    onError: (_error, _input, context) => restoreCached(queryClient, context),
+    onError: (_error, input, context) => revertDeployment(queryClient, input, context),
   });
 }
 
@@ -81,7 +105,7 @@ export function useUndeploySkill(): UseMutationResult<
       }
     },
     error: "errors.undeploy",
-    onError: (_error, _input, context) => restoreCached(queryClient, context),
+    onError: (_error, input, context) => revertDeployment(queryClient, input, context),
   });
 }
 

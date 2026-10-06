@@ -36,7 +36,27 @@ export async function patchCachedSkill(
   ];
 }
 
-/** Put back what an instant change replaced, when the backend refused it. */
+/**
+ * Put back what an instant change replaced, when the backend refused it, then fetch the truth:
+ * another instant change made meanwhile was taken back with it, or put back over it.
+ */
 export function restoreCached(queryClient: QueryClient, snapshot: CacheSnapshot | undefined): void {
-  for (const [key, data] of snapshot ?? []) queryClient.setQueryData(key, data);
+  for (const [key, data] of snapshot ?? []) {
+    queryClient.setQueryData(key, data);
+    void queryClient.invalidateQueries({ queryKey: key, exact: true });
+  }
+}
+
+/** A skill as a snapshot of the skills list, or of its own entry, held it. */
+export function skillInSnapshot(
+  snapshot: CacheSnapshot | undefined,
+  skillId: string,
+): Skill | undefined {
+  for (const [, data] of snapshot ?? []) {
+    const found = Array.isArray(data)
+      ? (data as Skill[]).find((skill) => skill.id === skillId)
+      : (data as Skill | undefined);
+    if (found?.id === skillId) return found;
+  }
+  return undefined;
 }
