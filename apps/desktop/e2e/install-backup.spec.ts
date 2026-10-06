@@ -137,8 +137,6 @@ test("leaving the page with the import list open throws its checkout away", asyn
     (request.postData() ?? "").includes("install.cancelPreview"),
   );
   // As a keyboard shortcut or the tray would: straight to another page, the list still open.
-  await page.evaluate(() => {
-    window.location.hash = "#/library";
-  });
+  await page.evaluate("window.location.hash = '#/library'");
   await cancelled;
 });
