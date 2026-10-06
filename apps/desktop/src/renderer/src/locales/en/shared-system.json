@@ -4,6 +4,7 @@
   },
   "markdown": {
     "remoteImage": "Image on the web (open in browser)",
-    "remoteImageNamed": "Image: {{alt}} (open in browser)"
+    "remoteImageNamed": "Image: {{alt}} (open in browser)",
+    "localImage": "Image: {{name}}"
   }
 }

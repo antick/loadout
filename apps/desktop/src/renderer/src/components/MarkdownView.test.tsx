@@ -24,6 +24,14 @@ describe("Markdown images", () => {
     expect(relative).toContain("https://tracker.example/p.png");
   });
 
+  it("names an image from the skill's folder or the disk instead of loading it", () => {
+    for (const path of ["assets/diagram.png", "/Users/me/secret.png"]) {
+      const html = render(`![diagram](${path})`);
+      expect(html).not.toContain("<img");
+      expect(html).toContain("Image: diagram");
+    }
+  });
+
   it("shows frontmatter with a repeated key as the YAML it is", () => {
     const html = render("---\nname: a\nname: b\n---\n\nBody");
     expect(html).not.toContain("<dt");

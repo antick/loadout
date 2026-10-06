@@ -50,14 +50,23 @@ function MarkdownLink({ href, children, ...props }: ComponentProps<"a">): ReactN
 }
 
 /**
- * An image from the web is never fetched: a skill's author could track who opens the document.
- * It shows as a link to open in the browser instead; images embedded as data stay inline.
+ * Only an image embedded as data is shown. One from the web is never fetched (a skill's author
+ * could track who opens the document): it shows as a link to open in the browser instead.
  */
 function MarkdownImage({ src, alt, ...props }: ComponentProps<"img">): ReactNode {
   const { t } = useTranslation();
   const source = typeof src === "string" ? src : "";
-  if (EMBEDDED_IMAGE.test(source) || !NOT_LOCAL_SOURCE.test(source)) {
+  if (EMBEDDED_IMAGE.test(source)) {
     return <img alt={alt ?? ""} src={source} className="my-3 max-w-full rounded-md" {...props} />;
+  }
+  // A path inside the skill: the preview has no folder to read it from, so it is named instead.
+  if (!NOT_LOCAL_SOURCE.test(source)) {
+    return (
+      <span className="text-muted-foreground" title={source}>
+        <ImageOff className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
+        {t("markdown.localImage", { name: alt || source })}
+      </span>
+    );
   }
   // `//host/x.png` would be fetched (on Windows a `file://` page could even reach out over SMB).
   const web = PROTOCOL_RELATIVE.test(source) ? `https:${source}` : source;
