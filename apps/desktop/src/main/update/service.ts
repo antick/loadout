@@ -49,7 +49,10 @@ export interface UpdateServiceDeps {
 /** A download that passed its checks and can be installed. Survives restarts. */
 interface ReadyUpdate {
   version: string;
-  /** What gets installed: the unpacked app, the AppImage, the installer or the package. */
+  /**
+   * What gets installed: the unpacked app, the AppImage, the installer or the package. The file as
+   * downloaded until `install` prepares it.
+   */
   path: string;
   releaseUrl: string;
   /** The file as downloaded; checked again against the signed feed right before installing. */
@@ -212,7 +215,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     return set({ phase: "available", latestVersion: feed.version, releaseUrl, checkedAt, blocker });
   }
 
-  /** Turn the verified download into what `install` needs. */
+  /** Turn the verified download into what `install` needs. Run once, by `install`. */
   async function prepare(downloaded: string, dir: string, version: string): Promise<string> {
     if (deps.platform === "darwin") {
       return prepareMacBundle(downloaded, join(dir, "stage"), { bundleId: APP_ID, version });
@@ -257,7 +260,6 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
           set({ progress: { received, total: file.size } });
         },
       });
-      const path = await prepare(downloaded, dir, version);
       if (feedCopy) {
         await writeFile(join(dir, FEED_COPY_FILE), feedCopy.bytes);
         await writeFile(
@@ -265,7 +267,8 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
           feedCopy.signature,
         );
       }
-      ready = { version, path, releaseUrl: state.releaseUrl, archive: downloaded };
+      // Unpacked and checked by `install`, right after its second look at the download.
+      ready = { version, path: downloaded, releaseUrl: state.releaseUrl, archive: downloaded };
       await writeFile(readyFile, JSON.stringify(ready));
       deps.log.info(`Update ${version} downloaded and checked`);
       return set({ phase: "ready", progress: null });
