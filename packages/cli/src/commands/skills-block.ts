@@ -1,4 +1,4 @@
-import { AGENT_FLAG, limitPositionals, positional, requireAgents } from "./support";
+import { AGENT_FLAG, fieldView, limitPositionals, positional, requireAgents } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 /** Block or allow a skill for the agents named with `--agent`. */
@@ -17,7 +17,7 @@ function blocker(blocked: boolean) {
     const text = blocked
       ? `${saved.name} is blocked for ${names}. It is not deployed there any more.`
       : `${saved.name} may be deployed to ${names} again.`;
-    return { value: { id: saved.id, name: saved.name, blockedAgents: saved.blockedAgents }, text };
+    return { value: fieldView(saved, "blockedAgents"), text };
   };
 }
 

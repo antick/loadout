@@ -104,3 +104,30 @@ describe("skills scan --json", () => {
     expect((await box.cli("skills", "scan", "fine", "--force")).code).toBe(2);
   });
 });
+
+describe("--json on commands that set one field of skills", () => {
+  it("gives the skill's id, name and that field; several skills come with what failed", async () => {
+    await box.cli("skills", "install", writeSkill(box.root, "notes"));
+    const one = (...argv: string[]) => box.cli("skills", ...argv, "--json").then((r) => r.json());
+    expect(await one("tag", "notes", "--add", "a")).toEqual({
+      id: expect.any(String),
+      name: "notes",
+      tags: ["a"],
+    });
+    expect(Object.keys(await one("note", "notes", "why"))).toEqual(["id", "name", "note"]);
+    expect(Object.keys(await one("block", "notes", "--agent", AGENT))).toEqual([
+      "id",
+      "name",
+      "blockedAgents",
+    ]);
+    expect(Object.keys(await one("suggest-for", "notes", "--add", "*.rs"))).toEqual([
+      "id",
+      "name",
+      "suggestFor",
+    ]);
+    expect(await one("favorite", "notes")).toMatchObject({
+      skills: [{ name: "notes", favoritedAt: expect.any(Number) }],
+      failed: [],
+    });
+  });
+});

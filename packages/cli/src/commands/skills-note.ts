@@ -1,6 +1,6 @@
 import { SKILL_NOTE_MAX_LENGTH } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
-import { limitPositionals, positional } from "./support";
+import { fieldView, limitPositionals, positional } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const CLEAR_FLAG = {
@@ -20,7 +20,7 @@ async function note({ core, args }: CommandContext): Promise<CommandResult> {
   if (clear) saved = await core.api.skills.setNote(skill.id, null);
   else if (text !== undefined) saved = await core.api.skills.setNote(skill.id, text);
   const shown = saved.note ? `${saved.name}:\n${saved.note}` : `${saved.name} has no note.`;
-  return { value: { id: saved.id, name: saved.name, note: saved.note }, text: shown };
+  return { value: fieldView(saved, "note"), text: shown };
 }
 
 export const noteCommand: CommandSpec = {

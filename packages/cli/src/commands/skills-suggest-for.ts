@@ -1,6 +1,6 @@
 import { SUGGEST_FOR_MAX_PATTERNS } from "@loadout/shared";
 import { flagBoolean, flagList } from "../args";
-import { limitPositionals, positional } from "./support";
+import { fieldView, limitPositionals, positional } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const ADD_FLAG = {
@@ -37,7 +37,7 @@ async function suggestFor({ core, args }: CommandContext): Promise<CommandResult
     saved.suggestFor.length > 0
       ? `${saved.name} is suggested for projects with:\n${saved.suggestFor.map((p) => `  ${p}`).join("\n")}`
       : `${saved.name} has no patterns; it is suggested only for technologies it names.`;
-  return { value: saved.suggestFor, text };
+  return { value: fieldView(saved, "suggestFor"), text };
 }
 
 export const suggestForCommand: CommandSpec = {

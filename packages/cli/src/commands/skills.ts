@@ -38,6 +38,7 @@ import {
   REQUIRED_YES_FLAG,
   SKIP_CONFLICTS_FLAG,
   applyOutcome,
+  fieldView,
   limitPositionals,
   positional,
   positionalsFrom,
@@ -325,10 +326,10 @@ async function editTags({ core, args }: CommandContext): Promise<CommandResult> 
     const next = [...skill.tags, ...add].filter((name) => !drop.has(name.trim().toLowerCase()));
     await core.api.skills.setTags(skill.id, next);
   }
-  const tags = core.store.get(skill.id).tags;
+  const saved = core.store.get(skill.id);
   return {
-    value: { id: skill.id, name: skill.name, tags },
-    text: `${skill.name}: ${tags.length > 0 ? tags.join(", ") : "no tags"}`,
+    value: fieldView(saved, "tags"),
+    text: `${saved.name}: ${saved.tags.length > 0 ? saved.tags.join(", ") : "no tags"}`,
   };
 }
 

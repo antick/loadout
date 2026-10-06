@@ -50,7 +50,7 @@ describe("skills suggest-for", () => {
     expect(added.code).toBe(EXIT_OK);
     expect(added.stdout).toContain("  *.rs\n  Cargo.toml");
     const removed = await cli("skills", "suggest-for", "rust-helper", "--remove", "*.rs", "--json");
-    expect(removed.json()).toEqual(["Cargo.toml"]);
+    expect(removed.json()).toMatchObject({ name: "rust-helper", suggestFor: ["Cargo.toml"] });
     const cleared = await cli("skills", "suggest-for", "rust-helper", "--clear");
     expect(cleared.stdout).toContain("has no patterns");
   });
