@@ -44,16 +44,17 @@ export interface InstallTaskOptions<T> {
   key: string;
   /** Toast title while the task runs, e.g. "Installing pdf-tools". */
   title: string;
-  run: () => Promise<T>;
+  /** Run the task; `acceptRisk` goes ahead with skills the safety check flagged. */
+  run: (acceptRisk: boolean) => Promise<T>;
   /** Present when the backend can stop this task; called at most once. */
   cancel?: () => Promise<unknown>;
   /** What to say when it worked. Return null to finish silently (the caller shows the result). */
   success?: (result: T) => InstallTaskSuccess | null;
   /**
-   * The same install, told to go ahead with skills the safety check flagged. When present, a
-   * flagged install asks the user (with the findings) instead of failing.
+   * `run` can go ahead with flagged skills: a flagged install asks the user (with the findings)
+   * instead of failing, and on a yes runs again with `acceptRisk`.
    */
-  runAcceptingRisk?: () => Promise<T>;
+  asksAboutRisk?: boolean;
 }
 
 /** Navigation the toasts need; supplied by the hook because the store lives outside the router. */
@@ -225,17 +226,21 @@ function runOrAskAboutRisk<T>(
   options: InstallTaskOptions<T>,
   toastId: string,
 ): Promise<T | typeof DECLINED> {
-  const { runAcceptingRisk } = options;
-  if (!runAcceptingRisk) return options.run();
-  return runWithRiskConsent(options.run, runAcceptingRisk, {
-    declined: i18n.t("safety.prompt.notInstalled"),
-    toastId,
-    onAsk: () => toast.dismiss(toastId),
-    onAccept: () => {
-      const task = tasks.get(options.key);
-      if (task) showRunningToast(task);
+  const { run } = options;
+  if (!options.asksAboutRisk) return run(false);
+  return runWithRiskConsent(
+    () => run(false),
+    () => run(true),
+    {
+      declined: i18n.t("safety.prompt.notInstalled"),
+      toastId,
+      onAsk: () => toast.dismiss(toastId),
+      onAccept: () => {
+        const task = tasks.get(options.key);
+        if (task) showRunningToast(task);
+      },
     },
-  });
+  );
 }
 
 /**

@@ -32,8 +32,13 @@ export function marketTaskKey(skill: Pick<MarketSkill, "source" | "skillId" | "p
   return skill.provider === "clawhub" ? `clawhub:${ref}` : ref;
 }
 
-function installMarketSkill(skill: MarketSkill, acceptRisk?: boolean): Promise<Skill> {
-  const options = acceptRisk ? { acceptRisk: true } : undefined;
+/** `options` with the go-ahead for flagged skills added when `acceptRisk` is set. */
+function withRisk<O extends object>(options: O | undefined, acceptRisk: boolean) {
+  return acceptRisk ? { ...options, acceptRisk: true } : options;
+}
+
+function installMarketSkill(skill: MarketSkill, acceptRisk: boolean): Promise<Skill> {
+  const options = withRisk(undefined, acceptRisk);
   return skill.provider === "clawhub"
     ? api.install.fromClawhub(skill.source, skill.skillId, options)
     : api.install.fromMarket(skill.source, skill.skillId, options);
@@ -95,8 +100,8 @@ export function useInstallFromMarket(): (skill: MarketSkill) => Promise<Skill | 
       return run({
         key,
         title: t("install.toast.installing", { name: skill.name }),
-        run: () => installMarketSkill(skill),
-        runAcceptingRisk: () => installMarketSkill(skill, true),
+        run: (acceptRisk) => installMarketSkill(skill, acceptRisk),
+        asksAboutRisk: true,
         cancel: () => api.install.cancel(key),
         success: (installed) => installedOne(t, installed),
       });
@@ -114,9 +119,9 @@ export function useInstallFromPath(): (path: string, name?: string) => Promise<S
       run({
         key: path,
         title: t("install.toast.installingPath"),
-        run: () => api.install.fromPath(path, name?.trim() || undefined),
-        runAcceptingRisk: () =>
-          api.install.fromPath(path, name?.trim() || undefined, { acceptRisk: true }),
+        run: (acceptRisk) =>
+          api.install.fromPath(path, name?.trim() || undefined, withRisk(undefined, acceptRisk)),
+        asksAboutRisk: true,
         success: (installed) => installedOne(t, installed),
       }),
     [run, t],
@@ -152,9 +157,9 @@ export function useConfirmGit(): (
       const installed = await run({
         key: preview.repoUrl,
         title: t("install.toast.installingCount", { count: items.length }),
-        run: () => api.install.confirmGit(preview.previewId, items, options),
-        runAcceptingRisk: () =>
-          api.install.confirmGit(preview.previewId, items, { ...options, acceptRisk: true }),
+        run: (acceptRisk) =>
+          api.install.confirmGit(preview.previewId, items, withRisk(options, acceptRisk)),
+        asksAboutRisk: true,
         success: (skills) => {
           const only = soleItem(skills);
           const base = only
@@ -200,9 +205,13 @@ export function useImportDiscovered(): (
       const imported = await run({
         key: discoveredTaskKey(skill),
         title: t("install.toast.importing", { name: name?.trim() || skill.name }),
-        run: () => api.install.importDiscovered(path, name?.trim() || undefined),
-        runAcceptingRisk: () =>
-          api.install.importDiscovered(path, name?.trim() || undefined, { acceptRisk: true }),
+        run: (acceptRisk) =>
+          api.install.importDiscovered(
+            path,
+            name?.trim() || undefined,
+            withRisk(undefined, acceptRisk),
+          ),
+        asksAboutRisk: true,
         success: (installed) => installedOne(t, installed),
       });
       if (imported) {
