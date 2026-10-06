@@ -4,6 +4,7 @@ import {
   SOURCE_TYPES,
   type BatchFailure,
   type Skill,
+  editTags,
   fieldNotesFor,
   matchesSkillQuery,
   runsCode,
@@ -315,14 +316,13 @@ function deployer(action: "add" | "remove") {
   };
 }
 
-async function editTags({ core, args }: CommandContext): Promise<CommandResult> {
+async function tagSkill({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 1);
   const skill = core.store.resolve(positional(args, 0, "a skill (id, name or folder name)"));
   const add = flagList(args, ADD_FLAG.name);
-  const drop = new Set(flagList(args, REMOVE_FLAG.name).map((name) => name.trim().toLowerCase()));
-  if (add.length > 0 || drop.size > 0) {
-    const next = [...skill.tags, ...add].filter((name) => !drop.has(name.trim().toLowerCase()));
-    await core.api.skills.setTags(skill.id, next);
+  const dropping = flagList(args, REMOVE_FLAG.name);
+  if (add.length > 0 || dropping.length > 0) {
+    await core.api.skills.setTags(skill.id, editTags(skill.tags, add, dropping));
   }
   const saved = core.store.get(skill.id);
   return {
@@ -408,7 +408,7 @@ export const skillsGroup: CommandGroup = {
       summary: "Show or change a skill's tags",
       usage: "<ref>",
       flags: [ADD_FLAG, REMOVE_FLAG],
-      run: editTags,
+      run: tagSkill,
     },
     noteCommand,
     favoriteCommand,

@@ -46,4 +46,5 @@ export * from "./is-record";
 export * from "./frontmatter";
 export * from "./frontmatter-fix";
 export * from "./skill-notes";
+export * from "./tags";
 export * from "./editors";

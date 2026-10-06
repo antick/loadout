@@ -1,3 +1,4 @@
+import { editTags } from "@loadout/shared";
 import type { Skill } from "@loadout/shared";
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -69,10 +70,7 @@ function BatchTagForm({
     }
     setSaving(true);
     const jobs = skills.flatMap((skill) => {
-      const next = [
-        ...skill.tags.filter((tag) => !removing.has(tag)),
-        ...adding.filter((tag) => !skill.tags.includes(tag)),
-      ];
+      const next = editTags(skill.tags, adding, [...removing]);
       const changed =
         next.length !== skill.tags.length || next.some((tag, index) => tag !== skill.tags[index]);
       return changed ? [setTags.mutateAsync({ skillId: skill.id, tags: next })] : [];
