@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { AgentControlSetup } from "@/components/AgentControlSetup";
 import { CopyableCommand } from "@/components/CopyableCommand";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +24,8 @@ export function AgentControlSection(): ReactNode {
 
   return (
     <div className="flex flex-col gap-3">
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.cli.title")}
         description={t("settings.cli.description")}
         actions={
@@ -63,9 +64,10 @@ export function AgentControlSection(): ReactNode {
           ))}
         </div>
         <p className="text-xs text-muted-foreground">{t("settings.cli.pathHint")}</p>
-      </Panel>
+      </PageSection>
 
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.cli.control.title")}
         description={t("settings.cli.control.description", { skill: AGENT_CONTROL_SKILL_NAME })}
         actions={
@@ -105,7 +107,7 @@ export function AgentControlSection(): ReactNode {
             <AgentControlSetup />
           </div>
         </div>
-      </Panel>
+      </PageSection>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type Choice, ChoiceCards } from "@/components/ChoiceCards";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -75,7 +75,8 @@ export function RemoveAllDataPanel({ homePath }: { homePath: string }): ReactNod
   const choices = useFolderChoices(summary.data);
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       tone="danger"
       title={t("settings.storage.removeAll.title")}
       description={t("settings.storage.removeAll.description")}
@@ -119,6 +120,6 @@ export function RemoveAllDataPanel({ homePath }: { homePath: string }): ReactNod
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Panel>
+    </PageSection>
   );
 }

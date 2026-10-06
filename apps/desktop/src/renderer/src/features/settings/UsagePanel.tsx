@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
@@ -22,7 +22,7 @@ export function UsagePanel(): ReactNode {
   const nameOf = (key: string): string => names.get(key) ?? key;
 
   return (
-    <Panel title={t("usage.card.title")}>
+    <PageSection variant="card" title={t("usage.card.title")}>
       <div className="flex flex-col divide-y">
         <SettingRow
           label={t("usage.settings.label")}
@@ -55,6 +55,6 @@ export function UsagePanel(): ReactNode {
           </div>
         ) : null}
       </div>
-    </Panel>
+    </PageSection>
   );
 }

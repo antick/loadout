@@ -3,7 +3,7 @@ import { ExternalLink, KeyRound, ShieldCheck, ShieldOff } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { SettingRow } from "@/components/SettingRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +82,8 @@ export function MarketplacesSection(): ReactNode {
   }
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       title={CLAWHUB_NAME}
       description={t("settings.marketplaces.clawhub.description")}
       actions={
@@ -121,6 +122,6 @@ export function MarketplacesSection(): ReactNode {
           </Button>
         </SettingRow>
       </form>
-    </Panel>
+    </PageSection>
   );
 }

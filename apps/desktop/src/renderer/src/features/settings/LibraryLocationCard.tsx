@@ -2,7 +2,7 @@ import { FolderOpen, Power, TriangleAlert, Undo2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,8 @@ export function LibraryLocationCard(): ReactNode {
     });
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       title={t("settings.general.library.title")}
       description={t("settings.general.library.description")}
     >
@@ -96,6 +97,6 @@ export function LibraryLocationCard(): ReactNode {
       ) : (
         <Skeleton className="h-16 w-full" />
       )}
-    </Panel>
+    </PageSection>
   );
 }

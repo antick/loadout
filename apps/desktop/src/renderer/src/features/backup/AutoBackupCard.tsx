@@ -2,7 +2,7 @@ import { CircleAlert } from "lucide-react";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Switch } from "@/components/ui/switch";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useBackupStatus } from "@/hooks/queries/app";
@@ -17,7 +17,8 @@ export function AutoBackupCard(): ReactNode {
   const setSetting = useSetSetting();
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       title={t("backupPage.auto.title")}
       description={t("backupPage.auto.description")}
       actions={
@@ -35,6 +36,6 @@ export function AutoBackupCard(): ReactNode {
           <span data-selectable>{lastError}</span>
         </InlineNotice>
       ) : null}
-    </Panel>
+    </PageSection>
   );
 }

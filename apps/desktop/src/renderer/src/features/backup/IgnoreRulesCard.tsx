@@ -2,7 +2,7 @@ import { CircleAlert } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useSetBackupIgnoreRules } from "@/features/backup/backup-mutations";
@@ -27,7 +27,11 @@ export function IgnoreRulesCard({ enabled }: { enabled: boolean }): ReactNode {
   const changed = draft !== null && draft !== saved;
 
   return (
-    <Panel title={t("backupSync.ignore.title")} description={t("backupSync.ignore.description")}>
+    <PageSection
+      variant="card"
+      title={t("backupSync.ignore.title")}
+      description={t("backupSync.ignore.description")}
+    >
       <div className="flex flex-col gap-1.5">
         <p className={SECTION_LABEL}>{t("backupSync.ignore.defaults")}</p>
         <ul className="flex flex-wrap gap-1">
@@ -85,6 +89,6 @@ export function IgnoreRulesCard({ enabled }: { enabled: boolean }): ReactNode {
           {t("backupSync.ignore.save")}
         </Button>
       </div>
-    </Panel>
+    </PageSection>
   );
 }

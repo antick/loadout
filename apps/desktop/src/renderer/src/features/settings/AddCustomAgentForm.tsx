@@ -2,7 +2,7 @@ import { FolderOpen, Plus } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "@/components/IconButton";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,8 @@ export function AddCustomAgentForm(): ReactNode {
   };
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       title={t("settings.agents.custom.title")}
       description={t("settings.agents.custom.description")}
     >
@@ -112,6 +113,6 @@ export function AddCustomAgentForm(): ReactNode {
           </Button>
         </div>
       </form>
-    </Panel>
+    </PageSection>
   );
 }

@@ -13,7 +13,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { IconButton } from "@/components/IconButton";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -169,7 +169,8 @@ export function RecentlyRemovedPanel(): ReactNode {
   }
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       id="recently-removed"
       title={t("settings.storage.removed.title")}
       description={t("settings.storage.removed.description", {
@@ -190,6 +191,6 @@ export function RecentlyRemovedPanel(): ReactNode {
       }
     >
       {body}
-    </Panel>
+    </PageSection>
   );
 }

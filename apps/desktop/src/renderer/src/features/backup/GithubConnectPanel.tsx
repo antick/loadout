@@ -6,7 +6,7 @@ import {
 import { ExternalLink, KeyRound } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -68,7 +68,8 @@ export function GithubConnectPanel({
   };
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       title={t(reconnecting ? "backupPage.github.reconnectTitle" : "backupPage.github.title")}
       description={t(
         reconnecting ? "backupPage.github.reconnectDescription" : "backupPage.github.description",
@@ -152,6 +153,6 @@ export function GithubConnectPanel({
           </FieldDescription>
         </Field>
       </form>
-    </Panel>
+    </PageSection>
   );
 }

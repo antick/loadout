@@ -1,7 +1,7 @@
 import { PROXY_URL_PATTERN } from "@loadout/shared";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -70,7 +70,11 @@ export function NetworkSection(): ReactNode {
   const { t } = useTranslation();
   const saved = useSetting("proxyUrl");
   return (
-    <Panel title={t("settings.network.title")} description={t("settings.network.description")}>
+    <PageSection
+      variant="card"
+      title={t("settings.network.title")}
+      description={t("settings.network.description")}
+    >
       <ProxyForm key={saved} saved={saved} />
       <div className="border-t pt-3">
         <p className={SECTION_LABEL}>{t("settings.network.appliesTitle")}</p>
@@ -81,6 +85,6 @@ export function NetworkSection(): ReactNode {
         </ul>
         <p className="mt-2 text-sm text-muted-foreground">{t("settings.network.notApplied")}</p>
       </div>
-    </Panel>
+    </PageSection>
   );
 }

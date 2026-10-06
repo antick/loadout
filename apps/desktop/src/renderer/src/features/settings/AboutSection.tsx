@@ -2,7 +2,7 @@ import { Bug, ClipboardCopy, FileArchive, LifeBuoy, ScrollText } from "lucide-re
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useShell } from "@/components/layout/shell-context";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useCopyDiagnostics, useExportLogs } from "@/features/settings/settings-mutations";
@@ -21,7 +21,8 @@ export function AboutSection(): ReactNode {
     <div className="flex flex-col gap-3">
       <AppUpdatePanel />
 
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.about.supportTitle")}
         description={t("settings.about.supportDescription")}
       >
@@ -65,7 +66,7 @@ export function AboutSection(): ReactNode {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">{t("settings.about.privacy")}</p>
-      </Panel>
+      </PageSection>
     </div>
   );
 }

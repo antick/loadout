@@ -3,7 +3,7 @@ import { Check, HardDrive, Minus, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { useBackupSizeReport } from "@/features/backup/backup-queries";
 import { MAX_LISTED_OVERSIZED } from "./constants";
 import { SECTION_LABEL } from "@/lib/styles";
@@ -28,7 +28,7 @@ export function BackupContents(): ReactNode {
   };
 
   return (
-    <Panel title={t("backupPage.contents.title")}>
+    <PageSection variant="card" title={t("backupPage.contents.title")}>
       <ul className="flex flex-col gap-1.5 text-sm">
         {INCLUDED.map((item) => (
           <li key={item} className="flex items-start gap-2">
@@ -70,6 +70,6 @@ export function BackupContents(): ReactNode {
           {t("backupPage.contents.totalLarge", { limit: formatBytes(report.repoWarnBytes) })}
         </InlineNotice>
       ) : null}
-    </Panel>
+    </PageSection>
   );
 }

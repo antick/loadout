@@ -3,7 +3,7 @@ import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { ErrorState } from "@/components/ErrorState";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Skeletons } from "@/components/Skeletons";
@@ -59,7 +59,8 @@ export function StorageSection(): ReactNode {
 
   return (
     <div className="flex flex-col gap-3">
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.storage.home.title")}
         description={t("settings.storage.home.description")}
         actions={
@@ -76,13 +77,14 @@ export function StorageSection(): ReactNode {
             <Skeletons count={SKELETON_ROWS} className="h-10 w-full" />
           </div>
         )}
-      </Panel>
+      </PageSection>
 
       <RecentlyRemovedPanel />
 
       <LibraryLocationCard />
 
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.storage.window.title")}
         description={t("settings.storage.window.description")}
       >
@@ -106,9 +108,10 @@ export function StorageSection(): ReactNode {
             </li>
           ))}
         </ul>
-      </Panel>
+      </PageSection>
 
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.storage.outside.title")}
         description={t("settings.storage.outside.description")}
       >
@@ -117,7 +120,7 @@ export function StorageSection(): ReactNode {
             <li key={item}>{t(`settings.storage.outside.${item}`)}</li>
           ))}
         </ul>
-      </Panel>
+      </PageSection>
 
       {data ? <RemoveAllDataPanel homePath={data.homePath} /> : null}
     </div>

@@ -3,7 +3,7 @@ import { Unplug } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { useRemoveBackupRemote } from "@/features/backup/backup-mutations";
 import { useGithubAuthMethod } from "@/features/backup/backup-queries";
@@ -53,7 +53,8 @@ export function DisconnectCard({
   };
 
   return (
-    <Panel
+    <PageSection
+      variant="card"
       title={t("backupPage.disconnect.title")}
       description={t("backupPage.disconnect.body")}
       tone="danger"
@@ -85,6 +86,6 @@ export function DisconnectCard({
           />
         </p>
       ) : null}
-    </Panel>
+    </PageSection>
   );
 }

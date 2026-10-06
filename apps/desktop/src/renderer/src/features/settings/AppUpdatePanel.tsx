@@ -2,7 +2,7 @@ import { type AppUpdateStatus, formatBytes, formatRelative, isNewerVersion } fro
 import { Download, ExternalLink, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
@@ -74,7 +74,7 @@ export function AppUpdatePanel(): ReactNode {
   const progress = status?.progress;
 
   return (
-    <Panel>
+    <PageSection variant="card">
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="type-display text-lg">{info.data?.name}</p>
@@ -154,6 +154,6 @@ export function AppUpdatePanel(): ReactNode {
           ) : null}
         </div>
       ) : null}
-    </Panel>
+    </PageSection>
   );
 }

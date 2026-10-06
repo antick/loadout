@@ -16,7 +16,7 @@ import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { type Choice, ChoiceCards } from "@/components/ChoiceCards";
 import { OptionSelect } from "@/components/OptionSelect";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -89,7 +89,8 @@ export function GeneralSection(): ReactNode {
 
   return (
     <div className="flex flex-col gap-3">
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.general.deploy.title")}
         description={t("settings.general.deploy.description")}
       >
@@ -100,9 +101,10 @@ export function GeneralSection(): ReactNode {
           className="md:grid-cols-2"
           onChange={(value) => setSetting.mutate({ key: "deployMode", value })}
         />
-      </Panel>
+      </PageSection>
 
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.general.palette.title")}
         description={t("settings.general.palette.description")}
       >
@@ -113,9 +115,9 @@ export function GeneralSection(): ReactNode {
           className="md:grid-cols-2"
           onChange={(value) => setSetting.mutate({ key: "palette", value })}
         />
-      </Panel>
+      </PageSection>
 
-      <Panel title={t("settings.general.appearance.title")}>
+      <PageSection variant="card" title={t("settings.general.appearance.title")}>
         <div className="flex flex-col divide-y">
           <SettingRow label={t("settings.general.appearance.theme")}>
             <ToggleGroup
@@ -174,9 +176,9 @@ export function GeneralSection(): ReactNode {
             />
           </SettingRow>
         </div>
-      </Panel>
+      </PageSection>
 
-      <Panel title={t("settings.general.window.title")}>
+      <PageSection variant="card" title={t("settings.general.window.title")}>
         <div className="flex flex-col divide-y">
           <SettingRow
             label={t("settings.general.window.tray")}
@@ -199,7 +201,7 @@ export function GeneralSection(): ReactNode {
             />
           </SettingRow>
         </div>
-      </Panel>
+      </PageSection>
 
       <UsagePanel />
     </div>

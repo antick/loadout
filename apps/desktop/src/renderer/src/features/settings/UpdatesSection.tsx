@@ -2,7 +2,7 @@ import { AUTO_UPDATE_INTERVALS, formatRelative } from "@loadout/shared";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionSelect } from "@/components/OptionSelect";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { useSetSetting } from "@/hooks/mutations/settings";
@@ -23,7 +23,11 @@ export function UpdatesSection(): ReactNode {
   const off = settings.autoUpdateInterval === "off";
 
   return (
-    <Panel title={t("settings.updates.title")} description={t("settings.updates.description")}>
+    <PageSection
+      variant="card"
+      title={t("settings.updates.title")}
+      description={t("settings.updates.description")}
+    >
       <div className="flex flex-col divide-y">
         <SettingRow
           label={t("settings.updates.frequency")}
@@ -67,6 +71,6 @@ export function UpdatesSection(): ReactNode {
           />
         </SettingRow>
       </div>
-    </Panel>
+    </PageSection>
   );
 }

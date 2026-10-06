@@ -8,7 +8,7 @@ import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CopyableCommand } from "@/components/CopyableCommand";
 import { InlineNotice } from "@/components/InlineNotice";
-import { Panel } from "@/components/Panel";
+import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { SettingRow } from "@/components/SettingRow";
 import { Button } from "@/components/ui/button";
@@ -140,7 +140,8 @@ export function SafetySection(): ReactNode {
 
   return (
     <>
-      <Panel
+      <PageSection
+        variant="card"
         title={t("settings.safety.title")}
         description={t("settings.safety.description")}
         actions={
@@ -186,7 +187,7 @@ export function SafetySection(): ReactNode {
           </SettingRow>
           <ScannerPathForm key={savedPath} saved={savedPath} />
         </div>
-      </Panel>
+      </PageSection>
     </>
   );
 }
