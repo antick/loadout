@@ -191,6 +191,23 @@ describe("check", () => {
     expect(world.store.get(fresh.id).updateStatus).toBe("local_only");
   });
 
+  it("a dry-run check reports what is newer upstream and saves nothing", async () => {
+    const pdf = await world.installFromGit("pdf");
+    const docx = await world.installFromGit("docx");
+    changePdfUpstream(world);
+    const before = world.store.get(pdf.id);
+
+    const result = await world.updates.api.checkAll(true, { dryRun: true });
+
+    expect(result.updateAvailable).toEqual([pdf.id]);
+    expect(world.store.get(pdf.id)).toEqual(before);
+    expect(world.store.get(docx.id).lastCheckedAt).toBe(docx.lastCheckedAt);
+    // The real check saves the same answer.
+    const saved = await world.updates.api.checkAll(true);
+    expect(saved.updateAvailable).toEqual([pdf.id]);
+    expect(world.store.get(pdf.id).updateStatus).toBe("update_available");
+  });
+
   it("checks only the chosen skills, asking their repository once", async () => {
     const pdf = await world.installFromGit("pdf");
     const docx = await world.installFromGit("docx");
@@ -207,7 +224,7 @@ describe("check", () => {
       skillIds: [pdf.id, docx.id, "gone"],
     });
     expect(world.lookups()).toBe(before + 1);
-    expect(result).toEqual({ succeeded: 2, failed: [] });
+    expect(result).toEqual({ succeeded: 2, failed: [], updateAvailable: [pdf.id] });
     expect(world.store.get(pdf.id).updateStatus).toBe("update_available");
     // Not chosen: never looked at.
     expect(world.store.get(broken.id).updateStatus).toBe("unknown");

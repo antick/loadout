@@ -98,11 +98,15 @@ async function check(context: CommandContext): Promise<CommandResult> {
 /**
  * Asked to update everything: look upstream now, never at an answer kept from earlier, and take
  * the skills a check finds newer upstream. A skill whose check failed is not due, so the failures
- * come back too, or it would go unmentioned.
+ * come back too, or it would go unmentioned. A dry run saves nothing the check found.
  */
-async function dueForUpdate(core: Core): Promise<{ due: Skill[]; failed: BatchFailure[] }> {
-  const checked = await core.api.updates.checkAll(true);
-  const due = (await core.api.skills.list()).filter((s) => s.updateStatus === "update_available");
+async function dueForUpdate(
+  core: Core,
+  dryRun: boolean,
+): Promise<{ due: Skill[]; failed: BatchFailure[] }> {
+  const checked = await core.api.updates.checkAll(true, { dryRun });
+  const newer = new Set(checked.updateAvailable);
+  const due = (await core.api.skills.list()).filter((skill) => newer.has(skill.id));
   return { due, failed: checked.failed };
 }
 
@@ -128,7 +132,7 @@ async function planUpdates(context: CommandContext, one: Skill | null): Promise<
   // `--all` updates only skills a check finds newer upstream: the dry run looks at the same ones.
   let skills: Skill[] = one ? [one] : [];
   const value: UpdatePlan = { dryRun: true, skills: [], failed: [] };
-  if (!one) ({ due: skills, failed: value.failed } = await dueForUpdate(core));
+  if (!one) ({ due: skills, failed: value.failed } = await dueForUpdate(core, true));
   for (const skill of skills) value.skills.push(await planUpdate(core, skill));
   return {
     value,
@@ -162,7 +166,7 @@ async function update(context: CommandContext): Promise<CommandResult> {
   }
 
   const checkedSince = Date.now();
-  const checked = await dueForUpdate(core);
+  const checked = await dueForUpdate(core, false);
   const updated = await core.api.updates.updateMany(
     checked.due.map((skill) => skill.id),
     { checkedSince, approveRemovals: flagBoolean(args, APPROVE_FLAG.name) },
@@ -196,7 +200,7 @@ export const updateCommand: CommandSpec = {
   usage: "<ref> | --all",
   flags: [ALL_FLAG, APPROVE_FLAG, ACCEPT_RISK_FLAG, DRY_RUN_FLAG],
   notes: [
-    "--dry-run compares with the source and lists the files that would change, and whether the update would be held back; the library is not touched. With --all it checks for updates first (like `skills check --all`) and lists the skills the real run would update.",
+    "--dry-run compares with the source and lists the files that would change, and whether the update would be held back; the library is not touched. With --all it checks for updates first (like `skills check --all`, without saving what it found) and lists the skills the real run would update.",
     "An update that would delete files or replace edits made in the app is held back and listed; that is a safety stop, not an error.",
   ],
   run: update,

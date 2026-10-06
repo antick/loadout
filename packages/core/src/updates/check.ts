@@ -1,6 +1,6 @@
 import {
-  type BatchResult,
   type CheckAllOptions,
+  type CheckAllResult,
   type Skill,
   UPDATE_CHECK_FRESH_MS,
   type UpdateStatus,
@@ -46,7 +46,7 @@ export interface CheckRoundOptions extends CheckAllOptions {
 
 export interface Checker {
   check(skillId: string, options?: CheckOptions): Promise<Skill>;
-  checkAll(force?: boolean, options?: CheckRoundOptions): Promise<BatchResult>;
+  checkAll(force?: boolean, options?: CheckRoundOptions): Promise<CheckAllResult>;
 }
 
 const MAX_CONCURRENT_LOOKUPS = 8;
@@ -243,7 +243,21 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
     return remoteFinding(skill, outcome, store.installed(skill.id)?.hash ?? null);
   }
 
-  async function apply(skill: Skill, finding: Finding, lockMode: LockMode): Promise<Skill> {
+  /**
+   * Record what a lookup found. A dry run records nothing: the skill comes back as the check
+   * would have saved it.
+   */
+  async function apply(
+    skill: Skill,
+    finding: Finding,
+    lockMode: LockMode,
+    dryRun = false,
+  ): Promise<Skill> {
+    if (dryRun) {
+      const fresh = store.get(skill.id);
+      if (guardOf(fresh) !== finding.guard) return fresh;
+      return { ...fresh, ...finding.patch(fresh), lastCheckedAt: Date.now() };
+    }
     const applied = await runLocked(ctx, lockMode, `check ${skill.name}`, () => {
       const fresh = store.get(skill.id);
       if (guardOf(fresh) !== finding.guard) return fresh;
@@ -279,7 +293,17 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
         outcomes.set(key, await lookup(target));
       });
 
-      const result: BatchResult = { succeeded: skills.length - due.length, failed: [] };
+      const result: CheckAllResult = {
+        succeeded: skills.length - due.length,
+        failed: [],
+        updateAvailable: [],
+      };
+      const checkedIds = new Set(due.map((skill) => skill.id));
+      for (const skill of skills) {
+        if (!checkedIds.has(skill.id) && skill.updateStatus === "update_available") {
+          result.updateAvailable.push(skill.id);
+        }
+      }
       // Skills taken from one archive link download it once per round.
       const downloads: DownloadCache = new Map();
       // Skills of one repository whose commit moved: one fetch of folder trees for all of them.
@@ -302,7 +326,9 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
             skill,
             await investigate(skill, round),
             options.lockMode ?? "wait",
+            options.dryRun,
           );
+          if (checked.updateStatus === "update_available") result.updateAvailable.push(skill.id);
           if (checked.updateStatus === "error") {
             result.failed.push({
               name: skill.name,

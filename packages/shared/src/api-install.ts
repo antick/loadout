@@ -96,6 +96,14 @@ export interface CheckAllOptions {
    * asked once. Ids of skills no longer in the library are skipped.
    */
   skillIds?: string[];
+  /** Look upstream but save nothing: the library and its skills stay as they were. */
+  dryRun?: boolean;
+}
+
+/** A check round: how many skills it answered, the ones it could not, and what is newer upstream. */
+export interface CheckAllResult extends BatchResult {
+  /** Ids of the chosen skills a check found newer upstream (or already knew to be). */
+  updateAvailable: string[];
 }
 
 export interface UpdateManyOptions {
@@ -110,7 +118,7 @@ export interface UpdateManyOptions {
 
 export interface UpdatesApi {
   check(skillId: string, force?: boolean): Promise<Skill>;
-  checkAll(force?: boolean, options?: CheckAllOptions): Promise<BatchResult>;
+  checkAll(force?: boolean, options?: CheckAllOptions): Promise<CheckAllResult>;
   /**
    * The new version goes through the safety check first: flagged, it throws UNSAFE with the
    * findings and nothing changes, unless `options.acceptRisk` (the user said update anyway).

@@ -72,6 +72,9 @@ describe("skills update --dry-run", () => {
     expect(run.stdout).toContain("+ new.md");
     expect(run.stdout).toContain("- old.md");
     expect(run.stdout).toContain("Held back without --approve-removals");
+    const checkedBefore = (await box.cli("skills", "show", "notes", "--json")).json<{
+      lastCheckedAt: number | null;
+    }>().lastCheckedAt;
     // `--all` looks upstream now, like the real run, even right after the install.
     const json = (
       await box.cli("skills", "update", "--all", "--dry-run", "--json")
@@ -82,7 +85,14 @@ describe("skills update --dry-run", () => {
       removed: ["old.md"],
       heldBack: ["old.md"],
     });
-    // Nothing changed: the library copy still differs from its source by the same files.
+    // Nothing changed: not even when the skill was last checked.
+    const shown = (await box.cli("skills", "show", "notes", "--json")).json<{
+      lastCheckedAt: number | null;
+      updateStatus: string;
+    }>();
+    expect(shown.lastCheckedAt).toBe(checkedBefore);
+    expect(shown.updateStatus).not.toBe("update_available");
+    // The library copy still differs from its source by the same files.
     expect((await box.cli("skills", "diff", "notes", "--upstream")).stdout).toContain("old.md");
   });
 
