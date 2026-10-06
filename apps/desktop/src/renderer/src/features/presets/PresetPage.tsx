@@ -1,10 +1,9 @@
 import type { Preset, Skill } from "@loadout/shared";
-import { Navigate, useNavigate } from "@tanstack/react-router";
+import { Navigate } from "@tanstack/react-router";
 import { Info, Layers, Pencil, Play, Plus, Trash2, FileUp } from "lucide-react";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AddFromLibrarySheet } from "@/components/AddFromLibrarySheet";
-import { useConfirm } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { InlineNotice } from "@/components/InlineNotice";
@@ -54,8 +53,6 @@ function PresetSkeleton(): ReactNode {
 function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }): ReactNode {
   const { t } = useTranslation();
   const shell = useShell();
-  const confirm = useConfirm();
-  const navigate = useNavigate();
   const agents = useAvailableAgents();
   const apply = useApplyPreset();
   const removePreset = useRemovePreset();
@@ -73,17 +70,6 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
   const memberIds = members.map((skill) => skill.id);
   const memberIdSet = useMemo(() => new Set(preset.skillIds), [preset.skillIds]);
   const isMember = useCallback((skill: Skill) => memberIdSet.has(skill.id), [memberIdSet]);
-
-  const askDelete = async (): Promise<void> => {
-    const ok = await confirm({
-      title: t("presets.deleteTitle", { name: preset.name }),
-      description: t("presets.deleteDescription"),
-      confirmLabel: t("common.delete"),
-      destructive: true,
-    });
-    if (!ok) return;
-    removePreset.mutate(preset, { onSuccess: () => void navigate({ to: FALLBACK_ROUTE }) });
-  };
 
   return (
     <div className="flex min-h-full flex-col gap-5 px-6 py-5">
@@ -111,7 +97,7 @@ function PresetContent({ preset, skills }: { preset: Preset; skills: Skill[] }):
               size="sm"
               className="text-muted-foreground hover:text-danger"
               disabled={removePreset.isPending}
-              onClick={() => void askDelete()}
+              onClick={() => void removePreset.ask(preset)}
             >
               <Trash2 />
               <span className="max-xl:sr-only">{t("common.delete")}</span>

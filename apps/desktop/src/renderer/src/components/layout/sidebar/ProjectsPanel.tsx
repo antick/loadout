@@ -1,9 +1,8 @@
 import type { Project } from "@loadout/shared";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 import { ChevronRight, Folder, FolderPlus, Link2, Pin, PinOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useConfirm } from "@/components/ConfirmDialog";
 import { ProjectSkillList } from "@/components/layout/sidebar/ProjectSkillList";
 import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem";
 import { SidebarPanel } from "@/components/layout/sidebar/SidebarPanel";
@@ -94,12 +93,10 @@ function ShortcutGroup({
 export function ProjectsPanel(): ReactNode {
   const { t } = useTranslation();
   const shell = useShell();
-  const confirm = useConfirm();
-  const navigate = useNavigate();
   const params = useParams({ strict: false });
   const projects = useProjects();
   const reorder = useReorderProjects();
-  const remove = useRemoveProject();
+  const { ask: askRemove } = useRemoveProject();
   const reveal = useRevealProject();
   const setPinned = useSetProjectPinned();
   const items = projects.data ?? [];
@@ -115,19 +112,6 @@ export function ProjectsPanel(): ReactNode {
   const toggle = (id: string): void =>
     setOpenState((previous) => ({ ...previous, [id]: !(previous[id] ?? id === params.projectId) }));
   const ids = items.map((project) => project.id);
-
-  const askRemove = async (project: Project): Promise<void> => {
-    const ok = await confirm({
-      title: t("projects.removeTitle", { name: project.name }),
-      description: t("projects.removeDescription"),
-      items: [project.path],
-      confirmLabel: t("projects.remove"),
-      destructive: true,
-    });
-    if (!ok) return;
-    remove.mutate(project);
-    if (params.projectId === project.id) void navigate({ to: "/projects" });
-  };
 
   const pinItem = (project: Project): ReactNode => (
     <ContextMenuItem

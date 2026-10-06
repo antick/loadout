@@ -1,9 +1,6 @@
-import type { Preset } from "@loadout/shared";
-import { useNavigate, useParams } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useConfirm } from "@/components/ConfirmDialog";
 import { SidebarNavItem } from "@/components/layout/sidebar/SidebarNavItem";
 import { SidebarPanel } from "@/components/layout/sidebar/SidebarPanel";
 import { useShell } from "@/components/layout/shell-context";
@@ -30,26 +27,11 @@ import { moveId } from "@/lib/utils";
 export function PresetsPanel(): ReactNode {
   const { t } = useTranslation();
   const shell = useShell();
-  const confirm = useConfirm();
-  const navigate = useNavigate();
-  const params = useParams({ strict: false });
   const presets = usePresets();
   const reorder = useReorderPresets();
-  const remove = useRemovePreset();
+  const { ask: askDelete } = useRemovePreset();
   const items = presets.data ?? [];
   const ids = items.map((preset) => preset.id);
-
-  const askDelete = async (preset: Preset): Promise<void> => {
-    const ok = await confirm({
-      title: t("presets.deleteTitle", { name: preset.name }),
-      description: t("presets.deleteDescription"),
-      confirmLabel: t("common.delete"),
-      destructive: true,
-    });
-    if (!ok) return;
-    remove.mutate(preset);
-    if (params.presetId === preset.id) void navigate({ to: "/presets" });
-  };
 
   return (
     <SidebarPanel

@@ -1,9 +1,8 @@
-import { APP_NAME, type Project } from "@loadout/shared";
-import { Navigate, useNavigate } from "@tanstack/react-router";
+import type { Project } from "@loadout/shared";
+import { Navigate } from "@tanstack/react-router";
 import { FilePlus2, FolderOpen, MoreHorizontal, Pin, PinOff, Unlink } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useConfirm } from "@/components/ConfirmDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { IconButton } from "@/components/IconButton";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -103,14 +102,13 @@ function ProjectWorkspace({
   onSkillOpened,
 }: Omit<ProjectPageProps, "projectId"> & { project: Project }): ReactNode {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const confirm = useConfirm();
   const shell = useShell();
   const skills = useProjectSkills(project.missing ? null : project.id);
   const targets = useProjectTargets(project.id);
   const instructionFiles = useInstructionFiles(project.id, project.type === "project");
   const refresh = useRefreshProject();
   const removeProject = useRemoveProject();
+  const onRemoveProject = (): Promise<void> => removeProject.ask(project);
   const revealProject = useRevealProject();
   const setPinned = useSetProjectPinned();
   const { mutate: recordOpen } = useRecordProjectOpen();
@@ -172,16 +170,6 @@ function ProjectWorkspace({
         enabled: groups.filter((group) => group.enabledState !== "none").length,
         total: groups.length,
       };
-
-  const onRemoveProject = async (): Promise<void> => {
-    const ok = await confirm({
-      title: t("projects.removeTitle", { name: project.name, app: APP_NAME }),
-      description: t("projects.removeDescription"),
-      confirmLabel: t("projects.remove"),
-    });
-    if (!ok) return;
-    removeProject.mutate(project, { onSuccess: () => void navigate({ to: "/projects" }) });
-  };
 
   return (
     <LocalSkillPage>
