@@ -1,5 +1,14 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { closeSync, openSync, unlinkSync, utimesSync, writeSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import {
+  closeSync,
+  linkSync,
+  openSync,
+  renameSync,
+  unlinkSync,
+  utimesSync,
+  writeSync,
+} from "node:fs";
 import { hostname, uptime } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { AppError } from "./errors";
@@ -151,14 +160,38 @@ export class RepoLock {
       return true;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-      if (this.#abandoned(this.#readHolder())) {
-        try {
-          unlinkSync(this.#path);
-        } catch {
-          // Someone else cleaned it up first.
-        }
-      }
+      this.#clearAbandoned();
       return false;
+    }
+  }
+
+  /**
+   * Take away a lock file left behind. Between judging it abandoned and removing it, another
+   * process may have cleared it and taken a fresh lock of its own: so the file is first moved
+   * aside, which is atomic, and a file that is not the one judged goes straight back.
+   */
+  #clearAbandoned(): void {
+    const judged = statOrNull(this.#path);
+    if (!judged || !this.#abandoned(this.#readHolder())) return;
+    const aside = `${this.#path}.stale-${randomUUID()}`;
+    try {
+      renameSync(this.#path, aside);
+    } catch {
+      // Someone else cleaned it up first.
+      return;
+    }
+    if (statOrNull(aside)?.ino !== judged.ino) {
+      try {
+        // A link, unlike a rename, never replaces a lock taken meanwhile.
+        linkSync(aside, this.#path);
+      } catch {
+        // Another lock is there already.
+      }
+    }
+    try {
+      unlinkSync(aside);
+    } catch {
+      // Nothing left to tidy.
     }
   }
 

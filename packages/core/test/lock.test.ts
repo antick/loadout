@@ -1,4 +1,12 @@
-import { existsSync, mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { hostname, tmpdir, uptime } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -100,6 +108,8 @@ describe("library lock", () => {
     utimesSync(path, when, when);
     await lock.tryRun("mine", () => "ran");
     expect(await lock.tryRun("mine", () => "ran")).toBe("ran");
+    // Cleared files are moved aside before they go: none of them is left behind.
+    expect(readdirSync(dir)).toEqual([]);
   });
 
   it("clears a lock older than this computer's start, though its pid now runs again", async () => {
