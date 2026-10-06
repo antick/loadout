@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { AgentDetectionNote } from "./AgentDetectionNote";
 import { AgentPathField } from "./AgentPathField";
 
-export interface AgentCardProps {
+export interface AgentSettingsCardProps {
   agent: AgentInfo;
   /** Library skills currently installed for this agent; switching it off removes them. */
   deployedCount: number;
@@ -24,7 +24,12 @@ export interface AgentCardProps {
 }
 
 /** One agent in Settings: switch, badges and its two skill folders. */
-export function AgentCard({ agent, deployedCount, namesByKey, move }: AgentCardProps): ReactNode {
+export function AgentSettingsCard({
+  agent,
+  deployedCount,
+  namesByKey,
+  move,
+}: AgentSettingsCardProps): ReactNode {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const setEnabled = useSetAgentEnabled();

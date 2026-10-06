@@ -13,7 +13,7 @@ import { useAgents, useAgentNames } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
 import { matchesQuery, moveId } from "@/lib/utils";
 import { AddCustomAgentForm } from "./AddCustomAgentForm";
-import { AgentCard } from "./AgentCard";
+import { AgentSettingsCard } from "./AgentSettingsCard";
 import { groupAgents, mergeGroupOrder } from "./agent-groups";
 import { AGENT_GROUP_IDS, type AgentGroupId } from "./constants";
 import { SECTION_LABEL } from "@/lib/styles";
@@ -181,7 +181,7 @@ export function AgentsSection(): ReactNode {
                     disabled={!canReorder}
                     onReorder={reorderGroup}
                     renderItem={({ agent }, index) => (
-                      <AgentCard
+                      <AgentSettingsCard
                         agent={agent}
                         deployedCount={deployedCounts.get(agent.key) ?? 0}
                         namesByKey={namesByKey}
