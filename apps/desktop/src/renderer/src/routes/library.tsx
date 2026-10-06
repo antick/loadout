@@ -29,12 +29,16 @@ function LibraryRoute(): ReactNode {
       }),
     [navigate],
   );
+  // Stable, so the memoised cards do not all draw again when a panel opens or closes.
+  const openSkill = useCallback(
+    (skillId: string | null) =>
+      void navigate({ search: (prev) => ({ ...prev, skill: skillId ?? undefined }) }),
+    [navigate],
+  );
   return (
     <LibraryPage
       openSkillId={skill ?? null}
-      onOpenSkill={(skillId) =>
-        void navigate({ search: (prev) => ({ ...prev, skill: skillId ?? undefined }) })
-      }
+      onOpenSkill={openSkill}
       requestedStatus={status ?? null}
       requestedQuery={q ?? null}
       requestedFavorites={favorites === true}
