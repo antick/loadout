@@ -106,6 +106,12 @@ function syncProxy(): void {
 
 /** Scopes whose changes alter a count or a preset shown in the tray menu. */
 const TRAY_SCOPES: ReadonlySet<string> = new Set(["skills", "agents", "presets"]);
+/**
+ * Scopes whose changes write into watched folders (the library, agents' and projects' skills
+ * folders). Only these mute the watchers: a settings, usage or safety change writes nothing there,
+ * and muting for it would hide an outside edit made at the same moment.
+ */
+const DISK_SCOPES: ReadonlySet<string> = new Set(["skills", "agents", "presets", "projects"]);
 
 function navigateTo(to: string): void {
   showWindow();
@@ -274,8 +280,10 @@ function start(): void {
         secrets: createSecretStore(join(app.getPath("userData"), SECRETS_FILE)),
         emit: (event, payload) => {
           if (event === "data:changed") {
-            for (const watcher of watchers) watcher.mute();
             const { scope } = payload as { scope: string[] };
+            if (scope.some((entry) => DISK_SCOPES.has(entry))) {
+              for (const watcher of watchers) watcher.mute();
+            }
             if (scope.includes("settings")) {
               syncTray();
               syncProxy();
