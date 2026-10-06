@@ -2,14 +2,12 @@ import { chmodSync, copyFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { PublishSkillPlan } from "@loadout/shared";
 import { AppError } from "../errors";
-import { ensureDir, isInside, removePathSync } from "../util/fs";
+import { ensureDir, isInside, removePathSync, EXECUTABLE_MODE, FILE_MODE } from "../util/fs";
 import type { Checkout } from "./checkout";
 import type { PlannedSkill } from "./plan";
 
 /** Writing the skills into the working copy and committing them. Nothing here talks to the network. */
 
-const FILE_MODE = 0o644;
-const EXECUTABLE_MODE = 0o755;
 const MESSAGE_NAMES_SHOWN = 4;
 
 const list = (names: string[]): string => {

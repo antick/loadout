@@ -3,14 +3,19 @@ import { join } from "node:path";
 import { APP_NAME, CLI_BINARY_NAME, type CliStatus } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError } from "../errors";
-import { ensureDir, removePathSync, statOrNull, writeFileAtomic } from "../util/fs";
+import {
+  ensureDir,
+  removePathSync,
+  statOrNull,
+  writeFileAtomic,
+  EXECUTABLE_MODE,
+} from "../util/fs";
 
 const SCRIPT_FILE = `${CLI_BINARY_NAME}.mjs`;
 const STAGED_FILE = `.${SCRIPT_FILE}.staged`;
 const STAMP_FILE = ".version";
 const WINDOWS_LAUNCHER = `${CLI_BINARY_NAME}.cmd`;
 const FALLBACK_RUNTIME = "node";
-const EXECUTABLE_MODE = 0o755;
 const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 /**
  * The SQLite module still prints an "experimental" notice on every start. Agents read stderr as

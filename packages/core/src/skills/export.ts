@@ -3,7 +3,14 @@ import { extname } from "node:path";
 import { type ExportResult, type Skill, ZIP_SUFFIXES, formatBytes } from "@loadout/shared";
 import { type Zippable, zipSync } from "fflate";
 import { invalid } from "../errors";
-import { isInside, normalizeAbsolutePath, statOrNull, writeFileAtomic } from "../util/fs";
+import {
+  isInside,
+  normalizeAbsolutePath,
+  statOrNull,
+  writeFileAtomic,
+  EXECUTABLE_MODE,
+  FILE_MODE,
+} from "../util/fs";
 import { listContentFiles } from "../util/hash";
 
 /**
@@ -16,8 +23,6 @@ const MAX_EXPORT_BYTES = 512 * 1024 * 1024;
 const UNIX_HOST = 3;
 const MODE_SHIFT = 16;
 const REGULAR_FILE = 0o100000;
-const FILE_MODE = 0o644;
-const EXECUTABLE_MODE = 0o755;
 /** Text compresses well; the time saved at higher levels is not worth it for a few files. */
 const COMPRESSION_LEVEL = 6;
 

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { PUBLISH_MAX_FILE_BYTES, type SecretFinding } from "@loadout/shared";
 import { findSecretsInFile, secretsHeldBack } from "../backup/secret-scan";
 import type { AppError } from "../errors";
-import { lstatOrNull, readDirSafe } from "../util/fs";
+import { lstatOrNull, readDirSafe, isExecutableMode } from "../util/fs";
 import { isIgnoredContentName } from "../util/hash";
 import { isLeftOut } from "../util/left-out";
 
@@ -13,8 +13,6 @@ import { isLeftOut } from "../util/left-out";
  * (`util/left-out.ts`: dependencies, local secrets, logs) and links stay behind: a repository
  * other people read is not the place for them.
  */
-
-const EXECUTABLE_BITS = 0o111;
 
 export interface PublishFile {
   /** Path inside the skill folder, `/` separated. */
@@ -31,9 +29,6 @@ export interface CollectedFiles {
   /** The first file larger than {@link PUBLISH_MAX_FILE_BYTES}. */
   tooLarge: string | null;
 }
-
-const isExecutable = (mode: number): boolean =>
-  process.platform !== "win32" && (mode & EXECUTABLE_BITS) !== 0;
 
 /** Every file of the skill that would be published, sorted by path. */
 export function collectFiles(root: string): CollectedFiles {
@@ -62,7 +57,7 @@ export function collectFiles(root: string): CollectedFiles {
         files.push({
           relativePath,
           absolutePath,
-          executable: isExecutable(stat.mode),
+          executable: isExecutableMode(stat.mode),
           size: stat.size,
         });
       }
@@ -96,7 +91,7 @@ export function digestsInTree(dir: string): Map<string, string> {
       if (!stat) continue;
       if (stat.isDirectory()) walk(absolutePath, relativePath);
       else if (stat.isFile())
-        found.set(relativePath, digest(absolutePath, isExecutable(stat.mode)));
+        found.set(relativePath, digest(absolutePath, isExecutableMode(stat.mode)));
     }
   };
   walk(dir, "");

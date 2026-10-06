@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
-import { GIT_DIR, lstatOrNull, readDirSafe, toPosix } from "./fs";
+import { GIT_DIR, lstatOrNull, readDirSafe, toPosix, isExecutableMode } from "./fs";
 
 const GIT_IGNORE_FILE = ".gitignore";
 /** Entries that never count as skill content: not hashed, not diffed, not reported as removed. */
@@ -13,7 +13,6 @@ const IGNORED_NAMES: ReadonlySet<string> = new Set([
   "__pycache__",
 ]);
 const IGNORED_SUFFIX = ".pyc";
-const EXECUTABLE_BITS = 0o111;
 /** Folders whose plain hash `hashDirCached` remembers; the oldest looked at goes first. */
 const HASH_CACHE_MAX = 5000;
 
@@ -107,7 +106,7 @@ export function listContentFiles(
           absolutePath,
           size: stat.size,
           mtimeMs: stat.mtimeMs,
-          executable: process.platform !== "win32" && (stat.mode & EXECUTABLE_BITS) !== 0,
+          executable: isExecutableMode(stat.mode),
         });
       }
     }

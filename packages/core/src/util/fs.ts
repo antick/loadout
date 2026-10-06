@@ -335,3 +335,14 @@ export function dirSize(path: string): number {
   }
   return total;
 }
+
+/** Mode of a file anyone may read and its owner write. */
+export const FILE_MODE = 0o644;
+/** The same, and anyone may run it. */
+export const EXECUTABLE_MODE = 0o755;
+const EXECUTABLE_BITS = 0o111;
+
+/** A file mode that lets someone run the file. Windows has no such bit: always false there. */
+export function isExecutableMode(mode: number): boolean {
+  return process.platform !== "win32" && (mode & EXECUTABLE_BITS) !== 0;
+}

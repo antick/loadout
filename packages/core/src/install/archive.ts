@@ -12,7 +12,7 @@ import {
 } from "@loadout/shared";
 import { unzipSync } from "fflate";
 import { errorMessage, invalid, isAppError, notFound } from "../errors";
-import { isInside, isSkillDir, removePath } from "../util/fs";
+import { isInside, isSkillDir, removePath, EXECUTABLE_MODE, isExecutableMode } from "../util/fs";
 import { resolveInside } from "../util/safe-path";
 import { trySanitizeSkillName } from "../util/names";
 import {
@@ -47,8 +47,6 @@ const HOST_UNIX = 3;
 const UTF8_FLAG = 0x800;
 const MODE_TYPE_MASK = 0o170000;
 const MODE_SYMLINK = 0o120000;
-const EXECUTABLE_BITS = 0o111;
-const EXECUTABLE_MODE = 0o755;
 
 export function isZip(data: Buffer): boolean {
   return data[0] === ZIP_MAGIC[0] && data[1] === ZIP_MAGIC[1];
@@ -111,7 +109,7 @@ function writeEntry(root: string, name: string, bytes: Uint8Array | null, mode: 
   }
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, bytes);
-  if (process.platform !== "win32" && (mode & EXECUTABLE_BITS) !== 0) {
+  if (isExecutableMode(mode)) {
     chmodSync(target, EXECUTABLE_MODE);
   }
 }

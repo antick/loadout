@@ -13,13 +13,12 @@ import {
 } from "@loadout/shared";
 import { invalid } from "../errors";
 import { isSafeRelativePath } from "../util/safe-path";
-import { writeFileAtomic } from "../util/fs";
+import { writeFileAtomic, EXECUTABLE_MODE } from "../util/fs";
 import { fileDigests, listContentFiles, sha256Hex } from "../util/hash";
 
 /** Most skills a preset file may list, and longest names it may carry. */
 const MAX_SKILLS = 500;
 const MAX_NAME_LENGTH = 200;
-const EXECUTABLE_MODE = 0o755;
 const REPLACEMENT_CHAR = "�";
 
 /** Where a skill can be installed from on another computer; null when only here. */
