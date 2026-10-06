@@ -6,7 +6,12 @@ import type { SafetyGate } from "../install/safety-gate";
 import type { RemovedStore } from "../storage/removed";
 import { type OriginFinder, createOriginFinder } from "../origin";
 import type { SkillStore } from "../skills/store";
-import { type SourceNewsStore, createSourceChecker } from "../sources";
+import {
+  type SourceNewsStore,
+  checkedSince,
+  createSourceChecker,
+  repositoryKeyOf,
+} from "../sources";
 import { type AutoUpdater, createAutoUpdater } from "./auto";
 import { createChecker } from "./check";
 import { createSourcePreview } from "./preview";
@@ -82,8 +87,22 @@ export function createUpdatesService(ctx: CoreContext, deps: UpdatesServiceDeps)
 
   const api: UpdatesApi = {
     check: (skillId, force) => checker.check(skillId, { force }),
-    checkAll: (force, options) =>
-      checker.checkAll(force, { skillIds: options?.skillIds, dryRun: options?.dryRun }),
+    checkAll: async (force, options) => {
+      const checkedFrom = Date.now();
+      const result = await checker.checkAll(force, {
+        skillIds: options?.skillIds,
+        dryRun: options?.dryRun,
+      });
+      if (!options?.newSkills || options.dryRun) return result;
+      // The repositories of the skills checked, asked again only where the check failed.
+      const chosen = options.skillIds ? new Set(options.skillIds) : null;
+      const sourceKeys = chosen
+        ? store
+            .list()
+            .flatMap((skill) => (chosen.has(skill.id) ? (repositoryKeyOf(skill) ?? []) : []))
+        : undefined;
+      return { ...result, sources: await sources.check(sourceKeys, checkedSince(checkedFrom)) };
+    },
     update: (skillId, approval, options) =>
       updater.update(skillId, approval, {
         acceptRisk: options?.acceptRisk,

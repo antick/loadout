@@ -43,6 +43,20 @@ describe("new skills in a repository", () => {
     expect(await newPaths()).toEqual(["skills/pptx", "skills/xlsx"]);
   });
 
+  it("finds new skills within an update check, asking each repository once", async () => {
+    const pdf = await world.installFromGit("pdf");
+    await world.updates.api.checkSources();
+    publish("xlsx");
+    const before = world.lookups();
+    const result = await world.updates.api.checkAll(true, { skillIds: [pdf.id], newSkills: true });
+    expect(world.lookups() - before).toBe(1);
+    // Only the repository moved, not pdf's own folder: no update, but news.
+    expect(result.updateAvailable).toEqual([]);
+    expect(result.sources?.news[0]?.skills.map((skill) => skill.path)).toEqual(["skills/xlsx"]);
+    // Without the option, an update check leaves the news alone.
+    expect((await world.updates.api.checkAll(true)).sources).toBeUndefined();
+  });
+
   it("forgets skills an import listed but skipped, and those dismissed", async () => {
     await world.installFromGit("pdf");
     await world.updates.api.checkSources();

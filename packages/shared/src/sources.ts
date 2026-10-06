@@ -74,6 +74,7 @@ export interface SourceNews {
 
 /** What `updates.checkSources` found, and what it added when adding new skills is switched on. */
 export interface SourceCheckResult {
+  /** What is new in the repositories asked about (every one when none were named). */
   news: SourceNews[];
   /** Names of skills added to the library by themselves (the auto-add setting). */
   added: string[];

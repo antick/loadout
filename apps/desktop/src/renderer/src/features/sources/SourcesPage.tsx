@@ -19,11 +19,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { useDeleteSkills } from "@/hooks/mutations/library";
 import { FindSourcesDialog } from "@/features/origin/FindSourcesDialog";
-import {
-  useCheckSources,
-  useDismissSourceNews,
-  useSourceChecks,
-} from "@/features/sources/source-mutations";
+import { useDismissSourceNews, useSourceChecks } from "@/features/sources/source-mutations";
 import { useSourceNews } from "@/features/sources/source-queries";
 import { SourceCard } from "@/features/sources/SourceCard";
 import { useBrowseSource } from "@/features/sources/use-browse-source";
@@ -48,7 +44,6 @@ export function SourcesPage(): ReactNode {
   const copy = useCopyText();
   const deleteSkills = useDeleteSkills();
   const news = useSourceNews();
-  const checkSources = useCheckSources();
   const dismissNews = useDismissSourceNews();
   const newByKey = useMemo(
     () => new Map((news.data ?? []).map((entry) => [entry.sourceKey, entry.skills])),
@@ -80,10 +75,6 @@ export function SourcesPage(): ReactNode {
         {t("origin.batch.notice", { count: searchable.length })}
       </InlineNotice>
     ) : null;
-  const checkEverything = (): void => {
-    checks.checkAll();
-    checkSources.mutate(undefined);
-  };
 
   return (
     <div className="flex min-h-full flex-col gap-6 px-6 py-5">
@@ -95,7 +86,7 @@ export function SourcesPage(): ReactNode {
             <Button
               size="sm"
               variant="outline"
-              onClick={checkEverything}
+              onClick={checks.checkAll}
               disabled={checks.checkingAll}
             >
               {checks.checkingAll ? <Spinner /> : <RefreshCw />}
@@ -133,10 +124,7 @@ export function SourcesPage(): ReactNode {
                 browsing={browse.busyKey === source.key}
                 checking={checks.isChecking(source.key)}
                 onBrowse={() => void browse.browse(source)}
-                onCheck={() => {
-                  checks.check(source);
-                  if (source.kind === "repository") checkSources.mutate([source.key]);
-                }}
+                onCheck={() => checks.check(source)}
                 onUpdate={() =>
                   update.mutate(
                     own.filter((s) => s.updateStatus === "update_available").map((s) => s.id),

@@ -53,7 +53,7 @@ interface FoundInRepository extends NewSourceSkill {
 }
 
 /** The repository a skill came from, keyed as the Sources page keys it; null for other sources. */
-function repositoryKeyOf(skill: Skill): string | null {
+export function repositoryKeyOf(skill: Skill): string | null {
   const source = skillSourceOf(skill);
   return source?.kind === "repository" ? source.key : null;
 }
@@ -200,7 +200,7 @@ export function createSourceChecker(ctx: CoreContext, deps: SourceCheckerDeps): 
           result.failed.push({ name: repository.key, message: errorMessage(error) });
         }
       }
-      result.news = currentNews();
+      result.news = currentNews().filter((item) => !wanted || wanted.has(item.sourceKey));
       return result;
     },
   };

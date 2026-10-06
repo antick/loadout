@@ -1,24 +1,13 @@
-import {
-  type BatchResult,
-  type Skill,
-  type SkillSource,
-  type SourceCheckResult,
-} from "@loadout/shared";
-import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import type { CheckAllResult, SkillSource, SourceCheckResult } from "@loadout/shared";
+import type { TFunction } from "i18next";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { usePendingSet } from "@/hooks/use-pending-set";
 import { api } from "@/lib/api";
 import { toastBatchOutcome } from "@/lib/batch";
-import { keys } from "@/lib/query-keys";
 import { GENERIC_ERROR_KEY } from "@/lib/toast";
-
-/** What a check of several skills found: the batch outcome, and how many now have an update. */
-interface SkillsChecked extends BatchResult {
-  updates: number;
-}
 
 interface CheckSkillsInput {
   /** The skills to look at; every skill when omitted. */
@@ -27,32 +16,38 @@ interface CheckSkillsInput {
   label: string;
 }
 
+/** New skills a check found in the repositories, or added by itself, in one line; null for none. */
+function newsLine(t: TFunction, sources: SourceCheckResult | undefined): string | null {
+  if (!sources) return null;
+  const found = sources.news.reduce((total, news) => total + news.skills.length, 0);
+  const lines = [
+    ...(sources.added.length > 0
+      ? [
+          `${t("sources.news.addedToast", { count: sources.added.length })}: ${sources.added.join(", ")}.`,
+        ]
+      : []),
+    ...(found > 0 ? [t("sources.news.foundToast", { count: found })] : []),
+  ];
+  return lines.length > 0 ? lines.join(" ") : null;
+}
+
 /**
- * Look upstream for several skills, such as everything from one source, with one toast. One
- * backend round: each repository among them is asked once.
+ * Look upstream for several skills, such as everything from one source, and for skills their
+ * repositories gained, with one toast. One backend round: each repository is asked once.
  */
-function useCheckSkills(): UseMutationResult<SkillsChecked, unknown, CheckSkillsInput> {
+function useCheckSkills(): UseMutationResult<CheckAllResult, unknown, CheckSkillsInput> {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   return useApiMutation({
-    fn: async ({ skillIds }) => {
-      const result = await api.updates.checkAll(
-        true,
-        skillIds ? { skillIds: [...skillIds] } : undefined,
-      );
-      const chosen = skillIds ? new Set(skillIds) : null;
-      // The check already made the list refetch; waiting for that refetch is the one call needed.
-      await queryClient.invalidateQueries({ queryKey: keys.skills.all });
-      const skills = queryClient.getQueryData<Skill[]>(keys.skills.all) ?? [];
-      const updates = skills.filter(
-        (skill) => (!chosen || chosen.has(skill.id)) && skill.updateStatus === "update_available",
-      ).length;
-      return { ...result, updates };
-    },
-    onSuccess: (checked, { label }) =>
+    fn: ({ skillIds }) =>
+      api.updates.checkAll(true, {
+        ...(skillIds ? { skillIds: [...skillIds] } : {}),
+        newSkills: true,
+      }),
+    onSuccess: (result, { label }) =>
       toastBatchOutcome(
-        t("sources.checkedToast", { source: label, count: checked.updates }),
-        checked.failed,
+        t("sources.checkedToast", { source: label, count: result.updateAvailable.length }),
+        [...result.failed, ...(result.sources?.failed ?? [])],
+        { description: newsLine(t, result.sources) },
       ),
     error: "library.errors.check",
   });
@@ -96,34 +91,6 @@ export function useSourceChecks(): SourceChecks {
       run({ label: t("sources.allSources") }, () => setCheckingAll(false));
     },
   };
-}
-
-/**
- * Look for new skills in repositories: the ones named, or all. Quiet when there is nothing new;
- * says what was found or added otherwise.
- */
-export function useCheckSources(): UseMutationResult<
-  SourceCheckResult,
-  unknown,
-  readonly string[] | undefined
-> {
-  const { t } = useTranslation();
-  return useApiMutation({
-    fn: (sourceKeys) => api.updates.checkSources(sourceKeys ? [...sourceKeys] : undefined),
-    onSuccess: (result, sourceKeys) => {
-      const asked = sourceKeys ? new Set(sourceKeys) : null;
-      const found = result.news
-        .filter((news) => !asked || asked.has(news.sourceKey))
-        .reduce((total, news) => total + news.skills.length, 0);
-      if (result.added.length > 0) {
-        toast.success(t("sources.news.addedToast", { count: result.added.length }), {
-          description: result.added.join(", "),
-        });
-      }
-      if (found > 0) toast.info(t("sources.news.foundToast", { count: found }));
-    },
-    error: GENERIC_ERROR_KEY,
-  });
 }
 
 /** Stop showing a repository's new skills (some of them, or all). */

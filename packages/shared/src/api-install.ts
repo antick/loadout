@@ -98,12 +98,19 @@ export interface CheckAllOptions {
   skillIds?: string[];
   /** Look upstream but save nothing: the library and its skills stay as they were. */
   dryRun?: boolean;
+  /**
+   * Also look for skills the repositories among them gained, from the same answers: each
+   * repository is still asked once. Not with `dryRun`.
+   */
+  newSkills?: boolean;
 }
 
 /** A check round: how many skills it answered, the ones it could not, and what is newer upstream. */
 export interface CheckAllResult extends BatchResult {
   /** Ids of the chosen skills a check found newer upstream (or already knew to be). */
   updateAvailable: string[];
+  /** What the look for new skills found, when `newSkills` asked for it. */
+  sources?: SourceCheckResult;
 }
 
 export interface UpdateManyOptions {
