@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, rmSync, unlinkSync } from "node:fs";
 import { basename, join } from "node:path";
 import { APP_NAME, type Skill, isNewerVersion } from "@loadout/shared";
 import type { Database } from "../db/database";
@@ -118,6 +118,15 @@ export class PortableMetadata {
 
   get #presetsMetaDir(): string {
     return join(this.#paths.metadataDir, "presets");
+  }
+
+  /**
+   * Delete one preset's metadata file now, under the lock, with the row. Left for the next
+   * `write()`, a re-index running first (at start, or after an outside change) would read the
+   * file and put the preset back.
+   */
+  forgetPreset(id: string): void {
+    rmSync(join(this.#presetsMetaDir, `${id}.json`), { force: true });
   }
 
   /** Rewrite every metadata file from the database and delete stale ones. */

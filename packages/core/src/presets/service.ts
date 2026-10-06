@@ -10,6 +10,7 @@ import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import type { DeployService, PairRef } from "../deploy";
 import { errorMessage, exists, invalid } from "../errors";
+import type { PortableMetadata } from "../skills/portable";
 import type { SkillStore } from "../skills/store";
 import { type PresetFields, PresetStore } from "./store";
 
@@ -17,6 +18,7 @@ export interface PresetsServiceDeps {
   store: SkillStore;
   registry: AgentRegistry;
   deploy: Pick<DeployService, "applyPairs">;
+  portable: Pick<PortableMetadata, "forgetPreset">;
 }
 
 /** Everything but sharing, which needs the installers (`share.ts`, wired in `core.ts`). */
@@ -50,10 +52,18 @@ function describeApply(result: ApplyResult, action: "add" | "remove"): string {
  * an agent's folder: only `applyToDefault` does, and that is a one-time deploy, not a live sync.
  */
 export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps): PresetsService {
-  const { store, registry, deploy } = deps;
+  const { store, registry, deploy, portable } = deps;
   const presets = new PresetStore(ctx.db);
 
-  const changed = (): void => ctx.touched("presets", "skills");
+  /**
+   * Every edit runs under the library lock, like tag edits: a re-index or a merge in another
+   * process must see the presets either before or after it, never halfway.
+   */
+  async function edit<T>(operation: string, fn: () => T): Promise<T> {
+    const result = await ctx.lock.run(operation, fn);
+    ctx.touched("presets", "skills");
+    return result;
+  }
 
   function cleanInput(input: PresetInput, selfId: string | null): PresetFields {
     const name = input.name.trim();
@@ -128,49 +138,35 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
   const api: PresetsCoreApi = {
     list: async () => presets.list(),
 
-    create: async (input) => {
-      const preset = presets.insert(cleanInput(input, null));
-      changed();
-      return preset;
-    },
+    create: async (input) => edit("create a preset", () => presets.insert(cleanInput(input, null))),
 
-    update: async (id, input) => {
-      presets.get(id);
-      const preset = presets.update(id, cleanInput(input, id));
-      changed();
-      return preset;
-    },
+    update: async (id, input) =>
+      edit(`edit the preset ${presets.get(id).name}`, () =>
+        presets.update(id, cleanInput(input, id)),
+      ),
 
-    remove: async (id) => {
-      presets.get(id);
-      presets.delete(id);
-      changed();
-    },
+    remove: async (id) =>
+      edit(`delete the preset ${presets.get(id).name}`, () => {
+        presets.delete(id);
+        portable.forgetPreset(id);
+      }),
 
-    reorder: async (ids) => {
-      presets.reorder(ids);
-      changed();
-    },
+    reorder: async (ids) => edit("reorder presets", () => presets.reorder(ids)),
 
-    addSkills: async (id, skillIds) => {
-      presets.get(id);
-      // Check every skill before writing, so a bad id does not leave half the list added.
-      for (const skillId of skillIds) store.get(skillId);
-      presets.addSkills(id, skillIds);
-      changed();
-    },
+    addSkills: async (id, skillIds) =>
+      edit(`add skills to the preset ${presets.get(id).name}`, () => {
+        // Check every skill before writing, so a bad id does not leave half the list added.
+        for (const skillId of skillIds) store.get(skillId);
+        presets.addSkills(id, skillIds);
+      }),
 
-    removeSkills: async (id, skillIds) => {
-      presets.get(id);
-      presets.removeSkills(id, skillIds);
-      changed();
-    },
+    removeSkills: async (id, skillIds) =>
+      edit(`remove skills from the preset ${presets.get(id).name}`, () =>
+        presets.removeSkills(id, skillIds),
+      ),
 
-    reorderSkills: async (id, skillIds) => {
-      presets.get(id);
-      presets.reorderSkills(id, skillIds);
-      changed();
-    },
+    reorderSkills: async (id, skillIds) =>
+      edit(`reorder the preset ${presets.get(id).name}`, () => presets.reorderSkills(id, skillIds)),
 
     toggles: async (id, skillId): Promise<PresetAgentToggle[]> => {
       requireMember(presets.get(id), skillId);
@@ -186,12 +182,14 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
     },
 
     setToggle: async (id, skillId, agentKey, enabled) => {
-      requireMember(presets.get(id), skillId);
+      const preset = presets.get(id);
+      requireMember(preset, skillId);
       const agent = registry.get(agentKey);
       if (enabled && !agent.installed) throw invalid(`${agent.displayName} is not installed`);
       if (enabled && !agent.enabled) throw invalid(`${agent.displayName} is disabled`);
-      presets.setToggle(id, skillId, agentKey, enabled);
-      changed();
+      await edit(`switch ${agent.displayName} in the preset ${preset.name}`, () =>
+        presets.setToggle(id, skillId, agentKey, enabled),
+      );
     },
 
     applyToDefault: async (id, options) => applyWanted(presets.get(id), "add", options),

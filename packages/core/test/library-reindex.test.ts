@@ -370,3 +370,30 @@ describe("metadata files the app did not write", () => {
     }
   });
 });
+
+describe("re-indexing after a preset was deleted", () => {
+  let temp: ReturnType<typeof tempDir>;
+  beforeEach(() => {
+    temp = tempDir();
+  });
+  afterEach(() => temp.cleanup());
+
+  it("does not bring back a preset whose metadata file was not rewritten yet", async () => {
+    const core = createTestCore({ homeDir: temp.dir });
+    try {
+      const preset = await core.api.presets.create({ name: "Gone" });
+      await core.flush();
+      const file = join(core.ctx.paths.metadataDir, "presets", `${preset.id}.json`);
+      expect(existsSync(file)).toBe(true);
+
+      await core.api.presets.remove(preset.id);
+      // A re-index before the next metadata write (at start, or after an outside change).
+      await core.background.libraryChangedOnDisk();
+
+      expect(await core.api.presets.list()).toEqual([]);
+      expect(existsSync(file)).toBe(false);
+    } finally {
+      core.close();
+    }
+  });
+});

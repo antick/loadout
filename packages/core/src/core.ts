@@ -189,7 +189,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     sourceNews,
     searchMarket: market.api.search,
   });
-  const presets = createPresetsService(ctx, { store, registry, deploy });
+  const presets = createPresetsService(ctx, { store, registry, deploy, portable });
   const presetSharing = createPresetSharing(ctx, {
     store,
     presets: presets.presets,

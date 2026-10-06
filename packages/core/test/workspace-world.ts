@@ -27,7 +27,7 @@ export function createWorkspaceWorld(): WorkspaceWorld {
   return {
     ...world,
     removed,
-    presets: createPresetsService(ctx, { store, registry, deploy }),
+    presets: createPresetsService(ctx, { store, registry, deploy, portable: world.portable }),
     workspace: createWorkspaceService(ctx, { store, registry, deploy, install, removed }),
     projects: createProjectsService(ctx, { store, registry, deploy, install, removed }),
   };
