@@ -318,7 +318,7 @@ describe("source preview", () => {
     writeFile(join(sourceDir, "scripts", "run.sh"), "echo two\n");
     writeFile(join(sourceDir, "SKILL.md"), "---\nname: helper\n---\n\n# Helper v2\n");
 
-    const diff = await world.updates.api.sourceDiff(skill.id);
+    const diff = (await world.updates.api.compareSource(skill.id)).diff;
     expect(diff).toMatchObject({ skillId: skill.id, sourceLabel: "Local", revision: "workspace" });
     expect(diff.entries.map((entry) => entry.path)).toEqual(["SKILL.md", "scripts/run.sh"]);
 
@@ -336,13 +336,13 @@ describe("source preview", () => {
     const skill = await installLocal();
     expect(skill.dirName).toBe("helper-2");
     // Plain: the name line the library rewrote shows as a difference.
-    const plain = await world.updates.api.sourceDiff(skill.id);
+    const plain = (await world.updates.api.compareSource(skill.id)).diff;
     expect(plain.entries.map((entry) => entry.path)).toEqual(["SKILL.md"]);
     // As a library copy: nothing an update would change.
-    const asCopy = await world.updates.api.sourceDiff(skill.id, { asLibraryCopy: true });
+    const asCopy = (await world.updates.api.compareSource(skill.id, { asLibraryCopy: true })).diff;
     expect(asCopy.entries).toEqual([]);
     writeFile(join(sourceDir, "scripts", "run.sh"), "echo two\n");
-    const changed = await world.updates.api.sourceDiff(skill.id, { asLibraryCopy: true });
+    const changed = (await world.updates.api.compareSource(skill.id, { asLibraryCopy: true })).diff;
     expect(changed.entries.map((entry) => entry.path)).toEqual(["scripts/run.sh"]);
   });
 
@@ -352,7 +352,7 @@ describe("source preview", () => {
     writeFile(join(world.remote, "skills", "pdf", "scripts", "run.sh"), "echo pdf v2\n");
     const next = commitAll(world.remote, "pdf: v2");
 
-    const diff = await world.updates.api.sourceDiff(pdf.id);
+    const diff = (await world.updates.api.compareSource(pdf.id)).diff;
     expect(diff).toMatchObject({ sourceLabel: "Git", revision: next });
     expect(diff.entries).toEqual([
       expect.objectContaining({
@@ -372,7 +372,7 @@ describe("source preview", () => {
 
     rmSync(join(world.remote, "skills", "pdf"), { recursive: true });
     commitAll(world.remote, "pdf: removed");
-    expect((await rejection(world.updates.api.sourceDiff(pdf.id))).code).toBe("NOT_FOUND");
+    expect((await rejection(world.updates.api.compareSource(pdf.id))).code).toBe("NOT_FOUND");
     expect(leftoverCheckouts(world.tmp)).toEqual([]);
   });
 
@@ -401,7 +401,7 @@ describe("source preview", () => {
 
   it("explains why a skill without a source has nothing to show", async () => {
     const plain = world.addSkill("plain");
-    expect((await rejection(world.updates.api.sourceDiff(plain.id))).message).toBe(
+    expect((await rejection(world.updates.api.compareSource(plain.id))).message).toBe(
       "Local skill is missing its original source path",
     );
   });

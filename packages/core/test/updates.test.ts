@@ -110,7 +110,7 @@ describe("check", () => {
     expect(world.store.get(pdf.id).sourceRevision).toBe(pdf.sourceRevision);
     expect(world.store.get(pdf.id).updateStatus).not.toBe("error");
 
-    const head = (await world.updates.api.sourceDiff(pdf.id)).revision;
+    const head = (await world.updates.api.compareSource(pdf.id)).diff.revision;
     const result = await world.updates.api.update(pdf.id, null, { expectedRevision: head });
     expect(result.skill.sourceRevision).toBe(head);
   });

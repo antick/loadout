@@ -89,7 +89,7 @@ async function diff({ core, args }: CommandContext): Promise<CommandResult> {
 
   let comparisons: Comparison[];
   if (flagBoolean(args, UPSTREAM_FLAG.name)) {
-    const source = await core.api.updates.sourceDiff(skill.id);
+    const source = (await core.api.updates.compareSource(skill.id)).diff;
     comparisons = [
       {
         against: "upstream",

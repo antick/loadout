@@ -125,7 +125,7 @@ describe("removal guard", () => {
     const before = world.lookups();
     const dry = await world.updates.api.update(pdf.id, null, { dryRun: true });
     expect(world.lookups()).toBe(before + 1);
-    const shown = await world.updates.api.sourceDiff(pdf.id, { asLibraryCopy: true });
+    const shown = (await world.updates.api.compareSource(pdf.id, { asLibraryCopy: true })).diff;
     expect(dry.sourceDiff).toEqual(shown);
     expect(dry.sourceDiff?.entries.map((entry) => [entry.path, entry.status])).toEqual([
       ["notes/old.md", "removed"],
