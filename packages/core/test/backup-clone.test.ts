@@ -26,6 +26,11 @@ import {
 } from "./backup-world";
 import { makeSkill, writeFile } from "./helpers";
 
+/** Where a restore or recovery sets the replaced library aside, next to the skills folder. */
+const earlierDir = (skillsDir: string): string => join(dirname(skillsDir), "earlier-libraries");
+const earlierLibraries = (skillsDir: string): string[] =>
+  existsSync(earlierDir(skillsDir)) ? readdirSync(earlierDir(skillsDir)) : [];
+
 /** A file that reports a large size without writing that much to disk. */
 function sparseFile(path: string, bytes: number): void {
   const fd = openSync(path, "w");
@@ -109,8 +114,8 @@ describe("backup clone, size rules and credentials", () => {
     await b.api.clone(remote);
 
     expect(b.read("", "README.md")).toBe("The backup's readme\n");
-    const parent = dirname(b.skillsDir);
-    const aside = readdirSync(parent).filter((name) => name.startsWith("skills.backup-"));
+    const parent = earlierDir(b.skillsDir);
+    const aside = earlierLibraries(b.skillsDir);
     expect(aside).toHaveLength(1);
     expect(readFileSync(join(parent, aside[0] ?? "", "README.md"), "utf8")).toBe(
       "B's own readme\n",
@@ -149,8 +154,8 @@ describe("backup clone, size rules and credentials", () => {
 
     await b.api.clone(remote);
 
-    const parent = dirname(b.skillsDir);
-    const aside = readdirSync(parent).filter((name) => name.startsWith("skills.backup-"));
+    const parent = earlierDir(b.skillsDir);
+    const aside = earlierLibraries(b.skillsDir);
     expect(aside).toHaveLength(1);
     expect(lstatSync(join(parent, aside[0] ?? "", kept))).toBeTruthy();
   });
@@ -165,8 +170,7 @@ describe("backup clone, size rules and credentials", () => {
 
     await b.api.clone(remote);
 
-    const parent = dirname(b.skillsDir);
-    expect(readdirSync(parent).filter((name) => name.startsWith("skills.backup-"))).toEqual([]);
+    expect(earlierLibraries(b.skillsDir)).toEqual([]);
   });
 
   it("does not index a folder outside the library named by cloned metadata", async () => {
@@ -226,11 +230,11 @@ describe("backup clone, size rules and credentials", () => {
 
     await b.api.reclone(remote);
 
-    const aside = readdirSync(join(b.skillsDir, "..")).filter((n) =>
-      n.startsWith("skills.backup-"),
-    );
+    const aside = earlierLibraries(b.skillsDir);
     expect(aside).toHaveLength(1);
-    expect(existsSync(join(b.skillsDir, "..", aside[0] ?? "", "alpha", "notes.md"))).toBe(true);
+    expect(existsSync(join(earlierDir(b.skillsDir), aside[0] ?? "", "alpha", "notes.md"))).toBe(
+      true,
+    );
     expect(b.skill("unsynced")).not.toBeNull();
     expect(b.skill("alpha")?.id).toBe(a.skill("alpha")?.id);
     expect(existsSync(join(b.skillsDir, "alpha", "notes.md"))).toBe(false);

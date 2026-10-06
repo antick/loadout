@@ -41,6 +41,8 @@ export interface LibraryPaths {
   historyDir: string;
   /** Skill folders put aside from agent and project folders (Recently removed). This computer only. */
   removedDir: string;
+  /** Whole libraries set aside by a restore or recovery from a backup. This computer only. */
+  earlierDir: string;
   logsDir: string;
   binDir: string;
   dbPath: string;
@@ -85,6 +87,7 @@ const SKILLS_DIR = LIBRARY_SKILLS_DIR_NAME;
 const CACHE_DIR = "cache";
 const HISTORY_DIR = "history";
 const REMOVED_DIR = REMOVED_DIR_NAME;
+const EARLIER_DIR = "earlier-libraries";
 const LOGS_DIR = "logs";
 
 /** What the library is made of. Only these move when the library moves. */
@@ -95,6 +98,7 @@ const LIBRARY_ENTRIES: readonly string[] = [
   `${DB_FILE}-shm`,
   HISTORY_DIR,
   REMOVED_DIR,
+  EARLIER_DIR,
   CACHE_DIR,
   LOGS_DIR,
 ];
@@ -124,6 +128,7 @@ function buildPaths(baseDir: string, defaultBaseDir: string): LibraryPaths {
     cacheDir: join(baseDir, CACHE_DIR),
     historyDir: join(baseDir, HISTORY_DIR),
     removedDir: join(baseDir, REMOVED_DIR),
+    earlierDir: join(baseDir, EARLIER_DIR),
     logsDir: join(baseDir, LOGS_DIR),
     binDir: join(defaultBaseDir, CLI_BIN_DIR_NAME),
     dbPath: join(baseDir, DB_FILE),

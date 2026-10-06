@@ -67,6 +67,13 @@ describe("clear", () => {
     expect(existsSync(world.ctx.paths.historyDir)).toBe(false);
   });
 
+  it("deletes the libraries a restore set aside", async () => {
+    writeFile(join(world.ctx.paths.earlierDir, "skills-1", "alpha", "SKILL.md"), "older");
+    expect(await areaOf("earlier")).toMatchObject({ bytes: 5, clearable: true, exists: true });
+    expect(await storage.api.clear("earlier")).toBe(5);
+    expect(existsSync(world.ctx.paths.earlierDir)).toBe(false);
+  });
+
   it("empties the clone cache and the publishing working copies", async () => {
     writeFile(join(world.ctx.paths.cacheDir, "repos", "0123456789abcdef", "HEAD"), "ref");
     writeFile(join(world.ctx.paths.cacheDir, "publish", "0123456789abcdef", "HEAD"), "refs");

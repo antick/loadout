@@ -7,6 +7,7 @@ import { readPortableSkillFiles } from "../skills/portable";
 import {
   GIT_DIR,
   copyDir,
+  ensureDir,
   isSkillDir,
   readDirSafe,
   removePath,
@@ -26,7 +27,8 @@ import { isRepo } from "./repo";
  */
 
 const CLONE_DIR_PREFIX = "skills.clone-";
-const SET_ASIDE_PREFIX = "skills.backup-";
+/** In `paths.earlierDir`: the library a restore or recovery replaced. */
+const SET_ASIDE_PREFIX = "skills-";
 const LOCAL_COPY_SUFFIX = "-local";
 
 export interface CloneOptions {
@@ -37,11 +39,11 @@ export interface CloneOptions {
   keepCurrent: boolean;
 }
 
-function freeSibling(env: BackupEnv, prefix: string): string {
+function freeName(dir: string, prefix: string): string {
   const stamp = formatTimestampCompact(Date.now());
   return join(
-    env.siblingDir,
-    firstFreeName(`${prefix}${stamp}`, (name) => !existsSync(join(env.siblingDir, name))),
+    dir,
+    firstFreeName(`${prefix}${stamp}`, (name) => !existsSync(join(dir, name))),
   );
 }
 
@@ -163,8 +165,10 @@ export async function cloneLibrary(
     throw exists("This library is already backed up. Use the recovery option to clone again.");
   }
   const url = await sanitizeRemoteUrl(env.ctx.secrets, inputUrl);
-  const cloneDir = freeSibling(env, CLONE_DIR_PREFIX);
-  const asideDir = freeSibling(env, SET_ASIDE_PREFIX);
+  const cloneDir = freeName(env.siblingDir, CLONE_DIR_PREFIX);
+  // Shown and cleared in Settings, Storage, and moved with the library; never left unseen.
+  const earlierDir = env.ctx.paths.earlierDir;
+  const asideDir = freeName(earlierDir, SET_ASIDE_PREFIX);
 
   try {
     await cloneInto(env, url, cloneDir);
@@ -178,6 +182,7 @@ export async function cloneLibrary(
     let carried: Carried;
     try {
       carried = await carryLocalEntries(env, cloneDir);
+      ensureDir(earlierDir);
       renameSync(env.repoDir, asideDir);
     } catch (error) {
       await removePath(cloneDir);

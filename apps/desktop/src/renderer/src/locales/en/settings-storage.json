@@ -30,6 +30,11 @@
           "description": "Skill folders taken out of agent and project folders when you replaced or deleted them, kept 30 days.",
           "clearEffect": "Every folder in Recently removed is deleted for good. Skills in the library, agents and projects stay."
         },
+        "earlier": {
+          "title": "Earlier libraries",
+          "description": "The whole library as it was before a restore or recovery from a backup, kept in case something in it is still wanted.",
+          "clearEffect": "Every earlier library is deleted for good. The library you use now stays."
+        },
         "cache": {
           "title": "Download cache",
           "description": "Copies of Git repositories kept to make installs and update checks faster, and the last safety-check reports.",

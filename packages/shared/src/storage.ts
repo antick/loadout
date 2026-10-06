@@ -8,6 +8,7 @@ export const STORAGE_AREAS = [
   "database",
   "history",
   "removed",
+  "earlier",
   "cache",
   "logs",
   "cli",
@@ -16,7 +17,7 @@ export const STORAGE_AREAS = [
 export type StorageArea = (typeof STORAGE_AREAS)[number];
 
 /** Areas that can be emptied from Settings without losing anything that is not rebuilt. */
-export const CLEARABLE_AREAS = ["history", "removed", "cache", "logs"] as const;
+export const CLEARABLE_AREAS = ["history", "removed", "earlier", "cache", "logs"] as const;
 export type ClearableArea = (typeof CLEARABLE_AREAS)[number];
 
 export interface StorageEntry {

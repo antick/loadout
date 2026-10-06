@@ -62,6 +62,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
     database: () => paths.dbPath,
     history: () => paths.historyDir,
     removed: () => paths.removedDir,
+    earlier: () => paths.earlierDir,
     cache: () => paths.cacheDir,
     logs: () => paths.logsDir,
     cli: () => paths.binDir,
@@ -113,11 +114,12 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
         freed = (await deps.git.clearCache()) + (await deps.publish.clearWorkingCopies());
       } else if (area === "removed") {
         freed = await deps.removed.clear();
-      } else if (area === "history") {
-        // Saves record versions under the lock, so none is written halfway through.
-        freed = await ctx.lock.run("clear editor history", async () => {
-          const size = pathSize(paths.historyDir);
-          removePathSync(paths.historyDir);
+      } else if (area === "history" || area === "earlier") {
+        // Saves record versions, and a restore sets a library aside, under the lock.
+        const dir = area === "history" ? paths.historyDir : paths.earlierDir;
+        freed = await ctx.lock.run(`clear ${area}`, async () => {
+          const size = pathSize(dir);
+          removePathSync(dir);
           return size;
         });
       } else {

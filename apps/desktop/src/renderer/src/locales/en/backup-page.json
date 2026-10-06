@@ -157,7 +157,7 @@
       "optionTitle": "Use the remote backup (recommended)",
       "pointRemote": "The library is downloaded again from the remote, so both share one history.",
       "pointLocalOnly": "Skills that only exist on this machine are copied back in afterwards.",
-      "pointOldFolder": "The current library folder is kept next to the new one, so nothing is thrown away.",
+      "pointOldFolder": "The current library folder is kept under Earlier libraries in Settings, Storage, so nothing is thrown away.",
       "noRemote": "There is no remote to download from. Connect a repository first.",
       "notNow": "Not now",
       "action": "Use the remote backup"
