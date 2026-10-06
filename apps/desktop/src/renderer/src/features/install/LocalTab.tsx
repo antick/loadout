@@ -3,6 +3,7 @@ import type { BatchImportResult, GitPreview } from "@loadout/shared";
 import { FileArchive, FolderInput, FolderTree, PackagePlus, X } from "lucide-react";
 import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { OptionCard } from "@/components/OptionCard";
 import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
@@ -74,6 +75,13 @@ export function LocalTab(): ReactNode {
     }
     const preview = await previewArchive.mutateAsync(source.path).catch(() => null);
     if (!preview) return;
+    if (preview.skills.length === 0) {
+      cancelPreview.mutate(preview.previewId);
+      toast.error(t("install.git.empty.archive.title"), {
+        description: t("install.git.empty.archive.description"),
+      });
+      return;
+    }
     if (preview.skills.length > 1) archiveChoice.show(preview);
     else setPicked({ ...source, preview });
   };
