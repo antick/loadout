@@ -20,6 +20,7 @@ import { StatusBarItem } from "@/components/layout/status-bar/StatusBarItem";
 import { ThemeMenu } from "@/components/layout/status-bar/ThemeMenu";
 import { VersionMenu } from "@/components/layout/status-bar/VersionMenu";
 import { Spinner } from "@/components/ui/spinner";
+import { installPhaseText } from "@/features/install/install-tasks";
 import { hasUpdate, needsAttention } from "@/features/library/library-filters";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useBackupStatus } from "@/hooks/queries/app";
@@ -36,7 +37,6 @@ const PROGRESS_LINGER_MS = 1500;
 
 /** What an install or update running in the background is doing, in a few words. */
 function useBackgroundWork(): string | null {
-  const { t } = useTranslation();
   // Per task key, so one task finishing never hides another that is still running.
   const [work, setWork] = useState<BackgroundWork>([]);
   const timers = useRef(new Map<string, number>());
@@ -59,18 +59,7 @@ function useBackgroundWork(): string | null {
   }, []);
 
   const progress = shownProgress(work);
-  if (!progress) return null;
-  if (progress.phase === "installing" && progress.total && progress.name) {
-    return t("install.phase.installingCount", {
-      current: progress.current ?? 0,
-      total: progress.total,
-      name: progress.name,
-    });
-  }
-  if (progress.phase === "installing" && progress.name) {
-    return t("install.phase.installingNamed", { name: progress.name });
-  }
-  return t(`install.phase.${progress.phase}`);
+  return progress ? installPhaseText(progress) : null;
 }
 
 /**
