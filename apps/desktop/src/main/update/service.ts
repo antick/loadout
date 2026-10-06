@@ -61,6 +61,9 @@ interface ReadyUpdate {
 
 /** The signed feed the download was checked against, kept next to it for the second check. */
 const FEED_COPY_FILE = "feed.json";
+/** Downloads go in a folder named by their version, such as `1.2.0` or `1.2.0-rc.1`. */
+const VERSION_DIR_PATTERN = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/;
+const isVersionDir = (name: string): boolean => VERSION_DIR_PATTERN.test(name);
 const REVERIFY_FAILED = "The downloaded update changed since it was checked. Download it again.";
 
 interface PendingInstall {
@@ -150,10 +153,12 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
         releaseUrl: saved.releaseUrl,
       };
     }
-    // Everything else in the folder belongs to older or abandoned downloads.
+    // Older versions go. A newer one not ready yet is a download that stopped: the next
+    // download of that version continues it, and a download of another version clears it.
     await mkdir(deps.updatesDir, { recursive: true });
     for (const name of await readdir(deps.updatesDir)) {
       if (keep && (name === saved.version || name === UPDATE_READY_FILE)) continue;
+      if (!keep && isVersionDir(name) && isNewerVersion(name, deps.currentVersion)) continue;
       await rm(join(deps.updatesDir, name), { recursive: true, force: true });
     }
     deps.emit(state);
@@ -248,6 +253,12 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     abort = controller;
     set({ phase: "downloading", progress: { received: 0, total: file.size }, error: null });
     try {
+      // A stopped download of another version is of no use any more.
+      for (const name of await readdir(deps.updatesDir).catch(() => [])) {
+        if (isVersionDir(name) && name !== version) {
+          await rm(join(deps.updatesDir, name), { recursive: true, force: true });
+        }
+      }
       await mkdir(dir, { recursive: true });
       const downloaded = join(dir, file.name);
       await downloadVerified(file, downloaded, {

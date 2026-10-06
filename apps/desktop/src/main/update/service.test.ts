@@ -207,6 +207,33 @@ describe("update service", () => {
     expect(existsSync(join(root, "updates", "1.1.0"))).toBe(false);
   });
 
+  it("continues a download stopped by a restart, and drops one of another version", async () => {
+    const partial = join(root, "updates", "1.1.0", "loadout_1.1.0_amd64.deb.part");
+    mkdirSync(join(root, "updates", "1.1.0"), { recursive: true });
+    mkdirSync(join(root, "updates", "1.0.5"), { recursive: true });
+    writeFileSync(partial, PACKAGE.subarray(0, 5));
+
+    const ranges: (string | null)[] = [];
+    const serve = fakeFetch(feed());
+    const fetchImpl = (async (input: string, init?: RequestInit) => {
+      if (input === PACKAGE_URL) {
+        const range = new Headers(init?.headers).get("Range");
+        ranges.push(range);
+        if (range) return new Response(PACKAGE.subarray(5), { status: 206 });
+      }
+      return serve(input, init);
+    }) as typeof fetch;
+
+    const restarted = service({ fetchImpl });
+    await restarted.updates.start();
+    expect(existsSync(partial)).toBe(true);
+
+    await restarted.updates.download();
+    expect(restarted.updates.status().phase).toBe("ready");
+    expect(ranges).toEqual(["bytes=5-"]);
+    expect(existsSync(join(root, "updates", "1.0.5"))).toBe(false);
+  });
+
   it("reports once whether the last install arrived", async () => {
     mkdirSync(join(root, "updates"));
     const pending = join(root, "updates", "pending-install.json");
