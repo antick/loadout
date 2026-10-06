@@ -178,7 +178,13 @@ test("a public GitHub repository is only used after the user agrees", async ({ p
   await expect(ask).toHaveCount(0);
   await expect(content.getByText("public-skills")).toHaveCount(0);
 
+  // The advanced URL field, open before connecting, follows the remote now in use.
+  await content.getByRole("button", { name: "Advanced: any Git URL" }).click();
+  const remoteField = content.getByPlaceholder("https://git.example.com/me/skills.git");
+  await expect(remoteField).toHaveValue("");
+
   await connect("public-skills");
   await ask.getByRole("button", { name: "Use the public repository" }).click();
   await expect(page.getByText("Connected to github.com/dev/public-skills")).toBeVisible();
+  await expect(remoteField).toHaveValue(/public-skills/);
 });

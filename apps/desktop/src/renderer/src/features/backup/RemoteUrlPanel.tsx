@@ -23,6 +23,15 @@ export function RemoteUrlPanel({ currentUrl, onSaved }: RemoteUrlPanelProps): Re
   const [savedAs, setSavedAs] = useState<string | null>(null);
   const save = useSetBackupRemote();
 
+  // The field follows the remote in use when it changes elsewhere (a GitHub connect, a
+  // disconnect), so saving it never puts back an old one.
+  const [shownRemote, setShownRemote] = useState(currentUrl);
+  if (currentUrl !== shownRemote) {
+    setShownRemote(currentUrl);
+    setUrl(currentUrl ?? "");
+    if (currentUrl !== savedAs) setSavedAs(null);
+  }
+
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     const value = url.trim();

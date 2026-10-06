@@ -49,8 +49,6 @@ export function BackupPage(): ReactNode {
   const [reconnecting, setReconnecting] = useState(false);
   // A URL saved a moment ago, until the refreshed status reports it itself.
   const [savedRemote, setSavedRemote] = useState<string | null>(null);
-  // Bumped on disconnect so the remote form starts empty again instead of showing the old URL.
-  const [remoteFormKey, setRemoteFormKey] = useState(0);
   const connectPanel = useRef<HTMLDivElement>(null);
 
   const data = status.data;
@@ -164,7 +162,6 @@ export function BackupPage(): ReactNode {
 
         {gitReady ? (
           <RemoteUrlPanel
-            key={remoteFormKey}
             currentUrl={remoteUrl}
             onSaved={(cleanUrl) => {
               setLastError(null);
@@ -191,7 +188,6 @@ export function BackupPage(): ReactNode {
             onDisconnected={() => {
               succeeded();
               setSavedRemote(null);
-              setRemoteFormKey((value) => value + 1);
             }}
           />
         ) : null}
