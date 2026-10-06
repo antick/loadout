@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import { useInstallTask } from "@/features/install/use-install-task";
+import { useInstallTasks } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useScanLibrary } from "@/hooks/mutations/safety";
 import { useSetSetting } from "@/hooks/mutations/settings";
@@ -103,7 +103,7 @@ export function SafetySection(): ReactNode {
   const scanOnInstall = useSetting("safetyScanOnInstall");
   const savedPath = useSetting("safetyScannerPath");
   const scanLibrary = useScanLibrary();
-  const { task } = useInstallTask();
+  const { task } = useInstallTasks();
   const openExternal = useOpenExternal();
   const switchId = useId();
   const scanning = Boolean(task(SAFETY_SCAN_LIBRARY_KEY));

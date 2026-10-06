@@ -53,6 +53,31 @@ export interface CommandPaletteProps {
 /** ⌘K: jump to a skill, preset, project or agent, or run a common action. ⌘P: edit a skill. */
 export function CommandPalette({ mode, onModeChange }: CommandPaletteProps): ReactNode {
   const { t } = useTranslation();
+  const editing = mode === "edit";
+  return (
+    <CommandDialog
+      open={mode !== null}
+      onOpenChange={(open) => {
+        if (!open) onModeChange(null);
+      }}
+      filter={keepMatchedSkills}
+      title={t(editing ? "palette.editTitle" : "palette.title")}
+      description={t(editing ? "palette.editDescription" : "palette.description")}
+    >
+      {/* Only while open: the lists it reads stay unwatched while it is closed. */}
+      {mode === null ? null : <PaletteContent mode={mode} onModeChange={onModeChange} />}
+    </CommandDialog>
+  );
+}
+
+function PaletteContent({
+  mode,
+  onModeChange,
+}: {
+  mode: PaletteMode;
+  onModeChange: (mode: PaletteMode | null) => void;
+}): ReactNode {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const shell = useShell();
   const { resolvedTheme } = useTheme();
@@ -90,15 +115,7 @@ export function CommandPalette({ mode, onModeChange }: CommandPaletteProps): Rea
   const editing = mode === "edit";
 
   return (
-    <CommandDialog
-      open={mode !== null}
-      onOpenChange={(open) => {
-        if (!open) changeMode(null);
-      }}
-      filter={keepMatchedSkills}
-      title={t(editing ? "palette.editTitle" : "palette.title")}
-      description={t(editing ? "palette.editDescription" : "palette.description")}
-    >
+    <>
       <CommandInput
         placeholder={t(editing ? "palette.editSkill" : "palette.placeholder")}
         value={search}
@@ -253,6 +270,6 @@ export function CommandPalette({ mode, onModeChange }: CommandPaletteProps): Rea
           </CommandGroup>
         ) : null}
       </CommandList>
-    </CommandDialog>
+    </>
   );
 }

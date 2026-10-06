@@ -1,5 +1,5 @@
 import { ApiError, type BatchFailure, type Project } from "@loadout/shared";
-import { type UseMutationResult } from "@tanstack/react-query";
+import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -89,10 +89,21 @@ export function useSetSuggestionDismissed(): UseMutationResult<
  * Count an open of a project page, for the sidebar's Frequent group. Silent: a count that could
  * not be saved is not worth telling anyone about.
  */
-export function useRecordProjectOpen(): UseMutationResult<void, unknown, string> {
+export function useRecordProjectOpen(): UseMutationResult<
+  Pick<Project, "recentOpens" | "lastOpenedAt">,
+  unknown,
+  string
+> {
+  const queryClient = useQueryClient();
   return useApiMutation({
     fn: (projectId: string) => api.projects.recordOpen(projectId),
     error: false,
-    invalidate: [keys.projects.all],
+    // Only this project's counts change: listing every project again would rescan their folders.
+    onSuccess: (counts, projectId) =>
+      queryClient.setQueryData<Project[]>(keys.projects.all, (projects) =>
+        projects?.map((project) =>
+          project.id === projectId ? { ...project, ...counts } : project,
+        ),
+      ),
   });
 }

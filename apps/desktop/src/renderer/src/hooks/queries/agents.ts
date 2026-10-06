@@ -2,6 +2,7 @@ import type { AgentCategory, AgentInfo } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { api } from "@/lib/api";
+import { REFETCH_ON_FOCUS } from "@/lib/query-client";
 import { keys } from "@/lib/query-keys";
 
 /** An agent skills can be deployed to right now: found on this machine and not switched off. */
@@ -11,7 +12,11 @@ export function isAgentAvailable(agent: AgentInfo): boolean {
 
 /** Every known agent, in the user's order. */
 export function useAgents(): UseQueryResult<AgentInfo[]> {
-  return useQuery({ queryKey: keys.agents.all, queryFn: () => api.agents.list() });
+  return useQuery({
+    queryKey: keys.agents.all,
+    queryFn: () => api.agents.list(),
+    ...REFETCH_ON_FOCUS,
+  });
 }
 
 /** Every agent's display name by its key, for labelling deployments and shared folders. */
@@ -33,7 +38,12 @@ export function useAvailableAgents(category?: AgentCategory): UseQueryResult<Age
       ),
     [category],
   );
-  return useQuery({ queryKey: keys.agents.all, queryFn: () => api.agents.list(), select });
+  return useQuery({
+    queryKey: keys.agents.all,
+    queryFn: () => api.agents.list(),
+    select,
+    ...REFETCH_ON_FOCUS,
+  });
 }
 
 /** Number of skill folders in each available agent's global folder, keyed by agent key. */

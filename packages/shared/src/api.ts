@@ -295,7 +295,11 @@ export interface ProjectsApi {
   reorder(ids: string[]): Promise<void>;
   setPinned(id: string, pinned: boolean): Promise<void>;
   /** The project page was opened: counts toward the sidebar's Frequent group. */
-  recordOpen(id: string): Promise<void>;
+  /**
+   * Count an open of the project's page (a visit counts once) and give back its open counts, so
+   * a view can update them without listing every project again.
+   */
+  recordOpen(id: string): Promise<Pick<Project, "recentOpens" | "lastOpenedAt">>;
   scan(root: string): Promise<string[]>;
   /**
    * Projects the user works in that are not linked yet: from Claude Code's and the editors'

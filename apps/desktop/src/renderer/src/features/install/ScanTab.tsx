@@ -18,7 +18,7 @@ import {
   useImportDiscovered,
 } from "@/features/install/install-mutations";
 import { useScanLocal } from "@/features/install/install-queries";
-import { useInstallTask } from "@/features/install/use-install-task";
+import { useInstallTasks } from "@/features/install/use-install-task";
 
 /** Stable identity of a discovered group across rescans. */
 function groupKey(skill: DiscoveredSkill): string {
@@ -51,7 +51,7 @@ export function ScanTab(): ReactNode {
   const scan = useScanLocal();
   const importOne = useImportDiscovered();
   const importAll = useImportAllDiscovered();
-  const { task } = useInstallTask();
+  const { task } = useInstallTasks();
   const [names, setNames] = useState<Record<string, string>>({});
   const [batch, setBatch] = useState<BatchImportResult | null>(null);
 

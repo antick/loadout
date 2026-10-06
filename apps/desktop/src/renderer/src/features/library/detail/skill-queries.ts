@@ -53,7 +53,6 @@ export function useSourceComparison(skill: Skill): UseQueryResult<SourceComparis
     queryFn: () => api.updates.compareSource(skill.id),
     retry: false,
     staleTime: Infinity,
-    refetchOnWindowFocus: false,
   });
 }
 

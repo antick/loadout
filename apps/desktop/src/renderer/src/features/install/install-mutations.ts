@@ -13,7 +13,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { InstallTaskSuccess } from "@/features/install/install-tasks";
 import { guessSource, hostOf } from "@/features/install/source-guess";
-import { useInstallTask } from "@/features/install/use-install-task";
+import { useRunInstallTask } from "@/features/install/use-install-task";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
@@ -87,7 +87,7 @@ function batchSummary(t: Translate, result: BatchImportResult): InstallTaskSucce
 /** Install one marketplace skill. Cancellable; installing again refreshes the library copy. */
 export function useInstallFromMarket(): (skill: MarketSkill) => Promise<Skill | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   return useCallback(
     (skill) => {
       const key = marketTaskKey(skill);
@@ -107,7 +107,7 @@ export function useInstallFromMarket(): (skill: MarketSkill) => Promise<Skill | 
 /** Install a skill folder, optionally under another name. */
 export function useInstallFromPath(): (path: string, name?: string) => Promise<Skill | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   return useCallback(
     (path, name) =>
       run({
@@ -125,7 +125,7 @@ export function useInstallFromPath(): (path: string, name?: string) => Promise<S
 /** Import every skill folder directly inside a folder; progress arrives as "3/12: name". */
 export function useImportFolder(): (folder: string) => Promise<BatchImportResult | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   return useCallback(
     (folder) =>
       run({
@@ -145,7 +145,7 @@ export function useConfirmGit(): (
   options?: ConfirmOptions,
 ) => Promise<Skill[] | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   return useCallback(
     async (preview, items, options) => {
       const installed = await run({
@@ -191,7 +191,7 @@ export function useImportDiscovered(): (
   name?: string,
 ) => Promise<Skill | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   const queryClient = useQueryClient();
   return useCallback(
     async (skill, name) => {
@@ -231,7 +231,7 @@ export function useImportDiscovered(): (
 /** Import every discovered skill that is not in the library yet. */
 export function useImportAllDiscovered(): () => Promise<BatchImportResult | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   const queryClient = useQueryClient();
   return useCallback(async () => {
     const result = await run({
@@ -259,7 +259,7 @@ const FETCH_TITLES = {
  */
 export function usePreviewGit(): (repoUrl: string) => Promise<GitPreview | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   return useCallback(
     (repoUrl) =>
       run({

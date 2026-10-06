@@ -70,6 +70,5 @@ export function useScanLocal(enabled = true): UseQueryResult<ScanResult> {
     queryKey: keys.install.scan,
     queryFn: () => api.install.scanLocal(),
     enabled,
-    refetchOnWindowFocus: false,
   });
 }

@@ -10,6 +10,7 @@ import type {
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { EDITORS_STALE_MS } from "@/lib/constants";
+import { REFETCH_ON_FOCUS } from "@/lib/query-client";
 import { keys } from "@/lib/query-keys";
 
 /** App name, version, platform and home directory. Never changes while the app runs. */
@@ -59,5 +60,9 @@ export function useLastCrash(): UseQueryResult<CrashInfo | null> {
 
 /** Backup repository status (remote, pending changes, ahead/behind). */
 export function useBackupStatus(): UseQueryResult<BackupStatus> {
-  return useQuery({ queryKey: keys.backup.status, queryFn: () => api.backup.status() });
+  return useQuery({
+    queryKey: keys.backup.status,
+    queryFn: () => api.backup.status(),
+    ...REFETCH_ON_FOCUS,
+  });
 }

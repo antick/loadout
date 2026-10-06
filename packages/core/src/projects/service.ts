@@ -202,6 +202,8 @@ export function createProjectsService(
     recordOpen: async (id) => {
       projects.get(id);
       activity.recordOpen(id);
+      const { recentOpens, lastOpenedAt } = activity.summary(id);
+      return { recentOpens, lastOpenedAt };
     },
 
     scan: async (root) => findProjects(requireFolder(root, "Folder"), projectSkillDirs(registry)),

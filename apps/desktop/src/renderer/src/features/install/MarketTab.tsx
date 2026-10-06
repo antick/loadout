@@ -46,7 +46,7 @@ import { useMarketBoard, useMarketSearch } from "@/features/install/install-quer
 import { filterBySource, marketSkillUrl, sourceOptions } from "@/features/install/market-filters";
 import { MarketDetailSheet } from "@/features/install/MarketDetailSheet";
 import { MarketSkillCard } from "@/features/install/MarketSkillCard";
-import { useInstallTask } from "@/features/install/use-install-task";
+import { useInstallTasks } from "@/features/install/use-install-task";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -80,7 +80,7 @@ export function MarketTab(): ReactNode {
   const searchQuery = useMarketSearch(provider, searching ? debouncedQuery : "", limit);
   const active = searching ? searchQuery : boardQuery;
 
-  const { task, cancel } = useInstallTask();
+  const { task, cancel } = useInstallTasks();
   const install = useInstallFromMarket();
   const openExternal = useOpenExternal();
 

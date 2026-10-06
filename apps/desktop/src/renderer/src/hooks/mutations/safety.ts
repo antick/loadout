@@ -1,7 +1,7 @@
 import { SAFETY_SCAN_LIBRARY_KEY, type SafetyScanSummary } from "@loadout/shared";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useInstallTask } from "@/features/install/use-install-task";
+import { useRunInstallTask } from "@/features/install/use-install-task";
 import { api } from "@/lib/api";
 
 /**
@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
  */
 export function useScanLibrary(): (force?: boolean) => Promise<SafetyScanSummary | null> {
   const { t } = useTranslation();
-  const { run } = useInstallTask();
+  const run = useRunInstallTask();
   return useCallback(
     (force = false) =>
       run({

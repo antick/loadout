@@ -20,7 +20,7 @@ import {
   usePreviewArchive,
 } from "@/features/install/install-mutations";
 import { cn } from "@/lib/utils";
-import { useInstallTask } from "@/features/install/use-install-task";
+import { useInstallTasks } from "@/features/install/use-install-task";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
 import { usePickFolder } from "@/hooks/mutations/app";
 
@@ -43,7 +43,7 @@ export function LocalTab(): ReactNode {
   const importFolder = useImportFolder();
   const previewArchive = usePreviewArchive();
   const cancelPreview = useCancelPreview();
-  const { task } = useInstallTask();
+  const { task } = useInstallTasks();
   /** An archive holding several skills, waiting for the user to pick from it. */
   const archiveChoice = usePreviewChoice();
 

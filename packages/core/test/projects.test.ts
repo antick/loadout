@@ -74,6 +74,13 @@ describe("projects", () => {
       expect((await api().list()).map((p) => p.name)).toEqual(["other", "repo"]);
     });
 
+    it("counts an open of a project's page and gives back its counts", async () => {
+      const project = await api().add(repo);
+      const counts = await api().recordOpen(project.id);
+      expect(counts).toEqual({ recentOpens: 1, lastOpenedAt: expect.any(Number) });
+      expect((await api().list())[0]).toMatchObject(counts);
+    });
+
     it("refuses a missing folder and a folder that is already saved", async () => {
       expect((await rejection(api().add(join(world.root, "nope")))).code).toBe("NOT_FOUND");
       expect((await rejection(api().add("relative/path"))).code).toBe("INVALID_INPUT");

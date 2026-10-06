@@ -22,7 +22,7 @@ import {
   commandSource,
   guessSource,
 } from "@/features/install/source-guess";
-import { useInstallTask } from "@/features/install/use-install-task";
+import { useInstallTasks } from "@/features/install/use-install-task";
 import { useMounted } from "@/hooks/use-mounted";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
@@ -93,7 +93,7 @@ export function GitTab(): ReactNode {
   const previewGit = usePreviewGit();
   const cancelPreview = useCancelPreview();
   const choice = usePreviewChoice();
-  const { task } = useInstallTask();
+  const { task } = useInstallTasks();
 
   const [url, setUrl] = useState("");
   /** The URL last sent, which is also the key its progress is reported under. */
