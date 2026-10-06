@@ -26,3 +26,4 @@ export { parseSkillsCommand } from "./install/skills-command";
 export { readSkillIdentity } from "./skills/metadata";
 export { skillTraits } from "./skills/traits";
 export { type FolderCheck, checkSkillFolder } from "./skills/validate-folder";
+export { type AdoptResult, adoptAgentSkills } from "./workspace/adopt";

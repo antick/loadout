@@ -1,15 +1,17 @@
 import { statSync } from "node:fs";
-import { type Core, type ResolvedAgent, canonicalPath, invalid, notFound } from "@loadout/core";
-import type { LocalSkill } from "@loadout/shared";
+import {
+  type Core,
+  type ResolvedAgent,
+  adoptAgentSkills,
+  canonicalPath,
+  invalid,
+  notFound,
+} from "@loadout/core";
 import { flagBoolean } from "../args";
 import { failureLines, plural } from "../output";
-import { DRY_RUN_FLAG, eachItem, limitPositionals, positional, resolveUserPath } from "./support";
+import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
-
-const REASON_MANAGED = "already managed";
-const REASON_LIBRARY_DIFFERS =
-  "the library holds a different version that adopting would overwrite - settle it in the app first";
 
 /** The agent whose own skills folder this is. Usable agents win when several share the folder. */
 function owningAgent(core: Core, dir: string): ResolvedAgent {
@@ -26,21 +28,6 @@ function owningAgent(core: Core, dir: string): ResolvedAgent {
   return owner;
 }
 
-/** Adopting overwrites the library match, so a library that has moved on is never a candidate. */
-function skipReason(skill: LocalSkill): string | null {
-  if (skill.managed) return REASON_MANAGED;
-  if (skill.syncStatus === "library_newer" || skill.syncStatus === "diverged") {
-    return REASON_LIBRARY_DIFFERS;
-  }
-  return null;
-}
-
-const view = (skill: LocalSkill) => ({
-  name: skill.name,
-  relativePath: skill.relativePath,
-  syncStatus: skill.syncStatus,
-});
-
 async function run(context: CommandContext): Promise<CommandResult> {
   const { core, args, cwd } = context;
   limitPositionals(args, 1);
@@ -56,41 +43,27 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const dir = canonicalPath(input);
   const agent = owningAgent(core, dir);
 
-  // The listing is already limited to that agent's own skills folder, which is `dir`.
-  const found = await core.api.workspace.list(agent.key);
-  const candidates = found.filter((skill) => skipReason(skill) === null);
-  const skipped = found.flatMap((skill) => {
-    const reason = skipReason(skill);
-    return reason === null ? [] : [{ name: skill.name, relativePath: skill.relativePath, reason }];
+  // The agent's own skills folder is `dir`, the one the workspace lists for it.
+  const dryRun = flagBoolean(args, DRY_RUN_FLAG.name);
+  const { adopted, skipped, failed } = await adoptAgentSkills(core.api.workspace, agent.key, {
+    dryRun,
   });
-
-  if (flagBoolean(args, DRY_RUN_FLAG.name)) {
+  const skipLines = skipped.map((skill) => `  skip:  ${skill.name} (${skill.reason})`);
+  if (dryRun) {
     const lines = [
-      `Would adopt ${plural(candidates.length, "skill")} for ${agent.displayName}; ${skipped.length} skipped. Nothing was changed.`,
-      ...candidates.map((skill) => `  adopt: ${skill.name}`),
-      ...skipped.map((skill) => `  skip:  ${skill.name} (${skill.reason})`),
+      `Would adopt ${plural(adopted.length, "skill")} for ${agent.displayName}; ${skipped.length} skipped. Nothing was changed.`,
+      ...adopted.map((skill) => `  adopt: ${skill.name}`),
+      ...skipLines,
     ];
-    return {
-      value: { dryRun: true, agent: agent.key, adopted: candidates.map(view), skipped },
-      text: lines.join("\n"),
-    };
+    return { value: { dryRun, agent: agent.key, adopted, skipped }, text: lines.join("\n") };
   }
-
-  const { done: adopted, failed } = await eachItem(
-    candidates,
-    (skill) => skill.name,
-    async (skill) => {
-      const librarySkill = await core.api.workspace.upload(agent.key, skill.relativePath);
-      return { ...view(skill), skillId: librarySkill.id };
-    },
-  );
   const lines = [
     `Adopted ${plural(adopted.length, "skill")} for ${agent.displayName}; ${skipped.length} skipped.`,
-    ...skipped.map((skill) => `  skip:  ${skill.name} (${skill.reason})`),
+    ...skipLines,
     ...failureLines(failed),
   ];
   return {
-    value: { dryRun: false, agent: agent.key, adopted, skipped, failed },
+    value: { dryRun, agent: agent.key, adopted, skipped, failed },
     text: lines.join("\n"),
     exitCode: exitCodeFor(failed.length > 0),
   };
