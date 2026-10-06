@@ -24,47 +24,47 @@
 
 ## Core layout (`packages/core/src`)
 
-| Path                 | Owns                                                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `core.ts`            | `createCore(options)`: builds the context, wires every service, returns `CoreApi` + helpers                  |
-| `context.ts`         | `CoreContext`, `SecretStore`, `HostBridge`                                                                   |
-| `errors.ts`          | `AppError`, helpers, `toErrorShape`                                                                          |
-| `paths.ts`           | Library location, move-on-restart, warnings                                                                  |
-| `lock.ts`            | Cross-process library lock                                                                                   |
-| `log.ts`             | Rotating file logger                                                                                         |
-| `activity.ts`        | Activity history                                                                                             |
-| `db/`                | SQLite wrapper (`node:sqlite`) and migrations                                                                |
-| `settings/store.ts`  | Typed settings + internal JSON blobs (`INTERNAL_KEYS`)                                                       |
-| `util/`              | `fs` (copy, atomic write, containment, links), `hash`, `names`, `exec`, `async`, `queue`, `git` (one runner) |
-| `skills/store.ts`    | All SQL for skills, tags, deployments                                                                        |
-| `skills/metadata.ts` | Frontmatter + document lookup                                                                                |
-| `skills/portable.ts` | Portable metadata files and database rebuild                                                                 |
-| `skills/service.ts`  | `SkillsApi`                                                                                                  |
-| `skills/checks.ts`   | Agent Skills format checks per skill, cached by content hash (rules in `shared/skill-checks`)                |
-| `editor/`            | `EditorApi`: files of a skill in the library, an agent folder or a project; history, copies                  |
-| `agents/`            | `registry.ts` resolves built-in + custom agents; `service.ts` implements `AgentsApi`                         |
-| `deploy/`            | `engine.ts` ownership rules + symlink/copy; `service.ts` implements `DeployApi`                              |
-| `install/`           | Local, archive, Git (source parsing, clone cache, repo scan), cancel registry → `InstallApi`                 |
-| `scan/`              | "Scan this machine": skills already in agent folders, matched against the library, imported                  |
-| `safety/`            | Built-in safety rules, the SkillSpector runner, kept reports, the check before every install                 |
-| `duplicates/`        | Possible duplicates: same files, alike text or names; merge one into the other, dismiss a pair               |
-| `instructions/`      | Agents' instruction files (`CLAUDE.md`, `AGENTS.md`...), globally and per project                            |
-| `skills-file/`       | A project's `skills.toml` and `skills-lock.json`: plan, safety check, apply, unapply                         |
-| `listing/`           | What Claude Code's skill listing costs in context, against its budget                                        |
-| `health/`            | `loadout doctor`: one report of everything that needs a look                                                 |
-| `market/`            | Marketplace boards and search → `MarketApi`                                                                  |
-| `sources/`           | Skills repositories gained since last seen: per-repository state, check, auto-add                            |
-| `origin/`            | Finding and linking the source of skills without one: local evidence, marketplace, compare                   |
-| `updates/`           | Check, update, removal approval, source diff, background auto-update → `UpdatesApi`                          |
-| `presets/`           | `PresetsApi`; `share.ts` exports a preset as a file and imports one, installing what is missing              |
-| `workspace/`         | Local skill scanning, library matching, sync status, global workspace → `WorkspaceApi`                       |
-| `projects/`          | Project and linked workspaces → `ProjectsApi`                                                                |
-| `backup/`            | Git backup, skill-aware merge, snapshots, GitHub connect, auto backup → `BackupApi`                          |
-| `system/`            | Diagnostics, log export, crash marker, CLI publishing, agent-control setup → `SystemApi`                     |
-| `suggest/`           | Library skills that fit a project: its technologies and files, the skills' own patterns                      |
-| `usage/`             | Skill runs read from agents' session logs, incrementally, into `usage_events` → `UsageApi`                   |
-| `publish/`           | Publishes chosen skills to another Git repository: own clone, key check, never forces → `PublishApi`         |
-| `storage/`           | Sizes of every area, clearing history/cache/logs, Recently removed, removing all data → `StorageApi`         |
+| Path                 | Owns                                                                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core.ts`            | `createCore(options)`: builds the context, wires every service, returns `CoreApi` + helpers                                                           |
+| `context.ts`         | `CoreContext`, `SecretStore`, `HostBridge`                                                                                                            |
+| `errors.ts`          | `AppError`, helpers, `toErrorShape`                                                                                                                   |
+| `paths.ts`           | Library location, move-on-restart, warnings                                                                                                           |
+| `lock.ts`            | Cross-process library lock                                                                                                                            |
+| `log.ts`             | Rotating file logger                                                                                                                                  |
+| `activity.ts`        | Activity history                                                                                                                                      |
+| `db/`                | SQLite wrapper (`node:sqlite`) and migrations                                                                                                         |
+| `settings/store.ts`  | Typed settings + internal JSON blobs (`INTERNAL_KEYS`)                                                                                                |
+| `util/`              | `fs` (copy, atomic write, links), `safe-path` (every name and path check from outside), `hash`, `names`, `exec`, `async`, `queue`, `git` (one runner) |
+| `skills/store.ts`    | All SQL for skills, tags, deployments                                                                                                                 |
+| `skills/metadata.ts` | Frontmatter + document lookup                                                                                                                         |
+| `skills/portable.ts` | Portable metadata files and database rebuild                                                                                                          |
+| `skills/service.ts`  | `SkillsApi`                                                                                                                                           |
+| `skills/checks.ts`   | Agent Skills format checks per skill, cached by content hash (rules in `shared/skill-checks`)                                                         |
+| `editor/`            | `EditorApi`: files of a skill in the library, an agent folder or a project; history, copies                                                           |
+| `agents/`            | `registry.ts` resolves built-in + custom agents; `service.ts` implements `AgentsApi`                                                                  |
+| `deploy/`            | `engine.ts` ownership rules + symlink/copy; `service.ts` implements `DeployApi`                                                                       |
+| `install/`           | Local, archive, Git (source parsing, clone cache, repo scan), cancel registry → `InstallApi`                                                          |
+| `scan/`              | "Scan this machine": skills already in agent folders, matched against the library, imported                                                           |
+| `safety/`            | Built-in safety rules, the SkillSpector runner, kept reports, the check before every install                                                          |
+| `duplicates/`        | Possible duplicates: same files, alike text or names; merge one into the other, dismiss a pair                                                        |
+| `instructions/`      | Agents' instruction files (`CLAUDE.md`, `AGENTS.md`...), globally and per project                                                                     |
+| `skills-file/`       | A project's `skills.toml` and `skills-lock.json`: plan, safety check, apply, unapply                                                                  |
+| `listing/`           | What Claude Code's skill listing costs in context, against its budget                                                                                 |
+| `health/`            | `loadout doctor`: one report of everything that needs a look                                                                                          |
+| `market/`            | Marketplace boards and search → `MarketApi`                                                                                                           |
+| `sources/`           | Skills repositories gained since last seen: per-repository state, check, auto-add                                                                     |
+| `origin/`            | Finding and linking the source of skills without one: local evidence, marketplace, compare                                                            |
+| `updates/`           | Check, update, removal approval, source diff, background auto-update → `UpdatesApi`                                                                   |
+| `presets/`           | `PresetsApi`; `share.ts` exports a preset as a file and imports one, installing what is missing                                                       |
+| `workspace/`         | Local skill scanning, library matching, sync status, global workspace → `WorkspaceApi`                                                                |
+| `projects/`          | Project and linked workspaces → `ProjectsApi`                                                                                                         |
+| `backup/`            | Git backup, skill-aware merge, snapshots, GitHub connect, auto backup → `BackupApi`                                                                   |
+| `system/`            | Diagnostics, log export, crash marker, CLI publishing, agent-control setup → `SystemApi`                                                              |
+| `suggest/`           | Library skills that fit a project: its technologies and files, the skills' own patterns                                                               |
+| `usage/`             | Skill runs read from agents' session logs, incrementally, into `usage_events` → `UsageApi`                                                            |
+| `publish/`           | Publishes chosen skills to another Git repository: own clone, key check, never forces → `PublishApi`                                                  |
+| `storage/`           | Sizes of every area, clearing history/cache/logs, Recently removed, removing all data → `StorageApi`                                                  |
 
 ## Service shape
 
