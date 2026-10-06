@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agentKeyFor, parseSkillsCommand } from "../src/install/skills-command";
+import { agentKeyFor, parseSkillsCommand } from "../src/skills-command";
 
 describe("parseSkillsCommand", () => {
   it("reads the command skill pages show", () => {

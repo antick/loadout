@@ -5,6 +5,9 @@ import {
   type InstallSelection,
   NO_REQUESTED_AGENTS,
   type Skill,
+  type SkillsCommand,
+  agentKeyFor,
+  parseSkillsCommand,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { cancelled, invalid } from "../errors";
@@ -24,7 +27,7 @@ import { type SafetyGate, installChecked } from "./safety-gate";
 import { type PreviewSessions, createPreviewSessions, emitProgress } from "./preview-sessions";
 import { listRepoSkills, resolveSkillDir } from "./repo-scan";
 import { matchRequested } from "./requested";
-import { type SkillsCommand, agentKeyFor, parseSkillsCommand } from "./skills-command";
+
 import { createWebPreviews } from "./web-install";
 import { isSiteCandidate } from "./well-known";
 import { isPlainName } from "../util/safe-path";

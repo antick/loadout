@@ -1,4 +1,4 @@
-import type { GitPreview } from "@loadout/shared";
+import { type GitPreview, isArchivePath, parseSkillsCommand } from "@loadout/shared";
 import {
   FileArchive,
   FileText,
@@ -7,7 +7,6 @@ import {
   type LucideIcon,
   SquareTerminal,
 } from "lucide-react";
-import { ARCHIVE_LINK_PATTERN } from "@/features/install/constants";
 
 /**
  * What typed text probably points at, before the backend has looked. Only picks an icon and
@@ -29,20 +28,16 @@ const WEB_ADDRESS = /^https?:\/\//i;
 /** `….git`, also with a `#branch` after it. */
 const GIT_SUFFIX = /\.git\/?(?:#\S*)?$/i;
 
-/** `npx skills add <source> …` and the other runners; the backend reads it for real. */
-const SKILLS_COMMAND =
-  /^(?:(?:npx|bunx|pnpx|pnpm\s+dlx|yarn\s+dlx)\s+(?:-y\s+)?)?skills(?:@\S+)?\s+(?:add|install|a|i)\s+(?:-\S+\s+)*["']?([^\s"']+)/i;
-
 export const COMMAND_ICON: LucideIcon = SquareTerminal;
 
 /** The source a pasted `skills add` command installs from, or null when it is not one. */
 export function commandSource(text: string): string | null {
-  return SKILLS_COMMAND.exec(text.trim())?.[1] ?? null;
+  return parseSkillsCommand(text)?.source ?? null;
 }
 
 export function guessSource(text: string): SourceGuess {
   const trimmed = commandSource(text) ?? text.trim();
-  if (ARCHIVE_LINK_PATTERN.test(trimmed)) return "archive";
+  if (WEB_ADDRESS.test(trimmed) && isArchivePath(trimmed.split(/[?#]/)[0] ?? "")) return "archive";
   if (REPOSITORY_HOST.test(trimmed)) return "repository";
   if (SKILL_FILE_LINK.test(trimmed)) return "file";
   if (WEB_ADDRESS.test(trimmed) && !GIT_SUFFIX.test(trimmed)) return "site";

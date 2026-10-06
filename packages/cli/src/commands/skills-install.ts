@@ -1,8 +1,7 @@
-import { isArchivePath, skillMatchesName } from "@loadout/shared";
+import { isArchivePath, parseSkillsCommand, skillMatchesName } from "@loadout/shared";
 import {
   cancelled,
   notFound,
-  parseSkillsCommand,
   planFolder,
   planMarket,
   planPreview,

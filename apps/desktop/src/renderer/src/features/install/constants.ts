@@ -44,10 +44,6 @@ export const GIT_URL_EXAMPLES = [
   "npx skills add owner/repo --skill my-skill",
 ] as const;
 
-/** A link to an archive; the backend decides for real, this only picks wording. */
-export const ARCHIVE_LINK_PATTERN =
-  /^https?:\/\/[^?#\s]+\.(zip|skill|tar|tgz|tar\.gz)(?:[?#]\S*)?$/i;
-
 /** Where to get Git, offered when it is missing. */
 export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
 
