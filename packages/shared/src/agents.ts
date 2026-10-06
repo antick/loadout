@@ -118,3 +118,8 @@ export function cleanAgentKeys(values: readonly unknown[]): string[] {
   );
   return [...new Set(keys)].sort();
 }
+
+/** An agent (or project target) skills can go to now: found on this machine and not switched off. */
+export function isAgentAvailable(agent: { installed: boolean; enabled: boolean }): boolean {
+  return agent.installed && agent.enabled;
+}

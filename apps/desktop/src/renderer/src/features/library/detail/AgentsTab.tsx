@@ -1,4 +1,4 @@
-import type { AgentInfo, Skill } from "@loadout/shared";
+import { type AgentInfo, isAgentAvailable, type Skill } from "@loadout/shared";
 import { Bot, ChevronRight, MoreHorizontal } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,7 +21,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useSetBlocked } from "@/features/library/library-mutations";
 import { type AgentToggle, useAgentToggle, useApplySkills } from "@/hooks/mutations/deploy";
-import { isAgentAvailable, useAgents } from "@/hooks/queries/agents";
+import { useAgents } from "@/hooks/queries/agents";
 import { useSkillAgentKeys } from "@/hooks/use-skill-agent-keys";
 import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
 import { SECTION_LABEL } from "@/lib/styles";

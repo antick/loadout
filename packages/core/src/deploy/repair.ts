@@ -1,5 +1,10 @@
 import { existsSync } from "node:fs";
-import type { RepairFailure, RepairReport, RepairedDeployment } from "@loadout/shared";
+import {
+  isAgentAvailable,
+  type RepairedDeployment,
+  type RepairFailure,
+  type RepairReport,
+} from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
@@ -35,9 +40,7 @@ export function createDeployRepair(ctx: CoreContext, deps: DeployRepairDeps): De
 
   async function run(): Promise<RepairReport> {
     const agents = deps.registry.list();
-    const available = new Set(
-      agents.filter((agent) => agent.installed && agent.enabled).map((agent) => agent.key),
-    );
+    const available = new Set(agents.filter(isAgentAvailable).map((agent) => agent.key));
     const names = new Map(agents.map((agent) => [agent.key, agent.displayName]));
     const agentName = (key: string): string => names.get(key) ?? key;
     const repaired: RepairedDeployment[] = [];

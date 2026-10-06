@@ -4,6 +4,7 @@ import {
   AGENT_INSTRUCTION_FILES,
   type InstructionFile,
   type InstructionScope,
+  isAgentAvailable,
   type SkillLocation,
 } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
@@ -77,7 +78,7 @@ export function createInstructionFinder(deps: InstructionFinderDeps) {
   function collect(place: Place, include: string | null = null): InstructionFile[] {
     const groups = new Map<string, Reading[]>();
     for (const agent of registry.list()) {
-      const wanted = (agent.installed && agent.enabled) || agent.key === include;
+      const wanted = isAgentAvailable(agent) || agent.key === include;
       const path = wanted ? pathOf(agent, place) : null;
       if (!path) continue;
       const identity = canonicalPath(path);

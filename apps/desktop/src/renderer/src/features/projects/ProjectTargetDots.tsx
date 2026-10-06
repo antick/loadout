@@ -1,7 +1,7 @@
-import type { ProjectTarget } from "@loadout/shared";
+import { isAgentAvailable, type ProjectTarget } from "@loadout/shared";
 import { type ReactNode, useMemo } from "react";
 import { AgentBadgeRow } from "@/components/AgentBadgeRow";
-import { isTargetAvailable, type ProjectSkillGroup } from "./project-skill-groups";
+import { type ProjectSkillGroup } from "./project-skill-groups";
 import { pendingTargetId } from "./use-project-skill-actions";
 
 export interface ProjectTargetDotsProps {
@@ -39,7 +39,7 @@ export function ProjectTargetDots({
     [group.variants],
   );
   // Unavailable agents only show up when they already hold a copy.
-  const shown = targets.filter((target) => isTargetAvailable(target) || assigned.has(target.key));
+  const shown = targets.filter((target) => isAgentAvailable(target) || assigned.has(target.key));
   const pending = new Set(
     shown
       .filter((target) => pendingTargets.has(pendingTargetId(group.id, target.key)))

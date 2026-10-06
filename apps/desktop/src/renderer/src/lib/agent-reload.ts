@@ -1,4 +1,9 @@
-import { type AgentInfo, type AgentReloadWhen, formatNameList } from "@loadout/shared";
+import {
+  type AgentInfo,
+  type AgentReloadWhen,
+  formatNameList,
+  isAgentAvailable,
+} from "@loadout/shared";
 import type { QueryClient } from "@tanstack/react-query";
 import { i18n } from "@/lib/i18n";
 import { keys } from "@/lib/query-keys";
@@ -67,5 +72,5 @@ export function reloadHintFor(
 /** `reloadHint` for every agent a preset applies to by default: installed and switched on. */
 export function reloadHintForAvailable(queryClient: QueryClient): string | null {
   const agents = queryClient.getQueryData<AgentInfo[]>(keys.agents.all) ?? [];
-  return reloadHint(agents.filter((agent) => agent.installed && agent.enabled));
+  return reloadHint(agents.filter(isAgentAvailable));
 }

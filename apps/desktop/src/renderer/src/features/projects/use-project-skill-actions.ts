@@ -1,4 +1,9 @@
-import type { Project, ProjectTarget, SkillVersion } from "@loadout/shared";
+import {
+  isAgentAvailable,
+  type Project,
+  type ProjectTarget,
+  type SkillVersion,
+} from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowDownToLine, ArrowUpFromLine, History, PencilLine, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -18,7 +23,6 @@ import { usePendingSet } from "@/hooks/use-pending-set";
 import { editLink } from "@/lib/skill-location";
 import type { VersionChoice } from "./PushVersionDialog";
 import {
-  isTargetAvailable,
   leadVariant,
   type ProjectSkillGroup,
   projectSkillRules,
@@ -191,7 +195,7 @@ export function useProjectSkillActions(
       const variant = variantFor(group, target.key);
 
       if (!variant) {
-        if (!isTargetAvailable(target)) {
+        if (!isAgentAvailable(target)) {
           toast.info(t("projectPage.targets.unavailable", { target: target.displayName }));
           return;
         }

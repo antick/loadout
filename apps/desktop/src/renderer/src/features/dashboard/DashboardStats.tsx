@@ -1,10 +1,15 @@
-import type { AgentInfo, BackupStatus, Project, Skill } from "@loadout/shared";
+import {
+  type AgentInfo,
+  type BackupStatus,
+  isAgentAvailable,
+  type Project,
+  type Skill,
+} from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUpCircle, Bot, CloudUpload, FolderKanban, Layers, Library } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { StatCard } from "@/components/StatCard";
-import { isAgentAvailable } from "@/hooks/queries/agents";
 import { BACKUP_MODE_TONES, deriveBackupMode } from "@/lib/backup-mode";
 import { PERCENT } from "./constants";
 

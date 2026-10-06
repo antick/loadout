@@ -1,13 +1,14 @@
-import type {
-  CoreApi,
-  HealthArea,
-  HealthFinding,
-  HealthReport,
-  HealthSeverity,
-  LibraryWarning,
-  LocalSkill,
-  Skill,
-  SyncStatus,
+import {
+  type CoreApi,
+  type HealthArea,
+  type HealthFinding,
+  type HealthReport,
+  type HealthSeverity,
+  isAgentAvailable,
+  type LibraryWarning,
+  type LocalSkill,
+  type Skill,
+  type SyncStatus,
 } from "@loadout/shared";
 import { APP_NAME, CLI_COMMANDS, LISTING_AGENT_KEY } from "@loadout/shared";
 import { type DeploymentState, deploymentState } from "../deploy/state";
@@ -130,7 +131,7 @@ function localFindings(skill: LocalSkill, agentKey: string): Finding[] {
 }
 
 async function agentFolderFindings(api: CoreApi): Promise<{ findings: Finding[]; agents: number }> {
-  const agents = (await api.agents.list()).filter((agent) => agent.installed && agent.enabled);
+  const agents = (await api.agents.list()).filter(isAgentAvailable);
   const findings: Finding[] = [];
   for (const agent of agents) {
     for (const skill of await api.workspace.list(agent.key)) {

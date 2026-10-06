@@ -4,13 +4,14 @@ import { dirname, join } from "node:path";
 import {
   type CreateSkillInput,
   DEFAULT_PROJECT_AGENT_KEY,
+  isAgentAvailable,
   type LocalSkill,
   NEW_SKILL_DOCUMENT,
+  newSkillDocument,
   type ProjectCopyRef,
   type PushToLibraryOptions,
   type PushToLibraryResult,
   type Skill,
-  newSkillDocument,
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
@@ -42,7 +43,7 @@ import { indexLibrary } from "../workspace/local-scan";
 import { type Variant, findVariants, groupKey, listProjectSkills } from "./scan";
 import type { ProjectRecord } from "./store";
 import { type VersionGroup, describeVersion, groupByContent } from "./versions";
-import { type ResolvedTarget, findTarget, isAvailable, resolveTargets } from "./targets";
+import { type ResolvedTarget, findTarget, resolveTargets } from "./targets";
 
 export interface ProjectActionsDeps extends LocalSyncDeps {
   registry: AgentRegistry;
@@ -122,7 +123,7 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
     const keys = agentKeys?.length ? agentKeys : [DEFAULT_PROJECT_AGENT_KEY];
     const chosen = keys.flatMap((key) => {
       const target = findTarget(targets, key);
-      return target && isAvailable(target) ? [target] : [];
+      return target && isAgentAvailable(target) ? [target] : [];
     });
     // Two keys resolving to one folder are one write.
     return [...new Set(chosen)];

@@ -4,6 +4,7 @@ import {
   type ClawhubAccount,
   type CustomAgentInput,
   formatDateTime,
+  isAgentAvailable,
   type LibraryLocation,
   type LogExport,
 } from "@loadout/shared";
@@ -154,7 +155,7 @@ export function useCopyDiagnostics(): UseMutationResult<void, unknown, void> {
         api.system.lastCrash(),
         api.agents.list(),
       ]);
-      const enabled = agents.filter((agent) => agent.installed && agent.enabled);
+      const enabled = agents.filter(isAgentAvailable);
       const lines = [
         `## ${APP_NAME} diagnostics`,
         "",

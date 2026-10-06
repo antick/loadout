@@ -1,14 +1,9 @@
-import type { AgentCategory, AgentInfo } from "@loadout/shared";
+import { type AgentCategory, type AgentInfo, isAgentAvailable } from "@loadout/shared";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { api } from "@/lib/api";
 import { REFETCH_ON_FOCUS } from "@/lib/query-client";
 import { keys } from "@/lib/query-keys";
-
-/** An agent skills can be deployed to right now: found on this machine and not switched off. */
-export function isAgentAvailable(agent: AgentInfo): boolean {
-  return agent.installed && agent.enabled;
-}
 
 /** Every known agent, in the user's order. */
 export function useAgents(): UseQueryResult<AgentInfo[]> {

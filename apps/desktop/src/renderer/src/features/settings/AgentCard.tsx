@@ -1,4 +1,4 @@
-import type { AgentInfo } from "@loadout/shared";
+import { type AgentInfo, isAgentAvailable } from "@loadout/shared";
 import { Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -100,7 +100,7 @@ export function AgentCard({ agent, deployedCount, namesByKey, move }: AgentCardP
           ) : null}
           <Switch
             className="ml-2"
-            checked={agent.enabled && agent.installed}
+            checked={isAgentAvailable(agent)}
             disabled={!agent.installed}
             aria-label={t("settings.agents.enable", { name: agent.displayName })}
             onCheckedChange={(enabled) => void toggle(enabled)}

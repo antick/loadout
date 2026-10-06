@@ -1,10 +1,11 @@
-import type {
-  ApplyResult,
-  Preset,
-  PresetRemoveOptions,
-  PresetAgentToggle,
-  PresetInput,
-  PresetsApi,
+import {
+  type ApplyResult,
+  isAgentAvailable,
+  type Preset,
+  type PresetAgentToggle,
+  type PresetInput,
+  type PresetRemoveOptions,
+  type PresetsApi,
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
@@ -178,7 +179,7 @@ export function createPresetsService(ctx: CoreContext, deps: PresetsServiceDeps)
         installed: agent.installed,
         globallyEnabled: agent.enabled,
         // An agent that cannot receive skills is shown as off whatever was saved for it.
-        enabled: agent.installed && agent.enabled && !off.has(agent.key),
+        enabled: isAgentAvailable(agent) && !off.has(agent.key),
       }));
     },
 

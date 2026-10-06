@@ -7,6 +7,7 @@ import {
   type AgentDetection,
   type AgentInfo,
   BUILT_IN_AGENTS,
+  isAgentAvailable,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { notFound } from "../errors";
@@ -272,7 +273,7 @@ export class AgentRegistry {
 
   /** Installed and not switched off. */
   available(): ResolvedAgent[] {
-    return this.list().filter((agent) => agent.installed && agent.enabled);
+    return this.list().filter(isAgentAvailable);
   }
 
   toInfo(agent: ResolvedAgent): AgentInfo {

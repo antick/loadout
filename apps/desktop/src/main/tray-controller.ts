@@ -1,6 +1,6 @@
 import { Notification } from "electron";
 import type { Core } from "@loadout/core";
-import type { ApplyResult } from "@loadout/shared";
+import { type ApplyResult, isAgentAvailable } from "@loadout/shared";
 import { TRAY_REFRESH_DEBOUNCE_MS } from "./constants";
 import { type TrayHandle, createTray } from "./tray";
 import type { TrayState } from "./tray-menu";
@@ -48,7 +48,7 @@ async function loadState(api: CoreApi, checkingUpdates: boolean): Promise<TraySt
   const progress = new Map(status.map((entry) => [entry.presetId, entry]));
   return {
     skillCount: counts.total,
-    agentCount: agents.filter((agent) => agent.installed && agent.enabled).length,
+    agentCount: agents.filter(isAgentAvailable).length,
     updateCount: counts.updatesAvailable,
     presets: presets.map((preset) => ({
       id: preset.id,

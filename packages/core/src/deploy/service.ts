@@ -1,9 +1,10 @@
-import type {
-  BatchFailure,
-  DeployApi,
-  Skill,
-  TargetConflict,
-  UndeployResult,
+import {
+  type BatchFailure,
+  type DeployApi,
+  isAgentAvailable,
+  type Skill,
+  type TargetConflict,
+  type UndeployResult,
 } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
@@ -383,7 +384,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         const agents = new Map(registry.list().map((agent) => [agent.key, agent]));
         for (const key of new Set(agentKeys)) {
           const agent = agents.get(key);
-          if (agent?.installed && agent.enabled) await attempt(ops.pairFor(skill, agent), report);
+          if (agent && isAgentAvailable(agent)) await attempt(ops.pairFor(skill, agent), report);
           else
             report.failed.push({
               name: skill.name,
@@ -401,7 +402,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       await ctx.lock.run(`move deployments of ${agentName(agentKey)}`, async () => {
         const agent = registry.find(agentKey);
         const rows = store.deploymentsForAgent(agentKey);
-        const available = agent !== null && agent.installed && agent.enabled;
+        const available = agent !== null && isAgentAvailable(agent);
         const name = agent?.displayName ?? agentKey;
         for (const row of rows) {
           const skill = store.find(row.skillId);

@@ -1,4 +1,5 @@
 import {
+  isAgentAvailable,
   type LocalSkill,
   PROJECT_EXPORT_PRIORITY,
   type ProjectTarget,
@@ -107,9 +108,6 @@ export function projectSkillRules(group: ProjectSkillGroup): ProjectSkillRules {
   };
 }
 
-export const isTargetAvailable = (target: ProjectTarget): boolean =>
-  target.installed && target.enabled;
-
 /** Place in the export priority list; a merged target ranks as its best-placed member. */
 function priorityRank(target: ProjectTarget): number {
   const ranks = target.agentKeys
@@ -121,7 +119,7 @@ function priorityRank(target: ProjectTarget): number {
 /** Available targets, the usual agents first, the rest in the order they were detected. */
 export function orderedAvailableTargets(targets: readonly ProjectTarget[]): ProjectTarget[] {
   return targets
-    .filter(isTargetAvailable)
+    .filter(isAgentAvailable)
     .map((target, index) => ({ target, index }))
     .sort((a, b) => priorityRank(a.target) - priorityRank(b.target) || a.index - b.index)
     .map(({ target }) => target);

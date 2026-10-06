@@ -1,5 +1,10 @@
 import { join } from "node:path";
-import { BUILT_IN_AGENTS, DEFAULT_PROJECT_AGENT_KEY, type ProjectTarget } from "@loadout/shared";
+import {
+  BUILT_IN_AGENTS,
+  DEFAULT_PROJECT_AGENT_KEY,
+  isAgentAvailable,
+  type ProjectTarget,
+} from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { ProjectRecord } from "./store";
 
@@ -15,8 +20,6 @@ export interface ResolvedTarget extends ProjectTarget {
 /** Appended to a skills folder to name the folder its switched-off skills are moved to. */
 export const DISABLED_SUFFIX = "-disabled";
 const NAME_SEPARATOR = " / ";
-
-export const isAvailable = (target: ProjectTarget): boolean => target.installed && target.enabled;
 
 /** The target an agent key belongs to: its own, or the merged one it shares a folder with. */
 export function findTarget(targets: ResolvedTarget[], agentKey: string): ResolvedTarget | null {
@@ -51,9 +54,7 @@ function mergeAgents(
   root: string,
 ): ResolvedTarget {
   const usable =
-    members.find((agent) => agent.installed && agent.enabled) ??
-    members.find((agent) => agent.installed) ??
-    first;
+    members.find(isAgentAvailable) ?? members.find((agent) => agent.installed) ?? first;
   const enabledRoot = join(root, relativeDir);
   return {
     key: first.key,

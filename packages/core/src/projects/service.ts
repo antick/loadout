@@ -1,5 +1,11 @@
 import { basename, dirname, join } from "node:path";
-import type { Project, ProjectTarget, ProjectsApi, SkillDocument } from "@loadout/shared";
+import {
+  isAgentAvailable,
+  type Project,
+  type ProjectsApi,
+  type ProjectTarget,
+  type SkillDocument,
+} from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { exists, invalid, isAppError, notFound } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
@@ -29,7 +35,6 @@ import {
   type ResolvedTarget,
   defaultProjectSkillsDir,
   findTarget,
-  isAvailable,
   projectSkillDirs,
   resolveTargets,
 } from "./targets";
@@ -287,7 +292,7 @@ export function createProjectsService(
         .getRaw<string[]>(INTERNAL_KEYS.projectExportAgents(id), [])
         .filter((key) => {
           const target = findTarget(targets, key);
-          return target !== null && isAvailable(target);
+          return target !== null && isAgentAvailable(target);
         });
     },
 

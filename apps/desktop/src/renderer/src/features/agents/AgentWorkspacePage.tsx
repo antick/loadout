@@ -1,4 +1,4 @@
-import type { LocalSkill } from "@loadout/shared";
+import { isAgentAvailable, type LocalSkill } from "@loadout/shared";
 import { Navigate } from "@tanstack/react-router";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,7 +28,7 @@ import {
 import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { SkillActionMenu } from "@/features/local-skills/SkillActionMenu";
 import { useLocalSkillFilters } from "@/features/local-skills/use-local-skill-filters";
-import { isAgentAvailable, useAgentNames, useAgents } from "@/hooks/queries/agents";
+import { useAgentNames, useAgents } from "@/hooks/queries/agents";
 import { useInstructionFiles } from "@/hooks/queries/instructions";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { useSelection } from "@/hooks/use-selection";

@@ -1,4 +1,4 @@
-import type { AgentInfo } from "@loadout/shared";
+import { type AgentInfo, isAgentAvailable } from "@loadout/shared";
 import { ChevronRight, RefreshCw } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -92,7 +92,7 @@ export function AgentsSection(): ReactNode {
           <Counter label={t("settings.agents.count.detected")} value={groups.detected.length} />
           <Counter
             label={t("settings.agents.count.enabled")}
-            value={list.filter((agent) => agent.installed && agent.enabled).length}
+            value={list.filter(isAgentAvailable).length}
           />
           <Counter label={t("settings.agents.count.custom")} value={groups.custom.length} />
         </div>

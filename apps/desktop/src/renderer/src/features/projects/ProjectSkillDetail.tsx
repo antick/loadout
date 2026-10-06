@@ -1,4 +1,4 @@
-import type { Project, ProjectTarget } from "@loadout/shared";
+import { isAgentAvailable, type Project, type ProjectTarget } from "@loadout/shared";
 import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
@@ -12,12 +12,7 @@ import { SkillActionButtons } from "@/features/local-skills/SkillActionButtons";
 import { useProjectDocument } from "@/features/projects/project-queries";
 import { useLastDefined } from "@/hooks/use-last-defined";
 import { cn } from "@/lib/utils";
-import {
-  isTargetAvailable,
-  leadVariant,
-  type ProjectSkillGroup,
-  variantFor,
-} from "./project-skill-groups";
+import { leadVariant, type ProjectSkillGroup, variantFor } from "./project-skill-groups";
 import { pendingTargetId, type ProjectSkillActions } from "./use-project-skill-actions";
 import { SECTION_LABEL } from "@/lib/styles";
 
@@ -48,7 +43,7 @@ export function ProjectSkillDetail({
   const document = useProjectDocument(project.id, shown?.relativePath, shown?.agentKey);
 
   const listed = group
-    ? targets.filter((target) => isTargetAvailable(target) || variantFor(group, target.key))
+    ? targets.filter((target) => isAgentAvailable(target) || variantFor(group, target.key))
     : [];
 
   return (

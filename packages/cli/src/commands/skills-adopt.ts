@@ -12,11 +12,12 @@ import { failureLines, plural } from "../output";
 import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
+import { isAgentAvailable } from "@loadout/shared";
 
 /** The agent whose own skills folder this is. Usable agents win when several share the folder. */
 function owningAgent(core: Core, dir: string): ResolvedAgent {
   const owners = core.registry.list().filter((agent) => canonicalPath(agent.skillsDir) === dir);
-  const owner = owners.find((agent) => agent.installed && agent.enabled) ?? owners[0];
+  const owner = owners.find(isAgentAvailable) ?? owners[0];
   if (!owner) {
     throw invalid(
       `${dir} is not the skills folder of any known agent (see \`agents list\`). To copy skills into the library without deploying them, use \`skills install\`.`,
