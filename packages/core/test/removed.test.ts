@@ -201,6 +201,9 @@ describe("recently removed", () => {
     const meta = JSON.parse(readFileSync(metaPath, "utf8")) as { removedAt: number };
     writeFileSync(metaPath, JSON.stringify({ ...meta, removedAt: Date.now() - 31 * DAY_MS }));
     expect(await storage.api.removed()).toEqual([]);
+    // Listing only reads: the delete waits for a prune, which runs under the library lock.
+    expect(existsSync(join(world.ctx.paths.removedDir, old ?? ""))).toBe(true);
+    world.removed.prune();
     expect(existsSync(join(world.ctx.paths.removedDir, old ?? ""))).toBe(false);
 
     const one = world.removed.setAside(makeSkill(claude, "one"), { place: "x", reason: "deleted" });
@@ -358,10 +361,11 @@ describe("recently removed", () => {
     const half = join(world.ctx.paths.removedDir, "11111111-1111-4111-8111-111111111111");
     writeFile(join(half, "content", "SKILL.md"), "partly copied");
     expect(await storage.api.removed()).toEqual([]);
+    world.removed.prune();
     expect(existsSync(half)).toBe(true);
     const old = new Date(Date.now() - 2 * 60 * 60 * 1000);
     utimesSync(half, old, old);
-    await storage.api.removed();
+    world.removed.prune();
     expect(existsSync(half)).toBe(false);
   });
 });

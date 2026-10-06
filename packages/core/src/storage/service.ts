@@ -163,7 +163,8 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       }
       return result;
     },
-    deleteRemoved: async (id) => deps.removed.remove(id),
+    deleteRemoved: (id) =>
+      ctx.lock.run("delete from Recently removed", () => deps.removed.remove(id)),
     revealRemoved: async (id) => ctx.host.revealPath(deps.removed.contentPath(id)),
   };
 

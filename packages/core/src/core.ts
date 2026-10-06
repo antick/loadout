@@ -116,18 +116,20 @@ export function createCore(options: CoreCreateOptions = {}): Core {
       : null;
 
   const registry = new AgentRegistry(ctx);
+  const removed = createRemovedStore(ctx, { store });
   // Pick up anything that changed while the app was closed (manual edits, CLI use, a restore),
-  // write the metadata and prune links left by deleted skills: only when nobody else is working
-  // in the library. Mid-merge a skill folder is set aside for a moment, and its row would go
-  // with its deployments. When it is busy, the process working in it keeps the index.
+  // write the metadata, prune links left by deleted skills and Recently removed entries past
+  // their time: only when nobody else is working in the library. Mid-merge a skill folder is set
+  // aside for a moment, and its row would go with its deployments. When it is busy, the process
+  // working in it keeps the index.
   const tidied = ctx.lock.holdSync("tidy the library on start", () => {
     portable.rebuild({ mode: "reindex" });
     if (options.readOnly) return;
     portable.write();
     pruneBrokenLinks(ctx, { registry, store });
+    removed.prune();
   });
   if (!tidied) ctx.log.info("The library is busy; start-up tidying waits for the next start");
-  const removed = createRemovedStore(ctx, { store });
   const deploy = createDeployService(ctx, { store, registry, removed });
   const staleCopies = createStaleCopyRefresher(ctx, deploy);
   const repair = createDeployRepair(ctx, { store, registry, deploy });

@@ -79,9 +79,16 @@ export interface RemovedStore {
   setAside(path: string, info: SetAsideInfo): string | null;
   /** Like `setAside`, but copies: the folder stays where it is. */
   keepCopy(path: string, info: SetAsideInfo): string | null;
+  /** Entries not yet past their time, newest first. Reads only. */
   list(): RemovedFolder[];
   restore(id: string): Promise<RestoreRemovedResult>;
+  /** Delete one entry for good. Call it under the library lock. */
   remove(id: string): void;
+  /**
+   * Delete entries past their time, and half-written ones surely abandoned. Call it under the
+   * library lock; adding an entry prunes too.
+   */
+  prune(): void;
   /** Delete every entry. Returns the bytes freed. */
   clear(): Promise<number>;
   /**
@@ -261,7 +268,6 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
     keepCopy: (path, info) => keep(path, info, "copy"),
 
     list: () => {
-      prune();
       const now = Date.now();
       return readDirSafe(root())
         .flatMap((entry) => {
@@ -325,6 +331,8 @@ export function createRemovedStore(ctx: CoreContext, deps: { store: SkillStore }
       requireMeta(id);
       removePathSync(entryDir(id));
     },
+
+    prune: () => prune(),
 
     clear: () =>
       ctx.lock.run("clear recently removed", () => {

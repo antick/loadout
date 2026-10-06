@@ -44,11 +44,14 @@ export function createBackupOperations(
    * the backup changed, once it has its whole answer.
    */
   async function saveRemote(url: string): Promise<void> {
-    if (isRepo(env)) {
-      const verb = (await originUrl(env)) ? "set-url" : "add";
-      await env.git.run(["remote", verb, REMOTE_NAME, url]);
-    }
-    ctx.settings.setRaw(INTERNAL_KEYS.backupRemoteUrl, url);
+    // `git remote` writes the repository's config: never while a merge or commit works in it.
+    await ctx.lock.run("set the backup remote", async () => {
+      if (isRepo(env)) {
+        const verb = (await originUrl(env)) ? "set-url" : "add";
+        await env.git.run(["remote", verb, REMOTE_NAME, url]);
+      }
+      ctx.settings.setRaw(INTERNAL_KEYS.backupRemoteUrl, url);
+    });
   }
 
   const github = createGithubService(ctx, { fetchImpl, saveRemote });
@@ -89,8 +92,11 @@ export function createBackupOperations(
     },
 
     removeRemote: async () => {
-      const urls = [env.remoteUrl(), isRepo(env) ? await originUrl(env) : null];
-      if (isRepo(env) && urls[1]) await env.git.run(["remote", "remove", REMOTE_NAME]);
+      const urls = await ctx.lock.run("remove the backup remote", async () => {
+        const found = [env.remoteUrl(), isRepo(env) ? await originUrl(env) : null];
+        if (isRepo(env) && found[1]) await env.git.run(["remote", "remove", REMOTE_NAME]);
+        return found;
+      });
       for (const url of urls) if (url) await deleteRemoteToken(ctx.secrets, url);
       ctx.settings.deleteRaw(INTERNAL_KEYS.backupRemoteUrl);
       ctx.settings.deleteRaw(INTERNAL_KEYS.githubAuthMethod);
