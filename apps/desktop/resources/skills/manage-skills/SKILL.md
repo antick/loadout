@@ -115,7 +115,7 @@ loadout skills check --all --json
 loadout skills update <ref> --json
 loadout skills update --all --json                      # checks every source fresh first
 
-# Safety check: built-in rules always; SkillSpector when the user has it installed; exit code 1 when one is unsafe or could not be checked
+# Safety check: built-in rules, or SkillSpector when the user has it installed (installs skip it only if the user turned it off in Settings); exit code 1 when one is unsafe or could not be checked
 # Both print { scanned, unsafe, caution, failed, records }: records are this run's reports
 loadout skills scan <ref> --json
 loadout skills scan --all --json
