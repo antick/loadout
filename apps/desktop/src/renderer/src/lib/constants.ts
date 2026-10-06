@@ -128,6 +128,3 @@ export const SOURCE_SEARCH_CONCURRENCY = 3;
 export const PLUGIN_SKILLS_SHOWN = 6;
 /** Skills named in the skill listing card before "Show all". */
 export const LISTING_SKILLS_SHOWN = 5;
-
-/** The renderer asks the app again which editors are installed after this long. */
-export const EDITORS_STALE_MS = 60_000;

@@ -9,7 +9,6 @@ import type {
 } from "@loadout/shared";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { EDITORS_STALE_MS } from "@/lib/constants";
 import { REFETCH_ON_FOCUS } from "@/lib/query-client";
 import { keys } from "@/lib/query-keys";
 
@@ -22,12 +21,11 @@ export function useAppInfo(): UseQueryResult<AppInfo> {
   });
 }
 
-/** Code editors found on this computer. Looked for again now and then. */
+/** Code editors found on this computer. The main process keeps the detection for a while. */
 export function useEditors(): UseQueryResult<DetectedEditor[]> {
   return useQuery({
     queryKey: keys.app.editors,
     queryFn: () => api.app.editors(),
-    staleTime: EDITORS_STALE_MS,
   });
 }
 
