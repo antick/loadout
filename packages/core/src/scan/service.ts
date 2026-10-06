@@ -24,7 +24,7 @@ import {
   normalizeAbsolutePath,
   targetIdentity,
 } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { hashDir, hashDirCached } from "../util/hash";
 import {
   type LibraryIndex,
   type ScanOptions,
@@ -103,7 +103,7 @@ function record(
   library: LibraryIndex,
 ): void {
   const identity = readSkillIdentity(location.path);
-  const fingerprint = hashDir(location.path);
+  const fingerprint = hashDirCached(location.path);
   const entry = { path: location.path, dirName: basename(location.path), hash: fingerprint };
   const imported = matchLibrarySkill(entry, library, "strict") !== null;
   const key = `${identity.name}\n${fingerprint ?? location.path}`;
@@ -157,8 +157,7 @@ export function createScanService(ctx: CoreContext, deps: ScanServiceDeps): Scan
     return { agentsScanned, skillsFound: paths.size, skills: lastScan };
   }
 
-  const sameName = (candidate: string): Skill[] =>
-    store.list().filter((skill) => skill.name.toLowerCase() === candidate.toLowerCase());
+  const sameName = (candidate: string): Skill[] => store.findByName(candidate);
 
   /**
    * The library name for a found skill nobody renamed: its own, unless the library already has a

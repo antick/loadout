@@ -98,7 +98,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
           ? file.source.revision
           : null;
       if (!skill || skill.sourceRevision === revision) continue;
-      deps.store.update(skill.id, { sourceRevision: revision });
+      deps.store.patch(skill.id, { sourceRevision: revision });
     }
   }
 

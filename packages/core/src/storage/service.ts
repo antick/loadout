@@ -136,7 +136,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       // The same test `removeEverywhere` uses: these stay in place even when copies go.
       const edited = new Set(
         copyRows
-          .filter((row) => holdsOwnEdits(row, deps.store.find(row.skillId)?.contentHash ?? null))
+          .filter((row) => holdsOwnEdits(row, deps.store.contentHashOf(row.skillId)))
           .map((row) => row.targetPath),
       );
       return {

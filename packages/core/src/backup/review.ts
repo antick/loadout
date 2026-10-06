@@ -205,7 +205,7 @@ async function buildPreview(env: BackupEnv): Promise<SyncPreview> {
       const here = versions.ours ?? versions.base;
       const item = (change: SyncChange, fromDevice: string | null): SyncPreviewItem => ({
         id: plan.id,
-        name: env.store.find(plan.id)?.name ?? plan.path ?? here?.path ?? plan.id,
+        name: env.store.nameOf(plan.id) ?? plan.path ?? here?.path ?? plan.id,
         change,
         path: plan.path ?? here?.path ?? null,
         previousPath: change === "renamed" ? (here?.path ?? null) : null,
@@ -276,7 +276,7 @@ export async function previewDiff(
   const local = localFolderOf(env, skillId);
   if (!meta && !local) throw notFound("That skill is neither here nor on the remote.");
   return {
-    name: env.store.find(skillId)?.name ?? meta?.path ?? skillId,
+    name: env.store.nameOf(skillId) ?? meta?.path ?? skillId,
     entries: await diffWithCommit(env, local, commit, meta?.path ?? null),
   };
 }

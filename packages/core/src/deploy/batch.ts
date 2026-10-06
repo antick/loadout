@@ -160,7 +160,7 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
         ops.undeployRow(row, names.get(ref.agentKey));
         result.removed += 1;
       } catch (error) {
-        const name = store.find(ref.skillId)?.name ?? ref.skillId;
+        const name = store.nameOf(ref.skillId) ?? ref.skillId;
         result.failed.push({ name, message: errorMessage(error) });
       }
     }

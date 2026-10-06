@@ -56,6 +56,7 @@ export function relativeDir(dir: string | null | undefined): string | null {
  * state and display order. Reads settings on every call, so it never goes stale.
  */
 export class AgentRegistry {
+  #resolved: { version: number; agents: ResolvedAgent[] } | null = null;
   readonly #ctx: CoreContext;
 
   constructor(ctx: CoreContext) {
@@ -220,10 +221,22 @@ export class AgentRegistry {
   }
 
   /**
-   * Every agent, in display order. Resolving touches the disk for each of them: a caller going
-   * through many rows resolves once and looks agents up in that list.
+   * Every agent, in display order. Resolving touches the disk for each of them, so one answer is
+   * kept for the rest of the current turn of the event loop, while the settings stay as they
+   * were: an API call that looks up several agents resolves them once.
    */
   list(): ResolvedAgent[] {
+    const version = this.#ctx.settings.version;
+    if (this.#resolved?.version === version) return [...this.#resolved.agents];
+    const agents = this.#resolveAll();
+    this.#resolved = { version, agents };
+    setImmediate(() => {
+      this.#resolved = null;
+    });
+    return [...agents];
+  }
+
+  #resolveAll(): ResolvedAgent[] {
     const settings: ResolveSettings = {
       disabled: this.disabledKeys(),
       overrides: this.pathOverrides(),

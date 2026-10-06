@@ -15,7 +15,14 @@ import {
   usableMode,
   writeTarget,
 } from "./engine";
-import { holdsOwnEdits, isCurrent, policyFromRows, rowsAtPath, samePath } from "./evidence";
+import {
+  holdsOwnEdits,
+  isCurrent,
+  policyFromRows,
+  rowsAtPath,
+  samePath,
+  storedRowsAtPath,
+} from "./evidence";
 
 const REASON_OTHER_SKILL = "already holds a different skill's deployment";
 
@@ -87,7 +94,7 @@ export function createDeployOperations(
     known?: DeploymentRecord[],
   ): TargetCheck {
     const { skill, targetPath } = pair;
-    const rows = rowsAtPath(known ?? store.deployments(), targetPath);
+    const rows = known ? rowsAtPath(known, targetPath) : storedRowsAtPath(store, targetPath);
     const policy = forced ?? policyFromRows(rows);
     const state = classifyTarget(targetPath, skill.libraryPath);
     const mode = usableMode(targetPath, ctx.settings.get("deployMode"));
@@ -106,7 +113,7 @@ export function createDeployOperations(
   /** Other rows still pointing at `row`'s path keep it; null when that could not be checked. */
   function sharedWithOthers(row: DeploymentRecord): boolean | null {
     try {
-      return rowsAtPath(store.deployments(), row.targetPath).some(
+      return storedRowsAtPath(store, row.targetPath).some(
         (other) => other.skillId !== row.skillId || other.agentKey !== row.agentKey,
       );
     } catch (error) {
@@ -117,13 +124,13 @@ export function createDeployOperations(
 
   function editedCopyOf(row: DeploymentRecord): string | null {
     if (sharedWithOthers(row) !== false) return null;
-    const libraryHash = store.find(row.skillId)?.contentHash ?? null;
+    const libraryHash = store.contentHashOf(row.skillId);
     return holdsOwnEdits(row, libraryHash) ? row.targetPath : null;
   }
 
   function releasePath(row: DeploymentRecord, place = row.agentKey, setAside?: string[]): boolean {
     if (sharedWithOthers(row) !== false) return false;
-    const libraryHash = store.find(row.skillId)?.contentHash ?? null;
+    const libraryHash = store.contentHashOf(row.skillId);
     const keptId = setAsideEdited([row], place, "deleted", libraryHash);
     if (keptId !== null) {
       setAside?.push(keptId);
@@ -182,7 +189,7 @@ export function createDeployOperations(
     agentName = row.agentKey,
     setAside?: string[],
   ): boolean {
-    const skillName = store.find(row.skillId)?.name ?? row.skillId;
+    const skillName = store.nameOf(row.skillId) ?? row.skillId;
     // The folder first: if removing it fails, the row stays as the proof the folder is ours.
     const released = releasePath(row, agentName, setAside);
     store.deleteDeployment(row.skillId, row.agentKey);

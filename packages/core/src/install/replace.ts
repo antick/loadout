@@ -20,9 +20,8 @@ export interface ReplaceDeps {
  * (`planInstallNames`). Null when the name is free or held by a folder no skill owns.
  */
 export function skillHoldingName(store: SkillStore, name: string): Skill | null {
-  const key = name.trim().toLowerCase();
-  if (!key) return null;
-  return store.list().find((skill) => skill.dirName.toLowerCase() === key) ?? null;
+  const key = name.trim();
+  return key ? store.findByDirName(key) : null;
 }
 
 /**

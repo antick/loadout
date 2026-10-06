@@ -291,10 +291,10 @@ export class PortableMetadata {
           current.name === identity.name &&
           current.description === identity.description &&
           current.libraryPath === libraryPath;
-        if (!same) this.#skills.update(current.id, fromFolder);
+        if (!same) this.#skills.patch(current.id, fromFolder);
         return current.id;
       }
-      this.#skills.update(current.id, {
+      this.#skills.patch(current.id, {
         ...fromFolder,
         sourceType: file.source.type,
         sourceUrl: file.source.url ?? current.sourceUrl,
@@ -314,7 +314,7 @@ export class PortableMetadata {
       return current.id;
     }
     const remote = !MACHINE_LOCAL_SOURCES.has(file.source.type);
-    this.#skills.insert({
+    this.#skills.add({
       id: file.id,
       name: identity.name,
       description: identity.description,
@@ -387,7 +387,7 @@ export class PortableMetadata {
         (sameName.length === 1 ? sameName[0] : undefined);
       if (match) {
         missing.splice(missing.indexOf(match), 1);
-        this.#skills.update(match.id, {
+        this.#skills.patch(match.id, {
           name: identity.name,
           description: identity.description,
           libraryPath,
@@ -398,7 +398,7 @@ export class PortableMetadata {
         this.#log.info(`Skill folder ${basename(match.libraryPath)} was renamed to ${name}`);
         continue;
       }
-      this.#skills.insert({
+      this.#skills.add({
         name: identity.name,
         description: identity.description,
         sourceType: "import",

@@ -176,7 +176,10 @@ export function hashDir(root: string, options: HashOptions = {}): string | null 
  * fingerprints mean the content is almost surely the same; null for an empty tree.
  */
 export function contentFingerprint(root: string): string | null {
-  const files = listContentFiles(root);
+  return fingerprintOf(root, listContentFiles(root));
+}
+
+function fingerprintOf(root: string, files: readonly ContentFile[]): string | null {
   if (files.length === 0) return null;
   const hash = createHash("sha256");
   frame(hash, root);
@@ -197,7 +200,10 @@ const hashCache = new Map<string, { fingerprint: string; hash: string | null }>(
  * (agent and project skills on every list), where the plain hash is all that is needed.
  */
 export function hashDirCached(root: string): string | null {
-  const fingerprint = contentFingerprint(root);
+  return cachedHash(root, contentFingerprint(root));
+}
+
+function cachedHash(root: string, fingerprint: string | null): string | null {
   if (fingerprint === null) {
     hashCache.delete(root);
     return null;
@@ -216,9 +222,21 @@ export function hashDirCached(root: string): string | null {
 
 /** Newest modification time among content files, or null for an empty tree. */
 export function newestContentMtime(root: string): number | null {
-  const files = listContentFiles(root);
+  return newestOf(listContentFiles(root));
+}
+
+function newestOf(files: readonly ContentFile[]): number | null {
   if (files.length === 0) return null;
-  return Math.max(...files.map((f) => f.mtimeMs));
+  return files.reduce((newest, file) => Math.max(newest, file.mtimeMs), 0);
+}
+
+/** `hashDirCached` and `newestContentMtime` together, from one walk of the folder. */
+export function hashAndNewestCached(root: string): {
+  hash: string | null;
+  newestMtime: number | null;
+} {
+  const files = listContentFiles(root);
+  return { hash: cachedHash(root, fingerprintOf(root, files)), newestMtime: newestOf(files) };
 }
 
 /** SHA-256 of one file's bytes, hex. */

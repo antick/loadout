@@ -80,6 +80,12 @@ export async function installIntoLibrary(
   const name = request.name?.trim() ? sanitizeSkillName(request.name) : identity.name;
   const sourceHash = hashDir(sourceDir);
   if (sourceHash === null) throw invalid(`The folder has no files to install: ${sourceDir}`);
+  // What the source hashes to as a library copy called each name tried: worked out once each.
+  const copyHashes = new Map<string, string | null>();
+  const copyHashAs = (dirName: string): string | null => {
+    if (!copyHashes.has(dirName)) copyHashes.set(dirName, hashAsLibraryCopy(sourceDir, dirName));
+    return copyHashes.get(dirName) ?? null;
+  };
 
   try {
     const outcome = await ctx.lock.run(`install ${name}`, async () => {
@@ -94,7 +100,7 @@ export async function installIntoLibrary(
               const path = join(skillsDir, candidate);
               if (lstatOrNull(path) === null) return true;
               const held = hashDir(path);
-              return held === sourceHash || held === hashAsLibraryCopy(sourceDir, candidate);
+              return held === sourceHash || held === copyHashAs(candidate);
             }),
           ),
         );
@@ -104,9 +110,9 @@ export async function installIntoLibrary(
       // Same content already in place: leave the folder alone so deployed links never flicker.
       // Copy from the real folder: a source that is itself a link would be copied as a link.
       const dirName = basename(destination);
-      if (hashDir(destination) !== hashAsLibraryCopy(sourceDir, dirName)) {
-        await replaceDirAtomic(canonicalPath(sourceDir), destination);
-      }
+      const held = hashDir(destination);
+      const inPlace = held !== null && held === copyHashAs(dirName);
+      if (!inPlace) await replaceDirAtomic(canonicalPath(sourceDir), destination);
       const fixedName = fixNumberedName(destination, dirName);
 
       const fields = {
@@ -122,7 +128,7 @@ export async function installIntoLibrary(
           : { sourceTrustedHost: record.sourceTrustedHost }),
         sourceRevision: record.sourceRevision ?? null,
         remoteRevision: record.remoteRevision ?? record.sourceRevision ?? null,
-        contentHash: hashDir(destination),
+        contentHash: inPlace && fixedName === null ? held : hashDir(destination),
         updateStatus: record.updateStatus,
         // The folder now holds exactly what the source has: nothing is edited any more.
         editedFiles: [],

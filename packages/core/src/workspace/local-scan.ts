@@ -12,8 +12,9 @@ import {
   targetIdentity,
   toPosix,
 } from "../util/fs";
-import { hashDirCached, newestContentMtime } from "../util/hash";
+
 import { slugify } from "../util/names";
+import { hashAndNewestCached } from "../util/hash";
 
 /** A skill folder found under a skills root, before it is compared with the library. */
 export interface LocalSkillDir {
@@ -150,8 +151,7 @@ export function describeLocalSkill(dir: LocalSkillDir): LocalEntry {
     dirName: basename(dir.path),
     description: identity.description,
     files: listTopLevel(dir.path),
-    hash: hashDirCached(dir.path),
-    newestMtime: newestContentMtime(dir.path),
+    ...hashAndNewestCached(dir.path),
   };
 }
 
@@ -252,12 +252,12 @@ export function classifySync(
   librarySkill: Skill | null,
 ): SyncStatus {
   if (!librarySkill) return "local_only";
-  if (entry.hash !== null) {
-    if (entry.hash === librarySkill.contentHash) return "in_sync";
-    // The stored hash can lag behind a hand edit of the library folder.
-    if (entry.hash === hashDirCached(librarySkill.libraryPath)) return "in_sync";
-  }
-  const libraryMtime = newestContentMtime(librarySkill.libraryPath);
+  if (entry.hash !== null && entry.hash === librarySkill.contentHash) return "in_sync";
+  // One walk of the library folder: its hash (the stored one can lag behind a hand edit) and its
+  // newest file.
+  const library = hashAndNewestCached(librarySkill.libraryPath);
+  if (entry.hash !== null && entry.hash === library.hash) return "in_sync";
+  const libraryMtime = library.newestMtime;
   if (entry.newestMtime === null || libraryMtime === null) return "diverged";
   if (entry.newestMtime > libraryMtime + MTIME_THRESHOLD_MS) return "local_newer";
   if (libraryMtime > entry.newestMtime + MTIME_THRESHOLD_MS) return "library_newer";

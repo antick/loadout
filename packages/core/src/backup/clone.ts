@@ -116,7 +116,7 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
       // The same skill with unsaved local edits stays with the backup; the copy is indexed as new.
       if (row && !sameSkill) {
         carried.adjustments.push(() => {
-          env.store.update(row.id, { libraryPath: join(env.repoDir, name) });
+          env.store.patch(row.id, { libraryPath: join(env.repoDir, name) });
         });
       }
       continue;

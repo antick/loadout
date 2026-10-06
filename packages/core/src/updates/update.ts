@@ -285,7 +285,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     if (!store.find(skillId)) return;
     if (isAppError(error, "UNSAFE")) {
       // Nothing is wrong with the source: a new version is there, and it waits for the user.
-      store.update(skillId, {
+      store.patch(skillId, {
         updateStatus: "update_available",
         lastCheckError: FLAGGED_UPDATE,
         lastCheckedAt: Date.now(),
@@ -293,7 +293,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       ctx.touched("skills");
       return;
     }
-    store.update(skillId, {
+    store.patch(skillId, {
       // The source answered, and the skill is not in it any more: not a failure to retry.
       updateStatus: isAppError(error, "NOT_FOUND") ? "source_missing" : "error",
       lastCheckError: errorMessage(error),

@@ -48,7 +48,7 @@ function projectEntries(folders: readonly string[], skill: Skill): ProjectEntrie
  */
 function moveFolder(store: SkillStore, skill: Skill, to: string, name: string): void {
   if (skill.libraryPath === to) {
-    store.update(skill.id, { name });
+    store.patch(skill.id, { name });
     return;
   }
   if (skill.dirName.toLowerCase() === name.toLowerCase()) {
@@ -58,7 +58,7 @@ function moveFolder(store: SkillStore, skill: Skill, to: string, name: string): 
   } else {
     renameSync(skill.libraryPath, to);
   }
-  store.update(skill.id, { name, libraryPath: to });
+  store.patch(skill.id, { name, libraryPath: to });
 }
 
 /** Set the new name in the document, and record the change like an editor save does. */
@@ -73,7 +73,7 @@ function rewriteDocument(store: SkillStore, skill: Skill, name: string): void {
       if (!edited.includes(found.filename)) edited.push(found.filename);
     }
   }
-  store.update(skill.id, { contentHash: hashDir(skill.libraryPath), editedFiles: edited });
+  store.patch(skill.id, { contentHash: hashDir(skill.libraryPath), editedFiles: edited });
 }
 
 /** Re-point project links at the renamed folder, under the new name when that is free. */
@@ -150,7 +150,7 @@ export async function renameSkill(
       isAbsolute(moved.sourceRef) &&
       samePath(moved.sourceRef, skill.libraryPath)
     ) {
-      store.update(skill.id, { sourceRef: to });
+      store.patch(skill.id, { sourceRef: to });
     }
 
     const current = store.get(skill.id);

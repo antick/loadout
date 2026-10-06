@@ -377,7 +377,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
 
   const planned = planSides(env, sides, new Set(review?.keep ?? []));
   const { skills, presets, plan } = planned;
-  assertDeletesReviewed(planned, (id) => env.store.find(id)?.name ?? id, theirs, review);
+  assertDeletesReviewed(planned, (id) => env.store.nameOf(id) ?? id, theirs, review);
   const conflicts = plan.skills.filter((item) => item.outcome === "conflict");
 
   // Nothing of ours to protect: let git move the branch. It refuses when an untracked folder is

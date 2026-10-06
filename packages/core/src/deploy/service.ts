@@ -283,7 +283,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         store.deployments().filter((row) => {
           if (row.mode === "symlink") return true;
           if (!includeCopies) return false;
-          const edited = holdsOwnEdits(row, store.find(row.skillId)?.contentHash ?? null);
+          const edited = holdsOwnEdits(row, store.contentHashOf(row.skillId));
           if (edited) keptEdited.add(row.targetPath);
           return !edited;
         }),
@@ -317,7 +317,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
           .deployments()
           .filter((row) => row.mode === "copy")
           .filter((row) => {
-            const hash = store.find(row.skillId)?.contentHash ?? null;
+            const hash = store.contentHashOf(row.skillId);
             return hash !== null && row.sourceHash !== hash;
           })
           .map((row) => row.skillId),

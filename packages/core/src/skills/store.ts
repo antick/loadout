@@ -162,9 +162,33 @@ export class SkillStore {
     return skill;
   }
 
+  /** One skill's content hash, without reading the rest of it; null for an unknown id. */
+  contentHashOf(id: string): string | null {
+    return (
+      this.#db.get<{ content_hash: string | null }>(
+        "SELECT content_hash FROM skills WHERE id = ?",
+        id,
+      )?.content_hash ?? null
+    );
+  }
+
+  /** One skill's name, without reading the rest of it; null for an unknown id. */
+  nameOf(id: string): string | null {
+    return this.#db.get<{ name: string }>("SELECT name FROM skills WHERE id = ?", id)?.name ?? null;
+  }
+
   findByLibraryPath(libraryPath: string): Skill | null {
     const rows = this.#db.all<SkillRow>("SELECT * FROM skills WHERE library_path = ?", libraryPath);
     return this.#hydrate(rows)[0] ?? null;
+  }
+
+  /** The skill whose library folder is called `dirName`, compared without letter case. */
+  findByDirName(dirName: string): Skill | null {
+    const key = dirName.toLowerCase();
+    const row = this.#db
+      .all<{ id: string; library_path: string }>("SELECT id, library_path FROM skills")
+      .find((candidate) => basename(candidate.library_path).toLowerCase() === key);
+    return row ? this.find(row.id) : null;
   }
 
   findByName(name: string): Skill[] {
@@ -195,6 +219,11 @@ export class SkillStore {
   }
 
   insert(input: NewSkill): Skill {
+    return this.get(this.add(input));
+  }
+
+  /** Insert without reading the skill back; returns its id. */
+  add(input: NewSkill): string {
     const now = Date.now();
     const id = input.id ?? randomUUID();
     this.#db.run(
@@ -227,15 +256,24 @@ export class SkillStore {
       input.favoritedAt ?? null,
       input.sourceTrustedHost ?? null,
     );
+    return id;
+  }
+
+  /** `patch` and read the skill back. */
+  update(id: string, patch: SkillPatch): Skill {
+    this.patch(id, patch);
     return this.get(id);
   }
 
-  /** `updatedAt` moves only on an edit (see `EDIT_FIELDS`), unless the patch sets it. */
-  update(id: string, patch: SkillPatch): Skill {
+  /**
+   * Write a patch without reading the skill back, for callers that do not need it. `updatedAt`
+   * moves only on an edit (see `EDIT_FIELDS`), unless the patch sets it.
+   */
+  patch(id: string, patch: SkillPatch): void {
     const edit = patch.updatedAt === undefined && this.#edits(id, patch);
     const stamped = edit ? { updatedAt: Date.now(), ...patch } : patch;
     const entries = Object.entries(stamped) as [keyof SkillPatch, unknown][];
-    if (entries.length === 0) return this.get(id);
+    if (entries.length === 0) return;
     const assignments = entries.map(([key]) => `${PATCH_COLUMNS[key]} = ?`).join(", ");
     const values = entries.map(([key, value]) => {
       if (LIST_COLUMNS.has(key)) return encodeList(value as string[] | null);
@@ -243,7 +281,6 @@ export class SkillStore {
       return (value ?? null) as string | number | null;
     });
     this.#db.run(`UPDATE skills SET ${assignments} WHERE id = ?`, ...values, id);
-    return this.get(id);
   }
 
   /** The patch changes what the skill says or holds, not only how it is kept. */
@@ -360,6 +397,23 @@ export class SkillStore {
 
   deployments(): DeploymentRecord[] {
     return this.#db.all<DeploymentRow>("SELECT * FROM deployments").map(toDeployment);
+  }
+
+  /**
+   * Rows whose path may end in the folder `name`, with either separator: every row that can be
+   * at one path, and a few more (the match ignores case), for `rowsAtPath` to narrow down.
+   */
+  deploymentsNamed(name: string): DeploymentRecord[] {
+    const escaped = name.replace(/[!%_]/g, (ch) => `!${ch}`);
+    return this.#db
+      .all<DeploymentRow>(
+        `SELECT * FROM deployments
+         WHERE target_path = ? OR target_path LIKE ? ESCAPE '!' OR target_path LIKE ? ESCAPE '!'`,
+        name,
+        `%/${escaped}`,
+        `%\\${escaped}`,
+      )
+      .map(toDeployment);
   }
 
   deployment(skillId: string, agentKey: string): DeploymentRecord | null {

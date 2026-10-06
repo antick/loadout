@@ -18,9 +18,15 @@ import { invalid } from "../errors";
  */
 export class SettingsStore {
   readonly #db: Database;
+  #version = 0;
 
   constructor(db: Database) {
     this.#db = db;
+  }
+
+  /** Goes up on every write: a value worked out from the settings is stale once it moves. */
+  get version(): number {
+    return this.#version;
   }
 
   getRaw<T>(key: string, fallback: T): T {
@@ -39,10 +45,12 @@ export class SettingsStore {
       key,
       JSON.stringify(value),
     );
+    this.#version += 1;
   }
 
   deleteRaw(key: string): void {
     this.#db.run("DELETE FROM settings WHERE key = ?", key);
+    this.#version += 1;
   }
 
   get<K extends SettingKey>(key: K): SettingValue<K> {
