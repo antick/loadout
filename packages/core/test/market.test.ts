@@ -362,6 +362,19 @@ describe("marketplace skill detail", () => {
     expect(calls).toEqual([]);
   });
 
+  it("keeps only the most recent details", async () => {
+    const { fetchImpl } = fakeFetch((url) => {
+      if (url.startsWith("https://raw.githubusercontent.com/")) return html(DOCUMENT);
+      return new Response("", { status: url.startsWith(MARKETPLACE_URL) ? 404 : 403 });
+    });
+    detail = marketOver(detailWorld, fetchImpl).api.detail;
+    for (let i = 0; i < 105; i += 1) await detail("acme/skills", `s${i}`);
+    const kept = detailWorld.ctx.db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM market_cache WHERE cache_key LIKE 'detail:%'",
+    );
+    expect(kept?.n).toBe(100);
+  });
+
   it("guesses the usual folders when the listing is out of reach, and tells no audits from unknown", async () => {
     serve({
       [AUDIT_URL]: () => new Response("", { status: 404 }),

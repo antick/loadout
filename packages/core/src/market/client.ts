@@ -44,6 +44,8 @@ const SEARCH_CACHE_PREFIX = "search:";
 /** Searches kept for offline use; the oldest go first. */
 const MAX_CACHED_SEARCHES = 100;
 const DETAIL_CACHE_PREFIX = "detail:";
+/** Skill details kept for offline use (each holds a SKILL.md); the oldest go first. */
+const MAX_CACHED_DETAILS = 100;
 /** Audits and documents change far less often than rankings. */
 const DETAIL_CACHE_TTL_MS = 30 * MINUTE_MS;
 const MAX_SEARCH_LIMIT = 200;
@@ -88,16 +90,16 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     );
   }
 
-  /** Only the latest searches are kept for offline use, per marketplace. */
-  function pruneSearches(): void {
-    for (const prefix of [SEARCH_CACHE_PREFIX, `${CLAWHUB_CACHE_PREFIX}${SEARCH_CACHE_PREFIX}`]) {
+  /** Only the latest searches or details are kept for offline use, per marketplace. */
+  function pruneCache(kind: string, keep: number): void {
+    for (const prefix of [kind, `${CLAWHUB_CACHE_PREFIX}${kind}`]) {
       ctx.db.run(
         `DELETE FROM market_cache WHERE cache_key LIKE ? AND cache_key NOT IN (
            SELECT cache_key FROM market_cache WHERE cache_key LIKE ?
            ORDER BY fetched_at DESC LIMIT ?)`,
         `${prefix}%`,
         `${prefix}%`,
-        MAX_CACHED_SEARCHES,
+        keep,
       );
     }
   }
@@ -192,7 +194,10 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
       // A half answer is shown only without an earlier copy, and never kept.
       return stale(`${key} went partly unanswered`) ?? { ...detail, cachedAt: null };
     }
-    if (detail.audits !== null && detail.document !== null) writeCache(key, detail);
+    if (detail.audits !== null && detail.document !== null) {
+      writeCache(key, detail);
+      pruneCache(DETAIL_CACHE_PREFIX, MAX_CACHED_DETAILS);
+    }
     return { ...detail, cachedAt: null };
   }
 
@@ -266,7 +271,7 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
               skillsSh,
               `${MARKETPLACE_NAME} search`,
             );
-      pruneSearches();
+      pruneCache(SEARCH_CACHE_PREFIX, MAX_CACHED_SEARCHES);
       return listing;
     },
 
