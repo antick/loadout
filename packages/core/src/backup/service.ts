@@ -23,6 +23,7 @@ import {
 import { conflictDiff, currentLocalTree, previewDiff, previewSync } from "./review";
 import { readStatus } from "./status";
 import { fetchRemote, pullRemote, syncLibrary } from "./sync";
+import type { HttpRequest } from "../install/download";
 
 const INITIAL_COMMIT_MESSAGE = "Initial skill library snapshot";
 
@@ -32,10 +33,7 @@ export interface BackupOperations {
   target: AutoBackupTarget;
 }
 
-export function createBackupOperations(
-  env: BackupEnv,
-  fetchImpl: typeof fetch | undefined,
-): BackupOperations {
+export function createBackupOperations(env: BackupEnv, request: HttpRequest): BackupOperations {
   const { ctx } = env;
   let fetching: Promise<void> | null = null;
 
@@ -54,7 +52,7 @@ export function createBackupOperations(
     });
   }
 
-  const github = createGithubService(ctx, { fetchImpl, saveRemote });
+  const github = createGithubService(ctx, { request, saveRemote });
 
   const api: BackupApi = {
     status: () => readStatus(env),

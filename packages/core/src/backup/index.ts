@@ -16,6 +16,6 @@ export interface BackupService {
 /** Git backup, skill-aware merge, snapshots, GitHub connect and the automatic backup. */
 export function createBackupService(ctx: CoreContext, deps: BackupDeps): BackupService {
   const env = createBackupEnv(ctx, deps);
-  const { api, target } = createBackupOperations(env, deps.fetchImpl);
+  const { api, target } = createBackupOperations(env, deps.request);
   return { api, auto: createAutoBackup(target, ctx) };
 }

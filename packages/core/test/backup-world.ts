@@ -13,6 +13,7 @@ import { type RemovedStore, createRemovedStore } from "../src/storage/removed";
 import { removePathSync } from "../src/util/fs";
 import { hashDir } from "../src/util/hash";
 import { makeSkill, tempDir, writeFile } from "./helpers";
+import { createRequest } from "../src/install/download";
 
 export { rawGit } from "./git-fixtures";
 
@@ -96,7 +97,7 @@ export function createDevice(root: string, name: string, options: DeviceOptions 
     store,
     portable: bundle.portable,
     removed,
-    fetchImpl: options.fetchImpl,
+    request: createRequest(options.fetchImpl),
     afterContentChange: () => {
       contentChanges.count += 1;
     },

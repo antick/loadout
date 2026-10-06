@@ -19,8 +19,8 @@ import type { CoreContext } from "../context";
 import { AppError, invalid, isUnanswered, notFound } from "../errors";
 import {
   type HttpAnswer,
+  type HttpRequest,
   JSON_TYPE,
-  createRequest,
   jsonOptions,
   readJson,
 } from "../install/download";
@@ -49,7 +49,8 @@ const STATUS_OK = 200;
 const STATUS_CREATED = 201;
 
 export interface GithubDeps {
-  fetchImpl?: typeof fetch;
+  /** Core's one HTTP client. */
+  request: HttpRequest;
   /** Save the remote URL (and point `origin` at it when the library already is a repository). */
   saveRemote(url: string): Promise<void>;
 }
@@ -114,7 +115,7 @@ export function createGithubService(ctx: CoreContext, deps: GithubDeps): GithubS
     }
   };
 
-  const send = createRequest(deps.fetchImpl);
+  const send = deps.request;
 
   async function request(url: string, options: RequestOptions = {}): Promise<Reply> {
     const headers: Record<string, string> = { "User-Agent": APP_NAME };

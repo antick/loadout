@@ -221,7 +221,7 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     store,
     portable,
     removed,
-    fetchImpl: options.fetchImpl,
+    request,
     afterContentChange: async () => {
       // Only copies now behind the library; one edited in the agent's folder is left alone.
       await deploy.refreshStaleCopies();

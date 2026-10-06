@@ -21,6 +21,7 @@ import { readDeviceName } from "./device";
 import { BACKUP_ERROR_TEXT, BACKUP_GIT_CONFIG, type Git, createGit } from "./git";
 
 import { isSkillFolderName } from "../util/safe-path";
+import type { HttpRequest } from "../install/download";
 
 /** The backup's remote and branch: the git conventions every Loadout repository follows. */
 export const REMOTE_NAME = GIT_REMOTE_NAME;
@@ -36,7 +37,8 @@ export interface BackupDeps {
   removed: RemovedStore;
   /** Core refreshes copy-mode deployments here after skill content was replaced. */
   afterContentChange: () => Promise<void> | void;
-  fetchImpl?: typeof fetch;
+  /** Core's one HTTP client, for GitHub's API. */
+  request: HttpRequest;
 }
 
 /** What every backup module works with. Built once per service. */
