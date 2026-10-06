@@ -7,13 +7,14 @@ import {
   lstatOrNull,
   readDirSafe,
   removePathSync,
-  resolveInside,
   segmentsOf,
 } from "../util/fs";
 import { isIgnoredContentName, listContentFiles } from "../util/hash";
 import { isPortableName } from "../util/names";
-import { type EditableFolder, mainDocumentOf, staysInside } from "./files";
+import { isReallyInside } from "../util/safe-path";
+import { type EditableFolder, mainDocumentOf } from "./files";
 import type { FileHistory } from "./history";
+import { resolveInside } from "../util/safe-path";
 
 /**
  * Creating, renaming and deleting the files and folders of one skill folder. The main document
@@ -46,7 +47,8 @@ function entryAt(folder: EditableFolder, path: unknown): Entry {
   const relative = segments.join("/");
   if (segments.some(isIgnoredContentName)) throw unsupported(`${relative} cannot be changed here`);
   const absolute = resolveInside(folder.dir, path);
-  if (!staysInside(folder.dir, absolute)) throw invalid(`${relative} is outside the skill folder`);
+  if (!isReallyInside(folder.dir, absolute))
+    throw invalid(`${relative} is outside the skill folder`);
   return { relative, absolute, stat: lstatOrNull(absolute) };
 }
 

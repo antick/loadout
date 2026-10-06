@@ -1,4 +1,5 @@
 import { redactUrl, firstFreeName } from "@loadout/shared";
+
 import { basename, join } from "node:path";
 
 import type { ActivityKind, Skill, SourceType, UpdateStatus } from "@loadout/shared";
@@ -13,18 +14,13 @@ import { fixNumberedName, hashAsLibraryCopy } from "../skills/numbered-name";
 
 import type { SkillStore } from "../skills/store";
 
-import {
-  canonicalPath,
-  isDirectory,
-  isInside,
-  lstatOrNull,
-  readDirSafe,
-  replaceDirAtomic,
-} from "../util/fs";
+import { canonicalPath, isDirectory, lstatOrNull, readDirSafe, replaceDirAtomic } from "../util/fs";
 
 import { fileDigests, hashDir } from "../util/hash";
 
 import { sanitizeSkillName } from "../util/names";
+
+import { isReallyInside } from "../util/safe-path";
 
 /** Where the installed skill came from; written to its row as is. */
 export interface InstallRecord {
@@ -77,7 +73,7 @@ export async function installIntoLibrary(
   const kind = request.activityKind ?? "install";
   if (!isDirectory(sourceDir)) throw invalid(`Not a folder: ${sourceDir}`);
   const skillsDir = ctx.paths.skillsDir;
-  if (isInside(canonicalPath(skillsDir), canonicalPath(sourceDir))) {
+  if (isReallyInside(skillsDir, sourceDir)) {
     throw invalid("That folder is already inside the skill library");
   }
   const identity = readSkillIdentity(sourceDir);

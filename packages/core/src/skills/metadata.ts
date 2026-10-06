@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
+
 import { join } from "node:path";
+
 import {
   SKILL_DOCUMENT_FILES,
   SKILL_MARKER_FILES,
@@ -12,9 +14,13 @@ import {
   splitFrontmatter,
   textField,
 } from "@loadout/shared";
+
 import { parseDocument, stringify } from "yaml";
-import { isInside, canonicalPath, readDirSafe, statOrNull } from "../util/fs";
+
+import { readDirSafe, statOrNull } from "../util/fs";
 import { inferSkillName } from "../util/names";
+
+import { isReallyInside } from "../util/safe-path";
 
 export interface SkillFrontmatter {
   name: string | null;
@@ -115,7 +121,7 @@ export function readSkillDocument(
 ): FoundDocument | null {
   const path = findDocument(skillDir, DOCUMENT_SEARCH_DEPTH);
   if (!path) return null;
-  if (!isInside(canonicalPath(containmentRoot), canonicalPath(path))) return null;
+  if (!isReallyInside(containmentRoot, path)) return null;
   if (!statOrNull(path)?.isFile()) return null;
   try {
     return { filename: path.slice(skillDir.length + 1), content: readFileSync(path, "utf8") };

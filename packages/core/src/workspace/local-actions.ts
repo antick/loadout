@@ -17,7 +17,6 @@ import {
   lstatOrNull,
   removePathSync,
   replaceDirAtomic,
-  resolveInside,
   toPosix,
 } from "../util/fs";
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
@@ -31,6 +30,7 @@ import {
   matchLibrarySkill,
 } from "./local-scan";
 import { logRedeployProblems } from "../deploy/report-log";
+import { resolveInside } from "../util/safe-path";
 
 /** What the global and the project workspaces both need to move content in and out of the library. */
 export interface LocalSyncDeps {

@@ -13,14 +13,7 @@ import type { DeployService } from "../deploy";
 import { repointSources, rowsAtPath, samePath } from "../deploy/evidence";
 import { errorMessage, exists, invalid, notFound } from "../errors";
 import type { SkillStore } from "../skills/store";
-import {
-  isDirectory,
-  listTopLevel,
-  lstatOrNull,
-  removePath,
-  resolveInside,
-  toPosix,
-} from "../util/fs";
+import { isDirectory, listTopLevel, lstatOrNull, removePath, toPosix } from "../util/fs";
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import { withSharedFolderDuplicates } from "./duplicates";
@@ -45,6 +38,7 @@ import {
   scanSkillRoot,
   walkSkillRoot,
 } from "./local-scan";
+import { resolveInside } from "../util/safe-path";
 
 export interface WorkspaceServiceDeps {
   store: SkillStore;

@@ -12,7 +12,7 @@ import { notFound } from "../errors";
 import { diffTrees } from "../updates/diff";
 import { ensureDir, removePath, statOrNull } from "../util/fs";
 import { findConflict } from "./conflict-store";
-import { type BackupEnv, isSafeSkillPath } from "./env";
+import { type BackupEnv } from "./env";
 import { PREVIEW_INDEX_PREFIX, createStage, extractPaths } from "./extract";
 import {
   type MergeSides,
@@ -38,6 +38,7 @@ import {
 } from "./repo";
 import { refreshIgnoreFile } from "./size";
 import { fetchRemote } from "./sync";
+import { isSkillFolderName } from "../util/safe-path";
 
 /**
  * The sync review: what the next sync would bring in, send out and leave for a choice, worked
@@ -260,7 +261,7 @@ function localFolderOf(env: BackupEnv, id: string): string | null {
   const skill = env.store.find(id);
   if (!skill) return null;
   const folder = skill.libraryPath.slice(env.repoDir.length + 1);
-  return isSafeSkillPath(folder) ? folder : null;
+  return isSkillFolderName(folder) ? folder : null;
 }
 
 export async function previewDiff(
@@ -291,7 +292,7 @@ export async function conflictDiff(env: BackupEnv, skillKey: string): Promise<Sy
     );
   }
   const remotePath =
-    conflict.theirsPath && isSafeSkillPath(conflict.theirsPath) ? conflict.theirsPath : null;
+    conflict.theirsPath && isSkillFolderName(conflict.theirsPath) ? conflict.theirsPath : null;
   return {
     name: conflict.skillName,
     entries: await diffWithCommit(env, localFolderOf(env, skillKey), commit, remotePath),

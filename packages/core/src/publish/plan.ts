@@ -11,10 +11,11 @@ import {
   type Skill,
   formatBytes,
 } from "@loadout/shared";
-import { isSafeSkillPath } from "../backup/env";
+
 import { isDirectory } from "../util/fs";
 import { type PublishFile, collectFiles, digestsInTree, digestsOf, findSecretsIn } from "./files";
 import type { ResolvedTarget } from "./target";
+import { isSkillFolderName } from "../util/safe-path";
 
 /** What publishing would do to a repository, worked out without changing anything. */
 
@@ -84,7 +85,7 @@ function skipped(
 function planSkill(skill: Skill, checkoutDir: string, target: ResolvedTarget): PlannedSkill {
   const name = basename(skill.libraryPath);
   const folder = `${target.layerDir}/${name}`;
-  if (!isSafeSkillPath(name)) {
+  if (!isSkillFolderName(name)) {
     return skipped(skill, folder, "Its folder name cannot be used in a repository.");
   }
   if (!isDirectory(skill.libraryPath)) return skipped(skill, folder, "Its folder is missing.");

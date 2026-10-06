@@ -27,7 +27,6 @@ export {
   type PortablePreset,
   type PortableSkill,
   type PortableSkillFile,
-  isSafeRelativePath,
   readBlockedAgents,
   readFavoritedAt,
   readPortableSkillFiles,

@@ -27,6 +27,7 @@ import { matchRequested } from "./requested";
 import { type SkillsCommand, agentKeyFor, parseSkillsCommand } from "./skills-command";
 import { createWebPreviews } from "./web-install";
 import { isSiteCandidate } from "./well-known";
+import { isPlainName } from "../util/safe-path";
 
 export interface GitInstallerDeps {
   store: SkillStore;
@@ -221,7 +222,7 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     fromMarket: async (source, skillId, options = {}) => {
       const cloneUrl = marketSourceToUrl(source);
       const id = skillId.trim();
-      if (!id || id === "." || id === ".." || /[\\/]/.test(id)) {
+      if (!isPlainName(id)) {
         throw invalid(`Invalid marketplace skill id: '${skillId}'`);
       }
       const key = `${source.trim()}/${id}`;

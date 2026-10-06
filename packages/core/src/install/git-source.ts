@@ -2,6 +2,7 @@ import { OWNER_REPO_PATTERN } from "@loadout/shared";
 import { invalid, isAppError } from "../errors";
 import { trySanitizeSkillName } from "../util/names";
 import type { GitClient } from "./git-client";
+import { isPlainName } from "../util/safe-path";
 
 /** Where a Git install comes from, after the typed text has been understood. */
 export interface GitSource {
@@ -133,7 +134,7 @@ function splitFragment(text: string): { text: string; ref: string | null; skill:
 /** `a/b/c` with no empty, `.` or `..` segment; throws on a path that would climb out. */
 function cleanPath(path: string): string | null {
   const segments = path.split("/").filter(Boolean).map(decodeSegment);
-  if (segments.some((segment) => segment === ".." || segment === ".")) throw invalid(CLIMBS_OUT);
+  if (!segments.every(isPlainName)) throw invalid(CLIMBS_OUT);
   return segments.length > 0 ? segments.join("/") : null;
 }
 

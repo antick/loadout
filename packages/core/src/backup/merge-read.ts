@@ -3,13 +3,9 @@ import { AppError } from "../errors";
 import type { PortablePreset, PortableSkill } from "../skills/portable";
 import { GIT_DIR } from "../util/fs";
 import { batchInput, parseBatch } from "../util/git-batch";
-import {
-  type BackupEnv,
-  PRESET_METADATA_SUBDIR,
-  SKILL_METADATA_SUBDIR,
-  isSafeSkillPath,
-} from "./env";
+import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import type { PresetVersion, SkillSide } from "./merge-plan";
+import { isSkillFolderName } from "../util/safe-path";
 
 /** Reads what the library looked like in one commit, straight from git objects. */
 
@@ -92,7 +88,7 @@ function usableSkillMeta(raw: string, id: string): PortableSkill | null {
   const usable =
     meta !== null &&
     meta.id === id &&
-    isSafeSkillPath(meta.path) &&
+    isSkillFolderName(meta.path) &&
     Array.isArray(meta.tags) &&
     typeof meta.source === "object" &&
     meta.source !== null;

@@ -4,6 +4,7 @@ import { invalid } from "../errors";
 import { type GuardedFolder, guardedFolders, overlappingFolder } from "../projects/overlap";
 import { isInside, lstatOrNull, realPathOf } from "../util/fs";
 import { holdsUncopiedEntries } from "../util/hash";
+import { isPlainName } from "../util/safe-path";
 
 /**
  * Where `skills.toml` may write. Both files are committed by other people, so nothing in them is
@@ -65,7 +66,7 @@ export function lockFolderPath(rules: FolderRules, folder: string): string | nul
   const dir = folder.slice(0, cut);
   const name = folder.slice(cut + 1);
   if (cut <= 0 || !rules.projectDirs.has(dir)) return null;
-  if (!name || name === "." || name === ".." || /[\\/]/.test(name)) return null;
+  if (!isPlainName(name)) return null;
   return refusal(rules, dir) ? null : join(rules.root, dir, name);
 }
 

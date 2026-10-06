@@ -12,7 +12,7 @@ import {
   formatBytes,
 } from "@loadout/shared";
 import { invalid } from "../errors";
-import { isSafeRelativePath } from "../skills/portable";
+import { isSafeRelativePath } from "../util/safe-path";
 import { writeFileAtomic } from "../util/fs";
 import { fileDigests, listContentFiles, sha256Hex } from "../util/hash";
 

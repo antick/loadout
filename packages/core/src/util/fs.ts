@@ -129,17 +129,6 @@ export function segmentsOf(path: string): string[] {
   return path.split(/[\\/]+/).filter(Boolean);
 }
 
-/** Resolve a user-supplied relative path under `root`, refusing anything that escapes it. */
-export function resolveInside(root: string, relativePath: string): string {
-  const segments = segmentsOf(relativePath);
-  if (segments.length === 0 || segments.some((s) => s === "." || s === "..")) {
-    throw invalid(`Invalid relative path: '${relativePath}'`);
-  }
-  const full = join(root, ...segments);
-  if (!isInside(root, full)) throw invalid(`Path escapes its root: '${relativePath}'`);
-  return full;
-}
-
 export function toPosix(path: string): string {
   return sep === "/" ? path : path.split(sep).join("/");
 }

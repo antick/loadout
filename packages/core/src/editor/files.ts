@@ -1,26 +1,25 @@
 import { type Stats, readFileSync, writeFileSync } from "node:fs";
+
 import { dirname } from "node:path";
+
 import {
   NEW_FILE_HASH,
   type SaveSkillFileInput,
   type SkillFile,
   type SkillFileEntry,
 } from "@loadout/shared";
+
 import { AppError, invalid, notFound, unsupported } from "../errors";
+
 import { readSkillDocument } from "../skills/metadata";
-import {
-  canonicalPath,
-  ensureDir,
-  isInside,
-  lstatOrNull,
-  resolveInside,
-  segmentsOf,
-  toPosix,
-  writeFileAtomic,
-} from "../util/fs";
+
+import { ensureDir, lstatOrNull, segmentsOf, toPosix, writeFileAtomic } from "../util/fs";
 import { isIgnoredContentName, listContentFiles, looksBinary, sha256Hex } from "../util/hash";
+
 import type { FileHistory } from "./history";
 import { MAX_EDITABLE_BYTES, SNIFF_BYTES, decodeText, encodeText, hasBom } from "./text-file";
+
+import { isReallyInside, resolveInside } from "../util/safe-path";
 
 /**
  * Reading and writing the text files of one skill folder, wherever it lives. A write never
@@ -97,18 +96,9 @@ function locate(folder: EditableFolder, path: unknown): LocatedFile {
   if (stat.isSymbolicLink() || !stat.isFile()) {
     throw unsupported(`Only regular files can be edited: ${relative}`);
   }
-  if (!staysInside(folder.dir, absolute)) throw invalid(`${relative} is outside the skill folder`);
+  if (!isReallyInside(folder.dir, absolute))
+    throw invalid(`${relative} is outside the skill folder`);
   return { relative, absolute, stat };
-}
-
-/**
- * Whether `absolute` really lies in `dir`, judged from its nearest part that exists: a linked
- * folder on the way could lead somewhere else entirely.
- */
-export function staysInside(dir: string, absolute: string): boolean {
-  let existing = absolute;
-  while (!lstatOrNull(existing) && dirname(existing) !== existing) existing = dirname(existing);
-  return isInside(canonicalPath(dir), canonicalPath(existing));
 }
 
 /** Why a file cannot be opened, judged from its size and bytes. */
@@ -263,7 +253,7 @@ function createFileAt(
   const next = encodeText(input.content, "lf", false);
   if (next.length > MAX_EDITABLE_BYTES) throw invalid(`${missing.relative} is too large to save`);
   ensureDir(dirname(missing.absolute));
-  if (!staysInside(folder.dir, missing.absolute)) {
+  if (!isReallyInside(folder.dir, missing.absolute)) {
     throw invalid(`${missing.relative} is outside the skill folder`);
   }
   try {

@@ -9,7 +9,7 @@ import {
   isRecord,
 } from "@loadout/shared";
 import { AppError, invalid, isAppError, isUnanswered, notFound } from "../errors";
-import { resolveInside } from "../util/fs";
+import { isSafeRelativePath, resolveInside } from "../util/safe-path";
 import { sha256Hex } from "../util/hash";
 import { archiveSkillDir, unpackArchiveInto } from "./archive";
 import { type Download, WEB_PROTOCOLS, jsonOptions, parseUrl } from "./download";
@@ -83,14 +83,6 @@ function isSafeName(value: unknown): value is string {
   return typeof value === "string" && value.length <= NAME_MAX && SAFE_NAME.test(value);
 }
 
-function isSafeFilePath(value: unknown): value is string {
-  if (typeof value !== "string" || !value || value.includes("\0") || value.includes("\\")) {
-    return false;
-  }
-  if (value.startsWith("/")) return false;
-  return !value.split("/").some((segment) => segment === ".." || segment === ".");
-}
-
 function description(value: unknown): string | null {
   return typeof value === "string" && value.trim() && value.length <= MAX_DESCRIPTION
     ? value
@@ -126,7 +118,14 @@ function olderEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
   const text = description(value.description);
   const files = value.files;
   if (text === null || !Array.isArray(files) || files.length === 0) return null;
-  if (files.length > MAX_FILES || !files.every(isSafeFilePath)) return null;
+  if (files.length > MAX_FILES) return null;
+  // A file that would reach outside the skill's folder is refused out loud, never just skipped.
+  const outside = files.find((file) => !isSafeRelativePath(file));
+  if (outside !== undefined) {
+    throw invalid(
+      `The index entry for ${value.name} lists a file outside its folder: ${String(outside)}`,
+    );
+  }
   if (!files.some((file) => file.toLowerCase() === SKILL_FILE.toLowerCase())) return null;
   return {
     name: value.name,
@@ -181,12 +180,14 @@ async function readWellKnownIndex(
     // Offline, timed out or failing: the other addresses are on the same host.
     return isUnanswered(error) ? "unanswered" : "none";
   }
-  let entries: WellKnownEntry[] | null;
+  let raw: unknown;
   try {
-    entries = parseWellKnownIndex(JSON.parse(fetched.data.toString("utf8")), indexUrl);
+    raw = JSON.parse(fetched.data.toString("utf8"));
   } catch {
     return "none";
   }
+  // A skills index that breaks the rules is refused with its reason, not taken for "no index".
+  const entries = parseWellKnownIndex(raw, indexUrl);
   return entries ? { entries, redirectedTo: fetched.redirectedTo } : "none";
 }
 

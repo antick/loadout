@@ -1,4 +1,5 @@
 import { basename, join } from "node:path";
+
 import {
   type SkillBehaviorField,
   type SkillIssue,
@@ -8,9 +9,13 @@ import {
   skillIssue,
   errorMessage,
 } from "@loadout/shared";
-import { canonicalPath, isInside, lstatOrNull } from "../util/fs";
+
+import { lstatOrNull } from "../util/fs";
 import { parseFrontmatter, readMarkerDocument } from "./metadata";
+
 import { folderTraits } from "./traits";
+
+import { isReallyInside } from "../util/safe-path";
 
 /** What the checks need to know about a library skill. */
 export interface InspectedSkill {
@@ -38,8 +43,7 @@ export interface SkillInspector {
 /** A linked file or folder is there, and a link inside the skill does not lead out of it. */
 function referenceExists(root: string, relativePath: string): boolean {
   const target = join(root, ...relativePath.split("/"));
-  if (!lstatOrNull(target)) return false;
-  return isInside(canonicalPath(root), canonicalPath(target));
+  return lstatOrNull(target) !== null && isReallyInside(root, target);
 }
 
 /** Every check of one skill folder, reading its files. */

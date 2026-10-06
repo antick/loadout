@@ -11,6 +11,7 @@ import {
 } from "@loadout/shared";
 import type { Logger } from "../log";
 import { readDirSafe } from "../util/fs";
+import { isSafeRelativePath, isSkillFolderName } from "../util/safe-path";
 
 /**
  * The format of the portable metadata files, and how they are read back. Files arrive from other
@@ -89,13 +90,6 @@ export function toPortableSkill(skill: Skill): PortableSkill {
   };
 }
 
-/** A relative, `/` separated path that stays inside the folder it is relative to. */
-export function isSafeRelativePath(path: unknown): path is string {
-  if (typeof path !== "string" || path.length === 0 || path.includes("\0")) return false;
-  if (path.startsWith("/") || path.includes("\\") || /^[A-Za-z]:/.test(path)) return false;
-  return path.split("/").every((segment) => segment !== "" && segment !== "." && segment !== "..");
-}
-
 /** Edited paths from a file that may come from another device; anything unsafe is dropped. */
 export function readEditedFiles(value: unknown): string[] {
   return Array.isArray(value) ? [...new Set(value.filter(isSafeRelativePath))].sort() : [];
@@ -121,18 +115,6 @@ export function readFavoritedAt(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
 }
 
-/** A metadata file may only name a plain folder directly inside the skills folder. */
-export function isSafeLibraryDirName(name: unknown): name is string {
-  return (
-    typeof name === "string" &&
-    name.length > 0 &&
-    name !== "." &&
-    name !== ".." &&
-    !name.startsWith(".") &&
-    !/[\\/\0]/.test(name)
-  );
-}
-
 const KNOWN_SOURCE_TYPES: ReadonlySet<unknown> = new Set(SOURCE_TYPES);
 
 function textOrNull(value: unknown): string | null {
@@ -152,7 +134,7 @@ function timeOr(value: unknown, fallback: number): number {
  * hand edit. Null when its id, folder or source type is unusable; odd optional fields are dropped.
  */
 export function readPortableSkill(value: unknown): PortableSkill | null {
-  if (!isRecord(value) || typeof value.id !== "string" || !isSafeLibraryDirName(value.path)) {
+  if (!isRecord(value) || typeof value.id !== "string" || !isSkillFolderName(value.path)) {
     return null;
   }
   const source = isRecord(value.source) ? value.source : null;

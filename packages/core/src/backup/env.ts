@@ -1,19 +1,26 @@
 import { unlinkSync } from "node:fs";
+
 import { dirname, join } from "node:path";
+
 import { GIT_DEFAULT_BRANCH, GIT_REMOTE_NAME, isRecord } from "@loadout/shared";
+
 import type { CoreContext } from "../context";
 import { INTERNAL_KEYS } from "../settings/store";
+
 import {
   type PortableMetadata,
   type PortableSkillFile,
   type RebuildMode,
   readPortableSkillFiles,
 } from "../skills/portable";
+
 import type { SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
-import { trySanitizeSkillName } from "../util/names";
 import { readDeviceName } from "./device";
+
 import { BACKUP_ERROR_TEXT, BACKUP_GIT_CONFIG, type Git, createGit } from "./git";
+
+import { isSkillFolderName } from "../util/safe-path";
 
 /** The backup's remote and branch: the git conventions every Loadout repository follows. */
 export const REMOTE_NAME = GIT_REMOTE_NAME;
@@ -21,15 +28,6 @@ export const DEFAULT_BRANCH = GIT_DEFAULT_BRANCH;
 /** Folder names inside the repository that belong to the app, not to a skill. */
 export const SKILL_METADATA_SUBDIR = "skills";
 export const PRESET_METADATA_SUBDIR = "presets";
-
-/**
- * A folder name that arrived from another device is only trusted when it is one plain name.
- * Anything with a separator, `..` or a leading dot could point outside the library or at our
- * own metadata.
- */
-export function isSafeSkillPath(path: unknown): path is string {
-  return typeof path === "string" && !path.startsWith(".") && trySanitizeSkillName(path) === path;
-}
 
 export interface BackupDeps {
   store: SkillStore;
@@ -79,7 +77,7 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
    */
   function dropUnsafeMetadata(): void {
     for (const { path, file } of metadataFiles()) {
-      if (isSafeSkillPath(file.path)) continue;
+      if (isSkillFolderName(file.path)) continue;
       ctx.log.warn(`Removed backup metadata pointing outside the library: ${path}`);
       unlinkSync(path);
     }

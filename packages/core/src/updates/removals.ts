@@ -5,6 +5,7 @@ import type { PendingRemoval } from "@loadout/shared";
 import { notFound } from "../errors";
 import { isIgnoredContentName } from "../util/hash";
 import { compareText } from "../util/text";
+import { isSafeRelativePath } from "../util/safe-path";
 
 /**
  * The removal guard: before an update replaces a folder, list what the user would lose, and only
@@ -89,8 +90,8 @@ export function listReplacedEdits(
 ): string[] {
   const replaced: string[] = [];
   for (const path of new Set(editedFiles)) {
-    const segments = path.split("/").filter(Boolean);
-    if (segments.length === 0 || segments.some((segment) => segment === "..")) continue;
+    if (!isSafeRelativePath(path)) continue;
+    const segments = path.split("/");
     const current = fileBytes(join(currentRoot, ...segments));
     if (!current) continue;
     const replacement = fileBytes(join(replacementRoot, ...segments));

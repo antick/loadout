@@ -13,6 +13,7 @@ import {
   readDirSafe,
   toPosix,
 } from "../util/fs";
+import { isReallyInside } from "../util/safe-path";
 
 /** A skill folder found under a scan root. */
 export interface FoundSkill {
@@ -48,9 +49,7 @@ const SHARED_HIDDEN_DIRS: ReadonlySet<string> = new Set([".agents"]);
 
 /** Lexically inside, and (once it exists, so links can be followed) really inside too. */
 function assertInside(repoDir: string, path: string, label: string): void {
-  const reallyInside =
-    lstatOrNull(path) === null || isInside(canonicalPath(repoDir), canonicalPath(path));
-  if (!isInside(repoDir, path) || !reallyInside) {
+  if (!isInside(repoDir, path) || !isReallyInside(repoDir, path)) {
     throw invalid(`Path '${label}' resolves outside the repository`);
   }
 }

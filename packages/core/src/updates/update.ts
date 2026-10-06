@@ -7,6 +7,7 @@ import {
   type UpdateResult,
   updateProgressKey,
 } from "@loadout/shared";
+
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
 import type { RedeployReport } from "../deploy";
@@ -19,6 +20,7 @@ import {
   notFound,
   unsupported,
 } from "../errors";
+
 import type {
   CancelRegistry,
   Download,
@@ -28,21 +30,22 @@ import type {
 } from "../install";
 import type { SafetyGate } from "../install/safety-gate";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
+
 import type { RemovedStore } from "../storage/removed";
 import { LIBRARY_PLACE } from "../storage/removed-library";
+
 import type { SkillPatch, SkillStore } from "../skills/store";
-import {
-  canonicalPath,
-  isDirectory,
-  isInside,
-  isSkillDir,
-  normalizeAbsolutePath,
-} from "../util/fs";
+import { isDirectory, isSkillDir, normalizeAbsolutePath } from "../util/fs";
 import { detachSkill } from "./detach";
+
 import { type LockMode, runLocked } from "./locking";
+
 import { assessReplacement } from "./pending";
+
 import { diffWithSource } from "./preview";
+
 import { LIBRARY_LOCATION, approvalToken, isApproved } from "./removals";
+
 import {
   type OpenedSource,
   isRemoteSource,
@@ -52,8 +55,12 @@ import {
   remoteTargetOf,
   resolveRemoteRevision,
 } from "./source";
+
 import { logRedeployProblems } from "../deploy/report-log";
+
 import { CANNOT_REFRESH, FLAGGED_UPDATE, updateEach } from "./update-many";
+
+import { isReallyInside } from "../util/safe-path";
 
 export interface UpdaterDeps {
   store: SkillStore;
@@ -157,9 +164,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   const { store, git, download, cancels } = deps;
   const clients = { git, clawhub: deps.clawhub };
 
-  function insideLibrary(path: string): boolean {
-    return isInside(canonicalPath(ctx.paths.skillsDir), canonicalPath(path));
-  }
+  const insideLibrary = (path: string): boolean => isReallyInside(ctx.paths.skillsDir, path);
 
   function recordFailure(name: string, error: unknown): void {
     if (isAppError(error, "CANCELLED")) return;

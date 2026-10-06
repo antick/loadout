@@ -12,7 +12,8 @@ import {
 } from "@loadout/shared";
 import { unzipSync } from "fflate";
 import { errorMessage, invalid, isAppError, notFound } from "../errors";
-import { isInside, isSkillDir, removePath, resolveInside } from "../util/fs";
+import { isInside, isSkillDir, removePath } from "../util/fs";
+import { resolveInside } from "../util/safe-path";
 import { trySanitizeSkillName } from "../util/names";
 import {
   type FoundSkill,
