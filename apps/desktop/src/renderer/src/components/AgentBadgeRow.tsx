@@ -136,7 +136,7 @@ export function AgentBadgeRow<T extends BadgeAgent = AgentInfo>({
                   : overflowLabel
               }
               className={cn(
-                "inline-flex h-5 items-center rounded bg-muted px-1 font-mono text-[0.625rem] hover:text-foreground",
+                "inline-flex h-5 items-center rounded bg-muted px-1 font-mono text-2xs hover:text-foreground",
                 overflowDeployed > 0 ? "font-semibold text-foreground" : "text-muted-foreground",
                 FOCUS_RING,
               )}

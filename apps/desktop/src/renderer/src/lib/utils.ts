@@ -1,5 +1,13 @@
 import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/**
+ * Font sizes `globals.css` adds to the theme (`--text-*`). Told to tailwind-merge so `cn` keeps
+ * `text-caption` next to a colour such as `text-muted-foreground` instead of taking it for one.
+ */
+const THEME_TEXT_SIZES = ["3xs", "2xs", "caption", "page-subtitle", "page-title"];
+
+const twMerge = extendTailwindMerge({ extend: { theme: { text: THEME_TEXT_SIZES } } });
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));

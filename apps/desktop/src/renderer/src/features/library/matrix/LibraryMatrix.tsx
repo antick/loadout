@@ -128,7 +128,7 @@ export function LibraryMatrix({
                       size="md"
                       className="mx-auto"
                     />
-                    <span className="mt-1 block text-[0.625rem] text-muted-foreground tabular-nums">
+                    <span className="mt-1 block text-2xs text-muted-foreground tabular-nums">
                       {coverage.deployed}/{coverage.total}
                     </span>
                     <span className="sr-only">{agent.displayName}</span>

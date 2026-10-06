@@ -122,7 +122,7 @@ export function PresetBar({
                 {busy ? <Spinner className="size-3" /> : null}
                 {!busy && active ? <Check className="size-3" /> : null}
                 {!busy && partial ? (
-                  <span className="font-mono text-[0.625rem] tabular-nums text-kit">
+                  <span className="font-mono text-2xs tabular-nums text-kit">
                     {state.installed}/{state.total}
                   </span>
                 ) : null}

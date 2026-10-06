@@ -63,7 +63,7 @@ function FileRow({
           <span className="sr-only">{t("editor.files.unsaved")}</span>
         </span>
       ) : showEdited && file.edited ? (
-        <span className="shrink-0 text-[0.625rem] tracking-wide text-muted-foreground uppercase">
+        <span className="shrink-0 text-2xs tracking-wide text-muted-foreground uppercase">
           {t("editor.files.edited")}
         </span>
       ) : null}
@@ -128,7 +128,7 @@ export function EditorFileList({
       {groups.length > 0 || actions ? (
         <div className="flex flex-col gap-0.5">
           <div className="flex h-7 items-center gap-1 pr-1 pl-2">
-            <h2 className="flex-1 text-[0.6875rem] font-medium tracking-wider text-muted-foreground uppercase">
+            <h2 className="flex-1 text-caption font-medium tracking-wider text-muted-foreground uppercase">
               {t("editor.files.other")}
             </h2>
             {actions ? (

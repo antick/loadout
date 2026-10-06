@@ -80,7 +80,7 @@ function SkillDetailBody({ skill, onClose }: { skill: Skill; onClose: () => void
               <TabsTrigger key={name} value={name}>
                 {t(`library.detail.tabs.${name}`)}
                 {counts[name] ? (
-                  <span className="font-mono text-[0.6875rem] text-muted-foreground tabular-nums">
+                  <span className="font-mono text-caption text-muted-foreground tabular-nums">
                     {counts[name]}
                   </span>
                 ) : null}

@@ -115,6 +115,13 @@
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
 
+  /* Sizes below Tailwind's text-xs, and the page header's two. */
+  --text-3xs: 0.5625rem;
+  --text-2xs: 0.625rem;
+  --text-caption: 0.6875rem;
+  --text-page-subtitle: 0.8125rem;
+  --text-page-title: 0.9375rem;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

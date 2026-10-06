@@ -54,7 +54,7 @@ export function ActivityBarButton({
         {icon}
         {indicator ? <span className="absolute -top-0.5 -right-1 flex">{indicator}</span> : null}
       </span>
-      <span className="max-w-full truncate text-[0.625rem] leading-none font-medium">{label}</span>
+      <span className="max-w-full truncate text-2xs leading-none font-medium">{label}</span>
     </>
   );
 

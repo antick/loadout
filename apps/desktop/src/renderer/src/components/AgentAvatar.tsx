@@ -10,8 +10,8 @@ type AgentAvatarSize = "sm" | "md" | "lg";
 type AgentAvatarStatus = "on" | "off" | "warning" | "blocked";
 
 const SIZE_CLASSES: Record<AgentAvatarSize, string> = {
-  sm: "size-5 rounded text-[0.5625rem]",
-  md: "size-7 rounded-md text-[0.6875rem]",
+  sm: "size-5 rounded text-3xs",
+  md: "size-7 rounded-md text-caption",
   lg: "size-10 rounded-lg text-sm",
 };
 
