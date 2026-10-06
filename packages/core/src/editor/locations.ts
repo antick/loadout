@@ -14,6 +14,7 @@ import { canonicalPath, isInside, lstatOrNull, segmentsOf, targetIdentity } from
 import { requireLocalSkillDir } from "../workspace/local-actions";
 import { describeLocalSkill, indexLibrary, matchLibrarySkill } from "../workspace/local-scan";
 import type { EditableFolder } from "./files";
+import { projectHistoryPrefix } from "./history";
 
 /** A skill folder the editor works on, with everything a save needs to know about it. */
 export interface ResolvedLocation {
@@ -160,7 +161,7 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps): Lo
         folder: {
           dir: variant.path,
           label: `${project.name}${PLACE_SEPARATOR}${variant.target.displayName}`,
-          historyKey: `project:${project.id}:${variant.target.key}:${variant.relativePath}`,
+          historyKey: `${projectHistoryPrefix(project.id)}${variant.target.key}:${variant.relativePath}`,
         },
       });
     }
@@ -176,7 +177,7 @@ export function createLocationResolver(ctx: CoreContext, deps: LocationDeps): Lo
       folder: {
         dir: chosen.path,
         label: placeLabel,
-        historyKey: `project:${project.id}:${owner.key}:${chosen.relativePath}`,
+        historyKey: `${projectHistoryPrefix(project.id)}${owner.key}:${chosen.relativePath}`,
       },
       librarySkill: null,
       otherCopies,

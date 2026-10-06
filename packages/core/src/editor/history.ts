@@ -28,6 +28,9 @@ const HASHED_MARK = "~";
 /** `<savedAt>` or `<savedAt>-<n>` when two saves land in the same millisecond. */
 const VERSION_ID_PATTERN = /^(\d+)(?:-(\d+))?$/;
 
+/** What the history key of every file in a project's agent folders starts with. */
+export const projectHistoryPrefix = (projectId: string): string => `project:${projectId}:`;
+
 export interface FileHistory {
   /**
    * Keep `bytes` as the version that is about to be overwritten. Never throws: a version that
@@ -39,6 +42,8 @@ export interface FileHistory {
   read(skillId: string, path: string, versionId: string): string;
   /** Forget every version of a skill, when the skill itself goes. */
   removeSkill(skillId: string): void;
+  /** Forget every version kept under a key that starts with `prefix`, e.g. a removed project's. */
+  removeKeysStartingWith(prefix: string): void;
 }
 
 function savedAtOf(versionId: string): number | null {
@@ -120,5 +125,13 @@ export function createFileHistory(historyDir: string, log: Logger = silentLogger
     },
 
     removeSkill: (skillId) => removePathSync(skillDir(skillId)),
+
+    removeKeysStartingWith: (prefix) => {
+      // Folder names start with the encoded key, also those cut short and hashed.
+      const encoded = encodeURIComponent(prefix);
+      for (const entry of readDirSafe(historyDir)) {
+        if (entry.name.startsWith(encoded)) removePathSync(join(historyDir, entry.name));
+      }
+    },
   };
 }

@@ -62,4 +62,21 @@ describe("pinned and frequently opened projects", () => {
       lastOpenedAt: null,
     });
   });
+
+  it("forgets the editor history of a removed project's files, and only that project's", async () => {
+    const add = async (name: string) => {
+      const dir = join(world.root, "work", name);
+      mkdirSync(dir, { recursive: true });
+      return world.projects.api.add(dir);
+    };
+    const gone = await add("gone");
+    const kept = await add("kept");
+    const bytes = new TextEncoder().encode("old text");
+    world.history.record(`project:${gone.id}:claude:review`, "SKILL.md", bytes, 1);
+    world.history.record(`project:${kept.id}:claude:review`, "SKILL.md", bytes, 1);
+
+    await world.projects.api.remove(gone.id);
+    expect(world.history.list(`project:${gone.id}:claude:review`, "SKILL.md")).toEqual([]);
+    expect(world.history.list(`project:${kept.id}:claude:review`, "SKILL.md")).toHaveLength(1);
+  });
 });

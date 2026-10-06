@@ -22,6 +22,7 @@ import { slugify } from "../util/names";
 import { withProjectDuplicates } from "../workspace/duplicates";
 import { readLocalDocument } from "../workspace/local-actions";
 import { type LibraryIndex, indexLibrary } from "../workspace/local-scan";
+import { type FileHistory, projectHistoryPrefix } from "../editor/history";
 import { type ProjectActionsDeps, createProjectActions } from "./actions";
 import { osConfigDir } from "../paths";
 import { refuseLinkedOverlap, refuseProjectOverlap } from "./overlap";
@@ -39,7 +40,10 @@ import {
   resolveTargets,
 } from "./targets";
 
-export type ProjectsServiceDeps = ProjectActionsDeps;
+export interface ProjectsServiceDeps extends ProjectActionsDeps {
+  /** Editor history: a removed project's earlier file versions go with it. */
+  history: Pick<FileHistory, "removeKeysStartingWith">;
+}
 
 export interface ProjectsService {
   api: ProjectsApi;
@@ -188,6 +192,7 @@ export function createProjectsService(
       projects.delete(id);
       ctx.settings.deleteRaw(INTERNAL_KEYS.projectExportAgents(id));
       ctx.settings.deleteRaw(INTERNAL_KEYS.projectSuggestionsDismissed(id));
+      deps.history.removeKeysStartingWith(projectHistoryPrefix(id));
       activity.forget(id);
       ctx.touched("projects");
     },

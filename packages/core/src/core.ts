@@ -203,7 +203,14 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     safety,
   });
   const workspace = createWorkspaceService(ctx, { store, registry, deploy, install, removed });
-  const projects = createProjectsService(ctx, { store, registry, deploy, install, removed });
+  const projects = createProjectsService(ctx, {
+    store,
+    registry,
+    deploy,
+    install,
+    removed,
+    history,
+  });
   const finder = createInstructionFinder({ registry, projects: projects.projects });
   const editor = createEditorService(ctx, {
     store,

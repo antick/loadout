@@ -1,5 +1,6 @@
 import { lstatSync, readFileSync, utimesSync } from "node:fs";
 import { join } from "node:path";
+import { type FileHistory, createFileHistory } from "../src/editor/history";
 import { installIntoLibrary } from "../src/install/library";
 import { type PresetsService, createPresetsService } from "../src/presets";
 import { type ProjectsService, createProjectsService } from "../src/projects";
@@ -13,6 +14,7 @@ export interface WorkspaceWorld extends DeployWorld {
   presets: PresetsService;
   workspace: WorkspaceService;
   projects: ProjectsService;
+  history: FileHistory;
 }
 
 /** The deploy world plus presets, the global workspace and projects, wired as `createCore` does. */
@@ -24,12 +26,14 @@ export function createWorkspaceWorld(): WorkspaceWorld {
       installIntoLibrary(ctx, store, request),
   };
   const removed = createRemovedStore(ctx, { store });
+  const history = createFileHistory(ctx.paths.historyDir);
   return {
     ...world,
     removed,
+    history,
     presets: createPresetsService(ctx, { store, registry, deploy, portable: world.portable }),
     workspace: createWorkspaceService(ctx, { store, registry, deploy, install, removed }),
-    projects: createProjectsService(ctx, { store, registry, deploy, install, removed }),
+    projects: createProjectsService(ctx, { store, registry, deploy, install, removed, history }),
   };
 }
 
