@@ -155,7 +155,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 
 - `loadout` CLI for everything above, with `--json`, `--dry-run` and `--yes`.
 - `--json` keeps one shape per command: with `--dry-run`, an object with `dryRun` on both runs; `skills scan` and `skills validate` alike for one skill or all.
-- `--yes` only for what cannot be given back (permanent deletes, rollbacks, pushes, overwritten files); usage lines come from each command's options.
+- `--yes` only for what cannot be given back (permanent deletes, rollbacks, pushes to another repository, overwritten files); other go-aheads have their own `--allow-<what>` flag. Usage lines come from each command's options.
 - Keyboard picker when an install finds several skills.
 - `--dry-run` for install, update and `git sync` shows what would change; it refuses exactly what the real run refuses.
 - `loadout doctor`: one report of everything that needs a look, including sources not checked for a month and archives that are gone.
@@ -176,7 +176,7 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - `presets export <preset>` writes a preset to a file; `presets import <file | link>` creates it here, installing what the library lacks.
 - `git pull` merges what other devices pushed without pushing; `git versions` lists versions, `git restore <version>` goes back to one, `git remote <url>` sets where backups go.
 - `--accept-risk` installs or updates a skill the safety check flagged; `--approve-removals` lets an update delete files or replace your edits.
-- `--allow-secrets` backs up or publishes what looks like a key anyway; `--allow-deletes` lets a sync delete many skills here.
+- `--allow-secrets` backs up or publishes what looks like a key anyway; `--allow-deletes` lets a sync delete many skills here; `--allow-redirect` takes a download that moved to another site; `--allow-different` links a copy that differs from its source.
 
 ## Recently removed
 

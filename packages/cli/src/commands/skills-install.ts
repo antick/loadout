@@ -18,11 +18,11 @@ import {
 } from "./skills-install-plan";
 import {
   ACCEPT_RISK_FLAG,
+  ALLOW_REDIRECT_FLAG,
   DRY_RUN_FLAG,
   limitPositionals,
   positional,
   resolveUserPath,
-  yesFlag,
 } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
@@ -125,9 +125,6 @@ const ALL_FLAG = {
   type: "boolean",
   description: "Take every skill the repository or archive holds.",
 } as const;
-const INSTALL_YES_FLAG = yesFlag(
-  "Install from a download that moved to another site than the link names.",
-);
 
 /**
  * The skills to install: named with `--skill`, all with `--all`, the only one, or (in a terminal a
@@ -190,10 +187,10 @@ async function chooseItems(
  * its dry run refuses it the same way.
  */
 function requireRedirectAccepted(context: CommandContext, preview: GitPreview): boolean {
-  const acceptRedirect = flagBoolean(context.args, INSTALL_YES_FLAG.name);
+  const acceptRedirect = flagBoolean(context.args, ALLOW_REDIRECT_FLAG.name);
   if (preview.redirectedTo && !acceptRedirect) {
     throw new UsageError(
-      `The download moved to ${preview.redirectedTo}, another site than the link names. Add --yes to install from it anyway.`,
+      `The download moved to ${preview.redirectedTo}, another site than the link names. Add --${ALLOW_REDIRECT_FLAG.name} to install from it anyway.`,
     );
   }
   return acceptRedirect;
@@ -393,7 +390,7 @@ export const installCommand: CommandSpec = {
     SKILL_FLAG,
     ALL_FLAG,
     REPLACE_FLAG,
-    INSTALL_YES_FLAG,
+    ALLOW_REDIRECT_FLAG,
     ACCEPT_RISK_FLAG,
     DRY_RUN_FLAG,
   ],
@@ -407,7 +404,7 @@ export const installCommand: CommandSpec = {
     "`npx skills add …` command, @owner/slug for a ClawHub skill,",
     "owner/repo@skill, a link to an archive or a SKILL.md, or a site that publishes skills",
     "(https://example.com, read from /.well-known/agent-skills/index.json).",
-    "--yes also accepts a download that moved to another site than the link names.",
+    "--allow-redirect accepts a download that moved to another site than the link names.",
     "--replace puts a skill in place of the library skill holding its name, keeping its tags,",
     "presets and agents; the old version goes to Recently removed.",
     "Every skill is safety-checked first; a flagged one fails with",

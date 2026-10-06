@@ -26,8 +26,9 @@ import type { CommandResult } from "./types";
  *   `project apply --prune`), undone by the opposite command (`skills undeploy`, `presets undeploy`,
  *   `skills block`), or a field set again in one step (tags, notes, favourites).
  * - A dry run never needs it, and --json never implies it.
- * A few commands also take --yes to answer their own yes/no question that a script must answer
- * on purpose (a download that moved to another site, a source that differs); they describe it.
+ * A yes/no question a script must answer on purpose that is not about losing anything gets its
+ * own `--allow-<what>` flag instead (a download that moved, a source that differs, keys in a
+ * backup, many deletions in a sync), and `--accept-risk` for a skill the safety check flagged.
  */
 const YES_FLAG: FlagSpec = {
   name: "yes",
@@ -50,6 +51,13 @@ export const ACCEPT_RISK_FLAG: FlagSpec = {
   name: "accept-risk",
   type: "boolean",
   description: "Install skills the safety check flags. Read the findings first.",
+};
+
+/** A download that moved to another site than the link names. */
+export const ALLOW_REDIRECT_FLAG: FlagSpec = {
+  name: "allow-redirect",
+  type: "boolean",
+  description: "Go ahead with a download that moved to another site than the link names.",
 };
 
 export const ALLOW_SECRETS_FLAG: FlagSpec = {

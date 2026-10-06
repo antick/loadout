@@ -6,7 +6,7 @@ import { plural } from "../output";
 import { classifySource, selectSkills } from "./skills-install";
 import {
   ACCEPT_RISK_FLAG,
-  yesFlag,
+  ALLOW_REDIRECT_FLAG,
   limitPositionals,
   positional,
   resolveUserPath,
@@ -33,10 +33,6 @@ const USE_RISK_FLAG = {
   description: "Print a skill the safety check flags anyway. Read the findings first.",
 };
 
-const USE_YES_FLAG = yesFlag(
-  "Read from a download that moved to another site than the link names.",
-);
-
 /** The one skill a preview should give: named, the one the typed text asked for, or the only one. */
 function pickSkill(preview: GitPreview, wanted: string | undefined): RepoSkillPreview {
   if (wanted !== undefined) {
@@ -61,9 +57,9 @@ async function readFromPreview(
 ): Promise<PreviewedSkill> {
   const { core, args } = context;
   try {
-    if (preview.redirectedTo && !flagBoolean(args, USE_YES_FLAG.name)) {
+    if (preview.redirectedTo && !flagBoolean(args, ALLOW_REDIRECT_FLAG.name)) {
       throw new UsageError(
-        `The download moved to ${preview.redirectedTo}, another site than the link names. Add --yes to read it anyway.`,
+        `The download moved to ${preview.redirectedTo}, another site than the link names. Add --${ALLOW_REDIRECT_FLAG.name} to read it anyway.`,
       );
     }
     const skill = pickSkill(preview, wanted);
@@ -117,7 +113,7 @@ export const useCommand: CommandSpec = {
   name: "use",
   summary: "Print a skill's SKILL.md without installing it, to pipe into an agent",
   usage: "<source>",
-  flags: [SKILL_FLAG, USE_YES_FLAG, USE_RISK_FLAG],
+  flags: [SKILL_FLAG, ALLOW_REDIRECT_FLAG, USE_RISK_FLAG],
   notes: [
     "Takes the same sources as `skills install`: ./folder, owner/repo@skill, owner/repo, a git",
     "URL, a link, an archive, or @owner/slug for ClawHub. Nothing is added to the library.",

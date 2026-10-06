@@ -150,7 +150,7 @@ loadout sources list --json                                # repositories, archi
 loadout sources check --json                               # skills repositories gained since last look; exit 1 when one could not be checked (read `failed`)
 loadout sources dismiss owner/repo                         # stop showing a repository's new skills
 loadout sources find --json                                # where skills without a source came from (changes nothing)
-loadout sources link <skill> [owner/repo]                  # follow a repository; a copy that differs needs --yes
+loadout sources link <skill> [owner/repo]                  # follow a repository; a copy that differs needs --allow-different
 loadout sources mine <skill>                               # the user wrote it: stop looking for a source
 
 # A project's skills.toml: the skills a repository uses, pinned in skills-lock.json

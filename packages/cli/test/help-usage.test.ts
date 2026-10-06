@@ -64,3 +64,16 @@ describe("read-only commands", () => {
     expect(readOnly).toEqual(expect.arrayContaining(["repo show", "sources list"]));
   });
 });
+
+const flagNames = (path: string): string[] => find(path).flags.map((flag) => flag.name);
+
+describe("--yes", () => {
+  it("is never the answer to a question that loses nothing", () => {
+    for (const path of ["skills install", "skills use"]) {
+      expect(flagNames(path), path).toContain("allow-redirect");
+      expect(flagNames(path), path).not.toContain("yes");
+    }
+    expect(flagNames("sources link")).toContain("allow-different");
+    expect(flagNames("sources link")).not.toContain("yes");
+  });
+});

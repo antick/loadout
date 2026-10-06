@@ -60,7 +60,7 @@ it("finds the repository a skill links to and links it", async () => {
   expect(list.stdout).toMatch(/acme\/skills\s+repository\s+1/);
 });
 
-it("links a copy that differs only with --yes", async () => {
+it("links a copy that differs only with --allow-different", async () => {
   await installCopy("draft", "# my own draft\n");
   const refused = await box.cli("sources", "link", "draft", "acme/skills");
   expect(refused.code).not.toBe(0);
@@ -68,7 +68,14 @@ it("links a copy that differs only with --yes", async () => {
     "draft is not the same as acme/skills/skills/draft: 80% alike (SKILL.md)",
   );
 
-  const linked = await box.cli("sources", "link", "draft", "acme/skills", "--yes", "--json");
+  const linked = await box.cli(
+    "sources",
+    "link",
+    "draft",
+    "acme/skills",
+    "--allow-different",
+    "--json",
+  );
   expect(linked.json<{ skill: Skill }>().skill).toMatchObject({
     sourceType: "git",
     sourceRevision: null,

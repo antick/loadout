@@ -4,16 +4,9 @@ import {
   type SourceSearch,
   needsSourceSearch,
 } from "@loadout/shared";
-import { UsageError, flagBoolean } from "../args";
+import { type FlagSpec, UsageError, flagBoolean } from "../args";
 import { plural, table } from "../output";
-import {
-  limitPositionals,
-  positional,
-  positionalsFrom,
-  resolveSkills,
-  undoFlag,
-  yesFlag,
-} from "./support";
+import { limitPositionals, positional, positionalsFrom, resolveSkills, undoFlag } from "./support";
 import type { CommandContext, CommandResult, LibraryCommandSpec } from "./types";
 
 /**
@@ -22,7 +15,11 @@ import type { CommandContext, CommandResult, LibraryCommandSpec } from "./types"
  */
 
 const UNDO_FLAG = undoFlag("Take the mark away again.");
-const LINK_YES_FLAG = yesFlag("Link it even when its files differ from the repository's.");
+const ALLOW_DIFFERENT_FLAG: FlagSpec = {
+  name: "allow-different",
+  type: "boolean",
+  description: "Link it even when its files differ from the repository's.",
+};
 
 const MATCH_TEXT: Record<SourceCandidate["match"], (candidate: SourceCandidate) => string> = {
   identical: () => "same files",
@@ -105,11 +102,11 @@ async function chooseCandidate(
       );
     }
   }
-  if (candidate.match !== "identical" && !flagBoolean(args, LINK_YES_FLAG.name)) {
+  if (candidate.match !== "identical" && !flagBoolean(args, ALLOW_DIFFERENT_FLAG.name)) {
     throw new UsageError(
       `${skill.name} is not the same as ${whereOf(candidate)}: ${describeMatch(candidate)}` +
         `${candidate.changedFiles.length > 0 ? ` (${candidate.changedFiles.join(", ")})` : ""}. ` +
-        "Add --yes to link it anyway: it then shows an update, and updating asks before replacing those files.",
+        `Add --${ALLOW_DIFFERENT_FLAG.name} to link it anyway: it then shows an update, and updating asks before replacing those files.`,
     );
   }
   return candidate;
@@ -166,7 +163,7 @@ export const originCommands: readonly LibraryCommandSpec[] = [
     name: "link",
     summary: "Make a skill without a source follow a repository",
     usage: "<skill> [<repository>]",
-    flags: [LINK_YES_FLAG],
+    flags: [ALLOW_DIFFERENT_FLAG],
     notes: [
       "Without a repository, links the best match `sources find` shows. The skill's files",
       "stay as they are. A copy that differs needs --yes; it then shows an update, and",
