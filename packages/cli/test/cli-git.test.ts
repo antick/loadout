@@ -40,6 +40,33 @@ describe("git sync", () => {
     const pushed = await sandbox.cli("git", "sync", "--allow-secrets");
     expect(pushed.code).toBe(EXIT_OK);
     expect(pushed.stdout).toContain("Pushed");
+
+    // The go-ahead was for that one sync: a new key stops the next one again.
+    writeSkill(join(sandbox.root, "src"), "leaky2", `Also ${TOKEN}.\n`);
+    await sandbox.cli("skills", "install", join(sandbox.root, "src", "leaky2"));
+    const again = await sandbox.cli("git", "sync");
+    expect(again.code).toBe(EXIT_FAILED);
+    expect(again.stderr).toContain("leaky2/SKILL.md:");
+    expect(again.stderr).not.toContain("leaky/SKILL.md:");
+  });
+
+  it("--allow-secrets on a sync that stops for another reason remembers nothing", async () => {
+    expect((await sandbox.cli("git", "init")).code).toBe(EXIT_OK);
+    // A remote that does not exist: the sync fails after the key would have been allowed.
+    expect((await sandbox.cli("git", "remote", join(sandbox.root, "nowhere.git"))).code).toBe(
+      EXIT_OK,
+    );
+    writeSkill(join(sandbox.root, "src"), "leaky", `Call it with ${TOKEN}.\n`);
+    await sandbox.cli("skills", "install", join(sandbox.root, "src", "leaky"));
+    expect((await sandbox.cli("git", "sync", "--allow-secrets")).code).toBe(EXIT_FAILED);
+
+    const remote = join(sandbox.root, "remote.git");
+    mkdirSync(remote);
+    execFileSync("git", ["init", "-q", "--bare"], { cwd: remote });
+    await sandbox.cli("git", "remote", remote);
+    const held = await sandbox.cli("git", "sync");
+    expect(held.code).toBe(EXIT_FAILED);
+    expect(held.stderr).toContain("Error (SECRETS_FOUND)");
   });
 
   it("--dry-run lists what would go out and changes nothing", async () => {

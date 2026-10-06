@@ -2,6 +2,7 @@ import {
   DEFAULT_BACKUP_COMMIT_MESSAGE,
   type MergeSummary,
   type SyncOutcome,
+  type SyncOptions,
   type SyncReviewAnswer,
 } from "@loadout/shared";
 import { isAppError } from "../errors";
@@ -69,14 +70,16 @@ export function syncLibrary(
   env: BackupEnv,
   message: string = DEFAULT_BACKUP_COMMIT_MESSAGE,
   review?: SyncReviewAnswer,
+  options: SyncOptions = {},
 ): Promise<SyncOutcome> {
-  return withStages(env, () => runSync(env, message, review));
+  return withStages(env, () => runSync(env, message, review, options));
 }
 
 async function runSync(
   env: BackupEnv,
   message: string,
   review: SyncReviewAnswer | undefined,
+  options: SyncOptions,
 ): Promise<SyncOutcome> {
   assertRepo(env);
   const { lock, settings } = env.ctx;
@@ -91,7 +94,7 @@ async function runSync(
     await prepareCommit(env);
     // A key caught before it is committed can still simply be removed; once committed, it would
     // travel with the history even after removal. Without a remote nothing leaves the computer.
-    if (hasRemote) {
+    if (hasRemote && !options.allowSecrets) {
       const uncommitted = await scanUncommittedChanges(env);
       if (uncommitted.length > 0) throw secretsFound(uncommitted);
     }
@@ -119,7 +122,7 @@ async function runSync(
       if (result.upstream && ahead === 0) break;
 
       // Everything this push sends, commits made while there was no remote included.
-      const secrets = await scanForPush(env, branch);
+      const secrets = options.allowSecrets ? [] : await scanForPush(env, branch);
       if (secrets.length > 0) throw secretsFound(secrets);
 
       reportStage(env, "uploading");

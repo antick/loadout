@@ -111,7 +111,7 @@ export function createBackupOperations(
       await cloneLibrary(env, url, { keepCurrent: true });
     },
 
-    sync: (message, review) => syncLibrary(env, message, review),
+    sync: (message, review, options) => syncLibrary(env, message, review, options),
 
     pull: async () => {
       const summary = await pullRemote(env);

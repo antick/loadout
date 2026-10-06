@@ -127,10 +127,6 @@ async function sync({ core, args }: CommandContext): Promise<CommandResult> {
       text: [...describePreview(preview), "Nothing was changed."].join("\n"),
     };
   }
-  if (flagBoolean(args, ALLOW_SECRETS_FLAG.name)) {
-    const held = await core.api.backup.secretFindings();
-    await core.api.backup.allowSecrets(held.map((finding) => finding.id));
-  }
   // Going ahead past the deletion guard is a review answer like the app's, with nothing kept.
   const reviewed = flagBoolean(args, ALLOW_DELETES_FLAG.name)
     ? (await core.api.backup.preview()).remoteCommit
@@ -138,6 +134,7 @@ async function sync({ core, args }: CommandContext): Promise<CommandResult> {
   const value = await core.api.backup.sync(
     flagString(args, MESSAGE_FLAG.name),
     reviewed ? { remoteCommit: reviewed, keep: [] } : undefined,
+    { allowSecrets: flagBoolean(args, ALLOW_SECRETS_FLAG.name) },
   );
   const lines = [
     value.committed ? "Saved local changes." : "No local changes to save.",

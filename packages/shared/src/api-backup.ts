@@ -20,6 +20,14 @@ import type {
 } from "./types";
 
 /** Git backup of the library: remote, sync, snapshots, conflicts and GitHub connect. */
+export interface SyncOptions {
+  /**
+   * Send what looks like keys or tokens in this one sync: nothing is remembered, so the next
+   * sync that would send them stops again.
+   */
+  allowSecrets?: boolean;
+}
+
 export interface BackupApi {
   status(): Promise<BackupStatus>;
   fetch(): Promise<void>;
@@ -32,7 +40,7 @@ export interface BackupApi {
    * Commit, merge and push. `review`: the answer to a review of this sync; without one, a sync
    * that would delete many skills here stops with `SYNC_MANY_DELETES`.
    */
-  sync(message?: string, review?: SyncReviewAnswer): Promise<SyncOutcome>;
+  sync(message?: string, review?: SyncReviewAnswer, options?: SyncOptions): Promise<SyncOutcome>;
   pull(): Promise<MergeSummary>;
   /** Fetch, then work out what a sync would do, without changing the library or the remote. */
   preview(): Promise<SyncPreview>;
