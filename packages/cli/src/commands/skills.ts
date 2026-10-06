@@ -2,6 +2,7 @@ import { deploymentState } from "@loadout/core";
 import {
   REMOVED_KEEP_DAYS,
   SOURCE_TYPES,
+  type BatchFailure,
   type Skill,
   fieldNotesFor,
   matchesSkillQuery,
@@ -227,6 +228,18 @@ async function status({ core, args }: CommandContext): Promise<CommandResult> {
   return { value, text };
 }
 
+/** The skills a removal took (or would take): every one asked for but the ones it refused. */
+function removedView(skills: readonly Skill[], failed: readonly BatchFailure[]) {
+  const refused = new Set(failed.map((failure) => failure.name));
+  return skills
+    .filter((skill) => !refused.has(skill.name))
+    .map((skill) => ({
+      id: skill.id,
+      name: skill.name,
+      deployedTo: skill.deployments.map((d) => d.agentKey),
+    }));
+}
+
 async function remove({ core, args }: CommandContext): Promise<CommandResult> {
   // Resolve everything before deleting anything: one bad reference stops the whole request, the
   // dry run included, so a preview never promises what the real run would refuse.
@@ -240,24 +253,17 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
       skills.map((skill) => skill.id),
       { dryRun: true },
     );
-    const refused = new Set(planned.failed.map((failure) => failure.name));
-    const wouldRemove = skills
-      .filter((skill) => !refused.has(skill.name))
-      .map((skill) => ({
-        id: skill.id,
-        name: skill.name,
-        deployedTo: skill.deployments.map((d) => d.agentKey),
-      }));
+    const removed = removedView(skills, planned.failed);
     const lines = [
       `Would remove ${plural(planned.succeeded, "skill")}. Nothing was changed.`,
-      ...wouldRemove.map(
+      ...removed.map(
         (s) =>
           `  ${s.name}${s.deployedTo.length ? ` (deployed to ${s.deployedTo.join(", ")})` : ""}`,
       ),
       ...failureLines(planned.failed),
     ];
     return {
-      value: { dryRun: true, wouldRemove, failed: planned.failed },
+      value: { dryRun: true, removed: planned.succeeded, skills: removed, failed: planned.failed },
       text: lines.join("\n"),
       exitCode: exitCodeFor(planned.failed.length > 0),
     };
@@ -274,6 +280,7 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
     value: {
       dryRun: false,
       removed: result.succeeded,
+      skills: removedView(skills, result.failed),
       removedIds: result.removedIds,
       failed: result.failed,
     },

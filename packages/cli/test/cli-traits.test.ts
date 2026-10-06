@@ -49,8 +49,11 @@ describe("what a skill can run", () => {
     expect(plan.stdout).toContain("CAN RUN");
     expect(plan.stdout).toContain("scripts, pre-approved tools");
     const json = (await cli("skills", "install", "./src/tooling", "--dry-run", "--json")).json<{
-      skills: { traits: { code: string }[] }[];
+      installed: { traits: { code: string }[] }[];
     }>();
-    expect(json.skills[0]?.traits.map((trait) => trait.code)).toEqual(["scripts", "tool_grants"]);
+    expect(json.installed[0]?.traits.map((trait) => trait.code)).toEqual([
+      "scripts",
+      "tool_grants",
+    ]);
   });
 });

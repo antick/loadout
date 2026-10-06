@@ -164,7 +164,7 @@ describe.skipIf(process.platform === "win32")("skills scan and the safety check"
       expect(accepted.code).toBe(EXIT_OK);
       expect(accepted.json()).toMatchObject({
         dryRun: true,
-        skills: [{ name: "evil", safety: { verdict: "unsafe" } }],
+        installed: [{ name: "evil", safety: { verdict: "unsafe" } }],
       });
 
       expect((await sandbox.cli("skills", "install", evil, "--accept-risk")).code).toBe(EXIT_OK);

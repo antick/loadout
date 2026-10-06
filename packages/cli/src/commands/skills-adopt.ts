@@ -78,17 +78,17 @@ async function run(context: CommandContext): Promise<CommandResult> {
       ...skipped.map((skill) => `  skip:  ${skill.name} (${skill.reason})`),
     ];
     return {
-      value: { dryRun: true, agent: agent.key, candidates: candidates.map(view), skipped },
+      value: { dryRun: true, agent: agent.key, adopted: candidates.map(view), skipped },
       text: lines.join("\n"),
     };
   }
 
-  const adopted: { name: string; skillId: string }[] = [];
+  const adopted: (ReturnType<typeof view> & { skillId: string })[] = [];
   const failed: BatchFailure[] = [];
   for (const skill of candidates) {
     try {
       const librarySkill = await core.api.workspace.upload(agent.key, skill.relativePath);
-      adopted.push({ name: skill.name, skillId: librarySkill.id });
+      adopted.push({ ...view(skill), skillId: librarySkill.id });
     } catch (error) {
       failed.push({ name: skill.name, message: errorMessage(error) });
     }

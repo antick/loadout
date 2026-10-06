@@ -38,7 +38,7 @@ describe("skills install --replace", () => {
       "--dry-run",
       "--json",
     );
-    expect(plan.json<InstallPlan>().skills.map((s) => [s.name, s.outcome.kind])).toEqual([
+    expect(plan.json<InstallPlan>().installed.map((s) => [s.name, s.outcome.kind])).toEqual([
       ["alpha", "replaces"],
       ["beta", "new"],
     ]);

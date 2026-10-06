@@ -80,7 +80,7 @@ describe("skills install owner/repo@skill --dry-run", () => {
     expect(plan.json()).toMatchObject({
       dryRun: true,
       source: "acme/skills/pdf",
-      skills: [{ name: "pdf", outcome: { kind: "new" } }],
+      installed: [{ name: "pdf", outcome: { kind: "new" } }],
     });
 
     const missing = await box.cli("skills", "install", "acme/skills@nope", "--dry-run");

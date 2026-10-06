@@ -121,11 +121,13 @@ describe("skills: install, deploy, status, remove", () => {
     expect(dry.code).toBe(EXIT_OK);
     const body = dry.json<{
       dryRun: boolean;
-      wouldRemove: { name: string; deployedTo: string[] }[];
+      removed: number;
+      skills: { name: string; deployedTo: string[] }[];
       failed: { name: string }[];
     }>();
     expect(body.dryRun).toBe(true);
-    expect(body.wouldRemove).toMatchObject([{ name: "alpha", deployedTo: [AGENT] }]);
+    expect(body.removed).toBe(1);
+    expect(body.skills).toMatchObject([{ name: "alpha", deployedTo: [AGENT] }]);
     expect(body.failed).toEqual([]);
     expect(existsSync(join(libraryDir(), "alpha", "SKILL.md"))).toBe(true);
     // A bad reference fails the dry run exactly as it fails the real one, --yes or not.
@@ -239,7 +241,7 @@ describe("skills adopt", () => {
     expect(dry.json()).toMatchObject({
       dryRun: true,
       agent: AGENT,
-      candidates: [{ name: "handmade" }],
+      adopted: [{ name: "handmade" }],
       skipped: [],
     });
     expect(lstatSync(local).isSymbolicLink()).toBe(false);
@@ -292,7 +294,7 @@ describe("agents", () => {
     expect(empty.json()).toEqual({
       dryRun: true,
       agents: [{ agent: AGENT, enabled: false, changed: true }],
-      wouldRemove: {},
+      removed: {},
     });
     const stillOn = (await cli("agents", "list", "--json")).json<
       { key: string; enabled: boolean }[]
@@ -318,7 +320,7 @@ describe("agents", () => {
     await cli("skills", "deploy", "alpha", "--agent", AGENT);
     expect((await cli("agents", "disable", AGENT, "--json")).code).toBe(EXIT_USAGE);
     const dry = await cli("agents", "disable", AGENT, "--dry-run", "--json");
-    expect(dry.json()).toMatchObject({ dryRun: true, wouldRemove: { [AGENT]: ["alpha"] } });
+    expect(dry.json()).toMatchObject({ dryRun: true, removed: { [AGENT]: ["alpha"] } });
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(true);
     expect((await cli("agents", "disable", AGENT, "--yes", "--json")).json()).toEqual({
       dryRun: false,

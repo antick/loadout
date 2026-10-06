@@ -36,7 +36,8 @@ export interface InstallPlanRow {
 export interface InstallPlan {
   dryRun: true;
   source: string;
-  skills: InstallPlanRow[];
+  /** What would be installed: the same key the real install reports what it installed under. */
+  installed: InstallPlanRow[];
   /** A marketplace skill already installed is refreshed in place, keeping its name. */
   refreshesInPlace: boolean;
   /** Another site the download moved to; a real install needs `--yes` for it. */
@@ -71,7 +72,7 @@ export function planPreview(
   return {
     dryRun: true,
     source: preview.repoUrl,
-    skills: items.flatMap((item, index) => {
+    installed: items.flatMap((item, index) => {
       const outcome = outcomes[index];
       const row = preview.skills.find((skill) => skill.relPath === item.relPath);
       return outcome
@@ -111,7 +112,7 @@ export function planFolder(
   return {
     dryRun: true,
     source: path,
-    skills: outcome
+    installed: outcome
       ? [
           {
             name: chosen,
@@ -153,7 +154,7 @@ export function planMarket(
   return {
     dryRun: true,
     source: key,
-    skills: outcome
+    installed: outcome
       ? [
           {
             name,
@@ -179,7 +180,7 @@ export function safetySummary(name: string, report: SafetyReport | null): string
 
 /** The plan as a person reads it. */
 export function planText(plan: InstallPlan): string {
-  const rows = plan.skills.map((row) => [
+  const rows = plan.installed.map((row) => [
     row.name,
     plan.refreshesInPlace
       ? "already installed: refreshed in place"
@@ -189,16 +190,16 @@ export function planText(plan: InstallPlan): string {
     row.relPath ?? "",
   ]);
   const lines = [
-    `Dry run: nothing was installed. From ${plan.source}, ${plural(plan.skills.length, "skill")} would be added:`,
+    `Dry run: nothing was installed. From ${plan.source}, ${plural(plan.installed.length, "skill")} would be added:`,
     table(["name", "outcome", "invocation", "can run", "folder"], rows, "  (none)"),
   ];
-  if (plan.skills.some((row) => row.outcome.kind === "taken")) {
+  if (plan.installed.some((row) => row.outcome.kind === "taken")) {
     lines.push(
       "A skill identical to the one holding its name is not added twice: the library keeps one.",
     );
   }
   if (plan.redirectedTo) lines.push(`The download moved to ${plan.redirectedTo}.`);
-  for (const row of plan.skills) {
+  for (const row of plan.installed) {
     const line = safetySummary(row.name, row.safety);
     if (line) lines.push(line);
   }

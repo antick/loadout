@@ -23,7 +23,7 @@ describe("skills install --dry-run", () => {
     expect(fresh.code).toBe(0);
     expect(fresh.json<InstallPlan>()).toMatchObject({
       dryRun: true,
-      skills: [{ name: "pdf", outcome: { kind: "new", installAs: "pdf" } }],
+      installed: [{ name: "pdf", outcome: { kind: "new", installAs: "pdf" } }],
     });
     expect(await names()).toEqual([]);
 
@@ -44,7 +44,7 @@ describe("skills install --dry-run", () => {
     await maker.cli("skills", "export", "--all", "--out", zip);
     try {
       const plan = await box.cli("skills", "install", zip, "--all", "--dry-run", "--json");
-      expect(plan.json<InstallPlan>().skills.map((s) => [s.name, s.outcome.kind])).toEqual([
+      expect(plan.json<InstallPlan>().installed.map((s) => [s.name, s.outcome.kind])).toEqual([
         ["alpha", "new"],
         ["beta", "new"],
       ]);
@@ -213,7 +213,7 @@ describe("a dry run checks its input like the real run", () => {
     await maker.cli("skills", "export", "solo", "--out", zip);
     try {
       const plan = await box.cli("skills", "install", zip, "--dry-run", "--json");
-      const [planned] = plan.json<InstallPlan>().skills;
+      const [planned] = plan.json<InstallPlan>().installed;
       const run = await box.cli("skills", "install", zip, "--json");
       expect(run.json<{ installed: Skill[] }>().installed).toMatchObject([
         { name: "solo", sourceSubpath: planned?.relPath },

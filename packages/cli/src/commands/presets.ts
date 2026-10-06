@@ -85,7 +85,7 @@ async function remove({ core, args }: CommandContext): Promise<CommandResult> {
   const view = { id: preset.id, name: preset.name, skillCount: preset.skillIds.length };
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     return {
-      value: { dryRun: true, wouldDelete: view },
+      value: { dryRun: true, deleted: view },
       text: `Would delete preset ${preset.name} (${plural(view.skillCount, "skill")} stay in the library). Nothing was changed.`,
     };
   }

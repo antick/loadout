@@ -77,7 +77,7 @@ function switcher(enabled: boolean) {
     if (flagBoolean(args, DRY_RUN_FLAG.name)) {
       const lines = [...losing].map(([agent, names]) => `  ${agent}: ${names.join(", ")}`);
       return {
-        value: { dryRun: true, agents, wouldRemove: Object.fromEntries(losing) },
+        value: { dryRun: true, agents, removed: Object.fromEntries(losing) },
         text: [
           count > 0
             ? `Would remove ${plural(count, "deployed skill")}:`

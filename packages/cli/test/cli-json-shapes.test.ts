@@ -39,7 +39,7 @@ function expectRule(name: string, [dry, real]: [Body, Body], shared: string[]): 
 describe("--json on commands that take --dry-run", () => {
   it("is an object with dryRun on both runs, sharing keys", async () => {
     const folder = writeSkill(box.root, "notes");
-    expectRule("skills install", await both("skills", "install", folder), []);
+    expectRule("skills install", await both("skills", "install", folder), ["installed"]);
     expectRule("skills deploy", await both("skills", "deploy", "notes", "--agent", AGENT), [
       "added",
       "removed",
@@ -55,9 +55,13 @@ describe("--json on commands that take --dry-run", () => {
 
     await box.cli("presets", "create", "Kit");
     expectRule("presets undeploy", await both("presets", "undeploy", "Kit"), ["removed", "failed"]);
-    expectRule("presets delete", await both("presets", "delete", "Kit", "--yes"), []);
+    expectRule("presets delete", await both("presets", "delete", "Kit", "--yes"), ["deleted"]);
 
-    expectRule("skills remove", await both("skills", "remove", "jots", "--yes"), ["failed"]);
+    expectRule("skills remove", await both("skills", "remove", "jots", "--yes"), [
+      "removed",
+      "skills",
+      "failed",
+    ]);
     const [entry] = (await box.cli("removed", "list", "--json")).json<{ id: string }[]>();
     expectRule("removed delete", await both("removed", "delete", entry?.id ?? "", "--yes"), [
       "entry",
@@ -67,15 +71,14 @@ describe("--json on commands that take --dry-run", () => {
     writeSkill(box.agentSkillsDir, "local");
     expectRule("skills adopt", await both("skills", "adopt", box.agentSkillsDir), [
       "agent",
+      "adopted",
       "skipped",
     ]);
   });
 
   it("is an object on agents disable both ways, and on enable", async () => {
     const [dry, real] = await both("agents", "disable", AGENT);
-    expectRule("agents disable", [dry, real], ["agents"]);
-    expect(dry).toHaveProperty("wouldRemove");
-    expect(real).toHaveProperty("removed");
+    expectRule("agents disable", [dry, real], ["agents", "removed"]);
     const enabled = await box.cli("agents", "enable", AGENT, "--json");
     expect(enabled.json()).toMatchObject({ agents: [{ agent: AGENT, enabled: true }] });
   });
