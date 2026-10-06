@@ -56,10 +56,10 @@ describe("argument parser", () => {
   });
 
   it("reads a choice, and names the choices when the value is not one", () => {
-    const choices = ["a", "b"] as const;
-    expect(flagChoice(parseArgs(["--message", "b"], specs), "message", choices)).toBe("b");
-    expect(flagChoice(parseArgs([], specs), "message", choices)).toBeUndefined();
-    expect(() => flagChoice(parseArgs(["--message", "c"], specs), "message", choices)).toThrow(
+    const flag = { name: "message", choices: ["a", "b"] as const };
+    expect(flagChoice(parseArgs(["--message", "b"], specs), flag)).toBe("b");
+    expect(flagChoice(parseArgs([], specs), flag)).toBeUndefined();
+    expect(() => flagChoice(parseArgs(["--message", "c"], specs), flag)).toThrow(
       "--message must be one of: a, b.",
     );
   });

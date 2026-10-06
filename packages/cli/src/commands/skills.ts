@@ -66,6 +66,7 @@ const SOURCE_FLAG = {
   name: "source",
   type: "string",
   value: "type",
+  choices: SOURCE_TYPES,
   description: `Only skills from this source: ${SOURCE_TYPES.join(", ")}.`,
 } as const;
 const FAVORITES_FLAG = {
@@ -119,7 +120,7 @@ function checksOf(skill: Skill): string {
 async function list({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
   const tags = flagList(args, TAG_FLAG.name).map((tag) => tag.toLowerCase());
-  const source = flagChoice(args, SOURCE_FLAG.name, SOURCE_TYPES);
+  const source = flagChoice(args, SOURCE_FLAG);
   const query = flagString(args, QUERY_FLAG.name) ?? "";
   const favorites = flagBoolean(args, FAVORITES_FLAG.name);
   const value = (await core.api.skills.list()).filter(

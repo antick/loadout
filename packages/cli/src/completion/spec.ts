@@ -1,4 +1,3 @@
-import { LISTING_WINDOW_CHOICES, NEW_SKILL_TEMPLATES, SOURCE_TYPES } from "@loadout/shared";
 import type { FlagSpec } from "../args";
 import type { CommandGroup, CommandSpec } from "../commands/types";
 
@@ -41,31 +40,29 @@ export interface CompletionSpec {
   byPath: Map<string, CompletionCommand>;
 }
 
-/** Value placeholder of a flag → what to complete. Anything else is free text. */
+/**
+ * Value placeholder of a flag → what to complete. Anything else is free text, or the flag's
+ * own `choices`.
+ */
 const VALUE_KINDS: Readonly<Record<string, WordKind>> = {
+  ref: "skills",
+  skill: "skills",
   key: "agents",
-  agent: "agents",
   tag: "tags",
   path: "files",
   file: "files",
-  dir: "files",
-  preset: "presets",
-};
-
-/** Fixed values of a flag, by its value placeholder (`--source <type>` in `skills list`). */
-const VALUE_CHOICES: Readonly<Record<string, readonly string[]>> = {
-  type: SOURCE_TYPES,
-  template: NEW_SKILL_TEMPLATES,
-  window: LISTING_WINDOW_CHOICES,
 };
 
 /** A positional placeholder in a usage line → what to complete. */
 const POSITIONAL_KINDS: Readonly<Record<string, WordKind>> = {
   ref: "skills",
+  skill: "skills",
+  preset: "presets",
   key: "agents",
   tag: "tags",
   path: "files",
   dir: "files",
+  folder: "files",
   source: "files",
   file: "files",
 };
@@ -78,7 +75,7 @@ const REPEAT_MARK = "…";
 function toFlag(flag: FlagSpec): CompletionFlag {
   const spellings = [`--${flag.name}`, ...(flag.short ? [`-${flag.short}`] : [])];
   const takesValue = flag.type !== "boolean";
-  const choices = takesValue ? VALUE_CHOICES[flag.value ?? ""] : undefined;
+  const choices = takesValue ? flag.choices : undefined;
   return {
     spellings,
     takesValue,

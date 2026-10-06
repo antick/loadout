@@ -36,6 +36,8 @@ describe("help, version and usage errors", () => {
   it("prints the version", async () => {
     expect((await cli("--version")).stdout.trim()).toBe(VERSION);
     expect((await cli("--version", "--json")).json()).toEqual({ version: VERSION });
+    expect((await cli("skills", "--version")).stdout.trim()).toBe(VERSION);
+    expect((await cli("skills", "list", "-V")).stdout.trim()).toBe(VERSION);
   });
 
   it("exits 2 with INVALID_INPUT for wrong usage", async () => {

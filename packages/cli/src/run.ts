@@ -75,7 +75,8 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
     const args = parseArgs(rest, [...GLOBAL_FLAGS, ...(command?.flags ?? [])]);
     json = flagBoolean(args, "json");
 
-    if (flagBoolean(args, "version") && path.length === 0) {
+    // After any group or command too, as most tools take it.
+    if (flagBoolean(args, "version")) {
       io.stdout(`${json ? JSON.stringify({ version: deps.version }) : deps.version}\n`);
       return EXIT_OK;
     }

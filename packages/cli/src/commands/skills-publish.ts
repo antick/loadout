@@ -29,6 +29,7 @@ const LAYER_FLAG = {
   name: "layer",
   type: "string",
   value: "layer",
+  choices: PUBLISH_LAYERS,
   description: `Where in the repository: ${PUBLISH_LAYERS.join(", ")}. Default: root (skills/).`,
 } as const;
 const ALL_FLAG = {
@@ -96,7 +97,7 @@ function describeResult(result: PublishResult): string {
 }
 
 function layerOf(context: CommandContext): PublishLayer | undefined {
-  return flagChoice(context.args, LAYER_FLAG.name, PUBLISH_LAYERS);
+  return flagChoice(context.args, LAYER_FLAG);
 }
 
 /** Copy chosen library skills into another Git repository, so others can install them. */

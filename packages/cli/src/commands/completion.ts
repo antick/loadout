@@ -1,10 +1,9 @@
 import type { Core } from "@loadout/core";
 import { CLI_BINARY_NAME } from "@loadout/shared";
-import { UsageError } from "../args";
 import { type Shell, completionScript } from "../completion/scripts";
 import { LIBRARY_WORD_KINDS, type LibraryWordKind, completionSpec } from "../completion/spec";
 import { GLOBAL_FLAGS } from "../help";
-import { limitPositionals, positional } from "./support";
+import { limitPositionals } from "./support";
 import { COMMAND_GROUPS } from "./index";
 import type { CommandGroup, CommandResult, FreeCommandContext, FreeCommandSpec } from "./types";
 
@@ -40,8 +39,9 @@ function scriptCommand(shell: Shell, how: string): FreeCommandSpec {
 }
 
 /**
- * Names the completion scripts offer, one per line. Quiet by design: without a library, or on
- * any failure, it prints nothing, so pressing Tab never shows an error.
+ * Names the completion scripts offer, one per line. Quiet by design: without a library, for a
+ * kind it does not know, or on any failure, it prints nothing, so pressing Tab never shows an
+ * error.
  */
 const wordsCommand: FreeCommandSpec = {
   name: "words",
@@ -50,17 +50,15 @@ const wordsCommand: FreeCommandSpec = {
   flags: [],
   hidden: true,
   runWithoutLibrary: async ({ args, openExisting }) => {
-    limitPositionals(args, 1);
-    const kind = positional(args, 0, "what to list");
-    if (!isWordKind(kind)) {
-      throw new UsageError(`Pick one of: ${LIBRARY_WORD_KINDS.join(", ")}.`);
-    }
+    const [kind, extra] = args.positionals;
     let words: string[] = [];
-    try {
-      const core = openExisting();
-      if (core) words = await wordsOf(core, kind);
-    } catch {
-      words = [];
+    if (kind !== undefined && extra === undefined && isWordKind(kind)) {
+      try {
+        const core = openExisting();
+        if (core) words = await wordsOf(core, kind);
+      } catch {
+        words = [];
+      }
     }
     return { value: words, text: words.join("\n") };
   },

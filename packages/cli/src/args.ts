@@ -13,6 +13,8 @@ export interface FlagSpec {
   type: FlagType;
   /** Placeholder shown in help for flags that take a value. */
   value?: string;
+  /** The only values the flag takes; `flagChoice` refuses others and completion offers these. */
+  choices?: readonly string[];
   description: string;
   /**
    * Must be given unless the flag named here is, e.g. `--yes` unless `--dry-run`. Usage shows the
@@ -112,16 +114,16 @@ export function flagList(args: ParsedArgs, name: string): string[] {
 }
 
 /** A flag that takes one of `choices`; undefined when it is not given, a usage error otherwise. */
+/** The value of a flag that takes one of its `choices`; anything else is a usage error. */
 export function flagChoice<T extends string>(
   args: ParsedArgs,
-  name: string,
-  choices: readonly T[],
+  flag: { readonly name: string; readonly choices: readonly T[] },
 ): T | undefined {
-  const value = flagString(args, name);
+  const value = flagString(args, flag.name);
   if (value === undefined) return undefined;
-  const choice = choices.find((candidate) => candidate === value);
+  const choice = flag.choices.find((candidate) => candidate === value);
   if (choice === undefined) {
-    throw new UsageError(`--${name} must be one of: ${choices.join(", ")}.`);
+    throw new UsageError(`--${flag.name} must be one of: ${flag.choices.join(", ")}.`);
   }
   return choice;
 }

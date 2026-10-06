@@ -39,7 +39,10 @@ describe("completion", () => {
     expect((await box.cli("completion", "words", "agents")).stdout).toContain(`${AGENT}\n`);
     const elsewhere = await box.cli("completion", "words", "skills", "--library", box.root);
     expect(elsewhere).toMatchObject({ code: 0, stdout: "\n" });
-    expect((await box.cli("completion", "words", "nope")).code).toBe(2);
+    // Quiet whatever it is asked: Tab never shows an error.
+    for (const odd of [["nope"], ["skills", "extra"], []]) {
+      expect(await box.cli("completion", "words", ...odd)).toMatchObject({ code: 0, stdout: "\n" });
+    }
   });
 
   it("keeps plumbing out of help", async () => {
@@ -116,5 +119,14 @@ describe("completion spec", () => {
     expect(kinds.get("skills list --source")?.choices).toContain("git");
     expect(kinds.get("project init --source")?.choices).toBeUndefined();
     expect(kinds.get(" --library")?.kind).toBe("files");
+    // Every flag that takes a fixed set of values offers them.
+    expect(kinds.get("skills publish --layer")?.choices?.length).toBeGreaterThan(0);
+    expect(kinds.get("skills search --on")?.choices).toContain("clawhub");
+    expect(kinds.get("skills merge --keep")?.kind).toBe("skills");
+  });
+
+  it("completes the skills, presets and folders a usage line names", () => {
+    expect(positionalsOf("sources link")?.positionals[0]).toBe("skills");
+    expect(positionalsOf("skills validate")?.positionals[0]).toBe("skills");
   });
 });

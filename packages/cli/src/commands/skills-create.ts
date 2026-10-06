@@ -18,6 +18,7 @@ const TEMPLATE_FLAG = {
   name: "template",
   type: "string",
   value: "template",
+  choices: NEW_SKILL_TEMPLATES,
   description: `Outline to start from: ${NEW_SKILL_TEMPLATES.join(", ")} (default ${DEFAULT_NEW_SKILL_TEMPLATE}).`,
 } as const;
 
@@ -34,7 +35,7 @@ async function createSkill(context: CommandContext): Promise<CommandResult> {
   if (!name || extra.length > 0) throw new UsageError("Give exactly one name for the new skill.");
   const description = flagString(args, DESCRIPTION_FLAG.name);
   if (!description) throw new UsageError(`--${DESCRIPTION_FLAG.name} <text> is required.`);
-  const template = flagChoice(args, TEMPLATE_FLAG.name, NEW_SKILL_TEMPLATES);
+  const template = flagChoice(args, TEMPLATE_FLAG);
 
   const skill = await core.api.skills.create({ name, description, template });
   if (flagBoolean(args, PROMPT_FLAG.name)) {

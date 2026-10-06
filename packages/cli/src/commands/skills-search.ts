@@ -34,6 +34,7 @@ const ON_FLAG = {
   name: "on",
   type: "string",
   value: "marketplace",
+  choices: MARKET_PROVIDERS,
   description: `Which marketplace to search: ${MARKET_PROVIDERS.join(" or ")} (default ${DEFAULT_PROVIDER}).`,
 } as const;
 
@@ -134,7 +135,7 @@ async function search(context: CommandContext): Promise<CommandResult> {
       `--${ACCEPT_RISK_FLAG.name} needs the picker, which opens only in a terminal and never with --json. Install a flagged skill with: skills install <skill> --${ACCEPT_RISK_FLAG.name}`,
     );
   }
-  const provider = flagChoice(args, ON_FLAG.name, MARKET_PROVIDERS) ?? DEFAULT_PROVIDER;
+  const provider = flagChoice(args, ON_FLAG) ?? DEFAULT_PROVIDER;
   const name = MARKET_PROVIDER_NAMES[provider];
   const listing = await core.api.market.search(query, flagInteger(args, LIMIT_FLAG.name), provider);
   const picked = await pickAndInstall(context, listing, `${name} results for "${query}"`);

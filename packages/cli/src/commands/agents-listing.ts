@@ -22,6 +22,7 @@ const WINDOW_FLAG = {
   name: "window",
   type: "string",
   value: "window",
+  choices: LISTING_WINDOW_CHOICES,
   description: `Context window to assume: ${LISTING_WINDOW_CHOICES.join(" or ")}. Default: the saved setting (${DEFAULT_LISTING_WINDOW}).`,
 } as const;
 
@@ -79,7 +80,7 @@ function render(report: SkillListingReport, all: boolean): string {
 
 async function listing({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
-  const window = flagChoice(args, WINDOW_FLAG.name, LISTING_WINDOW_CHOICES);
+  const window = flagChoice(args, WINDOW_FLAG);
   const report = await core.api.listing.report(
     LISTING_AGENT_KEY,
     window === undefined ? undefined : { window },
