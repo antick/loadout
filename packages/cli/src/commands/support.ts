@@ -3,12 +3,13 @@ import { resolve } from "node:path";
 import {
   type Core,
   type ResolvedAgent,
+  errorMessage,
   expandHome,
   invalid,
   notFound,
   targetConflict,
 } from "@loadout/core";
-import type { ApplyResult, Preset, Skill } from "@loadout/shared";
+import type { ApplyResult, BatchFailure, Preset, Skill } from "@loadout/shared";
 import { type FlagSpec, type ParsedArgs, UsageError, flagBoolean, flagList } from "../args";
 import { exitCodeFor } from "../exit-codes";
 import { failureLines, plural } from "../output";
@@ -127,6 +128,35 @@ export function positionalsFrom(args: ParsedArgs, index: number, label: string):
 export function limitPositionals(args: ParsedArgs, max: number): void {
   const extra = args.positionals[max];
   if (extra !== undefined) throw new UsageError(`Unexpected argument: ${extra}`);
+}
+
+/**
+ * Run `fn` on each item in turn. One that fails is noted by name and the rest still run, so a
+ * batch never stops at its first problem nor hides what it already did.
+ */
+export async function eachItem<T, R>(
+  items: readonly T[],
+  nameOf: (item: T) => string,
+  fn: (item: T) => Promise<R>,
+): Promise<{ done: R[]; failed: BatchFailure[] }> {
+  const done: R[] = [];
+  const failed: BatchFailure[] = [];
+  for (const item of items) {
+    try {
+      done.push(await fn(item));
+    } catch (error) {
+      failed.push({ name: nameOf(item), message: errorMessage(error) });
+    }
+  }
+  return { done, failed };
+}
+
+/** What a command that sets one field of a skill reports about it: the skill and that field. */
+export function fieldView<K extends keyof Skill>(
+  skill: Skill,
+  key: K,
+): Pick<Skill, "id" | "name" | K> {
+  return { id: skill.id, name: skill.name, [key]: skill[key] } as Pick<Skill, "id" | "name" | K>;
 }
 
 /** Destructive commands stop here unless the caller said `--yes` (a dry run changes nothing). */

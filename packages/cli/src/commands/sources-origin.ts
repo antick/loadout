@@ -5,8 +5,17 @@ import {
   needsSourceSearch,
 } from "@loadout/shared";
 import { type FlagSpec, UsageError, flagBoolean } from "../args";
-import { plural, table } from "../output";
-import { limitPositionals, positional, positionalsFrom, resolveSkills, undoFlag } from "./support";
+import { exitCodeFor } from "../exit-codes";
+import { failureLines, plural, table } from "../output";
+import {
+  eachItem,
+  fieldView,
+  limitPositionals,
+  positional,
+  positionalsFrom,
+  resolveSkills,
+  undoFlag,
+} from "./support";
 import type { CommandContext, CommandResult, LibraryCommandSpec } from "./types";
 
 /**
@@ -129,20 +138,24 @@ async function link(context: CommandContext): Promise<CommandResult> {
 async function mine({ core, args }: CommandContext): Promise<CommandResult> {
   const undo = flagBoolean(args, UNDO_FLAG.name);
   const skills = resolveSkills(core, positionalsFrom(args, 0, "a skill"));
-  const value: Skill[] = [];
-  for (const skill of skills) {
-    // A source that no longer has the skill is forgotten first: it can never be updated from.
-    const gone = !undo && skill.updateStatus === "source_missing";
-    value.push(
-      gone
-        ? await core.api.updates.detach(skill.id, { markAuthored: true })
-        : await core.api.skills.setAuthored(skill.id, !undo),
-    );
-  }
-  const names = value.map((skill) => skill.name).join(", ");
+  const { done, failed } = await eachItem(
+    skills,
+    (skill) => skill.name,
+    (skill) =>
+      // A source that no longer has the skill is forgotten first: it can never be updated from.
+      !undo && skill.updateStatus === "source_missing"
+        ? core.api.updates.detach(skill.id, { markAuthored: true })
+        : core.api.skills.setAuthored(skill.id, !undo),
+  );
+  const names = done.map((skill) => skill.name).join(", ");
+  const lines =
+    done.length > 0
+      ? [undo ? `No longer marked as yours: ${names}.` : `Marked as yours: ${names}.`]
+      : [];
   return {
-    value,
-    text: undo ? `No longer marked as yours: ${names}.` : `Marked as yours: ${names}.`,
+    value: { skills: done.map((skill) => fieldView(skill, "authored")), failed },
+    text: [...lines, ...failureLines(failed)].join("\n"),
+    exitCode: exitCodeFor(failed.length > 0),
   };
 }
 
@@ -166,7 +179,7 @@ export const originCommands: readonly LibraryCommandSpec[] = [
     flags: [ALLOW_DIFFERENT_FLAG],
     notes: [
       "Without a repository, links the best match `sources find` shows. The skill's files",
-      "stay as they are. A copy that differs needs --yes; it then shows an update, and",
+      "stay as they are. A copy that differs needs --allow-different; it then shows an update, and",
       "updating asks before replacing the files that differ.",
     ],
     run: link,

@@ -28,7 +28,10 @@ describe("skills favorite", () => {
     expect((await cli("skills", "show", "alpha")).stdout).toContain("Favourite");
 
     const undone = await cli("skills", "favorite", "alpha", "--undo", "--json");
-    expect(undone.json<{ favoritedAt: number | null }[]>()[0]?.favoritedAt).toBeNull();
+    expect(undone.json()).toMatchObject({
+      skills: [{ name: "alpha", favoritedAt: null }],
+      failed: [],
+    });
     expect((await cli("skills", "list", "--favorites", "--json")).json()).toEqual([]);
   });
 });

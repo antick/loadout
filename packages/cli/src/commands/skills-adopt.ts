@@ -1,16 +1,9 @@
 import { statSync } from "node:fs";
-import {
-  type Core,
-  type ResolvedAgent,
-  canonicalPath,
-  errorMessage,
-  invalid,
-  notFound,
-} from "@loadout/core";
-import type { BatchFailure, LocalSkill } from "@loadout/shared";
+import { type Core, type ResolvedAgent, canonicalPath, invalid, notFound } from "@loadout/core";
+import type { LocalSkill } from "@loadout/shared";
 import { flagBoolean } from "../args";
 import { failureLines, plural } from "../output";
-import { DRY_RUN_FLAG, limitPositionals, positional, resolveUserPath } from "./support";
+import { DRY_RUN_FLAG, eachItem, limitPositionals, positional, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
 
@@ -83,16 +76,14 @@ async function run(context: CommandContext): Promise<CommandResult> {
     };
   }
 
-  const adopted: (ReturnType<typeof view> & { skillId: string })[] = [];
-  const failed: BatchFailure[] = [];
-  for (const skill of candidates) {
-    try {
+  const { done: adopted, failed } = await eachItem(
+    candidates,
+    (skill) => skill.name,
+    async (skill) => {
       const librarySkill = await core.api.workspace.upload(agent.key, skill.relativePath);
-      adopted.push({ ...view(skill), skillId: librarySkill.id });
-    } catch (error) {
-      failed.push({ name: skill.name, message: errorMessage(error) });
-    }
-  }
+      return { ...view(skill), skillId: librarySkill.id };
+    },
+  );
   const lines = [
     `Adopted ${plural(adopted.length, "skill")} for ${agent.displayName}; ${skipped.length} skipped.`,
     ...skipped.map((skill) => `  skip:  ${skill.name} (${skill.reason})`),

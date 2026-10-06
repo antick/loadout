@@ -1,8 +1,9 @@
 import { canonicalPath, isInside, notFound } from "@loadout/core";
 import type { Project, ProjectSuggestions, SuggestionReason } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
-import { plural, table } from "../output";
-import { AGENT_FLAG, limitPositionals, resolveUserPath } from "./support";
+import { exitCodeFor } from "../exit-codes";
+import { failureLines, plural, table } from "../output";
+import { AGENT_FLAG, eachItem, limitPositionals, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const DIR_FLAG = {
@@ -80,17 +81,22 @@ async function suggest(context: CommandContext): Promise<CommandResult> {
 
   if (!add) return { value: found, text: lines.join("\n") };
   const strong = found.suggestions.filter((s) => s.strength === "strong");
-  const added: string[] = [];
-  for (const suggestion of strong) {
-    await core.api.projects.exportSkill(suggestion.skillId, project.id, agents);
-    added.push(nameOf(suggestion.skillId));
-  }
-  lines.push(
-    added.length > 0
-      ? `Added ${plural(added.length, "skill")}: ${added.join(", ")}`
-      : "Nothing strong enough to add.",
+  const { done: added, failed } = await eachItem(
+    strong,
+    (suggestion) => nameOf(suggestion.skillId),
+    async (suggestion) => {
+      await core.api.projects.exportSkill(suggestion.skillId, project.id, agents);
+      return nameOf(suggestion.skillId);
+    },
   );
-  return { value: { ...found, added }, text: lines.join("\n") };
+  if (added.length > 0) lines.push(`Added ${plural(added.length, "skill")}: ${added.join(", ")}`);
+  else if (failed.length === 0) lines.push("Nothing strong enough to add.");
+  lines.push(...failureLines(failed));
+  return {
+    value: { ...found, added, failed },
+    text: lines.join("\n"),
+    exitCode: exitCodeFor(failed.length > 0),
+  };
 }
 
 export const suggestCommand: CommandSpec = {

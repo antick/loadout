@@ -1,9 +1,9 @@
-import { type Core, errorMessage } from "@loadout/core";
+import type { Core } from "@loadout/core";
 import type { SafetyRecord, SafetyScanSummary } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { plural } from "../output";
 import { exitCodeFor } from "../exit-codes";
-import { resolveSkills } from "./support";
+import { eachItem, resolveSkills } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const ALL_FLAG = {
@@ -30,20 +30,21 @@ interface ScanResult extends SafetyScanSummary {
 }
 
 async function scanNamed(core: Core, refs: readonly string[]): Promise<ScanResult> {
-  const result: ScanResult = { scanned: 0, unsafe: 0, caution: 0, failed: [], records: [] };
-  for (const skill of resolveSkills(core, refs)) {
-    try {
-      const record = await core.api.safety.scanSkill(skill.id);
-      result.records.push(record);
-      result.scanned += 1;
-      if (record.verdict === "unsafe") result.unsafe += 1;
-      if (record.verdict === "caution") result.caution += 1;
-    } catch (error) {
-      // Like `--all`: one skill the scanner chokes on does not stop the others.
-      result.failed.push({ name: skill.name, message: errorMessage(error) });
-    }
-  }
-  return result;
+  // Like `--all`: one skill the scanner chokes on does not stop the others.
+  const { done: records, failed } = await eachItem(
+    resolveSkills(core, refs),
+    (skill) => skill.name,
+    (skill) => core.api.safety.scanSkill(skill.id),
+  );
+  const count = (verdict: SafetyRecord["verdict"]): number =>
+    records.filter((record) => record.verdict === verdict).length;
+  return {
+    scanned: records.length,
+    unsafe: count("unsafe"),
+    caution: count("caution"),
+    failed,
+    records,
+  };
 }
 
 async function scanAll(core: Core, force: boolean): Promise<ScanResult> {

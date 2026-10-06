@@ -1,4 +1,4 @@
-import { errorMessage, previewLibrary } from "@loadout/core";
+import { previewLibrary } from "@loadout/core";
 import {
   type BatchFailure,
   CLAWHUB_NAME,
@@ -17,7 +17,7 @@ import {
 import { UsageError, flagBoolean, flagChoice, flagInteger } from "../args";
 import { failureLines, plural, table } from "../output";
 import { NOT_DEPLOYED_HINT } from "./skills-install";
-import { ACCEPT_RISK_FLAG, positionalsFrom } from "./support";
+import { ACCEPT_RISK_FLAG, eachItem, positionalsFrom } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 import { exitCodeFor } from "../exit-codes";
 
@@ -96,19 +96,15 @@ async function pickAndInstall(
       `--${ACCEPT_RISK_FLAG.name} works on one skill at a time: tick one, or install each with skills install <skill> --${ACCEPT_RISK_FLAG.name}.`,
     );
   }
-  const result: PickedInstall = { installed: [], failed: [] };
-  for (const skill of keys.flatMap((key) => rows.get(key) ?? [])) {
-    try {
-      result.installed.push(
-        skill.provider === "clawhub"
-          ? await core.api.install.fromClawhub(skill.source, skill.skillId, { acceptRisk })
-          : await core.api.install.fromMarket(skill.source, skill.skillId, { acceptRisk }),
-      );
-    } catch (error) {
-      result.failed.push({ name: installRef(skill), message: errorMessage(error) });
-    }
-  }
-  return result;
+  const { done: installed, failed } = await eachItem(
+    keys.flatMap((key) => rows.get(key) ?? []),
+    installRef,
+    (skill) =>
+      skill.provider === "clawhub"
+        ? core.api.install.fromClawhub(skill.source, skill.skillId, { acceptRisk })
+        : core.api.install.fromMarket(skill.source, skill.skillId, { acceptRisk }),
+  );
+  return { installed, failed };
 }
 
 function pickedText(picked: PickedInstall): string {

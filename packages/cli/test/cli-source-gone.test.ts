@@ -34,11 +34,11 @@ describe("a skill gone from its source", () => {
     await cli("skills", "check", "notes", "--force");
     const run = await cli("sources", "mine", "notes", "--json");
     expect(run.code).toBe(EXIT_OK);
-    expect(run.json<unknown[]>()[0]).toMatchObject({
+    expect(run.json()).toMatchObject({ skills: [{ name: "notes", authored: true }], failed: [] });
+    expect((await cli("skills", "show", "notes", "--json")).json()).toMatchObject({
       authored: true,
       sourceRef: null,
       updateStatus: "local_only",
     });
-    expect((await cli("skills", "show", "notes")).code).toBe(EXIT_OK);
   });
 });
