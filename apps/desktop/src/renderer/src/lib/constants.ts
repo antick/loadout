@@ -17,6 +17,11 @@ export const STORAGE_KEYS = {
   editorWrap: "editor.wrap",
   editorSplit: "editor.split",
   newSkillTemplate: "new-skill.template",
+  librarySort: "library.sort",
+  libraryGroupBySource: "library.group-by-source",
+  /** Folded source groups. The stored name says "open" from before; kept so choices survive. */
+  libraryGroupsFolded: "library.groups-open",
+  marketProvider: "install.market-provider",
 } as const;
 
 /** File type "Export as .zip" saves, and the name an export of several skills starts with. */

@@ -51,9 +51,9 @@ import { useOpenExternal } from "@/hooks/mutations/app";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { cn } from "@/lib/utils";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3";
-const PROVIDER_STORAGE_KEY = "install.market-provider";
 const PROVIDER_ICONS: Record<MarketProvider, typeof Store> = { skills_sh: Store, clawhub: Package };
 const CONNECTION_ERROR_CODES: ReadonlySet<ErrorCode> = new Set(["NETWORK", "TIMEOUT"]);
 
@@ -61,7 +61,7 @@ const CONNECTION_ERROR_CODES: ReadonlySet<ErrorCode> = new Set(["NETWORK", "TIME
 export function MarketTab(): ReactNode {
   const { t } = useTranslation();
   const [provider, setProvider] = usePersistedState<MarketProvider>(
-    PROVIDER_STORAGE_KEY,
+    STORAGE_KEYS.marketProvider,
     DEFAULT_MARKET_PROVIDER,
   );
   const [board, setBoard] = useState<MarketBoard>(DEFAULT_MARKET_BOARD_OF[provider]);

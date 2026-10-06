@@ -10,15 +10,14 @@ import type { LibraryGroup } from "@/features/library/library-groups";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { SOURCE_KIND_ICONS } from "@/lib/source-icons";
 import { cn } from "@/lib/utils";
-
-const OPEN_STORAGE_KEY = "library.groups-open";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 /** Group key → folded. Groups not in it are open. */
 export type FoldedGroups = Partial<Record<string, boolean>>;
 
 /** Which library sections are folded, remembered across restarts. */
 export function useFoldedGroups(): [FoldedGroups, (key: string, folded: boolean) => void] {
-  const [folded, setFolded] = usePersistedState<FoldedGroups>(OPEN_STORAGE_KEY, {});
+  const [folded, setFolded] = usePersistedState<FoldedGroups>(STORAGE_KEYS.libraryGroupsFolded, {});
   const setOne = useCallback(
     (key: string, next: boolean) => setFolded((previous) => ({ ...previous, [key]: next })),
     [setFolded],

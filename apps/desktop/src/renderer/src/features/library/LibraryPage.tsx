@@ -70,12 +70,10 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewMode } from "@/hooks/use-view-mode";
-import type { LibraryViewMode } from "@/lib/constants";
+import { type LibraryViewMode, STORAGE_KEYS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 const VIEW_MODE_SCOPE = "library";
-const SORT_STORAGE_KEY = "library.sort";
-const GROUP_STORAGE_KEY = "library.group-by-source";
 const NO_AGENTS: readonly AgentInfo[] = [];
 const GRID_CLASS = "grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]";
 const LIST_CLASS = "flex flex-col gap-1.5";
@@ -112,8 +110,11 @@ export function LibraryPage({
   const updateMany = useUpdateSkills();
   const actionsFor = useLibrarySkillActions();
   const [viewMode, setViewMode] = useViewMode<LibraryViewMode>(VIEW_MODE_SCOPE);
-  const [sort, setSort] = usePersistedState<SortMode>(SORT_STORAGE_KEY, DEFAULT_SORT_MODE);
-  const [groupBySource, setGroupBySource] = usePersistedState<boolean>(GROUP_STORAGE_KEY, false);
+  const [sort, setSort] = usePersistedState<SortMode>(STORAGE_KEYS.librarySort, DEFAULT_SORT_MODE);
+  const [groupBySource, setGroupBySource] = usePersistedState<boolean>(
+    STORAGE_KEYS.libraryGroupBySource,
+    false,
+  );
   const [rest, setRest] = useState(EMPTY_FILTERS);
   const [deployAllOpen, setDeployAllOpen] = useState(false);
   const [duplicatesOpen, setDuplicatesOpen] = useState(false);
