@@ -22,6 +22,7 @@ export { type DeploymentState, deploymentState } from "./deploy/state";
 export { canonicalPath, expandHome, isInside, writeFileAtomic } from "./util/fs";
 export { previewLibrary } from "./install/fetched-preview";
 export { requireSkillFolder } from "./install/service";
+export { planFolder, planMarket, planPreview } from "./install/plan";
 export { parseSkillsCommand } from "./install/skills-command";
 export { readSkillIdentity } from "./skills/metadata";
 export { skillTraits } from "./skills/traits";

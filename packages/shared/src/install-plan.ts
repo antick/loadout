@@ -1,3 +1,6 @@
+import type { SafetyReport } from "./safety";
+import type { SkillTrait } from "./skill-traits";
+
 /**
  * What importing a skill under a name does to the library, worked out before anything is written.
  * Mirrors the library's own rule (`core/install/library.ts`): a skill lands in `<name>`; when that
@@ -110,4 +113,29 @@ export function planInstallNames(
     }
     return outcome;
   });
+}
+
+/** One skill `skills install --dry-run` would add, and what its name would do. */
+export interface InstallPlanRow {
+  name: string;
+  /** Its folder in the source; null for a folder installed as a whole. */
+  relPath: string | null;
+  outcome: InstallOutcome;
+  manualOnly: boolean;
+  /** What installing it puts in reach of an agent: scripts, hooks, MCP servers, tools. */
+  traits: SkillTrait[];
+  /** The safety check's report, as the real install would keep it; null when the check is off. */
+  safety: SafetyReport | null;
+}
+
+/** What `skills install --dry-run` reports. Nothing is written. */
+export interface InstallPlan {
+  dryRun: true;
+  source: string;
+  /** What would be installed: the same key the real install reports what it installed under. */
+  installed: InstallPlanRow[];
+  /** A marketplace skill already installed is refreshed in place, keeping its name. */
+  refreshesInPlace: boolean;
+  /** Another site the download moved to; a real install has to be told to accept it. */
+  redirectedTo: string | null;
 }

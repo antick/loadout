@@ -1,21 +1,24 @@
 import { isArchivePath, skillMatchesName } from "@loadout/shared";
-import { cancelled, notFound, parseSkillsCommand, requireSkillFolder } from "@loadout/core";
+import {
+  cancelled,
+  notFound,
+  parseSkillsCommand,
+  planFolder,
+  planMarket,
+  planPreview,
+  requireSkillFolder,
+} from "@loadout/core";
 import type {
   GitPreview,
   InstallSelection,
   RepoSkillPreview,
   SafetyReport,
   Skill,
+  InstallPlan,
 } from "@loadout/shared";
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { plural } from "../output";
-import {
-  type InstallPlan,
-  planFolder,
-  planMarket,
-  planPreview,
-  planText,
-} from "./skills-install-plan";
+import { planText } from "./skills-install-plan";
 import {
   ACCEPT_RISK_FLAG,
   ALLOW_REDIRECT_FLAG,
@@ -293,7 +296,12 @@ async function plan(context: CommandContext, source: InstallSource): Promise<Ins
       acceptRisk,
     });
     const { owner: from, slug: skillId } = source;
-    return planMarket(core, { source: from, skillId, sourceType: "clawhub", safety: read.safety });
+    return planMarket(core.ctx, core.store, {
+      source: from,
+      skillId,
+      sourceType: "clawhub",
+      safety: read.safety,
+    });
   }
   if (source.kind === "market") return planMarketSkill(context, source.source, source.skillId);
   if (source.kind === "git") {
@@ -304,7 +312,7 @@ async function plan(context: CommandContext, source: InstallSource): Promise<Ins
     return planFromPreview(context, await core.api.install.previewArchive(path));
   }
   const read = await core.api.install.readFolderSkill(requireSkillFolder(path), { acceptRisk });
-  return planFolder(core, path, flagString(args, NAME_FLAG.name), read.safety);
+  return planFolder(core.ctx, core.store, path, flagString(args, NAME_FLAG.name), read.safety);
 }
 
 /** `owner/repo@skill`: the repository is fetched and the skill found and checked in it. */
@@ -321,7 +329,7 @@ async function planMarketSkill(
     const read = await core.api.install.readPreviewSkill(preview.previewId, row.relPath, {
       acceptRisk: flagBoolean(args, ACCEPT_RISK_FLAG.name),
     });
-    return planMarket(core, {
+    return planMarket(core.ctx, core.store, {
       source,
       skillId,
       sourceType: "marketplace",
