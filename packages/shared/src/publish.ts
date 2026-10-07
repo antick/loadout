@@ -1,4 +1,4 @@
-import { SKILL_FILE } from "./constants";
+import { MIB, SKILL_FILE } from "./constants";
 import { formatBytes } from "./format";
 import type { SecretFinding } from "./secrets";
 
@@ -26,7 +26,7 @@ export const PUBLISH_LAYER_DIRS: Record<PublishLayer, string> = {
 };
 
 /** A single file over this size is not a skill's text; Git hosts refuse files over 100 MB. */
-export const PUBLISH_MAX_FILE_BYTES = 50 * 1024 * 1024;
+export const PUBLISH_MAX_FILE_BYTES = 50 * MIB;
 /** Names of entries left out of a skill's copy, shown at most this many per skill. */
 export const PUBLISH_LEFT_OUT_SHOWN = 5;
 
@@ -130,8 +130,8 @@ export interface PublishResult {
 /** Where a ClawHub API token is made. */
 export const CLAWHUB_TOKEN_URL = "https://clawhub.ai/settings";
 /** ClawHub's own limits on what a version may hold. */
-export const CLAWHUB_MAX_FILE_BYTES = 10 * 1024 * 1024;
-export const CLAWHUB_MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+export const CLAWHUB_MAX_FILE_BYTES = 10 * MIB;
+export const CLAWHUB_MAX_TOTAL_BYTES = 50 * MIB;
 export const CLAWHUB_MAX_TOPICS = 5;
 export const CLAWHUB_MAX_TOPIC_LENGTH = 48;
 /** Every version published on ClawHub is released under this licence; the registry insists. */

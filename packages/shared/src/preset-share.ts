@@ -1,3 +1,4 @@
+import { MIB } from "./constants";
 import { slugOf } from "./skill-checks";
 import type { BatchFailure, Preset } from "./types";
 
@@ -18,9 +19,9 @@ export function presetFileName(name: string): string {
 }
 
 /** Files of skills without a source are embedded up to this size in total. */
-export const PRESET_FILE_MAX_EMBED_BYTES = 8 * 1024 * 1024;
+export const PRESET_FILE_MAX_EMBED_BYTES = 8 * MIB;
 /** A preset file larger than this is refused on import. */
-export const PRESET_FILE_MAX_BYTES = 16 * 1024 * 1024;
+export const PRESET_FILE_MAX_BYTES = 16 * MIB;
 
 /** One file of an embedded skill: text as is, anything else in base64. */
 export interface PresetFileEntry {

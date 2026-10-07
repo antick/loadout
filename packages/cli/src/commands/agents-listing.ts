@@ -1,11 +1,14 @@
 import {
   DEFAULT_LISTING_WINDOW,
   LISTING_AGENT_KEY,
+  LISTING_BUDGET_FRACTION,
   LISTING_WINDOW_CHOICES,
   LISTING_WINDOWS,
   type ListingBudgetSource,
   type SkillListingReport,
+  formatCount,
   formatNumber,
+  formatPercent,
 } from "@loadout/shared";
 import { flagBoolean, flagChoice } from "../args";
 import { plural, table } from "../output";
@@ -27,7 +30,7 @@ const SHOWN = 10;
 
 const BUDGET_NOTES: Record<ListingBudgetSource, (report: SkillListingReport) => string> = {
   default: (report) =>
-    `1% of a ${formatNumber(LISTING_WINDOWS[report.window] / 1000)}K-token context window`,
+    `${formatPercent(LISTING_BUDGET_FRACTION)} of a ${formatCount(LISTING_WINDOWS[report.window])}-token context window`,
   fraction: () => "from skillListingBudgetFraction in Claude Code's settings",
   characters: () => "from SLASH_COMMAND_TOOL_CHAR_BUDGET in Claude Code's settings",
 };
@@ -97,7 +100,7 @@ export const listingCommand: CommandSpec = {
   flags: [WINDOW_FLAG, ALL_FLAG],
   readOnly: true,
   notes: [
-    "Claude Code puts every skill's name and description in the model's context and cuts descriptions past a budget of about 1% of the context window. This reads your skills, your plugins' skills and Claude Code's settings, and estimates the total. It assumes a 200k-token window; if you run a 1M-token model, add --window 1m.",
+    "Claude Code puts every skill's name and description in the model's context and cuts descriptions past a budget of about 1% of the context window. This reads your skills, your plugins' skills and Claude Code's settings, and estimates the total. It assumes the window saved in Settings (200k unless changed); for a 1M-token model, add --window 1m.",
   ],
   run: listing,
 };

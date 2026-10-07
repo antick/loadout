@@ -77,6 +77,11 @@ export function formatNumber(value: number): string {
   return WHOLE_NUMBER.format(value);
 }
 
+/** `87%`: a share from 0 to 1, rounded to a whole percent. */
+export function formatPercent(fraction: number): string {
+  return `${Math.round(Math.min(Math.max(fraction, 0), 1) * 100)}%`;
+}
+
 /** "Codex, Goose and Warp". */
 export function formatNameList(names: readonly string[]): string {
   return AND_LIST.format(names);

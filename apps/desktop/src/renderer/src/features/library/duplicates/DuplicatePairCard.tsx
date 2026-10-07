@@ -2,7 +2,8 @@ import {
   type DuplicatePair,
   type DuplicateReason,
   type Skill,
-  formatSimilarity,
+  formatPercent,
+  pairScore,
 } from "@loadout/shared";
 import { Diff, Undo2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -48,7 +49,7 @@ export function DuplicatePairCard({
 }: DuplicatePairCardProps): ReactNode {
   const { t } = useTranslation();
   const [comparing, setComparing] = useState(false);
-  const score = formatSimilarity(Math.max(pair.contentScore, pair.nameScore));
+  const score = formatPercent(pairScore(pair));
 
   return (
     <article

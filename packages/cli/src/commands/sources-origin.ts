@@ -2,6 +2,7 @@ import {
   type Skill,
   type SourceCandidate,
   type SourceSearch,
+  formatPercent,
   needsSourceSearch,
 } from "@loadout/shared";
 import { type FlagSpec, UsageError, flagBoolean } from "../args";
@@ -33,7 +34,7 @@ const ALLOW_DIFFERENT_FLAG: FlagSpec = {
 const MATCH_TEXT: Record<SourceCandidate["match"], (candidate: SourceCandidate) => string> = {
   identical: () => "same files",
   similar: (candidate) => `differs in ${plural(candidate.changedFiles.length, "file")}`,
-  different: (candidate) => `${Math.round(candidate.similarity * 100)}% alike`,
+  different: (candidate) => `${formatPercent(candidate.similarity)} alike`,
 };
 
 const EVIDENCE_TEXT: Record<SourceCandidate["evidence"], string> = {
@@ -92,7 +93,7 @@ async function find({ core, args }: CommandContext): Promise<CommandResult> {
 
 /**
  * The candidate to link: the repository named on the command line, else the best one found.
- * Refused without `--yes` when its files differ from the library copy.
+ * Refused without `--allow-different` when its files differ from the library copy.
  */
 async function chooseCandidate(
   context: CommandContext,

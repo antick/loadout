@@ -4,7 +4,8 @@ import {
   type DuplicatePair,
   type DuplicateReason,
   REMOVED_KEEP_DAYS,
-  formatSimilarity,
+  formatPercent,
+  pairScore,
 } from "@loadout/shared";
 import { UsageError, flagBoolean, flagString } from "../args";
 import { plural, table } from "../output";
@@ -47,7 +48,7 @@ function pairRow(core: Core, pair: DuplicatePair): (string | boolean)[] {
     nameOf(core, pair.a),
     nameOf(core, pair.b),
     REASON_TEXT[pair.reason],
-    formatSimilarity(Math.max(pair.contentScore, pair.nameScore)),
+    formatPercent(pairScore(pair)),
     pair.dismissed,
   ];
 }

@@ -105,7 +105,7 @@ export function duplicatePairKey(idA: string, idB: string): string {
   return idA < idB ? `${idA}:${idB}` : `${idB}:${idA}`;
 }
 
-/** "94%": a score for a person to read. */
-export function formatSimilarity(score: number): string {
-  return `${Math.round(Math.min(Math.max(score, 0), 1) * 100)}%`;
+/** How sure a pair is: the higher of its text and name likeness, 0 to 1. */
+export function pairScore(pair: { contentScore: number; nameScore: number }): number {
+  return Math.max(pair.contentScore, pair.nameScore);
 }

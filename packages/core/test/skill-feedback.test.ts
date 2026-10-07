@@ -14,7 +14,7 @@ const fromGit = (url: string, extra = {}) =>
   skillRecord("code-review", {
     sourceType: "git",
     sourceUrl: url,
-    sourceRevision: "0123456789abcdef0123",
+    sourceRevision: "0123456789abcdef0123456789abcdef01234567",
     sourceBranch: "main",
     sourceSubpath: "skills/code-review",
     libraryPath: "/Users/someone/.loadout/skills/code-review",
@@ -107,7 +107,7 @@ describe("skill feedback: the report", () => {
         "",
         "- Skill: `code-review`",
         "- Where in the repository: folder `skills/code-review`, branch `main`",
-        "- Installed revision: `0123456789`",
+        "- Installed revision: `0123456`",
         "- Reported from Loadout 0.1.0",
         "",
       ].join("\n"),

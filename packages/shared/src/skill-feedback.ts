@@ -1,3 +1,4 @@
+import { formatRevision } from "./format";
 import { normalizeSourceUrl } from "./sources";
 import type { Skill } from "./types";
 
@@ -17,8 +18,6 @@ export const FEEDBACK_TITLE_MAX = 100;
  * clipboard, the CLI prints it.
  */
 export const FEEDBACK_URL_MAX = 6000;
-/** Characters of the installed revision named in the report. */
-const REVISION_SHORT = 10;
 
 export type FeedbackHost = "github" | "gitlab";
 
@@ -118,7 +117,7 @@ function contextLines(skill: Skill, options: SkillFeedbackOptions): string[] {
   if (skill.sourceBranch) where.push(`branch ${codeSpan(skill.sourceBranch)}`);
   if (where.length > 0) lines.push(`- Where in the repository: ${where.join(", ")}`);
   if (skill.sourceRevision) {
-    lines.push(`- Installed revision: ${codeSpan(skill.sourceRevision.slice(0, REVISION_SHORT))}`);
+    lines.push(`- Installed revision: ${codeSpan(formatRevision(skill.sourceRevision))}`);
   }
   if (skill.editedFiles.length > 0) {
     lines.push(

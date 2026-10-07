@@ -16,6 +16,7 @@ import { useCancelAppUpdate, useCheckAppUpdate } from "@/hooks/mutations/app-upd
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { useDownloadAppUpdate, useInstallAppUpdate } from "@/hooks/mutations/app-update";
 import { useAppInfo, useAppUpdate } from "@/hooks/queries/app";
+import { PERCENT } from "@/lib/constants";
 
 /** A newer version is known and this copy could fetch it. */
 function canDownload(status: AppUpdateStatus): boolean {
@@ -108,7 +109,7 @@ export function AppUpdatePanel(): ReactNode {
           </span>
           {status.phase === "downloading" && progress ? (
             <Progress
-              value={progress.total > 0 ? (progress.received / progress.total) * 100 : 0}
+              value={progress.total > 0 ? (progress.received / progress.total) * PERCENT : 0}
               aria-label={t("settings.about.downloadProgress")}
             />
           ) : null}

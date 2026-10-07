@@ -22,6 +22,8 @@ export const SECOND_MS = 1000;
 export const MINUTE_MS = 60 * SECOND_MS;
 export const HOUR_MS = 60 * MINUTE_MS;
 export const DAY_MS = 24 * HOUR_MS;
+/** One mebibyte: the chunk size for streamed reads and the unit of file limits. */
+export const MIB = 1024 * 1024;
 /** Where the library lives when it is not in the home data folder. Kept in the home folder. */
 export const LIBRARY_CONFIG_FILE = "library.json";
 /** Published command-line tool, in the home data folder. */
@@ -97,8 +99,8 @@ export const AGENT_CONTROL_SKILL_NAME = "manage-skills";
 export const DEFAULT_BACKUP_REPO_NAME = `${APP_SLUG}-backup`;
 export const DEFAULT_BACKUP_COMMIT_MESSAGE = "backup: sync skills library";
 
-export const BACKUP_SKILL_LIMIT_BYTES = 100 * 1024 * 1024;
-export const BACKUP_REPO_WARN_BYTES = 1024 * 1024 * 1024;
+export const BACKUP_SKILL_LIMIT_BYTES = 100 * MIB;
+export const BACKUP_REPO_WARN_BYTES = 1024 * MIB;
 /**
  * A sync that would delete more skills here than this, because another device deleted them,
  * stops and asks first. So does one deleting at least `BACKUP_DELETE_GUARD_MIN` that are more
@@ -148,8 +150,6 @@ export function isArchivePath(path: string): boolean {
  */
 export const NEW_FILE_HASH = "";
 
-/** One mebibyte: the chunk size for streamed reads and the unit of file limits. */
-export const MIB = 1024 * 1024;
 /** Streamed text (session logs, secret scans, archives) is read this much at a time. */
 export const STREAM_CHUNK_BYTES = MIB;
 /** A single skill file fetched from the web is refused above this size. */

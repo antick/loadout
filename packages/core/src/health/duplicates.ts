@@ -3,7 +3,8 @@ import {
   type DuplicatesReport,
   type HealthFinding,
   type Skill,
-  formatSimilarity,
+  formatPercent,
+  pairScore,
 } from "@loadout/shared";
 
 const WHY = {
@@ -22,8 +23,6 @@ export function duplicateFindings(
     area: "duplicates" as const,
     severity: "info" as const,
     skill: nameOf.get(pair.a) ?? pair.a,
-    message: `${WHY[pair.reason]} "${nameOf.get(pair.b) ?? pair.b}" (${formatSimilarity(
-      Math.max(pair.contentScore, pair.nameScore),
-    )} alike). See \`${CLI_COMMANDS.duplicates}\`.`,
+    message: `${WHY[pair.reason]} "${nameOf.get(pair.b) ?? pair.b}" (${formatPercent(pairScore(pair))} alike). See \`${CLI_COMMANDS.duplicates}\`.`,
   }));
 }

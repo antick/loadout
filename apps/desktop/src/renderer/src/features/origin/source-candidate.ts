@@ -1,5 +1,6 @@
 import type { SourceCandidate, SourceEvidence } from "@loadout/shared";
 import type { StatusTone } from "@/components/StatusBadge";
+import { PERCENT } from "@/lib/constants";
 
 /** Changed files listed under a candidate before the rest are counted. */
 export const CANDIDATE_FILES_SHOWN = 4;
@@ -26,7 +27,7 @@ export function matchLabel(
   }
   return {
     key: "origin.match.different",
-    values: { percent: Math.round(candidate.similarity * 100) },
+    values: { percent: Math.round(candidate.similarity * PERCENT) },
   };
 }
 

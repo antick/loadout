@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
 import { useSetSetting } from "@/hooks/mutations/settings";
-import { LISTING_SKILLS_SHOWN } from "@/lib/constants";
+import { LISTING_SKILLS_SHOWN, PERCENT } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { ShowMoreButton } from "@/components/ShowMoreButton";
 
@@ -27,7 +27,7 @@ export interface ListingBudgetCardProps {
 
 /** Share of the budget used, 0 to 100 (more is capped for the bar). */
 function percentUsed(report: SkillListingReport): number {
-  return report.budget > 0 ? Math.round((report.used / report.budget) * 100) : 0;
+  return report.budget > 0 ? Math.round((report.used / report.budget) * PERCENT) : 0;
 }
 
 function EntryRow({ entry, agentName }: { entry: ListingEntry; agentName: string }): ReactNode {
