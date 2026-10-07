@@ -14,9 +14,9 @@ const SERVER_STOP_TIMEOUT_MS = 10_000;
 // machine.
 const TEST_TIMEOUT_MS = 60_000;
 const EXPECT_TIMEOUT_MS = 15_000;
-// Each worker runs its own core and Git; more than two swamps an ordinary machine. CI keeps
-// Playwright's own choice for its runners.
-const LOCAL_WORKERS = 2;
+// Each worker runs its own core, Git and browser; even two slow an ordinary machine down for
+// everything else on it. CI keeps Playwright's own choice for its runners.
+const LOCAL_WORKERS = 1;
 
 export default defineConfig({
   testDir: "./e2e",
