@@ -73,6 +73,8 @@ interface Conflict {
 
 const NO_FILES: readonly SkillFileEntry[] = [];
 const NO_FOLDERS: readonly string[] = [];
+/** A loading or error state laid over the editor, which stays mounted underneath. */
+const OVER_EDITOR_CLASS = "absolute inset-0 z-10 bg-background";
 
 function pickPath(files: readonly SkillFileEntry[], requested: string | null): string | null {
   const editable = files.filter((file) => file.locked === null);
@@ -131,6 +133,11 @@ export function EditorWorkspace({
   }, [file.data, sync]);
 
   const current = activePath ? session.sessions[activePath] : undefined;
+  // The editor stays on the last document while the next one loads or fails to: unmounting it
+  // would throw away the undo history it keeps for every open file.
+  const [shownPath, setShownPath] = useState(activePath);
+  if (current && shownPath !== current.path) setShownPath(current.path);
+  const shown = current ?? (shownPath ? session.sessions[shownPath] : undefined);
   const language = languageFor(activePath ?? "");
   const view = language.previewable && EDITOR_VIEWS.includes(storedView) ? storedView : "edit";
   const draft = current?.draft ?? "";
@@ -356,35 +363,40 @@ export function EditorWorkspace({
         ) : null}
 
         {/* A narrow editor stacks the preview underneath instead of squeezing both. */}
-        <div className="@container flex min-h-0 flex-1">
-          {file.isError && !deleted ? (
-            <ErrorState error={file.error} onRetry={() => void file.refetch()} className="flex-1" />
-          ) : !current ? (
-            <div className="flex flex-1 flex-col gap-2 p-4">
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-3/5" />
-            </div>
-          ) : (
+        <div className="@container relative flex min-h-0 flex-1">
+          {shown ? (
             <EditorSplit
               view={view}
               editor={
                 <CodeEditor
                   ref={editorRef}
-                  docKey={current.path}
+                  docKey={shown.path}
                   unsavedKeys={session.dirtyPaths}
-                  value={current.draft}
+                  value={shown.draft}
                   language={language}
                   wrap={wrap}
-                  ariaLabel={t("editor.ariaLabel", { path: current.path })}
-                  onChange={(text) => session.setDraft(current.path, text)}
+                  ariaLabel={t("editor.ariaLabel", { path: shown.path })}
+                  onChange={(text) => session.setDraft(shown.path, text)}
                   onSave={saveActive}
                   onCursor={setCursor}
                 />
               }
               preview={<MarkdownView content={previewText} />}
             />
-          )}
+          ) : null}
+          {file.isError && !deleted ? (
+            <ErrorState
+              error={file.error}
+              onRetry={() => void file.refetch()}
+              className={shown ? `${OVER_EDITOR_CLASS} flex-1` : "flex-1"}
+            />
+          ) : !current ? (
+            <div className={`${shown ? OVER_EDITOR_CLASS : ""} flex flex-1 flex-col gap-2 p-4`}>
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-3/5" />
+            </div>
+          ) : null}
         </div>
 
         <EditorStatusBar

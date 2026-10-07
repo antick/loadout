@@ -75,3 +75,23 @@ test("discarding unsaved drafts in Settings asks first, saying how many", async 
   await ask.getByRole("button", { name: "Discard" }).click();
   await expect.poll(() => storedDrafts(page)).toEqual([]);
 });
+
+test("opening another file keeps the undo history of the one left", async ({ page }) => {
+  await openApp(page, "/library");
+  await main(page).getByRole("button", { name: "code-review", exact: true }).click();
+  await openEditor(page);
+  const files = page.getByRole("navigation", { name: "Files of the skill" });
+
+  const skill = page.getByRole("textbox", { name: "Contents of SKILL.md" });
+  await skill.click();
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.keyboard.type("\nOne more line.");
+  // A file not opened before: the editor waits for it to load.
+  await files.getByRole("button", { name: /examples\.md/ }).click();
+  await expect(page.getByRole("textbox", { name: "Contents of examples.md" })).toBeVisible();
+  await files.getByRole("button", { name: /SKILL\.md/ }).click();
+
+  await skill.click();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(skill).not.toContainText("One more line.");
+});
