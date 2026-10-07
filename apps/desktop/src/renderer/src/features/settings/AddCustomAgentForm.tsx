@@ -1,7 +1,7 @@
-import { FolderOpen, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IconButton } from "@/components/IconButton";
+import { FolderField } from "@/components/FolderField";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { WslFolderNote } from "@/components/WslFolderNote";
 import { useAddCustomAgent } from "@/features/settings/settings-mutations";
-import { usePickFolder } from "@/hooks/mutations/app";
 import { errorMessage } from "@/lib/toast";
 
 /** Add an agent the app does not know: a name, its skills folder, optionally a project folder. */
@@ -22,7 +21,6 @@ export function AddCustomAgentForm(): ReactNode {
   const [skillsDir, setSkillsDir] = useState("");
   const [projectDir, setProjectDir] = useState("");
   const add = useAddCustomAgent();
-  const pickFolder = usePickFolder();
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
@@ -60,29 +58,13 @@ export function AddCustomAgentForm(): ReactNode {
         </Field>
         <Field>
           <FieldLabel htmlFor={dirId}>{t("settings.agents.custom.skillsDir")}</FieldLabel>
-          <div className="flex gap-1">
-            <Input
-              id={dirId}
-              value={skillsDir}
-              spellCheck={false}
-              placeholder={t("settings.agents.custom.skillsDirPlaceholder")}
-              className="font-mono text-sm"
-              onChange={(event) => setSkillsDir(event.target.value)}
-            />
-            <IconButton
-              variant="outline"
-              size="icon"
-              label={t("settings.agents.browse")}
-              icon={<FolderOpen />}
-              onClick={() =>
-                pickFolder.mutate(t("settings.agents.custom.skillsDir"), {
-                  onSuccess: (picked) => {
-                    if (picked) setSkillsDir(picked);
-                  },
-                })
-              }
-            />
-          </div>
+          <FolderField
+            id={dirId}
+            value={skillsDir}
+            onChange={setSkillsDir}
+            placeholder={t("settings.agents.custom.skillsDirPlaceholder")}
+            pickerTitle={t("settings.agents.custom.skillsDir")}
+          />
           <WslFolderNote path={skillsDir} hint />
         </Field>
         <Field className="md:col-span-2">
