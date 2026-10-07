@@ -9,7 +9,6 @@ import {
   highlightActiveLineGutter,
   keymap,
   lineNumbers,
-  placeholder as placeholderText,
 } from "@codemirror/view";
 import { type ReactNode, type Ref, useEffect, useImperativeHandle, useRef } from "react";
 import type { CodeLanguage } from "@/features/editor/code-languages";
@@ -38,7 +37,6 @@ export interface CodeEditorProps {
   value: string;
   language: CodeLanguage;
   wrap: boolean;
-  placeholder?: string;
   ariaLabel: string;
   onChange(value: string): void;
   onSave(): void;
@@ -68,7 +66,6 @@ export function CodeEditor({
   value,
   language,
   wrap,
-  placeholder,
   ariaLabel,
   onChange,
   onSave,
@@ -85,11 +82,11 @@ export function CodeEditor({
     wrap: new Compartment(),
     label: new Compartment(),
   });
-  const settings = useRef({ language, wrap, placeholder, ariaLabel });
+  const settings = useRef({ language, wrap, ariaLabel });
 
   useEffect(() => {
     callbacks.current = { onChange, onSave, onCursor };
-    settings.current = { language, wrap, placeholder, ariaLabel };
+    settings.current = { language, wrap, ariaLabel };
   });
 
   useImperativeHandle(
@@ -112,11 +109,10 @@ export function CodeEditor({
   );
 
   function labelExtensions(): Extension {
-    const { ariaLabel: label, placeholder: hint } = settings.current;
-    return [
-      EditorView.contentAttributes.of({ "aria-label": label, spellcheck: "true" }),
-      hint ? placeholderText(hint) : [],
-    ];
+    return EditorView.contentAttributes.of({
+      "aria-label": settings.current.ariaLabel,
+      spellcheck: "true",
+    });
   }
 
   function createState(doc: string): EditorState {
@@ -234,7 +230,7 @@ export function CodeEditor({
       effects: compartments.current.label.reconfigure(labelExtensions()),
     });
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [ariaLabel, placeholder]);
+  }, [ariaLabel]);
 
   return <div ref={hostRef} data-selectable className="h-full min-h-0 overflow-hidden" />;
 }

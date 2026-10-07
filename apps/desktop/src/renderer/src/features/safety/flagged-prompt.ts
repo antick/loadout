@@ -40,7 +40,7 @@ export function getFlaggedPrompt(): FlaggedPrompt | null {
 }
 
 /** Ask, and resolve with the answer. A newer question answers an open one with "no". */
-export function askToInstallFlagged(
+function askToInstallFlagged(
   details: ErrorDetails | undefined,
   action: FlaggedAction = "install",
 ): Promise<boolean> {

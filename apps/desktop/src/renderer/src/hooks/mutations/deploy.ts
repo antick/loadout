@@ -74,7 +74,7 @@ export async function revertDeployment(
 }
 
 /** Deploy one skill to one agent; the badge flips immediately and rolls back on failure. */
-export function useDeploySkill(): UseMutationResult<void, unknown, DeployPairInput, CacheSnapshot> {
+function useDeploySkill(): UseMutationResult<void, unknown, DeployPairInput, CacheSnapshot> {
   const queryClient = useQueryClient();
   return useApiMutation({
     fn: ({ skillId, agentKey }: DeployPairInput) => api.deploy.deploy(skillId, agentKey),

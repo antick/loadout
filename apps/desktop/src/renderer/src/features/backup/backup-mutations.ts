@@ -71,26 +71,22 @@ export interface StartBackupInput {
   isRepo: boolean;
 }
 
-export interface StartBackupResult {
-  mode: StartBackupInput["mode"];
-  outcome: SyncOutcome | null;
-}
-
 /** Wire the library to a remote for the first time, either restoring from it or filling it. */
-export function useStartBackup(): UseMutationResult<StartBackupResult, unknown, StartBackupInput> {
+/** Resolves to the sync's outcome when it filled the remote, null when it restored from it. */
+export function useStartBackup(): UseMutationResult<SyncOutcome | null, unknown, StartBackupInput> {
   const { t } = useTranslation();
   return useBackupMutation({
     fn: async ({ url, mode, isRepo }: StartBackupInput) => {
       if (mode === "restore") {
         if (isRepo) await api.backup.setRemote(url);
         else await api.backup.clone(url);
-        return { mode, outcome: null };
+        return null;
       }
       if (!isRepo) await api.backup.init();
       await api.backup.setRemote(url);
-      return { mode, outcome: await api.backup.sync() };
+      return api.backup.sync();
     },
-    onSuccess: ({ outcome }, { isRepo }) => {
+    onSuccess: (outcome, { isRepo }) => {
       if (outcome) toastSyncOutcome(outcome, t);
       else toastSuccess(t(isRepo ? "backupPage.toast.remoteSaved" : "backupPage.toast.restored"));
     },

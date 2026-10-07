@@ -18,13 +18,12 @@ import { useEditorFileVersions } from "@/features/editor/editor-queries";
 export interface VersionsMenuProps {
   location: SkillLocation;
   path: string | null;
-  disabled?: boolean;
   /** A version was picked; the caller loads it into the editor. */
   onPick(versionId: string, savedAt: number): void;
 }
 
 /** Earlier saved versions of the open file, kept on this computer, newest first. */
-export function VersionsMenu({ location, path, disabled, onPick }: VersionsMenuProps): ReactNode {
+export function VersionsMenu({ location, path, onPick }: VersionsMenuProps): ReactNode {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const versions = useEditorFileVersions(location, path, open);
@@ -35,7 +34,7 @@ export function VersionsMenu({ location, path, disabled, onPick }: VersionsMenuP
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label={label} disabled={disabled || !path}>
+            <Button variant="ghost" size="icon-sm" aria-label={label} disabled={!path}>
               <History />
             </Button>
           </DropdownMenuTrigger>

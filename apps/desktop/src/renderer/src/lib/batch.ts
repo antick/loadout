@@ -12,7 +12,7 @@ export function soleItem<T>(items: readonly T[]): T | undefined {
  * Run one job per item, one after the other, and collect what failed. Used where the backend has
  * no batch call and the jobs touch the same folders, so they must not overlap.
  */
-export async function runSequentially<T>(
+async function runSequentially<T>(
   items: readonly T[],
   nameOf: (item: T) => string,
   job: (item: T) => Promise<unknown>,

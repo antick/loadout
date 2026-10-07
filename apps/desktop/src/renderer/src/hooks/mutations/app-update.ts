@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { keys } from "@/lib/query-keys";
 
 /** The update actions all answer with the new status; keep the cached one in step. */
-export function useUpdateAction(
+function useUpdateAction(
   action: () => Promise<AppUpdateStatus>,
   fallbackKey: string,
 ): UseMutationResult<AppUpdateStatus, unknown, void> {

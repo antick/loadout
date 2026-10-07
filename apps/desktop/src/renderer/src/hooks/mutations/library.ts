@@ -34,7 +34,7 @@ export function useUpdateSkills(): UseMutationResult<BatchUpdateResult, unknown,
 }
 
 /** Remove skills from the library (and every agent they were deployed to). Toasts the counts. */
-export function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown, string[]> {
+function useRemoveSkills(): UseMutationResult<RemoveSkillsResult, unknown, string[]> {
   const { t } = useTranslation();
   return useApiMutation({
     fn: (skillIds: string[]) => api.skills.removeMany(skillIds),
