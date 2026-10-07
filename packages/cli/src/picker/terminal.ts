@@ -40,31 +40,56 @@ export function pickInTerminal(
     output.write(`${CLEAR}${lines.join("\r\n")}`);
   };
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const wasRaw = input.isRaw;
-    const finish = (keys: string[] | null): void => {
+    let restored = false;
+    // Also on the way out of a process that exits meanwhile: never a raw terminal left behind.
+    const restore = (): void => {
+      if (restored) return;
+      restored = true;
       input.off("keypress", onKey);
-      output.off("resize", draw);
+      output.off("resize", redraw);
+      process.off("exit", restore);
       input.setRawMode(wasRaw);
       input.pause();
       output.write(LEAVE_SCREEN);
-      resolve(keys);
     };
-    const onKey = (_text: string | undefined, key: PickerKey | undefined): void => {
-      const step = pickerStep(state, key ?? {});
-      if (step.type === "confirm") finish(step.keys);
-      else if (step.type === "cancel") finish(null);
-      else {
-        state = step.state;
+    const fail = (error: unknown): void => {
+      restore();
+      reject(error);
+    };
+    const redraw = (): void => {
+      try {
         draw();
+      } catch (error) {
+        fail(error);
       }
     };
-    emitKeypressEvents(input);
-    input.setRawMode(true);
-    input.resume();
-    input.on("keypress", onKey);
-    output.on("resize", draw);
-    output.write(ENTER_SCREEN);
-    draw();
+    const onKey = (_text: string | undefined, key: PickerKey | undefined): void => {
+      try {
+        const step = pickerStep(state, key ?? {});
+        if (step.type === "confirm" || step.type === "cancel") {
+          restore();
+          resolve(step.type === "confirm" ? step.keys : null);
+          return;
+        }
+        state = step.state;
+        draw();
+      } catch (error) {
+        fail(error);
+      }
+    };
+    process.on("exit", restore);
+    try {
+      emitKeypressEvents(input);
+      input.setRawMode(true);
+      input.resume();
+      input.on("keypress", onKey);
+      output.on("resize", redraw);
+      output.write(ENTER_SCREEN);
+      draw();
+    } catch (error) {
+      fail(error);
+    }
   });
 }

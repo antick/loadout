@@ -1,7 +1,9 @@
+import { EventEmitter } from "node:events";
 import { join } from "node:path";
 import type { LibraryNameEntry, RepoSkillPreview } from "@loadout/shared";
 import { describe, expect, it } from "vitest";
 import { PLAIN_STYLES, renderPicker } from "../src/picker/render";
+import { pickInTerminal } from "../src/picker/terminal";
 import {
   NOTHING_TICKED,
   type PickRequest,
@@ -217,5 +219,48 @@ describe("skills install with the picker", () => {
       plain.cleanup();
       pack.cleanup();
     }
+  });
+});
+
+/** Stand-in terminal ends; `failDrawing` makes the screen fail the way a closed pipe would. */
+function terminal(failDrawing: boolean) {
+  const input = Object.assign(new EventEmitter(), {
+    isRaw: false,
+    rawModes: [] as boolean[],
+    setRawMode(mode: boolean) {
+      this.rawModes.push(mode);
+      return this;
+    },
+    resume() {
+      return this;
+    },
+    pause() {
+      return this;
+    },
+  });
+  const written: string[] = [];
+  const output = Object.assign(new EventEmitter(), {
+    columns: 80,
+    rows: 24,
+    write(text: string) {
+      if (failDrawing && text.includes("\u001B[2J")) throw new Error("EPIPE");
+      written.push(text);
+      return true;
+    },
+  });
+  return { input, output, written };
+}
+
+describe("the picker in a terminal", () => {
+  it("puts the terminal back when drawing fails, and says why", async () => {
+    const { input, output, written } = terminal(true);
+    const picking = pickInTerminal(
+      { input: input as never, output: output as never, color: false },
+      { source: "acme/skills", skills: [row("pdf")], library: [], selected: null },
+    );
+    await expect(picking).rejects.toThrow("EPIPE");
+    expect(input.rawModes).toEqual([true, false]);
+    expect(written.at(-1)).toBe("\u001B[?25h\u001B[?1049l");
+    expect(input.listenerCount("keypress")).toBe(0);
   });
 });
