@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { PageSection } from "@/components/PageSection";
 import { PathActions } from "@/components/PathActions";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
 import { PLUGIN_SKILLS_SHOWN } from "@/lib/constants";
+import { ShowMoreButton } from "@/components/ShowMoreButton";
 
 export interface PluginSkillsSectionProps {
   agentName: string;
@@ -97,18 +97,11 @@ export function PluginSkillsSection({
           );
         })}
       </ul>
-      {hidden > 0 || expanded ? (
-        <Button
-          size="xs"
-          variant="link"
-          className="h-auto self-start px-0 text-muted-foreground"
-          onClick={() => setExpanded((open) => !open)}
-        >
-          {expanded
-            ? t("agents.plugins.showFewer")
-            : t("agents.plugins.showAll", { count: hidden })}
-        </Button>
-      ) : null}
+      <ShowMoreButton
+        expanded={expanded}
+        hidden={hidden}
+        onToggle={() => setExpanded((open) => !open)}
+      />
     </PageSection>
   );
 }

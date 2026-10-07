@@ -24,7 +24,6 @@
     "cutHint": "Its description is longer than {{agent}} keeps, so the end is cut.",
     "showAll_one": "Show all {{count}} listed skill",
     "showAll_other": "Show all {{count}} listed skills",
-    "showFewer": "Show fewer",
     "details": "Details",
     "hideDetails": "Hide details"
   }

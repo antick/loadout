@@ -40,10 +40,7 @@
       "description": "{{agent}}'s plugins bring these skills. Its plugin manager owns them, so they are shown here only; turn plugins on or off with /plugin in {{agent}}.",
       "off": "Plugin off",
       "twice": "Also in this folder",
-      "twiceHint": "A skill with this name is also in {{agent}}'s skills folder, so {{agent}} loads it twice.",
-      "showAll_one": "Show {{count}} more",
-      "showAll_other": "Show {{count}} more",
-      "showFewer": "Show fewer"
+      "twiceHint": "A skill with this name is also in {{agent}}'s skills folder, so {{agent}} loads it twice."
     },
     "broken": {
       "title_one": "{{count}} folder here is not a skill",
@@ -58,9 +55,6 @@
       "linkedTo": "linked to {{target}}",
       "managedHint": "{{app}} put this copy here. Deploy the skill again from the library to repair it.",
       "delete": "Delete",
-      "showAll_one": "Show {{count}} more",
-      "showAll_other": "Show {{count}} more",
-      "showFewer": "Show fewer",
       "confirm": {
         "title": "Delete “{{name}}”?",
         "folderDescription": "{{path}} goes to Recently removed in Settings → Storage, where it is kept for {{removedDays}} days.",

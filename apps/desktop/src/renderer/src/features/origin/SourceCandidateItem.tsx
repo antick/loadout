@@ -65,7 +65,7 @@ export function SourceCandidateItem({
             ))}
             {hidden > 0 ? (
               <li className="font-sans text-muted-foreground">
-                {t("origin.moreFiles", { count: hidden })}
+                {t("common.andMore", { count: hidden })}
               </li>
             ) : null}
           </ul>

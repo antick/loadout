@@ -39,8 +39,6 @@
     "at": "{{path}} on {{branch}}",
     "atDefault": "{{path}}",
     "root": "top folder",
-    "moreFiles_one": "and {{count}} more",
-    "moreFiles_other": "and {{count}} more",
     "badge": "Mine",
     "batch": {
       "open": "Find sources…",

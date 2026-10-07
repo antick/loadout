@@ -10,6 +10,7 @@ import { useDeleteBrokenFolder } from "@/features/agents/workspace-mutations";
 import { useAppInfo } from "@/hooks/queries/app";
 import { compactHome } from "@/lib/paths";
 import { BROKEN_FOLDERS_SHOWN, brokenFolderProblem } from "./broken-folders";
+import { ShowMoreButton } from "@/components/ShowMoreButton";
 
 export interface BrokenFoldersNoticeProps {
   agentKey: string;
@@ -43,16 +44,12 @@ export function BrokenFoldersNotice({
           <BrokenFolderRow key={folder.relativePath} agentKey={agentKey} folder={folder} />
         ))}
       </ul>
-      {hidden > 0 || expanded ? (
-        <Button
-          size="xs"
-          variant="link"
-          className="mt-1 h-auto px-0 text-foreground/80"
-          onClick={() => setExpanded((open) => !open)}
-        >
-          {expanded ? t("agents.broken.showFewer") : t("agents.broken.showAll", { count: hidden })}
-        </Button>
-      ) : null}
+      <ShowMoreButton
+        expanded={expanded}
+        hidden={hidden}
+        onToggle={() => setExpanded((open) => !open)}
+        className="mt-1 text-foreground/80"
+      />
     </InlineNotice>
   );
 }

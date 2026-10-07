@@ -18,8 +18,6 @@
     "checked": "Checked {{when}}",
     "neverChecked": "Not checked yet",
     "skillsFrom": "Skills from {{source}}",
-    "andMore_one": "and {{count}} more",
-    "andMore_other": "and {{count}} more",
     "browse": "Find new skills",
     "update_one": "Update {{count}}",
     "update_other": "Update {{count}}",

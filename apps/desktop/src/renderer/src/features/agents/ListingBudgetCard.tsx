@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { LISTING_SKILLS_SHOWN } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { ShowMoreButton } from "@/components/ShowMoreButton";
 
 export interface ListingBudgetCardProps {
   report: SkillListingReport;
@@ -153,18 +154,12 @@ export function ListingBudgetCard({ report }: ListingBudgetCardProps): ReactNode
                     <EntryRow key={entry.path} entry={entry} agentName={agent} />
                   ))}
                 </ul>
-                {more > 0 || showAll ? (
-                  <Button
-                    size="xs"
-                    variant="link"
-                    className="h-auto self-start px-0 text-muted-foreground"
-                    onClick={() => setShowAll((all) => !all)}
-                  >
-                    {showAll
-                      ? t("listing.showFewer")
-                      : t("listing.showAll", { count: listed.length })}
-                  </Button>
-                ) : null}
+                <ShowMoreButton
+                  expanded={showAll}
+                  hidden={more}
+                  onToggle={() => setShowAll((all) => !all)}
+                  moreLabel={t("listing.showAll", { count: listed.length })}
+                />
               </div>
             ) : null}
           </CollapsibleContent>

@@ -177,7 +177,7 @@ export function SourceCard({
         ))}
         {hidden > 0 ? (
           <li className="inline-flex h-6 items-center px-1 text-xs text-muted-foreground">
-            {t("sources.andMore", { count: hidden })}
+            {t("common.andMore", { count: hidden })}
           </li>
         ) : null}
       </ul>
