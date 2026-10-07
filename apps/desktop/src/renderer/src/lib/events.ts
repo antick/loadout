@@ -59,9 +59,11 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
     keys.system.repair,
     keys.storage.root,
     // Editing a skill can add or remove something the backup would hold back, and changes what
-    // an open sync review would save.
+    // an open sync review would save and the "here" side of its diffs.
     keys.backup.secrets,
     keys.backup.localTreeRoot,
+    keys.backup.previewDiffRoot,
+    keys.backup.conflictDiffRoot,
     // Reports say whether they are stale by comparing content hashes.
     keys.safety.root,
     // Runs are matched to skills by name.
@@ -87,7 +89,7 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
 };
 
 /** Invalidate everything that depends on the given data scopes. */
-function invalidateScopes(queryClient: QueryClient, scopes: readonly DataScope[]): void {
+export function invalidateScopes(queryClient: QueryClient, scopes: readonly DataScope[]): void {
   const seen = new Set<string>();
   for (const scope of scopes) {
     for (const queryKey of SCOPE_KEYS[scope] ?? []) {

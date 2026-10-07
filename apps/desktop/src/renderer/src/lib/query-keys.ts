@@ -119,6 +119,8 @@ export const keys = {
     previewDiff: (skillId: string, remoteCommit: string) =>
       ["backup", "preview-diff", skillId, remoteCommit] as const,
     conflictDiff: (skillKey: string) => ["backup", "conflict-diff", skillKey] as const,
+    previewDiffRoot: ["backup", "preview-diff"] as const,
+    conflictDiffRoot: ["backup", "conflict-diff"] as const,
   },
   publish: {
     root: ["publish"] as const,
