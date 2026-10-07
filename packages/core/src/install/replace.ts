@@ -3,7 +3,7 @@ import type { CoreContext } from "../context";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
-import { LIBRARY_PLACE } from "../storage/removed-library";
+import { LIBRARY_PLACE } from "@loadout/shared";
 import { hashDir } from "../util/hash";
 import type { InstallIntoLibrary, InstallRequest } from "./library";
 

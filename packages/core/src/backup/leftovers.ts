@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { HOUR_MS } from "@loadout/shared";
-import { LIBRARY_PLACE } from "../storage/removed-library";
+import { LIBRARY_PLACE } from "@loadout/shared";
 import { readDirSafe, removePath, statOrNull } from "../util/fs";
 import { CLONE_DIR_PREFIX } from "./clone";
 import type { BackupEnv } from "./env";

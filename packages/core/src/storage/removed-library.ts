@@ -8,9 +8,6 @@ import { hashDir } from "../util/hash";
 import { asStrings } from "../util/json";
 import { isPlainName } from "../util/safe-path";
 
-/** Where a removed library skill lived, for people. */
-export const LIBRARY_PLACE = "Library";
-
 /**
  * Everything a library skill had besides its files, kept with it in Recently removed so a
  * restore brings back the same skill: its id, where it came from, its tags and presets, the

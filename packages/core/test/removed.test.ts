@@ -16,7 +16,7 @@ import { createGitClient } from "../src/install/git-client";
 import { installIntoLibrary } from "../src/install/library";
 import { createWorkspaceService } from "../src/workspace";
 import { type StorageService, createStorageService } from "../src/storage";
-import { LIBRARY_PLACE } from "../src/storage/removed-library";
+import { LIBRARY_PLACE } from "@loadout/shared";
 import { makeSkill, writeFile } from "./helpers";
 import {
   type WorkspaceWorld,

@@ -28,7 +28,7 @@ import type { SafetyGate } from "../install/safety-gate";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 
 import type { RemovedStore } from "../storage/removed";
-import { LIBRARY_PLACE } from "../storage/removed-library";
+import { LIBRARY_PLACE } from "@loadout/shared";
 
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { sourceGuard } from "./check";

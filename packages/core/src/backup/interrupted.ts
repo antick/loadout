@@ -11,7 +11,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { SECOND_MS, isRecord } from "@loadout/shared";
 import { AppError } from "../errors";
 import { writerGone } from "../lock";
-import { LIBRARY_PLACE } from "../storage/removed-library";
+import { LIBRARY_PLACE } from "@loadout/shared";
 import {
   GIT_DIR,
   ensureDir,

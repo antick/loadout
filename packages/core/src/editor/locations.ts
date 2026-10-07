@@ -16,6 +16,7 @@ import { describeLocalSkill, indexLibrary, matchLibrarySkill } from "../workspac
 import type { EditableFolder } from "./files";
 import { projectHistoryPrefix } from "./history";
 import { PLACE_SEPARATOR } from "../util/text";
+import { LIBRARY_PLACE } from "@loadout/shared";
 
 /** A skill folder the editor works on, with everything a save needs to know about it. */
 export interface ResolvedLocation {
@@ -39,7 +40,6 @@ export interface LocationDeps {
   instructions: InstructionFinder;
 }
 
-const LIBRARY_LABEL = "Library";
 
 function library(skill: Skill): ResolvedLocation {
   return {
@@ -52,7 +52,7 @@ function library(skill: Skill): ResolvedLocation {
       name: skill.name,
       folderName: skill.dirName,
       path: skill.libraryPath,
-      placeLabel: LIBRARY_LABEL,
+      placeLabel: LIBRARY_PLACE,
       otherCopies: [],
     },
   };

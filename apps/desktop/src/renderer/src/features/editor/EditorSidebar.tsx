@@ -1,5 +1,5 @@
-import type { EditTarget, SkillFileEntry } from "@loadout/shared";
 import { formatNameList } from "@loadout/shared";
+import type { EditTarget, SkillFileEntry } from "@loadout/shared";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { ChevronLeft, Copy } from "lucide-react";
 import type { ReactNode } from "react";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EditorFileList } from "@/features/editor/EditorFileList";
 import type { FileActions } from "@/features/editor/EditorFileMenu";
 import { ACTIVITY_BAR_WIDTH_PX, MAC_WINDOW_CONTROLS_WIDTH_PX } from "@/lib/constants";
+import { placeText } from "@/lib/place-text";
 
 export interface EditorSidebarProps {
   target: EditTarget;
@@ -74,7 +75,7 @@ export function EditorSidebar({
             {target.name}
           </p>
           <p data-selectable className="truncate text-xs text-muted-foreground">
-            {target.placeLabel}
+            {placeText(target.placeLabel)}
           </p>
         </div>
         <SidebarSeparator className="mx-3 data-[orientation=horizontal]:w-auto" />

@@ -26,6 +26,7 @@ import {
 } from "@/features/settings/storage-mutations";
 import { useRemovedFolders } from "@/features/settings/storage-queries";
 import { Skeletons } from "@/components/Skeletons";
+import { placeText } from "@/lib/place-text";
 
 const SKELETON_ROWS = 2;
 
@@ -117,7 +118,7 @@ export function RecentlyRemovedPanel(): ReactNode {
                     date: formatDate(entry.expiresAt),
                   })}
                 >
-                  {entry.place}
+                  {placeText(entry.place)}
                   {" · "}
                   {formatRelative(entry.removedAt)}
                   {" · "}

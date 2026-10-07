@@ -1,5 +1,10 @@
 export const APP_NAME = "Loadout";
 export const APP_ID = "sh.potion.loadout";
+/**
+ * The place name core gives the library itself (in Recently removed, the editor's header); the
+ * app shows its own word for it, `placeText` in the renderer.
+ */
+export const LIBRARY_PLACE = "Library";
 /** Folder name under the home directory, and the prefix for anything else we name on disk. */
 export const APP_SLUG = "loadout";
 export const LIBRARY_DIR_NAME = `.${APP_SLUG}`;

@@ -8,7 +8,8 @@ import {
 } from "@loadout/shared";
 import { AppError } from "../errors";
 import { readSkillIdentity } from "../skills/metadata";
-import { LIBRARY_PLACE, type LibraryRecord, libraryRecordOf } from "../storage/removed-library";
+import { type LibraryRecord, libraryRecordOf } from "../storage/removed-library";
+import { LIBRARY_PLACE } from "@loadout/shared";
 import { ensureDir, isSkillDir, removePath, writeFileAtomic } from "../util/fs";
 import { assertReadable, schemaAt } from "./compat";
 import { recordConflict } from "./conflict-store";

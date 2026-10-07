@@ -1,7 +1,7 @@
 import { existsSync, renameSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { AppError } from "../errors";
-import { LIBRARY_PLACE } from "../storage/removed-library";
+import { LIBRARY_PLACE } from "@loadout/shared";
 import { ensureDir, lstatOrNull } from "../util/fs";
 import type { BackupEnv } from "./env";
 import { STAGE_ASIDE_DIR, type Stage } from "./extract";
