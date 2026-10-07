@@ -86,7 +86,8 @@ function parseJson<T>(text: string): T | null {
 
 /**
  * A skill's metadata as read from git; null unless it is whole and belongs to `id`. Checked by
- * the same rules the rebuild uses, so the merge never takes in a file the rebuild would drop.
+ * the same rules the rebuild uses, so the merge never takes in a file the rebuild would drop. The
+ * file itself is kept as written: tidied, it would differ from both sides and make a commit.
  */
 function usableSkillMeta(raw: string, id: string): PortableSkill | null {
   let value: unknown;
@@ -95,8 +96,7 @@ function usableSkillMeta(raw: string, id: string): PortableSkill | null {
   } catch {
     return null;
   }
-  const meta = readPortableSkill(value);
-  return meta?.id === id ? meta : null;
+  return readPortableSkill(value)?.id === id ? (value as PortableSkill) : null;
 }
 
 /** One skill's metadata in `commit`; null when it is not there or not usable. */
