@@ -13,15 +13,7 @@ import {
 import type { CoreContext } from "../context";
 import type { ClawhubClient } from "../market/clawhub";
 import type { RedeployReport } from "../deploy";
-import {
-  AppError,
-  cancelled,
-  errorMessage,
-  invalid,
-  isAppError,
-  notFound,
-  unsupported,
-} from "../errors";
+import { AppError, cancelled, errorMessage, invalid, isAppError, unsupported } from "../errors";
 
 import type {
   CancelRegistry,
@@ -30,6 +22,8 @@ import type {
   InstallIntoLibrary,
   InstallRecord,
 } from "../install";
+import { INSIDE_LIBRARY, sourceFieldsOf } from "../install/library";
+import { requireSkillFolder } from "../install/read-skill";
 import type { SafetyGate } from "../install/safety-gate";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 
@@ -37,7 +31,6 @@ import type { RemovedStore } from "../storage/removed";
 import { LIBRARY_PLACE } from "../storage/removed-library";
 
 import type { SkillPatch, SkillStore } from "../skills/store";
-import { isDirectory, isSkillDir, normalizeAbsolutePath } from "../util/fs";
 import { sourceGuard } from "./check";
 import { detachSkill } from "./detach";
 
@@ -121,7 +114,6 @@ const REIMPORT_DOMAIN = "reimport";
 const NOT_LOCAL =
   "Only local, imported and linked skills can do this. Use update for this skill instead.";
 const SOURCE_MOVED = "This skill's source changed while it was being updated. Try again.";
-const INSIDE_LIBRARY = "That folder is already inside the skill library";
 const NO_CHANGES_DETAIL = "No file changes";
 const MOVED_SINCE_COMPARED =
   "The source changed again since you compared it. Look at Compare again, then update.";
@@ -152,13 +144,7 @@ interface Replacement {
 
 function patchFromRecord(record: InstallRecord): SkillPatch {
   return {
-    sourceType: record.sourceType,
-    sourceRef: record.sourceRef,
-    sourceUrl: record.sourceUrl ?? null,
-    sourceSubpath: record.sourceSubpath ?? null,
-    sourceBranch: record.sourceBranch ?? null,
-    sourceRevision: record.sourceRevision ?? null,
-    remoteRevision: record.remoteRevision ?? record.sourceRevision ?? null,
+    ...sourceFieldsOf(record),
     updateStatus: record.updateStatus,
     lastCheckedAt: Date.now(),
     lastCheckError: null,
@@ -456,9 +442,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   ): Promise<UpdateResult> {
     const skill = store.get(skillId);
     requireLocal(skill);
-    const path = normalizeAbsolutePath(sourcePath, "Source path");
-    if (!isDirectory(path)) throw notFound(`Folder not found: ${path}`);
-    if (!isSkillDir(path)) throw invalid(`No SKILL.md found in ${path}`);
+    const path = requireSkillFolder(sourcePath);
     if (insideLibrary(path)) throw invalid(INSIDE_LIBRARY);
     try {
       return await replace({

@@ -13,7 +13,7 @@ import type { SkillStore } from "../skills/store";
 import { skillTraits } from "../skills/traits";
 import { sanitizeSkillName } from "../util/names";
 import { previewLibrary } from "./fetched-preview";
-import { requireSkillFolder } from "./service";
+import { requireSkillFolder } from "./read-skill";
 
 /**
  * What `skills install --dry-run` would add and under which names, built from what the real

@@ -55,6 +55,41 @@ export interface InstallRequest {
   recordFailure?: boolean;
 }
 
+/** The source fields of a skill row; the trusted host only when one is set. */
+type SourceFields = Pick<
+  Skill,
+  | "sourceType"
+  | "sourceRef"
+  | "sourceUrl"
+  | "sourceSubpath"
+  | "sourceBranch"
+  | "sourceRevision"
+  | "remoteRevision"
+> &
+  Partial<Pick<Skill, "sourceTrustedHost">>;
+
+/** Shown when a folder to install or relink is already part of the library. */
+export const INSIDE_LIBRARY = "That folder is already inside the skill library";
+
+/**
+ * A skill row's source fields as `record` says them, with its defaults: missing parts are null,
+ * the remote revision is the installed one, and a trusted host is left as it was when absent.
+ */
+export function sourceFieldsOf(record: InstallRecord): SourceFields {
+  return {
+    sourceType: record.sourceType,
+    sourceRef: record.sourceRef,
+    sourceUrl: record.sourceUrl ?? null,
+    sourceSubpath: record.sourceSubpath ?? null,
+    sourceBranch: record.sourceBranch ?? null,
+    ...(record.sourceTrustedHost === undefined
+      ? {}
+      : { sourceTrustedHost: record.sourceTrustedHost }),
+    sourceRevision: record.sourceRevision ?? null,
+    remoteRevision: record.remoteRevision ?? record.sourceRevision ?? null,
+  };
+}
+
 /** Bound form handed to other services. */
 export type InstallIntoLibrary = (request: InstallRequest) => Promise<Skill>;
 
@@ -74,7 +109,7 @@ export async function installIntoLibrary(
   if (!isDirectory(sourceDir)) throw invalid(`Not a folder: ${sourceDir}`);
   const skillsDir = ctx.paths.skillsDir;
   if (isReallyInside(skillsDir, sourceDir)) {
-    throw invalid("That folder is already inside the skill library");
+    throw invalid(INSIDE_LIBRARY);
   }
   const identity = readSkillIdentity(sourceDir);
   const name = request.name?.trim() ? sanitizeSkillName(request.name) : identity.name;
@@ -118,16 +153,7 @@ export async function installIntoLibrary(
       const fields = {
         name: fixedName ?? name,
         description: identity.description,
-        sourceType: record.sourceType,
-        sourceRef: record.sourceRef,
-        sourceUrl: record.sourceUrl ?? null,
-        sourceSubpath: record.sourceSubpath ?? null,
-        sourceBranch: record.sourceBranch ?? null,
-        ...(record.sourceTrustedHost === undefined
-          ? {}
-          : { sourceTrustedHost: record.sourceTrustedHost }),
-        sourceRevision: record.sourceRevision ?? null,
-        remoteRevision: record.remoteRevision ?? record.sourceRevision ?? null,
+        ...sourceFieldsOf(record),
         contentHash: inPlace && fixedName === null ? held : hashDir(destination),
         updateStatus: record.updateStatus,
         // The folder now holds exactly what the source has: nothing is edited any more.

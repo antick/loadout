@@ -2,17 +2,11 @@ import { join } from "node:path";
 import type { BatchImportResult, InstallApi, InstallOptions, Skill } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
-import { errorMessage, invalid, notFound } from "../errors";
+import { errorMessage, notFound } from "../errors";
 import type { ScanService } from "../scan/service";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
-import {
-  isDirectory,
-  isSkillDir,
-  normalizeAbsolutePath,
-  readDirSafe,
-  statOrNull,
-} from "../util/fs";
+import { isDirectory, isSkillDir, normalizeAbsolutePath, readDirSafe } from "../util/fs";
 import { CancelRegistry } from "./cancel";
 import { type Download, type HttpRequest, downloadWith } from "./download";
 import { type GitClient, createGitClient } from "./git-client";
@@ -26,7 +20,7 @@ import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-g
 import type { ClawhubClient } from "../market/clawhub";
 import { createClawhubInstaller, createClawhubReader } from "./clawhub-install";
 import { emitProgress } from "./preview-sessions";
-import { readFolderSkill } from "./read-skill";
+import { readFolderSkill, requireSkillFolder } from "./read-skill";
 
 export interface InstallServiceDeps {
   store: SkillStore;
@@ -64,19 +58,6 @@ export interface InstallService {
 
 const LOCAL_RECORD = { sourceType: "local", updateStatus: "local_only" } as const;
 
-/**
- * The skill folder a folder install takes, or why it cannot: the install and its dry run
- * (`skills install <folder> --dry-run`) refuse the same things. Archives go through
- * `previewArchive`, which lists what they hold before installing.
- */
-export function requireSkillFolder(sourcePath: string): string {
-  const path = normalizeAbsolutePath(sourcePath, "Source path");
-  const stat = statOrNull(path);
-  if (!stat) throw notFound(`Nothing found at ${path}`);
-  if (!stat.isDirectory()) throw invalid(`Not a folder: ${path}`);
-  if (!isSkillDir(path)) throw invalid(`No SKILL.md found in ${path}`);
-  return path;
-}
 export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps): InstallService {
   const { store, registry, clawhub } = deps;
   const download = downloadWith(deps.request);

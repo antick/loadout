@@ -21,7 +21,7 @@ export { checkHealth } from "./health/doctor";
 export { type DeploymentState, deploymentState } from "./deploy/state";
 export { canonicalPath, expandHome, isInside, writeFileAtomic } from "./util/fs";
 export { previewLibrary } from "./install/fetched-preview";
-export { requireSkillFolder } from "./install/service";
+export { requireSkillFolder } from "./install/read-skill";
 export { planFolder, planMarket, planPreview } from "./install/plan";
 export { matchRequested } from "./install/requested";
 export { baseNameOf } from "./skills/numbered-name";
