@@ -7,6 +7,7 @@ import {
 import { invalid } from "../errors";
 import { writeFileAtomic, GIT_IGNORE_FILE } from "../util/fs";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
+import { metadataFileName } from "../skills/portable-format";
 import { assertRepo } from "./repo";
 import {
   DEFAULT_IGNORE_LINES,
@@ -59,8 +60,8 @@ async function blockingPattern(env: BackupEnv): Promise<string | null> {
   const probes = [
     `${PROBE_SKILL}/SKILL.md`,
     `${PROBE_SKILL}/skill.md`,
-    `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${PROBE_ID}.json`,
-    `${env.metadataName}/${PRESET_METADATA_SUBDIR}/${PROBE_ID}.json`,
+    `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${metadataFileName(PROBE_ID)}`,
+    `${env.metadataName}/${PRESET_METADATA_SUBDIR}/${metadataFileName(PROBE_ID)}`,
     GIT_IGNORE_FILE,
   ];
   const result = await env.git.probe(["check-ignore", "--no-index", "-v", "-z", "--stdin"], {

@@ -1,4 +1,5 @@
 import { isAbsolute } from "node:path";
+import { TOKEN_USER } from "../util/github-token";
 import { fileURLToPath } from "node:url";
 import { APP_NAME, GITHUB_HOST, redactUrl } from "@loadout/shared";
 import type { SecretStore } from "../context";
@@ -17,8 +18,6 @@ const USER_KEY_PREFIX = "backup.git.user:";
  * is a user name (copied from the host's clone button), and sending it as a token fails every sync.
  */
 const LONE_TOKEN_PATTERN = /^(?:gh[pousr]_|github_pat_|glpat-|glptt-)|^[A-Za-z0-9_-]{32,}$/;
-/** User name sent with a token. Git hosts accept any non-empty name next to a personal token. */
-const TOKEN_USER = "x-access-token";
 const SHORTHAND_PATTERN = /^[\w.-]+\/[\w.-]+$/;
 const SCP_LIKE_PATTERN = /^[\w.-]+@([\w.-]+):.+$/;
 const HTTP_PATTERN = /^https?:\/\//i;

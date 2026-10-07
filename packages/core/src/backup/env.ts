@@ -22,13 +22,13 @@ import { BACKUP_ERROR_TEXT, BACKUP_GIT_CONFIG, type Git, createGit } from "./git
 
 import { isSkillFolderName } from "../util/safe-path";
 import type { HttpRequest } from "../install/download";
+import { PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "../skills/portable-format";
 
 /** The backup's remote and branch: the git conventions every Loadout repository follows. */
 export const REMOTE_NAME = GIT_REMOTE_NAME;
 export const DEFAULT_BRANCH = GIT_DEFAULT_BRANCH;
 /** Folder names inside the repository that belong to the app, not to a skill. */
-export const SKILL_METADATA_SUBDIR = "skills";
-export const PRESET_METADATA_SUBDIR = "presets";
+export { PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR };
 
 export interface BackupDeps {
   store: SkillStore;

@@ -4,7 +4,7 @@ import { APP_NAME, type Skill, isNewerVersion } from "@loadout/shared";
 import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";
-import { ensureDir, isSkillDir, readDirSafe, writeJsonAtomic } from "../util/fs";
+import { ensureDir, isSkillDir, writeJsonAtomic } from "../util/fs";
 import { contentFingerprint, hashDir } from "../util/hash";
 import { readSkillIdentity } from "./metadata";
 import {
@@ -14,7 +14,10 @@ import {
   readBlockedAgents,
   readEditedFiles,
   readFavoritedAt,
+  PRESET_METADATA_SUBDIR,
+  SKILL_METADATA_SUBDIR,
   metadataFileIds,
+  metadataFileName,
   readJsonDir,
   readNote,
   readPortablePreset,
@@ -59,10 +62,8 @@ export interface RebuildResult {
 }
 
 function pruneDir(dir: string, keep: ReadonlySet<string>): void {
-  for (const entry of readDirSafe(dir)) {
-    if (entry.isFile() && entry.name.endsWith(".json") && !keep.has(entry.name)) {
-      unlinkSync(join(dir, entry.name));
-    }
+  for (const id of metadataFileIds(dir)) {
+    if (!keep.has(id)) unlinkSync(join(dir, metadataFileName(id)));
   }
 }
 
@@ -116,11 +117,11 @@ export class PortableMetadata {
   }
 
   get #skillsMetaDir(): string {
-    return join(this.#paths.metadataDir, "skills");
+    return join(this.#paths.metadataDir, SKILL_METADATA_SUBDIR);
   }
 
   get #presetsMetaDir(): string {
-    return join(this.#paths.metadataDir, "presets");
+    return join(this.#paths.metadataDir, PRESET_METADATA_SUBDIR);
   }
 
   /**
@@ -129,7 +130,7 @@ export class PortableMetadata {
    * file and put the preset back.
    */
   forgetPreset(id: string): void {
-    rmSync(join(this.#presetsMetaDir, `${id}.json`), { force: true });
+    rmSync(join(this.#presetsMetaDir, metadataFileName(id)), { force: true });
   }
 
   /** Rewrite every metadata file from the database and delete stale ones. */
@@ -151,15 +152,18 @@ export class PortableMetadata {
 
     const skillFiles = new Set<string>();
     for (const skill of this.#skills.list()) {
-      skillFiles.add(`${skill.id}.json`);
-      this.#writeIfChanged(join(this.#skillsMetaDir, `${skill.id}.json`), toPortableSkill(skill));
+      skillFiles.add(skill.id);
+      this.#writeIfChanged(
+        join(this.#skillsMetaDir, metadataFileName(skill.id)),
+        toPortableSkill(skill),
+      );
     }
     pruneDir(this.#skillsMetaDir, skillFiles);
 
     const presetFiles = new Set<string>();
     for (const preset of this.#readPresets()) {
-      presetFiles.add(`${preset.id}.json`);
-      this.#writeIfChanged(join(this.#presetsMetaDir, `${preset.id}.json`), preset);
+      presetFiles.add(preset.id);
+      this.#writeIfChanged(join(this.#presetsMetaDir, metadataFileName(preset.id)), preset);
     }
     pruneDir(this.#presetsMetaDir, presetFiles);
   }

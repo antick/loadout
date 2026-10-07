@@ -172,7 +172,20 @@ export function readPortablePreset(value: unknown): PortablePreset | null {
   };
 }
 
+/** Inside the metadata folder: one file per skill, one per preset. */
+export const SKILL_METADATA_SUBDIR = "skills";
+export const PRESET_METADATA_SUBDIR = "presets";
 const JSON_SUFFIX = ".json";
+
+/** The metadata file of the skill or preset `id`. */
+export function metadataFileName(id: string): string {
+  return `${id}${JSON_SUFFIX}`;
+}
+
+/** The id a metadata file is named for; null for any other file. */
+export function metadataIdOf(fileName: string): string | null {
+  return fileName.endsWith(JSON_SUFFIX) ? fileName.slice(0, -JSON_SUFFIX.length) : null;
+}
 
 /** Every `.json` file in `dir`, parsed; `value` is null for one that is not JSON. */
 function readJsonFiles(dir: string): { path: string; value: unknown }[] {
@@ -187,9 +200,10 @@ function readJsonFiles(dir: string): { path: string; value: unknown }[] {
 /** The ids named by the metadata files in `dir`, readable or not (`<id>.json`). */
 export function metadataFileIds(dir: string): Set<string> {
   return new Set(
-    readDirSafe(dir)
-      .filter((entry) => entry.isFile() && entry.name.endsWith(JSON_SUFFIX))
-      .map((entry) => entry.name.slice(0, -JSON_SUFFIX.length)),
+    readDirSafe(dir).flatMap((entry) => {
+      const id = entry.isFile() ? metadataIdOf(entry.name) : null;
+      return id === null ? [] : [id];
+    }),
   );
 }
 

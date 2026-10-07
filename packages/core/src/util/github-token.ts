@@ -33,8 +33,8 @@ const FOUND_TTL_MS = 10 * 60_000;
 const MISSING_TTL_MS = 60_000;
 /** Holds the token for the helper below; git passes its environment on to helpers. */
 const TOKEN_ENV = "LOADOUT_GITHUB_TOKEN";
-/** User name sent with a token. GitHub accepts any non-empty name next to one. */
-const TOKEN_USER = "x-access-token";
+/** User name sent with a token. Git hosts accept any non-empty name next to a personal token. */
+export const TOKEN_USER = "x-access-token";
 /** Only answers `get`, so a rejected token is never "erased" from anywhere. */
 const HELPER = `!f() { test "$1" = get && echo username=${TOKEN_USER} && echo "password=$${TOKEN_ENV}"; }; f`;
 const HELPER_KEY = "credential.https://github.com.helper";

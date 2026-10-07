@@ -1,7 +1,7 @@
 import { isRecord } from "@loadout/shared";
 import { AppError } from "../errors";
 import type { PortablePreset, PortableSkill } from "../skills/portable";
-import { readPortableSkill } from "../skills/portable-format";
+import { metadataFileName, metadataIdOf, readPortableSkill } from "../skills/portable-format";
 import { GIT_DIR } from "../util/fs";
 import { batchInput, parseBatch } from "../util/git-batch";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
@@ -9,7 +9,6 @@ import type { PresetVersion, SkillSide } from "./merge-plan";
 
 /** Reads what the library looked like in one commit, straight from git objects. */
 
-const JSON_SUFFIX = ".json";
 const SAFE_ID = /^[\w-]+$/;
 
 export interface CommitSnapshot {
@@ -105,7 +104,7 @@ export async function skillMetadataAt(
   commit: string,
   id: string,
 ): Promise<PortableSkill | null> {
-  const file = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${id}${JSON_SUFFIX}`;
+  const file = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/${metadataFileName(id)}`;
   const result = await env.git.probe(["show", `${commit}:${file}`]);
   return result.code === 0 ? usableSkillMeta(result.stdout, id) : null;
 }
@@ -121,7 +120,7 @@ export async function readCommit(env: BackupEnv, commit: string): Promise<Commit
     "--",
     `${env.metadataName}/`,
   ]);
-  const metadataFiles = listing.stdout.split("\0").filter((path) => path.endsWith(JSON_SUFFIX));
+  const metadataFiles = listing.stdout.split("\0").filter((path) => metadataIdOf(path) !== null);
   const contents = await readFiles(env, commit, metadataFiles);
 
   const skills = new Map<string, SkillSide>();
@@ -133,7 +132,7 @@ export async function readCommit(env: BackupEnv, commit: string): Promise<Commit
   for (const [path, raw] of contents) {
     const prefix = [skillPrefix, presetPrefix].find((candidate) => path.startsWith(candidate));
     if (!prefix) continue;
-    const id = path.slice(prefix.length, -JSON_SUFFIX.length);
+    const id = metadataIdOf(path.slice(prefix.length)) ?? "";
     if (!SAFE_ID.test(id)) continue;
     if (prefix === skillPrefix) {
       const meta = usableSkillMeta(raw, id);

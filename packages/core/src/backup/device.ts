@@ -2,7 +2,7 @@ import { hostname } from "node:os";
 import { APP_SLUG, DEVICE_NAME_MAX_LENGTH } from "@loadout/shared";
 import { invalid } from "../errors";
 import { INTERNAL_KEYS, type SettingsStore } from "../settings/store";
-import { slugify } from "../util/names";
+import { replaceControlChars, slugify } from "../util/names";
 
 /**
  * The device name is what other devices see next to a snapshot or a merged skill. It is written
@@ -11,17 +11,9 @@ import { slugify } from "../util/names";
 
 const FALLBACK_DEVICE_NAME = "My Computer";
 const LOCAL_SUFFIX = /\.local$/i;
-const LAST_CONTROL_CODE = 0x1f;
-const DELETE_CODE = 0x7f;
-
 /** Drop control characters and angle brackets (git rejects them in identities), collapse spaces. */
 function sanitizeDeviceName(input: string): string {
-  let cleaned = "";
-  for (const ch of input) {
-    const code = ch.codePointAt(0) ?? 0;
-    const control = code <= LAST_CONTROL_CODE || code === DELETE_CODE;
-    cleaned += control || ch === "<" || ch === ">" ? " " : ch;
-  }
+  const cleaned = replaceControlChars(input, " ").replace(/[<>]/g, " ");
   return [...cleaned.replace(/\s+/g, " ").trim()].slice(0, DEVICE_NAME_MAX_LENGTH).join("").trim();
 }
 

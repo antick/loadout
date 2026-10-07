@@ -13,7 +13,7 @@ import type { CoreContext } from "../context";
 import { notFound } from "../errors";
 import { osConfigDir } from "../paths";
 import { INTERNAL_KEYS } from "../settings/store";
-import { canonicalPath, segmentsOf } from "../util/fs";
+import { canonicalPath, expandHome, segmentsOf } from "../util/fs";
 
 /**
  * An agent's home folder as its variable (`CODEX_HOME`, …) sets it: an absolute path (or `~/…`),
@@ -27,7 +27,7 @@ export function agentHomeFromEnv(
   const raw = ctx.env()[variable]?.trim();
   if (!raw) return null;
   const home = ctx.homeDir;
-  const value = raw === "~" ? home : raw.startsWith("~/") ? join(home, raw.slice(2)) : raw;
+  const value = expandHome(raw, home);
   return isAbsolute(value) ? value : null;
 }
 

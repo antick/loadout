@@ -44,6 +44,7 @@ import { type Variant, findVariants, groupKey, listProjectSkills } from "./scan"
 import type { ProjectRecord } from "./store";
 import { type VersionGroup, describeVersion, groupByContent } from "./versions";
 import { type ResolvedTarget, findTarget, resolveTargets } from "./targets";
+import { PLACE_SEPARATOR } from "../util/text";
 
 export interface ProjectActionsDeps extends LocalSyncDeps {
   registry: AgentRegistry;
@@ -68,8 +69,6 @@ export interface ProjectActions {
 
 const NOT_IN_WORKSPACE = "Skill not found in this workspace";
 const VERSION_GONE = "That version is no longer in the project. Refresh and choose again.";
-/** Between the project and the agent in a Recently removed entry's place. */
-const PLACE_SEPARATOR = " · ";
 
 /** A project copy's place in Recently removed: the project, then the agent folder it sat in. */
 const placeOf = (project: ProjectRecord, agentName: string): string =>

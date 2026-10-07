@@ -10,6 +10,7 @@ import {
   type MarketBoard,
   type MarketSkill,
   SECOND_MS,
+  SKILL_FILE,
   clawhubMarketId,
   clawhubSkillUrl,
   formatTimestampIso,
@@ -210,7 +211,7 @@ export function createClawhubClient(request: HttpRequest): ClawhubClient {
       changelog: asText(latest.changelog),
       audits: null,
       document: document && document.trim() ? document : null,
-      documentPath: document ? "SKILL.md" : null,
+      documentPath: document ? SKILL_FILE : null,
     };
   }
 

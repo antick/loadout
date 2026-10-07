@@ -13,6 +13,7 @@ import { ensureDir, isSkillDir, removePath, writeFileAtomic } from "../util/fs";
 import { assertReadable, schemaAt } from "./compat";
 import { recordConflict } from "./conflict-store";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
+import { metadataFileName } from "../skills/portable-format";
 import { STAGE_MOVES_DIR, type Stage, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
 import {
@@ -223,14 +224,14 @@ async function materialise(
 
     const metadataDir = env.ctx.paths.metadataDir;
     for (const item of plan.skills) {
-      const file = join(metadataDir, SKILL_METADATA_SUBDIR, `${item.id}.json`);
+      const file = join(metadataDir, SKILL_METADATA_SUBDIR, metadataFileName(item.id));
       if (item.meta) writeIfChanged(file, `${JSON.stringify(item.meta, null, 2)}\n`);
       // Only a skill we really had is removed; an unreadable file of ours is left for the user.
       else if (skills.get(item.id)?.ours) await removePath(file);
     }
     for (const item of plan.presets) {
       if (item.take !== "theirs") continue;
-      const file = join(metadataDir, PRESET_METADATA_SUBDIR, `${item.id}.json`);
+      const file = join(metadataDir, PRESET_METADATA_SUBDIR, metadataFileName(item.id));
       const raw = presets.get(item.id)?.theirs?.raw;
       if (raw === undefined) await removePath(file);
       else writeIfChanged(file, raw);

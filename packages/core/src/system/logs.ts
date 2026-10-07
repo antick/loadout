@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { type Zippable, strToU8, zipSync } from "fflate";
 import {
   APP_SLUG,
@@ -22,7 +22,6 @@ const EXPORT_EXTENSION = ".zip";
 const ZIP_LOGS_DIR = "logs";
 const ZIP_ACTIVITY_FILE = "activity.json";
 const ZIP_DIAGNOSTICS_FILE = "diagnostics.json";
-const ZIP_CRASH_FILE = "last-crash.json";
 
 function currentLogPath(ctx: CoreContext): string {
   return ctx.log.filePath ?? join(ctx.paths.logsDir, LOG_FILE_NAME);
@@ -81,7 +80,9 @@ export function exportLogs(ctx: CoreContext, diagnostics: DiagnosticInfo): LogEx
     entries[`${ZIP_LOGS_DIR}/${name}`] = clean(readTextOrNull(file) ?? "");
   }
   if (statOrNull(ctx.paths.crashMarkerPath)?.isFile()) {
-    entries[ZIP_CRASH_FILE] = clean(readTextOrNull(ctx.paths.crashMarkerPath) ?? "");
+    entries[basename(ctx.paths.crashMarkerPath)] = clean(
+      readTextOrNull(ctx.paths.crashMarkerPath) ?? "",
+    );
   }
   const activity = ctx.activity.list(EXPORT_ACTIVITY_LIMIT);
   entries[ZIP_ACTIVITY_FILE] = clean(`${JSON.stringify(activity, null, 2)}\n`);

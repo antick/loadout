@@ -18,6 +18,7 @@ import {
 } from "../util/fs";
 import { LEFT_OUT_LINES } from "../util/left-out";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
+import { metadataFileName } from "../skills/portable-format";
 
 /**
  * Size rules. A skill over the per-skill limit is kept out of the backup through a managed block
@@ -158,7 +159,8 @@ function managedBlock(env: BackupEnv, excluded: OversizedSkill[]): string[] {
     lines.push(`/${escapeIgnorePath(skill.name)}/`);
     // Its metadata stays out too, so no device ever sees a skill entry without a folder.
     const row = env.store.findByLibraryPath(join(env.repoDir, skill.name));
-    if (row) lines.push(`/${env.metadataName}/${SKILL_METADATA_SUBDIR}/${row.id}.json`);
+    if (row)
+      lines.push(`/${env.metadataName}/${SKILL_METADATA_SUBDIR}/${metadataFileName(row.id)}`);
   }
   lines.push(BLOCK_END);
   return lines;

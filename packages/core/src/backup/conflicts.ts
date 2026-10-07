@@ -7,6 +7,7 @@ import { type PortableSkill, toPortableSkill } from "../skills/portable";
 import { isInside, removePath, writeJsonAtomic } from "../util/fs";
 import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
+import { metadataFileName } from "../skills/portable-format";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { skillMetadataAt } from "./merge-read";
 import { type SetAsideFolder, localFilesNotKept, setAsideFolder, settleSetAside } from "./ignored";
@@ -41,7 +42,7 @@ interface ChoiceWork {
 }
 
 function metadataFile(env: BackupEnv, skillId: string): string {
-  return join(env.ctx.paths.metadataDir, SKILL_METADATA_SUBDIR, `${skillId}.json`);
+  return join(env.ctx.paths.metadataDir, SKILL_METADATA_SUBDIR, metadataFileName(skillId));
 }
 
 /** The other device's metadata for the skill at the conflicting commit, when it can be read. */

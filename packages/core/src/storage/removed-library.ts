@@ -6,6 +6,7 @@ import { readBlockedAgents, readSuggestFor } from "../skills/portable-format";
 import type { SkillStore } from "../skills/store";
 import { hashDir } from "../util/hash";
 import { asStrings } from "../util/json";
+import { isPlainName } from "../util/safe-path";
 
 /** Where a removed library skill lived, for people. */
 export const LIBRARY_PLACE = "Library";
@@ -74,9 +75,6 @@ export function libraryRecordOf(skill: Skill): LibraryRecord {
   };
 }
 
-/** A plain folder name: anything that could climb out of the library is refused. */
-const SAFE_DIR_NAME = /^(?!\.\.?$)[^/\\]+$/;
-
 /** Where a removed library skill goes back to. */
 export function libraryPathOf(ctx: CoreContext, record: LibraryRecord): string {
   return join(ctx.paths.skillsDir, record.dirName);
@@ -90,7 +88,7 @@ export function isLibraryRecord(value: unknown): value is LibraryRecord {
     typeof record.id === "string" &&
     typeof record.name === "string" &&
     typeof record.dirName === "string" &&
-    SAFE_DIR_NAME.test(record.dirName) &&
+    isPlainName(record.dirName) &&
     typeof record.sourceType === "string" &&
     Array.isArray(record.tags) &&
     Array.isArray(record.presetIds)

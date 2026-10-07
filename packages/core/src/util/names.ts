@@ -10,11 +10,12 @@ const AGENT_KEY_SEPARATOR = "_";
 const LAST_CONTROL_CODE = 0x1f;
 const DELETE_CODE = 0x7f;
 
-function replaceControlChars(text: string): string {
+/** `text` with every control character (and DEL) replaced by `replacement`. */
+export function replaceControlChars(text: string, replacement = "_"): string {
   let out = "";
   for (const ch of text) {
     const code = ch.codePointAt(0) ?? 0;
-    out += code <= LAST_CONTROL_CODE || code === DELETE_CODE ? "_" : ch;
+    out += code <= LAST_CONTROL_CODE || code === DELETE_CODE ? replacement : ch;
   }
   return out;
 }

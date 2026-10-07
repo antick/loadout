@@ -15,6 +15,7 @@ import { requireLocalSkillDir } from "../workspace/local-actions";
 import { describeLocalSkill, indexLibrary, matchLibrarySkill } from "../workspace/local-scan";
 import type { EditableFolder } from "./files";
 import { projectHistoryPrefix } from "./history";
+import { PLACE_SEPARATOR } from "../util/text";
 
 /** A skill folder the editor works on, with everything a save needs to know about it. */
 export interface ResolvedLocation {
@@ -39,7 +40,6 @@ export interface LocationDeps {
 }
 
 const LIBRARY_LABEL = "Library";
-const PLACE_SEPARATOR = " · ";
 
 function library(skill: Skill): ResolvedLocation {
   return {

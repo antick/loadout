@@ -9,6 +9,7 @@ import { AppError } from "../errors";
 import { isSkillDir } from "../util/fs";
 import { listConflicts } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
+import { metadataFileName } from "../skills/portable-format";
 import {
   type MergePlan,
   type PresetVersions,
@@ -102,7 +103,7 @@ export async function authorsIn(env: BackupEnv, range: string): Promise<RangeAut
   }
   return {
     of: (id, path) =>
-      (id === null ? undefined : byEntry.get(`${metadataPrefix}${id}.json`)) ??
+      (id === null ? undefined : byEntry.get(`${metadataPrefix}${metadataFileName(id)}`)) ??
       (path ? byEntry.get(path) : undefined) ??
       null,
     all,
