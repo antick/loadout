@@ -10,10 +10,18 @@ type Listener = (event: AppEventName, payload: unknown) => void;
 
 const listeners = new Set<Listener>();
 const events = new EventSource(`${DEV_API_PREFIX}${DEV_ROUTES.events}`);
+const STREAM_REFUSED =
+  "The preview's event stream was refused. Open the page at the address the dev server printed.";
 // Calls wait for the event stream, so no change they cause can be announced before it listens.
-const listening = new Promise<void>((resolve) => {
+const listening = new Promise<void>((resolve, reject) => {
   events.addEventListener("open", () => resolve(), { once: true });
+  // Refused for good (another host name, say): every call fails with that, never waits forever.
+  events.addEventListener("error", () => {
+    if (events.readyState === EventSource.CLOSED) reject(new Error(STREAM_REFUSED));
+  });
 });
+// Answered by each call; a page that makes none must not report it as unhandled.
+listening.catch(() => undefined);
 events.addEventListener("message", (message: MessageEvent<string>) => {
   const { event, payload } = fromWire(message.data) as { event: AppEventName; payload: unknown };
   for (const listener of listeners) listener(event, payload);
