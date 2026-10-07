@@ -10,7 +10,8 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
   - package-ecosystem: github-actions
-    directory: /
+    # The shared setup action pins its own actions; it is only looked at when listed.
+    directories: ["/", "/.github/actions/setup"]
     schedule:
       interval: weekly
     groups:

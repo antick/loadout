@@ -61,7 +61,7 @@ jobs:
         include:
           # One Mac builds both Apple Silicon and Intel: the app has no native modules.
           - name: macOS
-            os: macos-latest
+            os: macos-26
             args: --mac --arm64 --x64
             standalone_cli: true
           - name: Linux
@@ -69,7 +69,7 @@ jobs:
             args: --linux
             standalone_cli: false
           - name: Windows
-            os: windows-latest
+            os: windows-2025
             args: --win --x64
             standalone_cli: false
     steps:
