@@ -8,6 +8,7 @@ import type {
   ScanResult,
   Skill,
 } from "@loadout/shared";
+import { clawhubMarketId } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,8 +29,9 @@ export const IMPORT_ALL_DISCOVERED_KEY = "scan:import-all";
  * for skills.sh, `clawhub:owner/slug` for ClawHub.
  */
 export function marketTaskKey(skill: Pick<MarketSkill, "source" | "skillId" | "provider">): string {
-  const ref = `${skill.source}/${skill.skillId}`;
-  return skill.provider === "clawhub" ? `clawhub:${ref}` : ref;
+  return skill.provider === "clawhub"
+    ? clawhubMarketId(skill.source, skill.skillId)
+    : `${skill.source}/${skill.skillId}`;
 }
 
 /** `options` with the go-ahead for flagged skills added when `acceptRisk` is set. */

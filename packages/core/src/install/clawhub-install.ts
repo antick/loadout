@@ -5,6 +5,7 @@ import {
   type InstallOptions,
   type PreviewedSkill,
   type Skill,
+  clawhubMarketId,
   clawhubSkillUrl,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
@@ -27,11 +28,6 @@ export interface ClawhubInstallerDeps {
   safety: SafetyGate;
   /** Recently removed and deployed copies, for installing a skill that is already there. */
   replace: ReplaceDeps;
-}
-
-/** Progress and cancel key of a ClawHub install, as the app names it. */
-function clawhubTaskKey(owner: string, slug: string): string {
-  return `clawhub:${owner}/${slug}`;
 }
 
 /** A ClawHub download, unpacked, with the registry's own files taken out. Always call `cleanup`. */
@@ -77,7 +73,7 @@ async function withLatestClawhub<T>(
   doneName?: (result: T) => string,
 ): Promise<T> {
   const { owner, slug } = parseClawhubRef(`${ownerInput.trim()}/${slugInput.trim()}`);
-  const key = clawhubTaskKey(owner, slug);
+  const key = clawhubMarketId(owner, slug);
   const open = async ({ signal, keep }: Task): Promise<T> => {
     emitProgress(ctx, key, "downloading", { name: slug });
     const found = await deps.clawhub.detail(owner, slug);

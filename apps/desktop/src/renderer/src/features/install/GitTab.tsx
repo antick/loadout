@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
-import { GIT_DOWNLOAD_URL, GIT_URL_EXAMPLES } from "@/features/install/constants";
+import { GIT_URL_EXAMPLES } from "@/features/install/constants";
+import { GIT_DOWNLOAD_URL } from "@/lib/constants";
 import { GitPreviewDialog } from "@/features/install/GitPreviewDialog";
 import { useDiagnostics } from "@/features/install/install-queries";
 import {

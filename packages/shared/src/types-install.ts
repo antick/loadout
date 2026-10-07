@@ -221,7 +221,10 @@ export interface MarketSkill {
   version: string | null;
 }
 
-/** `MarketSkill.id` of a ClawHub skill, matching a library skill's `sourceRef` after the prefix. */
+/**
+ * `MarketSkill.id` of a ClawHub skill, matching a library skill's `sourceRef` after the prefix;
+ * also the progress and cancel key of its install.
+ */
 export const CLAWHUB_ID_PREFIX = "clawhub:";
 export function clawhubMarketId(owner: string, slug: string): string {
   return `${CLAWHUB_ID_PREFIX}${owner}/${slug}`;

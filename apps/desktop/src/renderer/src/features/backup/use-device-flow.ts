@@ -1,10 +1,15 @@
-import { ApiError, type DeviceFlowStart, type GithubConnectResult } from "@loadout/shared";
+import {
+  ApiError,
+  type DeviceFlowStart,
+  type GithubConnectResult,
+  SECOND_MS,
+} from "@loadout/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useGithubDevicePoll, useGithubDeviceStart } from "@/features/backup/backup-mutations";
 import { useOpenExternal } from "@/hooks/mutations/app";
 import { toastBackupError } from "@/features/backup/backup-errors";
-import { DEVICE_POLL_MIN_INTERVAL_S, DEVICE_POLL_SLOW_DOWN_S, MS_PER_SECOND } from "./constants";
+import { DEVICE_POLL_MIN_INTERVAL_S, DEVICE_POLL_SLOW_DOWN_S } from "./constants";
 
 type DeviceFlowPhase = "idle" | "starting" | "waiting" | "expired";
 
@@ -63,10 +68,10 @@ export function useDeviceFlow(
     setPhase("waiting");
     openExternal.mutate(started.verificationUri);
 
-    const deadline = Date.now() + started.expiresIn * MS_PER_SECOND;
+    const deadline = Date.now() + started.expiresIn * SECOND_MS;
     let intervalS = Math.max(started.interval, DEVICE_POLL_MIN_INTERVAL_S);
     const schedule = (): void => {
-      timer.current = window.setTimeout(() => void tick(), intervalS * MS_PER_SECOND);
+      timer.current = window.setTimeout(() => void tick(), intervalS * SECOND_MS);
     };
     const tick = async (): Promise<void> => {
       if (!isCurrent()) return;

@@ -1,6 +1,7 @@
 import type { BatchFailure, Skill, SourceType } from "./types";
 import { redactUrl } from "./secrets";
-import { isArchivePath } from "./constants";
+import { GITHUB_HOST, isArchivePath } from "./constants";
+import { CLAWHUB_ID_PREFIX } from "./types-install";
 import { lastPathSegment } from "./skill-match";
 import { compareNames } from "./compare";
 
@@ -84,7 +85,6 @@ export interface SourceCheckResult {
 const GIT_SUFFIX = /\.git$/i;
 /** `git@host:owner/repo`. */
 const SCP_STYLE = /^[^@\s]+@([^:\s]+):(.+)$/;
-const GITHUB_HOST = "github.com";
 const PROBLEM_STATUSES: ReadonlySet<Skill["updateStatus"]> = new Set(["error", "source_missing"]);
 
 /** `scheme://[user@]host[:port]/path`: the host and path of an address. */
@@ -152,7 +152,7 @@ export function skillSourceOf(skill: Skill): SkillSourceIdentity | null {
   if (!ref) return null;
   if (skill.sourceType === "clawhub") {
     return {
-      key: `clawhub:${ref}`,
+      key: `${CLAWHUB_ID_PREFIX}${ref}`,
       kind: "registry",
       label: ref,
       location: skill.sourceUrl ?? ref,

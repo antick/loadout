@@ -130,3 +130,6 @@ export const SOURCE_SEARCH_CONCURRENCY = 3;
 export const PLUGIN_SKILLS_SHOWN = 6;
 /** Skills named in the skill listing card before "Show all". */
 export const LISTING_SKILLS_SHOWN = 5;
+
+/** Where to get Git, offered when it is missing (installing from Git, backing up). */
+export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";

@@ -44,9 +44,6 @@ export const GIT_URL_EXAMPLES = [
   "npx skills add owner/repo --skill my-skill",
 ] as const;
 
-/** Where to get Git, offered when it is missing. */
-export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
-
 /** Errors listed in a batch result before the rest collapse into "and N more". */
 export const BATCH_ERRORS_MAX_VISIBLE = 5;
 /** Folders listed under a discovered skill before "and N more". */

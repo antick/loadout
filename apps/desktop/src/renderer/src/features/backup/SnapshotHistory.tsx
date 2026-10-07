@@ -1,4 +1,4 @@
-import { formatDateTime, type Snapshot } from "@loadout/shared";
+import { formatDateTime, formatRevision, type Snapshot } from "@loadout/shared";
 import { History, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,6 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { useRestoreSnapshot } from "@/features/backup/backup-mutations";
 import { useBackupSnapshots } from "@/features/backup/backup-queries";
-import { SHORT_COMMIT_LENGTH } from "./constants";
 import { Skeletons } from "@/components/Skeletons";
 
 const SKELETON_ROWS = 3;
@@ -94,7 +93,7 @@ export function SnapshotHistory({
                   {snapshot.device}
                   {" · "}
                   <span data-selectable className="font-mono">
-                    {snapshot.id.slice(0, SHORT_COMMIT_LENGTH)}
+                    {formatRevision(snapshot.id)}
                   </span>
                 </p>
               </div>

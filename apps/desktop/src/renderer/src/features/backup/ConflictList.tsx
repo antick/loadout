@@ -1,4 +1,9 @@
-import { type BackupConflict, type ConflictResolution, formatRelative } from "@loadout/shared";
+import {
+  type BackupConflict,
+  type ConflictResolution,
+  formatRelative,
+  formatRevision,
+} from "@loadout/shared";
 import { TriangleAlert } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +12,6 @@ import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { useResolveBackupConflicts } from "@/features/backup/backup-mutations";
 import { ConflictDiffDialog } from "./ConflictDiffDialog";
-import { SHORT_COMMIT_LENGTH } from "./constants";
 
 const ACTIONS: readonly ConflictResolution[] = ["keep_local", "use_remote", "keep_both"];
 /** Offered for the whole list once there is more than one conflict. */
@@ -81,9 +85,7 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
                     when: formatRelative(conflict.detectedAt),
                   })}
                   {" · "}
-                  <span className="font-mono">
-                    {conflict.theirsCommit.slice(0, SHORT_COMMIT_LENGTH)}
-                  </span>
+                  <span className="font-mono">{formatRevision(conflict.theirsCommit)}</span>
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-1.5">

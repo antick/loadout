@@ -1,5 +1,5 @@
 import { CLI_BINARY_NAME } from "@loadout/shared";
-import { type CompletionSpec, valueKinds } from "./spec";
+import { type CompletionSpec, LIBRARY_WORD_KINDS, valueKinds } from "./spec";
 
 /**
  * Bash and Zsh completion scripts. The tables are written out from the command definitions, so
@@ -113,7 +113,7 @@ function scanner(first: string, current: string, word: (index: string) => string
   fi`;
 }
 
-const LIBRARY_KINDS = "skills|agents|presets|tags";
+const LIBRARY_KINDS = LIBRARY_WORD_KINDS.join("|");
 
 function bashScript(spec: CompletionSpec): string {
   return `# ${CLI_BINARY_NAME} completion for Bash. Printed by \`${CLI_BINARY_NAME} completion bash\`.

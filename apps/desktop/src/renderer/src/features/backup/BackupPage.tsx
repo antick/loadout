@@ -15,7 +15,7 @@ import { AutoBackupCard } from "./AutoBackupCard";
 import { BackupContents } from "./BackupContents";
 import { deriveBackupMode } from "@/lib/backup-mode";
 import { ConflictList } from "./ConflictList";
-import { GIT_DOWNLOAD_URL } from "./constants";
+import { GIT_DOWNLOAD_URL } from "@/lib/constants";
 import { HeldBackSecrets } from "./HeldBackSecrets";
 import { IgnoreRulesCard } from "./IgnoreRulesCard";
 import { DisconnectCard } from "./DisconnectCard";

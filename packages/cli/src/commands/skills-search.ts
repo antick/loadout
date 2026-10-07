@@ -7,7 +7,7 @@ import {
   MARKET_PROVIDERS,
   MARKET_SEARCH_DEFAULT_LIMIT,
   type MarketListing,
-  type MarketProvider,
+  DEFAULT_MARKET_PROVIDER,
   type MarketSkill,
   type RepoSkillPreview,
   type Skill,
@@ -28,14 +28,12 @@ const LIMIT_FLAG = {
   description: `How many results to list (default ${MARKET_SEARCH_DEFAULT_LIMIT}).`,
 } as const;
 
-const DEFAULT_PROVIDER: MarketProvider = "skills_sh";
-
 const ON_FLAG = {
   name: "on",
   type: "string",
   value: "marketplace",
   choices: MARKET_PROVIDERS,
-  description: `Which marketplace to search: ${MARKET_PROVIDERS.join(" or ")} (default ${DEFAULT_PROVIDER}).`,
+  description: `Which marketplace to search: ${MARKET_PROVIDERS.join(" or ")} (default ${DEFAULT_MARKET_PROVIDER}).`,
 } as const;
 
 /** The name `skills install` takes for a marketplace skill. */
@@ -135,7 +133,7 @@ async function search(context: CommandContext): Promise<CommandResult> {
       `--${ACCEPT_RISK_FLAG.name} needs the picker, which opens only in a terminal and never with --json. Install a flagged skill with: skills install <skill> --${ACCEPT_RISK_FLAG.name}`,
     );
   }
-  const provider = flagChoice(args, ON_FLAG) ?? DEFAULT_PROVIDER;
+  const provider = flagChoice(args, ON_FLAG) ?? DEFAULT_MARKET_PROVIDER;
   const name = MARKET_PROVIDER_NAMES[provider];
   const listing = await core.api.market.search(query, flagInteger(args, LIMIT_FLAG.name), provider);
   const picked = await pickAndInstall(context, listing, `${name} results for "${query}"`);
