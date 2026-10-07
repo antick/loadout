@@ -59,6 +59,18 @@ describe("refuseRequest", () => {
     ).not.toBeNull();
   });
 
+  it("refuses a request sent to this server under another site's name", () => {
+    // A page on evil.example whose address was re-pointed at 127.0.0.1 looks same-origin.
+    const rebound = { host: "evil.example:5197", origin: "http://evil.example:5197" };
+    expect(
+      refuseRequest({ method: "POST", headers: { ...rebound, "content-type": JSON_TYPE } }),
+    ).not.toBeNull();
+    expect(refuseRequest({ method: "GET", headers: {} })).not.toBeNull();
+    for (const host of ["127.0.0.1:5197", "[::1]:5197", "app.localhost:5197"]) {
+      expect(refuseRequest({ method: "GET", headers: { host } })).toBeNull();
+    }
+  });
+
   it("matches a default port written out in the Host header", () => {
     expect(
       refuseRequest({

@@ -2,6 +2,8 @@ import type { IncomingHttpHeaders } from "node:http";
 
 /** The only body the preview's API reads. Anything else could come from a plain HTML form. */
 const JSON_MEDIA_TYPE = "application/json";
+/** Host names that only ever mean this computer. */
+const LOOPBACK_HOST = /^(?:localhost|[\w-]+\.localhost|127\.\d+\.\d+\.\d+|\[::1\])$/i;
 /** `Sec-Fetch-Site` of the preview's own page, or of an address typed into the browser. */
 const OWN_FETCH_SITES: ReadonlySet<string> = new Set(["same-origin", "none"]);
 
@@ -15,11 +17,14 @@ export interface GuardedRequest {
  * real and its calls take absolute paths, so a page on another site, or on another port of
  * localhost, must never reach it while the preview runs: a `text/plain` POST is sent without a
  * CORS preflight, and a GET of the event stream needs none. Every origin hint the browser gave
- * must name this server. A client that is not a browser (the UI tests' request context) sends
- * none, and gets through.
+ * must name this server, and the server must be called by a name of this computer. A client that
+ * is not a browser (the UI tests' request context) sends no hints, and gets through.
  */
 export function refuseRequest({ method, headers }: GuardedRequest): string | null {
   const host = headers.host;
+  // Another name for this server (a site whose address was pointed at 127.0.0.1) is another
+  // site, though the browser takes its pages as same-origin.
+  if (!isLoopback(host)) return `Refused a request for ${host ?? "no host"}`;
   const origin = single(headers.origin);
   if (origin !== undefined && !sameHost(origin, host)) return `Refused a request from ${origin}`;
   const site = single(headers["sec-fetch-site"]);
@@ -30,6 +35,15 @@ export function refuseRequest({ method, headers }: GuardedRequest): string | nul
     return `Refused a POST that is not ${JSON_MEDIA_TYPE}`;
   }
   return null;
+}
+
+function isLoopback(host: string | undefined): boolean {
+  if (!host) return false;
+  try {
+    return LOOPBACK_HOST.test(new URL(`http://${host}`).hostname);
+  } catch {
+    return false;
+  }
 }
 
 function single(value: string | string[] | undefined): string | undefined {
