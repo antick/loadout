@@ -387,6 +387,19 @@ describe("duplicates in a library", () => {
     expect(existsSync(join(temp.dir, ".claude", "skills", "pdf-tools"))).toBe(false);
   });
 
+  it("keeps the other skill's blocks, but never takes the kept one down for them", async () => {
+    const keep = await install("pdf-tools", GUIDE);
+    const drop = await install("pdf-helper", GUIDE);
+    await core.api.deploy.deploy(keep.id, "claude_code");
+    await core.api.deploy.setBlocked(drop.id, ["cursor", "claude_code"], true);
+
+    await core.api.duplicates.merge(keep.id, drop.id);
+
+    const kept = await core.api.skills.get(keep.id);
+    expect(kept.blockedAgents).toEqual(["cursor"]);
+    expect(kept.deployments.map((entry) => entry.agentKey)).toEqual(["claude_code"]);
+  });
+
   it("removes nothing when the kept skill cannot go where the other was", async () => {
     const keep = await install("pdf-tools", GUIDE);
     const drop = await install("pdf-helper", GUIDE);

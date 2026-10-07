@@ -31,6 +31,8 @@ interface MergePlan {
   presetIds: string[];
   deployedTo: string[];
   blockedFor: string[];
+  /** Agents the removed skill was blocked for, which the kept one now is too. */
+  blocks: string[];
 }
 
 export interface DuplicatesService {
@@ -134,7 +136,13 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
         !blockedFor.includes(agentKey) &&
         !keep.deployments.some((entry) => entry.agentKey === agentKey),
     );
-    return { tags, presetIds, deployedTo, blockedFor };
+    // Not where the kept skill is deployed: a block there would take it down.
+    const blocks = remove.blockedAgents.filter(
+      (agentKey) =>
+        !keep.blockedAgents.includes(agentKey) &&
+        !keep.deployments.some((entry) => entry.agentKey === agentKey),
+    );
+    return { tags, presetIds, deployedTo, blockedFor, blocks };
   }
 
   /** Give the kept skill what the removed one had. Only ever adds, so a failure loses nothing. */
@@ -147,6 +155,7 @@ export function createDuplicatesService(ctx: CoreContext, deps: DuplicatesDeps):
         if (!toggle.enabled) await presets.setToggle(presetId, keep.id, toggle.agentKey, false);
       }
     }
+    if (plan.blocks.length > 0) await deploy.setBlocked(keep.id, plan.blocks, true);
     if (plan.deployedTo.length === 0) return;
     const applied = await deploy.apply([keep.id], plan.deployedTo, "add");
     if (applied.conflicts.length > 0) throw targetConflict(applied.conflicts);
