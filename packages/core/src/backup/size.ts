@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   APP_SLUG,
   BACKUP_REPO_WARN_BYTES,
@@ -9,6 +9,7 @@ import {
 import {
   GIT_DIR,
   dirSize,
+  ensureDir,
   readDirSafe,
   statOrNull,
   writeFileAtomic,
@@ -20,8 +21,10 @@ import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 
 /**
  * Size rules. A skill over the per-skill limit is kept out of the backup through a managed block
- * in `.gitignore`, unless git already tracks it, because untracking would look like a delete to
- * every other device. The block is rebuilt before each commit, so a skill that shrank comes back.
+ * in `.git/info/exclude`, unless git already tracks it, because untracking would look like a
+ * delete to every other device. The block lists this device's own large skills, so it stays out
+ * of the shared `.gitignore`: there, two devices would rewrite it back and forth on every sync.
+ * It is rebuilt before each commit, so a skill that shrank comes back.
  */
 
 /**
@@ -39,6 +42,8 @@ export const BASE_IGNORE_LINES: readonly string[] = [...DEFAULT_IGNORE_LINES, AT
 const BLOCK_START = `# ${APP_SLUG}: skills over the backup size limit (managed, do not edit)`;
 const BLOCK_END = `# ${APP_SLUG}: end of managed block`;
 const IGNORE_SPECIAL_CHARS = /[\\*?[\]#! ]/g;
+/** Inside `.git`: the ignore file git reads for this clone only. */
+const GIT_EXCLUDE_PATH = ["info", "exclude"] as const;
 
 interface MeasuredSkill {
   name: string;
@@ -56,6 +61,11 @@ export function ignoreFilePath(env: BackupEnv): string {
 /** The ignore file as it is now; null when there is none. */
 export function readIgnoreText(env: BackupEnv): string | null {
   return readTextOrNull(ignoreFilePath(env));
+}
+
+/** Git's ignore file for this clone only: never committed, so never seen by another device. */
+function excludeFilePath(env: BackupEnv): string {
+  return join(env.repoDir, GIT_DIR, ...GIT_EXCLUDE_PATH);
 }
 
 /** An ignore file's lines: the user's own, as written, and the managed block's patterns. */
@@ -79,10 +89,14 @@ function splitIgnoreFile(text: string): { user: string[]; managed: string[] } {
  * size alone are measured as if they were not, or they would shrink to nothing and come back.
  */
 async function backedUpSizes(env: BackupEnv): Promise<Map<string, number> | null> {
-  // The standard lines count even before they are first written into the ignore file.
+  // The standard lines count even before they are first written into the ignore file. A block
+  // an older version wrote into `.gitignore` counts until the next refresh moves it.
+  const managed = [readTextOrNull(excludeFilePath(env)), readIgnoreText(env)].flatMap(
+    (text) => splitIgnoreFile(text ?? "").managed,
+  );
   const overrides = [
     ...BASE_IGNORE_LINES.map((line) => `--exclude=${line}`),
-    ...splitIgnoreFile(readIgnoreText(env) ?? "").managed.map((line) => `--exclude=!${line}`),
+    ...managed.map((line) => `--exclude=!${line}`),
   ];
   const result = await env.git.probe(["ls-files", "-z", "-co", "--exclude-standard", ...overrides]);
   if (result.code !== 0) return null;
@@ -165,6 +179,12 @@ export function customLines(text: string): string[] {
   return trimBlankEdges(splitIgnoreFile(text).user.filter((line) => !base.has(line.trim())));
 }
 
+/** Write `lines` to `path` when they differ from what is there; no lines make an empty file. */
+function writeLinesIfChanged(path: string, current: string, lines: readonly string[]): void {
+  const next = lines.length > 0 ? `${lines.join("\n")}\n` : "";
+  if (next !== current) writeFileAtomic(path, next);
+}
+
 /**
  * Make sure the standard ignore lines exist and the managed block matches today's sizes. The
  * standard lines always come first, in their own order, so a line added in a newer version (and
@@ -175,17 +195,27 @@ export async function refreshIgnoreFile(
   /** The user's own lines to write; those of the file as it is when left out. */
   custom?: readonly string[],
 ): Promise<void> {
-  const current = readIgnoreText(env) ?? "";
-  custom ??= customLines(current);
-  const lines = [...BASE_IGNORE_LINES, ...(custom.length > 0 ? ["", ...custom] : [])];
-
   const { oversized } = await findOversized(env);
   const block = managedBlock(
     env,
     oversized.filter((skill) => skill.excluded),
   );
-  const next = `${[...lines, ...(block.length > 0 ? ["", ...block] : [])].join("\n")}\n`;
-  if (next !== current) writeFileAtomic(ignoreFilePath(env), next);
+
+  const current = readIgnoreText(env) ?? "";
+  custom ??= customLines(current);
+  writeLinesIfChanged(ignoreFilePath(env), current, [
+    ...BASE_IGNORE_LINES,
+    ...(custom.length > 0 ? ["", ...custom] : []),
+  ]);
+
+  // The block goes after whatever else this clone's exclude file holds (git's own template).
+  const excludePath = excludeFilePath(env);
+  const excludeText = readTextOrNull(excludePath) ?? "";
+  const own = trimBlankEdges(splitIgnoreFile(excludeText).user);
+  const gap = own.length > 0 && block.length > 0 ? [""] : [];
+  if (!excludeText && block.length === 0) return;
+  ensureDir(dirname(excludePath));
+  writeLinesIfChanged(excludePath, excludeText, [...own, ...gap, ...block]);
 }
 
 export async function buildSizeReport(env: BackupEnv): Promise<SizeReport> {

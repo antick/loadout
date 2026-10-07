@@ -88,7 +88,7 @@ export async function writeIgnoreRules(
   const path = ignoreFilePath(env);
   const previous = readIgnoreText(env);
   try {
-    // The standard lines, the user's, and the managed size block, in one write.
+    // The standard lines and the user's, in one write; the size block goes to this clone's own.
     await refreshIgnoreFile(env, lines);
     const blocking = await blockingPattern(env);
     if (blocking !== null) {

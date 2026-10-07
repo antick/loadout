@@ -31,6 +31,9 @@ const earlierDir = (skillsDir: string): string => join(dirname(skillsDir), "earl
 const earlierLibraries = (skillsDir: string): string[] =>
   existsSync(earlierDir(skillsDir)) ? readdirSync(earlierDir(skillsDir)) : [];
 
+/** This clone's own ignore file, which is never committed. */
+const excludeFile = (skillsDir: string): string => join(skillsDir, ".git", "info", "exclude");
+
 /** A file that reports a large size without writing that much to disk. */
 function sparseFile(path: string, bytes: number): void {
   const fd = openSync(path, "w");
@@ -298,8 +301,11 @@ describe("backup clone, size rules and credentials", () => {
 
     const ignore = readFileSync(join(a.skillsDir, ".gitignore"), "utf8");
     expect(ignore).toContain(`${BASE_IGNORE_LINES.join("\n")}\n`);
-    expect(ignore).toContain("/big\\ \\[v2\\]/\n");
-    expect(ignore).toContain(`/${basename(a.ctx.paths.metadataDir)}/skills/${big.id}.json\n`);
+    // This device's own large skills stay out of the shared file, in this clone's exclude file.
+    expect(ignore).not.toContain("big");
+    const exclude = readFileSync(excludeFile(a.skillsDir), "utf8");
+    expect(exclude).toContain("/big\\ \\[v2\\]/\n");
+    expect(exclude).toContain(`/${basename(a.ctx.paths.metadataDir)}/skills/${big.id}.json\n`);
     const tracked = a.git("ls-files");
     expect(tracked).toContain("small/SKILL.md");
     expect(tracked).not.toContain("big");
@@ -319,7 +325,7 @@ describe("backup clone, size rules and credentials", () => {
     await a.api.sync();
     const after = readFileSync(join(a.skillsDir, ".gitignore"), "utf8");
     expect(after).toContain("secrets.txt");
-    expect(after).not.toContain("big");
+    expect(readFileSync(excludeFile(a.skillsDir), "utf8")).not.toContain("big");
     expect(a.git("ls-files")).toContain("big [v2]/SKILL.md");
     expect((await a.api.sizeReport()).oversized).toEqual([]);
 
@@ -329,8 +335,30 @@ describe("backup clone, size rules and credentials", () => {
     expect((await a.api.sizeReport()).oversized).toEqual([
       { name: "big [v2]", bytes: expect.any(Number), excluded: false },
     ]);
-    expect(readFileSync(join(a.skillsDir, ".gitignore"), "utf8")).not.toContain("big");
+    expect(readFileSync(excludeFile(a.skillsDir), "utf8")).not.toContain("big");
     expect(a.git("ls-files")).toContain("big [v2]/model.bin");
+  });
+
+  it("a large skill on one device does not make every sync on another commit", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = track(createDevice(temp.dir, "A"));
+    a.addSkill("small");
+    a.addSkill("big");
+    sparseFile(join(a.skillsDir, "big", "model.bin"), BACKUP_SKILL_LIMIT_BYTES + 1);
+    await a.api.init();
+    await a.api.setRemote(remote);
+    await a.api.sync();
+    const b = track(await joinRemote(temp.dir, remote));
+    await b.api.sync();
+    await a.api.sync();
+
+    const head = (device: typeof a): string => device.git("rev-parse", "HEAD");
+    const before = [head(a), head(b)];
+    await b.api.sync();
+    await a.api.sync();
+    await b.api.sync();
+    expect([head(a), head(b)]).toEqual(before);
+    expect(b.skill("big")).toBeNull();
   });
 
   it("moves a token out of the remote URL and never writes it to git config", async () => {
