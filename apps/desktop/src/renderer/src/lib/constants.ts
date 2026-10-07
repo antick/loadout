@@ -133,3 +133,6 @@ export const LISTING_SKILLS_SHOWN = 5;
 
 /** Where to get Git, offered when it is missing (installing from Git, backing up). */
 export const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads";
+
+/** Existing tags offered while typing a new one. */
+export const TAG_SUGGESTIONS_MAX = 12;

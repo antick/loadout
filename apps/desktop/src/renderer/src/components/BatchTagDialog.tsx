@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useSetSkillTags } from "@/hooks/mutations/skills";
+import { useSetTagsOfSkills } from "@/hooks/mutations/skills";
 import { useAllTags } from "@/hooks/queries/skills";
-import { toastSuccess } from "@/lib/toast";
+import { tagSuggestions } from "@/lib/tag-filter";
 import { SECTION_LABEL } from "@/lib/styles";
 import { toggleIn } from "@/lib/sets";
 
@@ -27,8 +27,6 @@ export interface BatchTagDialogProps {
   onDone?: () => void;
 }
 
-const MAX_SUGGESTIONS = 12;
-
 /** The form lives in its own component so every opening starts with nothing marked. */
 function BatchTagForm({
   onOpenChange,
@@ -36,12 +34,11 @@ function BatchTagForm({
   onDone,
 }: Omit<BatchTagDialogProps, "open">): ReactNode {
   const { t } = useTranslation();
-  const setTags = useSetSkillTags();
+  const setTags = useSetTagsOfSkills();
   const allTags = useAllTags();
   const [removing, setRemoving] = useState<ReadonlySet<string>>(new Set());
   const [adding, setAdding] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const current = useMemo(() => {
     const counts = new Map<string, number>();
@@ -50,11 +47,7 @@ function BatchTagForm({
     return [...counts.entries()].sort(([a], [b]) => compareNames(a, b));
   }, [skills]);
 
-  const suggestions = (allTags.data ?? [])
-    .filter(
-      (tag) => !adding.includes(tag) && tag.toLowerCase().includes(draft.trim().toLowerCase()),
-    )
-    .slice(0, MAX_SUGGESTIONS);
+  const suggestions = tagSuggestions(allTags.data, adding, draft);
 
   const addTag = (raw: string): void => {
     const tag = raw.trim();
@@ -68,18 +61,15 @@ function BatchTagForm({
       addTag(draft);
       return;
     }
-    setSaving(true);
-    const jobs = skills.flatMap((skill) => {
-      const next = editTags(skill.tags, adding, [...removing]);
+    const changes = skills.flatMap((skill) => {
+      const tags = editTags(skill.tags, adding, [...removing]);
       const changed =
-        next.length !== skill.tags.length || next.some((tag, index) => tag !== skill.tags[index]);
-      return changed ? [setTags.mutateAsync({ skillId: skill.id, tags: next })] : [];
+        tags.length !== skill.tags.length || tags.some((tag, index) => tag !== skill.tags[index]);
+      return changed ? [{ skill, tags }] : [];
     });
-    const results = await Promise.allSettled(jobs);
-    setSaving(false);
-    const saved = results.filter((result) => result.status === "fulfilled").length;
-    if (saved > 0) toastSuccess(t("tags.batchSaved", { count: saved }));
-    if (saved === results.length) {
+    // A batch of one that failed has said so already; the dialog stays for another try.
+    const result = await setTags.mutateAsync(changes).catch(() => null);
+    if (result?.failed.length === 0) {
       onOpenChange(false);
       onDone?.();
     }
@@ -151,8 +141,8 @@ function BatchTagForm({
         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={!dirty || saving}>
-          {saving ? <Spinner /> : null}
+        <Button type="submit" disabled={!dirty || setTags.isPending}>
+          {setTags.isPending ? <Spinner /> : null}
           {t("common.save")}
         </Button>
       </DialogFooter>

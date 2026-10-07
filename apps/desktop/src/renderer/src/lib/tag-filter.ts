@@ -1,4 +1,4 @@
-import { TAG_FILTER_UNTAGGED } from "@/lib/constants";
+import { TAG_FILTER_UNTAGGED, TAG_SUGGESTIONS_MAX } from "@/lib/constants";
 
 /** OR filter: no selection matches everything; "untagged" matches skills without tags. */
 export function matchesTagFilter(tags: readonly string[], selected: readonly string[]): boolean {
@@ -18,4 +18,16 @@ export function existingTagFilters(
 ): readonly string[] {
   if (!known) return selected;
   return selected.filter((tag) => tag === TAG_FILTER_UNTAGGED || known.includes(tag));
+}
+
+/** Tags offered while typing one: those that hold the typed text, minus the ones already there. */
+export function tagSuggestions(
+  all: readonly string[] | undefined,
+  taken: readonly string[],
+  typed: string,
+): string[] {
+  const needle = typed.trim().toLowerCase();
+  return (all ?? [])
+    .filter((tag) => !taken.includes(tag) && tag.toLowerCase().includes(needle))
+    .slice(0, TAG_SUGGESTIONS_MAX);
 }

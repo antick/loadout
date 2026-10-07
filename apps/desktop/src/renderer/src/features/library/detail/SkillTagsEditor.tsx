@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSetSkillTags } from "@/hooks/mutations/skills";
 import { useAllTags } from "@/hooks/queries/skills";
-
-const MAX_SUGGESTIONS = 10;
+import { tagSuggestions } from "@/lib/tag-filter";
 
 /** A skill's tags, editable in place: remove with ×, add by typing or picking an existing tag. */
 export function SkillTagsEditor({ skill }: { skill: Skill }): ReactNode {
@@ -31,10 +30,7 @@ export function SkillTagsEditor({ skill }: { skill: Skill }): ReactNode {
     add(draft);
   };
 
-  const needle = draft.trim().toLowerCase();
-  const suggestions = (allTags.data ?? [])
-    .filter((tag) => !skill.tags.includes(tag) && tag.toLowerCase().includes(needle))
-    .slice(0, MAX_SUGGESTIONS);
+  const suggestions = tagSuggestions(allTags.data, skill.tags, draft);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">

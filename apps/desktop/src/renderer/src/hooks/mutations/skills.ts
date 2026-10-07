@@ -1,8 +1,10 @@
-import { type Skill } from "@loadout/shared";
+import { type BatchResult, type Skill } from "@loadout/shared";
 import { type QueryClient, type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
+import { runBatch, toastBatchOutcome } from "@/lib/batch";
+import { toastError } from "@/lib/toast";
 import { type CacheSnapshot, patchCachedSkill, restoreCached } from "@/lib/optimistic";
 
 export interface SetSkillTagsInput {
@@ -15,6 +17,39 @@ export function useSetSkillTags(): UseMutationResult<void, unknown, SetSkillTags
   return useApiMutation({
     fn: ({ skillId, tags }: SetSkillTagsInput) => api.skills.setTags(skillId, tags),
     error: "errors.saveTags",
+  });
+}
+
+/** One skill's tags after a batch edit. */
+export interface TagChange {
+  skill: Skill;
+  tags: string[];
+}
+
+/**
+ * Replace the tags of several skills, one after the other, with one toast for the whole set: what
+ * failed is listed in it. A batch of one fails like the single edit it is.
+ */
+export function useSetTagsOfSkills(): UseMutationResult<
+  BatchResult,
+  unknown,
+  readonly TagChange[]
+> {
+  const { t } = useTranslation();
+  return useApiMutation({
+    fn: async (changes: readonly TagChange[]) => {
+      const result = await runBatch(
+        changes,
+        (change) => change.skill.name,
+        (change) => api.skills.setTags(change.skill.id, change.tags),
+      ).catch((error: unknown) => {
+        toastError(error, "errors.saveTags");
+        throw error;
+      });
+      toastBatchOutcome(t("tags.batchSaved", { count: result.succeeded }), result.failed);
+      return result;
+    },
+    error: false,
   });
 }
 
