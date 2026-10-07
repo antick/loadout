@@ -45,6 +45,12 @@ describe("partial checkouts", () => {
       expect(existsSync(join(pdf, "SKILL.md"))).toBe(true);
       expect(existsSync(join(pdf, "scripts", "run.sh"))).toBe(false);
       expect(existsSync(join(checkout.dir, "README.md"))).toBe(false);
+      // What is not on disk yet is still named, from the commit.
+      expect(checkout.files).toContainEqual({
+        path: "skills/pdf/scripts/run.sh",
+        executable: false,
+      });
+      expect(checkout.files).toContainEqual({ path: "README.md", executable: false });
 
       await checkout.materialize([pdf]);
       expect(readFileSync(join(pdf, "scripts", "run.sh"), "utf8")).toBe("echo pdf v1\n");

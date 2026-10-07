@@ -131,7 +131,13 @@ describe("git preview and confirm", () => {
         name: "pdf",
         description: "Test skill pdf",
         manualOnly: false,
-        traits: [],
+        // Named from the commit: only the SKILL.md files are on disk while previewing.
+        traits: [
+          expect.objectContaining({
+            code: "scripts",
+            params: { count: 1, examples: "scripts/run.sh" },
+          }),
+        ],
         alreadyInstalled: false,
       },
     ]);

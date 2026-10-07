@@ -25,7 +25,7 @@ import type { SourceNewsStore } from "../sources/news-store";
 import { type ReplaceDeps, installOver } from "./replace";
 import { type SafetyGate, installChecked } from "./safety-gate";
 import { type PreviewSessions, createPreviewSessions, emitProgress } from "./preview-sessions";
-import { listRepoSkills, resolveSkillDir } from "./repo-scan";
+import { filesUnder, listRepoSkills, resolveSkillDir } from "./repo-scan";
 import { matchRequested } from "./requested";
 
 import { createWebPreviews } from "./web-install";
@@ -99,7 +99,11 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
     const release = task.keep(checkout.cleanup);
     emitProgress(ctx, key, "scanning");
     const scanRoot = resolveSkillDir(checkout.dir, source.subpath);
-    const found = listRepoSkills(scanRoot, { libraryDir: ctx.paths.skillsDir });
+    const found = listRepoSkills(scanRoot, {
+      libraryDir: ctx.paths.skillsDir,
+      // Only the SKILL.md files are on disk: the rest is named from the commit.
+      filesOf: checkout.files ? filesUnder(checkout.dir, checkout.files) : undefined,
+    });
     if (signal.aborted) throw cancelled();
 
     const repoIdentity = normalizeSourceUrl(source.cloneUrl);

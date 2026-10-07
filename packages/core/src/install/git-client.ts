@@ -63,12 +63,23 @@ export interface CheckoutOptions {
 }
 
 /** A throwaway copy of a repository, without its `.git`. Always call `cleanup`. */
+/** One file of a commit, as git records it: its path from the repository root, posix style. */
+export interface TreeFile {
+  path: string;
+  executable: boolean;
+}
+
 export interface Checkout {
   dir: string;
   /** Commit the files were taken from. */
   revision: string;
   /** Only the skill documents are here so far (a `manifestsOnly` checkout Git could narrow). */
   partial: boolean;
+  /**
+   * Every file of the commit, read from git without downloading it, while the checkout is
+   * partial; null for a whole one, whose files are on disk to read.
+   */
+  files: readonly TreeFile[] | null;
   /**
    * Give these folders (inside `dir`) all their files, from the same commit. Does nothing for a
    * whole checkout. Call it before reading, copying or scanning anything in them.
@@ -80,6 +91,7 @@ export interface Checkout {
 /** What a checkout that is already whole says to `materialize`. */
 export const WHOLE_CHECKOUT = {
   partial: false,
+  files: null,
   materialize: async (): Promise<void> => undefined,
 } as const;
 
@@ -127,6 +139,9 @@ const KEEP_CACHE_CODES: ReadonlySet<ErrorCode> = new Set([
   "GIT_MISSING",
 ]);
 const RECEIVING_PERCENT = /Receiving objects:\s+(\d+)%/;
+/** Git's file modes in a tree: a file that can run, and a link (never copied, so never listed). */
+const EXECUTABLE_MODE = "100755";
+const SYMLINK_MODE = "120000";
 
 /** Turn git's progress lines into whole percentages, each reported once. */
 function percentReader(
@@ -177,6 +192,23 @@ export function createGitClient(ctx: CoreContext): GitClient {
     const result = await run(args, call);
     if (result.code !== 0) throw gitFailure(action, result.stderr);
     return result;
+  }
+
+  /** Every regular file of `revision`, named from its tree: no file content is needed. */
+  async function treeFiles(slot: string, revision: string): Promise<TreeFile[]> {
+    const result = await runOk(
+      "Failed to list the repository's files",
+      ["ls-tree", "-r", "-z", "--full-tree", revision],
+      { cwd: slot },
+    );
+    const files: TreeFile[] = [];
+    for (const entry of result.stdout.split("\0")) {
+      const tab = entry.indexOf("\t");
+      const [mode, type] = entry.slice(0, tab).split(" ");
+      if (tab === -1 || type !== "blob" || mode === SYMLINK_MODE) continue;
+      files.push({ path: entry.slice(tab + 1), executable: mode === EXECUTABLE_MODE });
+    }
+    return files;
   }
 
   async function fetchInto(
@@ -335,7 +367,7 @@ export function createGitClient(ctx: CoreContext): GitClient {
 
     checkout: async (url, checkoutOptions = {}) => {
       const slot = cache.slotFor(url);
-      const { dir, revision, partial, cleanup } = await cache.withSlot(slot, async () => {
+      const { dir, revision, partial, files, cleanup } = await cache.withSlot(slot, async () => {
         if (checkoutOptions.signal?.aborted) throw cancelled();
         await prepareSlot(slot, url, checkoutOptions);
         const pinned = await pinRevision(slot, url, checkoutOptions);
@@ -361,7 +393,15 @@ export function createGitClient(ctx: CoreContext): GitClient {
           await remove();
           throw error;
         }
-        return { dir: target, revision: pinned, partial: tree.partial, cleanup: remove };
+        // What is not on disk yet can still be named, from the commit's tree.
+        const named = tree.partial ? await treeFiles(slot, pinned) : null;
+        return {
+          dir: target,
+          revision: pinned,
+          partial: tree.partial,
+          files: named,
+          cleanup: remove,
+        };
       });
 
       let whole = !partial;
@@ -399,6 +439,7 @@ export function createGitClient(ctx: CoreContext): GitClient {
         dir,
         revision,
         partial,
+        files,
         materialize,
         cleanup: async () => {
           release();

@@ -2,7 +2,8 @@ import { basename, join, relative } from "node:path";
 import { invalid, notFound } from "../errors";
 import { type SkillTrait, lastPathSegment, mergeTraits } from "@loadout/shared";
 import { readFrontmatter, readSkillIdentity } from "../skills/metadata";
-import { folderTraits } from "../skills/traits";
+import { filesTraits, folderTraits } from "../skills/traits";
+import type { TreeFile } from "./git-client";
 import {
   GIT_DIR,
   canonicalPath,
@@ -33,6 +34,21 @@ export interface FindOptions {
   maxDepth?: number;
   /** Links that resolve inside this folder are ours already and are skipped. */
   libraryDir?: string;
+}
+
+/** The files of a skill folder when they are not on disk yet (a partial checkout). */
+export type FilesOf = (dir: string) => readonly TreeFile[];
+
+/** `FilesOf` over a commit's files, `files` named from the repository root at `root`. */
+export function filesUnder(root: string, files: readonly TreeFile[]): FilesOf {
+  return (dir) => {
+    const prefix = toPosix(relative(root, dir));
+    if (!prefix) return files;
+    const start = `${prefix}/`;
+    return files
+      .filter((file) => file.path.startsWith(start))
+      .map((file) => ({ path: file.path.slice(start.length), executable: file.executable }));
+  };
 }
 
 /** Folders that never hold installable skills. */
@@ -119,22 +135,26 @@ export function preferNeutralCopies(root: string, dirs: readonly string[]): stri
 }
 
 /** The skill folder `dir` under a scan root, described for a preview. */
-export function describeSkill(scanRoot: string, dir: string): FoundSkill {
+export function describeSkill(scanRoot: string, dir: string, filesOf?: FilesOf): FoundSkill {
   const identity = readSkillIdentity(dir);
+  const fileTraits = filesOf ? filesTraits(filesOf(dir)) : folderTraits(dir);
   return {
     dir,
     relPath: toPosix(relative(scanRoot, dir)) || basename(scanRoot),
     name: identity.name,
     description: identity.description,
     manualOnly: identity.manualOnly,
-    traits: mergeTraits(identity.traits, folderTraits(dir)),
+    traits: mergeTraits(identity.traits, fileTraits),
   };
 }
 
 /** Skills under a scan root, described for a preview. Agent-specific duplicates are left out. */
-export function listRepoSkills(scanRoot: string, options: FindOptions = {}): FoundSkill[] {
+export function listRepoSkills(
+  scanRoot: string,
+  options: FindOptions & { filesOf?: FilesOf } = {},
+): FoundSkill[] {
   return preferNeutralCopies(scanRoot, findSkillDirs(scanRoot, options)).map((dir) =>
-    describeSkill(scanRoot, dir),
+    describeSkill(scanRoot, dir, options.filesOf),
   );
 }
 
