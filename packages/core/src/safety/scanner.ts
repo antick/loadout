@@ -8,11 +8,11 @@ import {
   type SafetyFinding,
   type SafetyReport,
   type SafetySeverity,
-  isRecord,
 } from "@loadout/shared";
 import { AppError, invalid, unsupported } from "../errors";
 import { exec } from "../util/exec";
 import { isDirectory, statOrNull } from "../util/fs";
+import { type Json, asNumber, asObject, asText, asTrimmedText } from "../util/json";
 import { buildReport, isBlockingSeverity, shorten } from "./report";
 
 /**
@@ -120,15 +120,11 @@ function lastLine(text: string): string | null {
 
 // ── Report ──
 
-type Json = Record<string, unknown>;
-
-const asObject = (value: unknown): Json => (isRecord(value) ? value : {});
-const asText = (value: unknown): string => (typeof value === "string" ? value : "");
-const asNumber = (value: unknown): number | null =>
-  typeof value === "number" && Number.isFinite(value) ? value : null;
+/** A text field of the report; a missing one reads as empty. */
+const textOf = (value: unknown): string => asText(value) ?? "";
 
 function severityOf(value: unknown): SafetySeverity | null {
-  const upper = asText(value).toUpperCase();
+  const upper = textOf(value).toUpperCase();
   return SAFETY_SEVERITIES.find((severity) => severity === upper) ?? null;
 }
 
@@ -139,16 +135,16 @@ function findingOf(raw: unknown): SafetyFinding | null {
   const location = asObject(issue.location);
   const line = asNumber(location.start_line);
   return {
-    id: asText(issue.id),
-    category: asText(issue.category),
-    pattern: asText(issue.pattern),
+    id: textOf(issue.id),
+    category: textOf(issue.category),
+    pattern: textOf(issue.pattern),
     severity,
     confidence: asNumber(issue.confidence) ?? 0,
-    file: asText(location.file),
+    file: textOf(location.file),
     line: line !== null && line > 0 ? line : null,
-    excerpt: shorten(asText(issue.finding)),
-    explanation: shorten(asText(issue.explanation), MAX_TEXT),
-    remediation: shorten(asText(issue.remediation), MAX_TEXT),
+    excerpt: shorten(textOf(issue.finding)),
+    explanation: shorten(textOf(issue.explanation), MAX_TEXT),
+    remediation: shorten(textOf(issue.remediation), MAX_TEXT),
   };
 }
 
@@ -174,9 +170,10 @@ export function parseReport(stdout: string, scannedAt: number): SafetyReport {
     findings,
     score,
     // The scanner's own rule: any high or critical finding, whatever its confidence.
-    blocking: isBlockingSeverity(asText(risk.max_issue_severity)),
-    recommendation: asText(risk.recommendation),
-    scannerVersion: asText(asObject(data.metadata).skillspector_version) || null,
+    blocking: isBlockingSeverity(textOf(risk.max_issue_severity)),
+    // Missing or empty: the report's own wording for its verdict.
+    recommendation: asTrimmedText(risk.recommendation),
+    scannerVersion: asTrimmedText(asObject(data.metadata).skillspector_version),
     scannedAt,
   });
 }

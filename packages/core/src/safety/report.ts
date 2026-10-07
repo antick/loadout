@@ -27,7 +27,7 @@ export interface ReportParts {
   /** Something found stops an install whatever the score. */
   blocking: boolean;
   /** The engine's own words; the verdict's when it has none. */
-  recommendation?: string;
+  recommendation?: string | null;
   scannerVersion: string | null;
   scannedAt: number;
 }

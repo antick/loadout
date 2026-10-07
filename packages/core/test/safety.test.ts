@@ -161,6 +161,12 @@ describe("reading SkillSpector reports", () => {
     expect(parseReport(CAUTION_OUTPUT, 0).verdict).toBe("caution");
   });
 
+  it("words the verdict itself when the scanner gives no recommendation", () => {
+    const report = parseReport(JSON.stringify({ risk_assessment: { score: 30 } }), 0);
+    const wording = { safe: "SAFE", caution: "CAUTION", unsafe: "DO_NOT_INSTALL" };
+    expect(report.recommendation).toBe(wording[report.verdict]);
+  });
+
   it("rejects output that is not a report", () => {
     expect(() => parseReport("Traceback: nope", 0)).toThrow(/could not be read/);
     expect(() => parseReport("{}", 0)).toThrow(/no risk score/);
