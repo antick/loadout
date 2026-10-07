@@ -1,6 +1,7 @@
-import { isArchivePath, parseSkillsCommand, skillMatchesName } from "@loadout/shared";
+import { isArchivePath, parseSkillsCommand } from "@loadout/shared";
 import {
   cancelled,
+  matchRequested,
   notFound,
   planFolder,
   planMarket,
@@ -99,11 +100,11 @@ export function selectSkills(
       `That ${what} holds ${plural(available.length, "skill")}: ${names}. Pick with --skill <name> (repeatable) or take everything with --all.`,
     );
   }
-  return wanted.map((want) => {
-    const match = available.find((skill) => skillMatchesName(skill, want));
-    if (!match) throw notFound(`No skill called "${want}" in that ${what}.`);
-    return match;
-  });
+  // The app's rule: the exact folder wins, and a name several skills share is refused.
+  const { selected, missing } = matchRequested(available, wanted);
+  if (missing[0] !== undefined) throw notFound(`No skill called "${missing[0]}" in that ${what}.`);
+  const chosen = new Set(selected);
+  return available.filter((skill) => chosen.has(skill.relPath));
 }
 
 const NAME_FLAG = {

@@ -155,5 +155,11 @@ describe("install sources", () => {
     expect(selectSkills([one, two], ["skills/alpha"], false)).toEqual([one]);
     expect(() => selectSkills([one, two], ["gamma"], false)).toThrow(/No skill called/);
     expect(() => selectSkills([], [], true)).toThrow(/No skills/);
+    // As in the app: the folder called `beta` wins over a frontmatter name, and a name two
+    // skills share is refused rather than guessed.
+    const legacy = { ...two, relPath: "legacy/x", name: "beta" };
+    expect(selectSkills([legacy, two], ["beta"], false)).toEqual([two]);
+    const other = { ...two, relPath: "other/y", name: "beta" };
+    expect(() => selectSkills([legacy, other], ["beta"], false)).toThrow(/names several skills/);
   });
 });
