@@ -44,8 +44,15 @@ export function useSkillsFilePlan(
   options: Pick<SkillsFileApplyOptions, "prune">,
   enabled: boolean,
 ): UseQueryResult<SkillsFilePlan> {
+  const queryKey = keys.skillsFile.plan(dir, mode, JSON.stringify(options));
   return useQuery({
-    queryKey: keys.skillsFile.plan(dir, mode, JSON.stringify(options)),
+    queryKey,
+    // A ticked option asks again: the plan it changes stays on screen meanwhile, but only the
+    // same project and mode's plan, never another dialog's.
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[2] === dir && previousQuery.queryKey[3] === mode
+        ? previous
+        : undefined,
     queryFn: async () =>
       mode === "unapply"
         ? (await api.skillsFile.unapply(dir, { dryRun: true })).plan

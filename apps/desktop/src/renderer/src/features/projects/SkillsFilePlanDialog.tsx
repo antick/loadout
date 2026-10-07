@@ -219,12 +219,14 @@ export function SkillsFilePlanDialog({
           </Button>
           <Button
             variant={shown === "unapply" ? "destructive" : "default"}
-            disabled={!plan.data || !hasWork(plan.data, force) || run.isPending}
+            disabled={
+              !plan.data || plan.isPlaceholderData || !hasWork(plan.data, force) || run.isPending
+            }
             onClick={() =>
               mode && run.mutate({ dir, mode, options: { force, prune } }, { onSuccess: close })
             }
           >
-            {run.isPending ? <Spinner /> : null}
+            {run.isPending || plan.isPlaceholderData ? <Spinner /> : null}
             {shown ? t(`skillsFile.confirm.${shown}`) : null}
           </Button>
         </DialogFooter>

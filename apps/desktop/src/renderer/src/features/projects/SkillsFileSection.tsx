@@ -2,6 +2,7 @@ import { DEFAULT_PROJECT_AGENT_KEY, SKILLS_FILE_NAME, type SkillsFileInfo } from
 import { FileCode2, FolderOpen, MoreHorizontal, Play, RefreshCw, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -50,7 +51,9 @@ function CreateDialog({
           <DialogTitle>{t("skillsFile.createTitle", { file: SKILLS_FILE_NAME })}</DialogTitle>
           <DialogDescription>{t("skillsFile.createDescription")}</DialogDescription>
         </DialogHeader>
-        {!init ? (
+        {suggestion.isError ? (
+          <ErrorState error={suggestion.error} onRetry={() => void suggestion.refetch()} />
+        ) : !init ? (
           <p className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
             <Spinner />
             {t("skillsFile.looking")}

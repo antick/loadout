@@ -86,3 +86,34 @@ test("updating the library from the selection asks which copy when they differ",
     page.getByRole("dialog", { name: "Which copy of “code-review” goes to the library?" }),
   ).toBeVisible();
 });
+
+test("skills.toml dialogs keep their place: an option changed, or a failed look", async ({
+  page,
+}) => {
+  await openApp(page, "/projects");
+  await main(page)
+    .getByRole("link", { name: "Open project “shop-web”" })
+    .click({ position: { x: 12, y: 12 } });
+  const content = main(page);
+
+  // The suggestion fails: the dialog says so and can try again, instead of spinning for ever.
+  await page.route("**/invoke", (route) =>
+    route.request().postData()?.includes("skillsFile.suggest") ? route.abort() : route.continue(),
+  );
+  await content.getByRole("button", { name: "Create…" }).click();
+  const create = page.getByRole("dialog");
+  await expect(create.getByRole("button", { name: "Retry" })).toBeVisible();
+  await page.unroute("**/invoke");
+  await create.getByRole("button", { name: "Retry" }).click();
+  await create.getByRole("button", { name: "Create file" }).click();
+  await expect(create).toHaveCount(0);
+
+  // Ticking an option asks again, with the plan and the box still there meanwhile.
+  await content.getByRole("button", { name: "Apply…" }).click();
+  const plan = page.getByRole("dialog");
+  const prune = plan.getByRole("checkbox", { name: /Also remove skills/ });
+  await prune.check();
+  await expect(prune).toBeChecked();
+  await expect(prune).toBeFocused();
+  await expect(plan.getByText(".cursor/skills/code-review")).toBeVisible();
+});
