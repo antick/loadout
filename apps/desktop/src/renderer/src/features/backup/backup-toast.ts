@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { SyncOutcome } from "@loadout/shared";
 import type { TFunction } from "i18next";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ export function toastSyncOutcome(outcome: SyncOutcome, t: TFunction): void {
     removed.length > 0
       ? t("backupSync.removed", {
           count: removed.length,
-          names: removed.map((skill) => skill.name).join(", "),
+          names: formatNameList(removed.map((skill) => skill.name)),
           device: removed[0]?.fromDevice ?? "",
         })
       : null;

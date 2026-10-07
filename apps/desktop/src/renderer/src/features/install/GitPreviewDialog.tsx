@@ -6,6 +6,7 @@ import {
   type InstallSelection,
   initialSelection,
   planInstallNames,
+  formatNameList,
 } from "@loadout/shared";
 import { Bot, GitBranch, GitCommitHorizontal, SearchX, ShieldAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, type RefObject, useRef, useState } from "react";
@@ -47,14 +48,14 @@ function RequestedAgentsNotice({ preview }: { preview: GitPreview }): ReactNode 
         <p>
           {allAgents
             ? t("install.git.agentsAll")
-            : t("install.git.agentsNamed", { names: names.join(", ") })}
+            : t("install.git.agentsNamed", { names: formatNameList(names) })}
         </p>
       ) : null}
       {unknownAgents.length > 0 ? (
         <p className="text-muted-foreground">
           {t("install.git.agentsUnknown", {
             count: unknownAgents.length,
-            names: unknownAgents.join(", "),
+            names: formatNameList(unknownAgents),
           })}
         </p>
       ) : null}
@@ -171,7 +172,7 @@ function PreviewForm({
         <InlineNotice tone="warning" icon={SearchX}>
           {t("install.git.missing", {
             count: preview.missing.length,
-            names: preview.missing.join(", "),
+            names: formatNameList(preview.missing),
           })}
         </InlineNotice>
       ) : null}

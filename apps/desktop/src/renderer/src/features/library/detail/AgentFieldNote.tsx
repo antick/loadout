@@ -1,4 +1,4 @@
-import { MANUAL_ONLY_KEY, type Skill, fieldNotesFor } from "@loadout/shared";
+import { MANUAL_ONLY_KEY, type Skill, fieldNotesFor, formatNameList } from "@loadout/shared";
 import { Info } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,7 @@ export function AgentFieldNote({ skill, agentKey, agentName }: AgentFieldNotePro
   const notes = fieldNotesFor(skill.behaviorFields, agentKey);
   const [first] = notes;
   if (!first) return null;
-  const fields = notes.map((note) => note.field).join(", ");
+  const fields = formatNameList(notes.map((note) => note.field));
   const ignored = first.level === "ignored";
   return (
     <Tooltip>

@@ -8,7 +8,7 @@ import type {
   ScanResult,
   Skill,
 } from "@loadout/shared";
-import { clawhubMarketId } from "@loadout/shared";
+import { clawhubMarketId, formatNameList } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -74,7 +74,7 @@ function withRenames(
       : [];
   });
   if (renamed.length === 0) return summary;
-  return { ...summary, description: t("install.toast.renamed", { list: renamed.join(", ") }) };
+  return { ...summary, description: t("install.toast.renamed", { list: formatNameList(renamed) }) };
 }
 
 function batchSummary(t: Translate, result: BatchImportResult): InstallTaskSuccess {

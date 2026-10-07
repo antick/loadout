@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { Project, Skill, SkillSuggestion } from "@loadout/shared";
 import { Plus, Sparkles, X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
@@ -60,7 +61,7 @@ export function SuggestedSkillsSection({ project, onAdd }: SuggestedSkillsSectio
       title={t("projectPage.suggestedSkills.title")}
       description={
         technologies.length > 0
-          ? t("projectPage.suggestedSkills.uses", { list: technologies.join(", ") })
+          ? t("projectPage.suggestedSkills.uses", { list: formatNameList(technologies) })
           : undefined
       }
       actions={

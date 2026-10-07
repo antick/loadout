@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { PublishResult } from "@loadout/shared";
 import { CheckCircle2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -15,7 +16,7 @@ export function PublishResultView({ result }: { result: PublishResult }): ReactN
         {result.commit
           ? t("publish.result.published", {
               count: result.published.length,
-              names: result.published.join(", "),
+              names: formatNameList(result.published),
             })
           : t("publish.result.nothing")}
         {result.unchanged.length > 0 && result.commit
@@ -24,7 +25,9 @@ export function PublishResultView({ result }: { result: PublishResult }): ReactN
       </InlineNotice>
       {skipped.length > 0 ? (
         <p className="text-xs text-muted-foreground" data-selectable>
-          {t("publish.result.skipped", { names: skipped.map((skill) => skill.name).join(", ") })}
+          {t("publish.result.skipped", {
+            names: formatNameList(skipped.map((skill) => skill.name)),
+          })}
         </p>
       ) : null}
       {result.installCommands.length > 0 ? (

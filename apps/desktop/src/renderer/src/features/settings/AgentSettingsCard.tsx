@@ -1,4 +1,4 @@
-import { type AgentInfo, isAgentAvailable } from "@loadout/shared";
+import { type AgentInfo, isAgentAvailable, formatNameList } from "@loadout/shared";
 import { Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -88,7 +88,7 @@ export function AgentSettingsCard({
           {sharedWith.length > 0 ? (
             <StatusBadge
               tone="warning"
-              label={t("settings.agents.badge.shares", { names: sharedWith.join(", ") })}
+              label={t("settings.agents.badge.shares", { names: formatNameList(sharedWith) })}
             />
           ) : null}
         </div>

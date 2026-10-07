@@ -8,6 +8,7 @@ import {
   type ClawhubPublishInput,
   type Skill,
   formatBytes,
+  formatNameList,
 } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Check, ExternalLink, KeyRound } from "lucide-react";
@@ -238,7 +239,7 @@ function ClawhubPublishForm({
             </p>
             {plan.topics.length > 0 ? (
               <p className="text-muted-foreground">
-                {t("publish.clawhub.topics", { topics: plan.topics.join(", ") })}
+                {t("publish.clawhub.topics", { topics: formatNameList(plan.topics) })}
               </p>
             ) : null}
           </div>

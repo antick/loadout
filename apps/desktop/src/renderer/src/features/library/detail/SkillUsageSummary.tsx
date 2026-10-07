@@ -1,4 +1,4 @@
-import { USAGE_RECENT_DAYS, formatRelative } from "@loadout/shared";
+import { USAGE_RECENT_DAYS, formatRelative, formatNameList } from "@loadout/shared";
 import { Activity } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,9 +35,9 @@ export function SkillUsageSummary({ skillId }: { skillId: string }): ReactNode {
             {" · "}
             {t("usage.detail.last", { when: formatRelative(used.lastUsedAt) })}
             {" · "}
-            {Object.entries(used.byAgent)
-              .map(([key, count]) => `${nameOf(key)} ${count}`)
-              .join(", ")}
+            {formatNameList(
+              Object.entries(used.byAgent).map(([key, count]) => `${nameOf(key)} ${count}`),
+            )}
           </p>
           {used.projects.length > 0 ? (
             <p className="truncate" title={used.projects.join("\n")}>

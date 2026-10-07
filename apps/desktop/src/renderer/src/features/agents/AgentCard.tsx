@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { AgentInfo } from "@loadout/shared";
 import { Share2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -41,7 +42,7 @@ export function AgentCard({ agent, count, sharedWith }: AgentCardProps): ReactNo
       {sharedWith.length > 0 ? (
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
           <Share2 className="mt-0.5 size-3 shrink-0" />
-          {t("agents.sharedFolder", { agents: sharedWith.join(", ") })}
+          {t("agents.sharedFolder", { agents: formatNameList(sharedWith) })}
         </p>
       ) : null}
     </LinkCard>

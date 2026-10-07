@@ -4,6 +4,7 @@ import {
   type Skill,
   type SkillSource,
   formatRelative,
+  formatNameList,
 } from "@loadout/shared";
 import { Link } from "@tanstack/react-router";
 import {
@@ -187,7 +188,7 @@ export function SourceCard({
           <p className="text-xs">
             {t("sources.news.names", {
               count: newSkills.length,
-              names: newSkills.map((skill) => skill.name).join(", "),
+              names: formatNameList(newSkills.map((skill) => skill.name)),
             })}
           </p>
           <div className="flex flex-wrap gap-2">

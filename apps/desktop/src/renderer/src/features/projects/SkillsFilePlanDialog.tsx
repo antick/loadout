@@ -4,6 +4,7 @@ import {
   type SkillsFileEntry,
   type SkillsFilePlan,
   formatRevision,
+  formatNameList,
 } from "@loadout/shared";
 import {
   CircleAlert,
@@ -112,12 +113,12 @@ function PlanBody({
       ) : null}
       {missing.length > 0 ? (
         <InlineNotice tone="warning" icon={SearchX}>
-          {t("skillsFile.missing", { count: missing.length, names: missing.join(", ") })}
+          {t("skillsFile.missing", { count: missing.length, names: formatNameList(missing) })}
         </InlineNotice>
       ) : null}
       {plan.unknownAgents.length > 0 ? (
         <InlineNotice tone="warning" icon={CircleAlert}>
-          {t("skillsFile.unknownAgents", { names: plan.unknownAgents.join(", ") })}
+          {t("skillsFile.unknownAgents", { names: formatNameList(plan.unknownAgents) })}
         </InlineNotice>
       ) : null}
       {plan.entries.length === 0 ? (

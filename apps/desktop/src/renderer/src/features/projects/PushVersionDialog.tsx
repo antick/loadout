@@ -1,4 +1,4 @@
-import { type SkillVersion, formatRelative } from "@loadout/shared";
+import { type SkillVersion, formatRelative, formatNameList } from "@loadout/shared";
 import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChoiceCards } from "@/components/ChoiceCards";
@@ -32,7 +32,7 @@ export interface PushVersionDialogProps {
 }
 
 const agentsOf = (version: SkillVersion): string =>
-  version.agents.map((agent) => agent.agentName).join(", ");
+  formatNameList(version.agents.map((agent) => agent.agentName));
 
 /** The newest copy that is not already the library's, which is most likely the one meant. */
 function preferred(versions: readonly SkillVersion[]): SkillVersion | undefined {
@@ -55,7 +55,7 @@ function VersionForm({ choice, onClose }: { choice: VersionChoice; onClose(): vo
     others.find((version) => version.id === otherId) ??
     others.find((version) => version.matchesLibrary) ??
     others[0];
-  const otherAgents = others.map(agentsOf).join(", ");
+  const otherAgents = formatNameList(others.map(agentsOf));
 
   const confirm = (): void => {
     push.mutate([{ ...ref, options: { version: chosenId, realign } }], {

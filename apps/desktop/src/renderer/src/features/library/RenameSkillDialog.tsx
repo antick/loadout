@@ -5,6 +5,7 @@ import {
   newSkillNameProblem,
   toSkillNameInput,
   takenSkillNames,
+  formatNameList,
 } from "@loadout/shared";
 import { FolderSymlink, Info, TriangleAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
@@ -45,7 +46,7 @@ function RenamePreview({ preview }: { preview: RenameResult }): ReactNode {
       <InlineNotice tone="info" icon={Info}>
         {preview.agents.length > 0
           ? t("library.rename.movesDeployments", {
-              agents: preview.agents.map(nameOf).join(", "),
+              agents: formatNameList(preview.agents.map(nameOf)),
             })
           : t("library.rename.noDeployments")}
       </InlineNotice>

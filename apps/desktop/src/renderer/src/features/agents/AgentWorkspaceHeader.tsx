@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { AgentInfo } from "@loadout/shared";
 import { FolderSearch, RefreshCw, Share2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -48,7 +49,7 @@ export function AgentWorkspaceHeader({
         {sharedWith.length > 0 ? (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Share2 className="size-3 shrink-0" />
-            {t("agents.sharedFolder", { agents: sharedWith.join(", ") })}
+            {t("agents.sharedFolder", { agents: formatNameList(sharedWith) })}
           </p>
         ) : null}
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">

@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { CheckAllResult, SkillSource, SourceCheckResult } from "@loadout/shared";
 import type { TFunction } from "i18next";
 import type { UseMutationResult } from "@tanstack/react-query";
@@ -23,7 +24,7 @@ function newsLine(t: TFunction, sources: SourceCheckResult | undefined): string 
   const lines = [
     ...(sources.added.length > 0
       ? [
-          `${t("sources.news.addedToast", { count: sources.added.length })}: ${sources.added.join(", ")}.`,
+          `${t("sources.news.addedToast", { count: sources.added.length })}: ${formatNameList(sources.added)}.`,
         ]
       : []),
     ...(found > 0 ? [t("sources.news.foundToast", { count: found })] : []),

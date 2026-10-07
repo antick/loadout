@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { Project, ProjectTarget, Skill } from "@loadout/shared";
 import { Pin } from "lucide-react";
 import { type ReactNode, useCallback, useMemo } from "react";
@@ -79,7 +80,7 @@ export function ProjectAddSkillsSheet({
         return {
           state: "available",
           hint: t("projectPage.add.partly", {
-            targets: free.map((target) => target.displayName).join(", "),
+            targets: formatNameList(free.map((target) => target.displayName)),
           }),
         };
       }

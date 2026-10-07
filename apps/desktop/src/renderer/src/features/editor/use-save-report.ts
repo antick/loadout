@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { SaveSkillFileResult } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
@@ -25,14 +26,14 @@ export function useSaveReport(
         toast.warning(t("editor.saved.skippedTitle", { count: result.otherCopiesSkipped.length }), {
           description: t("editor.saved.skippedDescription", {
             count: result.otherCopiesSkipped.length,
-            agents: result.otherCopiesSkipped.map(nameOf).join(", "),
+            agents: formatNameList(result.otherCopiesSkipped.map(nameOf)),
           }),
         });
       } else if (result.otherCopiesSaved.length > 0) {
         toast.success(
           t("editor.saved.carried", {
             count: result.otherCopiesSaved.length,
-            agents: result.otherCopiesSaved.map(nameOf).join(", "),
+            agents: formatNameList(result.otherCopiesSaved.map(nameOf)),
           }),
         );
       }
@@ -42,7 +43,7 @@ export function useSaveReport(
       toast.warning(t("editor.saved.keptTitle", { count: names.length }), {
         description: t("editor.saved.keptDescription", {
           count: names.length,
-          agents: names.join(", "),
+          agents: formatNameList(names),
         }),
         action: first
           ? {

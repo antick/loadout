@@ -4,6 +4,7 @@ import {
   type SkillCopy,
   type SkillIssue,
   hasTrackedSource,
+  formatNameList,
 } from "@loadout/shared";
 import { Copy, FilePlus, FileWarning, GitBranch, History, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
@@ -166,7 +167,7 @@ export function EditorNotices({
       >
         {t("editor.notice.copies", {
           count: otherCopies.length,
-          agents: otherCopies.map((copy) => copy.agentName).join(", "),
+          agents: formatNameList(otherCopies.map((copy) => copy.agentName)),
         })}
       </InlineNotice>,
     );

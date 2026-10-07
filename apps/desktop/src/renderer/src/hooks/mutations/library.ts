@@ -3,6 +3,7 @@ import {
   REMOVED_KEEP_DAYS,
   type RemoveSkillsResult,
   type Skill,
+  formatNameList,
 } from "@loadout/shared";
 import { type UseMutationResult } from "@tanstack/react-query";
 import { useCallback } from "react";
@@ -25,7 +26,7 @@ export function useUpdateSkills(): UseMutationResult<BatchUpdateResult, unknown,
         {
           description:
             result.heldBack.length > 0
-              ? t("library.updates.heldBack", { names: result.heldBack.join(", ") })
+              ? t("library.updates.heldBack", { names: formatNameList(result.heldBack) })
               : null,
         },
       ),

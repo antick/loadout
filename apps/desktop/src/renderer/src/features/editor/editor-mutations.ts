@@ -1,3 +1,4 @@
+import { formatNameList } from "@loadout/shared";
 import type { SkillFileChangeResult, SkillLocation } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -44,7 +45,7 @@ function useFileChange<Variables>(
       toast.warning(title, {
         description: t("editor.manage.copiesKept", {
           count: names.length,
-          agents: names.join(", "),
+          agents: formatNameList(names),
         }),
       });
     },

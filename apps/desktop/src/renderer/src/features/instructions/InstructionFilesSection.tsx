@@ -1,4 +1,4 @@
-import { type InstructionFile, formatRelative } from "@loadout/shared";
+import { type InstructionFile, formatRelative, formatNameList } from "@loadout/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { FileText, Plus } from "lucide-react";
 import type { ReactNode } from "react";
@@ -36,7 +36,7 @@ export function InstructionFilesSection({
       <h2 className={SECTION_LABEL}>{t("instructions.label")}</h2>
       <ul className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
         {files.map((file) => {
-          const readers = file.readers.map((reader) => reader.agentName).join(", ");
+          const readers = formatNameList(file.readers.map((reader) => reader.agentName));
           return (
             <li key={file.path}>
               <Tooltip>

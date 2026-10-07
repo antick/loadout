@@ -1,4 +1,5 @@
 import type { EditTarget, SkillFileEntry } from "@loadout/shared";
+import { formatNameList } from "@loadout/shared";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { ChevronLeft, Copy } from "lucide-react";
 import type { ReactNode } from "react";
@@ -100,7 +101,7 @@ export function EditorSidebar({
             <span>
               {t("editor.sidebar.copies", {
                 count: target.otherCopies.length,
-                agents: target.otherCopies.map((copy) => copy.agentName).join(", "),
+                agents: formatNameList(target.otherCopies.map((copy) => copy.agentName)),
               })}
             </span>
           </p>

@@ -1,4 +1,4 @@
-import { REMOVED_KEEP_DAYS, type Skill } from "@loadout/shared";
+import { REMOVED_KEEP_DAYS, type Skill, formatNameList } from "@loadout/shared";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -34,10 +34,13 @@ export function useMergeDuplicate(): MergeDuplicate {
             ? t("duplicates.merge.presets", { count: plan.presetsJoined })
             : null,
           plan.deployedTo.length > 0
-            ? t("duplicates.merge.agents", { agents: plan.deployedTo.join(", ") })
+            ? t("duplicates.merge.agents", { agents: formatNameList(plan.deployedTo) })
             : null,
           plan.blockedFor.length > 0
-            ? t("duplicates.merge.blocked", { keep: keep.name, agents: plan.blockedFor.join(", ") })
+            ? t("duplicates.merge.blocked", {
+                keep: keep.name,
+                agents: formatNameList(plan.blockedFor),
+              })
             : null,
         ].filter((line): line is string => line !== null);
         const ok = await confirm({
