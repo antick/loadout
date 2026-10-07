@@ -208,4 +208,36 @@ describe("portable metadata", () => {
       world.cleanup();
     }
   });
+
+  it("keeps a skill whose metadata file this version cannot read", async () => {
+    const { createTestWorld } = await import("./helpers");
+    const world = createTestWorld();
+    try {
+      const libraryPath = makeSkill(world.ctx.paths.skillsDir, "alpha");
+      const skill = world.store.insert({
+        name: "alpha",
+        description: null,
+        sourceType: "local",
+        libraryPath,
+        contentHash: "x",
+        updateStatus: "local_only",
+      });
+      // A source type a newer version knows: unreadable here, but the skill still exists.
+      writeFile(
+        join(world.ctx.paths.metadataDir, "skills", `${skill.id}.json`),
+        JSON.stringify({
+          id: skill.id,
+          path: "alpha",
+          tags: ["kept"],
+          source: { type: "from-the-future" },
+          createdAt: 1,
+        }),
+      );
+      writeFile(join(world.ctx.paths.metadataDir, "schema.json"), "{}");
+      world.portable.rebuild({ mode: "authoritative" });
+      expect(world.store.list().map((row) => row.id)).toEqual([skill.id]);
+    } finally {
+      world.cleanup();
+    }
+  });
 });

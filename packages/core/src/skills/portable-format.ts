@@ -184,6 +184,15 @@ function readJsonFiles(dir: string): { path: string; value: unknown }[] {
     });
 }
 
+/** The ids named by the metadata files in `dir`, readable or not (`<id>.json`). */
+export function metadataFileIds(dir: string): Set<string> {
+  return new Set(
+    readDirSafe(dir)
+      .filter((entry) => entry.isFile() && entry.name.endsWith(JSON_SUFFIX))
+      .map((entry) => entry.name.slice(0, -JSON_SUFFIX.length)),
+  );
+}
+
 /** Every metadata file in `dir` that `read` accepts; the rest are skipped and logged. */
 export function readJsonDir<T>(dir: string, read: (value: unknown) => T | null, log: Logger): T[] {
   const items: T[] = [];

@@ -14,6 +14,7 @@ import {
   readBlockedAgents,
   readEditedFiles,
   readFavoritedAt,
+  metadataFileIds,
   readJsonDir,
   readNote,
   readPortablePreset,
@@ -219,10 +220,18 @@ export class PortableMetadata {
         seenSkillIds.add(this.#upsertSkill(file, libraryPath, mode, fingerprints));
       }
 
+      // A file this version cannot read (a hand edit, a source type from a newer version) still
+      // says the skill exists: its row stays, or it would come back under a new id.
+      const fileIds = metadataFileIds(this.#skillsMetaDir);
       const missing: Skill[] = [];
       for (const skill of this.#skills.list()) {
         if (!existsSync(skill.libraryPath)) missing.push(skill);
-        else if (authoritative && hasMetadata && !seenSkillIds.has(skill.id)) {
+        else if (
+          authoritative &&
+          hasMetadata &&
+          !seenSkillIds.has(skill.id) &&
+          !fileIds.has(skill.id)
+        ) {
           this.#skills.delete(skill.id);
         }
       }

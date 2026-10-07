@@ -1,11 +1,11 @@
 import { isRecord } from "@loadout/shared";
 import { AppError } from "../errors";
 import type { PortablePreset, PortableSkill } from "../skills/portable";
+import { readPortableSkill } from "../skills/portable-format";
 import { GIT_DIR } from "../util/fs";
 import { batchInput, parseBatch } from "../util/git-batch";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
 import type { PresetVersion, SkillSide } from "./merge-plan";
-import { isSkillFolderName } from "../util/safe-path";
 
 /** Reads what the library looked like in one commit, straight from git objects. */
 
@@ -84,17 +84,19 @@ function parseJson<T>(text: string): T | null {
   }
 }
 
-/** A skill's metadata as read from git; null unless it is whole and belongs to `id`. */
+/**
+ * A skill's metadata as read from git; null unless it is whole and belongs to `id`. Checked by
+ * the same rules the rebuild uses, so the merge never takes in a file the rebuild would drop.
+ */
 function usableSkillMeta(raw: string, id: string): PortableSkill | null {
-  const meta = parseJson<PortableSkill>(raw);
-  const usable =
-    meta !== null &&
-    meta.id === id &&
-    isSkillFolderName(meta.path) &&
-    Array.isArray(meta.tags) &&
-    typeof meta.source === "object" &&
-    meta.source !== null;
-  return usable ? meta : null;
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const meta = readPortableSkill(value);
+  return meta?.id === id ? meta : null;
 }
 
 /** One skill's metadata in `commit`; null when it is not there or not usable. */
