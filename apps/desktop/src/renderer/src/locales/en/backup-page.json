@@ -229,6 +229,8 @@
       "GIT_NO_UPSTREAM": "The library is not linked to a branch on the remote yet. Back up once to create the link.",
       "GIT_NOT_REPO": "Backup is not set up for this library yet.",
       "SYNC_CONFLICT": "The same files changed on two devices and could not be merged.",
+      "SYNC_MANY_DELETES": "Another device deleted skills that are on this computer. Nothing was changed: look at the sync first.",
+      "SYNC_PLAN_CHANGED": "Another device synced while you were reviewing. Nothing was changed: look at the sync again.",
       "GITHUB_TOKEN_INVALID": "GitHub did not accept that token. Check that it was copied completely and has not expired.",
       "GITHUB_SCOPE": "The token may not create or read that repository. Create one with the “repo” scope.",
       "GITHUB_DEVICE_EXPIRED": "The sign-in code expired. Start again to get a new one.",
