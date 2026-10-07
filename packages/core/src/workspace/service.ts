@@ -107,7 +107,8 @@ export function createWorkspaceService(
       const ours = rowsAtPath(store.deployments(), target).some((row) => row.skillId === skill.id);
       if (!ours) throw exists(`Cannot take over "${skill.name}": ${target} already exists`);
     }
-    repointSources(store, localPath);
+    // A skill row edit, under the lock like every other; released before the deploy takes it.
+    await ctx.lock.run(`adopt ${skill.name}`, () => repointSources(store, localPath));
     await deploy.adopt(skill, agent);
     if (inPlace) return;
     await ctx.lock.run(`adopt ${skill.name}`, async () => {
