@@ -1,5 +1,5 @@
-import { chmodSync, existsSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { chmodSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Device, pushByHand, rawGit, useTwoDevices } from "./backup-world";
 import { DEFAULT_IGNORE_LINES } from "../src/backup/size";
@@ -226,6 +226,35 @@ describe("backup ignore rules", () => {
     await b.api.resolveConflicts([conflict?.skillKey ?? ""], "use_remote");
     expect(b.read("alpha", ".env")).toBe("FROM_A=1");
     expect(keptEnv()).toEqual(["SECRET=1"]);
+  });
+
+  it("journals a conflict choice, so what a crash leaves is kept at the next sync", async () => {
+    await trackEnvOnA();
+    writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+    b.editSkill("alpha", "B's version");
+    await b.api.sync();
+    const conflict = (await b.api.conflicts())[0];
+    const note = join(b.skillsDir, ".git", "loadout-merging");
+    // Called once the choice is committed: the moment a crash would leave the journal behind.
+    const setAside = b.removed.setAside.bind(b.removed);
+    let journal = "";
+    b.removed.setAside = () => {
+      journal = readFileSync(note, "utf8");
+      throw new Error("crashed");
+    };
+    await rejection(b.api.resolveConflicts([conflict?.skillKey ?? ""], "use_remote"));
+    expect(journal).toContain(JSON.stringify(join(b.skillsDir, "alpha")));
+
+    // As a crash leaves it: the note of a process that is gone, our folder still set aside.
+    writeFileSync(note, `${2 ** 22 + 7}\n${journal.split("\n").slice(1).join("\n")}`);
+    b.removed.setAside = setAside;
+    await b.api.sync();
+    expect(keptEnv()).toEqual(["SECRET=1"]);
+    expect(existsSync(note)).toBe(false);
+    const stages = readdirSync(dirname(b.skillsDir)).filter((name) =>
+      name.startsWith(".backup-stage-"),
+    );
+    expect(stages).toEqual([]);
   });
 
   /** What Recently removed on B holds at `relative` inside each kept folder. */

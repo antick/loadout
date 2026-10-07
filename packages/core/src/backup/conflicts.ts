@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, renameSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
 import { type BackupConflict, type ConflictResolution, firstFreeName } from "@loadout/shared";
 import { AppError, notFound } from "../errors";
@@ -9,13 +9,8 @@ import { deleteConflict, findConflict } from "./conflict-store";
 import { type BackupEnv, SKILL_METADATA_SUBDIR } from "./env";
 import { type Stage, createStage, extractPaths } from "./extract";
 import { skillMetadataAt } from "./merge-read";
-import {
-  type SetAsideFolder,
-  localFilesNotKept,
-  putBackFolder,
-  setAsideFolder,
-  settleSetAside,
-} from "./ignored";
+import { type SetAsideFolder, localFilesNotKept, setAsideFolder, settleSetAside } from "./ignored";
+import { type LibraryEdit, startLibraryEdit, whileMerging } from "./interrupted";
 import { commitLibrary, commitStaged, resolveCommit } from "./repo";
 import { safetyPoint } from "./snapshots";
 
@@ -35,9 +30,11 @@ const LOCAL_ASIDE_KEY = "local";
 
 /** What a choice changed on disk, so a failure can be undone and the rest finished after it. */
 interface ChoiceWork {
-  /** Folders and files moved into the library. */
+  /** Every folder moved in or out of the library, journaled so a crash can be undone too. */
+  edit: LibraryEdit;
+  /** Metadata files written for new skills; taken out again on failure. */
   created: string[];
-  /** Our folders that were replaced; put back on failure, their left-out files carried after. */
+  /** Our folders that were replaced; their left-out files are carried across after the commit. */
   replaced: { aside: SetAsideFolder; target: string }[];
   /** Scratch folders to remove at the very end; one holding files the user must see is kept. */
   stages: Stage[];
@@ -56,6 +53,7 @@ function remoteMetadata(env: BackupEnv, conflict: BackupConflict): Promise<Porta
 async function stageRemoteVersion(
   env: BackupEnv,
   conflict: BackupConflict,
+  edit: LibraryEdit,
 ): Promise<{ folder: string; stage: Stage }> {
   const path = conflict.theirsPath;
   if (!path || !(await resolveCommit(env, conflict.theirsCommit))) {
@@ -64,6 +62,7 @@ async function stageRemoteVersion(
     );
   }
   const stage = createStage(env);
+  edit.addStage(stage.dir);
   try {
     await extractPaths(env, stage, conflict.theirsCommit, [path]);
     if (!existsSync(stage.pathOf(path))) {
@@ -83,7 +82,7 @@ async function useRemote(
 ): Promise<void> {
   const local = env.store.find(conflict.skillKey);
   const meta = await remoteMetadata(env, conflict);
-  const staged = await stageRemoteVersion(env, conflict);
+  const staged = await stageRemoteVersion(env, conflict, work.edit);
   work.stages.push(staged.stage);
   const isFree = (name: string): boolean => !existsSync(join(env.repoDir, name));
   // The skill keeps the folder it has here; if it was deleted meanwhile it gets its remote name.
@@ -91,10 +90,10 @@ async function useRemote(
     ? basename(local.libraryPath)
     : firstFreeName(conflict.theirsPath ?? conflict.skillName, isFree);
   const target = join(env.repoDir, folder);
-  const aside = await setAsideFolder(env, staged.stage, folder, LOCAL_ASIDE_KEY);
+  const move = (from: string, to: string): void => work.edit.move(from, to);
+  const aside = await setAsideFolder(env, staged.stage, folder, LOCAL_ASIDE_KEY, move);
   if (aside) work.replaced.push({ aside, target });
-  work.created.push(target);
-  renameSync(staged.folder, target);
+  move(staged.folder, target);
   // The other device's metadata wins; what it leaves out (a block, a note) stays as it is here.
   const next: PortableSkill = {
     tags: [],
@@ -111,31 +110,76 @@ async function useRemote(
 }
 
 async function keepBoth(env: BackupEnv, conflict: BackupConflict, work: ChoiceWork): Promise<void> {
-  const { created } = work;
   const local = env.store.find(conflict.skillKey);
   const meta = await remoteMetadata(env, conflict);
-  const staged = await stageRemoteVersion(env, conflict);
+  const staged = await stageRemoteVersion(env, conflict, work.edit);
+  work.stages.push(staged.stage);
+  const stem = local ? basename(local.libraryPath) : (conflict.theirsPath ?? conflict.skillName);
+  const folder = firstFreeName(
+    `${stem}${REMOTE_COPY_SUFFIX}`,
+    (name) => !existsSync(join(env.repoDir, name)),
+  );
+  // A new skill in its own right: new id, and no upstream to update from.
+  const id = randomUUID();
+  work.created.push(metadataFile(env, id));
+  work.edit.move(staged.folder, join(env.repoDir, folder));
+  const copy: PortableSkill = {
+    id,
+    path: folder,
+    tags: meta?.tags ?? [],
+    source: { type: "import" },
+    createdAt: Date.now(),
+  };
+  writeJsonAtomic(metadataFile(env, id), copy);
+}
+
+/**
+ * Move the chosen versions in and commit them on top of `safety`. Returns where files that could
+ * be kept nowhere else wait on disk; null otherwise.
+ */
+async function applyChoice(
+  env: BackupEnv,
+  conflicts: readonly BackupConflict[],
+  action: ConflictResolution,
+  safety: string,
+  message: string,
+): Promise<string | null> {
+  const work: ChoiceWork = {
+    edit: startLibraryEdit(env, safety),
+    created: [],
+    replaced: [],
+    stages: [],
+  };
+  let leftIn: string | null = null;
   try {
-    const stem = local ? basename(local.libraryPath) : (conflict.theirsPath ?? conflict.skillName);
-    const folder = firstFreeName(
-      `${stem}${REMOTE_COPY_SUFFIX}`,
-      (name) => !existsSync(join(env.repoDir, name)),
-    );
-    // A new skill in its own right: new id, and no upstream to update from.
-    const id = randomUUID();
-    created.push(join(env.repoDir, folder), metadataFile(env, id));
-    renameSync(staged.folder, join(env.repoDir, folder));
-    const copy: PortableSkill = {
-      id,
-      path: folder,
-      tags: meta?.tags ?? [],
-      source: { type: "import" },
-      createdAt: Date.now(),
-    };
-    writeJsonAtomic(metadataFile(env, id), copy);
+    try {
+      for (const conflict of conflicts) {
+        if (action === "use_remote") await useRemote(env, conflict, work);
+        if (action === "keep_both") await keepBoth(env, conflict, work);
+      }
+      await commitStaged(env, message);
+    } catch (error) {
+      // Every folder moved goes back where it was, then git restores the safety point. One that
+      // could not go back is still in its scratch folder: that one stays on disk.
+      for (const path of work.created) await removePath(path);
+      if (!work.edit.undo()) {
+        work.stages = [];
+        env.ctx.log.error("A failed conflict choice could not put every folder back");
+      }
+      await env.git.probe(["reset", "--hard", safety]);
+      throw error;
+    }
+    // Files kept out of the backup exist only here: they stay with the skill, or are kept in
+    // Recently removed. When neither worked, the scratch folder holding them stays on disk.
+    for (const { aside, target } of work.replaced) {
+      if (settleSetAside(env, aside, target)) continue;
+      work.stages = work.stages.filter((stage) => !isInside(stage.dir, aside.to));
+      leftIn ??= aside.to;
+    }
   } finally {
-    await staged.stage.cleanup();
+    for (const stage of work.stages) await stage.cleanup();
   }
+  return leftIn;
 }
 
 /**
@@ -167,36 +211,14 @@ export async function resolveConflicts(
 
   await commitLibrary(env, BEFORE_RESOLVE_MESSAGE);
   const safety = await safetyPoint(env);
-  const work: ChoiceWork = { created: [], replaced: [], stages: [] };
-  let leftIn: string | null = null;
   const message =
     conflicts.length > 1
       ? `${RESOLVE_MESSAGE[action]} (${conflicts.length} skills)`
       : RESOLVE_MESSAGE[action];
-  try {
-    try {
-      for (const conflict of conflicts) {
-        if (action === "use_remote") await useRemote(env, conflict, work);
-        if (action === "keep_both") await keepBoth(env, conflict, work);
-      }
-      await commitStaged(env, message);
-    } catch (error) {
-      // Take out what was moved in, put our folders back, then let git restore the safety point.
-      for (const path of work.created) await removePath(path);
-      for (const { aside } of work.replaced) putBackFolder(aside);
-      await env.git.probe(["reset", "--hard", safety]);
-      throw error;
-    }
-    // Files kept out of the backup exist only here: they stay with the skill, or are kept in
-    // Recently removed. When neither worked, the scratch folder holding them stays on disk.
-    for (const { aside, target } of work.replaced) {
-      if (settleSetAside(env, aside, target)) continue;
-      work.stages = work.stages.filter((stage) => !isInside(stage.dir, aside.to));
-      leftIn ??= aside.to;
-    }
-  } finally {
-    for (const stage of work.stages) await stage.cleanup();
-  }
+  // Journaled like a merge: a crash before the commit puts every folder back at the next sync.
+  const leftIn = await whileMerging(env, () =>
+    applyChoice(env, conflicts, action, safety, message),
+  );
   for (const conflict of conflicts) {
     deleteConflict(env.ctx.db, conflict.skillKey);
     env.ctx.activity.record("backup", conflict.skillName, RESOLVE_MESSAGE[action]);
