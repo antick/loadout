@@ -81,7 +81,13 @@ describe("deleting a library skill", () => {
 
   it("keeps it in Recently removed and brings back the same skill with tags and presets", async () => {
     const skill = world.addSkill("notes", { "ref.md": "reference" });
-    world.store.update(skill.id, { sourceRef: "/src/notes", sourceRevision: "abc" });
+    world.store.update(skill.id, {
+      sourceRef: "/src/notes",
+      sourceRevision: "abc",
+      sourceTrustedHost: "cdn.example.com",
+      suggestFor: ["*.md"],
+      blockedAgents: ["codex"],
+    });
     world.store.setTags(skill.id, ["writing", "daily"]);
     const presets = new PresetStore(world.ctx.db);
     const preset = presets.insert({ name: "Work", description: null, icon: null });
@@ -115,6 +121,9 @@ describe("deleting a library skill", () => {
       name: "notes",
       sourceRef: "/src/notes",
       sourceRevision: "abc",
+      sourceTrustedHost: "cdn.example.com",
+      suggestFor: ["*.md"],
+      blockedAgents: ["codex"],
       libraryPath: skill.libraryPath,
       contentHash: skill.contentHash,
       deployments: [],
