@@ -25,6 +25,7 @@ import type { ReplaceDeps } from "./replace";
 import { type SafetyGate, batchFailureMessage, installChecked } from "./safety-gate";
 import type { ClawhubClient } from "../market/clawhub";
 import { createClawhubInstaller, createClawhubReader } from "./clawhub-install";
+import { emitProgress } from "./preview-sessions";
 import { readFolderSkill } from "./read-skill";
 
 export interface InstallServiceDeps {
@@ -111,12 +112,17 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
     options: InstallOptions = {},
   ): Promise<Skill> {
     const path = requireSkillFolder(sourcePath);
-    return installChecked(
-      install,
-      deps.safety,
-      { sourceDir: path, name, record: { ...LOCAL_RECORD, sourceRef: path } },
-      { ...options, progressKey: sourcePath },
-    );
+    try {
+      return await installChecked(
+        install,
+        deps.safety,
+        { sourceDir: path, name, record: { ...LOCAL_RECORD, sourceRef: path } },
+        { ...options, progressKey: sourcePath },
+      );
+    } finally {
+      // The safety check reported under this key; the status bar must stop showing it.
+      emitProgress(ctx, sourcePath, "done");
+    }
   }
 
   async function importFolder(folderPath: string): Promise<BatchImportResult> {

@@ -6,6 +6,7 @@ import type {
   InstallProgress,
   InstallSelection,
   PreviewedSkill,
+  SafetyReport,
   Skill,
 } from "@loadout/shared";
 import { MINUTE_MS } from "@loadout/shared";
@@ -134,11 +135,18 @@ export function createPreviewSessions(ctx: CoreContext, deps: PreviewSessionDeps
       // Also before the session is spent: after reading the findings the user can still say yes.
       const checkable = chosen.flatMap(({ dir, name }) => (dir ? [{ name, dir }] : []));
       // Whole folders before anything reads them: the safety check, then the install.
-      await session.materialize?.(checkable.map((entry) => entry.dir));
-      const checked = await safety.check(checkable, {
-        acceptRisk: options.acceptRisk,
-        progressKey: session.key,
-      });
+      let checked: (SafetyReport | null)[];
+      try {
+        await session.materialize?.(checkable.map((entry) => entry.dir));
+        checked = await safety.check(checkable, {
+          acceptRisk: options.acceptRisk,
+          progressKey: session.key,
+        });
+      } catch (error) {
+        // Flagged and not accepted, or unreadable: the status bar stops saying "Checking…".
+        emitProgress(ctx, session.key, "done");
+        throw error;
+      }
       const reportOf = new Map(
         checkable.map((entry, index) => [entry.dir, checked[index] ?? null]),
       );

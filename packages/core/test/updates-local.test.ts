@@ -1,6 +1,11 @@
 import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MARKETPLACE_NAME, type Skill, REMOVAL_IN_LIBRARY } from "@loadout/shared";
+import {
+  MARKETPLACE_NAME,
+  REMOVAL_IN_LIBRARY,
+  type Skill,
+  updateProgressKey,
+} from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MAX_DIFF_TEXT_BYTES, diffTrees } from "../src/updates/diff";
 
@@ -97,6 +102,8 @@ describe("check of local sources", () => {
     const result = await world.updates.api.update(skill.id);
     expect(result).toMatchObject({ contentChanged: true, pendingRemovals: [] });
     expect(readFileSync(join(skill.libraryPath, "scripts", "run.sh"), "utf8")).toBe("echo two\n");
+    // The new version's safety check showed in the status bar; it must not stay there.
+    expect(world.install.progressFor(updateProgressKey(skill.id)).at(-1)).toBe("done");
   });
 });
 

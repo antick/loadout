@@ -309,6 +309,15 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     ctx.touched("updates");
   }
 
+  /** Whatever happened, the status bar must stop saying "Cloning…" or "Checking…" for it. */
+  function progressDone(skill: Skill): void {
+    ctx.emit("install:progress", {
+      key: updateProgressKey(skill.id),
+      phase: "done",
+      name: skill.name,
+    });
+  }
+
   async function update(
     skillId: string,
     approval?: string | null,
@@ -384,8 +393,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       throw error;
     } finally {
       handle.done();
-      // Whatever happened, the status bar must stop saying "Cloning…" for this skill.
-      ctx.emit("install:progress", { key, phase: "done", name: skill.name });
+      progressDone(skill);
     }
   }
 
@@ -431,6 +439,9 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       recordFailure(skill.name, error);
       markFailed(skillId, error);
       throw error;
+    } finally {
+      // Its safety check reported under the skill's update key.
+      progressDone(skill);
     }
   }
 
@@ -462,6 +473,8 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       recordFailure(skill.name, error);
       markFailed(skillId, error);
       throw error;
+    } finally {
+      progressDone(skill);
     }
   }
 

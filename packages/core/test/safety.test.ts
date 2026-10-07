@@ -198,6 +198,8 @@ describe("the safety check on install", () => {
     ]);
     expect(existsSync(join(skillsDirOf(world), "bad"))).toBe(false);
     expect(world.store.list()).toEqual([]);
+    // The status bar stops saying "Checking…" when the install is refused.
+    expect(install.progressFor(source).at(-1)).toBe("done");
 
     const skill = await install.api.fromPath(source, undefined, { acceptRisk: true });
     expect(skill.name).toBe("bad");
@@ -281,6 +283,8 @@ describe("the safety check on install", () => {
     expect(error.code).toBe("UNSAFE");
     expect(error.details?.flagged?.map((f) => f.name)).toEqual(["bad"]);
     expect(world.store.list()).toEqual([]);
+    // Refused before anything was written: the status bar stops saying "Checking…".
+    expect(install.progressFor("acme/skills").slice(-2)).toEqual(["checking", "done"]);
 
     const installed = await install.api.confirmGit(preview.previewId, items, { acceptRisk: true });
     expect(installed.map((s) => s.name).sort()).toEqual(["bad", "good"]);
