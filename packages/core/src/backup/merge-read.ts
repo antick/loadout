@@ -20,6 +20,8 @@ export interface CommitSnapshot {
   entries: Map<string, string>;
   /** Skill ids whose metadata file exists but cannot be trusted (broken, misnamed, unsafe path). */
   unreadable: Set<string>;
+  /** Preset ids whose file exists but cannot be trusted (broken, or naming another id). */
+  unreadablePresets: Set<string>;
 }
 
 /**
@@ -123,6 +125,7 @@ export async function readCommit(env: BackupEnv, commit: string): Promise<Commit
   const skills = new Map<string, SkillSide>();
   const presets = new Map<string, PresetVersion>();
   const unreadable = new Set<string>();
+  const unreadablePresets = new Set<string>();
   const skillPrefix = `${env.metadataName}/${SKILL_METADATA_SUBDIR}/`;
   const presetPrefix = `${env.metadataName}/${PRESET_METADATA_SUBDIR}/`;
   for (const [path, raw] of contents) {
@@ -137,9 +140,10 @@ export async function readCommit(env: BackupEnv, commit: string): Promise<Commit
       else skills.set(id, { path: meta.path, treeHash: entries.get(meta.path) ?? null, meta });
     } else {
       const preset = parseJson<PortablePreset>(raw);
-      if (!preset || preset.id !== id) continue;
-      presets.set(id, { raw, updatedAt: Number(preset.updatedAt) || 0 });
+      // Like a skill's: a broken file must never read as a deleted preset.
+      if (!preset || preset.id !== id) unreadablePresets.add(id);
+      else presets.set(id, { raw, updatedAt: Number(preset.updatedAt) || 0 });
     }
   }
-  return { commit, skills, presets, entries, unreadable };
+  return { commit, skills, presets, entries, unreadable, unreadablePresets };
 }

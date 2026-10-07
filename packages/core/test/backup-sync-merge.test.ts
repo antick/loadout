@@ -198,6 +198,35 @@ describe("backup sync between two devices", () => {
     expect(existsSync(join(a.skillsDir, "..", "..", "escaped"))).toBe(false);
   });
 
+  it("keeps a preset whose file on the remote is broken", async () => {
+    const presetId = a.addPreset("Kit", [a.skill("alpha")?.id ?? ""]);
+    await a.api.sync();
+    const metadata = basename(a.ctx.paths.metadataDir);
+    const manual = join(world.dir, "manual");
+    rawGit(world.dir, "clone", "-q", world.remote, manual);
+    rawGit(manual, "checkout", "-q", "-B", "main", "origin/main");
+    writeFile(join(manual, metadata, "presets", `${presetId}.json`), "{ not json");
+    rawGit(manual, "add", "-A");
+    rawGit(
+      manual,
+      "-c",
+      "user.name=Hand",
+      "-c",
+      "user.email=hand@example.com",
+      "commit",
+      "-qm",
+      "manual",
+    );
+    rawGit(manual, "push", "-q", "origin", "main");
+
+    await a.api.sync();
+
+    const names = a.ctx.db.all<{ name: string }>("SELECT name FROM presets").map((row) => row.name);
+    expect(names).toEqual(["Kit"]);
+    const file = readFileSync(join(a.ctx.paths.metadataDir, "presets", `${presetId}.json`), "utf8");
+    expect(JSON.parse(file)).toMatchObject({ id: presetId, name: "Kit" });
+  });
+
   it("reads every metadata file past one that is not valid UTF-8", async () => {
     const ids = [a.skill("alpha")?.id ?? "", a.skill("beta")?.id ?? ""].sort();
     const metadata = basename(a.ctx.paths.metadataDir);

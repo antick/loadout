@@ -384,7 +384,7 @@ export async function mergeRemote(env: BackupEnv, review?: SyncReviewAnswer): Pr
   // in the way, and the full merge below then finds the incoming skill another name. Broken remote
   // metadata also goes the long way round, which only ever writes files the plan vouches for.
   let fastForward = false;
-  const trustworthy = theirSide.unreadable.size === 0;
+  const trustworthy = theirSide.unreadable.size === 0 && theirSide.unreadablePresets.size === 0;
   // Git leaves files kept out of the backup behind in a folder it deletes or renames. The full
   // merge sets such folders aside instead and moves those files along.
   const reshapesOurs = plan.skills.some((item) => {

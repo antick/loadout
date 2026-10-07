@@ -137,6 +137,11 @@ export function planSides(
     skills.delete(id);
     env.ctx.log.warn(`Backup merge skipped a skill with unreadable metadata: ${id}`);
   }
+  // A preset broken on either side is left exactly as it is here.
+  for (const id of [...sides.ours.unreadablePresets, ...sides.theirs.unreadablePresets]) {
+    presets.delete(id);
+    env.ctx.log.warn(`Backup merge skipped a preset with an unreadable file: ${id}`);
+  }
   const residual: Map<string, ResidualVersions> = collect(
     { base: sides.base.entries, ours: sides.ours.entries, theirs: sides.theirs.entries },
     (name) => claimed.has(name),
