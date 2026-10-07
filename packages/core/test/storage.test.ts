@@ -189,6 +189,8 @@ describe("prepareRemoval", () => {
     expect(plan.paths).toContain(paths.defaultBaseDir);
     expect(plan.paths).toContain(paths.skillsDir);
     expect(plan.paths).toContain(paths.dbPath);
+    // Earlier libraries kept by a restore are part of it too, or the folder could never go.
+    expect(plan.paths).toContain(paths.earlierDir);
     expect(plan.paths).not.toContain(paths.baseDir);
     expect(plan.emptyDirs).toEqual([paths.baseDir]);
   });

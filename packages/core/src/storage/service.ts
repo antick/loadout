@@ -13,6 +13,7 @@ import { holdsOwnEdits } from "../deploy/evidence";
 import { keepLinkedSkills, linkedFolders } from "../deploy/keep";
 import { logRedeployProblems } from "../deploy/report-log";
 import { AppError, invalid } from "../errors";
+import { libraryEntryPaths } from "../paths";
 import type { SkillStore } from "../skills/store";
 import type { GitClient } from "../install/git-client";
 import { lstatOrNull, removePathSync, pathSize } from "../util/fs";
@@ -188,17 +189,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       const moved = paths.baseDir !== home;
       // A moved library's folder was picked by the user: remove what is ours, then the folder
       // only if nothing else is left in it.
-      const libraryParts = moved
-        ? [
-            paths.skillsDir,
-            ...dbFiles(),
-            paths.historyDir,
-            paths.removedDir,
-            paths.cacheDir,
-            paths.logsDir,
-            paths.lockPath,
-          ]
-        : [];
+      const libraryParts = moved ? [...libraryEntryPaths(paths.baseDir), paths.lockPath] : [];
       return {
         paths: [...libraryParts, home],
         emptyDirs: moved ? [paths.baseDir] : [],

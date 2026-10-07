@@ -103,6 +103,11 @@ const LIBRARY_ENTRIES: readonly string[] = [
   LOGS_DIR,
 ];
 
+/** Every entry a library at `baseDir` is made of, whether or not it exists yet. */
+export function libraryEntryPaths(baseDir: string): string[] {
+  return LIBRARY_ENTRIES.map((name) => join(baseDir, name));
+}
+
 /** What stays in the home data folder wherever the library is. */
 const HOME_ENTRIES: ReadonlySet<string> = new Set([
   LIBRARY_CONFIG_FILE,
