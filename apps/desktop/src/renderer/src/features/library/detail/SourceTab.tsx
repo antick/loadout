@@ -89,7 +89,10 @@ export function SourceTab({ skill, refresh }: SourceTabProps): ReactNode {
   const none = <span className="text-muted-foreground">{t("library.source.none")}</span>;
 
   const relink = async (): Promise<void> => {
-    const folder = await pickFolder.mutateAsync(t("library.source.relinkPickerTitle"));
+    // A failing picker is toasted by the mutation.
+    const folder = await pickFolder
+      .mutateAsync(t("library.source.relinkPickerTitle"))
+      .catch(() => null);
     if (folder) refresh.start({ kind: "relink", sourcePath: folder });
   };
 

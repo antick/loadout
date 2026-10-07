@@ -165,8 +165,14 @@ function SearchResultRow({
   const settled = row?.state === "linked" || row?.state === "marked";
 
   const markMine = async (): Promise<void> => {
-    await setAuthored.mutateAsync({ skillId: skill.id, authored: true, quiet: true });
-    searches.set(skill.id, { state: "marked" });
+    // A failure is toasted by the mutation, and the row stays as it was.
+    const marked = await setAuthored
+      .mutateAsync({ skillId: skill.id, authored: true, quiet: true })
+      .then(
+        () => true,
+        () => false,
+      );
+    if (marked) searches.set(skill.id, { state: "marked" });
   };
 
   const openSkill = (): void => {

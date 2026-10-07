@@ -23,7 +23,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useImportPreset, usePreviewPresetImport } from "@/features/presets/preset-mutations";
-import { api } from "@/lib/api";
+import { usePickFile } from "@/hooks/mutations/app";
 import { errorMessage } from "@/lib/toast";
 import { setMany } from "@/lib/sets";
 
@@ -113,6 +113,7 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
   const navigate = useNavigate();
   const preview = usePreviewPresetImport();
   const importPreset = useImportPreset();
+  const pickFile = usePickFile();
   const inputId = useId();
   const nameId = useId();
   const [input, setInput] = useState("");
@@ -137,10 +138,13 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
     setReuse((current) => setMany(current, [skillName], used));
 
   const choose = async (): Promise<void> => {
-    const path = await api.app.pickFile(
-      { name: t("presetShare.fileType"), extensions: PRESET_FILE_DIALOG_EXTENSIONS },
-      t("presetShare.import.pickTitle"),
-    );
+    // A failing picker is toasted by the mutation.
+    const path = await pickFile
+      .mutateAsync({
+        filter: { name: t("presetShare.fileType"), extensions: PRESET_FILE_DIALOG_EXTENSIONS },
+        title: t("presetShare.import.pickTitle"),
+      })
+      .catch(() => null);
     if (!path) return;
     setInput(path);
     look(path);

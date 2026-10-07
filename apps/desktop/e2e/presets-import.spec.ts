@@ -58,3 +58,20 @@ test("a look still under way when the input changes never decides what is import
   await dialog.getByRole("button", { name: "Import", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Backend work");
 });
+
+test("a file picker that fails says so instead of failing silently", async ({ page }) => {
+  const thrown: string[] = [];
+  page.on("pageerror", (error) => thrown.push(error.message));
+  await openApp(page, "/presets");
+  await page.route("**/invoke", (route) =>
+    route.request().postData()?.includes("app.pickFile") ? route.abort() : route.continue(),
+  );
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Import a preset" })
+    .getByRole("button", { name: "Choose file…" })
+    .click();
+
+  await expect(page.locator("[data-sonner-toast]")).toContainText("Something went wrong.");
+  expect(thrown).toEqual([]);
+});
