@@ -10,7 +10,7 @@ import {
   parseSkillsCommand,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { cancelled, invalid } from "../errors";
+import { cancelled, invalid, isAppError } from "../errors";
 import type { SkillStore } from "../skills/store";
 import { unpackArchiveFile } from "./archive";
 import { archiveLink, skillFileLink } from "./archive-link";
@@ -163,11 +163,24 @@ export function createGitInstaller(ctx: CoreContext, deps: GitInstallerDeps): Gi
       const file = skillFileLink(text);
       if (file) return web.skillFile(task, file);
       // Only an address no repository pattern claimed can be a site; the rest stay Git sources.
+      let notBelowPath: unknown = null;
       if (isSiteCandidate(text) && isPlainUrl(text)) {
-        const index = await web.findSite(task, text);
-        if (index) return web.site(task, text, index, wanted);
+        try {
+          const index = await web.findSite(task, text);
+          if (index) return web.site(task, text, index, wanted);
+        } catch (error) {
+          // The site's index lists nothing below this path: it may still be a repository there.
+          if (!isAppError(error, "NOT_FOUND")) throw error;
+          notBelowPath = error;
+        }
       }
-      return previewRepository(task, text, wanted);
+      try {
+        return await previewRepository(task, text, wanted);
+      } catch (error) {
+        // Not a repository either: what the site said is the better answer.
+        if (notBelowPath && !isAppError(error, "CANCELLED")) throw notBelowPath;
+        throw error;
+      }
     });
   }
 

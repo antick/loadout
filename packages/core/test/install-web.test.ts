@@ -11,7 +11,7 @@ import {
   sha256Digest,
 } from "../src/install/well-known";
 import { createRequest, downloadWith } from "../src/install/download";
-import { leftoverCheckouts, tarBuffer } from "./install-fixtures";
+import { leftoverCheckouts, setEnv, tarBuffer } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
 const SCHEMA = "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
@@ -163,6 +163,31 @@ function publishDocs(pdfBody = ""): void {
 }
 
 describe("a site that publishes skills", () => {
+  it("still takes a repository below a path the site's index does not cover", async () => {
+    web.served.set(
+      `${SHOP}/.well-known/agent-skills/index.json`,
+      json({ skills: [{ name: "orders", description: "Handle orders", files: ["SKILL.md"] }] }),
+    );
+    // The repository at SHOP/acme/skills is the fixture one, through Git's own URL rewriting.
+    const restore = setEnv({
+      GIT_CONFIG_COUNT: "1",
+      GIT_CONFIG_KEY_0: `url.${world.remote}/.insteadOf`,
+      GIT_CONFIG_VALUE_0: `${SHOP}/acme/skills/`,
+    });
+    try {
+      const preview = await world.install.api.previewGit(`${SHOP}/acme/skills/`);
+      expect(preview.skills.map((skill) => skill.name).sort()).toEqual(["docx", "pdf"]);
+      await world.install.api.cancelPreview(preview.previewId);
+      // Neither a site's skills nor a repository: the site's hint stands.
+      await expect(world.install.api.previewGit(`${SHOP}/team/list`)).rejects.toMatchObject({
+        code: "NOT_FOUND",
+        message: expect.stringContaining("publishes skills, but none below /team/list"),
+      });
+    } finally {
+      restore();
+    }
+  });
+
   it("lists every valid skill of a scoped index and installs the chosen ones", async () => {
     publishDocs();
     const preview = await world.install.api.previewGit(DOCS);
