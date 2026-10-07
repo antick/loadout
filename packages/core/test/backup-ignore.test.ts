@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Device, pushByHand, rawGit, useTwoDevices } from "./backup-world";
@@ -133,6 +133,27 @@ describe("backup ignore rules", () => {
     expect(existsSync(join(b.skillsDir, "alpha"))).toBe(false);
     expect(b.read("alpha-renamed", ".env")).toBe("SECRET=1");
   });
+
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "keeps left-out files of a renamed skill when the merge fails before its commit",
+    async () => {
+      writeFile(join(b.skillsDir, "alpha", ".env"), "SECRET=1");
+      a.renameSkill("alpha", "alpha-renamed");
+      await a.api.sync();
+      // Writing the moved skill's metadata fails once its folder has been moved.
+      const metadata = join(b.ctx.paths.metadataDir, "skills");
+      chmodSync(metadata, 0o555);
+      try {
+        await expect(b.api.sync()).rejects.toThrow();
+      } finally {
+        chmodSync(metadata, 0o755);
+      }
+      expect(b.read("alpha", ".env")).toBe("SECRET=1");
+
+      await b.api.sync();
+      expect(b.read("alpha-renamed", ".env")).toBe("SECRET=1");
+    },
+  );
 
   it("leaves no folder of left-out files behind when another device deletes the skill", async () => {
     writeFile(join(b.skillsDir, "alpha", "node_modules", "dep", "index.js"), "dep");

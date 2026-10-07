@@ -108,15 +108,54 @@ function noteInJournal(env: BackupEnv, entry: JournalEntry): void {
   appendFileSync(gitPath(env, OWN_MERGE_NOTE), `${JSON.stringify(entry)}\n`);
 }
 
-/** Before the merge touches the library: the commit it starts from and its scratch folder. */
-export function noteMergeStart(env: BackupEnv, head: string, stage: string): void {
-  noteInJournal(env, { head, stage });
+/**
+ * Put moved folders back where they were, newest first, skipping any whose old place is taken.
+ * False when one could not go back: it is still where it was moved to.
+ */
+function undoMoves(moves: readonly { from: string; to: string }[]): boolean {
+  let all = true;
+  for (const { from, to } of moves.toReversed()) {
+    if (!lstatOrNull(to)) continue;
+    if (lstatOrNull(from)) {
+      all = false;
+      continue;
+    }
+    try {
+      ensureDir(dirname(from));
+      renameSync(to, from);
+    } catch {
+      all = false;
+    }
+  }
+  return all;
 }
 
-/** Move a folder in or out of the library during a merge, written down first. */
-export function journaledMove(env: BackupEnv, from: string, to: string): void {
-  noteInJournal(env, { from, to });
-  renameSync(from, to);
+/**
+ * Folder moves in and out of the library before a merge or a conflict choice commits. Each is
+ * written into the journal before it happens, so a crash is undone by `recoverInterrupted`, and
+ * kept here, so a failure in this process is undone the same way. Use inside `whileMerging`.
+ */
+export interface LibraryEdit {
+  /** A scratch folder the edit moves things through, cleaned up after a crash. */
+  addStage(dir: string): void;
+  /** Move a folder in or out of the library, written down first. */
+  move(from: string, to: string): void;
+  /** Put every moved folder back, newest first. False when one could not go back. */
+  undo(): boolean;
+}
+
+/** Start an edit of the library that commits on top of `head`. */
+export function startLibraryEdit(env: BackupEnv, head: string): LibraryEdit {
+  const moves: { from: string; to: string }[] = [];
+  return {
+    addStage: (stage) => noteInJournal(env, { head, stage }),
+    move: (from, to) => {
+      noteInJournal(env, { from, to });
+      renameSync(from, to);
+      moves.push({ from, to });
+    },
+    undo: () => undoMoves(moves),
+  };
 }
 
 /**
@@ -148,11 +187,7 @@ async function undoOwnMerge(env: BackupEnv, journal: Journal): Promise<void> {
   const head = (await env.git.probe(["rev-parse", "-q", "--verify", "HEAD"])).stdout.trim();
   const committed = journal.head !== null && journal.head !== head;
   if (!committed && journal.head) {
-    for (const { from, to } of journal.moves.toReversed()) {
-      if (!lstatOrNull(to) || lstatOrNull(from)) continue;
-      ensureDir(dirname(from));
-      renameSync(to, from);
-    }
+    undoMoves(journal.moves);
     // Not `merge --abort`: it keeps what the merge changed on disk, such as a folder moved away.
     await env.git.run(["reset", "--hard", journal.head]);
   } else if (!committed && existsSync(gitPath(env, "MERGE_HEAD"))) {

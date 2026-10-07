@@ -19,7 +19,6 @@ import {
   type SetAsideFolder,
   leftOutInTheWay,
   localFilesNotKept,
-  putBackFolder,
   setAsideFolder,
   settleSetAside,
 } from "./ignored";
@@ -35,7 +34,7 @@ import {
   skillFoldersHere,
 } from "./merge-input";
 import type { MergePlan, PresetVersions, SkillPlan, SkillVersions } from "./merge-plan";
-import { journaledMove, noteMergeStart } from "./interrupted";
+import { startLibraryEdit } from "./interrupted";
 import { type CommitSnapshot, isPlainEntryName } from "./merge-read";
 import { commitStaged, mergeBase, requireBranch, resolveCommit, upstreamCommit } from "./repo";
 
@@ -124,12 +123,13 @@ async function materialise(
   departing: ReadonlyMap<string, LibraryRecord>,
 ): Promise<string | null> {
   const stage: Stage = createStage(env);
-  const created: string[] = [];
+  // Every folder moved in or out before the commit is journaled, so a crash can be undone.
+  const edit = startLibraryEdit(env, await env.git.text(["rev-parse", "HEAD"]));
+  edit.addStage(stage.dir);
   // Folders of ours that the merge replaces or drops, set aside with their left-out files.
   const asides = new Map<string, SetAsideFolder>();
   const planned = new Set(plan.skills.flatMap((item) => (item.path ? [item.path] : [])));
-  // Every folder moved in or out before the commit is journaled, so a crash can be undone.
-  const move = (from: string, to: string): void => journaledMove(env, from, to);
+  const move = (from: string, to: string): void => edit.move(from, to);
   const place = (item: SkillPlan, from: string): void => {
     if (!item.path || !existsSync(from)) return;
     const folder = freeFolder(env, item.path, planned);
@@ -138,9 +138,7 @@ async function materialise(
       item.path = folder;
       if (item.meta) item.meta = { ...item.meta, path: folder };
     }
-    const target = join(env.repoDir, folder);
-    created.push(target);
-    move(from, target);
+    move(from, join(env.repoDir, folder));
   };
 
   // Set when files could be kept nowhere else: the stage then stays on disk.
@@ -167,17 +165,20 @@ async function materialise(
     try {
       await writeMerge();
     } catch (error) {
-      // Back to our last commit: take out what was moved in, put back what was set aside, then
-      // let git restore the rest.
-      for (const path of created) await removePath(path);
-      for (const aside of asides.values()) putBackFolder(aside);
+      // Back to our last commit: every folder moved goes back where it was, as after a crash,
+      // then git restores the rest. One that could not go back is still in the stage: keep it.
+      if (!edit.undo()) {
+        leftIn = stage.dir;
+        env.ctx.log.error(
+          `A failed backup merge could not put every folder back; see ${stage.dir}`,
+        );
+      }
       await env.git.probe(["reset", "--hard", "HEAD"]);
       throw error;
     }
   }
 
   async function writeMerge(): Promise<void> {
-    noteMergeStart(env, await env.git.text(["rev-parse", "HEAD"]), stage.dir);
     // Everything that can fail slowly (reading git objects) happens before the library is touched.
     const incoming = plan.skills.filter(
       (item) => item.content === "theirs" && skills.get(item.id)?.theirs?.treeHash,
