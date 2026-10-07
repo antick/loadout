@@ -1,7 +1,8 @@
 import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 import "@/lib/i18n";
-import { runWithUndo, toastBatchOutcome } from "@/lib/batch";
+import { toastBatchOutcome } from "@/lib/batch";
+import { runWithUndo } from "@/lib/removed-undo";
 import { TOAST_MAX_LINES } from "@/lib/constants";
 import { FAILURE_LIST_CLASS } from "@/lib/toast";
 

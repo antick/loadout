@@ -17,7 +17,7 @@ import {
 } from "@/features/projects/project-skill-groups";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "@/lib/api";
-import { runWithUndo } from "@/lib/batch";
+import { runWithUndo } from "@/lib/removed-undo";
 import { keys } from "@/lib/query-keys";
 import { GENERIC_ERROR_KEY, toastError } from "@/lib/toast";
 

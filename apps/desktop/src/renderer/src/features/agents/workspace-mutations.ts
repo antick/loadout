@@ -5,9 +5,9 @@ import { useApplySkills } from "@/hooks/mutations/deploy";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { runWithUndo, toastBatchOutcome } from "@/lib/batch";
+import { toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
-import { toastWithUndo } from "@/lib/removed-undo";
+import { runWithUndo, toastWithUndo } from "@/lib/removed-undo";
 
 /** One skill folder inside an agent's global skills folder. */
 export interface LocalSkillRef {

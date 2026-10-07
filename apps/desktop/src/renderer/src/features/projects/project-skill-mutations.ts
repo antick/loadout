@@ -10,9 +10,9 @@ import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { reloadHintFor } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
-import { runBatch, runWithUndo, soleItem, toastBatchOutcome } from "@/lib/batch";
+import { runBatch, soleItem, toastBatchOutcome } from "@/lib/batch";
 import { keys } from "@/lib/query-keys";
-import { toastWithUndo, undoAction } from "@/lib/removed-undo";
+import { runWithUndo, toastWithUndo, undoAction } from "@/lib/removed-undo";
 import { describeFailures, FAILURE_LIST_CLASS, toastError } from "@/lib/toast";
 
 /** One logical skill of a project: every per-agent copy at this relative path. */
