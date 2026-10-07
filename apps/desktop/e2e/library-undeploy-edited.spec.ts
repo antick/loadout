@@ -57,3 +57,19 @@ test("removing an edited copy from the Agents tab asks first and can be undone",
   await expect(toasts(page).filter({ hasText: "Put the folder back" })).toBeVisible();
   expect(await copyText(page)).toContain(EDIT);
 });
+
+test("removing an edited copy from the agent's page says so once, with Undo", async ({ page }) => {
+  await openApp(page, "/library");
+  await editedCopy(page);
+  await openApp(page, `/agents/${AGENT.key}`);
+  await main(page)
+    .getByRole("button", { name: `Actions for ${SKILL}` })
+    .click();
+  await page.getByRole("menuitem", { name: `Remove from ${AGENT.name}` }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Remove" }).click();
+
+  const kept = toasts(page).filter({ hasText: "Removed the copy you edited" });
+  await expect(kept.getByRole("button", { name: "Undo" })).toBeVisible();
+  // Both would come from the same finished removal: once the first is in, so is any second.
+  await expect(toasts(page)).toHaveCount(1);
+});

@@ -117,10 +117,12 @@ export function useAgentSkillActions(
               });
               if (!ok) return;
             }
-            // The mutation toasts a failure itself.
+            // The mutation toasts a failure itself, and an edited copy kept with its Undo.
             void remove({ agentKey: skill.agentKey, skillId })
-              .then(() => {
-                toastSuccess(t("agents.toast.removed", { name: skill.name }));
+              .then((result) => {
+                if (result.removedIds.length === 0) {
+                  toastSuccess(t("agents.toast.removed", { name: skill.name }));
+                }
                 onGone?.(skill);
               })
               .catch(() => undefined);
