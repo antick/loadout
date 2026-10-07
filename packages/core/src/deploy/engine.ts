@@ -1,5 +1,6 @@
-import { realpathSync, rmSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
+import { realpathSync, renameSync, rmSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { APP_NAME, type DeployMode, isWslPath } from "@loadout/shared";
 import { invalid, notFound, targetConflict } from "../errors";
 import {
@@ -9,6 +10,7 @@ import {
   linkTargetOf,
   lstatOrNull,
   pathsOverlap,
+  removePath,
   replaceDirAtomic,
   targetIdentity,
 } from "../util/fs";
@@ -84,10 +86,7 @@ function unlinkLink(path: string): void {
 function removeClassified(targetPath: string, state: TargetState): void {
   if (state === "absent") return;
   if (state === "real_dir") {
-    const stat = lstatOrNull(targetPath);
-    if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) {
-      throw targetConflict([{ path: targetPath, reason: REASON_MISMATCH }]);
-    }
+    assertStillDir(targetPath);
     rmSync(targetPath, { recursive: true });
     return;
   }
@@ -96,6 +95,29 @@ function removeClassified(targetPath: string, state: TargetState): void {
     return;
   }
   unlinkLink(targetPath);
+}
+
+/** A path classified as a real folder must still be one before anything replaces it. */
+function assertStillDir(targetPath: string): void {
+  const stat = lstatOrNull(targetPath);
+  if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) {
+    throw targetConflict([{ path: targetPath, reason: REASON_MISMATCH }]);
+  }
+}
+
+/**
+ * Replace the folder at `targetPath` with a link, moving the folder aside first and putting it
+ * back when no link can be made. False when the link failed; the folder is then where it was.
+ */
+async function swapInLink(sourceDir: string, targetPath: string): Promise<boolean> {
+  const aside = join(dirname(targetPath), `.${basename(targetPath)}.replaced-${randomUUID()}`);
+  renameSync(targetPath, aside);
+  if (!tryLink(sourceDir, targetPath)) {
+    renameSync(aside, targetPath);
+    return false;
+  }
+  await removePath(aside);
+  return true;
 }
 
 function tryLink(sourceDir: string, targetPath: string): boolean {
@@ -145,9 +167,16 @@ export async function writeTarget(
   const state = classifyTarget(targetPath, sourceDir);
   const refusal = authorize(state, policy);
   if (refusal) throw targetConflict([{ path: targetPath, reason: refusal }]);
-  removeClassified(targetPath, state);
 
-  if (mode === "symlink" && tryLink(sourceDir, targetPath)) return "symlink";
+  if (state === "real_dir") {
+    // A folder already there goes only once its replacement is ready: a copy that fails midway,
+    // or a link that cannot be made, leaves it as it was.
+    assertStillDir(targetPath);
+    if (mode === "symlink" && (await swapInLink(sourceDir, targetPath))) return "symlink";
+  } else {
+    removeClassified(targetPath, state);
+    if (mode === "symlink" && tryLink(sourceDir, targetPath)) return "symlink";
+  }
   // Staged beside the target and renamed in: a copy that fails midway leaves nothing there.
   await replaceDirAtomic(sourceDir, targetPath, { skipSymlinks: false });
   return "copy";

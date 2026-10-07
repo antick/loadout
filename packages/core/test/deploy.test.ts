@@ -128,6 +128,22 @@ describe("deploy engine", () => {
     expect(isLink(file)).toBe(true);
   });
 
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "keeps the recorded copy when its replacement cannot be written",
+    async () => {
+      writeFile(join(target, "old.txt"), "still here");
+      const locked = join(source, "locked.txt");
+      writeFile(locked, "unreadable");
+      chmodSync(locked, 0o000);
+      try {
+        await expect(writeTarget(source, target, "copy", recorded("copy"))).rejects.toThrow();
+      } finally {
+        chmodSync(locked, 0o644);
+      }
+      expect(readFileSync(join(target, "old.txt"), "utf8")).toBe("still here");
+    },
+  );
+
   it("refuses equal or nested source and target", async () => {
     const inside = join(source, "nested");
     mkdirSync(inside);
