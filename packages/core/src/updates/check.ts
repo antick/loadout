@@ -77,7 +77,7 @@ function isFresh(skill: Skill, now: number): boolean {
 }
 
 /** What the skill points at, read again after a lookup: a different answer drops the result. */
-function guardOf(skill: Skill): string {
+export function sourceGuard(skill: Skill): string {
   return [
     skill.sourceType,
     skill.sourceUrl,
@@ -88,7 +88,7 @@ function guardOf(skill: Skill): string {
 }
 
 function settled(skill: Skill, updateStatus: UpdateStatus, problem: string | null = null): Finding {
-  return { guard: guardOf(skill), patch: () => ({ updateStatus, lastCheckError: problem }) };
+  return { guard: sourceGuard(skill), patch: () => ({ updateStatus, lastCheckError: problem }) };
 }
 
 /**
@@ -109,7 +109,7 @@ function remoteFinding(
   if ("failure" in outcome) return settled(skill, "error", outcome.failure);
   const { revision } = outcome;
   return {
-    guard: guardOf(skill),
+    guard: sourceGuard(skill),
     patch: (fresh) => ({
       remoteRevision: revision,
       lastCheckError: null,
@@ -129,7 +129,7 @@ function remoteFinding(
 function unchangedFolderFinding(skill: Skill, compared: string, revision: string): Finding {
   const fallback = remoteFinding(skill, { revision });
   return {
-    guard: guardOf(skill),
+    guard: sourceGuard(skill),
     patch: (fresh) =>
       fresh.sourceRevision === compared
         ? {
@@ -252,12 +252,12 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
   ): Promise<Skill> {
     if (dryRun) {
       const fresh = store.get(skill.id);
-      if (guardOf(fresh) !== finding.guard) return fresh;
+      if (sourceGuard(fresh) !== finding.guard) return fresh;
       return { ...fresh, ...finding.patch(fresh), lastCheckedAt: Date.now() };
     }
     const applied = await runLocked(ctx, lockMode, `check ${skill.name}`, () => {
       const fresh = store.get(skill.id);
-      if (guardOf(fresh) !== finding.guard) return fresh;
+      if (sourceGuard(fresh) !== finding.guard) return fresh;
       return store.update(fresh.id, { ...finding.patch(fresh), lastCheckedAt: Date.now() });
     });
     // Only a new installed commit is library metadata; the rest is what the check found.

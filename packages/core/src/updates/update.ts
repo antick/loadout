@@ -38,6 +38,7 @@ import { LIBRARY_PLACE } from "../storage/removed-library";
 
 import type { SkillPatch, SkillStore } from "../skills/store";
 import { isDirectory, isSkillDir, normalizeAbsolutePath } from "../util/fs";
+import { sourceGuard } from "./check";
 import { detachSkill } from "./detach";
 
 import { type LockMode, runLocked } from "./locking";
@@ -284,29 +285,31 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     return result;
   }
 
-  function markFailed(skillId: string, error: unknown): void {
+  /**
+   * Record that updating `skill` failed. Inside the library lock, and only while the skill still
+   * points at the source that failed: one detached or relinked meanwhile is not marked. Skipped
+   * when the library is busy; the next check says the same.
+   */
+  async function markFailed(skill: Skill, error: unknown): Promise<void> {
     // None says anything is wrong with the source: the user stopped it, the library was busy,
     // or upstream simply moved on since the user compared.
     const quiet: readonly ErrorCode[] = ["CANCELLED", "BUSY", "CHANGED_ON_DISK"];
     if (quiet.some((code) => isAppError(error, code))) return;
-    if (!store.find(skillId)) return;
-    if (isAppError(error, "UNSAFE")) {
-      // Nothing is wrong with the source: a new version is there, and it waits for the user.
-      store.patch(skillId, {
-        updateStatus: "update_available",
-        lastCheckError: FLAGGED_UPDATE,
-        lastCheckedAt: Date.now(),
-      });
-      ctx.touched("updates");
-      return;
-    }
-    store.patch(skillId, {
-      // The source answered, and the skill is not in it any more: not a failure to retry.
-      updateStatus: isAppError(error, "NOT_FOUND") ? "source_missing" : "error",
-      lastCheckError: errorMessage(error),
-      lastCheckedAt: Date.now(),
+    const patch: SkillPatch = isAppError(error, "UNSAFE")
+      ? // Nothing is wrong with the source: a new version is there, and it waits for the user.
+        { updateStatus: "update_available", lastCheckError: FLAGGED_UPDATE }
+      : {
+          // The source answered, and the skill is not in it any more: not a failure to retry.
+          updateStatus: isAppError(error, "NOT_FOUND") ? "source_missing" : "error",
+          lastCheckError: errorMessage(error),
+        };
+    const marked = await ctx.lock.tryRun(`mark ${skill.name} failed`, () => {
+      const fresh = store.find(skill.id);
+      if (!fresh || sourceGuard(fresh) !== sourceGuard(skill)) return false;
+      store.patch(skill.id, { ...patch, lastCheckedAt: Date.now() });
+      return true;
     });
-    ctx.touched("updates");
+    if (marked) ctx.touched("updates");
   }
 
   /** Whatever happened, the status bar must stop saying "Cloning…" or "Checking…" for it. */
@@ -388,7 +391,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       // A dry run writes nothing, not even that it failed.
       if (!options.dryRun) {
         recordFailure(skill.name, error);
-        markFailed(skillId, error);
+        await markFailed(skill, error);
       }
       throw error;
     } finally {
@@ -437,7 +440,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     } catch (error) {
       if (options.dryRun) throw error;
       recordFailure(skill.name, error);
-      markFailed(skillId, error);
+      await markFailed(skill, error);
       throw error;
     } finally {
       // Its safety check reported under the skill's update key.
@@ -471,7 +474,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       });
     } catch (error) {
       recordFailure(skill.name, error);
-      markFailed(skillId, error);
+      await markFailed(skill, error);
       throw error;
     } finally {
       progressDone(skill);
