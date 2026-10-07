@@ -202,10 +202,10 @@
     },
     "disconnect": {
       "title": "Disconnect",
-      "body": "Forgets the remote and its stored access on this machine. The local history and the remote backup stay as they are.",
+      "body": "Forgets the remote on this machine. Its saved token stays, since publishing to the same host uses it; Remove all data in Settings clears it. The local history and the remote backup stay as they are.",
       "action": "Disconnect",
       "confirmTitle": "Disconnect this machine from the backup?",
-      "confirmBody": "The remote address and its stored credentials are removed from this machine. Nothing is deleted from the library, its history or the remote.",
+      "confirmBody": "The remote address is removed from this machine. Its saved token stays. Nothing is deleted from the library, its history or the remote.",
       "onGithub": "On GitHub you can also",
       "revoke": "revoke access",
       "or": "or",

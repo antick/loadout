@@ -179,18 +179,6 @@ export async function sanitizeRemoteUrl(secrets: SecretStore, url: string): Prom
   return parsed.cleanUrl;
 }
 
-export async function deleteRemoteToken(secrets: SecretStore, url: string): Promise<void> {
-  try {
-    const parsed = parseRemoteUrl(url);
-    if (parsed.host) {
-      await secrets.delete(tokenKey(parsed.host));
-      await secrets.delete(userKey(parsed.host));
-    }
-  } catch {
-    // Nothing usable was stored for an address we cannot even parse.
-  }
-}
-
 /**
  * Environment that makes git send the stored token to this remote, and only to this remote.
  * Empty when there is no token: SSH keys and the user's own credential helper then apply.

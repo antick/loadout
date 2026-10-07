@@ -5,7 +5,7 @@ import type { AutoBackupTarget } from "./auto";
 import { cloneLibrary } from "./clone";
 import { countConflicts, listConflicts } from "./conflict-store";
 import { resolveConflicts } from "./conflicts";
-import { deleteRemoteToken, sanitizeRemoteUrl } from "./credentials";
+import { sanitizeRemoteUrl } from "./credentials";
 import { writeDeviceName } from "./device";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME } from "./env";
 import { createGithubService } from "./github";
@@ -90,12 +90,12 @@ export function createBackupOperations(env: BackupEnv, request: HttpRequest): Ba
     },
 
     removeRemote: async () => {
-      const urls = await ctx.lock.run("remove the backup remote", async () => {
-        const found = [env.remoteUrl(), isRepo(env) ? await originUrl(env) : null];
-        if (isRepo(env) && found[1]) await env.git.run(["remote", "remove", REMOTE_NAME]);
-        return found;
+      await ctx.lock.run("remove the backup remote", async () => {
+        if (isRepo(env) && (await originUrl(env))) {
+          await env.git.run(["remote", "remove", REMOTE_NAME]);
+        }
       });
-      for (const url of urls) if (url) await deleteRemoteToken(ctx.secrets, url);
+      // The token stays in the keychain: it belongs to the host, and publishing there uses it too.
       ctx.settings.deleteRaw(INTERNAL_KEYS.backupRemoteUrl);
       ctx.settings.deleteRaw(INTERNAL_KEYS.githubAuthMethod);
       ctx.touched("backup");

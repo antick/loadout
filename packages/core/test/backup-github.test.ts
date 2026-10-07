@@ -101,7 +101,8 @@ describe("GitHub connect", () => {
     expect(JSON.stringify(device.ctx.settings.all())).not.toContain(TOKEN);
 
     await device.api.removeRemote();
-    expect(device.secrets.values.has(GITHUB_TOKEN_KEY)).toBe(false);
+    // Kept: publishing to GitHub signs in with it too.
+    expect(device.secrets.values.get(GITHUB_TOKEN_KEY)).toBe(TOKEN);
     expect(await device.api.githubAuthMethod()).toBeNull();
   });
 
