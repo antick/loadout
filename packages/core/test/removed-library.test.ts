@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { chmodSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createFileHistory } from "../src/editor";
@@ -42,6 +42,31 @@ describe("deleting a library skill", () => {
     });
   });
   afterEach(() => world.cleanup());
+
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "keeps the skill when its copy in an agent cannot be removed",
+    async () => {
+      world.ctx.settings.set("deployMode", "copy");
+      const skill = world.addSkill("notes");
+      await world.deploy.api.deploy(skill.id, "claude_code");
+      chmodSync(claude, 0o555);
+      let result;
+      try {
+        result = await skills.api.removeMany([skill.id]);
+      } finally {
+        chmodSync(claude, 0o755);
+      }
+      expect(result).toMatchObject({ succeeded: 0, removedIds: [] });
+      expect(result.failed).toHaveLength(1);
+      // The skill and the row proving the copy is ours both stay, so a retry can clean up.
+      expect(world.store.find(skill.id)).not.toBeNull();
+      expect(world.store.deployment(skill.id, "claude_code")).not.toBeNull();
+      expect(existsSync(skill.libraryPath)).toBe(true);
+
+      expect(await skills.api.removeMany([skill.id])).toMatchObject({ succeeded: 1 });
+      expect(existsSync(join(claude, "notes"))).toBe(false);
+    },
+  );
 
   it("dry run: counts and refuses as the real run would, and changes nothing", async () => {
     const skill = world.addSkill("notes");

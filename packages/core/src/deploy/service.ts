@@ -8,7 +8,7 @@ import {
 } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
 import type { CoreContext } from "../context";
-import { errorMessage, invalid, isAppError } from "../errors";
+import { AppError, errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
 import { canonicalPath, lstatOrNull, targetIdentity } from "../util/fs";
@@ -61,7 +61,10 @@ export interface DeployService {
   api: DeployApi;
   /** Like `api.apply`, for pairs that are not a full skills × agents grid (preset toggles). */
   applyPairs: BatchApply;
-  /** Remove every deployment of a skill, keeping anything we cannot prove we put there. */
+  /**
+   * Remove every deployment of a skill, keeping anything we cannot prove we put there. Throws IO
+   * when a folder of ours could not be removed; its row stays.
+   */
   removeAllForSkill(skill: Skill): Promise<void>;
   /**
    * Remove every link into the library from every agent folder, and every copy too when asked.
@@ -273,9 +276,16 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
     applyPairs,
 
     removeAllForSkill: async (skill) => {
-      await removeRows(`undeploy ${skill.name}`, () =>
-        store.deployments().filter((row) => row.skillId === skill.id),
-      );
+      const rowsOfSkill = (): DeploymentRecord[] =>
+        store.deployments().filter((row) => row.skillId === skill.id);
+      await removeRows(`undeploy ${skill.name}`, rowsOfSkill);
+      // A folder that could not be removed keeps its row, the proof that it is ours. Stop here,
+      // or the caller would drop that row with the skill and leave the folder orphaned.
+      const left = rowsOfSkill();
+      if (left.length > 0) {
+        const paths = left.map((row) => row.targetPath).join(", ");
+        throw new AppError("IO", `Could not remove ${skill.name} from ${paths}`);
+      }
     },
 
     removeEverywhere: async ({ includeCopies }) => {

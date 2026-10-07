@@ -136,7 +136,12 @@ export async function renameSkill(
     if (options.dryRun || (from === name && skill.dirName === name)) return result;
 
     // Nothing may point at the old folder while it moves: take the deployments down first.
-    await deploy.removeAllForSkill(skill);
+    try {
+      await deploy.removeAllForSkill(skill);
+    } catch (error) {
+      await deploy.redeploy(skill, agents);
+      throw error;
+    }
     try {
       moveFolder(store, skill, to, name);
     } catch (error) {
