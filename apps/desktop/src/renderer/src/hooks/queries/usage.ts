@@ -1,4 +1,4 @@
-import { type SkillUsage, USAGE_STALE_MS, type UsageReport, usageById } from "@loadout/shared";
+import { type SkillUsage, USAGE_STALE_MS, type UsageReport, indexUsage } from "@loadout/shared";
 import {
   type UseQueryResult,
   useIsMutating,
@@ -20,6 +20,8 @@ export interface SkillUsageView {
   report: UsageReport | undefined;
   /** Usage of each skill by id; empty while tracking is off. */
   byId: ReadonlyMap<string, SkillUsage>;
+  /** Tracking is on and has read the logs at least once. */
+  known: boolean;
   /** The logs are being read right now. */
   scanning: boolean;
   /** Read what the logs gained since the last look. */
@@ -52,6 +54,6 @@ export function useSkillUsage(): SkillUsageView {
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, scannedAt, mutate]);
 
-  const byId = useMemo(() => usageById(report.data), [report.data]);
-  return { enabled, report: report.data, byId, scanning, refresh: () => mutate() };
+  const { byId, known } = useMemo(() => indexUsage(report.data), [report.data]);
+  return { enabled, report: report.data, byId, known, scanning, refresh: () => mutate() };
 }

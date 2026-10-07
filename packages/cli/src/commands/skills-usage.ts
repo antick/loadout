@@ -1,9 +1,9 @@
 import {
   compareNames,
   formatRelative,
+  indexUsage,
   isUnusedSkill,
   USAGE_RECENT_DAYS,
-  usageById,
   type UsageReport,
 } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
@@ -52,11 +52,11 @@ async function usage(context: CommandContext): Promise<CommandResult> {
   if (!report.enabled) return { value: report, text: OFF_TEXT };
 
   const skills = await context.core.api.skills.list();
-  const byId = usageById(report);
+  const index = indexUsage(report);
   const unusedOnly = flagBoolean(context.args, UNUSED_FLAG.name);
   const shown = skills
-    .filter((skill) => !unusedOnly || isUnusedSkill(skill, byId))
-    .map((skill) => ({ skill, used: byId.get(skill.id) }))
+    .filter((skill) => !unusedOnly || isUnusedSkill(skill, index))
+    .map((skill) => ({ skill, used: index.byId.get(skill.id) }))
     .sort(
       (a, b) =>
         (b.used?.uses ?? 0) - (a.used?.uses ?? 0) || compareNames(a.skill.name, b.skill.name),

@@ -10,6 +10,7 @@ import {
   SOURCE_TYPES,
   type SourceType,
   type UpdateStatus,
+  type UsageIndex,
 } from "@loadout/shared";
 import { FILTER_ALL } from "@/lib/constants";
 import { matchesTagFilter } from "@/lib/tag-filter";
@@ -43,12 +44,11 @@ export const needsUsage = (value: StatusFilter | SortMode): boolean =>
   USAGE_STATUS_FILTERS.has(value as StatusFilter) || USAGE_SORT_MODES.has(value as SortMode);
 
 /** Usage of each skill by id, and whether tracking is on (without it, usage filters do nothing). */
-export interface UsageLookup {
+export interface UsageLookup extends UsageIndex {
   enabled: boolean;
-  byId: ReadonlyMap<string, SkillUsage>;
 }
 
-const NO_USAGE: UsageLookup = { enabled: false, byId: new Map() };
+const NO_USAGE: UsageLookup = { enabled: false, known: false, byId: new Map() };
 
 /** The last safety report of each skill by id; a report that still holds and is not "safe". */
 export type SafetyLookup = ReadonlyMap<string, SafetyRecord>;
@@ -122,7 +122,7 @@ function matchesStatus(
     case "flagged":
       return isSafetyFlagged(skill, safety);
     case "unused":
-      return !usage.enabled || isUnusedSkill(skill, usage.byId);
+      return !usage.enabled || isUnusedSkill(skill, usage);
     case "deployed":
       return skill.deployments.length > 0;
     case "deployed_all":

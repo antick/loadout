@@ -179,11 +179,11 @@ export function LibraryPage({
       filterSkills(
         all ?? [],
         { ...filters, query: searchQuery },
-        { enabled: usage.enabled, byId: usage.byId },
+        { enabled: usage.enabled, known: usage.known, byId: usage.byId },
         availableKeys,
         safety,
       ),
-    [all, filters, searchQuery, usage.enabled, usage.byId, availableKeys, safety],
+    [all, filters, searchQuery, usage.enabled, usage.known, usage.byId, availableKeys, safety],
   );
   // Sections change the order on screen; the selection follows it so shift-click ranges do too.
   const groups = useMemo(

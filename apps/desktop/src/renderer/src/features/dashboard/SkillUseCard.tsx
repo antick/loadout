@@ -57,9 +57,7 @@ export function SkillUseCard({ skills }: { skills: readonly Skill[] }): ReactNod
     .filter(({ used }) => (used?.recentUses ?? 0) > 0)
     .sort((a, b) => (b.used?.recentUses ?? 0) - (a.used?.recentUses ?? 0))
     .slice(0, TOP_USED_SKILLS_LIMIT);
-  const unused = usage.report.scannedAt
-    ? skills.filter((skill) => isUnusedSkill(skill, usage.byId)).length
-    : 0;
+  const unused = skills.filter((skill) => isUnusedSkill(skill, usage)).length;
 
   return (
     <PageSection title={t("usage.card.title")} actions={<UsageReadStatus usage={usage} />}>

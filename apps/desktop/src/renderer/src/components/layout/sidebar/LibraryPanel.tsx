@@ -1,9 +1,9 @@
 import {
   type Skill,
-  type SkillUsage,
+  type UsageIndex,
   groupSkillSources,
+  indexUsage,
   isUnusedSkill,
-  usageById,
 } from "@loadout/shared";
 import {
   CircleDashed,
@@ -49,11 +49,7 @@ interface LibraryView {
   /** What the library opens with. */
   search: LibrarySearch;
   icon: ReactNode;
-  count(
-    skills: readonly Skill[],
-    usage: ReadonlyMap<string, SkillUsage>,
-    safety: SafetyLookup,
-  ): number;
+  count(skills: readonly Skill[], usage: UsageIndex, safety: SafetyLookup): number;
   /** Shown only while usage tracking is on. */
   needsUsage?: boolean;
 }
@@ -105,7 +101,7 @@ export function LibraryPanel(): ReactNode {
   const { t } = useTranslation();
   const skills = useSkills();
   const usageReport = useUsageReport();
-  const usage = useMemo(() => usageById(usageReport.data), [usageReport.data]);
+  const usage = useMemo(() => indexUsage(usageReport.data), [usageReport.data]);
   const usageEnabled = usageReport.data?.enabled === true;
   const safety = useSafetyReports();
   const all = skills.data ?? [];

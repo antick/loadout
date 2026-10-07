@@ -51,6 +51,20 @@ export function usageById(report: UsageReport | undefined): ReadonlyMap<string, 
   return new Map((report?.enabled ? report.skills : []).map((usage) => [usage.skillId, usage]));
 }
 
+/** What is known of skills' use: whether the logs were read at all, and each skill's use. */
+export interface UsageIndex {
+  /** Tracking is on and has read the logs at least once. Before that, nothing is "unused". */
+  known: boolean;
+  byId: ReadonlyMap<string, SkillUsage>;
+}
+
+export function indexUsage(report: UsageReport | undefined | null): UsageIndex {
+  return {
+    known: report?.enabled === true && report.scannedAt !== null,
+    byId: usageById(report ?? undefined),
+  };
+}
+
 /**
  * Not used lately: tracking is on and has read the logs once, and the skill was not run in the
  * last `USAGE_RECENT_DAYS` days (or ever). A skill added within that time is left out, since it
@@ -58,11 +72,11 @@ export function usageById(report: UsageReport | undefined): ReadonlyMap<string, 
  */
 export function isUnusedSkill(
   skill: { id: string; createdAt: number },
-  usage: ReadonlyMap<string, SkillUsage>,
+  usage: UsageIndex,
   now: number = Date.now(),
 ): boolean {
-  if (now - skill.createdAt < USAGE_RECENT_MS) return false;
-  const used = usage.get(skill.id);
+  if (!usage.known || now - skill.createdAt < USAGE_RECENT_MS) return false;
+  const used = usage.byId.get(skill.id);
   return !used || now - used.lastUsedAt >= USAGE_RECENT_MS;
 }
 
