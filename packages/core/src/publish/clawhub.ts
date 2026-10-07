@@ -11,12 +11,12 @@ import {
   CLI_BINARY_NAME,
   SKILL_FILE,
   type ClawhubAccount,
+  type ClawhubProblem,
   type ClawhubPublishInput,
   type ClawhubPublishPreview,
   type ClawhubPublishResult,
   clawhubSkillUrl,
   slugOf,
-  formatBytes,
   isNewerVersion,
   nextPatchVersion,
 } from "@loadout/shared";
@@ -108,22 +108,23 @@ export function createClawhubPublisher(
     const slug = slugOf(skill.name);
     const files = filesOf(skill.libraryPath);
     const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
-    const problems: string[] = [];
+    const problems: ClawhubProblem[] = [];
     if (!files.some((file) => file.relativePath === SKILL_FILE)) {
-      problems.push(`The skill has no ${SKILL_FILE} at its top, which ClawHub requires.`);
+      problems.push({ code: "no_skill_file" });
     }
     for (const file of files) {
       if (file.size > CLAWHUB_MAX_FILE_BYTES) {
-        problems.push(
-          `${file.relativePath} is over ClawHub's limit of ${formatBytes(CLAWHUB_MAX_FILE_BYTES)} per file.`,
-        );
+        problems.push({
+          code: "file_too_large",
+          file: file.relativePath,
+          limitBytes: CLAWHUB_MAX_FILE_BYTES,
+        });
       }
     }
-    if (totalBytes > CLAWHUB_MAX_TOTAL_BYTES)
-      problems.push(
-        `The skill is over ClawHub's limit of ${formatBytes(CLAWHUB_MAX_TOTAL_BYTES)}.`,
-      );
-    if (!SKILL_NAME_PATTERN.test(slug)) problems.push("The name gives no usable slug.");
+    if (totalBytes > CLAWHUB_MAX_TOTAL_BYTES) {
+      problems.push({ code: "total_too_large", limitBytes: CLAWHUB_MAX_TOTAL_BYTES });
+    }
+    if (!SKILL_NAME_PATTERN.test(slug)) problems.push({ code: "no_slug" });
     const versions = await clawhub.versions(handle, slug);
     const latestVersion = versions.reduce<string | null>(
       (best, version) => (best === null || isNewerVersion(version, best) ? version : best),

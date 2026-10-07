@@ -1,3 +1,5 @@
+import { SKILL_FILE } from "./constants";
+import { formatBytes } from "./format";
 import type { SecretFinding } from "./secrets";
 
 /**
@@ -52,6 +54,34 @@ export interface PublishInput {
  */
 export type PublishStatus = "new" | "changed" | "unchanged" | "skipped";
 
+/** Why a skill is left out of a publish, with what the sentence names. */
+export type PublishSkip =
+  | { code: "folder_name" | "folder_missing" | "no_skill_file" }
+  | { code: "file_too_large"; file: string; limitBytes: number }
+  | { code: "published_elsewhere"; folder: string };
+
+/** The sentence for a skip, in English: what the CLI prints and the JSON carries as `reason`. */
+export function publishSkipText(skip: PublishSkip): string {
+  switch (skip.code) {
+    case "folder_name":
+      return "Its folder name cannot be used in a repository.";
+    case "folder_missing":
+      return "Its folder is missing.";
+    case "no_skill_file":
+      return `It has no ${SKILL_FILE}.`;
+    case "file_too_large":
+      return `${skip.file} is larger than ${formatBytes(skip.limitBytes)}.`;
+    case "published_elsewhere":
+      return `The repository already has it in ${skip.folder}/. Remove that copy first, or publish there.`;
+  }
+}
+
+/** Why a skill cannot go to ClawHub as it is, with what the sentence names. */
+export type ClawhubProblem =
+  | { code: "no_skill_file" | "no_slug" }
+  | { code: "file_too_large"; file: string; limitBytes: number }
+  | { code: "total_too_large"; limitBytes: number };
+
 export interface PublishFileCounts {
   added: number;
   changed: number;
@@ -64,8 +94,9 @@ export interface PublishSkillPlan {
   /** Path of the skill's folder in the repository, `/` separated. */
   folder: string;
   status: PublishStatus;
-  /** Why a skill is skipped. */
+  /** Why a skill is skipped, as a sentence (what the CLI prints); `skip` says it as data. */
   reason: string | null;
+  skip: PublishSkip | null;
   /** Compared with the repository's copy; all zero for `new` and `unchanged`. */
   files: PublishFileCounts;
   /** Entries not copied (dependencies, `.env`, logs, links), at most {@link PUBLISH_LEFT_OUT_SHOWN}. */
@@ -149,7 +180,7 @@ export interface ClawhubPublishPreview {
   /** Matches in the files that look like keys; publishing stops on these unless allowed. */
   secrets: SecretFinding[];
   /** Why it cannot be published as it is. */
-  problems: string[];
+  problems: ClawhubProblem[];
 }
 
 export interface ClawhubPublishInput {

@@ -37,6 +37,7 @@ import { useOpenExternal } from "@/hooks/mutations/app";
 import { errorMessage } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
+import { problemKey, problemParams } from "./publish-text";
 
 export interface ClawhubPublishDialogProps {
   skill: Skill | null;
@@ -248,8 +249,8 @@ function ClawhubPublishForm({
         ) : null}
 
         {plan?.problems.map((problem) => (
-          <InlineNotice key={problem} tone="danger" icon={AlertTriangle}>
-            {problem}
+          <InlineNotice key={problemKey(problem)} tone="danger" icon={AlertTriangle}>
+            {t(`publish.clawhub.problem.${problem.code}`, problemParams(problem))}
           </InlineNotice>
         ))}
         {plan && plan.secrets.length > 0 ? (

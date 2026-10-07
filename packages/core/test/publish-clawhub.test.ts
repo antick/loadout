@@ -171,7 +171,9 @@ describe("publishing to ClawHub", () => {
     writeFileSync(join(dir, "data.bin"), Buffer.alloc(CLAWHUB_MAX_FILE_BYTES + 1));
     const skill = await core.api.install.fromPath(dir);
     const preview = await core.api.publish.clawhubPreview(skill.id);
-    expect(preview.problems).toEqual(["data.bin is over ClawHub's limit of 10.0 MB per file."]);
+    expect(preview.problems).toEqual([
+      { code: "file_too_large", file: "data.bin", limitBytes: CLAWHUB_MAX_FILE_BYTES },
+    ]);
     expect(preview.files).toContainEqual({ path: "data.bin", bytes: CLAWHUB_MAX_FILE_BYTES + 1 });
   });
 

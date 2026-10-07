@@ -6,6 +6,7 @@ import { InlineNotice } from "@/components/InlineNotice";
 import { type StatusTone, StatusBadge } from "@/components/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { skipText } from "./publish-text";
 
 const STATUS_TONES: Record<PublishStatus, StatusTone> = {
   new: "success",
@@ -20,8 +21,8 @@ function SkillLine({ skill }: { skill: PublishSkillPlan }): ReactNode {
   const { t } = useTranslation();
   const { added, changed, removed } = skill.files;
   const detail =
-    skill.status === "skipped"
-      ? skill.reason
+    skill.status === "skipped" && skill.skip
+      ? skipText(skill.skip, t)
       : skill.status === "changed"
         ? t("publish.plan.changes", { added, changed, removed })
         : null;

@@ -81,7 +81,20 @@
       "doneLive": "{{ref}}@{{version}} is live on ClawHub.",
       "donePending": "{{ref}}@{{version}} was accepted. It goes public once ClawHub's security scan finishes.",
       "installWith": "Others install it with:",
-      "openPage": "Open on ClawHub"
+      "openPage": "Open on ClawHub",
+      "problem": {
+        "no_skill_file": "The skill has no SKILL.md at its top, which ClawHub requires.",
+        "no_slug": "The name gives no usable slug.",
+        "file_too_large": "{{file}} is over ClawHub's limit of {{limit}} per file.",
+        "total_too_large": "The skill is over ClawHub's limit of {{limit}}."
+      }
+    },
+    "skip": {
+      "folder_name": "Its folder name cannot be used in a repository.",
+      "folder_missing": "Its folder is missing.",
+      "no_skill_file": "It has no SKILL.md.",
+      "file_too_large": "{{file}} is larger than {{limit}}.",
+      "published_elsewhere": "The repository already has it in {{folder}}/. Remove that copy first, or publish there."
     }
   }
 }

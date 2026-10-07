@@ -6,10 +6,11 @@ import {
   PUBLISH_MAX_FILE_BYTES,
   type PublishFileCounts,
   type PublishSkillPlan,
+  type PublishSkip,
   type SecretFinding,
   SKILL_FILE,
   type Skill,
-  formatBytes,
+  publishSkipText,
 } from "@loadout/shared";
 
 import { isDirectory } from "../util/fs";
@@ -64,7 +65,7 @@ function publishedElsewhere(
 function skipped(
   skill: Skill,
   folder: string,
-  reason: string,
+  skip: PublishSkip,
   leftOut: string[] = [],
 ): PlannedSkill {
   return {
@@ -74,7 +75,8 @@ function skipped(
       name: skill.name,
       folder,
       status: "skipped",
-      reason,
+      reason: publishSkipText(skip),
+      skip,
       files: NO_FILES,
       leftOut: leftOut.slice(0, PUBLISH_LEFT_OUT_SHOWN),
       leftOutCount: leftOut.length,
@@ -86,30 +88,25 @@ function planSkill(skill: Skill, checkoutDir: string, target: ResolvedTarget): P
   const name = basename(skill.libraryPath);
   const folder = `${target.layerDir}/${name}`;
   if (!isSkillFolderName(name)) {
-    return skipped(skill, folder, "Its folder name cannot be used in a repository.");
+    return skipped(skill, folder, { code: "folder_name" });
   }
-  if (!isDirectory(skill.libraryPath)) return skipped(skill, folder, "Its folder is missing.");
+  if (!isDirectory(skill.libraryPath)) return skipped(skill, folder, { code: "folder_missing" });
   const collected = collectFiles(skill.libraryPath);
   const { files, leftOut } = collected;
   if (!files.some((file) => file.relativePath === SKILL_FILE)) {
-    return skipped(skill, folder, `It has no ${SKILL_FILE}.`, leftOut);
+    return skipped(skill, folder, { code: "no_skill_file" }, leftOut);
   }
   if (collected.tooLarge) {
     return skipped(
       skill,
       folder,
-      `${collected.tooLarge} is larger than ${formatBytes(PUBLISH_MAX_FILE_BYTES)}.`,
+      { code: "file_too_large", file: collected.tooLarge, limitBytes: PUBLISH_MAX_FILE_BYTES },
       leftOut,
     );
   }
   const elsewhere = publishedElsewhere(checkoutDir, target, name);
   if (elsewhere) {
-    return skipped(
-      skill,
-      folder,
-      `The repository already has it in ${elsewhere}/. Remove that copy first, or publish there.`,
-      leftOut,
-    );
+    return skipped(skill, folder, { code: "published_elsewhere", folder: elsewhere }, leftOut);
   }
 
   const there = digestsInTree(join(checkoutDir, ...folder.split("/")));
@@ -124,6 +121,7 @@ function planSkill(skill: Skill, checkoutDir: string, target: ResolvedTarget): P
       folder,
       status: isNew ? "new" : same ? "unchanged" : "changed",
       reason: null,
+      skip: null,
       files: isNew || same ? NO_FILES : counts,
       leftOut: leftOut.slice(0, PUBLISH_LEFT_OUT_SHOWN),
       leftOutCount: leftOut.length,
