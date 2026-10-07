@@ -31,12 +31,6 @@ export interface SimilarPair {
   nameScore: number;
 }
 
-/**
- * Below this many lines in common (of all lines in both, counted once) two documents are not
- * compared in order at all: it is the cheap test that keeps a big library fast, and it lies well
- * under what `DUPLICATE_CONTENT_MIN` needs.
- */
-const SHARED_LINES_PREFILTER = 0.3;
 /** Longest stretch of comparing before other work gets a turn. */
 const SLICE_MS = 10;
 
@@ -53,16 +47,7 @@ export interface SliceOptions extends SimilarOptions {
   stillWanted?: () => boolean;
 }
 
-function lineSet(text: string): Set<string> {
-  const lines = new Set<string>();
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (trimmed) lines.add(trimmed);
-  }
-  return lines;
-}
-
-/** Share of all distinct lines that both sets hold. */
+/** Share of all distinct items that both sets hold. */
 function jaccard<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): number {
   if (left.size === 0 || right.size === 0) return 0;
   const [small, large] = left.size <= right.size ? [left, right] : [right, left];
@@ -107,7 +92,6 @@ function wordSet(text: string | null): Set<string> {
 /** What a skill is compared by, worked out once rather than once for every other skill. */
 interface Prepared {
   input: SimilarityInput;
-  lines: Set<string>;
   words: Set<string>;
   /** The document's lines as `textSimilarity` reads them, each line as a number. */
   ordered: number[];
@@ -129,7 +113,6 @@ function prepare(skills: readonly SimilarityInput[], similarText: boolean): Prep
     const ordered = similarText ? comparedLines(input.document).map(numberOf) : [];
     return {
       input,
-      lines: similarText ? lineSet(input.document) : new Set<string>(),
       words: wordSet(input.description),
       ordered,
       counts: lineCounts(ordered),
@@ -147,11 +130,7 @@ function classify(left: Prepared, right: Prepared): Omit<SimilarPair, "key" | "a
     nameScore >= DUPLICATE_NAME_MIN &&
     jaccard(left.words, right.words) >= DUPLICATE_DESCRIPTION_MIN;
   let contentScore = 0;
-  if (
-    left.lines.size > 0 &&
-    right.lines.size > 0 &&
-    jaccard(left.lines, right.lines) >= SHARED_LINES_PREFILTER
-  ) {
+  if (left.ordered.length > 0 && right.ordered.length > 0) {
     // Lines in common in any order are never fewer than in order. Below the bar, the ordered
     // comparison runs only for a pair listed for its names, whose score is shown all the same.
     const total = left.ordered.length + right.ordered.length;
