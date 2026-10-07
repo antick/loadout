@@ -168,23 +168,17 @@ const BASE_COMPONENTS: Components = {
 
 export interface MarkdownViewProps {
   content: string;
-  /** Show the YAML frontmatter as a small table above the body (default true). */
-  showFrontmatter?: boolean;
   className?: string;
 }
 
 /** Sanitised GitHub-flavoured Markdown. Frontmatter becomes a metadata table; links open outside. */
-export function MarkdownView({
-  content,
-  showFrontmatter = true,
-  className,
-}: MarkdownViewProps): ReactNode {
+export function MarkdownView({ content, className }: MarkdownViewProps): ReactNode {
   const { entries, body } = useMemo(() => parseFrontmatter(content), [content]);
   const entryKeys = useMemo(() => occurrenceKeys(entries, (entry) => entry.key), [entries]);
 
   return (
     <div className={cn("markdown-body text-sm break-words", className)}>
-      {showFrontmatter && entries.length > 0 ? (
+      {entries.length > 0 ? (
         <dl className="mb-5 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
           {entries.map((entry, index) => (
             // A hand-written header can repeat a key.

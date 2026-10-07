@@ -10,7 +10,6 @@ import {
   SIDEBAR_WIDTH_STEP_PX,
 } from "@/lib/constants";
 import { clampTo, fitMax } from "@/lib/resize";
-import { cn } from "@/lib/utils";
 
 export function clampSidebarWidth(width: number): number {
   return clampTo(width, SIDEBAR_WIDTH_MIN_PX, SIDEBAR_WIDTH_MAX_PX);
@@ -31,16 +30,10 @@ export interface SidebarResizeHandleProps {
   /** How far it may be dragged; less than the usual maximum in a narrow window. */
   max: number;
   onWidth(width: number): void;
-  className?: string;
 }
 
 /** The sidebar's right edge: drag it to resize, double-click to reset, or use the arrow keys. */
-export function SidebarResizeHandle({
-  width,
-  max,
-  onWidth,
-  className,
-}: SidebarResizeHandleProps): ReactNode {
+export function SidebarResizeHandle({ width, max, onWidth }: SidebarResizeHandleProps): ReactNode {
   const { t } = useTranslation();
   return (
     <ResizeHandle
@@ -53,7 +46,7 @@ export function SidebarResizeHandle({
       fromDrag={(start, delta) => start + delta}
       onValue={onWidth}
       label={t("sidebar.resize")}
-      className={cn("absolute inset-y-0 -right-1.5 w-3", className)}
+      className="absolute inset-y-0 -right-1.5 w-3"
     />
   );
 }

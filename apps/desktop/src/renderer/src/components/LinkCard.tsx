@@ -1,10 +1,9 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Skeletons } from "@/components/Skeletons";
-import { cn } from "@/lib/utils";
 import { CARD_GRID_CLASS } from "@/lib/styles";
 
-/** Grid of cards on an overview page: as many columns as fit. */
+/** Placeholder cards an overview page shows while it loads. */
 const SKELETON_CARDS = 4;
 
 export interface LinkCardProps {
@@ -12,21 +11,15 @@ export interface LinkCardProps {
   /** Accessible name of the link that covers the card. */
   label: string;
   children: ReactNode;
-  className?: string;
 }
 
 /**
  * A card that opens a page when clicked anywhere. Controls inside stay clickable when they
  * carry `SKILL_ITEM_RAISED_CLASS`, which lifts them above the covering link.
  */
-export function LinkCard({ link, label, children, className }: LinkCardProps): ReactNode {
+export function LinkCard({ link, label, children }: LinkCardProps): ReactNode {
   return (
-    <div
-      className={cn(
-        "relative flex flex-col gap-3 rounded-lg border bg-card p-4 transition-colors duration-150 hover:border-primary/40 hover:bg-accent/40",
-        className,
-      )}
-    >
+    <div className="relative flex flex-col gap-3 rounded-lg border bg-card p-4 transition-colors duration-150 hover:border-primary/40 hover:bg-accent/40">
       <Link
         {...link}
         aria-label={label}

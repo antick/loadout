@@ -9,22 +9,15 @@ import { useAvailableAgents } from "@/hooks/queries/agents";
 import { cn } from "@/lib/utils";
 
 export interface AgentControlSetupProps {
-  /** Called once the skill is installed and deployed. */
-  onDone?: () => void;
   /** Extra button next to "Set up", e.g. "Not now". */
   secondaryAction?: ReactNode;
-  className?: string;
 }
 
 /**
  * Pick the agents that should learn to drive the command-line tool, then install the bundled
  * skill for them. Nothing is pre-selected: the user decides which agents may manage skills.
  */
-export function AgentControlSetup({
-  onDone,
-  secondaryAction,
-  className,
-}: AgentControlSetupProps): ReactNode {
+export function AgentControlSetup({ secondaryAction }: AgentControlSetupProps): ReactNode {
   const { t } = useTranslation();
   const agents = useAvailableAgents();
   const setup = useSetupAgentControl();
@@ -34,7 +27,7 @@ export function AgentControlSetup({
     setSelected((current) => (on ? [...current, key] : current.filter((k) => k !== key)));
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div className="flex flex-col gap-3">
       {agents.data && agents.data.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("agentControl.noAgents")}</p>
       ) : (
@@ -66,7 +59,7 @@ export function AgentControlSetup({
         <Button
           size="sm"
           disabled={selected.length === 0 || setup.isPending}
-          onClick={() => setup.mutate([...selected], { onSuccess: onDone })}
+          onClick={() => setup.mutate([...selected])}
         >
           {setup.isPending ? <Spinner /> : null}
           {t("agentControl.setUp", { count: selected.length })}

@@ -9,14 +9,12 @@ export interface IconButtonProps extends Omit<
   /** Used as both the accessible name and the tooltip. */
   label: string;
   icon: ReactNode;
-  tooltipSide?: ComponentProps<typeof TooltipContent>["side"];
 }
 
 /** Icon-only button that always carries an `aria-label` and a tooltip. */
 export function IconButton({
   label,
   icon,
-  tooltipSide,
   variant = "ghost",
   size = "icon-sm",
   ...props
@@ -28,7 +26,7 @@ export function IconButton({
           {icon}
         </Button>
       </TooltipTrigger>
-      <TooltipContent side={tooltipSide}>{label}</TooltipContent>
+      <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
 }

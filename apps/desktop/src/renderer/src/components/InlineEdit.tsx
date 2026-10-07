@@ -9,8 +9,6 @@ export interface InlineEditProps {
   onSubmit: (value: string) => void;
   /** Accessible name of the field, e.g. "Device name". */
   label: string;
-  placeholder?: string;
-  allowEmpty?: boolean;
   disabled?: boolean;
   className?: string;
 }
@@ -20,8 +18,6 @@ export function InlineEdit({
   value,
   onSubmit,
   label,
-  placeholder,
-  allowEmpty,
   disabled,
   className,
 }: InlineEditProps): ReactNode {
@@ -38,7 +34,7 @@ export function InlineEdit({
   const finish = (save: boolean): void => {
     setEditing(false);
     const next = draft.trim();
-    if (save && next !== value && (allowEmpty || next)) onSubmit(next);
+    if (save && next !== value && next) onSubmit(next);
   };
 
   if (editing) {
@@ -47,7 +43,6 @@ export function InlineEdit({
         ref={input}
         value={draft}
         aria-label={label}
-        placeholder={placeholder}
         className={cn("h-7 px-2", className)}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => finish(true)}
@@ -77,7 +72,7 @@ export function InlineEdit({
         className,
       )}
     >
-      {value || placeholder}
+      {value}
     </button>
   );
 }
