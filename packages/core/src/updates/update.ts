@@ -91,6 +91,11 @@ export interface UpdateOptions {
   knownRevision?: string | null;
   /** Only say what it would hold back: see `RefreshOptions.dryRun`. */
   dryRun?: boolean;
+  /**
+   * Take whatever files the new version removes, whatever the list: a batch the user approved
+   * as a whole. Saves downloading each skill twice, once for the list and once for its token.
+   */
+  approveRemovals?: boolean;
 }
 
 export interface Updater {
@@ -128,6 +133,8 @@ interface Replacement {
   /** Identity of the replacement inside the approval token. */
   domain: string;
   approval: string | null | undefined;
+  /** Take whatever the new version removes, without a token: see `UpdateOptions`. */
+  approveRemovals?: boolean;
   lockMode: LockMode;
   acceptRisk?: boolean;
   /** Work out the removals and stop: nothing is written. */
@@ -230,7 +237,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         fresh,
         plan.sourceDir,
       );
-      if (!isApproved(plan.approval, plan.domain, removals)) {
+      if (!plan.approveRemovals && !isApproved(plan.approval, plan.domain, removals)) {
         const patch = plan.declined(fresh);
         const skill = patch ? store.update(fresh.id, patch) : fresh;
         const approval = approvalToken(plan.domain, removals);
@@ -338,6 +345,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           sourceDir: same ? null : (source?.dir ?? null),
           domain: revision,
           approval,
+          approveRemovals: options.approveRemovals,
           lockMode: options.lockMode ?? "wait",
           acceptRisk: options.acceptRisk,
           dryRun: options.dryRun,
@@ -397,6 +405,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           sourceDir: insideLibrary(source.dir) ? null : source.dir,
           domain: REIMPORT_DOMAIN,
           approval,
+          approveRemovals: options.approveRemovals,
           lockMode: "wait",
           acceptRisk: options.acceptRisk,
           dryRun: options.dryRun,
@@ -464,7 +473,8 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
     updateMany: (skillIds, options) =>
       updateEach(
         store,
-        (skillId, approval, knownRevision) => update(skillId, approval, { knownRevision }),
+        (skillId, knownRevision, approveRemovals) =>
+          update(skillId, null, { knownRevision, approveRemovals }),
         skillIds,
         options,
       ),

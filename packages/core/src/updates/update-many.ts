@@ -9,13 +9,13 @@ export const FLAGGED_UPDATE =
   "Held back: the safety check flagged the new version. Update it on its own to read the findings.";
 
 /**
- * One skill takes its source's new version, nothing accepted. `knownRevision`: what a check
- * found moments ago, installed without asking the remote.
+ * One skill takes its source's new version. `knownRevision`: what a check found moments ago,
+ * installed without asking the remote. `approveRemovals`: files it removes need no token.
  */
 export type UpdateOne = (
   skillId: string,
-  approval: string | null,
   knownRevision: string | null,
+  approveRemovals: boolean,
 ) => Promise<UpdateResult>;
 
 /** Update each skill from its source in turn; one failing never stops the others. */
@@ -31,11 +31,8 @@ export async function updateEach(
     const skill = store.find(skillId);
     try {
       const knownRevision = (skill && known?.(skill)) ?? null;
-      let outcome = await update(skillId, null, knownRevision);
       // Unless approved, a skill whose update removes files waits for the user to read the list.
-      if (options.approveRemovals && outcome.pendingRemovals.length > 0) {
-        outcome = await update(skillId, outcome.approval, knownRevision);
-      }
+      const outcome = await update(skillId, knownRevision, options.approveRemovals === true);
       if (outcome.pendingRemovals.length > 0) result.heldBack.push(skill?.name ?? skillId);
       else if (outcome.contentChanged) result.updated += 1;
       else result.unchanged += 1;

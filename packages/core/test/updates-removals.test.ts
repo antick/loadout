@@ -198,9 +198,18 @@ describe("removal guard", () => {
     const pdf = await world.installFromGit("pdf");
     dropNotesUpstream(world);
 
-    const result = await world.updates.api.updateMany([pdf.id], { approveRemovals: true });
+    let checkouts = 0;
+    const counting = world.withGit({
+      checkout: (url, options) => {
+        checkouts += 1;
+        return world.install.git.checkout(url, options);
+      },
+    });
+    const result = await counting.api.updateMany([pdf.id], { approveRemovals: true });
     expect(result).toEqual({ updated: 1, unchanged: 0, heldBack: [], failed: [] });
     expect(existsSync(join(pdf.libraryPath, "notes", "old.md"))).toBe(false);
+    // Downloaded and checked once, not once for the list and again for its approval.
+    expect(checkouts).toBe(1);
   });
 
   it("updates to what a check just found without asking the remote again", async () => {
