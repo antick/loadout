@@ -6,6 +6,7 @@ import {
   type StorageApi,
   type StorageArea,
   type StorageEntry,
+  formatBytes,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
@@ -126,7 +127,7 @@ export function createStorageService(ctx: CoreContext, deps: StorageServiceDeps)
       } else {
         freed = clearLogs();
       }
-      ctx.log.info(`Cleared ${area}: ${freed} bytes`);
+      ctx.log.info(`Cleared ${area}: ${formatBytes(freed)}`);
       return freed;
     },
 

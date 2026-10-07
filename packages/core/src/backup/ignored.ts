@@ -107,21 +107,25 @@ export function settleSetAside(env: BackupEnv, aside: SetAsideFolder, target: st
   const left = carryIgnored(aside, target);
   if (left.length === 0) return true;
   const name = basename(aside.from);
+  let kept: string | null = null;
+  let failure: unknown = null;
   try {
-    const kept = env.removed.setAside(aside.to, {
+    kept = env.removed.setAside(aside.to, {
       place: LIBRARY_PLACE,
       reason: "replaced",
       originalPath: aside.from,
     });
-    if (kept === null) throw new Error("nothing to keep");
+  } catch (error) {
+    failure = error;
+  }
+  if (kept !== null) {
     env.ctx.log.warn(`Kept local files of ${aside.from} in Recently removed`, left);
     env.ctx.activity.record("backup", name, KEPT_DETAIL);
     return true;
-  } catch (error) {
-    env.ctx.log.error(`Could not keep local files of ${aside.from}; left in ${aside.to}`, error);
-    env.ctx.activity.record("backup", name, `${NOT_KEPT_DETAIL} ${aside.to}`, false);
-    return false;
   }
+  env.ctx.log.error(`Could not keep local files of ${aside.from}; left in ${aside.to}`, failure);
+  env.ctx.activity.record("backup", name, `${NOT_KEPT_DETAIL} ${aside.to}`, false);
+  return false;
 }
 
 /**
