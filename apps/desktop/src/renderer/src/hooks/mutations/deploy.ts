@@ -109,24 +109,30 @@ export function useUndeploySkill(): UseMutationResult<
   });
 }
 
+/** A library skill about to be taken out of an agent. */
+export interface UndeployTarget {
+  skillId: string;
+  name: string;
+  agentKey: string;
+  agentName: string;
+  /** The agent holds a copy, which may have been edited there; a link never is. */
+  copy: boolean;
+}
+
 /**
- * Before removing a skill from an agent: when the copy there was edited, ask first, as the agent
- * page does. Resolves to false when the answer was no.
+ * Before removing a skill from an agent: when the copy there was edited, ask first, listing the
+ * edited files. The one rule for every place that removes a skill from an agent. Resolves to false
+ * when the answer was no.
  */
-function useConfirmUndeploy(): (
-  skill: Skill,
-  agentKey: string,
-  agentName: string,
-) => Promise<boolean> {
+export function useConfirmUndeploy(): (target: UndeployTarget) => Promise<boolean> {
   const { t } = useTranslation();
   const confirm = useConfirm();
   return useCallback(
-    async (skill, agentKey, agentName) => {
-      const deployment = skill.deployments.find((entry) => entry.agentKey === agentKey);
-      if (deployment?.mode !== "copy") return true;
+    async ({ skillId, name, agentKey, agentName, copy }) => {
+      if (!copy) return true;
       let edited: string[];
       try {
-        ({ editedCopies: edited } = await api.deploy.undeploy(skill.id, agentKey, {
+        ({ editedCopies: edited } = await api.deploy.undeploy(skillId, agentKey, {
           dryRun: true,
         }));
       } catch {
@@ -135,7 +141,7 @@ function useConfirmUndeploy(): (
       }
       if (edited.length === 0) return true;
       return confirm({
-        title: t("agents.confirm.removeTitle", { name: skill.name, agent: agentName }),
+        title: t("agents.confirm.removeTitle", { name, agent: agentName }),
         description: t("agents.confirm.removeDescription"),
         items: edited,
         confirmLabel: t("agents.actions.removeShort"),
@@ -169,7 +175,15 @@ export function useAgentToggle(): AgentToggle {
         await deploy(pair);
         return;
       }
-      if (await confirmUndeploy(skill, agent.key, agent.displayName)) await undeploy(pair);
+      const deployment = skill.deployments.find((entry) => entry.agentKey === agent.key);
+      const asked = await confirmUndeploy({
+        skillId: skill.id,
+        name: skill.name,
+        agentKey: agent.key,
+        agentName: agent.displayName,
+        copy: deployment?.mode === "copy",
+      });
+      if (asked) await undeploy(pair);
     },
     [deploy, undeploy, confirmUndeploy],
   );

@@ -30,7 +30,6 @@ describe("agentSkillRules", () => {
       uploadNeedsConfirm: false,
       pull: false,
       remove: false,
-      removeNeedsConfirm: false,
       deleteLocal: false,
     });
   });
@@ -59,14 +58,11 @@ describe("agentSkillRules", () => {
     expect(agentSkillRules(folder("in_sync", true)).pull).toBe(false);
   });
 
-  it("removes managed skills, asking first when local edits would be lost", () => {
+  it("removes managed skills", () => {
     expect(agentSkillRules(folder("in_sync", true))).toMatchObject({
       remove: true,
-      removeNeedsConfirm: false,
       deleteLocal: false,
     });
-    expect(agentSkillRules(folder("local_newer", true)).removeNeedsConfirm).toBe(true);
-    expect(agentSkillRules(folder("diverged", true)).removeNeedsConfirm).toBe(true);
   });
 
   it("never deletes a managed folder as if it were local-only", () => {

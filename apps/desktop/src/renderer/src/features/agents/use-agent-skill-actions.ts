@@ -11,7 +11,7 @@ import {
   usePullLocalSkill,
   useUploadLocalSkill,
 } from "@/features/agents/workspace-mutations";
-import { useUndeploySkill } from "@/hooks/mutations/deploy";
+import { useConfirmUndeploy, useUndeploySkill } from "@/hooks/mutations/deploy";
 import { editLink } from "@/lib/skill-location";
 import { toastSuccess } from "@/lib/toast";
 import { agentSkillRules } from "./agent-skill-rules";
@@ -26,6 +26,7 @@ export function useAgentSkillActions(
 ): (skill: LocalSkill) => SkillAction[] {
   const { t } = useTranslation();
   const confirm = useConfirm();
+  const confirmUndeploy = useConfirmUndeploy();
   const navigate = useNavigate();
   // `mutate` is stable across renders; the mutation objects are not.
   const { mutate: upload } = useUploadLocalSkill();
@@ -107,16 +108,15 @@ export function useAgentSkillActions(
           label: t("agents.actions.remove", { agent: agentName }),
           icon: CircleMinus,
           run: async () => {
-            if (rules.removeNeedsConfirm) {
-              const ok = await confirm({
-                title: t("agents.confirm.removeTitle", { name: skill.name, agent: agentName }),
-                description: t("agents.confirm.removeDescription"),
-                items: [skill.path],
-                confirmLabel: t("agents.actions.removeShort"),
-                destructive: true,
-              });
-              if (!ok) return;
-            }
+            // The same question as everywhere else a skill leaves an agent: only for edits.
+            const ok = await confirmUndeploy({
+              skillId,
+              name: skill.name,
+              agentKey: skill.agentKey,
+              agentName,
+              copy: true,
+            });
+            if (!ok) return;
             // The mutation toasts a failure itself, and an edited copy kept with its Undo.
             void remove({ agentKey: skill.agentKey, skillId })
               .then((result) => {
@@ -155,6 +155,6 @@ export function useAgentSkillActions(
 
       return actions;
     },
-    [t, confirm, navigate, upload, pull, remove, deleteLocal, agentName, onGone],
+    [t, confirm, confirmUndeploy, navigate, upload, pull, remove, deleteLocal, agentName, onGone],
   );
 }

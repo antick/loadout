@@ -10,8 +10,6 @@ export interface AgentSkillRules {
   pull: boolean;
   /** Take the managed deployment out of this agent; the library copy stays. */
   remove: boolean;
-  /** Removing would drop local edits the library does not have, so ask first. */
-  removeNeedsConfirm: boolean;
   /** Delete a folder the app did not put there and has no copy of. */
   deleteLocal: boolean;
 }
@@ -29,7 +27,6 @@ export function agentSkillRules(skill: LocalSkill): AgentSkillRules {
     uploadNeedsConfirm: upload && status !== "local_only",
     pull: status === "library_newer" || status === "diverged",
     remove: managed,
-    removeNeedsConfirm: managed && (status === "local_newer" || status === "diverged"),
     deleteLocal: !managed && status === "local_only",
   };
 }
