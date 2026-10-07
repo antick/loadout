@@ -350,10 +350,11 @@ describe("backup clone, size rules and credentials", () => {
     expect(config).not.toContain("s3cr3t");
     expect((await a.api.status()).remoteUrl).toBe(clean);
 
-    // Disconnecting forgets the remote and the token, and may be repeated.
+    // Disconnecting forgets the remote, not the host's token (publishing uses it), and may be
+    // repeated.
     await a.api.removeRemote();
     await a.api.removeRemote();
-    expect(a.secrets.values.size).toBe(0);
+    expect(a.secrets.values.get(tokenKey("git.example.com"))).toBe("s3cr3t-t0ken");
     expect(a.ctx.settings.getRaw(INTERNAL_KEYS.backupRemoteUrl, null)).toBeNull();
     expect((await a.api.status()).upstreamHealth).toBe("no_remote");
   });
