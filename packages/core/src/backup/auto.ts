@@ -19,8 +19,8 @@ const QUIT_COMMIT_MESSAGE = "backup: on quit";
 export interface AutoBackupTarget {
   isRepo(): boolean;
   sync(message?: string): Promise<SyncOutcome>;
-  /** Commit without touching the network. `failFast`: give up at once when the library is busy. */
-  commitLocal(message: string, options: { failFast: boolean }): Promise<boolean>;
+  /** Commit without touching the network; give up at once when the library is busy. */
+  commitLocal(message: string): Promise<void>;
   pendingConflicts(): number;
 }
 
@@ -111,7 +111,7 @@ export function createAutoBackup(target: AutoBackupTarget, ctx: CoreContext): Au
     runOnQuit: async () => {
       if (!enabled()) return;
       try {
-        await target.commitLocal(QUIT_COMMIT_MESSAGE, { failFast: true });
+        await target.commitLocal(QUIT_COMMIT_MESSAGE);
       } catch (error) {
         ctx.log.warn("Could not commit the library on quit", error);
       }

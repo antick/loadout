@@ -40,7 +40,7 @@ describe("partial checkouts", () => {
     const client = createGitClient(world.ctx);
     const checkout = await client.checkout(url, { manifestsOnly: true });
     try {
-      expect(checkout.partial).toBe(true);
+      expect(checkout.files).not.toBeNull();
       const pdf = join(checkout.dir, "skills", "pdf");
       expect(existsSync(join(pdf, "SKILL.md"))).toBe(true);
       expect(existsSync(join(pdf, "scripts", "run.sh"))).toBe(false);
@@ -120,7 +120,7 @@ describe("partial checkouts", () => {
     await partial.cleanup();
 
     const whole = await client.checkout(url);
-    expect(whole.partial).toBe(false);
+    expect(whole.files).toBeNull();
     expect(existsSync(join(whole.dir, "README.md"))).toBe(true);
     await whole.materialize([join(whole.dir, "skills")]);
     await whole.cleanup();

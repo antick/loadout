@@ -46,7 +46,7 @@ describe("automatic backup", () => {
     isRepo = true;
     pending = 0;
     sync = vi.fn(async () => OUTCOME);
-    commitLocal = vi.fn(async () => true);
+    commitLocal = vi.fn(async () => undefined);
     auto = createAutoBackup(
       { isRepo: () => isRepo, sync, commitLocal, pendingConflicts: () => pending },
       device.ctx,
@@ -159,7 +159,7 @@ describe("automatic backup", () => {
 
   it("only commits locally on quit, and never waits for a busy library", async () => {
     await auto.runOnQuit();
-    expect(commitLocal).toHaveBeenCalledWith(expect.any(String), { failFast: true });
+    expect(commitLocal).toHaveBeenCalledWith(expect.any(String));
     expect(sync).not.toHaveBeenCalled();
 
     commitLocal.mockRejectedValueOnce(new Error("disk full"));

@@ -204,17 +204,15 @@ export function createBackupOperations(env: BackupEnv, request: HttpRequest): Ba
     isRepo: () => isRepo(env),
     sync: (message) => syncLibrary(env, message),
     pendingConflicts: () => countConflicts(ctx.db),
-    commitLocal: async (message, options) => {
-      const work = async (): Promise<boolean> => {
+    commitLocal: async (message) => {
+      await ctx.lock.tryRun("backup commit", async () => {
         // A save on quit must not bake a key into history the next push would carry.
         if ((await originUrl(env)) && (await scanUncommittedChanges(env)).length > 0) {
           ctx.log.warn("Not saving the library locally: a change looks like a key or token");
-          return false;
+          return;
         }
-        return commitLibrary(env, message);
-      };
-      if (!options.failFast) return ctx.lock.run("backup commit", work);
-      return (await ctx.lock.tryRun("backup commit", work)) ?? false;
+        await commitLibrary(env, message);
+      });
     },
   };
 

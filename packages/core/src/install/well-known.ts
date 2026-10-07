@@ -27,7 +27,6 @@ import { type RedirectRule, downloadWatched } from "./redirects";
 export interface WellKnownEntry {
   /** Folder name the site gives the skill; checked to be a safe slug. */
   name: string;
-  description: string;
   /** Current format: the one file to download, and the digest it must match. */
   artifact: { type: "skill-md" | "archive"; url: string; digest: string } | null;
   /** Older format: files below {@link fileBase}, `SKILL.md` among them. */
@@ -85,17 +84,17 @@ function isSafeName(value: unknown): value is string {
   );
 }
 
-function description(value: unknown): string | null {
-  return typeof value === "string" && value.trim() && value.length <= MAX_DESCRIPTION
-    ? value
-    : null;
+/** The spec requires a description; an entry without a usable one is not taken. */
+function hasDescription(value: unknown): boolean {
+  return typeof value === "string" && value.trim() !== "" && value.length <= MAX_DESCRIPTION;
 }
 
 function currentEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
   if (!isRecord(value) || !isSafeName(value.name)) return null;
-  const text = description(value.description);
   const { type, url, digest } = value;
-  if (text === null || (type !== "skill-md" && type !== "archive")) return null;
+  if (!hasDescription(value.description) || (type !== "skill-md" && type !== "archive")) {
+    return null;
+  }
   if (typeof url !== "string" || typeof digest !== "string" || !DIGEST.test(digest)) return null;
   let resolved: URL;
   try {
@@ -108,7 +107,6 @@ function currentEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
   if (resolved.protocol === "http:" && new URL(indexUrl).protocol === "https:") return null;
   return {
     name: value.name,
-    description: text,
     artifact: { type, url: resolved.toString(), digest },
     files: [],
     fileBase: null,
@@ -117,9 +115,10 @@ function currentEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
 
 function olderEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
   if (!isRecord(value) || !isSafeName(value.name)) return null;
-  const text = description(value.description);
   const files = value.files;
-  if (text === null || !Array.isArray(files) || files.length === 0) return null;
+  if (!hasDescription(value.description) || !Array.isArray(files) || files.length === 0) {
+    return null;
+  }
   if (files.length > MAX_FILES) return null;
   // A file that would reach outside the skill's folder is refused out loud, never just skipped.
   const outside = files.find((file) => !isSafeRelativePath(file));
@@ -131,7 +130,6 @@ function olderEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
   if (!files.some((file) => file.toLowerCase() === SKILL_FILE.toLowerCase())) return null;
   return {
     name: value.name,
-    description: text,
     artifact: null,
     files,
     fileBase: new URL(`${value.name}/`, indexUrl).toString(),

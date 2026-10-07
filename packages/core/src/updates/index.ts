@@ -1,1 +1,1 @@
-export { type UpdatesService, type UpdatesServiceDeps, createUpdatesService } from "./service";
+export { type UpdatesService, createUpdatesService } from "./service";

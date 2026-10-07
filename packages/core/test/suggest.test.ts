@@ -4,7 +4,7 @@ import { cleanSuggestPatterns, suggestPatternProblem } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type SkillSide, planSkill } from "../src/backup/merge-plan";
 import type { Core } from "../src/core";
-import { firstMatch } from "../src/suggest";
+import { firstMatch } from "../src/suggest/glob";
 import { matchSkills } from "../src/suggest/match";
 import { readProjectFiles } from "../src/suggest/project-files";
 import { makeSkill, tempDir, writeFile, createTestCore } from "./helpers";

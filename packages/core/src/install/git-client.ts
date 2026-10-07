@@ -62,22 +62,21 @@ export interface CheckoutOptions {
   onPercent?: (percent: number) => void;
 }
 
-/** A throwaway copy of a repository, without its `.git`. Always call `cleanup`. */
 /** One file of a commit, as git records it: its path from the repository root, posix style. */
 export interface TreeFile {
   path: string;
   executable: boolean;
 }
 
+/** A throwaway copy of a repository, without its `.git`. Always call `cleanup`. */
 export interface Checkout {
   dir: string;
   /** Commit the files were taken from. */
   revision: string;
-  /** Only the skill documents are here so far (a `manifestsOnly` checkout Git could narrow). */
-  partial: boolean;
   /**
-   * Every file of the commit, read from git without downloading it, while the checkout is
-   * partial; null for a whole one, whose files are on disk to read.
+   * Every file of the commit, read from git without downloading it, while only the skill
+   * documents are on disk (a `manifestsOnly` checkout Git could narrow); null for a whole
+   * checkout, whose files are on disk to read.
    */
   files: readonly TreeFile[] | null;
   /**
@@ -90,7 +89,6 @@ export interface Checkout {
 
 /** What a checkout that is already whole says to `materialize`. */
 export const WHOLE_CHECKOUT = {
-  partial: false,
   files: null,
   materialize: async (): Promise<void> => undefined,
 } as const;
@@ -367,7 +365,7 @@ export function createGitClient(ctx: CoreContext): GitClient {
 
     checkout: async (url, checkoutOptions = {}) => {
       const slot = cache.slotFor(url);
-      const { dir, revision, partial, files, cleanup } = await cache.withSlot(slot, async () => {
+      const { dir, revision, files, cleanup } = await cache.withSlot(slot, async () => {
         if (checkoutOptions.signal?.aborted) throw cancelled();
         await prepareSlot(slot, url, checkoutOptions);
         const pinned = await pinRevision(slot, url, checkoutOptions);
@@ -398,13 +396,12 @@ export function createGitClient(ctx: CoreContext): GitClient {
         return {
           dir: target,
           revision: pinned,
-          partial: tree.partial,
           files: named,
           cleanup: remove,
         };
       });
 
-      let whole = !partial;
+      let whole = files === null;
       // A partial checkout comes back to its slot for the rest of its files, so the cache keeps
       // the slot until the checkout is whole or cleaned up.
       const release = whole ? (): void => undefined : cache.hold(slot);
@@ -438,7 +435,6 @@ export function createGitClient(ctx: CoreContext): GitClient {
       return {
         dir,
         revision,
-        partial,
         files,
         materialize,
         cleanup: async () => {

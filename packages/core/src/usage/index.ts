@@ -1,1 +1,1 @@
-export { type UsageService, type UsageServiceDeps, createUsageService } from "./service";
+export { type UsageService, createUsageService } from "./service";

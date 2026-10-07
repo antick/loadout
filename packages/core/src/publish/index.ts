@@ -1,1 +1,1 @@
-export { type PublishDeps, type PublishService, createPublishService } from "./service";
+export { type PublishService, createPublishService } from "./service";

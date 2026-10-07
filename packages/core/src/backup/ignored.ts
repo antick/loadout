@@ -62,7 +62,7 @@ export async function setAsideFolder(
   stage: Stage,
   folder: string,
   key: string,
-  move: (from: string, to: string) => void = renameSync,
+  move: (from: string, to: string) => void,
 ): Promise<SetAsideFolder | null> {
   const from = join(env.repoDir, folder);
   if (!lstatOrNull(from)) return null;
@@ -71,11 +71,6 @@ export async function setAsideFolder(
   ensureDir(dirname(to));
   move(from, to);
   return { from, to, ignored };
-}
-
-/** Undo `setAsideFolder` after a failure, when nothing took the folder's place meanwhile. */
-export function putBackFolder(aside: SetAsideFolder): void {
-  if (existsSync(aside.to) && !lstatOrNull(aside.from)) renameSync(aside.to, aside.from);
 }
 
 /**
