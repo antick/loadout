@@ -142,12 +142,15 @@ async function runSync(
   if (pushed) settings.deleteRaw(INTERNAL_KEYS.backupLastAutoError);
   // The "restored from" note describes the state until it is backed up again.
   settings.deleteRaw(INTERNAL_KEYS.backupRestoredFrom);
-  const merged = merge && !merge.upToDate ? `, merged ${merge.updated.length} updated` : "";
-  env.ctx.activity.record(
-    "backup",
-    env.deviceName(),
-    `${pushed ? "Pushed" : "Saved locally"}${merged}`,
-  );
+  // A sync that changed and sent nothing is not worth a line in the activity log.
+  if (changed || pushed) {
+    const merged = merge && !merge.upToDate ? `, merged ${merge.updated.length} updated` : "";
+    env.ctx.activity.record(
+      "backup",
+      env.deviceName(),
+      `${pushed ? "Pushed" : "Saved locally"}${merged}`,
+    );
+  }
   env.ctx.touched("backup");
   return { committed, merge: merge && !merge.upToDate ? merge : null, pushed, snapshot };
 }

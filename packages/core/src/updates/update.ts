@@ -290,7 +290,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
         lastCheckError: FLAGGED_UPDATE,
         lastCheckedAt: Date.now(),
       });
-      ctx.touched("skills");
+      ctx.touched("updates");
       return;
     }
     store.patch(skillId, {
@@ -299,7 +299,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
       lastCheckError: errorMessage(error),
       lastCheckedAt: Date.now(),
     });
-    ctx.touched("skills");
+    ctx.touched("updates");
   }
 
   async function update(

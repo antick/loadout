@@ -110,7 +110,7 @@ function syncProxy(): void {
 }
 
 /** Scopes whose changes alter a count or a preset shown in the tray menu. */
-const TRAY_SCOPES: ReadonlySet<string> = new Set(["skills", "agents", "presets"]);
+const TRAY_SCOPES: ReadonlySet<string> = new Set(["skills", "updates", "agents", "presets"]);
 /**
  * Scopes whose changes write into watched folders (the library, agents' and projects' skills
  * folders). Only these mute the watchers: a settings, usage or safety change writes nothing there,

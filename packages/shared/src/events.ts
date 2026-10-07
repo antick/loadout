@@ -36,6 +36,11 @@ export type DataScope =
   | "projects"
   | "backup"
   | "settings"
+  /**
+   * What an update check found on skills (status, when checked, the error): kept apart from
+   * `skills` so a check never counts as a library change and never wakes the automatic backup.
+   */
+  | "updates"
   /** Safety reports: kept apart from `skills` so a scan never counts as a library change. */
   | "safety"
   /** Skill usage read from agents' session logs. */

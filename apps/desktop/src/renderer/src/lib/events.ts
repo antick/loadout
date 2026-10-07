@@ -78,6 +78,8 @@ const SCOPE_KEYS: Record<DataScope, readonly QueryKey[]> = {
   // Project copies that are replaced or deleted land in Recently removed (storage).
   projects: [keys.projects.root, keys.editor.root, keys.instructions.root, keys.storage.root],
   backup: [keys.backup.root],
+  // An update check changes skills' update status, shown in the library and project lists.
+  updates: [keys.skills.root, keys.projects.root],
   settings: [keys.settings.root, keys.system.root, keys.safety.root, keys.usage.root],
   safety: [keys.safety.root, keys.system.root],
   usage: [keys.usage.root],

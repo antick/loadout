@@ -260,7 +260,8 @@ export function createChecker(ctx: CoreContext, deps: CheckerDeps): Checker {
       if (guardOf(fresh) !== finding.guard) return fresh;
       return store.update(fresh.id, { ...finding.patch(fresh), lastCheckedAt: Date.now() });
     });
-    ctx.touched("skills");
+    // Only a new installed commit is library metadata; the rest is what the check found.
+    ctx.touched(applied.sourceRevision === skill.sourceRevision ? "updates" : "skills");
     return applied;
   }
 

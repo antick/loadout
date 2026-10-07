@@ -53,6 +53,15 @@ describe("check", () => {
     expect(world.lookups()).toBe(before + 2);
   });
 
+  it("records what a check found without counting it as a library change", async () => {
+    const pdf = await world.installFromGit("pdf");
+    changePdfUpstream(world);
+    const touched = vi.spyOn(world.ctx, "touched");
+    await world.updates.api.check(pdf.id, true);
+    // Not "skills": that would rewrite the metadata and wake the automatic backup.
+    expect(touched.mock.calls).toEqual([["updates"]]);
+  });
+
   it("offers no update when the commit changed another skill's folder only", async () => {
     const pdf = await world.installFromGit("pdf");
     const docx = await world.installFromGit("docx");
