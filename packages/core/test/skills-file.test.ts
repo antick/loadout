@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AgentRegistry } from "../src/agents";
 import { createGitClient } from "../src/install/git-client";
 import { applyPlan } from "../src/skills-file/apply";
-import { loadSkillsFile, parseSkillsFile } from "../src/skills-file/format";
+import { loadSkillsFile, parseSkillsFile, writeLock } from "../src/skills-file/format";
 import { preparePlan } from "../src/skills-file/plan";
 import { createSafetyService } from "../src/safety";
 import { createSkillsFileService } from "../src/skills-file/service";
@@ -474,5 +474,21 @@ describe("create and suggest", () => {
     const own = join(world.root, "own");
     makeSkill(join(own, ".claude", "skills"), "pdf", { body: "# A different pdf\n" });
     expect(await api.suggest(own)).toEqual({ agents: [], sources: [] });
+  });
+});
+
+/** A locked folder called `name`, the rest made up. */
+const lockedFolder = (name: string) => ({ folder: name, url: "u", skillPath: "s", hash: "h" });
+
+describe("the lock file", () => {
+  it("sorts by byte order, so every computer writes the same file", () => {
+    const path = join(world.root, SKILLS_LOCK_NAME);
+    writeLock(path, {
+      version: 1,
+      sources: [],
+      folders: [lockedFolder("b"), lockedFolder("B"), lockedFolder("a")],
+    });
+    const written = JSON.parse(readFileSync(path, "utf8")) as SkillsLock;
+    expect(written.folders.map((entry) => entry.folder)).toEqual(["B", "a", "b"]);
   });
 });

@@ -16,6 +16,7 @@ import {
 import { TomlError, parse, stringify } from "smol-toml";
 import { invalid } from "../errors";
 import { statOrNull, writeFileAtomic } from "../util/fs";
+import { compareText } from "../util/text";
 
 export const LOCK_VERSION = 1;
 /** Wildcard for "every skill of the source", as some people write it. */
@@ -148,14 +149,17 @@ function readLock(path: string): SkillsLock | null {
   };
 }
 
-/** Write the lock sorted, so it only changes when what it pins changes. */
+/**
+ * Write the lock sorted, so it only changes when what it pins changes. Byte order, not the
+ * computer's language: the file is committed, and two people's computers must agree on it.
+ */
 export function writeLock(path: string, lock: SkillsLock): void {
   const sorted: SkillsLock = {
     version: LOCK_VERSION,
     sources: [...lock.sources].sort((a, b) =>
-      `${a.url}#${a.ref ?? ""}`.localeCompare(`${b.url}#${b.ref ?? ""}`),
+      compareText(`${a.url}#${a.ref ?? ""}`, `${b.url}#${b.ref ?? ""}`),
     ),
-    folders: [...lock.folders].sort((a, b) => a.folder.localeCompare(b.folder)),
+    folders: [...lock.folders].sort((a, b) => compareText(a.folder, b.folder)),
   };
   writeFileAtomic(path, `${JSON.stringify(sorted, null, 2)}\n`);
 }
