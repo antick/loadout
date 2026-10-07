@@ -271,5 +271,13 @@ describe("usage service", () => {
       path: join(elsewhere, "projects"),
       found: false,
     });
+
+    // `~` as the agent reads it; a relative value is ignored, as the agent's folder ignores it.
+    world.ctx.env = () => ({ CLAUDE_CONFIG_DIR: "~/claude-alt", CODEX_HOME: "relative/codex" });
+    const logs = (await usage.api.report()).logs.map((entry) => entry.path);
+    expect(logs).toEqual([
+      join(world.ctx.homeDir, "claude-alt", "projects"),
+      join(world.ctx.homeDir, ".codex", "sessions"),
+    ]);
   });
 });

@@ -15,6 +15,22 @@ import { osConfigDir } from "../paths";
 import { INTERNAL_KEYS } from "../settings/store";
 import { canonicalPath, segmentsOf } from "../util/fs";
 
+/**
+ * An agent's home folder as its variable (`CODEX_HOME`, …) sets it: an absolute path (or `~/…`),
+ * else null. A relative or empty value is ignored, as the agent itself would resolve it against
+ * a folder we cannot know.
+ */
+export function agentHomeFromEnv(
+  ctx: Pick<CoreContext, "env" | "homeDir">,
+  variable: string,
+): string | null {
+  const raw = ctx.env()[variable]?.trim();
+  if (!raw) return null;
+  const home = ctx.homeDir;
+  const value = raw === "~" ? home : raw.startsWith("~/") ? join(home, raw.slice(2)) : raw;
+  return isAbsolute(value) ? value : null;
+}
+
 /** A user-defined agent, as stored in settings. */
 export interface CustomAgentRecord {
   key: string;
@@ -109,18 +125,10 @@ export class AgentRegistry {
     return new Set(this.#ctx.settings.getRaw<string[]>(INTERNAL_KEYS.disabledAgents, []));
   }
 
-  /**
-   * The agent's home folder as its variable sets it: an absolute path (or `~/…`), else null. A
-   * relative or empty value is ignored, as the agent itself would resolve it against a folder we
-   * cannot know.
-   */
   #homeFromEnv(definition: AgentDefinition): { variable: string; value: string } | null {
     const variable = definition.homeEnv?.variable;
-    const raw = variable ? this.#ctx.env()[variable]?.trim() : undefined;
-    if (!variable || !raw) return null;
-    const home = this.#ctx.homeDir;
-    const value = raw === "~" ? home : raw.startsWith("~/") ? join(home, raw.slice(2)) : raw;
-    return isAbsolute(value) ? { variable, value } : null;
+    const value = variable ? agentHomeFromEnv(this.#ctx, variable) : null;
+    return variable && value ? { variable, value } : null;
   }
 
   #resolveBuiltIn(definition: AgentDefinition, settings: ResolveSettings): ResolvedAgent {

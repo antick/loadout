@@ -10,6 +10,7 @@ import {
   type UsageLogSource,
   type UsageReport,
 } from "@loadout/shared";
+import { agentHomeFromEnv } from "../agents/registry";
 import type { CoreContext } from "../context";
 import { errorMessage } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
@@ -34,8 +35,8 @@ const LOG_ROOTS: Record<UsageAgentKey, { variable: string; home: string; logs: s
 
 function logRoot(ctx: CoreContext, agentKey: UsageAgentKey): string {
   const { variable, home, logs } = LOG_ROOTS[agentKey];
-  const fromEnv = ctx.env()[variable]?.trim();
-  return join(fromEnv || join(ctx.homeDir, home), logs);
+  // Read as the agent's own folder is: `~` expanded, a relative value ignored.
+  return join(agentHomeFromEnv(ctx, variable) ?? join(ctx.homeDir, home), logs);
 }
 
 /** The names a skill may be run by, lower case: its name and its folder's name. */
