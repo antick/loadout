@@ -4,7 +4,7 @@ import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SkillEditorPage } from "@/features/editor/SkillEditorPage";
 import { useProjects } from "@/hooks/queries/projects";
-import { originLink } from "@/lib/skill-location";
+import { optionalSearchText, searchText } from "@/lib/search-params";
 
 export interface ProjectSkillEditorSearch {
   /** The skill folder, relative to the agent's skills folder inside the project. */
@@ -39,16 +39,15 @@ function ProjectSkillEditorRoute(): ReactNode {
           params: { projectId },
         },
       ]}
-      doneLink={originLink(location)}
     />
   );
 }
 
 export const Route = createFileRoute("/projects_/$projectId/edit")({
   validateSearch: (search: Record<string, unknown>): ProjectSkillEditorSearch => ({
-    skill: typeof search.skill === "string" ? search.skill : "",
-    agent: typeof search.agent === "string" ? search.agent : "",
-    file: typeof search.file === "string" && search.file ? search.file : undefined,
+    skill: searchText(search.skill),
+    agent: searchText(search.agent),
+    file: optionalSearchText(search.file),
   }),
   component: ProjectSkillEditorRoute,
 });

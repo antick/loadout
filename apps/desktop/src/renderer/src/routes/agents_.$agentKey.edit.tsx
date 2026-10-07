@@ -4,7 +4,7 @@ import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SkillEditorPage } from "@/features/editor/SkillEditorPage";
 import { useAgents } from "@/hooks/queries/agents";
-import { originLink } from "@/lib/skill-location";
+import { optionalSearchText, searchText } from "@/lib/search-params";
 
 export interface AgentSkillEditorSearch {
   /** The skill folder, relative to the agent's skills folder. */
@@ -34,15 +34,14 @@ function AgentSkillEditorRoute(): ReactNode {
         { label: t("nav.agents"), to: "/agents" },
         { label: agent?.displayName ?? agentKey, to: "/agents/$agentKey", params: { agentKey } },
       ]}
-      doneLink={originLink(location)}
     />
   );
 }
 
 export const Route = createFileRoute("/agents_/$agentKey/edit")({
   validateSearch: (search: Record<string, unknown>): AgentSkillEditorSearch => ({
-    skill: typeof search.skill === "string" ? search.skill : "",
-    file: typeof search.file === "string" && search.file ? search.file : undefined,
+    skill: searchText(search.skill),
+    file: optionalSearchText(search.file),
   }),
   component: AgentSkillEditorRoute,
 });

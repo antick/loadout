@@ -1,5 +1,5 @@
 import { ApiError, type SkillLocation } from "@loadout/shared";
-import { type LinkProps, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { FileX } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEditTarget } from "@/features/editor/editor-queries";
 import { EditorWorkspace } from "@/features/editor/EditorWorkspace";
 import { useSkill } from "@/hooks/queries/skills";
-import { locationKey } from "@/lib/skill-location";
+import { locationKey, originLink } from "@/lib/skill-location";
 
 export interface SkillEditorPageProps {
   location: SkillLocation;
@@ -18,8 +18,6 @@ export interface SkillEditorPageProps {
   onOpenFile(path: string): void;
   /** Parent pages in the title bar, e.g. Projects › my-app. */
   crumbs: readonly PageCrumb[];
-  /** Where Done and "go back" lead. */
-  doneLink: LinkProps;
   /** Title while loading or when the file is gone; "Edit skill" by default. */
   title?: string;
 }
@@ -30,12 +28,13 @@ export function SkillEditorPage({
   file,
   onOpenFile,
   crumbs,
-  doneLink,
   title,
 }: SkillEditorPageProps): ReactNode {
   const { t } = useTranslation();
   const pageTitle = title ?? t("editor.title");
   const navigate = useNavigate();
+  // Done and "go back" lead where the skill was opened from.
+  const doneLink = originLink(location);
   const target = useEditTarget(location);
   const resolved = target.data?.location;
   const librarySkill = useSkill(resolved?.kind === "library" ? resolved.skillId : null);

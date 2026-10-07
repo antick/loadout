@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type ReactNode, useCallback } from "react";
 import { ProjectPage } from "@/features/projects/ProjectPage";
+import { optionalSearchText } from "@/lib/search-params";
 
 export interface ProjectSearch {
   /** Relative path of a skill to open in the side panel once. */
@@ -25,7 +26,7 @@ function ProjectRoute(): ReactNode {
 
 export const Route = createFileRoute("/projects/$projectId")({
   validateSearch: (search: Record<string, unknown>): ProjectSearch => ({
-    skill: typeof search.skill === "string" && search.skill ? search.skill : undefined,
+    skill: optionalSearchText(search.skill),
   }),
   component: ProjectRoute,
 });

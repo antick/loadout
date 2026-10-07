@@ -6,7 +6,7 @@ import type { PageCrumb } from "@/components/layout/PageHeader";
 import { SkillEditorPage } from "@/features/editor/SkillEditorPage";
 import { useAgents } from "@/hooks/queries/agents";
 import { useProjects } from "@/hooks/queries/projects";
-import { originLink } from "@/lib/skill-location";
+import { optionalSearchText, searchText } from "@/lib/search-params";
 
 export interface InstructionsEditorSearch {
   /** The agent whose instruction file is edited; agents sharing the file get the same edit. */
@@ -47,7 +47,6 @@ function InstructionsEditorRoute(): ReactNode {
         void navigate({ search: (previous) => ({ ...previous, file: path }), replace: true })
       }
       crumbs={crumbs}
-      doneLink={originLink(location)}
       title={t("instructions.editorTitle")}
     />
   );
@@ -55,9 +54,9 @@ function InstructionsEditorRoute(): ReactNode {
 
 export const Route = createFileRoute("/instructions/edit")({
   validateSearch: (search: Record<string, unknown>): InstructionsEditorSearch => ({
-    agent: typeof search.agent === "string" ? search.agent : "",
-    project: typeof search.project === "string" && search.project ? search.project : undefined,
-    file: typeof search.file === "string" && search.file ? search.file : undefined,
+    agent: searchText(search.agent),
+    project: optionalSearchText(search.project),
+    file: optionalSearchText(search.file),
   }),
   component: InstructionsEditorRoute,
 });

@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SkillEditorPage } from "@/features/editor/SkillEditorPage";
-import { originLink } from "@/lib/skill-location";
+import { optionalSearchText } from "@/lib/search-params";
 
 export interface SkillEditorSearch {
   /** File to open, relative to the skill folder. Defaults to the main document. */
@@ -22,14 +22,13 @@ function LibrarySkillEditorRoute(): ReactNode {
       file={file ?? null}
       onOpenFile={(path) => void navigate({ search: { file: path }, replace: true })}
       crumbs={[{ label: t("nav.library"), to: "/library" }]}
-      doneLink={originLink(location)}
     />
   );
 }
 
 export const Route = createFileRoute("/library_/$skillId/edit")({
   validateSearch: (search: Record<string, unknown>): SkillEditorSearch => ({
-    file: typeof search.file === "string" && search.file ? search.file : undefined,
+    file: optionalSearchText(search.file),
   }),
   component: LibrarySkillEditorRoute,
 });

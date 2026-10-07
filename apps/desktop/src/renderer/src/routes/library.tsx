@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { type ReactNode, useCallback } from "react";
 import { LibraryPage } from "@/features/library/LibraryPage";
 import { STATUS_FILTERS, type StatusFilter } from "@/features/library/library-filters";
+import { optionalSearchText } from "@/lib/search-params";
 
 export interface LibrarySearch {
   /** Id of the skill whose detail is open. */
@@ -49,9 +50,9 @@ function LibraryRoute(): ReactNode {
 
 export const Route = createFileRoute("/library")({
   validateSearch: (search: Record<string, unknown>): LibrarySearch => ({
-    skill: typeof search.skill === "string" && search.skill ? search.skill : undefined,
+    skill: optionalSearchText(search.skill),
     status: isStatusFilter(search.status) ? search.status : undefined,
-    q: typeof search.q === "string" && search.q ? search.q : undefined,
+    q: optionalSearchText(search.q),
     favorites: search.favorites === true || search.favorites === "true" ? true : undefined,
   }),
   component: LibraryRoute,
