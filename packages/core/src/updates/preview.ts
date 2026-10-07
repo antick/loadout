@@ -25,7 +25,7 @@ export interface SourcePreviewDeps {
   store: SkillStore;
   git: GitClient;
   download: Download;
-  clawhub?: ClawhubClient;
+  clawhub: ClawhubClient;
 }
 
 export interface SourcePreview {

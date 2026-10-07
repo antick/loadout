@@ -69,7 +69,7 @@ export interface UpdaterDeps {
   /** Keeps the edited version an approved update replaces. */
   removed: Pick<RemovedStore, "keepCopy">;
   /** The registry client, for ClawHub skills. */
-  clawhub?: ClawhubClient;
+  clawhub: ClawhubClient;
 }
 
 export interface UpdateOptions {

@@ -63,18 +63,25 @@ export function sourceLabel(skill: Pick<Skill, "sourceType">): string {
   return SOURCE_LABELS[skill.sourceType];
 }
 
-/** The repository a git or marketplace skill follows, or the registry entry a ClawHub skill does. */
-export interface RemoteTarget {
-  /** A Git repository, or a ClawHub skill served as versioned zips. */
-  kind: "git" | "clawhub";
+interface TargetBase {
   url: string;
   branch: string | null;
   subpath: string | null;
   /** Marketplace skills are found by name, because repositories move their folders around. */
   locator: string | null;
-  /** ClawHub: who published the skill, and its slug. */
-  clawhub?: { owner: string; slug: string };
 }
+
+/**
+ * The repository a git or marketplace skill follows, or the registry entry a ClawHub skill does,
+ * which ClawHub serves as versioned zips.
+ */
+export type RemoteTarget =
+  | (TargetBase & { kind: "git" })
+  | (TargetBase & {
+      kind: "clawhub";
+      /** Who published the skill, and its slug. */
+      clawhub: { owner: string; slug: string };
+    });
 
 /** What resolves remote revisions: Git for repositories, the ClawHub client for the registry. */
 export interface RemoteClients {
@@ -158,7 +165,7 @@ export async function resolveRemoteRevision(
   target: RemoteTarget,
   signal?: AbortSignal,
 ): Promise<string> {
-  if (target.kind === "clawhub" && target.clawhub) {
+  if (target.kind === "clawhub") {
     return requireClawhub(clients).latestVersion(target.clawhub.owner, target.clawhub.slug);
   }
   const { git } = clients;
@@ -316,7 +323,7 @@ export async function openRemoteSource(
   revision: string,
   signal?: AbortSignal,
 ): Promise<OpenedSource> {
-  if (target.kind === "clawhub" && target.clawhub) {
+  if (target.kind === "clawhub") {
     const { owner, slug } = target.clawhub;
     const opened = await openClawhubVersion(requireClawhub(clients), owner, slug, revision, signal);
     return { dir: opened.dir, revision, subpath: null, cleanup: opened.cleanup };

@@ -31,7 +31,7 @@ export interface CheckerDeps {
   git: GitClient;
   download: Download;
   /** The registry client, for ClawHub skills. */
-  clawhub?: ClawhubClient;
+  clawhub: ClawhubClient;
 }
 
 export interface CheckOptions {
