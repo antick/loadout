@@ -4,7 +4,7 @@ import { join } from "node:path";
 import {
   APP_SLUG,
   type CreateSkillInput,
-  NEW_SKILL_DOCUMENT,
+  SKILL_FILE,
   SKILL_DESCRIPTION_MAX,
   SKILL_NAME_MAX,
   type Skill,
@@ -93,7 +93,7 @@ export async function createSkill(
   try {
     const draft = join(parent, name);
     await mkdir(draft);
-    await writeFile(join(draft, NEW_SKILL_DOCUMENT), newSkillDocument(checked));
+    await writeFile(join(draft, SKILL_FILE), newSkillDocument(checked));
     return await install({
       sourceDir: draft,
       name,

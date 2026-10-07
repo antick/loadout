@@ -114,7 +114,16 @@ export function hasSkillErrors(issues: readonly SkillIssue[]): boolean {
   return issues.some((issue) => issue.severity === "error");
 }
 
-const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** An Agent Skills name: lower case letters and digits, single dashes between. */
+export const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** `Web kit!` → `web-kit`: any text made into a name `SKILL_NAME_PATTERN` accepts, or "". */
+export function slugOf(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 const FENCE_PATTERN = /^(\s*)(`{3,}|~{3,})/;
 const INLINE_CODE_PATTERN = /`[^`]*`/g;
 /**
@@ -276,7 +285,7 @@ export function checkSkillDocument(content: string | null, folderName: string): 
     if (name.length > SKILL_NAME_MAX) {
       head.push(skillIssue("name_too_long", { length: name.length, max: SKILL_NAME_MAX }, line));
     }
-    if (!NAME_PATTERN.test(name)) head.push(skillIssue("name_format", { name }, line));
+    if (!SKILL_NAME_PATTERN.test(name)) head.push(skillIssue("name_format", { name }, line));
     if (name !== folderName) {
       head.push(skillIssue("name_mismatch", { name, folder: folderName }, line));
     }

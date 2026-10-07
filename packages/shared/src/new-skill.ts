@@ -4,7 +4,8 @@ import {
   type NewSkillTemplate,
   newSkillTemplateBody,
 } from "./new-skill-templates";
-import { SKILL_DESCRIPTION_MAX, SKILL_NAME_MAX } from "./skill-checks";
+import { WINDOWS_DEVICE_NAMES } from "./constants";
+import { SKILL_DESCRIPTION_MAX, SKILL_NAME_MAX, SKILL_NAME_PATTERN } from "./skill-checks";
 import type { Skill } from "./types";
 
 /**
@@ -19,20 +20,13 @@ export interface CreateSkillInput {
   template?: NewSkillTemplate;
 }
 
-/** File a new skill is written to. */
-export const NEW_SKILL_DOCUMENT = "SKILL.md";
-
 export type NewSkillNameProblem = "empty" | "format" | "too_long" | "reserved";
-
-const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-/** Names Windows cannot use for a folder, whatever the case. */
-const WINDOWS_DEVICE_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
 
 /** What is wrong with `name` as a new skill's name; null when it is fine. */
 export function newSkillNameProblem(name: string): NewSkillNameProblem | null {
   if (!name) return "empty";
   if (name.length > SKILL_NAME_MAX) return "too_long";
-  if (!NAME_PATTERN.test(name)) return "format";
+  if (!SKILL_NAME_PATTERN.test(name)) return "format";
   if (WINDOWS_DEVICE_NAMES.test(name)) return "reserved";
   return null;
 }

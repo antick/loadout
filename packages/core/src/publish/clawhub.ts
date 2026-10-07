@@ -6,7 +6,7 @@ import {
   CLAWHUB_MAX_TOPIC_LENGTH,
   CLAWHUB_MAX_TOTAL_BYTES,
   CLAWHUB_NAME,
-  CLAWHUB_SLUG_PATTERN,
+  SKILL_NAME_PATTERN,
   CLAWHUB_VERSION_PATTERN,
   CLI_BINARY_NAME,
   SKILL_FILE,
@@ -15,7 +15,7 @@ import {
   type ClawhubPublishPreview,
   type ClawhubPublishResult,
   clawhubSkillUrl,
-  clawhubSlugOf,
+  slugOf,
   formatBytes,
   isNewerVersion,
   nextPatchVersion,
@@ -54,7 +54,7 @@ export interface ClawhubPublisher {
 /** Topics as ClawHub takes them: from tags, lower case, capped in number and length. */
 export function clawhubTopicsOf(tags: readonly string[]): string[] {
   const topics = tags
-    .map((tag) => clawhubSlugOf(tag))
+    .map((tag) => slugOf(tag))
     .filter((tag) => tag && tag.length <= CLAWHUB_MAX_TOPIC_LENGTH && !RESERVED_TOPICS.has(tag));
   return [...new Set(topics)].slice(0, CLAWHUB_MAX_TOPICS);
 }
@@ -105,7 +105,7 @@ export function createClawhubPublisher(
   async function preview(skillId: string): Promise<ClawhubPublishPreview> {
     const skill = store.get(skillId);
     const { handle } = await requireToken();
-    const slug = clawhubSlugOf(skill.name);
+    const slug = slugOf(skill.name);
     const files = filesOf(skill.libraryPath);
     const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
     const problems: string[] = [];
@@ -123,7 +123,7 @@ export function createClawhubPublisher(
       problems.push(
         `The skill is over ClawHub's limit of ${formatBytes(CLAWHUB_MAX_TOTAL_BYTES)}.`,
       );
-    if (!CLAWHUB_SLUG_PATTERN.test(slug)) problems.push("The name gives no usable slug.");
+    if (!SKILL_NAME_PATTERN.test(slug)) problems.push("The name gives no usable slug.");
     const versions = await clawhub.versions(handle, slug);
     const latestVersion = versions.reduce<string | null>(
       (best, version) => (best === null || isNewerVersion(version, best) ? version : best),
@@ -152,7 +152,7 @@ export function createClawhubPublisher(
       );
     }
     const slug = input.slug.trim();
-    if (!CLAWHUB_SLUG_PATTERN.test(slug))
+    if (!SKILL_NAME_PATTERN.test(slug))
       throw invalid("The slug must be lower-case letters, digits and dashes.");
     const version = input.version.trim();
     if (!CLAWHUB_VERSION_PATTERN.test(version)) throw invalid("The version must look like 1.2.3.");

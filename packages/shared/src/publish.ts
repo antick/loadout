@@ -105,16 +105,7 @@ export const CLAWHUB_MAX_TOPICS = 5;
 export const CLAWHUB_MAX_TOPIC_LENGTH = 48;
 /** Every version published on ClawHub is released under this licence; the registry insists. */
 export const CLAWHUB_LICENSE = "MIT-0";
-export const CLAWHUB_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const CLAWHUB_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
-
-/** A slug ClawHub accepts from any name: lower case, letters and digits, dashes between. */
-export function clawhubSlugOf(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 /** `1.2.3` → `1.2.4`; anything else → `1.0.0`. */
 export function nextPatchVersion(version: string | null): string {

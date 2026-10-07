@@ -1,9 +1,8 @@
 import { basename } from "node:path";
-import { firstFreeName } from "@loadout/shared";
+import { WINDOWS_DEVICE_NAMES, firstFreeName } from "@loadout/shared";
 import { invalid } from "../errors";
 
 const FORBIDDEN_CHARS = /[<>:"/\\|?*]/g;
-const WINDOWS_DEVICE_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 const FALLBACK_SKILL_NAME = "unknown-skill";
 const FALLBACK_SLUG = "skill";
 const FALLBACK_AGENT_KEY = "agent";

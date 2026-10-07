@@ -5,6 +5,8 @@ import {
   MIB,
   SECOND_MS,
   SKILL_FILE,
+  SKILL_NAME_MAX,
+  SKILL_NAME_PATTERN,
   formatBytes,
   isRecord,
 } from "@loadout/shared";
@@ -56,8 +58,6 @@ const MAX_INDEX_BYTES = 2 * MIB;
 const MAX_ARTIFACT_BYTES = 64 * MIB;
 const MAX_FILES = 1000;
 const MAX_DESCRIPTION = 1024;
-const NAME_MAX = 64;
-const SAFE_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
 const DIGEST_PREFIX = "sha256:";
 
@@ -80,7 +80,9 @@ export function isWellKnownIndexUrl(url: string | null): url is string {
 }
 
 function isSafeName(value: unknown): value is string {
-  return typeof value === "string" && value.length <= NAME_MAX && SAFE_NAME.test(value);
+  return (
+    typeof value === "string" && value.length <= SKILL_NAME_MAX && SKILL_NAME_PATTERN.test(value)
+  );
 }
 
 function description(value: unknown): string | null {

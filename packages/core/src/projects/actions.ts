@@ -6,7 +6,7 @@ import {
   DEFAULT_PROJECT_AGENT_KEY,
   isAgentAvailable,
   type LocalSkill,
-  NEW_SKILL_DOCUMENT,
+  SKILL_FILE,
   newSkillDocument,
   type ProjectCopyRef,
   type PushToLibraryOptions,
@@ -252,7 +252,7 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
             // Nothing made means the folder was already there: refused, never written into.
             if ((await mkdir(dir, { recursive: true })) === undefined) throw takenBy(target);
             written.push(dir);
-            await writeFile(join(dir, NEW_SKILL_DOCUMENT), document);
+            await writeFile(join(dir, SKILL_FILE), document);
           }
         } catch (error) {
           // Everywhere or nowhere: take back the folders this call made.

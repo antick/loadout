@@ -1,6 +1,6 @@
 import {
   DEFAULT_NEW_SKILL_TEMPLATE,
-  NEW_SKILL_DOCUMENT,
+  SKILL_FILE,
   NEW_SKILL_TEMPLATES,
   type NewSkillTemplate,
   isNewSkillTemplate,
@@ -101,7 +101,7 @@ function NewSkillForm({ onOpenChange, projectId }: Omit<NewSkillDialogProps, "op
     targets: place.targets,
     libraryPath: location?.path ?? null,
   });
-  const folderPath = skillFolder ? joinPath(skillFolder, NEW_SKILL_DOCUMENT) : null;
+  const folderPath = skillFolder ? joinPath(skillFolder, SKILL_FILE) : null;
   const folder = folderPath ? compactHome(folderPath, info?.homeDir) : null;
   const moreFolders = copyFolders.length;
 

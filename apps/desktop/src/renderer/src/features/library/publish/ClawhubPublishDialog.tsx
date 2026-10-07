@@ -2,7 +2,7 @@ import {
   CLAWHUB_FIRST_VERSION,
   CLAWHUB_LICENSE,
   CLAWHUB_NAME,
-  CLAWHUB_SLUG_PATTERN,
+  SKILL_NAME_PATTERN,
   CLAWHUB_TOKEN_URL,
   CLAWHUB_VERSION_PATTERN,
   type ClawhubPublishInput,
@@ -71,7 +71,7 @@ function ClawhubPublishForm({
   const slugValue = slug ?? plan?.slug ?? "";
   const nameValue = displayName ?? plan?.displayName ?? skill.name;
   const versionValue = version ?? plan?.suggestedVersion ?? CLAWHUB_FIRST_VERSION;
-  const slugOk = CLAWHUB_SLUG_PATTERN.test(slugValue);
+  const slugOk = SKILL_NAME_PATTERN.test(slugValue);
   const versionOk = CLAWHUB_VERSION_PATTERN.test(versionValue);
   const held = (plan?.secrets.length ?? 0) > 0 && !allowSecrets;
   const blocked = (plan?.problems.length ?? 0) > 0;

@@ -1,6 +1,6 @@
 import {
   DEFAULT_NEW_SKILL_TEMPLATE,
-  NEW_SKILL_DOCUMENT,
+  SKILL_FILE,
   NEW_SKILL_TEMPLATES,
   skillAuthoringPrompt,
 } from "@loadout/shared";
@@ -54,7 +54,7 @@ async function createSkill(context: CommandContext): Promise<CommandResult> {
     value: skill,
     text: [
       `Created ${skill.name} at ${skill.libraryPath}.`,
-      `Write its instructions in ${NEW_SKILL_DOCUMENT}, then: skills deploy ${skill.name} --agent <key>`,
+      `Write its instructions in ${SKILL_FILE}, then: skills deploy ${skill.name} --agent <key>`,
     ].join("\n"),
   };
 }

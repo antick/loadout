@@ -152,6 +152,8 @@ export const MAX_SKILL_FILE_BYTES = 2 * MIB;
 
 /** The canonical skill document name. `SKILL_MARKER_FILES` lists the spellings accepted on disk. */
 export const SKILL_FILE = SKILL_MARKER_FILES[0];
+/** Names Windows cannot use for a file or folder, whatever the case and extension. */
+export const WINDOWS_DEVICE_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 
 /** HTTP status codes the clients branch on. */
 export const HTTP_OK = 200;

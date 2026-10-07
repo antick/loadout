@@ -1,3 +1,4 @@
+import { slugOf } from "./skill-checks";
 import type { BatchFailure, Preset } from "./types";
 
 /**
@@ -13,11 +14,7 @@ export const PRESET_FILE_EXTENSION = ".loadout-preset.json";
 export const PRESET_FILE_DIALOG_EXTENSIONS = ["json"];
 /** A file name from a preset's name: `Web kit` → `web-kit.loadout-preset.json`. */
 export function presetFileName(name: string): string {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return `${slug || "preset"}${PRESET_FILE_EXTENSION}`;
+  return `${slugOf(name) || "preset"}${PRESET_FILE_EXTENSION}`;
 }
 
 /** Files of skills without a source are embedded up to this size in total. */
