@@ -6,7 +6,7 @@ import { createGitClient } from "../src/install/git-client";
 import { PREVIEW_TTL_MS } from "../src/install/preview-sessions";
 import { gitFailure } from "../src/util/git-errors";
 import { createRemovedStore } from "../src/storage/removed";
-import { type TestWorld, createTestWorld, makeSkill, writeFile } from "./helpers";
+import { type TestWorld, createTestWorld, makeSkill, rejection, writeFile } from "./helpers";
 import {
   type InstallHarness,
   commitAll,
@@ -197,17 +197,42 @@ describe("git preview and confirm", () => {
     expect(leftoverCheckouts(tmp)).toEqual([]);
   });
 
-  it("stops at the first failure and still deletes the checkout", async () => {
+  it("installs the rest past a failure, names both, and still deletes the checkout", async () => {
     const preview = await install.api.previewGit(REPO);
-    await expect(
+    const error = await rejection(
       install.api.confirmGit(preview.previewId, [
         { relPath: "skills/pdf", name: "" },
         { relPath: "../../outside", name: "" },
         { relPath: "skills/docx", name: "" },
       ]),
-    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
-    expect(world.store.list().map((s) => s.name)).toEqual(["pdf"]);
+    );
+    expect(error.code).toBe("INVALID_INPUT");
+    expect(error.message).toContain("Installed pdf, docx");
+    expect(error.message).toContain("../../outside");
+    const installed = error.details?.installed as ({ name: string } | null)[];
+    expect(installed.map((skill) => skill?.name ?? null)).toEqual(["pdf", null, "docx"]);
+    expect(error.details?.failed).toEqual([
+      {
+        name: "../../outside",
+        message: "'../../outside' is not one of the skills in this preview",
+      },
+    ]);
+    expect(
+      world.store
+        .list()
+        .map((s) => s.name)
+        .sort(),
+    ).toEqual(["docx", "pdf"]);
     expect(leftoverCheckouts(tmp)).toEqual([]);
+  });
+
+  it("passes a lone failure on as it is", async () => {
+    const preview = await install.api.previewGit(REPO);
+    const error = await rejection(
+      install.api.confirmGit(preview.previewId, [{ relPath: "../../outside", name: "" }]),
+    );
+    expect(error.message).toBe("'../../outside' is not one of the skills in this preview");
+    expect(error.details).toBeUndefined();
   });
 
   it("expires previews nobody confirmed, and cancelPreview never throws", async () => {

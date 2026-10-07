@@ -10,7 +10,7 @@ import type {
 } from "@loadout/shared";
 import { MINUTE_MS } from "@loadout/shared";
 import type { CoreContext } from "../context";
-import { invalid } from "../errors";
+import { AppError, errorMessage, invalid } from "../errors";
 import type { SkillStore } from "../skills/store";
 import type { InstallIntoLibrary, InstallRecord } from "./library";
 import { readCheckedSkill } from "./read-skill";
@@ -71,6 +71,28 @@ export interface PreviewSessionDeps {
   replace: ReplaceDeps;
 }
 
+/**
+ * The error a confirm ends with when some skills could not be installed. Alone, a failure is
+ * passed on as it is. Next to installed skills, it names both: `details.installed` lists what
+ * each chosen row became, in order, null where it failed; `details.failed` says why.
+ */
+function partlyInstalled(
+  done: readonly Skill[],
+  failures: readonly { name: string; error: unknown }[],
+  installed: readonly (Skill | null)[],
+): unknown {
+  const [first] = failures;
+  if (done.length === 0 && failures.length === 1) return first?.error;
+  const failed = failures.map(({ name, error }) => ({ name, message: errorMessage(error) }));
+  const named = failed.map((entry) => `${entry.name}: ${entry.message}`).join("; ");
+  const code = first?.error instanceof AppError ? first.error.code : "IO";
+  const message =
+    done.length > 0
+      ? `Installed ${done.map((skill) => skill.name).join(", ")}. Could not install ${named}`
+      : `Could not install ${named}`;
+  return new AppError(code, message, { installed, failed });
+}
+
 export function createPreviewSessions(ctx: CoreContext, deps: PreviewSessionDeps): PreviewSessions {
   const { install, store, safety } = deps;
   const sessions = new Map<string, PreviewSession & { createdAt: number }>();
@@ -124,25 +146,34 @@ export function createPreviewSessions(ctx: CoreContext, deps: PreviewSessionDeps
       if (!sessions.has(previewId)) throw invalid(SESSION_EXPIRED);
       sessions.delete(previewId);
       try {
-        const installed: Skill[] = [];
+        // One skill failing does not stop the rest; what happened to each is said at the end.
+        const installed: (Skill | null)[] = [];
+        const failures: { name: string; error: unknown }[] = [];
         for (const [index, { item, dir, name }] of chosen.entries()) {
-          if (!dir) throw invalid(`'${item.relPath}' is not one of the skills in this preview`);
           emitProgress(ctx, session.key, "installing", {
             current: index + 1,
             total: chosen.length,
             name,
           });
-          const request = { sourceDir: dir, name: item.name, record: session.record(dir) };
-          // Looked up now, not at preview time: an earlier row may have just taken the name.
-          const owner = item.replace ? skillHoldingName(store, name) : null;
-          const skill = owner
-            ? await installReplacing(ctx, install, deps.replace, owner, request)
-            : await install(request);
-          safety.remember(skill, reportOf.get(dir) ?? null);
-          installed.push(skill);
+          try {
+            if (!dir) throw invalid(`'${item.relPath}' is not one of the skills in this preview`);
+            const request = { sourceDir: dir, name: item.name, record: session.record(dir) };
+            // Looked up now, not at preview time: an earlier row may have just taken the name.
+            const owner = item.replace ? skillHoldingName(store, name) : null;
+            const skill = owner
+              ? await installReplacing(ctx, install, deps.replace, owner, request)
+              : await install(request);
+            safety.remember(skill, reportOf.get(dir) ?? null);
+            installed.push(skill);
+          } catch (error) {
+            installed.push(null);
+            failures.push({ name, error });
+          }
         }
-        session.confirmed?.();
-        return installed;
+        const done = installed.filter((skill): skill is Skill => skill !== null);
+        if (done.length > 0) session.confirmed?.();
+        if (failures.length > 0) throw partlyInstalled(done, failures, installed);
+        return done;
       } finally {
         // Installed or failed halfway, the status bar stops showing the install.
         emitProgress(ctx, session.key, "done");

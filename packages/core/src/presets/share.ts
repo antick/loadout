@@ -23,7 +23,7 @@ import {
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
-import { errorMessage, invalid, isAppError } from "../errors";
+import { AppError, errorMessage, invalid, isAppError } from "../errors";
 import type { Download } from "../install/download";
 import type { InstallIntoLibrary } from "../install/library";
 import { type SafetyGate, installChecked } from "../install/safety-gate";
@@ -39,6 +39,22 @@ import {
 import type { PresetStore } from "./store";
 
 export type PresetSharingApi = Pick<PresetsApi, "exportFile" | "previewImport" | "importFile">;
+
+/**
+ * What each row of a confirm became when some of them failed, and why each failed one did, in
+ * order; null for any other error.
+ */
+function installedBeforeFailure(
+  error: unknown,
+): { installed: readonly (Skill | null)[]; reasons: string[] } | null {
+  if (!(error instanceof AppError)) return null;
+  const { installed, failed } = error.details ?? {};
+  if (!Array.isArray(installed)) return null;
+  const reasons = Array.isArray(failed)
+    ? failed.map((entry: { message?: unknown }) => String(entry.message ?? ""))
+    : [];
+  return { installed: installed as (Skill | null)[], reasons };
+}
 
 export interface PresetSharingDeps {
   store: SkillStore;
@@ -186,14 +202,29 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
       if (picks.length === 0) return;
       // Entries naming one folder (its source spelled two ways) share one install.
       const folders = [...new Map(picks.map((pick) => [pick.relPath, pick])).values()];
-      const installed = await deps.install.confirmGit(
-        preview.previewId,
-        folders.map(({ relPath, name }) => ({ relPath, name })),
-        { acceptRisk: options.acceptRisk },
-      );
+      let installed: readonly (Skill | null)[];
+      const reasons = new Map<number, string>();
+      try {
+        installed = await deps.install.confirmGit(
+          preview.previewId,
+          folders.map(({ relPath, name }) => ({ relPath, name })),
+          { acceptRisk: options.acceptRisk },
+        );
+      } catch (error) {
+        // Some went in: keep those, and name only the others as failed.
+        const partial = installedBeforeFailure(error);
+        if (!partial) throw error;
+        installed = partial.installed;
+        let next = 0;
+        installed.forEach((skill, index) => {
+          if (skill === null) reasons.set(index, partial.reasons[next++] ?? errorMessage(error));
+        });
+      }
       for (const pick of picks) {
-        const skill = installed[folders.findIndex((folder) => folder.relPath === pick.relPath)];
+        const index = folders.findIndex((folder) => folder.relPath === pick.relPath);
+        const skill = installed[index];
         if (skill) result.ids.set(pick.entry, skill.id);
+        else result.failed.push({ name: pick.entry.name, message: reasons.get(index) ?? "" });
       }
     } finally {
       await deps.install.cancelPreview(preview.previewId).catch(() => undefined);
