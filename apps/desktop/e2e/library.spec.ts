@@ -205,3 +205,19 @@ test("ticking the first skill from the keyboard keeps focus on it", async ({ pag
   // Starting selection must not rebuild the cards under the keyboard.
   await expect(box).toBeFocused();
 });
+
+test("a blocked square in the matrix can be allowed again from the keyboard", async ({ page }) => {
+  await openApp(page, "/library");
+  await page.getByRole("radio", { name: "Matrix view: skills and agents" }).click();
+  const empty = main(page).getByRole("button", { name: "api-docs: Not installed for Codex" });
+  await empty.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Never install here" }).click();
+
+  const blocked = main(page).getByRole("button", { name: /^api-docs: Blocked for Codex/ });
+  await blocked.focus();
+  await expect(blocked).toBeFocused();
+  // What the context-menu key sends to the focused square (headless Chromium sends none).
+  await blocked.dispatchEvent("contextmenu", { bubbles: true });
+  await page.getByRole("menuitem", { name: "Allow here again" }).click();
+  await expect(empty).toBeVisible();
+});

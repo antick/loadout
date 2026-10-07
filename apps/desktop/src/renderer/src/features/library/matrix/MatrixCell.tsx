@@ -22,7 +22,10 @@ export interface MatrixCellProps {
   onToggle: () => void;
 }
 
-/** One skill × agent square. Click to deploy or remove; a blocked one does nothing. */
+/**
+ * One skill × agent square. Click to deploy or remove; a blocked one does nothing, but stays
+ * focusable, since its right-click menu (or the context-menu key) is where it is allowed again.
+ */
 export function MatrixCell({
   state,
   label,
@@ -38,10 +41,11 @@ export function MatrixCell({
       title={label}
       aria-label={label}
       aria-pressed={state === "deployed" || state === "pending"}
-      disabled={state === "blocked" || state === "pending"}
-      onClick={onToggle}
+      disabled={state === "pending"}
+      aria-disabled={state === "blocked" || undefined}
+      onClick={state === "blocked" ? undefined : onToggle}
       className={cn(
-        "mx-auto flex size-7 items-center justify-center rounded-md transition-colors disabled:cursor-default",
+        "mx-auto flex size-7 items-center justify-center rounded-md transition-colors disabled:cursor-default aria-disabled:cursor-default",
         STATE_CLASSES[state],
         FOCUS_RING,
       )}
