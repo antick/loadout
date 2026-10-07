@@ -3,7 +3,6 @@
 /** How a skill folder on disk compares with its library skill. */
 export type SyncStatus = "local_only" | "in_sync" | "local_newer" | "library_newer" | "diverged";
 
-/** A skill folder found in an agent's global folder or in a project. */
 /** Another copy of a skill that the same agent also loads, so it may see the skill twice. */
 export interface SkillDuplicate {
   /**
@@ -38,6 +37,7 @@ export interface PluginSkill {
   enabled: boolean;
 }
 
+/** A skill folder found in an agent's global folder or in a project. */
 export interface LocalSkill {
   name: string;
   dirName: string;
@@ -109,7 +109,6 @@ export interface Project {
   updatedAt: number;
 }
 
-/** A project-level deploy target. Agents sharing one project folder are merged into one target. */
 /** One agent's copy of a project skill: what the project editor opens. */
 export interface ProjectCopyRef {
   /** The skill folder, relative to the agent's skills folder inside the project. */
@@ -117,6 +116,7 @@ export interface ProjectCopyRef {
   agentKey: string;
 }
 
+/** A project-level deploy target. Agents sharing one project folder are merged into one target. */
 export interface ProjectTarget {
   key: string;
   displayName: string;

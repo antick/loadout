@@ -16,7 +16,7 @@ import { errorMessage } from "@/lib/toast";
 import { setMany, toggleIn } from "@/lib/sets";
 
 /**
- * The pieces the Scan and Suggested tabs of "Link a project" share: a list of folders to tick,
+ * The pieces the Folder and Suggested tabs of "Link a project" share: a list of folders to tick,
  * the outcome of adding them, and the footer that adds the ticked ones.
  */
 

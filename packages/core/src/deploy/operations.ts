@@ -105,11 +105,6 @@ export function createDeployOperations(
     return { state, rows, policy, current, refusal: reason ? { path: targetPath, reason } : null };
   }
 
-  /**
-   * Remove the folder `row` recorded (`row` may still exist). The path is ours to remove only
-   * when no row of any skill or agent still points at it, and only if it still looks like what
-   * `row` recorded. When in doubt the content stays.
-   */
   /** Other rows still pointing at `row`'s path keep it; null when that could not be checked. */
   function sharedWithOthers(row: DeploymentRecord): boolean | null {
     try {
@@ -128,6 +123,11 @@ export function createDeployOperations(
     return holdsOwnEdits(row, libraryHash) ? row.targetPath : null;
   }
 
+  /**
+   * Remove the folder `row` recorded (`row` may still exist). The path is ours to remove only
+   * when no row of any skill or agent still points at it, and only if it still looks like what
+   * `row` recorded. When in doubt the content stays.
+   */
   function releasePath(row: DeploymentRecord, place = row.agentKey, setAside?: string[]): boolean {
     if (sharedWithOthers(row) !== false) return false;
     const libraryHash = store.contentHashOf(row.skillId);

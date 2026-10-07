@@ -63,12 +63,11 @@ export function useMarketDetail(
 
 /**
  * Skills sitting in agent folders that the library does not manage yet. Scanning walks the disk,
- * so it runs when the Scan tab opens (`enabled`) and on Rescan, not on window focus.
+ * so it runs when the Scan tab opens and on Rescan, not on window focus.
  */
-export function useScanLocal(enabled = true): UseQueryResult<ScanResult> {
+export function useScanLocal(): UseQueryResult<ScanResult> {
   return useQuery({
     queryKey: keys.install.scan,
     queryFn: () => api.install.scanLocal(),
-    enabled,
   });
 }

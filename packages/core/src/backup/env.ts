@@ -86,9 +86,10 @@ export function createBackupEnv(ctx: CoreContext, deps: BackupDeps): BackupEnv {
   }
 
   /**
-   * A rebuild refreshes an existing skill from its files but keeps the installed revision it
-   * already had. After a merge that would make the next metadata write undo the other device's
-   * revision, and the two devices would trade commits for ever. So carry it over here.
+   * A rebuild takes a skill's installed revision from its file, but keeps the one it had when the
+   * file names none. After a merge where the other device cleared the revision, that would make
+   * the next metadata write put it back, and the two devices would trade commits for ever. So
+   * carry the file's revision over here, a cleared one included.
    */
   function adoptRevisions(): void {
     for (const { file } of metadataFiles()) {

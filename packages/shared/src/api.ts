@@ -274,7 +274,7 @@ export interface WorkspaceApi {
    * what was put aside (empty when the folder held nothing the library lacks), for an undo.
    */
   pull(agentKey: string, relativePath: string): Promise<string[]>;
-  /** Delete a local skill. Its folder goes to Recently removed; resolves to that entry's id. */
+  /** Delete a local skill. Its folder goes to Recently removed; resolves to those entries' ids. */
   deleteLocal(agentKey: string, relativePath: string): Promise<string[]>;
   /** Folders in the agent's skills folder that the agent ignores, sorted by path. */
   broken(agentKey: string): Promise<BrokenSkillFolder[]>;
@@ -294,7 +294,6 @@ export interface ProjectsApi {
   remove(id: string): Promise<void>;
   reorder(ids: string[]): Promise<void>;
   setPinned(id: string, pinned: boolean): Promise<void>;
-  /** The project page was opened: counts toward the sidebar's Frequent group. */
   /**
    * Count an open of the project's page (a visit counts once) and give back its open counts, so
    * a view can update them without listing every project again.

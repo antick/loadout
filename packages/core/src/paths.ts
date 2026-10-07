@@ -178,9 +178,9 @@ function canReceive(target: string, defaultBaseDir: string): boolean {
 }
 
 /**
- * Move the library's own entries (skills, database, history, removed, cache, logs) from one folder to
- * another; the home folder's files stay. All or nothing: a failure moves back what was moved.
- * Returns false when it could not be done safely; the source is then kept.
+ * Move the library's own entries (skills, database, history, removed, earlier libraries, cache,
+ * logs) from one folder to another; the home folder's files stay. All or nothing: a failure moves
+ * back what was moved. Returns false when it could not be done safely; the source is then kept.
  */
 function migrate(source: string, target: string, defaultBaseDir: string, notes: string[]): boolean {
   if (pathsOverlap(canonicalPath(source), canonicalPath(target))) {

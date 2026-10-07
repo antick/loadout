@@ -28,8 +28,6 @@ import { useUpdateSkills } from "@/hooks/mutations/library";
 import { useSkills } from "@/hooks/queries/skills";
 import { SOURCE_GRID_CLASS } from "@/lib/styles";
 
-/** Cards of sources, one column when narrow, two when there is room. */
-
 /**
  * Where the library's skills came from, one card per repository, archive or link: what came
  * from it, whether it has updates, and "find new skills" to see what else it offers now.

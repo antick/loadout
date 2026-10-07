@@ -21,8 +21,6 @@ import { cn } from "@/lib/utils";
 import { REMOVAL_IN_LIBRARY } from "@loadout/shared";
 import { PathList } from "@/components/PathList";
 
-/** `PendingRemoval.location` of files inside the library copy; anything else is an agent key. */
-
 export interface RemovalGuardDialogProps {
   skillName: string;
   /** Null keeps the dialog closed. */

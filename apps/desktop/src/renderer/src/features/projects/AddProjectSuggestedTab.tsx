@@ -24,7 +24,7 @@ import {
 
 const SUGGESTED_ITEM_ID_PREFIX = "suggested-project-";
 const SKELETON_ROWS = 4;
-/** Taller than the Scan list: each row here has two lines. */
+/** Taller than the Folder tab's list: each row here has two lines. */
 const LIST_CLASS = "max-h-72 overflow-y-auto rounded-lg border";
 
 /** Name and when it was last worked on, the folder, and where it was seen. */

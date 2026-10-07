@@ -13,10 +13,10 @@ import { useSafetyReports } from "@/hooks/queries/safety";
 import { editLink } from "@/lib/skill-location";
 
 /**
- * Attention badges of a library skill: update state, a SKILL.md that breaks the format (a link to
- * the editor), and an unresolved backup conflict (a link to the Backup page). Detail views also
- * count format warnings and say when a skill with an upstream was edited in the app. A skill
- * agents only run on request is marked everywhere, since it behaves differently once deployed.
+ * Badges of a library skill: update state, a SKILL.md that breaks the format (a link to the
+ * editor), the safety check's verdict, manual only, the user's note, what it runs, and an
+ * unresolved backup conflict (a link to the Backup page). Detail views also count format warnings
+ * and say when a skill with an upstream was edited in the app.
  */
 export function SkillIndicators({
   skill,

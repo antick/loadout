@@ -1,7 +1,6 @@
 import type { LocalSkill, Project, ProjectTarget } from "@loadout/shared";
-// Relative imports (not `@/`) so this module stays loadable by plain vitest.
-import type { AgentTargetChip } from "../../components/AgentPicker";
-import { orderedAvailableTargets, targetsOfAgents } from "../projects/project-skill-groups";
+import type { AgentTargetChip } from "@/components/AgentPicker";
+import { orderedAvailableTargets, targetsOfAgents } from "@/features/projects/project-skill-groups";
 
 /** The place id of the library in the "Create in" choice; any other id is a project's. */
 export const LIBRARY_PLACE = "library";

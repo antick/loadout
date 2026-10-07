@@ -111,7 +111,6 @@ export function flagList(args: ParsedArgs, name: string): string[] {
   return Array.isArray(value) ? value : [];
 }
 
-/** A flag that takes one of `choices`; undefined when it is not given, a usage error otherwise. */
 /** The value of a flag that takes one of its `choices`; anything else is a usage error. */
 export function flagChoice<T extends string>(
   args: ParsedArgs,

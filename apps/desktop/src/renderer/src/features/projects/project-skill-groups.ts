@@ -7,8 +7,7 @@ import {
   SYNC_STATUS_SEVERITY,
 } from "@loadout/shared";
 
-// Relative import (not `@/`) so this module stays loadable by plain vitest.
-import type { EnabledState, LocalSkillView } from "../local-skills/local-skill-view";
+import type { EnabledState, LocalSkillView } from "@/features/local-skills/local-skill-view";
 
 /**
  * One logical skill of a project: every per-agent copy ("variant") found at the same relative

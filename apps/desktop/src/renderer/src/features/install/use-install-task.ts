@@ -21,7 +21,7 @@ export interface InstallTasks {
 /**
  * The one way the Install page starts work: progress toast with phase text and Cancel, success
  * toast with "View" and "Deploy to agents…", friendly text for cancelled, offline and timed-out
- * installs. All four tabs go through it. Starting work does not watch progress, so a caller that
+ * installs. Starting work does not watch progress, so a caller that
  * only starts installs does not draw again on every progress tick.
  */
 export function useRunInstallTask(): RunInstallTask {

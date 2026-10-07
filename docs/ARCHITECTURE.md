@@ -130,12 +130,13 @@ Settings; then only the library's own entries move and the rest stays home.
     .loadout/              portable metadata: schema.json, skills/<id>.json, presets/<id>.json
   history/                 earlier versions of files saved in the editor (this computer only)
   removed/                 Recently removed: skill folders taken out of agent and project folders
+  earlier-libraries/       libraries a restore or recovery replaced, kept until cleared in Storage
   cache/repos/             Git clone cache
   logs/                    rotating logs, crash marker
 ```
 
-A library move (`paths.ts`) moves `skills/`, the database, `history/`, `removed/`, `cache/` and `logs/` as a
-whole or not at all, and only into an empty folder (the home data folder's own files aside).
+A library move (`paths.ts`) moves `skills/`, the database, `history/`, `removed/`,
+`earlier-libraries/`, `cache/` and `logs/` as a whole or not at all, and only into an empty folder (the home data folder's own files aside).
 
 `schema.json` holds the metadata format version and the highest app version that has written the
 library. Sync, clone and restore refuse a backup whose format is newer than the app knows

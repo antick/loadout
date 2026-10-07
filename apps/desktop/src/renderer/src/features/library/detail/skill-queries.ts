@@ -45,7 +45,7 @@ export function lastSourceComparison(
 
 /**
  * Library copy compared with its upstream source: changed files and the main document, from one
- * checkout. Fetched only when `enabled`; never again on focus or age, only when the key changes.
+ * checkout. Fetched once; never again on focus or age, only when the key changes.
  */
 export function useSourceComparison(skill: Skill): UseQueryResult<SourceComparison> {
   return useQuery({

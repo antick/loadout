@@ -71,8 +71,10 @@ export interface StartBackupInput {
   isRepo: boolean;
 }
 
-/** Wire the library to a remote for the first time, either restoring from it or filling it. */
-/** Resolves to the sync's outcome when it filled the remote, null when it restored from it. */
+/**
+ * Wire the library to a remote for the first time, either restoring from it or filling it.
+ * Resolves to the sync's outcome when it filled the remote, null when it restored from it.
+ */
 export function useStartBackup(): UseMutationResult<SyncOutcome | null, unknown, StartBackupInput> {
   const { t } = useTranslation();
   return useBackupMutation({
