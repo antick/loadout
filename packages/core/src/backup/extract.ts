@@ -8,7 +8,11 @@ import type { BackupEnv } from "./env";
  * git checks them out into a scratch work tree, through a scratch index.
  */
 
-const STAGE_PREFIX = ".backup-stage-";
+export const STAGE_PREFIX = ".backup-stage-";
+/** Inside a stage: our skill folders a merge or conflict choice set aside, with their files. */
+export const STAGE_ASIDE_DIR = ".replaced";
+/** Inside a stage: our skill folders a merge is moving to another name. */
+export const STAGE_MOVES_DIR = ".moves";
 const SCRATCH_INDEX = ".scratch-index";
 /** Index files the sync review builds its throwaway commit with, next to the library. */
 export const PREVIEW_INDEX_PREFIX = ".backup-preview-index-";

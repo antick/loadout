@@ -23,6 +23,7 @@ import {
 } from "../util/fs";
 import type { BackupEnv } from "./env";
 import { PREVIEW_INDEX_PREFIX } from "./extract";
+import { sweepLeftovers } from "./leftovers";
 
 /** Files git leaves behind while an operation is unfinished. */
 const INTERRUPTED_MARKERS = ["MERGE_HEAD", "index.lock", "rebase-merge", "rebase-apply"] as const;
@@ -221,6 +222,7 @@ export async function recoverInterrupted(env: BackupEnv): Promise<void> {
     env.ctx.log.warn("Undoing a backup merge that did not finish", leftoverMarker(env));
     await undoOwnMerge(env, journal);
   }
+  await sweepLeftovers(env);
   const marker = leftoverMarker(env);
   if (!marker) return;
   throw new AppError(

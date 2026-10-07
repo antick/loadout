@@ -26,7 +26,7 @@ import { isRepo } from "./repo";
  * over, so restoring a backup never costs local work.
  */
 
-const CLONE_DIR_PREFIX = "skills.clone-";
+export const CLONE_DIR_PREFIX = "skills.clone-";
 /** In `paths.earlierDir`: the library a restore or recovery replaced. */
 const SET_ASIDE_PREFIX = "skills-";
 const LOCAL_COPY_SUFFIX = "-local";

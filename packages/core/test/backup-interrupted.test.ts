@@ -2,6 +2,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readFileSync,
   renameSync,
   rmSync,
   utimesSync,
@@ -90,6 +91,33 @@ describe("a backup merge that did not finish", () => {
     expect(b.git("log", "--diff-filter=D", "--name-only", "--format=")).not.toContain("alpha/");
     await a.api.sync();
     expect(a.skill("alpha")).not.toBeNull();
+  });
+
+  it("clears scratch folders a crash left, keeping any folder of ours in Recently removed", async () => {
+    const { a } = await seedRemote(temp.dir, ["alpha"]);
+    track(a);
+    const beside = dirname(a.skillsDir);
+    const alphaId = a.skill("alpha")?.id ?? "";
+    const clone = join(beside, "skills.clone-1");
+    const stage = join(beside, ".backup-stage-old");
+    const fresh = join(beside, ".backup-stage-running");
+    writeFile(join(clone, "alpha", "SKILL.md"), "the remote's copy");
+    writeFile(join(stage, ".replaced", alphaId, ".env"), "SECRET=1");
+    writeFile(join(fresh, "alpha", "SKILL.md"), "in use right now");
+    const hoursAgo = Date.now() / 1000 - 2 * 60 * 60;
+    for (const dir of [clone, stage]) utimesSync(dir, hoursAgo, hoursAgo);
+
+    await a.api.sync();
+
+    expect(existsSync(clone)).toBe(false);
+    expect(existsSync(stage)).toBe(false);
+    // Too young to be left over: another run may be using it.
+    expect(existsSync(fresh)).toBe(true);
+    const [kept] = a.removed.list();
+    expect(kept).toMatchObject({ name: "alpha", reason: "replaced" });
+    expect(readFileSync(join(a.removed.contentPath(kept?.id ?? ""), ".env"), "utf8")).toBe(
+      "SECRET=1",
+    );
   });
 
   it("is left alone when someone else started it, or its process still runs", async () => {

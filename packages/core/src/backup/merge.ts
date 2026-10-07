@@ -13,7 +13,7 @@ import { ensureDir, isSkillDir, removePath, writeFileAtomic } from "../util/fs";
 import { assertReadable, schemaAt } from "./compat";
 import { recordConflict } from "./conflict-store";
 import { type BackupEnv, PRESET_METADATA_SUBDIR, SKILL_METADATA_SUBDIR } from "./env";
-import { type Stage, createStage, extractPaths } from "./extract";
+import { STAGE_MOVES_DIR, type Stage, createStage, extractPaths } from "./extract";
 import { gitError } from "./git";
 import {
   type SetAsideFolder,
@@ -49,7 +49,6 @@ import { commitStaged, mergeBase, requireBranch, resolveCommit, upstreamCommit }
 const BEFORE_MERGE_MESSAGE = "backup: before merge";
 const MERGE_MESSAGE_PREFIX = "merge: sync from ";
 const UNKNOWN_DEVICE = "another device";
-const MOVES_DIR = ".moves";
 
 export interface MergeResult {
   summary: MergeSummary;
@@ -201,12 +200,12 @@ async function materialise(
       } else if (item.path !== ours.path) movers.push(item);
     }
     // Two steps, so that skills swapping folder names do not trip over each other.
-    ensureDir(stage.pathOf(MOVES_DIR));
+    ensureDir(stage.pathOf(STAGE_MOVES_DIR));
     for (const item of movers) {
       const from = join(env.repoDir, skills.get(item.id)?.ours?.path ?? "");
-      if (existsSync(from)) move(from, stage.pathOf(join(MOVES_DIR, item.id)));
+      if (existsSync(from)) move(from, stage.pathOf(join(STAGE_MOVES_DIR, item.id)));
     }
-    for (const item of movers) place(item, stage.pathOf(join(MOVES_DIR, item.id)));
+    for (const item of movers) place(item, stage.pathOf(join(STAGE_MOVES_DIR, item.id)));
     for (const item of incoming) {
       place(item, stage.pathOf(skills.get(item.id)?.theirs?.path ?? item.id));
     }

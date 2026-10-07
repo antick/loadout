@@ -4,7 +4,7 @@ import { AppError } from "../errors";
 import { LIBRARY_PLACE } from "../storage/removed-library";
 import { ensureDir, lstatOrNull } from "../util/fs";
 import type { BackupEnv } from "./env";
-import type { Stage } from "./extract";
+import { STAGE_ASIDE_DIR, type Stage } from "./extract";
 
 /**
  * Files left out of the backup (`node_modules/`, `.env`, the user's own patterns) exist only on
@@ -14,7 +14,6 @@ import type { Stage } from "./extract";
  * version has a file at its path) stays with the old folder, which goes to Recently removed.
  */
 
-const ASIDE_DIR = ".replaced";
 const KEPT_DETAIL = "Local files kept in Recently removed";
 const NOT_KEPT_DETAIL = "Local files could not be kept; they are in";
 
@@ -68,7 +67,7 @@ export async function setAsideFolder(
   const from = join(env.repoDir, folder);
   if (!lstatOrNull(from)) return null;
   const ignored = await listIgnored(env, folder);
-  const to = stage.pathOf(join(ASIDE_DIR, key));
+  const to = stage.pathOf(join(STAGE_ASIDE_DIR, key));
   ensureDir(dirname(to));
   move(from, to);
   return { from, to, ignored };
