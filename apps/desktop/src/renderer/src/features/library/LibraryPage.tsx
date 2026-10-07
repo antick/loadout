@@ -72,6 +72,7 @@ import { useViewMode } from "@/hooks/use-view-mode";
 import { FILTER_ALL, type LibraryViewMode, STORAGE_KEYS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { CARD_GRID_CLASS } from "@/lib/styles";
+import { existingTagFilters } from "@/lib/tag-filter";
 
 const VIEW_MODE_SCOPE = "library";
 const NO_AGENTS: readonly AgentInfo[] = [];
@@ -147,10 +148,11 @@ export function LibraryPage({
   const filters = useMemo<LibraryFilters>(
     () => ({
       ...rest,
+      tags: existingTagFilters(rest.tags, allTags.data),
       status: !usage.enabled && needsUsage(rest.status) ? FILTER_ALL : rest.status,
       sort: !usage.enabled && needsUsage(sort) ? DEFAULT_SORT_MODE : sort,
     }),
-    [rest, sort, usage.enabled],
+    [rest, sort, usage.enabled, allTags.data],
   );
   const showUsage = usage.enabled && (needsUsage(filters.sort) || needsUsage(filters.status));
   const all = skills.data;
