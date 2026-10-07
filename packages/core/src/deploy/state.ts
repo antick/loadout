@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import type { DeployMode } from "@loadout/shared";
 import { classifyTarget } from "./engine";
 
@@ -6,10 +7,11 @@ import { classifyTarget } from "./engine";
  * `skills repair`), `doctor` and `skills status`:
  * - `ok`: a link to the skill, or a folder where a copy was put (an edited copy is still ours).
  * - `missing`: nothing there. The repair deploys it again.
- * - `broken`: a link row whose link leads nowhere or to another folder. The repair points it at
- *   the skill again.
+ * - `broken`: a link row whose link leads nowhere (the skill or the library moved). The repair
+ *   points it at the skill again.
  * - `not_ours`: something Loadout did not put there (a folder or file where its link was, a link
- *   or file where its copy was). Never overwritten: the repair leaves it alone.
+ *   to another folder that is there, such as the user's own checkout, a link or file where its
+ *   copy was). Never overwritten: the repair leaves it alone.
  */
 export type DeploymentState = "ok" | "missing" | "broken" | "not_ours";
 
@@ -20,6 +22,9 @@ export function deploymentState(
   const state = classifyTarget(row.targetPath, skill.libraryPath);
   if (state === "absent") return "missing";
   if (state === "link_to_source") return "ok";
-  if (row.mode === "symlink") return state === "foreign_link" ? "broken" : "not_ours";
+  if (row.mode === "symlink") {
+    // `existsSync` follows the link: false only when it leads nowhere.
+    return state === "foreign_link" && !existsSync(row.targetPath) ? "broken" : "not_ours";
+  }
   return state === "real_dir" ? "ok" : "not_ours";
 }

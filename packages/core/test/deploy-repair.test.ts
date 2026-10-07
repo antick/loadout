@@ -43,6 +43,24 @@ describe("repairing deployments", () => {
     }
   });
 
+  it("leaves alone a link the user pointed at another folder that is there", async () => {
+    const alpha = world.addSkill("alpha");
+    await world.deploy.api.deploy(alpha.id, "claude_code");
+    const checkout = join(world.root, "my-checkout", "alpha");
+    mkdirSync(checkout, { recursive: true });
+    writeFileSync(join(checkout, "SKILL.md"), "my working copy");
+    rmSync(join(agentDir(), "alpha"));
+    symlinkSync(checkout, join(agentDir(), "alpha"));
+
+    const report = await repair().run();
+
+    expect(report.repaired).toEqual([]);
+    expect(report.notOurs.map((entry) => entry.skill)).toEqual(["alpha"]);
+    expect(existsSync(join(agentDir(), "alpha", "SKILL.md"))).toBe(true);
+    expect(lstatSync(join(agentDir(), "alpha")).isSymbolicLink()).toBe(true);
+    expect(world.store.deployment(alpha.id, "claude_code")).not.toBeNull();
+  });
+
   it("puts a deployment back where it was recorded, not where the agent's folder is now", async () => {
     const alpha = world.addSkill("alpha");
     await world.deploy.api.deploy(alpha.id, "claude_code");
