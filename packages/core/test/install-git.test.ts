@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { planInstallNames } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -490,6 +490,25 @@ describe("git client", () => {
       restorePath();
     }
   });
+
+  it.skipIf(process.platform === "win32")(
+    "counts macOS's stand-in git, before the developer tools are installed, as missing",
+    async () => {
+      const bin = join(world.root, "stub-bin");
+      writeFile(
+        join(bin, "git"),
+        "#!/bin/sh\necho 'xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun' >&2\nexit 1\n",
+      );
+      chmodSync(join(bin, "git"), 0o755);
+      const client = createGitClient(world.ctx);
+      const restorePath = setEnv({ PATH: bin });
+      try {
+        await expect(client.lsRemote(remote)).rejects.toMatchObject({ code: "GIT_MISSING" });
+      } finally {
+        restorePath();
+      }
+    },
+  );
 
   it("classifies failures by what git said", () => {
     expect(code("fatal: unable to access 'x': Could not resolve host: github.com")).toBe("NETWORK");

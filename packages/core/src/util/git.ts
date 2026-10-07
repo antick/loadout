@@ -13,6 +13,11 @@ export const GIT_TIMEOUT_MS = 300_000;
 /** Transports Git may use; `file` covers local repositories and folder remotes. */
 const GIT_TRANSPORTS = "https:http:ssh:git:file";
 const MISSING_MESSAGE = "Git is not installed on this computer. Install Git and try again.";
+/**
+ * Until the developer tools are installed, macOS's `/usr/bin/git` is a stand-in that fails with
+ * one of these: Git is as good as missing.
+ */
+const MACOS_GIT_STUB = /xcrun: error: invalid active developer path|No developer tools were found/;
 
 /**
  * Settings forced on every call. Repositories Loadout touches hold third-party files, so nothing
@@ -110,8 +115,9 @@ export async function runGit(args: string[], options: GitRunOptions = {}): Promi
   ];
   // Config flags only count when they come before the subcommand.
   const fullArgs = [...configFlags(config), ...(options.globalArgs ?? []), ...args];
+  let result: ExecResult;
   try {
-    return await exec(options.binary ?? GIT_BINARY, fullArgs, {
+    result = await exec(options.binary ?? GIT_BINARY, fullArgs, {
       cwd: options.cwd,
       env: {
         ...inheritedEnvironment(),
@@ -129,4 +135,8 @@ export async function runGit(args: string[], options: GitRunOptions = {}): Promi
     if (isAppError(error, "UNSUPPORTED")) throw new AppError("GIT_MISSING", MISSING_MESSAGE);
     throw error;
   }
+  if (result.code !== 0 && MACOS_GIT_STUB.test(result.stderr)) {
+    throw new AppError("GIT_MISSING", MISSING_MESSAGE);
+  }
+  return result;
 }
