@@ -104,9 +104,6 @@ describe("project", () => {
     expect(gone.stdout).toContain("removed 1");
     expect(existsSync(join(project, ".claude", "skills", "pdf"))).toBe(false);
     expect((await box.cli("removed", "list")).stdout).toContain("pdf");
-    // Still accepted from older scripts.
-    await box.cli("project", "apply", "--dir", project);
-    expect((await box.cli("project", "unapply", "--dir", project, "--yes")).code).toBe(0);
   });
 
   it("init refuses to overwrite, and writes a file for a new project", async () => {

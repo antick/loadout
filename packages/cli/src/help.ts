@@ -40,11 +40,7 @@ function flagLabel(flag: FlagSpec): string {
 }
 
 const flagRows = (flags: readonly FlagSpec[]): string[] =>
-  columns(
-    flags
-      .filter((flag) => !flag.hidden)
-      .map((flag) => [flagLabel(flag), flag.description] as const),
-  );
+  columns(flags.map((flag) => [flagLabel(flag), flag.description] as const));
 
 /** `--agent <key>…`: how a flag is written in a usage line. */
 function flagUsage(flag: FlagSpec): string {
@@ -63,10 +59,9 @@ function usageNames(usage: string, flag: FlagSpec): boolean {
  * then every other flag from its specs, so the line cannot drift from what the command accepts.
  */
 export function commandUsage(command: CommandSpec): string {
-  const visible = command.flags.filter((flag) => !flag.hidden);
-  const paired = new Set(visible.flatMap((flag) => flag.requiredUnless ?? []));
+  const paired = new Set(command.flags.flatMap((flag) => flag.requiredUnless ?? []));
   const parts = [command.usage];
-  for (const flag of visible) {
+  for (const flag of command.flags) {
     if (usageNames(command.usage, flag) || paired.has(flag.name)) continue;
     parts.push(
       flag.requiredUnless
@@ -119,7 +114,7 @@ export function commandHelp(group: CommandGroup, command: CommandSpec): string {
     "",
     `Usage: ${invocation} ${commandUsage(command)}`.trimEnd(),
   ];
-  if (command.flags.some((flag) => !flag.hidden)) {
+  if (command.flags.length > 0) {
     lines.push("", "Options:", ...flagRows(command.flags));
   }
   lines.push("", "Global options:", ...flagRows(GLOBAL_FLAGS));

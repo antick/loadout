@@ -106,14 +106,6 @@ export const DRY_RUN_FLAG: FlagSpec = {
 /** --yes where the command always needs it, a dry run aside: usage shows `(--dry-run | --yes)`. */
 export const REQUIRED_YES_FLAG: FlagSpec = { ...YES_FLAG, requiredUnless: DRY_RUN_FLAG.name };
 
-/** --yes on a command that no longer needs it: accepted, so scripts that pass it keep working. */
-export const LEGACY_YES_FLAG: FlagSpec = {
-  ...YES_FLAG,
-  description:
-    "Not needed: what this removes waits in Recently removed or is put back in one step.",
-  hidden: true,
-};
-
 /** --yes on a command that writes a file: needed to replace one that is already there. */
 export const OVERWRITE_FLAG = yesFlag("Replace the file when it already exists.");
 

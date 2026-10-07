@@ -26,7 +26,7 @@ const find = (path: string): CommandSpec => {
 describe("usage lines", () => {
   it("name only flags the command accepts", () => {
     for (const { path, command } of commands) {
-      const known = [...command.flags.filter((flag) => !flag.hidden), ...GLOBAL_FLAGS];
+      const known = [...command.flags, ...GLOBAL_FLAGS];
       for (const [token] of command.usage.matchAll(/(?<![\w-])--?[a-zA-Z][\w-]*/g)) {
         const named = known.some(
           (flag) => token === `--${flag.name}` || token === `-${flag.short}`,
@@ -36,11 +36,11 @@ describe("usage lines", () => {
     }
   });
 
-  it("show every flag the command accepts, and no hidden one", () => {
+  it("show every flag the command accepts", () => {
     for (const { path, command } of commands) {
       const usage = commandUsage(command);
       for (const flag of command.flags) {
-        expect(usageNames(usage, flag), `${path} --${flag.name}`).toBe(flag.hidden !== true);
+        expect(usageNames(usage, flag), `${path} --${flag.name}`).toBe(true);
       }
     }
   });

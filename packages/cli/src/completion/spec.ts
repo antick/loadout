@@ -116,7 +116,7 @@ function toCommand(
   const path = group.standalone === command ? group.name : `${group.name} ${command.name}`;
   return {
     path,
-    flags: [...command.flags.filter((flag) => !flag.hidden).map(toFlag), ...globals],
+    flags: [...command.flags.map(toFlag), ...globals],
     ...positionalsOf(group.name, command.usage),
   };
 }

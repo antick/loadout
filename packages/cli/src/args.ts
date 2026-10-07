@@ -21,8 +21,6 @@ export interface FlagSpec {
    * two as `(--dry-run | --yes)`.
    */
   requiredUnless?: string;
-  /** Still accepted, so older scripts keep working, but left out of help and completion. */
-  hidden?: boolean;
 }
 
 export type FlagValue = boolean | string | string[];

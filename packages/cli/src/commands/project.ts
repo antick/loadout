@@ -14,7 +14,6 @@ import {
   ACCEPT_RISK_FLAG,
   AGENT_FLAG,
   DRY_RUN_FLAG,
-  LEGACY_YES_FLAG,
   limitPositionals,
   resolveUserPath,
 } from "./support";
@@ -202,7 +201,7 @@ export const projectGroup: CommandGroup = {
       name: "unapply",
       summary: "Remove every skill folder apply wrote",
       usage: "",
-      flags: [DIR_FLAG, FORCE_FLAG, DRY_RUN_FLAG, LEGACY_YES_FLAG],
+      flags: [DIR_FLAG, FORCE_FLAG, DRY_RUN_FLAG],
       notes: ["Removed folders wait in Recently removed. The file and its lock stay."],
       run: unapply,
     },

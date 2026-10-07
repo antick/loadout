@@ -384,10 +384,6 @@ describe("presets", () => {
       removed: 2,
     });
     expect(existsSync(join(agentSkillsDir(), "alpha"))).toBe(false);
-    // Older scripts that still pass --yes keep working.
-    await cli("presets", "deploy", "Writing", "--agent", AGENT);
-    const legacy = await cli("presets", "undeploy", "Writing", "--yes", "--json");
-    expect(legacy.json()).toMatchObject({ removed: 2 });
     expect((await cli("presets", "undeploy", "--help")).stdout).not.toContain("--yes");
 
     expect((await cli("presets", "deploy", "Writing", "--json")).json()).toMatchObject({

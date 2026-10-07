@@ -6,7 +6,7 @@ import {
   REMOVED_KEEP_DAYS,
   formatSimilarity,
 } from "@loadout/shared";
-import { type FlagSpec, type ParsedArgs, UsageError, flagBoolean, flagString } from "../args";
+import { UsageError, flagBoolean, flagString } from "../args";
 import { plural, table } from "../output";
 import {
   DRY_RUN_FLAG,
@@ -147,55 +147,17 @@ export const dismissCommand: LibraryCommandSpec = {
   run: dismiss,
 };
 
-/**
- * `skills duplicates merge|dismiss|restore …`, as older scripts and skills call the commands
- * that are now `skills merge` and `skills dismiss [--undo]`: forwarded there, with the same
- * checks on what was given.
- */
-const FORWARDED: Record<string, { command: LibraryCommandSpec; flags: Record<string, true> }> = {
-  merge: { command: mergeCommand, flags: {} },
-  dismiss: { command: dismissCommand, flags: {} },
-  restore: { command: dismissCommand, flags: { [UNDO_FLAG.name]: true } },
-};
-/** Accepted on `skills duplicates` only for the forwarded forms; left out of help and completion. */
-const hiddenCopy = (flag: FlagSpec): FlagSpec => ({ ...flag, hidden: true });
-const COMPAT_FLAGS: readonly FlagSpec[] = [
-  hiddenCopy(KEEP_FLAG),
-  hiddenCopy(REMOVE_FLAG),
-  hiddenCopy(DRY_RUN_FLAG),
-  hiddenCopy(REQUIRED_YES_FLAG),
-];
-
-/** A flag given that `allowed` does not hold is refused, never quietly ignored. */
-function refuseStrayFlags(args: ParsedArgs, allowed: readonly FlagSpec[], what: string): void {
-  const stray = [ALL_FLAG, ...COMPAT_FLAGS].find(
-    (flag) => args.flags[flag.name] !== undefined && !allowed.some((a) => a.name === flag.name),
-  );
-  if (stray) throw new UsageError(`--${stray.name} does not go with ${what}.`);
-}
-
-/** `skills duplicates [--all]`: the pairs that may be one skill; older action words forwarded. */
+/** `skills duplicates [--all]`: the pairs that may be one skill. */
 async function duplicates(context: CommandContext): Promise<CommandResult> {
-  const { args } = context;
-  const action = args.positionals[0];
-  if (action === undefined) {
-    refuseStrayFlags(args, [ALL_FLAG], "the list of pairs");
-    return list(context);
-  }
-  const target = FORWARDED[action];
-  if (!target) throw new UsageError(`Unknown action "${action}". Use merge, dismiss or restore.`);
-  refuseStrayFlags(args, target.command.flags, action);
-  return target.command.run({
-    ...context,
-    args: { positionals: args.positionals.slice(1), flags: { ...args.flags, ...target.flags } },
-  });
+  limitPositionals(context.args, 0);
+  return list(context);
 }
 
 export const duplicatesCommand: CommandSpec = {
   name: "duplicates",
   summary: "Find skills that look like one skill installed twice",
   usage: "[--all]",
-  flags: [ALL_FLAG, ...COMPAT_FLAGS],
+  flags: [ALL_FLAG],
   notes: [
     "Lists pairs whose files are the same, whose SKILL.md is mostly the same text, or whose names and descriptions are alike. Nothing is removed by itself.",
     "Keep one with skills merge; say they differ with skills dismiss.",

@@ -4,7 +4,6 @@ import {
   AGENT_FLAG,
   DEPLOY_NOTE,
   DRY_RUN_FLAG,
-  LEGACY_YES_FLAG,
   REQUIRED_YES_FLAG,
   SKIP_CONFLICTS_FLAG,
   applyOutcome,
@@ -191,7 +190,7 @@ export const presetsGroup: CommandGroup = {
       name: "undeploy",
       summary: "Remove a preset's skills from agents",
       usage: "<name>",
-      flags: [AGENT_FLAG, DRY_RUN_FLAG, LEGACY_YES_FLAG],
+      flags: [AGENT_FLAG, DRY_RUN_FLAG],
       notes: [
         "Without --agent: every agent that currently holds one of its skills.",
         "Copies edited in an agent's folder go to Recently removed; `presets deploy` puts the rest back. Preview with --dry-run.",
