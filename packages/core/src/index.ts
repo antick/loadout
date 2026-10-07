@@ -24,5 +24,7 @@ export { previewLibrary } from "./install/fetched-preview";
 export { requireSkillFolder } from "./install/service";
 export { planFolder, planMarket, planPreview } from "./install/plan";
 export { matchRequested } from "./install/requested";
+export { baseNameOf } from "./skills/numbered-name";
+export { sanitizeSkillName } from "./util/names";
 export { type FolderCheck, checkSkillFolder } from "./skills/validate-folder";
 export { type AdoptResult, adoptAgentSkills } from "./workspace/adopt";

@@ -1,5 +1,6 @@
 import { isArchivePath, parseSkillsCommand } from "@loadout/shared";
 import {
+  baseNameOf,
   cancelled,
   matchRequested,
   notFound,
@@ -7,6 +8,7 @@ import {
   planMarket,
   planPreview,
   requireSkillFolder,
+  sanitizeSkillName,
 } from "@loadout/core";
 import type {
   GitPreview,
@@ -76,6 +78,17 @@ export function classifySource(input: string): InstallSource {
   throw new UsageError(
     `Can not tell what "${text}" is. Use ./folder or ./file.zip for something on disk, a full git URL, owner/repo, owner/repo#branch, owner/repo@skill, or @owner/slug for ClawHub.`,
   );
+}
+
+/**
+ * Whether the library numbered `dirName` because the name asked for was taken (`pdf` → `pdf-2`).
+ * Compared with the name as the install made it safe (`pdf:v2` is written `pdf_v2`), and letter
+ * case aside, as the library compares names.
+ */
+function gotNumberedName(dirName: string, asked: string): boolean {
+  const wanted = sanitizeSkillName(asked).toLowerCase();
+  const got = dirName.toLowerCase();
+  return got !== wanted && baseNameOf(got) === wanted;
 }
 
 /** Said after anything lands in the library. */
@@ -370,7 +383,7 @@ async function run(context: CommandContext): Promise<CommandResult> {
   const lines = installed.map((skill) => `Installed ${skill.name} (${skill.id}) into the library.`);
   const renamed = installed.filter((skill, index) => {
     const asked = result.asked[index];
-    return asked !== undefined && asked !== skill.dirName && !result.replaced.includes(skill.name);
+    return asked !== undefined && gotNumberedName(skill.dirName, asked);
   });
   if (result.replaced.length > 0) {
     lines.push(

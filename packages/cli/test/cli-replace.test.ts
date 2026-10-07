@@ -69,4 +69,11 @@ describe("skills install --replace", () => {
     expect(run.stdout).toContain("got a numbered name instead: alpha-2");
     expect(await names()).toEqual(["alpha", "alpha-2"]);
   });
+
+  it("does not call a name made safe for a folder a numbered one", async () => {
+    const run = await box.cli("skills", "install", writeSkill(box.root, "pdf"), "--name", "pdf:v2");
+    expect(run.code).toBe(0);
+    expect(run.stdout).toContain("Installed pdf_v2");
+    expect(run.stdout).not.toContain("numbered name");
+  });
 });
