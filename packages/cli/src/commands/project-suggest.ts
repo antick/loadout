@@ -3,7 +3,7 @@ import type { Project, ProjectSuggestions, SuggestionReason } from "@loadout/sha
 import { UsageError, flagBoolean, flagList, flagString } from "../args";
 import { exitCodeFor } from "../exit-codes";
 import { failureLines, plural, table } from "../output";
-import { AGENT_FLAG, eachItem, limitPositionals, resolveUserPath } from "./support";
+import { AGENT_FLAG, eachItem, limitPositionals, requireAgents, resolveUserPath } from "./support";
 import type { CommandContext, CommandResult, CommandSpec } from "./types";
 
 const DIR_FLAG = {
@@ -50,13 +50,15 @@ async function suggest(context: CommandContext): Promise<CommandResult> {
   const { core, args } = context;
   limitPositionals(args, 0);
   const add = flagBoolean(args, ADD_FLAG.name);
-  const agents = flagList(args, AGENT_FLAG.name);
+  const agentKeys = flagList(args, AGENT_FLAG.name);
   // Checked before anything is read: an option that would be ignored is a mistake to point out.
-  if (add && agents.length === 0) {
+  if (add && agentKeys.length === 0) {
     throw new UsageError(`--${ADD_FLAG.name} needs at least one --agent.`);
   }
-  if (!add && agents.length > 0)
+  if (!add && agentKeys.length > 0)
     throw new UsageError(`--agent only works with --${ADD_FLAG.name}.`);
+  // A typo or an agent not installed would otherwise be left out without a word.
+  const agents = add ? requireAgents(core, args, true).map((agent) => agent.key) : [];
   const project = await projectAt(context);
   const found: ProjectSuggestions = await core.api.projects.suggestSkills(project.id);
   const skills = new Map((await core.api.skills.list()).map((skill) => [skill.id, skill]));

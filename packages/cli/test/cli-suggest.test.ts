@@ -77,6 +77,10 @@ describe("project suggest", () => {
     expect(json.technologies).toEqual(expect.arrayContaining(["Rust", "React"]));
 
     expect((await cli("project", "suggest", "--dir", "./app", "--add")).code).toBe(EXIT_USAGE);
+    // A mistyped agent is refused, not left out while the rest go ahead.
+    const typo = await cli("project", "suggest", "--dir", "./app", "--add", "--agent", "cluade");
+    expect(typo.code).not.toBe(EXIT_OK);
+    expect(existsSync(join(project, AGENT_DIR, "skills", "react-patterns"))).toBe(false);
     const add = await cli("project", "suggest", "--dir", "./app", "--add", "--agent", AGENT);
     expect(add.stdout).toContain("Added 2 skills");
     expect(existsSync(join(project, AGENT_DIR, "skills", "react-patterns", "SKILL.md"))).toBe(true);
