@@ -96,8 +96,13 @@ describe("importing a preset", () => {
       ["notes", "files", null],
     ]);
 
+    const locked = vi.spyOn(bob.ctx.lock, "run");
     const first = await bob.api.presets.importFile(file);
     expect(first).toMatchObject({ installed: ["pdf", "notes"], reused: [], failed: [] });
+    // The switch turned off on import is a preset edit like any other: under the library lock.
+    expect(locked.mock.calls.map(([name]) => name)).toContainEqual(
+      expect.stringContaining("in the preset Team"),
+    );
     expect(first.preset).toMatchObject({ name: "Team", description: "Our kit" });
     expect(first.preset.skillIds).toHaveLength(2);
     const library = await bob.api.skills.list();

@@ -321,8 +321,9 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
       for (const entry of file.skills) {
         const skillId = ids.get(entry);
         for (const agentKey of entry.offFor ?? []) {
+          // Through the API, so it takes the library lock like every other preset edit.
           if (skillId && known.has(agentKey))
-            deps.presets.setToggle(preset.id, skillId, agentKey, false);
+            await deps.api.setToggle(preset.id, skillId, agentKey, false);
         }
       }
       ctx.touched("presets", "skills");
