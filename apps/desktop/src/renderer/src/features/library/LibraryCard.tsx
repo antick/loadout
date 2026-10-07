@@ -7,7 +7,7 @@ import { SkillItem } from "@/components/SkillItem";
 import { SkillTags } from "@/components/SkillTags";
 import { SourceBadge } from "@/components/SourceBadge";
 import { SkillAgentBadges } from "@/features/library/SkillAgentBadges";
-import type { AgentToggle } from "@/hooks/mutations/deploy";
+import type { AgentToggle } from "@/features/library/use-agent-toggle";
 import { SkillUsageNote } from "@/features/library/SkillUsageNote";
 import { SKILL_ROW_MAX_TAGS } from "@/lib/constants";
 

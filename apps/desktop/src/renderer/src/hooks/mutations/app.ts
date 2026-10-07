@@ -1,4 +1,4 @@
-import { type EditorChoice, type FileTypeFilter, type RepairReport } from "@loadout/shared";
+import { type EditorChoice, type RepairReport } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { type SuccessToast, useApiMutation } from "@/hooks/use-api-mutation";
@@ -25,19 +25,6 @@ export function useCopyText(
 export function usePickFolder(): UseMutationResult<string | null, unknown, string | undefined> {
   return useApiMutation({
     fn: (title?: string) => api.app.pickFolder(title),
-    error: GENERIC_ERROR_KEY,
-  });
-}
-
-export interface PickFileInput {
-  filter: FileTypeFilter;
-  title?: string;
-}
-
-/** The native file picker; resolves to null when the user cancels. */
-export function usePickFile(): UseMutationResult<string | null, unknown, PickFileInput> {
-  return useApiMutation({
-    fn: ({ filter, title }: PickFileInput) => api.app.pickFile(filter, title),
     error: GENERIC_ERROR_KEY,
   });
 }

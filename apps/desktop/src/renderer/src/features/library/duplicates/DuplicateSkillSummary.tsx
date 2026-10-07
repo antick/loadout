@@ -5,7 +5,7 @@ import { AgentBadgeRow } from "@/components/AgentBadgeRow";
 import { SkillTags } from "@/components/SkillTags";
 import { SourceBadge } from "@/components/SourceBadge";
 import { useAvailableAgents } from "@/hooks/queries/agents";
-import { useSkillAgentKeys } from "@/hooks/use-skill-agent-keys";
+import { useSkillAgentKeys } from "@/features/library/use-skill-agent-keys";
 
 /** One side of a pair: what tells the two apart, and what would move if it were kept. */
 export function DuplicateSkillSummary({ skill }: { skill: Skill }): ReactNode {

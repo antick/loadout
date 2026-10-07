@@ -1,9 +1,9 @@
 import type { AgentInfo, Skill } from "@loadout/shared";
 import type { ReactNode } from "react";
 import { AgentBadgeRow } from "@/components/AgentBadgeRow";
-import type { AgentToggle } from "@/hooks/mutations/deploy";
+import type { AgentToggle } from "@/features/library/use-agent-toggle";
 import { usePendingSet } from "@/hooks/use-pending-set";
-import { useSkillAgentKeys } from "@/hooks/use-skill-agent-keys";
+import { useSkillAgentKeys } from "@/features/library/use-skill-agent-keys";
 
 /**
  * `AgentBadgeRow` wired to a library skill: clicking a badge deploys or removes it right away

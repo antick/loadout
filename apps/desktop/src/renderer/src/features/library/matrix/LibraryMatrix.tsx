@@ -13,7 +13,7 @@ import {
 import { useSetBlocked } from "@/features/library/library-mutations";
 import { MatrixCell } from "@/features/library/matrix/MatrixCell";
 import { agentColumnCoverage, matrixCellState } from "@/features/library/matrix/matrix-state";
-import { useAgentToggle } from "@/hooks/mutations/deploy";
+import { useAgentToggle } from "@/features/library/use-agent-toggle";
 import { cn } from "@/lib/utils";
 import { SECTION_LABEL } from "@/lib/styles";
 

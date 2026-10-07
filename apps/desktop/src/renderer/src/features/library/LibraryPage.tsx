@@ -59,7 +59,7 @@ import { LibrarySelectionActions } from "@/features/library/LibrarySelectionActi
 import { LibraryToolbar } from "@/features/library/LibraryToolbar";
 import { SkillDetailSheet } from "@/features/library/SkillDetailSheet";
 import { useLibrarySkillActions } from "@/features/library/use-library-skill-actions";
-import { useAgentToggle } from "@/hooks/mutations/deploy";
+import { useAgentToggle } from "@/features/library/use-agent-toggle";
 import { useUpdateSkills } from "@/hooks/mutations/library";
 import { useAvailableAgents } from "@/hooks/queries/agents";
 import { useAllTags, useSkills } from "@/hooks/queries/skills";

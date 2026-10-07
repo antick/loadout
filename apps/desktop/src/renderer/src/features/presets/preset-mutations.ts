@@ -1,5 +1,6 @@
 import {
   type ApplyResult,
+  type FileTypeFilter,
   type Preset,
   PRESET_FILE_DIALOG_EXTENSIONS,
   type PresetAgentToggle,
@@ -18,7 +19,7 @@ import { reloadHintFor, reloadHintForAvailable } from "@/lib/agent-reload";
 import { api } from "@/lib/api";
 import { type CacheSnapshot, patchCached, restoreCached } from "@/lib/optimistic";
 import { keys } from "@/lib/query-keys";
-import { toastApplyResult, toastError } from "@/lib/toast";
+import { GENERIC_ERROR_KEY, toastApplyResult, toastError } from "@/lib/toast";
 
 /** Persist a new skill order inside a preset; the cached preset is reordered at once. */
 export function useReorderPresetSkills(): UseMutationResult<
@@ -176,5 +177,18 @@ export function useImportPreset(): UseMutationResult<
       });
     },
     error: "presetShare.import.failed",
+  });
+}
+
+export interface PickFileInput {
+  filter: FileTypeFilter;
+  title?: string;
+}
+
+/** The native file picker; resolves to null when the user cancels. */
+export function usePickFile(): UseMutationResult<string | null, unknown, PickFileInput> {
+  return useApiMutation({
+    fn: ({ filter, title }: PickFileInput) => api.app.pickFile(filter, title),
+    error: GENERIC_ERROR_KEY,
   });
 }
