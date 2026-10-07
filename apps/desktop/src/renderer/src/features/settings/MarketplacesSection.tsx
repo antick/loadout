@@ -29,7 +29,11 @@ export function MarketplacesSection(): ReactNode {
     event.preventDefault();
     const value = draft.trim();
     if (!value) return;
-    setToken.mutate(value, { onSuccess: () => setDraft("") });
+    setToken.mutate(value, {
+      onSuccess: () => setDraft(""),
+      // `reset` lets go of the input, token included; errors are toasted by the mutation.
+      onSettled: () => setToken.reset(),
+    });
   };
 
   let status: ReactNode;
@@ -65,7 +69,12 @@ export function MarketplacesSection(): ReactNode {
         tone="danger"
         icon={KeyRound}
         actions={
-          <Button variant="ghost" size="xs" onClick={() => setToken.mutate(null)}>
+          <Button
+            variant="ghost"
+            size="xs"
+            disabled={setToken.isPending}
+            onClick={() => setToken.mutate(null)}
+          >
             {t("settings.marketplaces.clawhub.forget")}
           </Button>
         }

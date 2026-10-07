@@ -185,6 +185,8 @@ export function useSetClawhubToken(): UseMutationResult<ClawhubAccount, unknown,
   const { t } = useTranslation();
   return useApiMutation({
     fn: (token) => api.publish.setClawhubToken(token),
+    // The token is this mutation's input: drop the finished mutation from the cache at once.
+    gcTime: 0,
     success: (account) =>
       account.handle
         ? t("settings.marketplaces.clawhub.saved", { handle: account.handle })
