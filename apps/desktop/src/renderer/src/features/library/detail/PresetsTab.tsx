@@ -39,7 +39,11 @@ export function PresetsTab({ skill }: { skill: Skill }): ReactNode {
         icon={Layers}
         title={t("library.presets.emptyTitle")}
         description={t("library.presets.emptyDescription")}
-        action={{ label: t("presets.new"), icon: Plus, onClick: () => shell.openPresetDialog() }}
+        action={{
+          label: t("presets.new"),
+          icon: Plus,
+          onClick: () => shell.openPresetDialog(null, { skillIds: [skill.id] }),
+        }}
       />
     );
   }

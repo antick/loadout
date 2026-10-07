@@ -66,6 +66,23 @@ test("select two skills, tag them, then delete them", async ({ page }) => {
   await expect(content.getByRole("heading", { name: "code-review", level: 3 })).toBeVisible();
 });
 
+test("a new preset made from a selection holds the selected skills", async ({ page }) => {
+  await openApp(page, "/library");
+  const content = main(page);
+  await page.getByRole("button", { name: "Select", exact: true }).click();
+  await content.getByRole("checkbox", { name: "Select api-docs" }).check();
+  await content.getByRole("checkbox", { name: "Select release-notes" }).check();
+  await page.getByRole("button", { name: "Add to preset…" }).click();
+  await page.getByRole("menuitem", { name: "New preset" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Name" }).fill("Docs kit");
+  await dialog.getByRole("button", { name: "Create preset" }).click();
+
+  // The library stays open and the two skills land in the new preset.
+  await expect(toasts(page).filter({ hasText: "Added 2 skills to “Docs kit”" })).toBeVisible();
+  await expect(content.getByRole("heading", { name: "api-docs", level: 3 })).toBeVisible();
+});
+
 test("the Sources page groups skills by where they came from and opens them in the library", async ({
   page,
 }) => {

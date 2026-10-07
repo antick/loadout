@@ -5,8 +5,11 @@ import { createContext, useContext } from "react";
 export interface ShellActions {
   openCommandPalette(): void;
   openHelp(): void;
-  /** Create a preset, or edit the one given. */
-  openPresetDialog(preset?: Preset): void;
+  /**
+   * Create a preset, or edit the one given. A new preset made with `adding` gets those skills and
+   * the user stays where they are; one made from nothing opens its page.
+   */
+  openPresetDialog(preset?: Preset | null, adding?: NewPresetSkills): void;
   /**
    * Start a new skill, in the library or straight in the project given; the editor opens once it
    * is created.
@@ -17,6 +20,12 @@ export interface ShellActions {
   /** Upload a library skill as a version on ClawHub. */
   openPublishToClawhub(skill: Skill): void;
   openAddProject(): void;
+}
+
+/** Skills a new preset starts with, and what to do once they are in it. */
+export interface NewPresetSkills {
+  skillIds: readonly string[];
+  onAdded?: () => void;
 }
 
 export interface PageHeaderSlots {

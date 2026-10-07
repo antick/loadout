@@ -91,7 +91,14 @@ export function LibrarySelectionActions({
             </DropdownMenuItem>
           ))}
           {(presets.data ?? []).length > 0 ? <DropdownMenuSeparator /> : null}
-          <DropdownMenuItem onSelect={() => shell.openPresetDialog()}>
+          <DropdownMenuItem
+            onSelect={() =>
+              shell.openPresetDialog(null, {
+                skillIds: skills.map((skill) => skill.id),
+                onAdded: onDone,
+              })
+            }
+          >
             <Plus />
             {t("presets.new")}
           </DropdownMenuItem>

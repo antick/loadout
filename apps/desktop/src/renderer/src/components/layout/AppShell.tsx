@@ -11,6 +11,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { clampSidebarWidth, sidebarMaxFor } from "@/components/layout/sidebar/SidebarResizeHandle";
 import {
   PageHeaderSlotsContext,
+  type NewPresetSkills,
   type ShellActions,
   ShellContext,
   type SidebarTakeover,
@@ -21,6 +22,7 @@ import { StatusBar } from "@/components/layout/status-bar/StatusBar";
 import { TitleBar } from "@/components/layout/TitleBar";
 import { LibraryWarningBanner } from "@/components/LibraryWarningBanner";
 import { PresetDialog } from "@/components/PresetDialog";
+import { useAddSkillsToPreset } from "@/hooks/mutations/preset-members";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { FirstRunDialog } from "@/features/backup/FirstRunDialog";
 import { NewSkillDialog } from "@/features/library/NewSkillDialog";
@@ -62,10 +64,12 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   });
   const [renaming, setRenaming] = useState<Skill | null>(null);
   const [publishingToClawhub, setPublishingToClawhub] = useState<Skill | null>(null);
-  const [presetDialog, setPresetDialog] = useState<{ open: boolean; preset: Preset | null }>({
-    open: false,
-    preset: null,
-  });
+  const [presetDialog, setPresetDialog] = useState<{
+    open: boolean;
+    preset: Preset | null;
+    adding: NewPresetSkills | null;
+  }>({ open: false, preset: null, adding: null });
+  const addToPreset = useAddSkillsToPreset();
   const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
   const [sidebarHeaderSlot, setSidebarHeaderSlot] = useState<HTMLElement | null>(null);
@@ -93,7 +97,8 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     () => ({
       openCommandPalette: () => setPaletteMode("all"),
       openHelp: () => setHelpOpen(true),
-      openPresetDialog: (preset) => setPresetDialog({ open: true, preset: preset ?? null }),
+      openPresetDialog: (preset, adding) =>
+        setPresetDialog({ open: true, preset: preset ?? null, adding: adding ?? null }),
       openAddProject: () => setAddProjectOpen(true),
       openNewSkill: (projectId) => setNewSkill({ open: true, projectId: projectId ?? null }),
       openRenameSkill: setRenaming,
@@ -179,8 +184,16 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             preset={presetDialog.preset}
             onOpenChange={(open) => setPresetDialog((previous) => ({ ...previous, open }))}
             onSaved={(saved) => {
-              if (!presetDialog.preset)
+              const { preset, adding } = presetDialog;
+              if (preset) return;
+              if (!adding) {
                 void navigate({ to: "/presets/$presetId", params: { presetId: saved.id } });
+                return;
+              }
+              addToPreset.mutate(
+                { preset: saved, skillIds: [...adding.skillIds] },
+                { onSuccess: adding.onAdded },
+              );
             }}
           />
           <NewSkillDialog
