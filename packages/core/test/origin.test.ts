@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createOriginFinder } from "../src/origin";
 import { gitFolderLead, linkLeads, remoteUrlOf } from "../src/origin/evidence";
 import { lockFileLead, lockFilePaths } from "../src/origin/lock";
+import { fixNumberedName } from "../src/skills/numbered-name";
 import { hashDir } from "../src/util/hash";
 import { textSimilarity } from "../src/util/similarity";
 import { makeSkill, writeFile, rejection } from "./helpers";
@@ -192,6 +193,25 @@ describe("npx skills lock file", () => {
       evidence: "skills_lock",
       match: "identical",
     });
+  });
+
+  it("finds the source of a numbered library copy under the name it was numbered from", async () => {
+    const libraryPath = join(world.ctx.paths.skillsDir, "pdf-2");
+    cpSync(pdfInRemote(), libraryPath, { recursive: true });
+    fixNumberedName(libraryPath, "pdf-2");
+    const copy = world.store.insert({
+      name: "pdf-2",
+      description: null,
+      sourceType: "import",
+      sourceRef: null,
+      libraryPath,
+      contentHash: hashDir(libraryPath),
+      updateStatus: "local_only",
+    });
+    writeLock(homeLockDir(), { pdf: PDF_LOCK });
+    const search = await world.updates.api.findSource(copy.id);
+    expect(search.failures).toEqual([]);
+    expect(search.candidates[0]).toMatchObject({ evidence: "skills_lock", match: "identical" });
   });
 
   it("does not trust the file over the repository: a different skill is not called identical", async () => {

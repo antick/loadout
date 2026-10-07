@@ -19,6 +19,7 @@ import { createSerialQueue } from "../util/queue";
 import { type ComparedLead, compareLead } from "./compare";
 import { type SourceLead, gitFolderLead, linkLeads } from "./evidence";
 import { lockFileLead } from "./lock";
+import { baseNameOf } from "../skills/numbered-name";
 
 export interface OriginDeps {
   store: SkillStore;
@@ -78,6 +79,14 @@ function importedFrom(skill: Skill): string | null {
   return ref && isAbsolute(ref) ? ref : null;
 }
 
+/**
+ * The names a skill may go by upstream: its own, then for a numbered library copy (`pdf-2`) the
+ * name it was numbered from (`pdf`).
+ */
+function namesOf(skill: Skill): string[] {
+  return [...new Set([skill.name, baseNameOf(skill.name)])];
+}
+
 export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFinder {
   const { store, git } = deps;
 
@@ -90,7 +99,9 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
   /** What this machine itself says: the `npx skills` lock file, and the folder's own checkout. */
   function machineLeads(skill: Skill, sourcePath: string | null): SourceLead[] {
     const leads: SourceLead[] = [];
-    const installed = lockFileLead(skill.name, ctx.homeDir, ctx.env);
+    const installed = namesOf(skill)
+      .map((name) => lockFileLead(name, ctx.homeDir, ctx.env))
+      .find((lead) => lead !== null);
     if (installed) leads.push(installed);
     const folder = sourcePath ? gitFolderLead(sourcePath, ctx.homeDir) : null;
     if (folder) leads.push(folder);
@@ -99,7 +110,10 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
 
   /** Those, then repositories the skill's own document links to. */
   function localLeads(skill: Skill, sourcePath: string | null): SourceLead[] {
-    return [...machineLeads(skill, sourcePath), ...linkLeads(skill.libraryPath, skill.name)];
+    return [
+      ...machineLeads(skill, sourcePath),
+      ...linkLeads(skill.libraryPath, baseNameOf(skill.name)),
+    ];
   }
 
   /**
@@ -110,10 +124,12 @@ export function createOriginFinder(ctx: CoreContext, deps: OriginDeps): OriginFi
 
   async function marketLeads(skill: Skill): Promise<SourceLead[]> {
     if (!deps.searchMarket) return [];
-    const listing = await deps.searchMarket(skill.name, MARKET_SEARCH_LIMIT);
-    const name = skill.name.toLowerCase();
+    const listing = await deps.searchMarket(baseNameOf(skill.name), MARKET_SEARCH_LIMIT);
+    const names = new Set(namesOf(skill).map((name) => name.toLowerCase()));
     return listing.skills
-      .filter((entry) => entry.skillId.toLowerCase() === name || entry.name.toLowerCase() === name)
+      .filter(
+        (entry) => names.has(entry.skillId.toLowerCase()) || names.has(entry.name.toLowerCase()),
+      )
       .sort((a, b) => b.installs - a.installs)
       .slice(0, MAX_MARKET_LEADS)
       .map((entry) => ({
