@@ -61,6 +61,9 @@ export async function pullRemote(env: BackupEnv): Promise<MergeSummary> {
   const result = await env.ctx.lock.run("backup merge", async () => {
     // The merge commits pending changes first; a sync has refreshed the ignore file by then.
     await refreshIgnoreFile(env);
+    // As before a sync's commit: a key caught now can still simply be removed.
+    const uncommitted = await scanUncommittedChanges(env);
+    if (uncommitted.length > 0) throw secretsFound(uncommitted);
     return whileMerging(env, () => mergeRemote(env));
   });
   return result.summary;

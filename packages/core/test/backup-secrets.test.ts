@@ -196,6 +196,26 @@ describe("backup push check", () => {
     expect(rawGit(remote, "log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
   });
 
+  it("a pull does not commit a key it finds in uncommitted changes", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    a.addSkill("clean");
+    await a.api.init();
+    await a.api.setRemote(remote);
+    await a.api.sync();
+
+    a.addSkill("leaky", { body: `Use ${GITHUB_TOKEN} to call the API.` });
+    await expect(a.api.pull()).rejects.toMatchObject({
+      code: "SECRETS_FOUND",
+      message: expect.stringContaining("Remove it"),
+    });
+    expect(a.git("log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
+
+    removeKey(a);
+    await expect(a.api.pull()).resolves.toBeDefined();
+  });
+
   it("still holds back a key that was committed before and removed since", async () => {
     const remote = createBareRemote(temp.dir);
     const a = createDevice(temp.dir, "A");
