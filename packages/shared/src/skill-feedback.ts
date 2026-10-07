@@ -13,7 +13,8 @@ export const FEEDBACK_PROPOSAL_MAX = 6000;
 export const FEEDBACK_TITLE_MAX = 100;
 /**
  * Longest new-issue address we build. Browsers and the sites take about 8,000 characters; past
- * this the report is copied to the clipboard instead and the page opens with a note.
+ * this the page opens with a note, and the report is pasted in: the app copies it to the
+ * clipboard, the CLI prints it.
  */
 export const FEEDBACK_URL_MAX = 6000;
 /** Characters of the installed revision named in the report. */
@@ -148,7 +149,8 @@ export function feedbackBody(
   ].join("\n");
 }
 
-const PASTE_NOTE = "The report was copied to the clipboard. Paste it here.";
+/** True whether the app copied the report or the CLI printed it. */
+const PASTE_NOTE = "The report is too long for this link. Paste it here.";
 
 /** The new-issue page of `target`, with `title` and `body` filled in. */
 function newIssueUrl(target: SkillFeedbackTarget, title: string, body: string): string {

@@ -179,7 +179,10 @@ describe("skill feedback: the new-issue link", () => {
     });
     expect(draft.urlHasBody).toBe(false);
     expect((draft.url ?? "").length).toBeLessThan(FEEDBACK_URL_MAX);
-    expect(new URL(draft.url ?? "").searchParams.get("body")).toContain("Paste it here");
+    const note = new URL(draft.url ?? "").searchParams.get("body");
+    expect(note).toContain("Paste it here");
+    // The CLI prints the report rather than copying it: the note must not claim a copy.
+    expect(note).not.toContain("clipboard");
     expect(draft.body).toContain("\u00e9\u00e9\u00e9");
   });
 });
