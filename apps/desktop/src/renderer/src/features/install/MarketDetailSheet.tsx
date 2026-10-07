@@ -6,6 +6,7 @@ import {
   formatCount,
   formatDate,
   formatRelative,
+  marketLibraryRef,
 } from "@loadout/shared";
 import {
   Check,
@@ -65,9 +66,11 @@ export interface MarketDetailSheetProps {
 
 /** The library copy of a marketplace skill, installed from the marketplace under that id. */
 function libraryCopy(skills: readonly Skill[] | undefined, skill: MarketSkill): Skill | null {
-  const ref = skill.provider === "clawhub" ? `${skill.source}/${skill.skillId}` : skill.id;
-  const type = skill.provider === "clawhub" ? "clawhub" : "marketplace";
-  return skills?.find((entry) => entry.sourceType === type && entry.sourceRef === ref) ?? null;
+  const { sourceType, sourceRef } = marketLibraryRef(skill);
+  return (
+    skills?.find((entry) => entry.sourceType === sourceType && entry.sourceRef === sourceRef) ??
+    null
+  );
 }
 
 function AuditRow({ audit }: { audit: MarketAudit }): ReactNode {

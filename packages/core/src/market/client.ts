@@ -11,6 +11,7 @@ import {
   type MarketProvider,
   type MarketSkill,
   type MarketSkillDetail,
+  marketLibraryRef,
 } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import { AppError, invalid, isAppError, isUnanswered } from "../errors";
@@ -119,7 +120,7 @@ export function createMarketService(ctx: CoreContext, deps: MarketServiceDeps): 
     );
     return skills.map((skill) => ({
       ...skill,
-      installed: installed.has(`${skill.source}/${skill.skillId}`),
+      installed: installed.has(marketLibraryRef(skill).sourceRef),
     }));
   }
 

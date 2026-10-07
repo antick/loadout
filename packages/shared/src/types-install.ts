@@ -222,6 +222,20 @@ export interface MarketSkill {
 }
 
 /**
+ * What a library skill installed from a marketplace listing records as its source: the one rule
+ * that matches a listing to the library, in core and in the app.
+ */
+export function marketLibraryRef(listing: Pick<MarketSkill, "provider" | "source" | "skillId">): {
+  sourceType: "marketplace" | "clawhub";
+  sourceRef: string;
+} {
+  return {
+    sourceType: listing.provider === "clawhub" ? "clawhub" : "marketplace",
+    sourceRef: `${listing.source}/${listing.skillId}`,
+  };
+}
+
+/**
  * `MarketSkill.id` of a ClawHub skill, matching a library skill's `sourceRef` after the prefix;
  * also the progress and cancel key of its install.
  */
