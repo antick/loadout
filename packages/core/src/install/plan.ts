@@ -11,6 +11,7 @@ import type { CoreContext } from "../context";
 import { readSkillIdentity } from "../skills/metadata";
 import type { SkillStore } from "../skills/store";
 import { skillTraits } from "../skills/traits";
+import { sanitizeSkillName } from "../util/names";
 import { previewLibrary } from "./fetched-preview";
 import { requireSkillFolder } from "./service";
 
@@ -18,6 +19,14 @@ import { requireSkillFolder } from "./service";
  * What `skills install --dry-run` would add and under which names, built from what the real
  * install has already fetched and safety-checked. Nothing is written.
  */
+
+/**
+ * A name as the install would write it (`installIntoLibrary`): made safe for a folder, and
+ * refused where the install refuses it, so a dry run says what the real run does.
+ */
+function nameAsInstalled(name: string): string {
+  return name.trim() ? sanitizeSkillName(name) : name;
+}
 
 /** Safety reports by the folder a skill has in its source (`relPath`), or `""` for one skill. */
 export type SafetyByPath = ReadonlyMap<string, SafetyReport | null>;
@@ -28,8 +37,9 @@ export function planPreview(
   items: readonly InstallSelection[],
   safety: SafetyByPath,
 ): InstallPlan {
+  const names = items.map((item) => nameAsInstalled(item.name));
   const outcomes = planInstallNames(
-    items.map((item) => item.name),
+    names,
     preview.library,
     undefined,
     items.map((item) => item.replace === true),
@@ -43,7 +53,7 @@ export function planPreview(
       return outcome
         ? [
             {
-              name: item.name,
+              name: names[index] ?? item.name,
               relPath: item.relPath,
               outcome,
               manualOnly: row?.manualOnly ?? false,
@@ -68,7 +78,7 @@ export function planFolder(
 ): InstallPlan {
   const path = requireSkillFolder(source);
   const identity = readSkillIdentity(path);
-  const chosen = name?.trim() || identity.name;
+  const chosen = name?.trim() ? nameAsInstalled(name) : identity.name;
   const library = previewLibrary(
     ctx,
     store,

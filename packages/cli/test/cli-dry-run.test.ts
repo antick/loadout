@@ -35,6 +35,15 @@ describe("skills install --dry-run", () => {
     expect(await names()).toEqual(["pdf"]);
   });
 
+  it("names a skill as the real install would, and refuses what it refuses", async () => {
+    const folder = writeSkill(box.root, "pdf");
+    const plan = await box.cli("skills", "install", folder, "--name", "a/b", "--dry-run", "--json");
+    expect(plan.json<InstallPlan>()).toMatchObject({ installed: [{ name: "b" }] });
+    const dots = await box.cli("skills", "install", folder, "--name", "..", "--dry-run");
+    expect(dots.code).not.toBe(0);
+    expect(dots.stderr).toContain("Invalid skill name");
+  });
+
   it("lists every skill of a multi-skill archive and leaves nothing behind", async () => {
     const maker = createSandbox();
     for (const name of ["alpha", "beta"]) {
