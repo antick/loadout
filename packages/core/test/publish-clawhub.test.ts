@@ -4,7 +4,7 @@ import { CLAWHUB_MAX_FILE_BYTES } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { SecretStore } from "../src/context";
 import type { Core } from "../src/core";
-import { clawhubTopicsOf } from "../src/publish";
+import { clawhubTopicsOf } from "../src/publish/clawhub";
 import { makeSkill, tempDir, createTestCore } from "./helpers";
 
 const TOKEN = "clh_test_token";

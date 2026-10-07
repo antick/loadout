@@ -53,14 +53,9 @@ export function cleanGitOutput(output: string): string {
   return maskUrlCredentials(gitOutputLines(output).join("\n")).slice(0, MAX_DETAIL_LENGTH);
 }
 
-export function gitError(
-  output: string,
-  fallback: GitErrorCode = "GIT",
-  text: GitErrorText = BACKUP_ERROR_TEXT,
-): AppError {
+export function gitError(output: string, text: GitErrorText = BACKUP_ERROR_TEXT): AppError {
   const detail = cleanGitOutput(output);
-  const classified = classifyGitError(detail);
-  const code = classified === "GIT" ? fallback : classified;
+  const code = classifyGitError(detail);
   const message = code === "GIT" && detail ? `${text.GIT} ${detail}` : text[code];
   return new AppError(code, message, { detail });
 }
@@ -129,7 +124,7 @@ export function createGit(deps: GitDeps): Git {
   async function run(args: string[], options?: GitCallOptions): Promise<ExecResult> {
     const result = await probe(args, options);
     if (result.code !== 0) {
-      throw gitError(`${result.stderr}\n${result.stdout}`, "GIT", deps.errorText);
+      throw gitError(`${result.stderr}\n${result.stdout}`, deps.errorText);
     }
     return result;
   }

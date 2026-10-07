@@ -155,12 +155,12 @@ async function cloneInto(env: BackupEnv, url: string, cloneDir: string): Promise
   }
 }
 
-/** Returns the folder the previous library was set aside in, or null when it was removed. */
+/** Replace the library with a clone of the backup at `inputUrl`. */
 export async function cloneLibrary(
   env: BackupEnv,
   inputUrl: string,
   options: CloneOptions,
-): Promise<string | null> {
+): Promise<void> {
   if (!options.keepCurrent && isRepo(env)) {
     throw exists("This library is already backed up. Use the recovery option to clone again.");
   }
@@ -206,5 +206,4 @@ export async function cloneLibrary(
   });
 
   env.ctx.activity.record("restore", basename(url), keptAside ? `Kept ${keptAside}` : null);
-  return keptAside;
 }
