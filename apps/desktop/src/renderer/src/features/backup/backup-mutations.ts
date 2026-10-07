@@ -227,30 +227,17 @@ export function useRestoreFromRemote(): UseMutationResult<void, unknown, string>
   });
 }
 
-/** "Back up anyway": allow these findings, then back up right away. */
-export function useAllowSecretsAndSync(): UseMutationResult<SyncOutcome, unknown, string[]> {
-  const { t } = useTranslation();
-  return useBackupMutation({
-    fn: async (ids: string[]) => {
-      await api.backup.allowSecrets(ids);
-      return api.backup.sync();
-    },
-    onSuccess: (outcome) => toastSyncOutcome(outcome, t),
-    syncs: true,
-  });
+/** "Back up anyway": allow these findings. The caller then syncs through the sync review. */
+export function useAllowSecrets(): UseMutationResult<void, unknown, string[]> {
+  return useBackupMutation({ fn: (ids: string[]) => api.backup.allowSecrets(ids) });
 }
 
-/** Fold unpushed commits into today's files (a removed key leaves the history), then back up. */
-export function useCleanUpAndSync(): UseMutationResult<SyncOutcome, unknown, void> {
-  const { t } = useTranslation();
-  return useBackupMutation({
-    fn: async () => {
-      await api.backup.cleanUpUnpushed();
-      return api.backup.sync();
-    },
-    onSuccess: (outcome) => toastSyncOutcome(outcome, t),
-    syncs: true,
-  });
+/**
+ * Fold unpushed commits into today's files, so a removed key leaves the history. The caller then
+ * syncs through the sync review.
+ */
+export function useCleanUpUnpushed(): UseMutationResult<void, unknown, void> {
+  return useBackupMutation({ fn: () => api.backup.cleanUpUnpushed() });
 }
 
 /** Replace the user's own "leave out of the backup" patterns. Errors are shown by the caller. */

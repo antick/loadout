@@ -8,7 +8,8 @@ import { IconButton } from "@/components/IconButton";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useAllowSecretsAndSync, useCleanUpAndSync } from "@/features/backup/backup-mutations";
+import { useAllowSecrets, useCleanUpUnpushed } from "@/features/backup/backup-mutations";
+import { useSyncFlow } from "@/features/backup/sync-flow";
 import { useBackupSecrets } from "@/features/backup/backup-queries";
 import { useRevealPath } from "@/hooks/mutations/app";
 
@@ -26,8 +27,10 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
   const { t } = useTranslation();
   const confirm = useConfirm();
   const findings = useBackupSecrets(enabled);
-  const allow = useAllowSecretsAndSync();
-  const cleanUp = useCleanUpAndSync();
+  // Then the sync goes through the review like every other "sync now", never around it.
+  const flow = useSyncFlow();
+  const allow = useAllowSecrets();
+  const cleanUp = useCleanUpUnpushed();
   const reveal = useRevealPath();
   const list = findings.data ?? [];
   if (!enabled || list.length === 0) return null;
@@ -38,6 +41,7 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
   };
 
   const inHistoryOnly = list.every((finding) => finding.committed);
+  const busy = allow.isPending || cleanUp.isPending || flow.busy;
 
   const cleanUpHistory = async (): Promise<void> => {
     const ok = await confirm({
@@ -45,7 +49,7 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
       description: t("backupPage.secrets.cleanUpBody"),
       confirmLabel: t("backupPage.secrets.cleanUp"),
     });
-    if (ok) cleanUp.mutate();
+    if (ok) cleanUp.mutate(undefined, { onSuccess: () => flow.start() });
   };
 
   const backUpAnyway = async (): Promise<void> => {
@@ -56,7 +60,11 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
       confirmLabel: t("backupPage.secrets.backUpAnyway"),
       destructive: true,
     });
-    if (ok) allow.mutate(list.map((finding) => finding.id));
+    if (ok)
+      allow.mutate(
+        list.map((finding) => finding.id),
+        { onSuccess: () => flow.start() },
+      );
   };
 
   return (
@@ -115,17 +123,12 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
           {inHistoryOnly ? t("backupPage.secrets.historyHint") : t("backupPage.secrets.hint")}
         </p>
         {inHistoryOnly ? (
-          <Button size="sm" disabled={cleanUp.isPending} onClick={() => void cleanUpHistory()}>
+          <Button size="sm" disabled={busy} onClick={() => void cleanUpHistory()}>
             {cleanUp.isPending ? <Spinner /> : null}
             {t("backupPage.secrets.cleanUp")}
           </Button>
         ) : null}
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={allow.isPending || cleanUp.isPending}
-          onClick={() => void backUpAnyway()}
-        >
+        <Button variant="outline" size="sm" disabled={busy} onClick={() => void backUpAnyway()}>
           {allow.isPending ? <Spinner /> : null}
           {t("backupPage.secrets.backUpAnyway")}
         </Button>
