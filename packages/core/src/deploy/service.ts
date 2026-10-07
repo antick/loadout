@@ -412,8 +412,17 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       await ctx.lock.run(`move deployments of ${agentName(agentKey)}`, async () => {
         const agent = registry.find(agentKey);
         const rows = store.deploymentsForAgent(agentKey);
-        const available = agent !== null && isAgentAvailable(agent);
         const name = agent?.displayName ?? agentKey;
+        // Nowhere to put them: taking them down would lose them without a word. They stay where
+        // they are, still recorded, until the agent is there again.
+        if (!agent || !isAgentAvailable(agent)) {
+          if (rows.length > 0) {
+            ctx.log.warn(
+              `${name} is not available at ${newSkillsDir}; its skills stay in ${oldSkillsDir}`,
+            );
+          }
+          return;
+        }
         for (const row of rows) {
           const skill = store.find(row.skillId);
           try {
@@ -422,7 +431,7 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
             report.failed.push({ name: skill?.name ?? row.skillId, message: errorMessage(error) });
             continue;
           }
-          if (skill && available) await attempt(ops.pairFor(skill, agent, newSkillsDir), report);
+          if (skill) await attempt(ops.pairFor(skill, agent, newSkillsDir), report);
         }
       });
       ctx.touched("skills");

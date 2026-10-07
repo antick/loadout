@@ -226,6 +226,19 @@ describe("agents service", () => {
     expect(existsSync(join(newDir, "beta", "mine.txt"))).toBe(true);
   });
 
+  it("keeps deployments where they are when a reset leaves the agent undetected", async () => {
+    const chosen = join(world.home, "cursor-skills");
+    await world.agents.api.setSkillsDir("cursor", chosen);
+    const skill = world.addSkill("alpha");
+    await world.deploy.api.deploy(skill.id, "cursor");
+
+    await world.agents.api.resetSkillsDir("cursor");
+    expect(await info("cursor")).toMatchObject({ installed: false, hasPathOverride: false });
+    // Nowhere to move them, so they are neither taken down nor forgotten.
+    expect(lstatSync(join(chosen, "alpha")).isSymbolicLink()).toBe(true);
+    expect(world.store.deployment(skill.id, "cursor")?.targetPath).toBe(join(chosen, "alpha"));
+  });
+
   it("an override makes an undetected agent installed; a custom agent's path lives on its record", async () => {
     await world.agents.api.setSkillsDir("cursor", join(world.home, "cursor-skills"));
     expect(await info("cursor")).toMatchObject({ installed: true, hasPathOverride: true });
