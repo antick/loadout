@@ -37,11 +37,15 @@ export function SkillContextMenu({
   disabled,
   children,
 }: SkillContextMenuProps): ReactNode {
-  if (disabled || !actions || actions.length === 0) return children;
-  const { safe, destructive } = splitActions(actions);
+  const { safe, destructive } = splitActions(actions ?? []);
+  // Always the same tree, only switched off: swapping it for the bare item would remount every
+  // item (and lose keyboard focus) the moment selection starts.
+  const off = disabled === true || safe.length + destructive.length === 0;
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuTrigger asChild disabled={off}>
+        {children}
+      </ContextMenuTrigger>
       <ContextMenuContent className="min-w-52">
         {safe.map(menuEntry)}
         {safe.length > 0 && destructive.length > 0 ? <ContextMenuSeparator /> : null}

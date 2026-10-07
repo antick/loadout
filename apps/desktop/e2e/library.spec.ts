@@ -194,3 +194,14 @@ test("the library keeps its search after a visit to another page", async ({ page
   await expect(search).toHaveValue("api-docs");
   await expect(content.getByRole("heading", { level: 3 })).toHaveText(["api-docs"]);
 });
+
+test("ticking the first skill from the keyboard keeps focus on it", async ({ page }) => {
+  await openApp(page, "/library");
+  const content = main(page);
+  const box = content.getByRole("checkbox", { name: "Select api-docs" });
+  await box.focus();
+  await page.keyboard.press("Space");
+  await expect(box).toBeChecked();
+  // Starting selection must not rebuild the cards under the keyboard.
+  await expect(box).toBeFocused();
+});
