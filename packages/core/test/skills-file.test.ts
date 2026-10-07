@@ -450,6 +450,22 @@ describe("create and suggest", () => {
     await expect(api.create(elsewhere, init)).rejects.toMatchObject({ code: "ALREADY_EXISTS" });
   });
 
+  it("names a renamed library skill by its folder in the repository", async () => {
+    const install = createInstallHarness(world);
+    const preview = await install.api.previewGit("acme/skills");
+    const [pdf] = await install.api.confirmGit(preview.previewId, [
+      { relPath: "skills/pdf", name: "pdf" },
+    ]);
+    // Its name in the library differs from the repository's; its files are the same.
+    world.store.update(pdf!.id, { name: "my-pdf" });
+    const elsewhere = join(world.root, "other");
+    cpSync(join(remote, "skills", "pdf"), join(elsewhere, ".claude", "skills", "pdf"), {
+      recursive: true,
+    });
+    const init = await api.suggest(elsewhere);
+    expect(init.sources[0]?.skills).toEqual(["pdf"]);
+  });
+
   it("never suggests a library skill that only shares the project skill's name", async () => {
     const install = createInstallHarness(world);
     const preview = await install.api.previewGit("acme/skills");

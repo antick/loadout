@@ -7,6 +7,7 @@ import {
   type SkillsFileInit,
   type SkillsFileSource,
   groupSkillSources,
+  lastPathSegment,
 } from "@loadout/shared";
 import type { AgentRegistry } from "../agents/registry";
 import type { CoreContext } from "../context";
@@ -21,6 +22,7 @@ import { applyPlan, skillsToWrite } from "./apply";
 import { findSkillsFile, loadSkillsFile, stringifySkillsFile } from "./format";
 import { preparePlan } from "./plan";
 import { realPathOf } from "../util/fs";
+import { baseNameOf } from "../skills/numbered-name";
 
 export interface SkillsFileDeps {
   git: GitClient;
@@ -85,9 +87,13 @@ export function createSkillsFileService(
       .map((source) => ({
         url: source.location,
         ref: source.branch,
+        // Its folder's name in the repository: a renamed or numbered library skill (`pdf-2`) is
+        // still `pdf` there. A skill at the top of its repository goes by its upstream name.
         skills: skills
           .filter((skill) => source.skillIds.includes(skill.id))
-          .map((skill) => skill.name),
+          .map((skill) =>
+            skill.sourceSubpath ? lastPathSegment(skill.sourceSubpath) : baseNameOf(skill.name),
+          ),
       }));
     return { agents: [...agents], sources };
   }
