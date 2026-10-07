@@ -164,10 +164,12 @@ export function usualSkillPaths(id: string): string[] {
 }
 
 /**
- * Which of a repository's skill folders (relative, `/`-separated) the name `id` means: the rule
- * install and the marketplace detail share. `found` is the folder its path settles: a usual place,
- * else the first folder of that name, agent-neutral copies first. Otherwise the folders in
- * `byName`, in order, are the ones to check for a frontmatter `name` equal to `id`.
+ * Which of a repository's skill folders (relative, `/`-separated) the name `id` means, for a
+ * marketplace id (installs, updates, the marketplace detail): `found` is the folder its path
+ * settles, a usual place, else the first folder of that name, agent-neutral copies first.
+ * Otherwise the folders in `byName`, in order, are the ones to check for a frontmatter `name`
+ * equal to `id`. A name the user typed (`--skill`, `#skill`, `skills.toml`) goes through
+ * `matchRequested` instead, which refuses a name two skills share rather than pick one.
  */
 export function locateSkill(
   dirs: readonly string[],
