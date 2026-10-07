@@ -1,4 +1,4 @@
-import { APP_SLUG } from "@loadout/shared";
+import { APP_SLUG, DAY_MS } from "@loadout/shared";
 
 /** Prefix for every localStorage key the renderer writes. */
 export const STORAGE_PREFIX = `${APP_SLUG}:`;
@@ -46,7 +46,7 @@ export const EDITOR_DRAFT_SAVE_MS = 400;
  */
 export const EDITOR_PARKED_STATES_MAX = 20;
 /** Drafts older than this are dropped instead of restored. */
-export const EDITOR_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+export const EDITOR_DRAFT_MAX_AGE_MS = 30 * DAY_MS;
 export const EDITOR_VIEWS = ["edit", "split", "preview"] as const;
 export type EditorView = (typeof EDITOR_VIEWS)[number];
 export const DEFAULT_EDITOR_VIEW: EditorView = "split";

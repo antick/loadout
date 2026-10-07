@@ -1,5 +1,5 @@
 /** Values owned by the Electron main process. */
-import { ARCHIVE_SUFFIXES } from "@loadout/shared";
+import { ARCHIVE_SUFFIXES, HOUR_MS } from "@loadout/shared";
 
 export const WINDOW_DEFAULT_WIDTH = 1320;
 export const WINDOW_DEFAULT_HEIGHT = 860;
@@ -34,7 +34,7 @@ export const WATCH_RESCAN_MS = 60_000;
 
 /** App updates: first check after launch, then how often while the app runs. */
 export const UPDATE_CHECK_DELAY_MS = 3000;
-export const UPDATE_RECHECK_MS = 6 * 60 * 60 * 1000;
+export const UPDATE_RECHECK_MS = 6 * HOUR_MS;
 /** Timeout for fetching the update feed. */
 export const UPDATE_TIMEOUT_MS = 15_000;
 /** Progress events while downloading an update, at most this often. */

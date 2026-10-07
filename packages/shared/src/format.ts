@@ -2,18 +2,14 @@
  * The only place dates, durations, byte sizes and lists of names are turned into text.
  * Never format these inline elsewhere.
  */
-import { isCommitId } from "./constants";
+import { DAY_MS, HOUR_MS, MINUTE_MS, SECOND_MS, isCommitId } from "./constants";
 
 const DATE_TIME = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 const DATE_ONLY = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 const AND_LIST = new Intl.ListFormat(undefined, { type: "conjunction" });
 
-const SECOND = 1000;
-const MINUTE = 60 * SECOND;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
-const RELATIVE_CUTOFF = 30 * DAY;
+const RELATIVE_CUTOFF = 30 * DAY_MS;
 
 export function formatDateTime(ms: number | null | undefined): string {
   return ms ? DATE_TIME.format(new Date(ms)) : "";
@@ -29,15 +25,15 @@ export function formatRelative(ms: number | null | undefined, now: number = Date
   const delta = ms - now;
   const abs = Math.abs(delta);
   if (abs >= RELATIVE_CUTOFF) return formatDate(ms);
-  if (abs < MINUTE) return RELATIVE.format(Math.round(delta / SECOND), "second");
-  if (abs < HOUR) return RELATIVE.format(Math.round(delta / MINUTE), "minute");
-  if (abs < DAY) return RELATIVE.format(Math.round(delta / HOUR), "hour");
-  return RELATIVE.format(Math.round(delta / DAY), "day");
+  if (abs < MINUTE_MS) return RELATIVE.format(Math.round(delta / SECOND_MS), "second");
+  if (abs < HOUR_MS) return RELATIVE.format(Math.round(delta / MINUTE_MS), "minute");
+  if (abs < DAY_MS) return RELATIVE.format(Math.round(delta / HOUR_MS), "hour");
+  return RELATIVE.format(Math.round(delta / DAY_MS), "day");
 }
 
 /** `45s`: a duration in whole seconds. */
 export function formatSeconds(ms: number): string {
-  return `${Math.round(ms / SECOND)}s`;
+  return `${Math.round(ms / SECOND_MS)}s`;
 }
 
 /** `2026-09-19T15:30:45.123Z`, for log lines. UTC. */
