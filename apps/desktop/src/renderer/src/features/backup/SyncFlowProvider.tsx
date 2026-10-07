@@ -88,6 +88,8 @@ export function SyncFlowProvider({ children }: { children: ReactNode }): ReactNo
   const flow = useMemo<SyncFlow>(
     () => ({
       start: (next = {}) => {
+        // One look or sync at a time: a second would replace the first caller's callbacks.
+        if (busy) return;
         callbacks.current = next;
         look();
       },

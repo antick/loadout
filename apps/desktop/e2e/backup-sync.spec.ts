@@ -188,3 +188,23 @@ test("a public GitHub repository is only used after the user agrees", async ({ p
   await expect(page.getByText("Connected to github.com/dev/public-skills")).toBeVisible();
   await expect(remoteField).toHaveValue(/public-skills/);
 });
+
+test("while one conflict is being settled, the others wait", async ({ page }) => {
+  await openBackup(page, "backup-conflicts");
+  const content = main(page);
+  // Hold the choice in flight long enough to look at the other row.
+  let release: (() => void) | undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/invoke", async (route) => {
+    if (route.request().postData()?.includes("backup.resolveConflicts")) await held;
+    await route.continue();
+  });
+  const row = (name: string) => content.getByRole("listitem").filter({ hasText: name });
+  await row("release-notes").getByRole("button", { name: "Keep mine" }).click();
+  await expect(row("sql-helper").getByRole("button", { name: "Keep mine" })).toBeDisabled();
+  release?.();
+  await expect(row("release-notes")).toHaveCount(0);
+  await expect(row("sql-helper").getByRole("button", { name: "Keep mine" })).toBeEnabled();
+});

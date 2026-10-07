@@ -71,9 +71,6 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
     >
       <ul className="flex flex-col divide-y rounded-lg border border-warning/40 bg-card">
         {conflicts.map((conflict) => {
-          const pending =
-            resolve.isPending &&
-            (resolve.variables?.conflicts.some((c) => c.skillKey === conflict.skillKey) ?? false);
           return (
             <li key={conflict.skillKey} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <TriangleAlert className="size-4 shrink-0 text-warning" />
@@ -98,7 +95,8 @@ export function ConflictList({ conflicts }: { conflicts: readonly BackupConflict
                     key={action}
                     size="sm"
                     variant={action === "keep_local" ? "secondary" : "outline"}
-                    disabled={pending}
+                    // Every row waits for a choice in flight: each one takes its own snapshot.
+                    disabled={busy}
                     title={t(`backupPage.conflicts.hint.${action}`)}
                     onClick={() => void choose(conflict, action)}
                   >
