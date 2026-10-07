@@ -23,7 +23,7 @@ import { CLOSE_QUESTION, closeChoice, closeOutcome, shouldReloadPage } from "./c
 import { createCrashHandlers } from "./crash";
 import { keychainServiceToRemove, startRemoval } from "./remover";
 import { revealInFileManager } from "./reveal";
-import { readShellEnv } from "./shell-env";
+import { coreEnv, readShellEnv } from "./shell-env";
 import {
   APP_ICON_FILE,
   CRASH_DUMPS_DIR,
@@ -305,8 +305,7 @@ function start(): void {
         // Only the app carries out a library move queued in Settings, never a CLI run.
         migrateLibrary: true,
         echoLogs: !app.isPackaged,
-        // Started from a terminal, the app has the shell's variables already; they win.
-        env: () => ({ ...shellEnv, ...process.env }),
+        env: () => coreEnv(shellEnv, process.env),
         fetchImpl: appFetch,
         host: {
           appVersion: app.getVersion(),

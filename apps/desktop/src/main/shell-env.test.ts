@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { pickShellEnv, readShellEnv } from "./shell-env";
+import { coreEnv, pickShellEnv, readShellEnv } from "./shell-env";
 
 /** The stand-in shells are `#!/bin/sh` scripts; Windows has no login shell to ask anyway. */
 const NO_POSIX_SHELL = process.platform === "win32";
@@ -22,6 +22,18 @@ describe("shell environment", () => {
     chmodSync(path, 0o755);
     return path;
   }
+
+  it("lets the process's variables win for core, except the login shell's PATH", () => {
+    const shell = { CODEX_HOME: "/from/shell", PATH: "/opt/homebrew/bin:/usr/bin" };
+    const env = coreEnv(shell, { CODEX_HOME: "/from/terminal", PATH: "/usr/bin:/bin", HOME: "/h" });
+    expect(env).toMatchObject({
+      CODEX_HOME: "/from/terminal",
+      PATH: "/opt/homebrew/bin:/usr/bin",
+      HOME: "/h",
+    });
+    // Before the shell has been read, the process's own PATH stands.
+    expect(coreEnv({}, { PATH: "/usr/bin" }).PATH).toBe("/usr/bin");
+  });
 
   it("keeps only the asked names, after the marker, and skips empty values", () => {
     const output = `welcome banner CODEX_HOME=/nope\n__LOADOUT_SHELL_ENV__${[

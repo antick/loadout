@@ -26,6 +26,20 @@ export function pickShellEnv(
   return found;
 }
 
+/**
+ * The environment core runs with. Started from a terminal, the app has the shell's variables
+ * already, and they win. Not PATH: a Dock launch has a bare one, without `gh` and the other tools
+ * the login shell's PATH finds.
+ */
+export function coreEnv(
+  shellEnv: Record<string, string>,
+  processEnv: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const env = { ...shellEnv, ...processEnv };
+  if (shellEnv.PATH) env.PATH = shellEnv.PATH;
+  return env;
+}
+
 export interface ReadShellEnvOptions {
   /** Defaults to `$SHELL`. */
   shell?: string;
