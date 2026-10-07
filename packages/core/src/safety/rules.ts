@@ -9,7 +9,7 @@ import { SECRET_PATTERNS } from "../util/secret-patterns";
  */
 
 /** The rule set as a version, kept in each report so a changed set shows as a stale check. */
-export const BUILTIN_RULES_VERSION = "2";
+export const BUILTIN_RULES_VERSION = "3";
 
 /** The category of a file the rules could not read as text. */
 export const UNCHECKED_CATEGORY = "Not checked";
@@ -39,7 +39,10 @@ export interface SafetyRule {
   severity: SafetySeverity;
   /** 0–1, before the context lowers it. */
   confidence: number;
-  /** Tested per line, case-insensitively; never global. */
+  /**
+   * Tested per line; never global. Case-insensitive where what it matches is: paths (macOS and
+   * Windows disks ignore case) and words in prose. Commands and key formats keep their case.
+   */
   regex: RegExp;
   explanation: string;
   remediation: string;
@@ -422,7 +425,7 @@ export const SAFETY_RULES: readonly SafetyRule[] = [
     pattern: "SSH keys",
     severity: "HIGH",
     confidence: 0.8,
-    regex: /\.ssh\/(?:id_(?:rsa|ed25519|ecdsa|dsa)|authorized_keys|config)\b/,
+    regex: /\.ssh\/(?:id_(?:rsa|ed25519|ecdsa|dsa)|authorized_keys|config)\b/i,
     explanation: "Reaches for the user's SSH keys or their SSH configuration.",
     remediation: "A skill should not touch SSH keys.",
   },
@@ -433,7 +436,7 @@ export const SAFETY_RULES: readonly SafetyRule[] = [
     severity: "HIGH",
     confidence: 0.75,
     regex:
-      /\.aws\/credentials|\.kube\/config|\.docker\/config\.json|\.npmrc|\.pypirc|\.netrc|\.git-credentials|\.config\/gh\/hosts\.yml|\.config\/gcloud/,
+      /\.aws\/credentials|\.kube\/config|\.docker\/config\.json|\.npmrc|\.pypirc|\.netrc|\.git-credentials|\.config\/gh\/hosts\.yml|\.config\/gcloud/i,
     explanation: "Reaches for saved cloud, container or package registry credentials.",
     remediation: "Use the tool's own login; never read its credential file.",
   },

