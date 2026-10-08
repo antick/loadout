@@ -30,6 +30,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { usePublishToClawhub } from "@/features/library/publish/publish-mutations";
 import { canPreviewClawhub, useClawhubPreview } from "@/features/library/publish/publish-queries";
 import { useClawhubAccount } from "@/hooks/queries/publish";
@@ -152,6 +153,9 @@ function ClawhubPublishForm({
       <div className={cn(DIALOG_BODY_SCROLL_CLASS, "flex flex-col gap-4 px-0.5 pr-1")}>
         {account.isPending ? (
           <Spinner className="size-4" />
+        ) : account.isError ? (
+          // Nobody knows who is signed in: never "Signed in as @" with nothing after it.
+          <LoadErrorNotice error={account.error} onRetry={() => void account.refetch()} />
         ) : noToken ? (
           <InlineNotice
             tone="warning"
