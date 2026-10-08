@@ -248,8 +248,13 @@ function assertReviewed(
     return;
   }
   if (!tooManyDeletes(departing.length, here)) return;
+  throw manyDeletesStopped(departing);
+}
+
+/** The refusal of a sync that would delete many skills here that nobody reviewed. */
+export function manyDeletesStopped(departing: readonly string[]): AppError {
   const sorted = [...departing].sort((a, b) => a.localeCompare(b));
-  throw new AppError(
+  return new AppError(
     "SYNC_MANY_DELETES",
     `Sync stopped: it would delete ${sorted.length} skills on this computer that were deleted on another device (${sorted.join(", ")}). Nothing was changed. Review them first: press Sync on the Backup page, or run \`${CLI_BINARY_NAME} git sync --dry-run\`.`,
     { count: sorted.length, skills: sorted },

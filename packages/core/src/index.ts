@@ -17,6 +17,8 @@ export { type Logger, silentLogger } from "./log";
 export { isLibraryDir, pointLibraryAt, resolveLibrary } from "./paths";
 export type { ResolvedAgent } from "./agents/registry";
 export { diffTrees } from "./updates/diff";
+export { manyDeletesStopped } from "./backup/merge-input";
+export { secretsFound } from "./backup/secrets";
 export { checkHealth } from "./health/doctor";
 export { type DeploymentState, deploymentState } from "./deploy/state";
 export { canonicalPath, expandHome, isInside, writeFileAtomic } from "./util/fs";

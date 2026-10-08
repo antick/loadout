@@ -5,6 +5,7 @@ import {
   type SyncPreviewItem,
   formatDateTime,
 } from "@loadout/shared";
+import { manyDeletesStopped, secretsFound } from "@loadout/core";
 import { flagBoolean, flagInteger, flagString } from "../args";
 import { fields, plural, table } from "../output";
 import {
@@ -122,6 +123,15 @@ async function sync({ core, args }: CommandContext): Promise<CommandResult> {
   limitPositionals(args, 0);
   if (flagBoolean(args, DRY_RUN_FLAG.name)) {
     const preview = await core.api.backup.preview();
+    // Refused as the real sync refuses: a key it would push, then many deletions here.
+    if (!flagBoolean(args, ALLOW_SECRETS_FLAG.name)) {
+      const secrets = await core.api.backup.secretFindings();
+      if (secrets.length > 0) throw secretsFound(secrets);
+    }
+    if (preview.manyDeletes && !flagBoolean(args, ALLOW_DELETES_FLAG.name)) {
+      const departing = preview.incoming.filter((item) => item.change === "deleted");
+      throw manyDeletesStopped(departing.map((item) => item.name));
+    }
     return {
       value: { dryRun: true, preview },
       text: [...describePreview(preview), "Nothing was changed."].join("\n"),

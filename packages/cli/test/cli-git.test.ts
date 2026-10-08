@@ -30,6 +30,12 @@ describe("git sync", () => {
       EXIT_OK,
     );
 
+    // The dry run refuses what the real run refuses.
+    const dry = await sandbox.cli("git", "sync", "--dry-run");
+    expect(dry.code).toBe(EXIT_FAILED);
+    expect(dry.stderr).toContain("Error (SECRETS_FOUND)");
+    expect((await sandbox.cli("git", "sync", "--dry-run", "--allow-secrets")).code).toBe(EXIT_OK);
+
     const held = await sandbox.cli("git", "sync");
     expect(held.code).toBe(EXIT_FAILED);
     expect(held.stderr).toContain("Error (SECRETS_FOUND)");
