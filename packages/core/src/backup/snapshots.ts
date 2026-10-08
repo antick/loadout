@@ -4,7 +4,8 @@ import { INTERNAL_KEYS } from "../settings/store";
 import { assertReadable, schemaAt } from "./compat";
 import type { BackupEnv } from "./env";
 import { keepLeftOutBeforeRestore } from "./ignored";
-import { commitLibrary, commitStaged, commitTimeMs, inHistory, resolveCommit } from "./repo";
+import { commitStaged, commitTimeMs, inHistory, resolveCommit } from "./repo";
+import { commitLibraryChecked } from "./secrets";
 
 /**
  * Restore points are the branch's own commits, read with `git log --first-parent`: every backup,
@@ -89,7 +90,7 @@ export async function describeRestorePoint(env: BackupEnv, id: string): Promise<
 export async function restoreSnapshot(env: BackupEnv, id: string): Promise<string> {
   const commit = await findRestorePoint(env, id);
 
-  await commitLibrary(env, BEFORE_RESTORE_MESSAGE);
+  await commitLibraryChecked(env, BEFORE_RESTORE_MESSAGE);
   const safety = await safetyPoint(env);
   // The restore overwrites files left out of the backup where the restore point has a file.
   await keepLeftOutBeforeRestore(env, commit);

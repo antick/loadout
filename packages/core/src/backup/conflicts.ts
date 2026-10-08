@@ -12,7 +12,8 @@ import { type Stage, createStage, extractPaths } from "./extract";
 import { skillMetadataAt } from "./merge-read";
 import { type SetAsideFolder, localFilesNotKept, setAsideFolder, settleSetAside } from "./ignored";
 import { type LibraryEdit, startLibraryEdit, whileMerging } from "./interrupted";
-import { commitLibrary, commitStaged, resolveCommit } from "./repo";
+import { commitStaged, resolveCommit } from "./repo";
+import { commitLibraryChecked } from "./secrets";
 import { safetyPoint } from "./snapshots";
 
 /**
@@ -210,7 +211,7 @@ export async function resolveConflicts(
     );
   }
 
-  await commitLibrary(env, BEFORE_RESOLVE_MESSAGE);
+  await commitLibraryChecked(env, BEFORE_RESOLVE_MESSAGE);
   const safety = await safetyPoint(env);
   const message =
     conflicts.length > 1

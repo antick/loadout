@@ -5,7 +5,7 @@ import { INTERNAL_KEYS } from "../settings/store";
 import { statOrNull } from "../util/fs";
 import { batchInput, parseBatch } from "../util/git-batch";
 import type { BackupEnv } from "./env";
-import { resolveCommit, upstreamCommit } from "./repo";
+import { commitStaged, originUrl, prepareCommit, resolveCommit, upstreamCommit } from "./repo";
 import { findSecrets, findSecretsInFile, secretsHeldBack } from "./secret-scan";
 
 /**
@@ -203,6 +203,20 @@ export function secretsFound(findings: SecretFinding[]): AppError {
       ? "It is already in this computer's backup history, so removing it now does not stop it being pushed. Choose Back up anyway on the Backup page if it is safe to share."
       : "Remove it, or choose Back up anyway on the Backup page.",
   );
+}
+
+/**
+ * Commit the library like `commitLibrary`, but refuse first when a change looks like a key and
+ * there is a remote: once committed, a key travels with the history even after removal. For the
+ * commits a restore or a conflict choice makes before it starts. Must run inside the library lock.
+ */
+export async function commitLibraryChecked(env: BackupEnv, message: string): Promise<boolean> {
+  await prepareCommit(env);
+  if (await originUrl(env)) {
+    const uncommitted = await scanUncommittedChanges(env);
+    if (uncommitted.length > 0) throw secretsFound(uncommitted);
+  }
+  return commitStaged(env, message);
 }
 
 /** "Back up anyway" for these findings; kept on this computer only. */
