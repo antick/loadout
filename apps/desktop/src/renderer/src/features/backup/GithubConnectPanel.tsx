@@ -43,12 +43,13 @@ export function GithubConnectPanel({
   const deviceAvailable = useGithubDeviceAvailable();
   const connect = useGithubConnect();
   const openExternal = useOpenExternal();
-  const askAboutPublic = usePublicRepoConfirm(onConnected);
-  const flow = useDeviceFlow(onConnected, askAboutPublic);
+  const publicRepo = usePublicRepoConfirm(onConnected);
+  const flow = useDeviceFlow(onConnected, publicRepo.handle);
 
   const name = repoName.trim();
   const nameValid = REPO_NAME_PATTERN.test(name) && name !== "." && name !== "..";
-  const busy = finishing || connect.isPending;
+  // The agreed connect to a public repository runs after `connect` has settled.
+  const busy = finishing || connect.isPending || publicRepo.pending;
 
   const submitToken = (event: FormEvent): void => {
     event.preventDefault();
@@ -61,7 +62,7 @@ export function GithubConnectPanel({
       // `reset` lets go of the input, token included; errors are toasted by the mutation.
       {
         onSuccess: onConnected,
-        onError: (error) => void askAboutPublic(error),
+        onError: (error) => void publicRepo.handle(error),
         onSettled: () => connect.reset(),
       },
     );
