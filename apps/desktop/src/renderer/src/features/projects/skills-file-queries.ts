@@ -6,18 +6,23 @@ import type {
 } from "@loadout/shared";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { REFETCH_ON_FOCUS } from "@/lib/query-client";
 import { keys } from "@/lib/query-keys";
 
 /** What the plan dialog shows: applying (and pruning), moving to newest commits, or removing all. */
 export type SkillsFileMode = "apply" | "update" | "unapply";
 
-/** The project's `skills.toml` and lock; null when it has none. Read fresh each time it shows. */
+/**
+ * The project's `skills.toml` and lock; null when it has none. Read fresh each time it shows, and
+ * on coming back to the window: it is edited by hand, and no folder watcher sees it change.
+ */
 export function useSkillsFile(dir: string | null): UseQueryResult<SkillsFileInfo | null> {
   return useQuery({
     queryKey: keys.skillsFile.find(dir ?? ""),
     queryFn: () => api.skillsFile.find(dir ?? ""),
     enabled: dir !== null,
     staleTime: 0,
+    ...REFETCH_ON_FOCUS,
   });
 }
 
