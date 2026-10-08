@@ -26,6 +26,7 @@ import { useBrowseSource } from "@/features/sources/use-browse-source";
 import { useCopyText } from "@/hooks/mutations/app";
 import { useUpdateSkills } from "@/hooks/mutations/library";
 import { useSkills } from "@/hooks/queries/skills";
+import { usePendingSet } from "@/hooks/use-pending-set";
 import { SOURCE_GRID_CLASS } from "@/lib/styles";
 
 /**
@@ -39,6 +40,8 @@ export function SourcesPage(): ReactNode {
   const browse = useBrowseSource();
   const checks = useSourceChecks();
   const update = useUpdateSkills();
+  // Per card, so a second click cannot update the same skills twice.
+  const updating = usePendingSet();
   const copy = useCopyText();
   const deleteSkills = useDeleteSkills();
   const news = useSourceNews();
@@ -121,13 +124,16 @@ export function SourcesPage(): ReactNode {
                 skills={own}
                 browsing={browse.busyKey === source.key}
                 checking={checks.isChecking(source.key)}
+                updating={updating.pending.has(source.key)}
                 onBrowse={() => void browse.browse(source)}
                 onCheck={() => checks.check(source)}
-                onUpdate={() =>
+                onUpdate={() => {
+                  updating.mark(source.key, true);
                   update.mutate(
                     own.filter((s) => s.updateStatus === "update_available").map((s) => s.id),
-                  )
-                }
+                    { onSettled: () => updating.mark(source.key, false) },
+                  );
+                }}
                 onShowInLibrary={() =>
                   void navigate({ to: "/library", search: { q: source.location } })
                 }

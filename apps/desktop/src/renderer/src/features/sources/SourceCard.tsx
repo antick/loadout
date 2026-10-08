@@ -42,6 +42,8 @@ export interface SourceCardProps {
   skills: readonly Skill[];
   browsing: boolean;
   checking: boolean;
+  /** Its updates are being installed. */
+  updating: boolean;
   onBrowse: () => void;
   onCheck: () => void;
   onUpdate: () => void;
@@ -61,6 +63,7 @@ export function SourceCard({
   skills,
   browsing,
   checking,
+  updating,
   onBrowse,
   onCheck,
   onUpdate,
@@ -211,8 +214,8 @@ export function SourceCard({
           </Button>
         ) : null}
         {source.updatesAvailable > 0 ? (
-          <Button size="sm" variant="outline" onClick={onUpdate}>
-            <CircleFadingArrowUp />
+          <Button size="sm" variant="outline" onClick={onUpdate} disabled={updating}>
+            {updating ? <Spinner /> : <CircleFadingArrowUp />}
             {t("sources.update", { count: source.updatesAvailable })}
           </Button>
         ) : null}
