@@ -1,6 +1,7 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentPicker } from "@/components/AgentPicker";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { OptionSelect } from "@/components/OptionSelect";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { LIBRARY_PLACE } from "./new-skill-place";
@@ -36,7 +37,9 @@ export function NewSkillPlaceField({ place }: { place: NewSkillPlace }): ReactNo
           onChange={place.setSelected}
         />
       ) : null}
-      {noAgents ? (
+      {place.error ? (
+        <LoadErrorNotice error={place.error} onRetry={place.retry} />
+      ) : noAgents ? (
         <FieldError>
           {t(
             place.chips.length > 0

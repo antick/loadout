@@ -33,6 +33,10 @@ export interface NewSkillPlace {
   taken: ReadonlySet<string>;
   /** The project's folders are known; always true for the library. */
   ready: boolean;
+  /** Why the project's folders could not be read; null otherwise. */
+  error: unknown;
+  /** Ask for the project's folders again. */
+  retry(): void;
 }
 
 /** Where a new skill goes: the library, or straight into a project's agent folders. */
@@ -84,6 +88,9 @@ export function useNewSkillPlace(initialProjectId: string | null): NewSkillPlace
     agentKeys: linked ? [] : chosenAgentKeys(chips, selected),
     targets,
     taken,
-    ready: !project || (targetsQuery.isSuccess && remembered.isSuccess),
+    // The remembered choice is only a default: when it cannot be read, the usual one stands.
+    ready: !project || (targetsQuery.isSuccess && !remembered.isPending),
+    error: project ? targetsQuery.error : null,
+    retry: () => void targetsQuery.refetch(),
   };
 }
