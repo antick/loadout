@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type Choice, ChoiceCards } from "@/components/ChoiceCards";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { PageSection } from "@/components/PageSection";
 import {
   AlertDialog,
@@ -14,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useRemoveAllData } from "@/features/settings/storage-mutations";
 import { useAgentFolders } from "@/features/settings/storage-queries";
@@ -100,18 +102,25 @@ export function RemoveAllDataPanel({ homePath }: { homePath: string }): ReactNod
           </AlertDialogHeader>
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium">{t("settings.storage.removeAll.agentFolders")}</p>
-            <ChoiceCards
-              value={choice}
-              choices={choices}
-              onChange={setChoice}
-              label={t("settings.storage.removeAll.agentFolders")}
-            />
+            {/* The counts are what the choice is made on: never shown as zeros while unknown. */}
+            {summary.isError ? (
+              <LoadErrorNotice error={summary.error} onRetry={() => void summary.refetch()} />
+            ) : summary.data ? (
+              <ChoiceCards
+                value={choice}
+                choices={choices}
+                onChange={setChoice}
+                label={t("settings.storage.removeAll.agentFolders")}
+              />
+            ) : (
+              <Skeleton className="h-40 w-full" />
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={remove.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <Button
               variant="destructive"
-              disabled={remove.isPending}
+              disabled={remove.isPending || !summary.data}
               onClick={() => remove.mutate(OPTIONS[choice])}
             >
               {remove.isPending ? <Spinner /> : <Trash2 />}
