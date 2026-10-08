@@ -340,12 +340,21 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
         }
       }
 
-      const names = new Set(deps.presets.list().map((preset) => preset.name));
-      const preset = await deps.api.create({
-        name: freeName(options.name?.trim() || file.name, names),
-        description: file.description,
-        icon: file.icon,
-      });
+      const wanted = options.name?.trim() || file.name;
+      const presets = deps.presets.list();
+      // An import that got nothing in (offline, say) left an empty preset: importing again fills
+      // that one rather than making "Name 2" beside it.
+      const leftEmpty = presets.find(
+        (preset) =>
+          preset.name.toLowerCase() === wanted.toLowerCase() && preset.skillIds.length === 0,
+      );
+      const preset =
+        leftEmpty ??
+        (await deps.api.create({
+          name: freeName(wanted, new Set(presets.map((entry) => entry.name))),
+          description: file.description,
+          icon: file.icon,
+        }));
       const skillIds = [...new Set(file.skills.flatMap((entry) => ids.get(entry) ?? []))];
       if (skillIds.length > 0) await deps.api.addSkills(preset.id, skillIds);
       const known = new Set(deps.registry.list().map((agent) => agent.key));

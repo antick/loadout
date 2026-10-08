@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PRESET_FILE_FORMAT, type PresetFile } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -179,6 +179,25 @@ function presetOf(source: NonNullable<PresetFile["skills"][number]["source"]>): 
   );
   return file;
 }
+
+describe("importing again after an import got nothing in", () => {
+  it("fills the empty preset it left instead of making another", async () => {
+    const remote = join(temp.dir, "remotes", "acme", "skills.git");
+    const away = `${remote}-away`;
+    renameSync(remote, away);
+    const bob = newCore("bob");
+    const file = presetOf({ url: REPO });
+    const offline = await bob.api.presets.importFile(file);
+    expect(offline.installed).toEqual([]);
+    expect(offline.preset.skillIds).toEqual([]);
+
+    renameSync(away, remote);
+    const again = await bob.api.presets.importFile(file);
+    expect(again.installed).toEqual(["pdf"]);
+    expect(again.preset.id).toBe(offline.preset.id);
+    expect((await bob.api.presets.list()).map((preset) => preset.name)).toEqual(["One"]);
+  });
+});
 
 describe("importing beside a library skill that only shares the name", () => {
   it("installs the file's skill from its source when the library's one has none", async () => {
