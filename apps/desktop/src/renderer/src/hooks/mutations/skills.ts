@@ -12,11 +12,30 @@ export interface SetSkillTagsInput {
   tags: string[];
 }
 
-/** Replace one skill's tags. Silent on success: batch callers toast once for the whole set. */
-export function useSetSkillTags(): UseMutationResult<void, unknown, SetSkillTagsInput> {
+/**
+ * Show a skill's new tags at once, so a second edit made before the answer starts from them and
+ * does not bring back a tag the first one removed.
+ */
+export function showTags(
+  queryClient: QueryClient,
+  { skillId, tags }: SetSkillTagsInput,
+): Promise<CacheSnapshot> {
+  return patchCachedSkill(queryClient, skillId, (skill) => ({ ...skill, tags }));
+}
+
+/** Replace one skill's tags; they change at once and roll back on failure. */
+export function useSetSkillTags(): UseMutationResult<
+  void,
+  unknown,
+  SetSkillTagsInput,
+  CacheSnapshot
+> {
+  const queryClient = useQueryClient();
   return useApiMutation({
     fn: ({ skillId, tags }: SetSkillTagsInput) => api.skills.setTags(skillId, tags),
+    onMutate: (input) => showTags(queryClient, input),
     error: "errors.saveTags",
+    onError: (_error, _input, context) => restoreCached(queryClient, context),
   });
 }
 
