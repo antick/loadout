@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { SettingRow } from "@/components/SettingRow";
@@ -8,15 +9,20 @@ import { Switch } from "@/components/ui/switch";
 import { UsageReadStatus } from "@/components/UsageReadStatus";
 import { useSetUsageTracking } from "@/hooks/mutations/usage";
 import { useAgentNames } from "@/hooks/queries/agents";
-import { useSkillUsage } from "@/hooks/queries/usage";
+import { useSkillUsage, useUsageReport } from "@/hooks/queries/usage";
 
 /** The switch for counting skill use, and which agents' logs it reads. */
 export function UsagePanel(): ReactNode {
   const { t } = useTranslation();
   const usage = useSkillUsage();
+  // The same query, for why it failed and Retry.
+  const report = useUsageReport();
   const names = useAgentNames();
   const setTracking = useSetUsageTracking();
   const switchId = useId();
+  if (report.isError) {
+    return <LoadErrorNotice error={report.error} onRetry={() => void report.refetch()} />;
+  }
   if (!usage.report) return null;
 
   const nameOf = (key: string): string => names.get(key) ?? key;

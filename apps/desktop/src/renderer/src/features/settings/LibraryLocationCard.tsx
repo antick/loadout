@@ -7,6 +7,7 @@ import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { useRevealLibrary, useSetLibraryPath } from "@/features/settings/settings-mutations";
 import { usePickFolder, useRestartApp } from "@/hooks/mutations/app";
 import { useLibraryLocation } from "@/hooks/queries/app";
@@ -94,6 +95,8 @@ export function LibraryLocationCard(): ReactNode {
             </Button>
           </div>
         </>
+      ) : location.isError ? (
+        <LoadErrorNotice error={location.error} onRetry={() => void location.refetch()} />
       ) : (
         <Skeleton className="h-16 w-full" />
       )}

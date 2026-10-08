@@ -3,6 +3,7 @@ import { ExternalLink, KeyRound, ShieldCheck, ShieldOff } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineNotice } from "@/components/InlineNotice";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { PageSection } from "@/components/PageSection";
 import { SettingRow } from "@/components/SettingRow";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,10 @@ export function MarketplacesSection(): ReactNode {
 
   let status: ReactNode;
   if (account.isPending) status = <Skeleton className="h-10 w-full" />;
-  else if (!account.data?.available) {
+  else if (account.isError) {
+    // Not "no keychain": nobody knows yet whether there is one.
+    status = <LoadErrorNotice error={account.error} onRetry={() => void account.refetch()} />;
+  } else if (!account.data.available) {
     status = (
       <InlineNotice tone="warning" icon={ShieldOff}>
         {t("settings.marketplaces.clawhub.noKeychain")}

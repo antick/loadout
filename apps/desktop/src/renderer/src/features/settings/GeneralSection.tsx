@@ -20,6 +20,7 @@ import { PageSection } from "@/components/PageSection";
 import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useEditors } from "@/hooks/queries/app";
 import { useSettings } from "@/hooks/queries/settings";
@@ -34,12 +35,16 @@ const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon } as const;
  */
 export function GeneralSection(): ReactNode {
   const { t } = useTranslation();
-  const { data: settings } = useSettings();
+  const query = useSettings();
+  const settings = query.data;
   const setSetting = useSetSetting();
   const textSizeId = useId();
   const editorId = useId();
   const trayId = useId();
   const editors = useEditors();
+  if (query.isError) {
+    return <LoadErrorNotice error={query.error} onRetry={() => void query.refetch()} />;
+  }
   if (!settings) return null;
 
   // The chosen editor stays in the list while it is not found, so the choice is not lost.

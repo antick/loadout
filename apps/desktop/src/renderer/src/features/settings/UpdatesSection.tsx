@@ -5,6 +5,7 @@ import { OptionSelect } from "@/components/OptionSelect";
 import { PageSection } from "@/components/PageSection";
 import { SettingRow } from "@/components/SettingRow";
 import { Switch } from "@/components/ui/switch";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { useSetSetting } from "@/hooks/mutations/settings";
 import { useSettings } from "@/hooks/queries/settings";
 import { useLastAutoUpdateRun } from "./settings-queries";
@@ -12,13 +13,17 @@ import { useLastAutoUpdateRun } from "./settings-queries";
 /** How often skills are checked against their sources, and whether updates install themselves. */
 export function UpdatesSection(): ReactNode {
   const { t } = useTranslation();
-  const { data: settings } = useSettings();
+  const query = useSettings();
+  const settings = query.data;
   // `updates:auto-ran` refreshes it app-wide, so "last checked" updates by itself.
   const lastRunAt = useLastAutoUpdateRun().data;
   const setSetting = useSetSetting();
   const intervalId = useId();
   const applyId = useId();
   const addNewId = useId();
+  if (query.isError) {
+    return <LoadErrorNotice error={query.error} onRetry={() => void query.refetch()} />;
+  }
   if (!settings) return null;
   const off = settings.autoUpdateInterval === "off";
 

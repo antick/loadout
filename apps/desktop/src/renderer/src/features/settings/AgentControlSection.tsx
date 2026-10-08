@@ -10,6 +10,7 @@ import { PageSection } from "@/components/PageSection";
 import { PathText } from "@/components/PathText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { useCliStatus } from "@/features/settings/settings-queries";
 import { useAgentControlStatus } from "@/hooks/queries/agent-control";
 
@@ -46,6 +47,8 @@ export function AgentControlSection(): ReactNode {
             <dt className="text-xs text-muted-foreground">{t("settings.cli.version")}</dt>
             <dd className="font-mono text-xs">{cli.data.version ?? t("settings.cli.noVersion")}</dd>
           </dl>
+        ) : cli.isError ? (
+          <LoadErrorNotice error={cli.error} onRetry={() => void cli.refetch()} />
         ) : (
           <Skeleton className="h-10 w-full" />
         )}
