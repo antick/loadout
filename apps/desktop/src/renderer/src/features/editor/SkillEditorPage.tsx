@@ -55,6 +55,8 @@ export function SkillEditorPage({
   }
 
   const error = target.error ?? librarySkill.error;
+  // Retry asks again only for what failed.
+  const retry = (): void => void (target.error ? target.refetch() : librarySkill.refetch());
   if (error) {
     const gone = error instanceof ApiError && error.code === "NOT_FOUND";
     return (
@@ -69,7 +71,7 @@ export function SkillEditorPage({
             className="h-full"
           />
         ) : (
-          <ErrorState error={error} onRetry={() => void target.refetch()} className="h-full" />
+          <ErrorState error={error} onRetry={retry} className="h-full" />
         )}
       </>
     );
