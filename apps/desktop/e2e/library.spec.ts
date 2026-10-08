@@ -123,7 +123,7 @@ test("a source card shows new skills, opens them ticked, and forgets them on req
   const source = main(page).getByRole("article", { name: "example.com/acme/skills" });
   await expect(source.getByText("2 new skills")).toBeVisible();
   await expect(
-    source.getByText("New since you last looked: log-triage, terraform-review."),
+    source.getByText("New since you last looked: log-triage and terraform-review."),
   ).toBeVisible();
 
   await source.getByRole("button", { name: "Add them…" }).click();
