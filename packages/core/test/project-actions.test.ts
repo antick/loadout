@@ -147,6 +147,15 @@ describe("project actions", () => {
       expect(existsSync(join(claude, "alpha"))).toBe(false);
     });
 
+    it("counts a folder whose name differs only in case as taken, like creating does", async () => {
+      const project = await api().add(repo);
+      const skill = world.addSkill("alpha");
+      makeSkill(claude, "Alpha", { body: "theirs" });
+      const error = await rejection(api().exportSkill(skill.id, project.id, ["claude_code"]));
+      expect(error.code).toBe("ALREADY_EXISTS");
+      expect(skillText(join(claude, "Alpha"))).toContain("theirs");
+    });
+
     it("takes back what it wrote when a later agent's folder cannot be written", async () => {
       world.ctx.settings.set("deployMode", "copy");
       const project = await api().add(repo);

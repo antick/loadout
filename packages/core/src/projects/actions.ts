@@ -100,6 +100,18 @@ function pruneDisabledSide(variant: Variant): void {
   pruneEmptyDirs(dirname(variant.path), root, variant.target.ownsDisabledRoot);
 }
 
+/**
+ * A folder of this name in either of the target's skills folders, compared without case like the
+ * library, so a skill never sits next to a near twin on any disk.
+ */
+function nameTakenIn(target: ResolvedTarget, name: string): boolean {
+  const wanted = name.toLowerCase();
+  const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
+  return roots.some((root) =>
+    readDirSafe(root).some((entry) => entry.name.toLowerCase() === wanted),
+  );
+}
+
 /** Everything that changes skills inside a project or linked workspace. */
 export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps): ProjectActions {
   const { store, registry } = deps;
@@ -195,8 +207,7 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       await ctx.lock.run(`export ${skill.name}`, async () => {
         // Check every target before writing to any: an export lands everywhere or nowhere.
         for (const target of targets) {
-          const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
-          if (roots.some((root) => lstatOrNull(join(root, skill.dirName)))) {
+          if (nameTakenIn(target, skill.dirName)) {
             throw exists(
               `Skill "${skill.name}" already exists in this workspace for agent ${target.key}`,
             );
@@ -232,17 +243,11 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       if (!first) throw invalid("No enabled installed agents selected for this project");
       const takenBy = (target: ResolvedTarget) =>
         exists(`${target.displayName} already has a skill named ${name} in this project`);
-      // Compared without case, like the library, so the name never sits next to a near twin.
-      const wanted = name.toLowerCase();
       const document = newSkillDocument(checked);
       // Checked and written in one hold, so a second call for the name sees the first one's folder.
       await ctx.lock.run(`create ${name}`, async () => {
         for (const target of targets) {
-          const roots = [target.enabledRoot, target.disabledRoot].flatMap((root) => root ?? []);
-          const taken = roots.some((root) =>
-            readDirSafe(root).some((entry) => entry.name.toLowerCase() === wanted),
-          );
-          if (taken) throw takenBy(target);
+          if (nameTakenIn(target, name)) throw takenBy(target);
         }
         const written: string[] = [];
         try {
