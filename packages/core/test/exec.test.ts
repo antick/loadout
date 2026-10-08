@@ -41,3 +41,19 @@ describe("running a program on Windows", () => {
     });
   });
 });
+
+describe("piping input to a program", () => {
+  // Far more than a pipe holds, so the program is gone while input is still being written.
+  const input = "x".repeat(16 * 1024 * 1024);
+
+  it("answers with the exit code when the program quits before reading its input", async () => {
+    const result = await exec(process.execPath, ["-e", "process.exit(3)"], { input });
+    expect(result.code).toBe(3);
+  });
+
+  it("says the program is missing, never crashes, when it cannot start", async () => {
+    await expect(exec("no-such-program-here", [], { input })).rejects.toMatchObject({
+      code: "UNSUPPORTED",
+    });
+  });
+});

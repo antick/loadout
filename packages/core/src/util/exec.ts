@@ -135,6 +135,9 @@ export function exec(
         ),
       );
     });
+    // A program that quits, is killed or never started stops reading: the exit code or the spawn
+    // error above says so, and the broken pipe must not become an uncaught error.
+    child.stdin.on("error", () => {});
     if (options.input !== undefined) child.stdin.write(options.input);
     child.stdin.end();
   });
