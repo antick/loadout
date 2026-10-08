@@ -16,6 +16,7 @@ import {
   type ClawhubPublishPreview,
   type ClawhubPublishResult,
   clawhubSkillUrl,
+  formatBytes,
   slugOf,
   isNewerVersion,
   nextPatchVersion,
@@ -66,6 +67,43 @@ function filesOf(libraryPath: string): PublishFile[] {
   );
 }
 
+/** What in a version's files ClawHub would refuse: no SKILL.md at the top, or too many bytes. */
+function fileProblemsOf(files: readonly PublishFile[]): ClawhubProblem[] {
+  const problems: ClawhubProblem[] = [];
+  if (!files.some((file) => file.relativePath === SKILL_FILE)) {
+    problems.push({ code: "no_skill_file" });
+  }
+  for (const file of files) {
+    if (file.size > CLAWHUB_MAX_FILE_BYTES) {
+      problems.push({
+        code: "file_too_large",
+        file: file.relativePath,
+        limitBytes: CLAWHUB_MAX_FILE_BYTES,
+      });
+    }
+  }
+  if (files.reduce((sum, file) => sum + file.size, 0) > CLAWHUB_MAX_TOTAL_BYTES) {
+    problems.push({ code: "total_too_large", limitBytes: CLAWHUB_MAX_TOTAL_BYTES });
+  }
+  return problems;
+}
+
+/** The refusal for the first file problem, before anything is read or sent. */
+function fileProblemError(problem: ClawhubProblem): AppError {
+  switch (problem.code) {
+    case "file_too_large":
+      return invalid(
+        `${problem.file} is larger than ${formatBytes(problem.limitBytes)}, the most ${CLAWHUB_NAME} takes for one file.`,
+      );
+    case "total_too_large":
+      return invalid(
+        `The skill is larger than ${formatBytes(problem.limitBytes)}, the most ${CLAWHUB_NAME} takes for one version.`,
+      );
+    default:
+      return invalid(`The skill has no ${SKILL_FILE} at its top.`);
+  }
+}
+
 export function createClawhubPublisher(
   ctx: CoreContext,
   deps: ClawhubPublisherDeps,
@@ -108,22 +146,7 @@ export function createClawhubPublisher(
     const slug = slugOf(skill.name);
     const files = filesOf(skill.libraryPath);
     const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
-    const problems: ClawhubProblem[] = [];
-    if (!files.some((file) => file.relativePath === SKILL_FILE)) {
-      problems.push({ code: "no_skill_file" });
-    }
-    for (const file of files) {
-      if (file.size > CLAWHUB_MAX_FILE_BYTES) {
-        problems.push({
-          code: "file_too_large",
-          file: file.relativePath,
-          limitBytes: CLAWHUB_MAX_FILE_BYTES,
-        });
-      }
-    }
-    if (totalBytes > CLAWHUB_MAX_TOTAL_BYTES) {
-      problems.push({ code: "total_too_large", limitBytes: CLAWHUB_MAX_TOTAL_BYTES });
-    }
+    const problems = fileProblemsOf(files);
     if (!SKILL_NAME_PATTERN.test(slug)) problems.push({ code: "no_slug" });
     const versions = await clawhub.versions(handle, slug);
     const latestVersion = versions.reduce<string | null>(
@@ -162,8 +185,8 @@ export function createClawhubPublisher(
     const skill = store.get(input.skillId);
     const { token, handle } = await requireToken();
     const files = filesOf(skill.libraryPath);
-    if (!files.some((file) => file.relativePath === SKILL_FILE))
-      throw invalid(`The skill has no ${SKILL_FILE} at its top.`);
+    const [problem] = fileProblemsOf(files);
+    if (problem) throw fileProblemError(problem);
     const secrets = findSecretsIn(files);
     if (secrets.length > 0 && !input.allowSecrets) throw publishSecretsHeldBack(secrets);
     const topics = clawhubTopicsOf(input.topics ?? skill.tags);

@@ -175,6 +175,20 @@ describe("publishing to ClawHub", () => {
       { code: "file_too_large", file: "data.bin", limitBytes: CLAWHUB_MAX_FILE_BYTES },
     ]);
     expect(preview.files).toContainEqual({ path: "data.bin", bytes: CLAWHUB_MAX_FILE_BYTES + 1 });
+
+    const publishing = core.api.publish.publishToClawhub({
+      skillId: skill.id,
+      slug: "big",
+      displayName: "Big",
+      version: "1.0.0",
+      changelog: "",
+      acceptLicense: true,
+    });
+    await expect(publishing).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("data.bin is larger than"),
+    });
+    expect(registry.state.uploads).toHaveLength(0);
   });
 
   it("holds back a skill that looks like it carries a key, unless allowed", async () => {
