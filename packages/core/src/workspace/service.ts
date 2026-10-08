@@ -129,12 +129,13 @@ export function createWorkspaceService(
   /**
    * A new skill whose upload could not finish: while the agent's folder still holds exactly the
    * same skill, the library copy is only a duplicate and goes with its row. Otherwise both stay,
-   * a normal library skill: the library may hold the only whole copy now.
+   * a normal library skill: the library may hold the only whole copy now. So does a link that
+   * already replaced the agent's folder: read through it, the library only matches itself.
    */
   async function forgetUnadopted(skill: Skill, localPath: string): Promise<void> {
     await ctx.lock.run(`undo the upload of ${skill.name}`, async () => {
       const current = store.find(skill.id);
-      if (!current) return;
+      if (!current || lstatOrNull(localPath)?.isSymbolicLink()) return;
       if (hashAsLibraryCopy(localPath, current.dirName) !== hashDir(current.libraryPath)) return;
       store.delete(current.id);
       await removePath(current.libraryPath);

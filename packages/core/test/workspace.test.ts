@@ -274,6 +274,19 @@ describe("global workspace", () => {
     expect(skillText(join(world.ctx.paths.skillsDir, "fragile"))).toContain("first");
   });
 
+  it("keeps the uploaded skill when adoption failed after the link went in", async () => {
+    const local = makeSkill(claude, "fragile", { body: "only copy" });
+    const library = join(world.ctx.paths.skillsDir, "fragile");
+    // The link replaced the agent's folder, then cleaning up the folder it replaced failed.
+    const failing = failingAdopt(() => {
+      rmSync(local, { recursive: true });
+      symlinkSync(library, local, "junction");
+    });
+    await rejection(failing.api.upload("claude_code", "fragile"));
+    expect(world.store.list().map((skill) => skill.name)).toEqual(["fragile"]);
+    expect(skillText(library)).toContain("only copy");
+  });
+
   it("refuses to pull over a newer local skill, and pulls a stale one without a row", async () => {
     const skill = world.addSkill("doc");
     world.store.update(skill.id, { sourceRef: join(claude, "doc") });

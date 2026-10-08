@@ -116,7 +116,11 @@ async function swapInLink(sourceDir: string, targetPath: string): Promise<boolea
     renameSync(aside, targetPath);
     return false;
   }
-  await removePath(aside);
+  try {
+    await removePath(aside);
+  } catch {
+    // The link is in and the deploy is done; a folder in use (Windows) stays hidden beside it.
+  }
   return true;
 }
 
