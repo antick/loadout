@@ -135,7 +135,10 @@ const KEEP_CACHE_CODES: ReadonlySet<ErrorCode> = new Set([
   "TIMEOUT",
   "NETWORK",
   "GIT_MISSING",
+  "GIT_AUTH",
 ]);
+/** A branch or tag the repository does not have: a fresh clone would not find it either. */
+const MISSING_REF = /couldn't find remote ref|remote branch \S+ not found/i;
 const RECEIVING_PERCENT = /Receiving objects:\s+(\d+)%/;
 /** Git's file modes in a tree: a file that can run, and a link (never copied, so never listed). */
 const EXECUTABLE_MODE = "100755";
@@ -154,7 +157,10 @@ function percentReader(
 }
 
 function isHopeless(error: unknown): boolean {
-  return error instanceof AppError && KEEP_CACHE_CODES.has(error.code);
+  return (
+    error instanceof AppError &&
+    (KEEP_CACHE_CODES.has(error.code) || MISSING_REF.test(error.message))
+  );
 }
 
 /** System git with a shared clone cache. All network calls honour the proxy setting. */

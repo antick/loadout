@@ -455,6 +455,17 @@ describe("git client", () => {
     expect(leftoverCheckouts(tmp)).toEqual([]);
   });
 
+  it("keeps its cache slot when the branch asked for does not exist", async () => {
+    const client = createGitClient(world.ctx);
+    await (await client.checkout(remote)).cleanup();
+    const marker = join(world.base, "cache", "repos", cacheSlots()[0] ?? "", ".git", "marker");
+    writeFile(marker, "kept");
+    await expect(client.checkout(remote, { branch: "no-such-branch" })).rejects.toMatchObject({
+      code: "GIT",
+    });
+    expect(existsSync(marker)).toBe(true);
+  });
+
   it("clones again when the cached slot is broken", async () => {
     const client = createGitClient(world.ctx);
     await (await client.checkout(remote)).cleanup();
