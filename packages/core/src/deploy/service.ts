@@ -247,19 +247,30 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       for (const key of wanted) if (!known.has(key)) throw invalid(`Unknown agent: ${key}`);
       const nameOf = agentNames();
       const label = `${blocked ? "block" : "allow"} ${store.get(skillId).name}`;
-      const skill = await ctx.lock.run(label, () => {
+      const { skill, failure } = await ctx.lock.run(label, () => {
         const fresh = store.get(skillId);
-        if (blocked) {
-          // What Loadout put there goes first; a failure leaves the skill unblocked, not half done.
-          for (const key of wanted) {
-            const row = store.deployment(skillId, key);
-            if (row) ops.undeployRow(row, nameOf(key));
-          }
+        if (!blocked) {
+          const kept = fresh.blockedAgents.filter((key) => !wanted.includes(key));
+          return { skill: store.update(skillId, { blockedAgents: kept }), failure: null };
         }
-        const kept = fresh.blockedAgents.filter((key) => !wanted.includes(key));
-        return store.update(skillId, { blockedAgents: blocked ? [...kept, ...wanted] : kept });
+        // What Loadout put there goes first. An agent whose folder could not be emptied stays
+        // unblocked, so it never claims to be without the skill; the others are blocked.
+        let firstError: unknown = null;
+        const emptied = wanted.filter((key) => {
+          const row = store.deployment(skillId, key);
+          try {
+            if (row) ops.undeployRow(row, nameOf(key));
+            return true;
+          } catch (error) {
+            firstError ??= error;
+            return false;
+          }
+        });
+        const blockedAgents = [...new Set([...fresh.blockedAgents, ...emptied])];
+        return { skill: store.update(skillId, { blockedAgents }), failure: firstError };
       });
       ctx.touched("skills");
+      if (failure) throw failure;
       return skill;
     },
 

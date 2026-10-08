@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { chmodSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { planSkill } from "../src/backup/merge-plan";
 import { blockedFindings } from "../src/health/blocked";
@@ -31,6 +31,28 @@ describe("blocking a skill for an agent", () => {
     expect(world.store.deployment(skill.id, "cline")).not.toBeNull();
     expect(existsSync(join(skill.libraryPath, "SKILL.md"))).toBe(true);
   });
+
+  it.skipIf(process.platform === "win32")(
+    "keeps each agent it emptied blocked when another one cannot be emptied",
+    async () => {
+      const skill = world.addSkill("alpha");
+      await world.deploy.api.apply([skill.id], ["claude_code", "cline"], "add");
+      const locked = dirname(clineTarget("alpha"));
+      chmodSync(locked, 0o555);
+      try {
+        await expect(
+          world.deploy.api.setBlocked(skill.id, ["claude_code", "cline"], true),
+        ).rejects.toMatchObject({ code: "EACCES" });
+      } finally {
+        chmodSync(locked, 0o755);
+      }
+
+      // Claude Code was emptied, so it is blocked; Cline still has the skill, so it is not.
+      expect(world.store.get(skill.id).blockedAgents).toEqual(["claude_code"]);
+      expect(existsSync(claudeTarget("alpha"))).toBe(false);
+      expect(world.store.deployment(skill.id, "cline")).not.toBeNull();
+    },
+  );
 
   it("keeps the skill's last change time, like a tag", async () => {
     const skill = world.addSkill("alpha");
