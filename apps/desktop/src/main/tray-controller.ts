@@ -109,11 +109,22 @@ export function createTrayController(deps: TrayControllerDeps): TrayController {
     }, TRAY_REFRESH_DEBOUNCE_MS);
   };
 
+  /**
+   * Notifications on screen. Held here until clicked or closed: one nothing refers to can be
+   * garbage collected while it is still showing, and its click would then do nothing.
+   */
+  const shown = new Set<Notification>();
+
   const reportIfIncomplete = (result: ApplyResult): void => {
     if (result.conflicts.length === 0 && result.failed.length === 0) return;
     if (!Notification.isSupported()) return;
     const note = new Notification(PRESET_INCOMPLETE);
-    note.on("click", () => deps.navigate("/"));
+    shown.add(note);
+    note.on("click", () => {
+      shown.delete(note);
+      deps.navigate("/");
+    });
+    note.on("close", () => shown.delete(note));
     note.show();
   };
 
