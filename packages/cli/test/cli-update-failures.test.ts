@@ -66,7 +66,11 @@ describe("bulk runs with failed source checks", () => {
   it("skills check <ref> fails when the check fails, not when there is nothing to do", async () => {
     const broken = await box.cli("skills", "check", "broken", "--force", "--json");
     expect(broken.code).toBe(EXIT_FAILED);
-    expect(broken.json<{ updateStatus: string }>().updateStatus).toBe("error");
+    expect(broken.json()).toMatchObject({
+      checked: 0,
+      failed: [{ name: "broken" }],
+      skills: [{ updateStatus: "error" }],
+    });
     expect((await box.cli("skills", "check", "healthy", "--force")).code).toBe(EXIT_OK);
   });
 

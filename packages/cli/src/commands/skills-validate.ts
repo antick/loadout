@@ -49,9 +49,10 @@ async function validateLibrary(core: Core, ref: string | undefined): Promise<Com
       } with warnings only.`,
     );
   }
-  // `{ skills }` for one skill, --all and a folder alike, so a reader handles one shape.
+  // `{ skills, duplicates }` for one skill, --all and a folder alike, so a reader handles one
+  // shape: every skill checked, with its issues. Library names are never used twice.
   return {
-    value: { skills: flagged.map(view) },
+    value: { skills: skills.map(view), duplicates: [] },
     text: lines.join("\n"),
     exitCode: exitCodeFor(broken.length > 0),
   };

@@ -51,7 +51,9 @@ describe("--json on commands that take --dry-run", () => {
       "failed",
     ]);
     expectRule("skills rename", await both("skills", "rename", "notes", "jots"), ["from", "to"]);
-    expectRule("skills update", await both("skills", "update", "jots", "--accept-risk"), []);
+    expectRule("skills update", await both("skills", "update", "jots", "--accept-risk"), [
+      "failed",
+    ]);
 
     await box.cli("presets", "create", "Kit");
     expectRule("presets undeploy", await both("presets", "undeploy", "Kit"), ["removed", "failed"]);
@@ -102,6 +104,30 @@ describe("skills scan --json", () => {
     }
     // --force means "check everything again", which named skills always are.
     expect((await box.cli("skills", "scan", "fine", "--force")).code).toBe(2);
+  });
+});
+
+describe("skills check, update and validate --json", () => {
+  it("has one shape for one skill and for --all", async () => {
+    await box.cli("skills", "install", writeSkill(box.root, "notes"));
+    const keysOf = async (...argv: string[]) =>
+      Object.keys((await box.cli(...argv, "--json")).json<Body>()).sort();
+
+    const checkKeys = ["checked", "failed", "skills", "sourceMissing", "updateAvailable"];
+    expect(await keysOf("skills", "check", "notes")).toEqual(checkKeys);
+    expect(await keysOf("skills", "check", "--all")).toEqual(checkKeys);
+
+    const counts = ["dryRun", "failed", "heldBack", "unchanged", "updated"];
+    expect(await keysOf("skills", "update", "notes")).toEqual(expect.arrayContaining(counts));
+    expect(await keysOf("skills", "update", "--all")).toEqual(expect.arrayContaining(counts));
+
+    const one = (await box.cli("skills", "validate", "notes", "--json")).json<Body>();
+    const all = (await box.cli("skills", "validate", "--all", "--json")).json<Body>();
+    const folder = (await box.cli("skills", "validate", box.root, "--json")).json<Body>();
+    for (const body of [one, all, folder]) {
+      expect(Object.keys(body).sort()).toEqual(["duplicates", "skills"]);
+    }
+    expect(all.skills).toHaveLength(1);
   });
 });
 

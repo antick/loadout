@@ -199,7 +199,10 @@ describe("skills: install, deploy, status, remove", () => {
     expect((await cli("skills", "check", "--json")).code).toBe(EXIT_USAGE);
     expect((await cli("skills", "check", "alpha", "--all", "--json")).code).toBe(EXIT_USAGE);
     const checked = await cli("skills", "check", "alpha", "--json");
-    expect(checked.json()).toMatchObject({ name: "alpha", updateStatus: "local_only" });
+    expect(checked.json()).toMatchObject({
+      checked: 1,
+      skills: [{ name: "alpha", updateStatus: "local_only" }],
+    });
   });
 });
 
@@ -213,7 +216,7 @@ describe("skills validate", () => {
 
     const one = await cli("skills", "validate", "good", "--json");
     expect(one.code).toBe(EXIT_OK);
-    // One skill, --all and a folder all print `{ skills: [...] }`.
+    // One skill, --all and a folder all print `{ skills: [...], duplicates: [...] }`.
     expect(one.json<{ skills: { name: string; issues: unknown[] }[] }>().skills).toMatchObject([
       { name: "good", issues: [{ code: "broken_reference", severity: "warning" }] },
     ]);

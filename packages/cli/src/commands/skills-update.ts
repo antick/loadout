@@ -50,16 +50,25 @@ async function check(context: CommandContext): Promise<CommandResult> {
   const force = flagBoolean(args, FORCE_FLAG.name);
   const one = target(context);
   if (one) {
-    const value = checkView(await core.api.updates.check(one.id, force));
+    const skill = checkView(await core.api.updates.check(one.id, force));
     const text = fields([
-      ["Skill", value.name],
-      ["Status", value.updateStatus],
-      ["Checked", formatDateTime(value.lastCheckedAt)],
-      ["Problem", value.lastCheckError],
-      ["Next", value.updateStatus === "source_missing" ? goneNext(value.name) : null],
+      ["Skill", skill.name],
+      ["Status", skill.updateStatus],
+      ["Checked", formatDateTime(skill.lastCheckedAt)],
+      ["Problem", skill.lastCheckError],
+      ["Next", skill.updateStatus === "source_missing" ? goneNext(skill.name) : null],
     ]);
     // "error": the check itself failed, so nobody knows whether there is an update.
-    return { value, text, exitCode: exitCodeFor(value.updateStatus === "error") };
+    const failed = skill.updateStatus === "error";
+    // The shape `--all` has, so a reader handles one.
+    const value = {
+      checked: failed ? 0 : 1,
+      failed: failed ? [{ name: skill.name, message: skill.lastCheckError ?? "" }] : [],
+      updateAvailable: skill.updateStatus === "update_available" ? [skill] : [],
+      sourceMissing: skill.updateStatus === "source_missing" ? [skill] : [],
+      skills: [skill],
+    };
+    return { value, text, exitCode: exitCodeFor(failed) };
   }
   const batch = await core.api.updates.checkAll(force);
   const listed = await core.api.skills.list();
@@ -82,6 +91,8 @@ async function check(context: CommandContext): Promise<CommandResult> {
       failed: batch.failed,
       updateAvailable: available,
       sourceMissing: gone,
+      // Every skill with what its check found, as one skill gives it.
+      skills: listed.map(checkView),
     },
     text: lines.join("\n"),
     exitCode: exitCodeFor(batch.failed.length > 0),
@@ -103,13 +114,24 @@ async function dueForUpdate(
   return { due, failed: checked.failed };
 }
 
-const updateView = (result: UpdateResult) => ({
-  skill: checkView(result.skill),
-  contentChanged: result.contentChanged,
-  /** Files the update would delete or edits it would replace. Non-empty: nothing was changed. */
-  pendingRemovals: result.pendingRemovals,
-  applied: result.pendingRemovals.length === 0,
-});
+/**
+ * One skill's update, with the counts `--all` gives (`updated`, `unchanged`, `heldBack`,
+ * `failed`), so a reader handles one shape.
+ */
+function updateView(result: UpdateResult) {
+  const applied = result.pendingRemovals.length === 0;
+  return {
+    skill: checkView(result.skill),
+    contentChanged: result.contentChanged,
+    /** Files the update would delete or edits it would replace. Non-empty: nothing was changed. */
+    pendingRemovals: result.pendingRemovals,
+    applied,
+    updated: applied && result.contentChanged ? 1 : 0,
+    unchanged: applied && !result.contentChanged ? 1 : 0,
+    heldBack: applied ? [] : [result.skill.name],
+    failed: [] as BatchFailure[],
+  };
+}
 
 async function updateOne(context: CommandContext, skillId: string): Promise<UpdateResult> {
   const { core, args } = context;

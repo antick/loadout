@@ -110,7 +110,8 @@ loadout skills feedback <ref> -m "what happened" --proposal "wording that would 
 loadout skills diff <ref> --json
 loadout skills diff <ref> --upstream --json
 
-# Updates: check first, then update; exit 1 when a source check or update failed (read `failed`, or `updateStatus: "error"` for one skill): updates are then unknown, not absent
+# Updates: check first, then update; exit 1 when a source check or update failed (read `failed`): updates are then unknown, not absent
+# check prints { checked, failed, updateAvailable, sourceMissing, skills } and update { updated, unchanged, heldBack, failed }, for one skill or all
 loadout skills check --all --json
 loadout skills update <ref> --json
 loadout skills update --all --json                      # checks every source fresh first
@@ -120,7 +121,7 @@ loadout skills update --all --json                      # checks every source fr
 loadout skills scan <ref> --json
 loadout skills scan --all --json
 
-# Format checks (Agent Skills rules); exit code 1 when a skill has an error; all print { skills: [{ issues }] }
+# Format checks (Agent Skills rules); exit code 1 when a skill has an error; all print { skills: [{ issues }], duplicates }
 loadout skills validate <ref> --json
 loadout skills validate --all --json
 loadout skills validate ./path/to/skills --json   # a folder, no library needed
