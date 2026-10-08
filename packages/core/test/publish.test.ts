@@ -334,6 +334,17 @@ describe("keys and tokens", () => {
     const result = await service.api.publish(publishInput([pdf], { allowSecrets: true }));
     expect(result.published).toEqual(["pdf"]);
   });
+
+  it("does not hold back a later publish for a skill published anyway and unchanged since", async () => {
+    const pdf = world.addSkill("pdf", { "notes.md": `key: ${FAKE_TOKEN}\n` });
+    await service.api.publish(publishInput([pdf], { allowSecrets: true }));
+    const docx = world.addSkill("docx");
+
+    const plan = await service.api.preview(publishInput([pdf, docx]));
+    expect(plan.secrets).toEqual([]);
+    const result = await service.api.publish(publishInput([pdf, docx]));
+    expect(result.published).toEqual(["docx"]);
+  });
 });
 
 describe("what it refuses", () => {

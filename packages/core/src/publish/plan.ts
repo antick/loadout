@@ -129,7 +129,10 @@ function planSkill(skill: Skill, checkoutDir: string, target: ResolvedTarget): P
   };
 }
 
-/** Compare the skills with the repository's working copy and look for keys in what would go. */
+/**
+ * Compare the skills with the repository's working copy and look for keys in what would go. An
+ * unchanged skill is not written, so a key published anyway before does not hold the rest back.
+ */
 export function planSkills(
   skills: readonly Skill[],
   checkoutDir: string,
@@ -137,7 +140,7 @@ export function planSkills(
 ): Planned {
   const planned = skills.map((skill) => planSkill(skill, checkoutDir, target));
   const secrets = planned.flatMap(({ plan, files }) =>
-    plan.status === "skipped" ? [] : findSecretsIn(files, plan.folder),
+    plan.status === "new" || plan.status === "changed" ? findSecretsIn(files, plan.folder) : [],
   );
   return { skills: planned, secrets };
 }
