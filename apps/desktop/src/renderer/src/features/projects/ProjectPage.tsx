@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { InstructionFilesSection } from "@/features/instructions/InstructionFilesSection";
 import { LocalSkillList } from "@/features/local-skills/LocalSkillList";
 import { LocalSkillToolbar } from "@/features/local-skills/LocalSkillToolbar";
@@ -245,7 +246,12 @@ function ProjectWorkspace({
             project={project}
             onAdd={(ids, notes) => openAdd({ ids, notes })}
           />
-          <ProjectPresetBar project={project} targets={targets.data} groups={groups} />
+          {targets.isError ? (
+            // Without its agent folders nothing can be added: say why, rather than greying out.
+            <LoadErrorNotice error={targets.error} onRetry={() => void targets.refetch()} />
+          ) : (
+            <ProjectPresetBar project={project} targets={targets.data} groups={groups} />
+          )}
 
           <LocalSkillToolbar
             filters={filters}
