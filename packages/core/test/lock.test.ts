@@ -7,12 +7,29 @@ import {
   utimesSync,
   writeFileSync,
 } from "node:fs";
+import type * as NodeFs from "node:fs";
 import { hostname, tmpdir, uptime } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RepoLock } from "../src/lock";
 import { hashDir } from "../src/util/hash";
 import { createTestWorld, makeSkill } from "./helpers";
+
+/** Set to make the next write into a file descriptor fail as a full disk does. */
+const failWrites = vi.hoisted(() => ({ next: false }));
+vi.mock("node:fs", async (importOriginal) => {
+  const fs = await importOriginal<typeof NodeFs>();
+  return {
+    ...fs,
+    writeSync: (...args: Parameters<typeof fs.writeSync>) => {
+      if (failWrites.next) {
+        failWrites.next = false;
+        throw Object.assign(new Error("no space left on device"), { code: "ENOSPC" });
+      }
+      return fs.writeSync(...args);
+    },
+  };
+});
 
 let dir: string;
 let path: string;
@@ -44,6 +61,14 @@ describe("library lock", () => {
     await Promise.all([a, b]);
     expect(c).toBeNull();
     expect(order).toEqual(["a start", "a end", "b start", "b end"]);
+  });
+
+  it("leaves no empty lock file behind when writing it fails", async () => {
+    const lock = new RepoLock(path);
+    failWrites.next = true;
+    await expect(lock.run("a", () => "never")).rejects.toMatchObject({ code: "ENOSPC" });
+    expect(existsSync(path)).toBe(false);
+    expect(await lock.run("b", () => "ran")).toBe("ran");
   });
 
   it("lets a nested call of the holder through", async () => {

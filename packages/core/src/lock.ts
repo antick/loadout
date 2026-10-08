@@ -146,23 +146,26 @@ export class RepoLock {
   }
 
   #tryAcquire(operation: string): boolean {
+    let fd: number;
     try {
-      const fd = openSync(this.#path, "wx");
-      const info: LockInfo = {
-        pid: process.pid,
-        host: hostname(),
-        operation,
-        startedAt: Date.now(),
-      };
-      writeSync(fd, JSON.stringify(info));
-      closeSync(fd);
-      this.#ownStartedAt = info.startedAt;
-      return true;
+      fd = openSync(this.#path, "wx");
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
       this.#clearAbandoned();
       return false;
     }
+    const info: LockInfo = { pid: process.pid, host: hostname(), operation, startedAt: Date.now() };
+    try {
+      writeSync(fd, JSON.stringify(info));
+    } catch (error) {
+      // A disk that is full: an empty lock file left here would hold every caller off a minute.
+      closeSync(fd);
+      unlinkSync(this.#path);
+      throw error;
+    }
+    closeSync(fd);
+    this.#ownStartedAt = info.startedAt;
+    return true;
   }
 
   /**
