@@ -177,6 +177,12 @@ function keepStranded(env: BackupEnv, journal: Journal, stage: string): boolean 
   return kept;
 }
 
+/** The full id of `revision`, which may be shortened; the revision itself when git cannot tell. */
+async function fullCommitId(env: BackupEnv, revision: string): Promise<string> {
+  const result = await env.git.probe(["rev-parse", "-q", "--verify", `${revision}^{commit}`]);
+  return (result.code === 0 && result.stdout.trim()) || revision;
+}
+
 /**
  * Undo what an unfinished merge left. Before its commit: every folder goes back where it was, in
  * reverse order, then git puts every tracked file back as the starting commit has it. The merge
@@ -185,8 +191,10 @@ function keepStranded(env: BackupEnv, journal: Journal, stage: string): boolean 
  */
 async function undoOwnMerge(env: BackupEnv, journal: Journal): Promise<void> {
   rmSync(gitPath(env, INDEX_LOCK), { force: true });
-  const head = (await env.git.probe(["rev-parse", "-q", "--verify", "HEAD"])).stdout.trim();
-  const committed = journal.head !== null && journal.head !== head;
+  const head = await fullCommitId(env, "HEAD");
+  // A conflict choice journals its safety point shortened: compare full ids, never the text.
+  const start = journal.head === null ? null : await fullCommitId(env, journal.head);
+  const committed = start !== null && start !== head;
   if (!committed && journal.head) {
     undoMoves(journal.moves);
     // Not `merge --abort`: it keeps what the merge changed on disk, such as a folder moved away.

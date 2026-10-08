@@ -1,4 +1,12 @@
-import { chmodSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Device, pushByHand, rawGit, useTwoDevices } from "./backup-world";
@@ -255,6 +263,32 @@ describe("backup ignore rules", () => {
       name.startsWith(".backup-stage-"),
     );
     expect(stages).toEqual([]);
+  });
+
+  it("undoes a conflict choice that a crash cut off before its commit", async () => {
+    b.editSkill("alpha", "B's version");
+    b.git("add", "-A");
+    b.git("commit", "--quiet", "-m", "backup: before resolving");
+    // As a conflict choice leaves it: its safety point journaled shortened, our folder moved
+    // into the scratch folder, nothing committed yet.
+    const safety = b.git("rev-parse", "--short=12", "HEAD");
+    const stage = join(dirname(b.skillsDir), ".backup-stage-crashed");
+    const from = join(b.skillsDir, "alpha");
+    const to = join(stage, "alpha");
+    mkdirSync(stage, { recursive: true });
+    renameSync(from, to);
+    const note = join(b.skillsDir, ".git", "loadout-merging");
+    const entries = [
+      { head: safety, stage },
+      { from, to },
+    ].map((entry) => JSON.stringify(entry));
+    writeFileSync(note, [`${2 ** 22 + 7}`, ...entries, ""].join("\n"));
+
+    await b.api.sync();
+    expect(b.read("alpha")).toBe("B's version");
+    expect(b.removed.list()).toEqual([]);
+    expect(existsSync(note)).toBe(false);
+    expect(existsSync(stage)).toBe(false);
   });
 
   /** What Recently removed on B holds at `relative` inside each kept folder. */
