@@ -19,6 +19,7 @@ import {
   type ProjectSkillRef,
   usePushToLibrary,
 } from "@/features/projects/project-skill-mutations";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface VersionChoice {
   ref: ProjectSkillRef;
@@ -163,11 +164,13 @@ function VersionForm({ choice, onClose }: { choice: VersionChoice; onClose(): vo
  * Lists the versions with the agents that hold each, shows how they differ, and pushes the pick.
  */
 export function PushVersionDialog({ choice, onClose }: PushVersionDialogProps): ReactNode {
+  // Closing, it keeps showing the versions while it fades out.
+  const shown = useLastDefined(choice);
   return (
     <Dialog open={choice !== null} onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent className="min-w-0 sm:max-w-2xl">
-        {choice ? (
-          <VersionForm key={choice.ref.relativePath} choice={choice} onClose={onClose} />
+        {shown ? (
+          <VersionForm key={shown.ref.relativePath} choice={shown} onClose={onClose} />
         ) : null}
       </DialogContent>
     </Dialog>

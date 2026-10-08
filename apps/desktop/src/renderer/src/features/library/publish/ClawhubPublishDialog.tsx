@@ -38,6 +38,7 @@ import { errorMessage } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
 import { problemKey, problemParams } from "./publish-text";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface ClawhubPublishDialogProps {
   skill: Skill | null;
@@ -326,11 +327,13 @@ export function ClawhubPublishDialog({
   skill,
   onOpenChange,
 }: ClawhubPublishDialogProps): ReactNode {
+  // Closing, it keeps showing the skill while it fades out.
+  const shown = useLastDefined(skill);
   return (
     <Dialog open={skill !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        {skill ? (
-          <ClawhubPublishForm key={skill.id} skill={skill} onOpenChange={onOpenChange} />
+        {shown ? (
+          <ClawhubPublishForm key={shown.id} skill={shown} onOpenChange={onOpenChange} />
         ) : null}
       </DialogContent>
     </Dialog>

@@ -26,6 +26,7 @@ import { PreviewSkillList } from "@/features/install/PreviewSkillList";
 import { SOURCE_KIND_ICONS } from "@/features/install/source-guess";
 import { useAgentNames } from "@/hooks/queries/agents";
 import { setMany } from "@/lib/sets";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface GitPreviewDialogProps {
   /** The cloned repository to choose from; null keeps the dialog closed. */
@@ -209,6 +210,8 @@ export function GitPreviewDialog({
   onConfirm,
 }: GitPreviewDialogProps): ReactNode {
   const submit = useRef<HTMLButtonElement>(null);
+  // Closing, it keeps showing the preview while it fades out.
+  const shown = useLastDefined(preview);
   return (
     <Dialog
       open={preview !== null}
@@ -224,13 +227,13 @@ export function GitPreviewDialog({
           submit.current?.focus();
         }}
       >
-        {preview ? (
+        {shown ? (
           <PreviewForm
-            key={preview.previewId}
-            preview={preview}
+            key={shown.previewId}
+            preview={shown}
             submitRef={submit}
-            onDismiss={() => onDismiss(preview)}
-            onConfirm={(items, options) => onConfirm(preview, items, options)}
+            onDismiss={() => onDismiss(shown)}
+            onConfirm={(items, options) => onConfirm(shown, items, options)}
           />
         ) : null}
       </DialogContent>

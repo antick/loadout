@@ -239,7 +239,8 @@ export function ImportPresetDialog({ open, onOpenChange }: ImportPresetDialogPro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        {open ? <ImportForm onOpenChange={onOpenChange} /> : null}
+        {/* Mounted afresh on every opening; kept whole while it fades out. */}
+        <ImportForm onOpenChange={onOpenChange} />
       </DialogContent>
     </Dialog>
   );

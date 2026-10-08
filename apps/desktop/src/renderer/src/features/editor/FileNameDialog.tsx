@@ -13,6 +13,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { nameOf, normalizePath, pathProblem } from "@/features/editor/file-tree";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 /** What the dialog asks a path for. */
 export type NameRequest =
@@ -125,6 +126,8 @@ function FileNameForm({
 /** Asks for the path of a new file or folder, or the new path of one being renamed. */
 export function FileNameDialog(props: FileNameDialogProps): ReactNode {
   const { request, onClose } = props;
+  // Closing, it keeps showing the request while it fades out.
+  const shown = useLastDefined(request);
   return (
     <Dialog open={request !== null} onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent
@@ -132,7 +135,7 @@ export function FileNameDialog(props: FileNameDialogProps): ReactNode {
         // The form focuses its path itself, with the name selected.
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
-        {request ? <FileNameForm {...props} request={request} /> : null}
+        {shown ? <FileNameForm {...props} request={shown} /> : null}
       </DialogContent>
     </Dialog>
   );

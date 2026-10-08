@@ -27,6 +27,7 @@ import { type DeleteChoice, SyncReviewRow } from "./SyncReviewRow";
 import { setMany } from "@/lib/sets";
 import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
 import { cn } from "@/lib/utils";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface SyncReviewDialogProps {
   /** Null keeps the dialog closed. */
@@ -222,9 +223,11 @@ export function SyncReviewDialog({
     setWasOpen(preview !== null);
     if (preview) setQuery("");
   }
-  const lists = useMemo(() => (preview ? filterReview(preview, query) : null), [preview, query]);
+  // Closing, it keeps showing the review while it fades out.
+  const shown = useLastDefined(preview);
+  const lists = useMemo(() => (shown ? filterReview(shown, query) : null), [shown, query]);
   const searchable =
-    preview?.perSkill === true && (reviewSize(preview) >= REVIEW_SEARCH_MIN_ITEMS || query !== "");
+    shown?.perSkill === true && (reviewSize(shown) >= REVIEW_SEARCH_MIN_ITEMS || query !== "");
 
   return (
     <Dialog open={preview !== null} onOpenChange={(open) => !open && !syncing && onCancel()}>
@@ -232,7 +235,7 @@ export function SyncReviewDialog({
         <DialogHeader>
           <DialogTitle>{t("backupSync.review.title")}</DialogTitle>
           <DialogDescription>
-            {t("backupSync.review.description", { count: preview?.remoteBackups ?? 0 })}
+            {t("backupSync.review.description", { count: shown?.remoteBackups ?? 0 })}
           </DialogDescription>
         </DialogHeader>
         {stale ? (
@@ -257,11 +260,11 @@ export function SyncReviewDialog({
           />
         ) : null}
         <div className={cn(DIALOG_BODY_SCROLL_CLASS, "-mx-1 min-w-0 px-1")}>
-          {preview && lists && remoteCommit ? (
+          {shown?.remoteCommit && lists ? (
             <ReviewBody
-              preview={preview}
+              preview={shown}
               lists={lists}
-              remoteCommit={remoteCommit}
+              remoteCommit={shown.remoteCommit}
               kept={kept}
               onKept={setKept}
             />

@@ -42,7 +42,8 @@ export function FindSourcesDialog({ open, onOpenChange, skills }: FindSourcesDia
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="min-w-0 sm:max-w-2xl">
-        {open ? <FindSourcesBody skills={skills} onClose={() => onOpenChange(false)} /> : null}
+        {/* Mounted afresh on every opening; kept whole while it fades out. */}
+        <FindSourcesBody skills={skills} onClose={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );

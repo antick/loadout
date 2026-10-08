@@ -29,6 +29,7 @@ import { useAgentNames } from "@/hooks/queries/agents";
 import { useSkills } from "@/hooks/queries/skills";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { errorMessage } from "@/lib/toast";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface RenameSkillDialogProps {
   /** The skill to rename; null keeps the dialog closed. */
@@ -141,10 +142,12 @@ function RenameSkillForm({
 
 /** Rename a library skill: its folder, the name in SKILL.md, deployments and project links. */
 export function RenameSkillDialog({ skill, onOpenChange }: RenameSkillDialogProps): ReactNode {
+  // Closing, it keeps showing the skill while it fades out.
+  const shown = useLastDefined(skill);
   return (
     <Dialog open={skill !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        {skill ? <RenameSkillForm skill={skill} onOpenChange={onOpenChange} /> : null}
+        {shown ? <RenameSkillForm skill={shown} onOpenChange={onOpenChange} /> : null}
       </DialogContent>
     </Dialog>
   );

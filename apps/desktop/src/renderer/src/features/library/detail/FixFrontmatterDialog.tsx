@@ -116,7 +116,8 @@ export function FixFrontmatterDialog({ open, ...props }: FixFrontmatterDialogPro
   return (
     <Dialog open={open} onOpenChange={props.onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        {open ? <FixFrontmatterBody {...props} /> : null}
+        {/* Mounted afresh on every opening; kept whole while it fades out. */}
+        <FixFrontmatterBody {...props} />
       </DialogContent>
     </Dialog>
   );

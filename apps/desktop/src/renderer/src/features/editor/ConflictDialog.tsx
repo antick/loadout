@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface ConflictDialogProps {
   /** Null keeps the dialog closed. */
@@ -34,6 +35,8 @@ export function ConflictDialog({
   onCancel,
 }: ConflictDialogProps): ReactNode {
   const { t } = useTranslation();
+  // Closing, it keeps showing what it was about while it fades out.
+  const shown = useLastDefined(conflict);
   return (
     <AlertDialog
       open={conflict !== null}
@@ -42,13 +45,13 @@ export function ConflictDialog({
       <AlertDialogContent className="data-[size=default]:sm:max-w-3xl">
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {t("editor.conflict.title", { path: conflict?.path ?? "" })}
+            {t("editor.conflict.title", { path: shown?.path ?? "" })}
           </AlertDialogTitle>
           <AlertDialogDescription>{t("editor.conflict.description")}</AlertDialogDescription>
         </AlertDialogHeader>
 
-        {conflict ? (
-          conflict.disk === null ? (
+        {shown ? (
+          shown.disk === null ? (
             <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
               {t("editor.conflict.unreadable")}
             </p>
@@ -62,7 +65,7 @@ export function ConflictDialog({
                   <span className="font-mono text-success">+</span> {t("editor.conflict.yours")}
                 </span>
               </p>
-              <DiffView before={conflict.disk} after={conflict.mine} className="max-h-[50vh]" />
+              <DiffView before={shown.disk} after={shown.mine} className="max-h-[50vh]" />
             </div>
           )
         ) : null}
@@ -71,7 +74,7 @@ export function ConflictDialog({
           <AlertDialogCancel disabled={busy} onClick={onCancel}>
             {t("editor.conflict.cancel")}
           </AlertDialogCancel>
-          <Button variant="outline" disabled={busy || conflict?.disk === null} onClick={onUseDisk}>
+          <Button variant="outline" disabled={busy || shown?.disk === null} onClick={onUseDisk}>
             {t("editor.conflict.useDisk")}
           </Button>
           <Button variant="destructive" disabled={busy} onClick={onOverwrite}>

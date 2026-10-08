@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { type StartBackupInput, useStartBackup } from "@/features/backup/backup-mutations";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface SetupDialogProps {
   /** The remote to set up against; null keeps the dialog closed. */
@@ -28,6 +29,8 @@ const CHOICES: readonly { mode: StartBackupInput["mode"]; icon: LucideIcon }[] =
 export function SetupDialog({ url, onClose, onDone, onFailure }: SetupDialogProps): ReactNode {
   const { t } = useTranslation();
   const startBackup = useStartBackup();
+  // Closing, it keeps showing the address while it fades out.
+  const shown = useLastDefined(url);
 
   const choose = (mode: StartBackupInput["mode"]): void => {
     if (!url) return;
@@ -54,7 +57,7 @@ export function SetupDialog({ url, onClose, onDone, onFailure }: SetupDialogProp
           <DialogDescription>
             {t("backupPage.setup.description")}{" "}
             <span data-selectable className="font-mono text-xs break-all">
-              {url}
+              {shown}
             </span>
           </DialogDescription>
         </DialogHeader>

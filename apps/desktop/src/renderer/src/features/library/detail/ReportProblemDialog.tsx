@@ -25,6 +25,7 @@ import { useCopyText, useOpenExternal } from "@/hooks/mutations/app";
 import { useAppInfo } from "@/hooks/queries/app";
 import { DIALOG_BODY_SCROLL_CLASS } from "@/lib/styles";
 import { cn } from "@/lib/utils";
+import { useLastDefined } from "@/hooks/use-last-defined";
 
 export interface ReportProblemDialogProps {
   /** The skill to report on; null keeps the dialog closed. */
@@ -167,10 +168,12 @@ function ReportProblemForm({ skill }: { skill: Skill }): ReactNode {
  * sent by the app.
  */
 export function ReportProblemDialog({ skill, onOpenChange }: ReportProblemDialogProps): ReactNode {
+  // Closing, it keeps showing the skill while it fades out.
+  const shown = useLastDefined(skill);
   return (
     <Dialog open={skill !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        {skill ? <ReportProblemForm key={skill.id} skill={skill} /> : null}
+        {shown ? <ReportProblemForm key={shown.id} skill={shown} /> : null}
       </DialogContent>
     </Dialog>
   );

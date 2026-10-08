@@ -214,7 +214,8 @@ export function PublishDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        {open ? <PublishForm skills={skills} onOpenChange={onOpenChange} onDone={onDone} /> : null}
+        {/* Mounted afresh on every opening; kept whole while it fades out. */}
+        <PublishForm skills={skills} onOpenChange={onOpenChange} onDone={onDone} />
       </DialogContent>
     </Dialog>
   );
