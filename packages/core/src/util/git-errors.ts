@@ -32,7 +32,9 @@ const ERROR_RULES: readonly (readonly [GitErrorCode, RegExp])[] = [
     /authentication failed|could not read (username|password)|terminal prompts disabled|permission denied \(publickey|permission to \S+ denied|invalid (username or password|credentials)|(http|returned error:) 40[13]\b/i,
   ],
   ["GIT_UNRELATED", /unrelated histories|refusing to merge/i],
-  ["GIT_REJECTED", /\[rejected\]|non-fast-forward|fetch first|failed to push some refs/i],
+  // Only a remote that moved on: `failed to push some refs` also follows a refusal by the remote
+  // itself (a protected branch, a hook, a secret scan), which no retry gets past.
+  ["GIT_REJECTED", /\[rejected\]|non-fast-forward|fetch first/i],
   ["GIT_NO_UPSTREAM", /no upstream|has no upstream branch/i],
   ["SYNC_CONFLICT", /conflict/i],
   ["GIT_NOT_REPO", /not a git repository/i],

@@ -300,6 +300,15 @@ describe("git error classification", () => {
       "GIT_REJECTED",
     ],
     ["hint: Updates were rejected because the tip is behind (non-fast-forward)", "GIT_REJECTED"],
+    // Refused by the remote itself: pushing again after a merge would only be refused again.
+    [
+      "remote: error: GH013: Repository rule violations found for refs/heads/main.\n ! [remote rejected] main -> main (push declined due to repository rule violations)\nerror: failed to push some refs to 'https://github.com/me/skills.git'",
+      "GIT",
+    ],
+    [
+      " ! [remote rejected] main -> main (pre-receive hook declined)\nerror: failed to push some refs",
+      "GIT",
+    ],
     ["fatal: The current branch main has no upstream branch.", "GIT_NO_UPSTREAM"],
     ["CONFLICT (content): Merge conflict in alpha/SKILL.md", "SYNC_CONFLICT"],
     ["fatal: not a git repository (or any of the parent directories): .git", "GIT_NOT_REPO"],
