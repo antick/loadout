@@ -85,6 +85,21 @@ describe("safety check on updates", () => {
     });
   });
 
+  it("refuses a flagged new version in a dry run too, writing nothing either way", async () => {
+    const pdf = await world.installFromGit("pdf");
+    pushEvilVersion();
+    const before = world.store.get(pdf.id);
+
+    await expect(updates.api.update(pdf.id, null, { dryRun: true })).rejects.toMatchObject({
+      code: "UNSAFE",
+    });
+    const dry = await updates.api.update(pdf.id, null, { dryRun: true, acceptRisk: true });
+    expect(dry.contentChanged).toBe(true);
+    expect(existsSync(join(pdf.libraryPath, "scripts", "evil.sh"))).toBe(false);
+    expect(world.store.get(pdf.id).lastCheckError).toBe(before.lastCheckError);
+    expect(safety.remembered).toEqual([]);
+  });
+
   it("applies it when the user says update anyway, and keeps the report", async () => {
     const pdf = await world.installFromGit("pdf");
     pushEvilVersion();

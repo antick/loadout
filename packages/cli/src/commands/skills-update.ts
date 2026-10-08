@@ -1,4 +1,4 @@
-import type { Core } from "@loadout/core";
+import { type Core, FLAGGED_UPDATE, isAppError } from "@loadout/core";
 import { type BatchFailure, type Skill, type UpdateResult, formatDateTime } from "@loadout/shared";
 import { UsageError, flagBoolean } from "../args";
 import { failureLines, fields, plural } from "../output";
@@ -121,12 +121,25 @@ async function updateOne(context: CommandContext, skillId: string): Promise<Upda
 
 /** `--dry-run`: compare with the source, list what would change and what would be held back. */
 async function planUpdates(context: CommandContext, one: Skill | null): Promise<CommandResult> {
-  const { core } = context;
-  // `--all` updates only skills a check finds newer upstream: the dry run looks at the same ones.
-  let skills: Skill[] = one ? [one] : [];
+  const { core, args } = context;
+  const acceptRisk = flagBoolean(args, ACCEPT_RISK_FLAG.name);
   const value: UpdatePlan = { dryRun: true, skills: [], failed: [] };
-  if (!one) ({ due: skills, failed: value.failed } = await dueForUpdate(core, true));
-  for (const skill of skills) value.skills.push(await planUpdate(core, skill));
+  // One skill: a flagged new version stops the dry run as it stops the real one.
+  if (one) value.skills.push(await planUpdate(core, one, acceptRisk));
+  else {
+    // `--all` updates only skills a check finds newer upstream: the dry run looks at the same
+    // ones, and holds back a flagged one as the real run does.
+    const { due, failed } = await dueForUpdate(core, true);
+    value.failed = failed;
+    for (const skill of due) {
+      try {
+        value.skills.push(await planUpdate(core, skill, false));
+      } catch (error) {
+        if (!isAppError(error, "UNSAFE")) throw error;
+        value.failed.push({ name: skill.name, message: FLAGGED_UPDATE });
+      }
+    }
+  }
   return {
     value,
     text: updatePlanText(value),

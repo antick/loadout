@@ -1,5 +1,5 @@
 import { REMOVAL_IN_LIBRARY, formatRevision, isRemoteSource, redactUrl } from "@loadout/shared";
-import { type Core, errorMessage, unsupported } from "@loadout/core";
+import { type Core, errorMessage, isAppError, unsupported } from "@loadout/core";
 import type { BatchFailure, FileDiffEntry, PendingRemoval, Skill } from "@loadout/shared";
 
 import { failureLines, plural } from "../output";
@@ -52,10 +52,14 @@ const heldBackPath = (removal: PendingRemoval): string =>
  * it would hold back come from the update itself, run dry: one fetch, and the same rule the real
  * update uses.
  */
-export async function planUpdate(core: Core, skill: Skill): Promise<UpdatePlanRow> {
+export async function planUpdate(
+  core: Core,
+  skill: Skill,
+  acceptRisk: boolean,
+): Promise<UpdatePlanRow> {
   const empty = { added: [], modified: [], removed: [], heldBack: [] };
   try {
-    const dry = await core.api.updates.update(skill.id, null, { dryRun: true });
+    const dry = await core.api.updates.update(skill.id, null, { dryRun: true, acceptRisk });
     const diff = dry.sourceDiff;
     if (!diff) throw unsupported("This skill's source cannot be compared");
     const removed = pathsWith(diff.entries, "removed");
@@ -73,6 +77,8 @@ export async function planUpdate(core: Core, skill: Skill): Promise<UpdatePlanRo
       error: null,
     };
   } catch (error) {
+    // Flagged is not "could not read": the caller refuses it the way the real update does.
+    if (isAppError(error, "UNSAFE")) throw error;
     return {
       id: skill.id,
       name: skill.name,

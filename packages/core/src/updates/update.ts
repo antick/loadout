@@ -199,7 +199,9 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
 
   async function replace(plan: Replacement): Promise<UpdateResult> {
     if (plan.dryRun) {
-      // Reads only: no lock, no safety check, nothing written.
+      // Reads only: no lock, nothing written. The safety check reads too, and refuses as the
+      // real update would.
+      await checkNewVersion(plan);
       const fresh = store.get(plan.skillId);
       plan.verify(fresh);
       const { contentChanged, removals } = assessReplacement(store, fresh, plan.sourceDir);
