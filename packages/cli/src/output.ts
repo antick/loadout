@@ -74,8 +74,11 @@ export function printCommandResult(
 /** Findings listed per flagged skill in text mode; `--json` has them all. */
 const FLAGGED_FINDINGS_SHOWN = 5;
 
-/** Failures go to stderr in both modes, so stdout only ever carries a result. */
-export function printError(io: CliIo, json: boolean, error: ErrorShape): void {
+/**
+ * Failures go to stderr in both modes, so stdout only ever carries a result. `hint` says how to
+ * go ahead anyway, when the command has a flag for that.
+ */
+export function printError(io: CliIo, json: boolean, error: ErrorShape, hint?: string): void {
   if (json) {
     const body: Record<string, unknown> = { ok: false, code: error.code, message: error.message };
     if (error.details !== undefined) body.details = error.details;
@@ -99,7 +102,6 @@ export function printError(io: CliIo, json: boolean, error: ErrorShape): void {
   for (const { name, reason } of error.details?.unchecked ?? []) {
     lines.push(`  ${name}: the safety check could not finish (${reason})`);
   }
-  if (error.code === "UNSAFE") lines.push("Add --accept-risk to install it anyway.");
-  if (error.code === "SECRETS_FOUND") lines.push("Add --allow-secrets to go ahead anyway.");
+  if (hint) lines.push(hint);
   io.stderr(`${terminalSafe(lines.join("\n"))}\n`);
 }

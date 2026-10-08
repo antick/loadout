@@ -18,6 +18,24 @@ afterEach(() => {
   sandbox.cleanup();
 });
 
+describe("git pull", () => {
+  it("never suggests a go-ahead flag pull does not take", async () => {
+    const remote = join(sandbox.root, "remote.git");
+    mkdirSync(remote);
+    execFileSync("git", ["init", "-q", "--bare"], { cwd: remote });
+    expect((await sandbox.cli("git", "init")).code).toBe(EXIT_OK);
+    expect((await sandbox.cli("git", "remote", remote)).code).toBe(EXIT_OK);
+    expect((await sandbox.cli("git", "sync")).code).toBe(EXIT_OK);
+    writeSkill(join(sandbox.root, "src"), "leaky", `Call it with ${TOKEN}.\n`);
+    await sandbox.cli("skills", "install", join(sandbox.root, "src", "leaky"));
+
+    const held = await sandbox.cli("git", "pull");
+    expect(held.code).toBe(EXIT_FAILED);
+    expect(held.stderr).toContain("Error (SECRETS_FOUND)");
+    expect(held.stderr).not.toContain("--allow-secrets");
+  });
+});
+
 describe("git sync", () => {
   it("holds back a token, lists it, and pushes with --allow-secrets", async () => {
     const remote = join(sandbox.root, "remote.git");

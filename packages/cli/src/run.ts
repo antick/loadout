@@ -6,10 +6,22 @@ import {
   resolveLibrary,
   toErrorShape,
 } from "@loadout/core";
-import { APP_NAME, type ErrorShape } from "@loadout/shared";
-import { UsageError, flagBoolean, flagString, parseArgs, splitCommandPath } from "./args";
+import { APP_NAME, type ErrorCode, type ErrorShape } from "@loadout/shared";
+import {
+  type FlagSpec,
+  UsageError,
+  flagBoolean,
+  flagString,
+  parseArgs,
+  splitCommandPath,
+} from "./args";
 import { COMMAND_GROUPS, type CommandGroup, type CommandSpec } from "./commands";
-import { DRY_RUN_FLAG, resolveUserPath } from "./commands/support";
+import {
+  ACCEPT_RISK_FLAG,
+  ALLOW_SECRETS_FLAG,
+  DRY_RUN_FLAG,
+  resolveUserPath,
+} from "./commands/support";
 import { EXIT_FAILED, EXIT_OK, EXIT_USAGE } from "./exit-codes";
 import type { SkillPicker } from "./picker/state";
 import { GLOBAL_FLAGS, commandHelp, groupHelp, rootHelp } from "./help";
@@ -28,6 +40,15 @@ export interface CliDeps {
 }
 
 export { EXIT_FAILED, EXIT_OK, EXIT_USAGE };
+
+/** The flag that goes past each kind of refusal, with the line that names it. */
+const GO_AHEAD: Partial<Record<ErrorCode, { flag: FlagSpec; text: string }>> = {
+  UNSAFE: { flag: ACCEPT_RISK_FLAG, text: `Add --${ACCEPT_RISK_FLAG.name} to install it anyway.` },
+  SECRETS_FOUND: {
+    flag: ALLOW_SECRETS_FLAG,
+    text: `Add --${ALLOW_SECRETS_FLAG.name} to go ahead anyway.`,
+  },
+};
 
 const COMMAND_DEPTH = 2;
 const JSON_FLAG = "--json";
@@ -69,9 +90,12 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
   // Known before parsing, so even a parse error is reported in the format the caller asked for.
   let json = argv.includes(JSON_FLAG);
   let core: Core | null = null;
+  /** The running command's own flags: an error only suggests a go-ahead the command takes. */
+  let flagNames: ReadonlySet<string> = new Set();
   try {
     const { path, rest } = splitCommandPath(argv, GLOBAL_FLAGS, COMMAND_DEPTH);
     const { group, command } = findCommand(path);
+    flagNames = new Set(command?.flags.map((flag) => flag.name));
     const args = parseArgs(rest, [...GLOBAL_FLAGS, ...(command?.flags ?? [])]);
     json = flagBoolean(args, "json");
 
@@ -141,7 +165,13 @@ export async function runCli(argv: readonly string[], deps: CliDeps): Promise<nu
       return EXIT_USAGE;
     }
     const shape = toErrorShape(error);
-    printError(io, json, shape);
+    const goAhead = GO_AHEAD[shape.code];
+    printError(
+      io,
+      json,
+      shape,
+      goAhead && flagNames.has(goAhead.flag.name) ? goAhead.text : undefined,
+    );
     return EXIT_FAILED;
   } finally {
     try {
