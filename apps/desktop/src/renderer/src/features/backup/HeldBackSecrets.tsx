@@ -8,6 +8,7 @@ import { IconButton } from "@/components/IconButton";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { useAllowSecrets, useCleanUpUnpushed } from "@/features/backup/backup-mutations";
 import { useSyncFlow } from "@/features/backup/sync-flow";
 import { useBackupSecrets } from "@/features/backup/backup-queries";
@@ -33,6 +34,10 @@ export function HeldBackSecrets({ enabled, skills }: HeldBackSecretsProps): Reac
   const cleanUp = useCleanUpUnpushed();
   const reveal = useRevealPath();
   const list = findings.data ?? [];
+  // A check that failed is not "nothing held back": say so.
+  if (enabled && findings.isError) {
+    return <LoadErrorNotice error={findings.error} onRetry={() => void findings.refetch()} />;
+  }
   if (!enabled || list.length === 0) return null;
 
   const skillFor = (finding: SecretFinding): Skill | undefined => {

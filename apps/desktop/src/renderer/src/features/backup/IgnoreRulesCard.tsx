@@ -5,6 +5,7 @@ import { InlineNotice } from "@/components/InlineNotice";
 import { PageSection } from "@/components/PageSection";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadErrorNotice } from "@/components/LoadErrorNotice";
 import { useSetBackupIgnoreRules } from "@/features/backup/backup-mutations";
 import { useBackupIgnoreRules } from "@/features/backup/backup-queries";
 import { backupErrorText } from "@/features/backup/backup-errors";
@@ -21,6 +22,9 @@ export function IgnoreRulesCard({ enabled }: { enabled: boolean }): ReactNode {
   // Null while not editing, so patterns synced from another device show up as they arrive.
   const [draft, setDraft] = useState<string | null>(null);
 
+  if (enabled && rules.isError) {
+    return <LoadErrorNotice error={rules.error} onRetry={() => void rules.refetch()} />;
+  }
   if (!enabled || !rules.data) return null;
   const saved = toText(rules.data.custom);
   const text = draft ?? saved;
