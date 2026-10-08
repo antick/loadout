@@ -8,7 +8,14 @@ import { tmpdir } from "node:os";
 
 import { join, relative } from "node:path";
 
-import { APP_SLUG, type ErrorCode, MIB, normalizeSourceUrl, redactUrl } from "@loadout/shared";
+import {
+  APP_SLUG,
+  type ErrorCode,
+  MIB,
+  isCommitId,
+  normalizeSourceUrl,
+  redactUrl,
+} from "@loadout/shared";
 
 import type { CoreContext } from "../context";
 
@@ -328,6 +335,8 @@ export function createGitClient(ctx: CoreContext): GitClient {
     const wanted = options.revision?.trim();
     const current = await head();
     if (!wanted || wanted === current) return current;
+    // Handed to `git fetch` as an argument: only a commit id, never something read as an option.
+    if (!isCommitId(wanted)) throw invalid(`Not a commit id: ${wanted}`);
     const action = `Revision ${wanted} is no longer available from ${redactUrl(url)}`;
     const fetched = await fetchInto(slot, wanted, options);
     if (fetched.code !== 0) throw gitFailure(action, fetched.stderr);

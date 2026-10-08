@@ -455,6 +455,14 @@ describe("git client", () => {
     expect(leftoverCheckouts(tmp)).toEqual([]);
   });
 
+  it("pins only to a commit id, never to text git would read as an option", async () => {
+    const client = createGitClient(world.ctx);
+    await expect(
+      client.checkout(remote, { revision: "--upload-pack=touch pwned" }),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    expect(existsSync(join(world.root, "pwned"))).toBe(false);
+  });
+
   it("keeps its cache slot when the branch asked for does not exist", async () => {
     const client = createGitClient(world.ctx);
     await (await client.checkout(remote)).cleanup();
