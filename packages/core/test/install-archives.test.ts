@@ -192,6 +192,24 @@ describe("archive links", () => {
     );
   });
 
+  it("judges a moved link by each skill's own trusted site, though they share one download", async () => {
+    const preview = await world.install.api.previewGit(LINK);
+    const [prose, haiku] = await world.install.api.confirmGit(preview.previewId, [
+      { relPath: "writing/prose", name: "" },
+      { relPath: "writing/haiku", name: "" },
+    ]);
+    if (!prose || !haiku) throw new Error("fixture not installed");
+    // Only haiku was agreed to come from the mirror (say, installed again from Install).
+    world.store.update(haiku.id, { sourceTrustedHost: "mirror.example.org" });
+    const mirror = "https://mirror.example.org/writing.zip";
+    served.set(mirror, pack());
+    redirects.set(LINK, mirror);
+
+    await world.updates.api.checkAll(true);
+    expect(world.store.get(prose.id).lastCheckError).toContain("now leads to mirror.example.org");
+    expect(world.store.get(haiku.id).lastCheckError).toBeNull();
+  });
+
   it("marks a linked skill's source as missing when the link stops working", async () => {
     const preview = await world.install.api.previewGit(SINGLE_LINK);
     const [helper] = await world.install.api.confirmGit(preview.previewId, [

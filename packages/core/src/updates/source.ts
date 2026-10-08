@@ -187,12 +187,15 @@ export interface OpenedSource {
 const noCleanup = async (): Promise<void> => undefined;
 
 /**
- * Downloads made during one round of checks, by link, so skills taken from the same archive
- * download it once. Pass a fresh map per round.
+ * Downloads made during one round of checks, by link and the site each skill trusts, so skills
+ * taken from the same archive download it once. Pass a fresh map per round.
  */
 export type DownloadCache = Map<string, Promise<Buffer>>;
 
-/** Download `link` once per round of checks, keeping to `rule` (see `redirectRule`). */
+/**
+ * Download `link` once per round of checks, keeping to `rule` (see `redirectRule`). Skills that
+ * trust different sites never share a download: each one's rule must judge where it went.
+ */
 function cachedDownload(
   download: Download,
   link: string,
@@ -200,10 +203,11 @@ function cachedDownload(
   rule: RedirectRule,
   cache?: DownloadCache,
 ): Promise<Buffer> {
-  let pending = cache?.get(link);
+  const key = `${link}\n${rule.otherHost() ?? ""}`;
+  let pending = cache?.get(key);
   if (!pending) {
     pending = download(link, { subject, onRedirect: rule.watch(link) });
-    cache?.set(link, pending);
+    cache?.set(key, pending);
   }
   return pending;
 }
