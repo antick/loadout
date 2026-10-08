@@ -118,7 +118,8 @@ export function targetIdentity(path: string): string {
 /** `child` is `parent` or lies inside it (lexical, after resolve). */
 export function isInside(parent: string, child: string): boolean {
   const rel = relative(resolve(parent), resolve(child));
-  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  // `..notes.md` is a name inside; only `..` itself, or `..` followed by a separator, leads out.
+  return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 }
 
 export function pathsOverlap(a: string, b: string): boolean {

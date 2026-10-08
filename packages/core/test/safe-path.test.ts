@@ -34,6 +34,9 @@ describe("names and paths from outside", () => {
   it("resolves inside a root, either separator, refusing a way out", () => {
     expect(resolveInside("/root", "a\\b")).toBe(join("/root", "a", "b"));
     expect(() => resolveInside("/root", "../x")).toThrow();
+    // A name that only starts with two dots stays inside.
+    expect(resolveInside("/root", "..notes.md")).toBe(join("/root", "..notes.md"));
+    expect(resolveInside("/root", "docs/..draft")).toBe(join("/root", "docs", "..draft"));
     expect(() => resolveInside("/root", "")).toThrow();
   });
 });
