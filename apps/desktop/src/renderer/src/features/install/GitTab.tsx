@@ -114,9 +114,9 @@ export function GitTab(): ReactNode {
     setActiveUrl(repoUrl);
     const result = await previewGit(repoUrl);
     if (!result) return;
-    // Nobody is left to choose from a preview that arrives after the page was left, and an empty
-    // one has nothing to choose: both checkouts are thrown away at once.
-    if (!mounted.current || result.skills.length === 0) {
+    // An empty preview has nothing to choose: its checkout is thrown away at once. `show` does
+    // the same for one that arrives after the page was left.
+    if (result.skills.length === 0) {
       cancelPreview.mutate(result.previewId);
       if (mounted.current) setEmptyRepo({ kind: result.kind, repoUrl: result.repoUrl });
       return;

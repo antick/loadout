@@ -1,7 +1,7 @@
 import { ARCHIVE_SUFFIXES, isArchivePath } from "@loadout/shared";
 import type { BatchImportResult, GitPreview } from "@loadout/shared";
 import { FileArchive, FolderInput, FolderTree, PackagePlus, X } from "lucide-react";
-import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
+import { type DragEvent, type FormEvent, type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { OptionCard } from "@/components/OptionCard";
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { useInstallTasks } from "@/features/install/use-install-task";
 import { usePreviewChoice } from "@/features/install/use-preview-choice";
 import { usePickFolder } from "@/hooks/mutations/app";
+import { useMounted } from "@/hooks/use-mounted";
 
 type SourceKind = "folder" | "archive";
 
@@ -51,6 +52,9 @@ export function LocalTab(): ReactNode {
 
   const [picked, setPicked] = useState<PickedSource | null>(null);
   useCancelPreviewOnLeave(picked?.preview);
+  const mounted = useMounted();
+  /** Counts picks, so an archive's preview that arrives after a later pick is thrown away. */
+  const pickCount = useRef(0);
   const [name, setName] = useState("");
   const [bulk, setBulk] = useState<{ folder: string; result: BatchImportResult | null } | null>(
     null,
@@ -69,6 +73,7 @@ export function LocalTab(): ReactNode {
    * picker; one with a single skill keeps the name form.
    */
   const accept = async (source: PickedSource): Promise<void> => {
+    const pick = ++pickCount.current;
     drop();
     setName("");
     if (source.kind === "folder") {
@@ -77,6 +82,11 @@ export function LocalTab(): ReactNode {
     }
     const preview = await previewArchive.mutateAsync(source.path).catch(() => null);
     if (!preview) return;
+    // The page was left, or something else was picked meanwhile: nobody wants this one.
+    if (!mounted.current || pick !== pickCount.current) {
+      cancelPreview.mutate(preview.previewId);
+      return;
+    }
     if (preview.skills.length === 0) {
       cancelPreview.mutate(preview.previewId);
       toast.error(t("install.git.empty.archive.title"), {
