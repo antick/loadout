@@ -12,7 +12,7 @@ import { clawhubMarketId, formatNameList } from "@loadout/shared";
 import { type UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import type { InstallTaskSuccess } from "@/features/install/install-tasks";
+import { type InstallTaskSuccess, getInstallTasks } from "@/features/install/install-tasks";
 import { guessSource, hostOf } from "@/features/install/source-guess";
 import { useRunInstallTask } from "@/features/install/use-install-task";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -156,6 +156,8 @@ export function useConfirmGit(): (
   const run = useRunInstallTask();
   return useCallback(
     async (preview, items, options) => {
+      // A second confirm while the first runs only points at it: it must not cancel its preview.
+      const alreadyRunning = getInstallTasks().has(preview.repoUrl);
       const installed = await run({
         key: preview.repoUrl,
         title: t("install.toast.installingCount", { count: items.length }),
@@ -177,7 +179,9 @@ export function useConfirmGit(): (
       });
       // Declining a flagged install leaves the checkout waiting; nothing will confirm it now.
       // Cancelling a preview that was already used up does nothing.
-      if (!installed) void api.install.cancelPreview(preview.previewId).catch(() => undefined);
+      if (!installed && !alreadyRunning) {
+        void api.install.cancelPreview(preview.previewId).catch(() => undefined);
+      }
       return installed;
     },
     [run, t],
