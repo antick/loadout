@@ -70,9 +70,13 @@ function mergeAgents(
   };
 }
 
-/** A linked workspace is one skills root standing in for an agent of its own. */
-function linkedTarget(project: ProjectRecord): ResolvedTarget {
-  const key = project.linkedAgentKey ?? project.id;
+/**
+ * A linked workspace is one skills root standing in for an agent of its own. Its key is named
+ * after it, unless that is an agent's key ("Codex"): the folder would pass for that agent's.
+ */
+function linkedTarget(project: ProjectRecord, registry: AgentRegistry): ResolvedTarget {
+  const named = project.linkedAgentKey;
+  const key = named && !registry.find(named) ? named : project.id;
   return {
     key,
     displayName: project.name,
@@ -93,7 +97,7 @@ function linkedTarget(project: ProjectRecord): ResolvedTarget {
  * one target, in the user's agent order; agents without a project folder are left out.
  */
 export function resolveTargets(project: ProjectRecord, registry: AgentRegistry): ResolvedTarget[] {
-  if (project.type === "linked") return [linkedTarget(project)];
+  if (project.type === "linked") return [linkedTarget(project, registry)];
 
   const registration = new Map<string, number>(
     [...BUILT_IN_AGENTS, ...registry.customAgents()].map((agent, index) => [agent.key, index]),

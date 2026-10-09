@@ -310,6 +310,13 @@ describe("projects", () => {
       expect(isLink(join(skillsRoot, "alpha"))).toBe(true);
     });
 
+    it("never takes an agent's key, so its skills do not pass for that agent's", async () => {
+      const project = await api().addLinked("Codex", skillsRoot);
+      const [target] = await api().targets(project.id);
+      expect(target?.key).toBe(project.id);
+      expect(target?.agentKeys).toEqual([project.id]);
+    });
+
     it("validates the name and both folders", async () => {
       expect((await rejection(api().addLinked(" ", skillsRoot))).code).toBe("INVALID_INPUT");
       expect((await rejection(api().addLinked("X", join(world.root, "nope")))).code).toBe(
