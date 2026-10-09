@@ -1,10 +1,12 @@
 import { existsSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import { APP_NAME } from "@loadout/shared";
+import { APP_NAME, REMOVAL_IN_LIBRARY } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppError } from "../src/errors";
 import { installIntoLibrary } from "../src/install/library";
+import { assessReplacement } from "../src/updates/pending";
 import { canonicalPath } from "../src/util/fs";
+import { fileDigests } from "../src/util/hash";
 import { createWorkspaceService } from "../src/workspace";
 import { makeSkill, writeFile } from "./helpers";
 import {
@@ -214,6 +216,35 @@ describe("global workspace", () => {
       ["helper", "replaced"],
     ]);
   });
+
+  it.each([
+    ["recorded", true],
+    ["not recorded", false],
+  ])(
+    "keeps an uploaded edit as an edit, so an update asks first (source content %s)",
+    async (_label, recorded) => {
+      world.ctx.settings.set("deployMode", "copy");
+      const upstream = makeSkill(join(world.home, "upstream"), "helper", { body: "upstream v2" });
+      const skill = world.addSkill("helper");
+      world.store.update(skill.id, { sourceType: "git", sourceRef: "https://example.test/r.git" });
+      if (recorded) {
+        const files = fileDigests(skill.libraryPath);
+        world.store.setInstalled(skill.id, { hash: skill.contentHash ?? "", files });
+      }
+      await world.deploy.api.deploy(skill.id, "claude_code");
+      writeFile(
+        join(claude, "helper", "SKILL.md"),
+        "---\nname: helper\ndescription: v2\n---\nmine\n",
+      );
+
+      const updated = await api().upload("claude_code", "helper");
+      expect(assessReplacement(world.store, updated, upstream).removals).toContainEqual({
+        location: REMOVAL_IN_LIBRARY,
+        path: "SKILL.md",
+        kind: "edited",
+      });
+    },
+  );
 
   it("moves a nested skill to where deployments live, only once the library holds it", async () => {
     const nested = makeSkill(join(world.home, ".hermes", "skills", "research"), "web");

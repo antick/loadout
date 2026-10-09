@@ -20,6 +20,8 @@ import { fileDigests, hashDir } from "../util/hash";
 
 import { sanitizeSkillName } from "../util/names";
 
+import { compareText } from "../util/text";
+
 import { isReallyInside } from "../util/safe-path";
 
 /** Where the installed skill came from; written to its row as is. */
@@ -53,6 +55,11 @@ export interface InstallRequest {
   activityKind?: ActivityKind;
   /** Write a failure to the history (default true). Updates write their own entry. */
   recordFailure?: boolean;
+  /**
+   * The content is the user's own version, not what the source holds (a local copy pushed over
+   * its library skill): what came from the source stays on record, so an update asks first.
+   */
+  userContent?: boolean;
 }
 
 /** The source fields of a skill row; the trusted host only when one is set. */
@@ -150,20 +157,22 @@ export async function installIntoLibrary(
       if (!inPlace) await replaceDirAtomic(canonicalPath(sourceDir), destination);
       const fixedName = fixNumberedName(destination, dirName);
 
+      const userContent = request.userContent === true && owner !== null;
       const fields = {
         name: fixedName ?? name,
         description: identity.description,
         ...sourceFieldsOf(record),
         contentHash: inPlace && fixedName === null ? held : hashDir(destination),
         updateStatus: record.updateStatus,
-        // The folder now holds exactly what the source has: nothing is edited any more.
-        editedFiles: [],
+        // The folder now holds exactly what the source has: nothing is edited any more. The
+        // user's own content is edited throughout when what came from the source is not known.
+        editedFiles: userContent && owner ? userEdits(store, owner, destination) : [],
       };
       const skill = owner
         ? store.update(owner.id, { ...fields, lastCheckedAt: Date.now(), lastCheckError: null })
         : store.insert({ ...fields, libraryPath: destination });
       // What came from the source: any later difference is an edit an update must ask about.
-      if (fields.contentHash) {
+      if (fields.contentHash && !userContent) {
         store.setInstalled(skill.id, { hash: fields.contentHash, files: fileDigests(destination) });
       }
       return { skill, written: true };
@@ -178,6 +187,17 @@ export async function installIntoLibrary(
       ctx.activity.record(kind, name, errorMessage(error), false);
     throw error;
   }
+}
+
+/**
+ * The edited files of `owner` once the user's own content is in `folder`: those it had, and every
+ * file when what came from the source is not on record to compare against.
+ */
+function userEdits(store: SkillStore, owner: Skill, folder: string): string[] {
+  if (store.installed(owner.id)) return [...owner.editedFiles];
+  return [...new Set([...owner.editedFiles, ...Object.keys(fileDigests(folder))])].sort(
+    compareText,
+  );
 }
 
 /**

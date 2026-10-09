@@ -137,6 +137,7 @@ export async function pushLocalToLibrary(
   return installReplacing(ctx, install.installIntoLibrary, { removed, refreshCopies }, match, {
     sourceDir: entry.path,
     activityKind: "import",
+    userContent: true,
     record: {
       sourceType: match.sourceType,
       sourceRef: match.sourceRef,
