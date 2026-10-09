@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -89,7 +89,14 @@ function installOnWindows(pid: number, installer: string, waitSeconds: number): 
 describe.runIf(process.platform === "win32")("Windows install script", () => {
   it("starts nothing while the app still runs, and says so in the log", () => {
     const installer = join(root, "Loadout-Setup.exe");
-    expect(installOnWindows(process.pid, installer, 1)).toBe(1);
+    // A process of its own stands in for the app, as the real one is: not this test's, which
+    // is blocked until the script returns.
+    const app = spawn(process.execPath, ["-e", "setTimeout(() => {}, 600000)"]);
+    try {
+      expect(installOnWindows(app.pid ?? -1, installer, 1)).toBe(1);
+    } finally {
+      app.kill();
+    }
     const log = readFileSync(join(root, "update.log"), "utf8");
     expect(log).toContain("did not exit");
     expect(log).not.toContain("starting the installer");
