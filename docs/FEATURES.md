@@ -70,7 +70,6 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - 69 agents built in and detected automatically; custom agents too.
 - Folders, home-folder variables and reload behaviour taken from each agent's own docs.
 - Enable, disable, reorder, and override any agent's folders.
-- Agents inside WSL on Windows (always copied, never linked).
 - Says when each agent sees changed skills: live, new session or restart.
 - Agents that share one folder are handled safely.
 
@@ -203,7 +202,8 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 
 - English only.
 - GitHub device sign-in needs an OAuth client id; tokens and Git URLs work.
-- Builds are not signed with an Apple or Windows certificate.
+- Windows is not supported for now: no Windows build, and Windows is not tested.
+- Builds are not signed with an Apple certificate.
 - The CLI can't read tokens saved by the app; use SSH, a credential helper, or for GitHub a GitHub CLI sign-in or `GITHUB_TOKEN`.
 - Roo Code's folder of rule files is not covered; Cline and Kiro rule folders are, as Rules.
-- Windows and Linux are untested, and so is a real drag from the file manager.
+- Linux is untested, and so is a real drag from the file manager.

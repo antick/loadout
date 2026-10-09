@@ -13,10 +13,11 @@ use: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and more than 60 oth
 Download the installer for your system from the
 [latest release](https://github.com/antick/loadout/releases/latest).
 
-The builds are not signed with an Apple or Windows certificate yet, so macOS and Windows ask
-for one extra click the first time. [docs/INSTALL.md](docs/INSTALL.md) says which file to pick
-and exactly what to click on macOS, Windows and Linux. After the first start, Loadout updates
-itself.
+Loadout runs on macOS and Linux. Windows is not supported for now.
+
+The builds are not signed with an Apple certificate yet, so macOS asks for one extra click the
+first time. [docs/INSTALL.md](docs/INSTALL.md) says which file to pick and exactly what to click
+on macOS and Linux. After the first start, Loadout updates itself.
 
 ## Screenshots
 
@@ -55,7 +56,7 @@ itself.
 - **Library:** one folder for every skill, with search, tags, filters, batch actions and checks against the Agent Skills format.
 - **Editor:** edit any file of a skill with a live preview, the last 20 versions kept, and no silent overwrite of changes made on disk.
 - **Install:** from a folder, an archive (`.zip`, `.skill`, `.tar`, `.tar.gz`, `.tgz`), a download link, a Git repository (Git itself is optional) or the skills.sh marketplace.
-- **Agents:** 69 agents built in and found automatically, plus custom agents, custom folders and agents inside WSL.
+- **Agents:** 69 agents built in and found automatically, plus custom agents and custom folders.
 - **Deploying:** give a skill to any agent in one click, by symlink or copy, without ever touching a folder Loadout didn't create.
 - **Instruction files:** edit `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and the rest, globally and per project.
 - **Agent workspaces:** see everything in an agent's skills folder, compare it with the library, and adopt skills installed elsewhere.

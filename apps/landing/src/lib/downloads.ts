@@ -35,7 +35,6 @@ export interface Downloads {
 const OFFERED: readonly { system: string; label: string; target: UpdateTarget }[] = [
   { system: "macOS", label: "Apple silicon", target: "darwin-arm64" },
   { system: "macOS", label: "Intel", target: "darwin-x64" },
-  { system: "Windows", label: "64-bit", target: "win32-x64" },
   { system: "Linux", label: "x64", target: "linux-x64-appimage" },
   { system: "Linux", label: "x64", target: "linux-x64-deb" },
   { system: "Linux", label: "ARM", target: "linux-arm64-appimage" },

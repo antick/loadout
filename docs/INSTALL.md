@@ -5,9 +5,11 @@ Loadout is a desktop app that manages AI agent skills across your coding tools.
 Download it from the [latest release](https://github.com/antick/loadout/releases/latest).
 This page says which file to pick and what to click the first time you open it.
 
-**Why the extra clicks?** Loadout is not signed with a paid Apple or Microsoft certificate yet.
-macOS and Windows warn about any app that isn't, even a safe one. You only do this once: after
-that, Loadout updates itself.
+Loadout runs on macOS and Linux. Windows is not supported for now.
+
+**Why the extra clicks?** Loadout is not signed with a paid Apple certificate yet. macOS warns
+about any app that isn't, even a safe one. You only do this once: after that, Loadout updates
+itself.
 
 **Check a download (optional).** Every file in a release carries a signed record of the GitHub
 build that made it. With the [GitHub CLI](https://cli.github.com) installed, run
@@ -47,18 +49,6 @@ xattr -dr com.apple.quarantine /Applications/Loadout.app
 It removes the "downloaded from the internet" mark that makes macOS ask.
 
 </details>
-
-## Windows
-
-**1. Download** `Loadout-Setup-<version>-x64.exe`.
-
-**2. Run it.** Windows may show **Windows protected your PC**:
-
-1. Click **More info**.
-2. Click **Run anyway**.
-
-Loadout installs for your user only, so it doesn't ask for an administrator password, and it
-starts when the install finishes.
 
 ## Linux
 
