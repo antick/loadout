@@ -101,36 +101,38 @@ export function useSelection(
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [active, exit]);
 
-  const toggle = useCallback(
-    (id: string, modifiers?: { shiftKey?: boolean }) => {
-      setActive(true);
-      const from = anchor.current;
-      setSelected((previous) =>
-        toggledSelection(previous, orderedIds, from, id, modifiers?.shiftKey),
-      );
-      anchor.current = id;
-    },
-    [orderedIds],
-  );
+  // The lists as last drawn, read by the actions below: callers rebuild the arrays on every
+  // change of their data, and actions that changed with them would redraw every memoised row.
+  const lists = useRef({ orderedIds, keepIds });
+  useEffect(() => {
+    lists.current = { orderedIds, keepIds };
+  });
+
+  const toggle = useCallback((id: string, modifiers?: { shiftKey?: boolean }) => {
+    setActive(true);
+    const from = anchor.current;
+    const ids = lists.current.orderedIds;
+    setSelected((previous) => toggledSelection(previous, ids, from, id, modifiers?.shiftKey));
+    anchor.current = id;
+  }, []);
 
   const selectAll = useCallback(() => {
     setActive(true);
-    setSelected((previous) => setMany(previous, orderedIds, true));
-  }, [orderedIds]);
+    const ids = lists.current.orderedIds;
+    setSelected((previous) => setMany(previous, ids, true));
+  }, []);
 
   const deselectAll = useCallback(() => {
-    setSelected((previous) => setMany(previous, orderedIds, false));
+    const ids = lists.current.orderedIds;
+    setSelected((previous) => setMany(previous, ids, false));
     anchor.current = null;
-  }, [orderedIds]);
+  }, []);
 
-  const select = useCallback(
-    (ids: readonly string[]) => {
-      const inList = new Set(keepIds);
-      setActive(true);
-      setSelected(new Set(ids.filter((id) => inList.has(id))));
-    },
-    [keepIds],
-  );
+  const select = useCallback((ids: readonly string[]) => {
+    const inList = new Set(lists.current.keepIds);
+    setActive(true);
+    setSelected(new Set(ids.filter((id) => inList.has(id))));
+  }, []);
 
   const clear = useCallback(() => {
     setSelected(EMPTY);
