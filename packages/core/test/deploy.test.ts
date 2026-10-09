@@ -206,6 +206,19 @@ describe("deploy service", () => {
     expect(readFileSync(join(claudeTarget("alpha"), "mine.md"), "utf8")).toBe("my edit\n");
   });
 
+  it("says which edited copies a batch removal set aside, for Undo", async () => {
+    world.ctx.settings.set("deployMode", "copy");
+    const skill = world.addSkill("alpha");
+    await world.deploy.api.deploy(skill.id, "claude_code");
+    writeFile(join(claudeTarget("alpha"), "mine.md"), "my edit\n");
+
+    const result = await world.deploy.api.apply([skill.id], ["claude_code"], "remove");
+    expect(result).toMatchObject({ removed: 1 });
+    expect(result.removedIds).toHaveLength(1);
+    await world.removed.restore(result.removedIds[0] ?? "");
+    expect(readFileSync(join(claudeTarget("alpha"), "mine.md"), "utf8")).toBe("my edit\n");
+  });
+
   it("deploys a link, records it, and does nothing the second time", async () => {
     const skill = world.addSkill("alpha");
     await world.deploy.api.deploy(skill.id, "claude_code");

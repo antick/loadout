@@ -34,6 +34,7 @@ const emptyResult = (): ApplyResult => ({
   blocked: 0,
   conflicts: [],
   failed: [],
+  removedIds: [],
 });
 
 /** The pairs that may be written: all of them, or with `skipConflicts` those not refused. */
@@ -157,7 +158,7 @@ export function createBatchApply(ctx: CoreContext, deps: BatchDeps): BatchApply 
         continue;
       }
       try {
-        ops.undeployRow(row, names.get(ref.agentKey));
+        ops.undeployRow(row, names.get(ref.agentKey), result.removedIds);
         result.removed += 1;
       } catch (error) {
         const name = store.nameOf(ref.skillId) ?? ref.skillId;

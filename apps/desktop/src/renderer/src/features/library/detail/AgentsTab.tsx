@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useSetBlocked } from "@/features/library/library-mutations";
-import { useApplySkills } from "@/hooks/mutations/deploy";
+import { useApplySkills, useConfirmUndeploy } from "@/hooks/mutations/deploy";
 import { type AgentToggle, useAgentToggle } from "@/features/library/use-agent-toggle";
 import { useAgents } from "@/hooks/queries/agents";
 import { useSkillAgentKeys } from "@/features/library/use-skill-agent-keys";
@@ -130,6 +130,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
   const { t } = useTranslation();
   const agents = useAgents();
   const apply = useApplySkills();
+  const confirmUndeploy = useConfirmUndeploy();
   const toggle = useAgentToggle();
   const [showUnavailable, setShowUnavailable] = useState(false);
   const { deployed: deployedKeys, blocked: blockedKeys } = useSkillAgentKeys(skill);
@@ -169,6 +170,23 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
   const applyAll = (action: "add" | "remove"): void =>
     apply.mutate({ skillIds: [skill.id], agentKeys: availableKeys, action });
 
+  /** Like each switch: a copy edited in an agent's folder is asked about before it goes. */
+  const removeAll = async (): Promise<void> => {
+    for (const agent of available) {
+      const deployment = skill.deployments.find((entry) => entry.agentKey === agent.key);
+      if (deployment?.mode !== "copy") continue;
+      const go = await confirmUndeploy({
+        skillId: skill.id,
+        name: skill.name,
+        agentKey: agent.key,
+        agentName: agent.displayName,
+        copy: true,
+      });
+      if (!go) return;
+    }
+    applyAll("remove");
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <PageSection
@@ -191,7 +209,7 @@ export function AgentsTab({ skill }: { skill: Skill }): ReactNode {
               variant="ghost"
               size="sm"
               disabled={apply.isPending || deployedCount === 0}
-              onClick={() => applyAll("remove")}
+              onClick={() => void removeAll()}
             >
               {t("library.agents.removeAll")}
             </Button>

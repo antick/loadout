@@ -152,14 +152,24 @@ export function useConfirmUndeploy(): (target: UndeployTarget) => Promise<boolea
   );
 }
 
-/** Add or remove many skill × agent pairs in one call and toast the counts. */
+/**
+ * Add or remove many skill × agent pairs in one call and toast the counts. Copies edited in an
+ * agent's folder go to Recently removed: a toast says so and offers Undo, also when `silent`.
+ */
 export function useApplySkills(): UseMutationResult<ApplyResult, unknown, ApplySkillsInput> {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   return useApiMutation({
     fn: ({ skillIds, agentKeys, action, skipConflicts }: ApplySkillsInput) =>
       api.deploy.apply(skillIds, agentKeys, action, skipConflicts ? { skipConflicts } : undefined),
     onSuccess: (result, { action, agentKeys, silent }) => {
       if (!silent) toastApplyResult(result, action, reloadHintFor(queryClient, agentKeys));
+      if (result.removedIds.length > 0) {
+        toastWithUndo(
+          t("library.agents.editedCopiesRemoved", { count: result.removedIds.length }),
+          result.removedIds,
+        );
+      }
     },
     error: "errors.apply",
   });

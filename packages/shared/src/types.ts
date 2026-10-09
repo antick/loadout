@@ -383,6 +383,8 @@ export interface ApplyResult {
   blocked: number;
   conflicts: TargetConflict[];
   failed: BatchFailure[];
+  /** Recently removed entries made for copies edited in an agent's folder, for Undo. */
+  removedIds: string[];
 }
 
 export * from "./types-system";
