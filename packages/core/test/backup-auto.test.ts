@@ -134,6 +134,20 @@ describe("automatic backup", () => {
     expect(backoffDelay(20)).toBe(AUTO_MAX_BACKOFF_MS);
   });
 
+  it("keeps backing off when the library changes after a failure", async () => {
+    sync.mockRejectedValue(new AppError("NETWORK", "Could not reach the backup remote."));
+    auto.start();
+    await vi.advanceTimersByTimeAsync(AUTO_FIRST_CHECK_MS);
+    expect(sync).toHaveBeenCalledTimes(1);
+
+    // An edit while offline waits out the backoff, not just the quiet period.
+    auto.notifyChanged();
+    await vi.advanceTimersByTimeAsync(AUTO_QUIET_MS);
+    expect(sync).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(AUTO_QUIET_MS);
+    expect(sync).toHaveBeenCalledTimes(2);
+  });
+
   it("treats a busy library as bad timing, not as a failure", async () => {
     sync.mockRejectedValueOnce(new AppError("BUSY", "The skill library is busy: install"));
     auto.start();

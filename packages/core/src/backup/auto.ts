@@ -93,7 +93,8 @@ export function createAutoBackup(target: AutoBackupTarget, ctx: CoreContext): Au
     notifyChanged: () => {
       if (stopped) return;
       if (running) changedWhileRunning = true;
-      else schedule(AUTO_QUIET_MS);
+      // After a failure the backoff still holds: offline, every edit must not try (and fail) again.
+      else schedule(failures > 0 ? backoffDelay(failures) : AUTO_QUIET_MS);
     },
 
     start: () => {
