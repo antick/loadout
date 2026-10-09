@@ -14,7 +14,7 @@ import {
   type LibraryLocation,
   type LibraryWarning,
 } from "@loadout/shared";
-import { errorMessage } from "./errors";
+import { errorMessage, invalid } from "./errors";
 import { RepoLock, writerGone } from "./lock";
 import {
   canonicalPath,
@@ -23,6 +23,7 @@ import {
   moveEntrySync,
   normalizeAbsolutePath,
   pathsOverlap,
+  realPathOf,
   removePathSync,
   writeJsonAtomic,
 } from "./util/fs";
@@ -360,16 +361,35 @@ export function ensureLibraryDirs(paths: LibraryPaths): void {
   for (const dir of [paths.baseDir, paths.skillsDir, paths.cacheDir, paths.logsDir]) ensureDir(dir);
 }
 
-/** Queue a library move for the next launch. `null` goes back to the default location. */
+/**
+ * Queue a library move for the next launch. `null` goes back to the default location. A folder
+ * that already holds a library is used as it is, with nothing moved; a move the next start could
+ * never make (into a folder that holds other things, or overlaps the library) is refused now.
+ */
 export function setLibraryPath(paths: LibraryPaths, input: string | null): string | null {
   const next = input === null ? null : normalizeAbsolutePath(input, "Library path");
   const config = readConfig(paths.configPath);
   const target = next ?? paths.defaultBaseDir;
   // An earlier unsatisfied move still names where the data really is.
   const from = config.pendingMigrationFrom ?? paths.baseDir;
+  let pendingMigrationFrom: string | null = null;
+  if (canonicalPath(from) !== canonicalPath(target)) {
+    // Links followed in whatever part exists: the target need not exist yet.
+    if (pathsOverlap(realPathOf(from), realPathOf(target))) {
+      throw invalid(
+        `${target} and the library in ${from} contain one another: pick another folder.`,
+      );
+    }
+    if (!isLibraryDir(target)) {
+      if (!canReceive(target, paths.defaultBaseDir)) {
+        throw invalid(`${target} is not empty: move the library into an empty folder.`);
+      }
+      pendingMigrationFrom = from;
+    }
+  }
   writeJsonAtomic(paths.configPath, {
     libraryPath: next,
-    pendingMigrationFrom: canonicalPath(from) === canonicalPath(target) ? null : from,
+    pendingMigrationFrom,
   } satisfies LocationConfig);
   return next;
 }

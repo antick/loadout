@@ -6,7 +6,7 @@ import { fields } from "../output";
 import { limitPositionals, positional, resolveUserPath } from "./support";
 import type { CommandContext, CommandGroup, CommandResult } from "./types";
 
-const MOVE_NOTE = `The library is moved the next time ${APP_NAME} (or this tool) starts.`;
+const MOVE_NOTE = `This takes effect the next time ${APP_NAME} (or this tool) starts.`;
 
 async function show({ core }: CommandContext): Promise<CommandResult> {
   const [location, skills, presets] = await Promise.all([

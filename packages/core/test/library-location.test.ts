@@ -172,16 +172,38 @@ describe("library location", () => {
     expect(existsSync(target)).toBe(false);
   });
 
-  it("refuses a folder that already holds something else", () => {
+  it("refuses a folder that already holds something else, when asked and at the move", () => {
     const target = join(temp.dir, "documents");
     writeFile(join(target, "taxes.pdf"), "private");
-    setLibraryPath(seedDefaultLibrary(), target);
+    const seeded = seedDefaultLibrary();
+    expect(() => setLibraryPath(seeded, target)).toThrow("not empty");
+    expect(() => setLibraryPath(seeded, join(homeDir(), "skills", "inner"))).toThrow(
+      "contain one another",
+    );
+    expect(resolve().paths.baseDir).toBe(homeDir());
 
+    // Filled after the move was queued: the next start still leaves the library where it is.
+    const later = join(temp.dir, "later");
+    setLibraryPath(seeded, later);
+    writeFile(join(later, "taxes.pdf"), "private");
     const { paths, warnings } = resolve();
     expect(warnings).toContain("migration_incomplete");
     expect(paths.baseDir).toBe(homeDir());
     expect(existsSync(join(homeDir(), "skills", "alpha"))).toBe(true);
-    expect(existsSync(join(target, "skills"))).toBe(false);
+    expect(existsSync(join(later, "skills"))).toBe(false);
+  });
+
+  it("uses a folder that already holds a library as it is, moving nothing", () => {
+    const other = join(temp.dir, "other");
+    writeFile(join(other, "loadout.db"), "db");
+    writeFile(join(other, "skills", "beta", "SKILL.md"), "# beta\n");
+    setLibraryPath(seedDefaultLibrary(), other);
+
+    const { paths, warnings } = resolve();
+    expect(warnings).toEqual([]);
+    expect(paths.baseDir).toBe(other);
+    expect(existsSync(join(homeDir(), "skills", "alpha", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(other, "skills", "alpha"))).toBe(false);
   });
 
   it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
