@@ -67,6 +67,12 @@ function BatchTagForm({
         tags.length !== skill.tags.length || tags.some((tag, index) => tag !== skill.tags[index]);
       return changed ? [{ skill, tags }] : [];
     });
+    // Every skill already had what was asked: nothing to save, and nothing to report.
+    if (changes.length === 0) {
+      onOpenChange(false);
+      onDone?.();
+      return;
+    }
     // A batch of one that failed has said so already; the dialog stays for another try.
     const result = await setTags.mutateAsync(changes).catch(() => null);
     if (result?.failed.length === 0) {
