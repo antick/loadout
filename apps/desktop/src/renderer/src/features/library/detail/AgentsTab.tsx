@@ -23,7 +23,7 @@ import { useSetBlocked } from "@/features/library/library-mutations";
 import { useApplySkills, useConfirmUndeploy } from "@/hooks/mutations/deploy";
 import { type AgentToggle, useAgentToggle } from "@/features/library/use-agent-toggle";
 import { useAgents } from "@/hooks/queries/agents";
-import { useSkillAgentKeys } from "@/features/library/use-skill-agent-keys";
+import { blockActionKey, useSkillAgentKeys } from "@/features/library/use-skill-agent-keys";
 import { AgentFieldNote } from "@/features/library/detail/AgentFieldNote";
 import { SECTION_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
@@ -111,13 +111,7 @@ function AgentRow({
               setBlocked.mutate({ skillId: skill.id, agentKeys: [agent.key], blocked: !blocked })
             }
           >
-            {t(
-              blocked
-                ? "library.agents.allow"
-                : deployed
-                  ? "library.agents.blockAndRemove"
-                  : "library.agents.block",
-            )}
+            {t(blockActionKey(blocked, deployed))}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -14,6 +14,7 @@ import { useSetBlocked } from "@/features/library/library-mutations";
 import { MatrixCell } from "@/features/library/matrix/MatrixCell";
 import { agentColumnCoverage, matrixCellState } from "@/features/library/matrix/matrix-state";
 import { useAgentToggle } from "@/features/library/use-agent-toggle";
+import { blockActionKey } from "@/features/library/use-skill-agent-keys";
 import { cn } from "@/lib/utils";
 import { SECTION_LABEL } from "@/lib/styles";
 
@@ -60,6 +61,8 @@ export function LibraryMatrix({
   const byId = useMemo(() => new Map(skills.map((skill) => [skill.id, skill])), [skills]);
   const targetSkill = target ? byId.get(target.skillId) : undefined;
   const targetState = targetSkill && target ? matrixCellState(targetSkill, target.agentKey) : null;
+  // From the skill itself: the square shows a deployment over a block synced from elsewhere.
+  const targetBlocked = Boolean(target && targetSkill?.blockedAgents.includes(target.agentKey));
   const columns = useMemo(
     () => agents.map((agent) => ({ agent, coverage: agentColumnCoverage(skills, agent.key) })),
     [agents, skills],
@@ -192,24 +195,18 @@ export function LibraryMatrix({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-56">
-        {target && targetState ? (
+        {target && targetSkill && targetState ? (
           <ContextMenuItem
             disabled={targetState === "pending" || setBlocked.isPending}
             onSelect={() =>
               setBlocked.mutate({
                 skillId: target.skillId,
                 agentKeys: [target.agentKey],
-                blocked: targetState !== "blocked",
+                blocked: !targetBlocked,
               })
             }
           >
-            {t(
-              targetState === "blocked"
-                ? "library.agents.allow"
-                : targetState === "deployed"
-                  ? "library.agents.blockAndRemove"
-                  : "library.agents.block",
-            )}
+            {t(blockActionKey(targetBlocked, targetState === "deployed"))}
           </ContextMenuItem>
         ) : null}
       </ContextMenuContent>

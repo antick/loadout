@@ -19,3 +19,12 @@ export function useSkillAgentKeys(
   const blocked = useMemo(() => new Set(skill.blockedAgents), [skill.blockedAgents]);
   return { deployed, blocked };
 }
+
+/**
+ * The one block action offered for a skill and an agent: Allow while it is blocked (also when a
+ * block synced from another device meets a deployment here), else Block, or Block and remove.
+ */
+export function blockActionKey(blocked: boolean, deployed: boolean): string {
+  if (blocked) return "library.agents.allow";
+  return deployed ? "library.agents.blockAndRemove" : "library.agents.block";
+}
