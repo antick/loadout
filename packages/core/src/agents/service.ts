@@ -1,10 +1,16 @@
 import { posix, win32 } from "node:path";
-import { type AgentsApi, BUILT_IN_AGENTS, type CustomAgentInput } from "@loadout/shared";
+import { APP_NAME, type AgentsApi, BUILT_IN_AGENTS, type CustomAgentInput } from "@loadout/shared";
 import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { invalid } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
-import { canonicalPath, normalizeAbsolutePath, segmentsOf } from "../util/fs";
+import {
+  canonicalPath,
+  normalizeAbsolutePath,
+  pathsOverlap,
+  realPathOf,
+  segmentsOf,
+} from "../util/fs";
 import { agentKeyFromName } from "../util/names";
 import {
   type AgentRegistry,
@@ -55,6 +61,20 @@ function defaultProjectDir(key: string): string | null {
   return definition
     ? normalizeProjectDir(definition.projectSkillsDir ?? definition.skillsDir)
     : null;
+}
+
+/**
+ * An agent's skills folder as typed by the user, refused when it is, holds or lies inside the
+ * library: the library's own folders would show up there as the agent's unmanaged skills.
+ */
+function agentSkillsDir(ctx: CoreContext, input: string | null | undefined): string {
+  const skillsDir = normalizeAbsolutePath(input ?? "", SKILLS_PATH_LABEL);
+  if (pathsOverlap(realPathOf(skillsDir), realPathOf(ctx.paths.baseDir))) {
+    throw invalid(
+      `${SKILLS_PATH_LABEL} ${skillsDir} overlaps the ${APP_NAME} library (${ctx.paths.baseDir}): pick another folder.`,
+    );
+  }
+  return skillsDir;
 }
 
 export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): AgentsService {
@@ -141,7 +161,7 @@ export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): 
     addCustom: async (input: CustomAgentInput) => {
       const displayName = input.displayName?.trim() ?? "";
       if (!displayName) throw invalid("Agent name and skills path are required");
-      const skillsDir = normalizeAbsolutePath(input.skillsDir ?? "", SKILLS_PATH_LABEL);
+      const skillsDir = agentSkillsDir(ctx, input.skillsDir);
       const projectSkillsDir = normalizeProjectDir(input.projectSkillsDir);
       const taken = new Set(registry.list().map((agent) => agent.key));
       const key = agentKeyFromName(displayName, taken);
@@ -170,7 +190,7 @@ export function createAgentsService(ctx: CoreContext, deps: AgentsServiceDeps): 
 
     setSkillsDir: async (key, path) => {
       const before = registry.get(key);
-      const skillsDir = normalizeAbsolutePath(path ?? "", SKILLS_PATH_LABEL);
+      const skillsDir = agentSkillsDir(ctx, path);
       if (before.isCustom) patchCustom(key, { skillsDir });
       else writeOverride(INTERNAL_KEYS.agentPathOverrides, key, skillsDir);
       await followSkillsDir(before);

@@ -152,6 +152,11 @@ describe("agents service", () => {
     expect((await rejection(addCustom(climbing))).message).toBe(
       "Project skills path cannot contain parent directory segments",
     );
+    // The library's own folders would show up as the agent's unmanaged skills.
+    const library = { displayName: "X", skillsDir: world.ctx.paths.skillsDir };
+    expect((await rejection(addCustom(library))).message).toContain("overlaps");
+    const setDir = world.agents.api.setSkillsDir("claude_code", world.ctx.paths.skillsDir);
+    expect((await rejection(setDir)).message).toContain("overlaps");
     expect(await keys()).toHaveLength(BUILT_IN_AGENTS.length);
 
     const first = await addCustom({
