@@ -129,10 +129,15 @@ export function SourcesPage(): ReactNode {
                 onCheck={() => checks.check(source)}
                 onUpdate={() => {
                   updating.mark(source.key, true);
-                  update.mutate(
-                    own.filter((s) => s.updateStatus === "update_available").map((s) => s.id),
-                    { onSettled: () => updating.mark(source.key, false) },
-                  );
+                  // `mutateAsync`, not a per-call `onSettled`: TanStack Query only calls that for
+                  // the latest call, so a second card's update would leave this one spinning.
+                  void update
+                    .mutateAsync(
+                      own.filter((s) => s.updateStatus === "update_available").map((s) => s.id),
+                    )
+                    // The mutation toasts its own failure.
+                    .catch(() => undefined)
+                    .finally(() => updating.mark(source.key, false));
                 }}
                 onShowInLibrary={() =>
                   void navigate({ to: "/library", search: { q: source.location } })
