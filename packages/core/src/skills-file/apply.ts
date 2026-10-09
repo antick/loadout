@@ -81,9 +81,8 @@ export async function applyPlan(
   let written = 0;
   let removed = 0;
 
-  const setAside = (path: string, reason: "replaced" | "deleted"): void => {
+  const setAside = (path: string, reason: "replaced" | "deleted"): string | null =>
     deps.removed.setAside(path, { place, reason });
-  };
 
   const keep = (folder: string, locked: LockedFolder | undefined): void => {
     kept.push(folder);
@@ -108,8 +107,14 @@ export async function applyPlan(
     }
     if (item) {
       if (action !== "same") {
-        if (action === "edited") setAside(path, "replaced");
-        await replaceDirAtomic(item.skill.dir, path);
+        const keptId = action === "edited" ? setAside(path, "replaced") : null;
+        try {
+          await replaceDirAtomic(item.skill.dir, path);
+        } catch (error) {
+          // The project keeps its own edited folder rather than being left with nothing.
+          if (keptId) deps.removed.putBack(keptId);
+          throw error;
+        }
         written += 1;
       }
       folders.push({
