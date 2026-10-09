@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, symlinkSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { createRequest } from "../src/install/download";
@@ -43,5 +43,30 @@ it.skipIf(process.platform === "win32")(
     expect(error.code).toBe("INVALID_INPUT");
     expect(existsSync(join(victim, "pdf", "keep.txt"))).toBe(true);
     expect(existsSync(join(victim, "pdf", "SKILL.md"))).toBe(false);
+  },
+);
+
+it.skipIf(process.platform === "win32")(
+  "reuses its working copy when the user's git rewrites the address",
+  async () => {
+    // Another spelling of the same repository, which the user's config turns the address into.
+    const alias = join(world.root, "remotes", "alias.git");
+    symlinkSync(remote, alias);
+    appendFileSync(
+      process.env.GIT_CONFIG_GLOBAL ?? "",
+      `[url "${alias}"]\n\tinsteadOf = ${remote}\n`,
+    );
+    const pdf = world.addSkill("pdf");
+    await service.api.publish({ skillIds: [pdf.id], repo: remote });
+    const publishDir = join(world.ctx.paths.cacheDir, "publish");
+    const [slot] = readdirSync(publishDir);
+    const marker = join(publishDir, slot ?? "", ".git", "kept-by-test");
+    appendFileSync(marker, "");
+
+    writeFile(join(pdf.libraryPath, "more.md"), "more\n");
+    const result = await service.api.publish({ skillIds: [pdf.id], repo: remote });
+
+    expect(result.published).toEqual(["pdf"]);
+    expect(existsSync(marker)).toBe(true);
   },
 );

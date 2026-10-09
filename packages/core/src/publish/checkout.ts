@@ -108,7 +108,9 @@ export async function openCheckout(ctx: CoreContext, target: ResolvedTarget): Pr
       await clone();
       return false;
     }
-    const remote = await git.probe(["remote", "get-url", GIT_REMOTE_NAME]);
+    // The raw config value: `remote get-url` applies the user's `insteadOf` rewrites and would
+    // never equal the URL the working copy was cloned from, so every publish would clone again.
+    const remote = await git.probe(["config", "--get", `remote.${GIT_REMOTE_NAME}.url`]);
     if (remote.code !== 0 || remote.stdout.trim() !== url) {
       await clone();
       return false;
