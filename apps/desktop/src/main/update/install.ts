@@ -56,9 +56,7 @@ export const WINDOWS_INSTALL_SCRIPT = [
   "$appPid = [int]$env:LOADOUT_UPDATE_PID",
   "function Note($text) { Add-Content -LiteralPath $env:LOADOUT_UPDATE_LOG -Value ((Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + ' update: ' + $text) }",
   'Note "waiting for the app ($appPid) to exit"',
-  // A plain loop, not Wait-Process: that never returned on a CI runner while the process ran.
-  "$deadline = (Get-Date).AddSeconds([int]$env:LOADOUT_UPDATE_WAIT)",
-  "while ((Get-Process -Id $appPid) -and ((Get-Date) -lt $deadline)) { Start-Sleep -Milliseconds 250 }",
+  "Wait-Process -Id $appPid -Timeout ([int]$env:LOADOUT_UPDATE_WAIT)",
   "if (Get-Process -Id $appPid) { Note 'the app did not exit; nothing was installed'; exit 1 }",
   "Note 'starting the installer'",
   "Start-Process -FilePath $env:LOADOUT_UPDATE_INSTALLER -ArgumentList '--updated','/S','--force-run'",
