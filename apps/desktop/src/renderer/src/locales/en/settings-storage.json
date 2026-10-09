@@ -27,7 +27,7 @@
         },
         "removed": {
           "title": "Recently removed",
-          "description": "Skill folders taken out of agent and project folders when you replaced or deleted them, kept 30 days.",
+          "description": "Skills you deleted from the library, and skill folders taken out of agents and projects, kept {{removedDays}} days. Each one is listed below.",
           "clearEffect": "Every folder in Recently removed is deleted for good. Skills in the library, agents and projects stay."
         },
         "earlier": {
