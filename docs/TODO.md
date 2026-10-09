@@ -39,4 +39,8 @@ and are not affected.
 - [ ] Instruction files: keep one file in step across agents (`CLAUDE.md` as a link to `AGENTS.md`).
 - [ ] Instruction files: CLI commands, folders of rule files, custom agents and path overrides.
 - [ ] "Stop managing, keep them as folders" on its own, without removing all data.
+- [ ] Windows (paused 2026-10-09): no CI job, no installer or CLI in releases. The code paths stay.
+      To bring it back, add `windows-2025` to the CI test matrix and the release build matrix,
+      `win32-x64` to the feed's `--require` list and `win-x64` to the standalone CLI targets, then
+      fix the update script test that hangs on Windows (`apps/desktop/src/main/update/install.test.ts`).
 - [ ] Homebrew (deferred): `scripts/homebrew.mjs` and `publish-homebrew.yml` are ready but unused.

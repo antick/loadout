@@ -184,7 +184,7 @@ and links to the release page, so they never wait on the network.
 ## Releases
 
 For every push to `main` and every pull request, GitHub Actions runs the linter, the format check
-and the type check once on Linux, the tests on Linux, macOS and Windows, and the UI tests on Linux
+and the type check once on Linux, the tests on Linux and macOS, and the UI tests on Linux
 (`.github/workflows/ci.yml`).
 
 Installers are published as GitHub releases of this repository. The app's update check reads

@@ -45,10 +45,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # File handling (links, junctions, copies, locks, line endings, path separators) differs
-        # on each, so every one runs the tests.
+        # File handling (links, copies, locks, line endings) differs on each, so every one runs
+        # the tests. Windows is not supported for now (docs/TODO.md), so it is not tested.
         # Pinned like Ubuntu above: a `-latest` label moves to a new release on its own.
-        os: [ubuntu-24.04, macos-26, windows-2025]
+        os: [ubuntu-24.04, macos-26]
     # No Git identity here: the tests give their commits one (packages/core/test/git-setup.ts),
     # and GIT_AUTHOR_* variables would outrank the device names backup commits carry.
     steps:
