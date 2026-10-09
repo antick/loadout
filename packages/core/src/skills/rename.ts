@@ -122,6 +122,8 @@ export async function renameSkill(
       );
     }
     const agents = skill.deployments.map((deployment) => deployment.agentKey);
+    // Where each deployment was: an agent switched off keeps its copy there, under the new name.
+    const recorded = store.deployments().filter((row) => row.skillId === skill.id);
     const entries = projectEntries(deps.projectSkillFolders(), skill);
     const result: RenameResult = {
       dryRun: Boolean(options.dryRun),
@@ -139,13 +141,13 @@ export async function renameSkill(
     try {
       await deploy.removeAllForSkill(skill);
     } catch (error) {
-      await deploy.redeploy(skill, agents);
+      await deploy.redeploy(skill, agents, recorded);
       throw error;
     }
     try {
       moveFolder(store, skill, to, name);
     } catch (error) {
-      await deploy.redeploy(skill, agents);
+      await deploy.redeploy(skill, agents, recorded);
       throw error;
     }
     const moved = store.get(skill.id);
@@ -159,7 +161,7 @@ export async function renameSkill(
     }
 
     const current = store.get(skill.id);
-    const report = await deploy.redeploy(current, agents);
+    const report = await deploy.redeploy(current, agents, recorded);
     result.failed = [
       ...report.failed,
       ...report.conflicts.map((conflict) => ({

@@ -4,6 +4,7 @@ import type { RenameOptions } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setFrontmatterName } from "../src/skills/metadata";
 import { renameSkill } from "../src/skills/rename";
+import { INTERNAL_KEYS } from "../src/settings/store";
 import { makeSkill } from "./helpers";
 import {
   type WorkspaceWorld,
@@ -85,6 +86,19 @@ describe("renaming a library skill", () => {
       agents: ["claude_code", "cursor"],
       failed: [],
     });
+  });
+
+  it("keeps the deployment of an agent switched off, under the new name", async () => {
+    const skill = world.addSkill("pdf-tool");
+    await world.deploy.api.apply([skill.id], ["claude_code", "cursor"], "add");
+    world.ctx.settings.setRaw(INTERNAL_KEYS.disabledAgents, ["cursor"]);
+
+    const result = await rename(skill.id, "pdf-forms");
+    const cursor = join(world.home, ".cursor", "skills");
+    expect(result.failed).toEqual([]);
+    expect(world.store.deployment(skill.id, "cursor")?.targetPath).toBe(join(cursor, "pdf-forms"));
+    expect(isLink(join(cursor, "pdf-forms"))).toBe(true);
+    expect(existsSync(join(cursor, "pdf-tool"))).toBe(false);
   });
 
   it("moves copies too, and refuses when a copy was edited in the agent's folder", async () => {

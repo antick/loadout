@@ -1,3 +1,4 @@
+import { dirname, join } from "node:path";
 import {
   type BatchFailure,
   type DeployApi,
@@ -11,7 +12,7 @@ import type { CoreContext } from "../context";
 import { AppError, errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
-import { canonicalPath, lstatOrNull, sameEntry } from "../util/fs";
+import { canonicalPath, isDirectory, lstatOrNull, sameEntry } from "../util/fs";
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { type BatchApply, createBatchApply } from "./batch";
 import { copyWasEdited, holdsOwnEdits, repointSources, rowsAtPath } from "./evidence";
@@ -97,8 +98,16 @@ export interface DeployService {
    * would lose its edits when it is replaced.
    */
   checkRename(skill: Skill, renamed: Skill): RenameCheck;
-  /** Deploy `skill` to these agents again, e.g. after a rename. Unusable agents are reported. */
-  redeploy(skill: Skill, agentKeys: readonly string[]): Promise<RedeployReport>;
+  /**
+   * Deploy `skill` to these agents again, e.g. after a rename. An agent not usable now (switched
+   * off, not found) gets it in the folder its `recorded` row was in, when that folder is still
+   * there; otherwise it is reported.
+   */
+  redeploy(
+    skill: Skill,
+    agentKeys: readonly string[],
+    recorded?: readonly DeploymentRecord[],
+  ): Promise<RedeployReport>;
   /** Follow an agent to a new skills folder: remove at the old one, deploy at the new one. */
   moveAgentDeployments(
     agentKey: string,
@@ -113,6 +122,12 @@ export interface RenameCheck {
 }
 
 const emptyReport = (): RedeployReport => ({ written: 0, conflicts: [], failed: [], kept: [] });
+
+/** The folder the agent's recorded deployment was in, while it is still there. */
+function recordedFolder(rows: readonly DeploymentRecord[], agentKey: string): string | null {
+  const row = rows.find((entry) => entry.agentKey === agentKey);
+  return row && isDirectory(dirname(row.targetPath)) ? dirname(row.targetPath) : null;
+}
 
 export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): DeployService {
   const { store, registry } = deps;
@@ -399,14 +414,19 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
       return check;
     },
 
-    redeploy: async (skill, agentKeys) => {
+    redeploy: async (skill, agentKeys, recorded = []) => {
       const report = emptyReport();
       await ctx.lock.run(`deploy ${skill.name}`, async () => {
         const agents = new Map(registry.list().map((agent) => [agent.key, agent]));
         for (const key of new Set(agentKeys)) {
           const agent = agents.get(key);
+          const folder = recordedFolder(recorded, key);
           if (agent && isAgentAvailable(agent)) await attempt(ops.pairFor(skill, agent), report);
-          else
+          else if (folder) {
+            const targetPath = join(folder, skill.dirName);
+            const pair = { skill, agentKey: key, agentName: agentName(key), targetPath };
+            await attempt(pair, report);
+          } else
             report.failed.push({
               name: skill.name,
               message: `${agent?.displayName ?? key} is not available`,
