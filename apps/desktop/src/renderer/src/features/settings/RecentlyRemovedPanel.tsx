@@ -26,6 +26,7 @@ import {
 } from "@/features/settings/storage-mutations";
 import { useRemovedFolders } from "@/features/settings/storage-queries";
 import { Skeletons } from "@/components/Skeletons";
+import { usePendingSet } from "@/hooks/use-pending-set";
 import { placeText } from "@/lib/place-text";
 
 const SKELETON_ROWS = 2;
@@ -39,6 +40,7 @@ export function RecentlyRemovedPanel(): ReactNode {
   const confirm = useConfirm();
   const removed = useRemovedFolders();
   const restore = useRestoreRemoved();
+  const restoring = usePendingSet();
   const remove = useDeleteRemoved();
   const reveal = useRevealRemoved();
   const clear = useClearStorage();
@@ -54,7 +56,14 @@ export function RecentlyRemovedPanel(): ReactNode {
       });
       if (!ok) return;
     }
-    restore.mutate(entry);
+    // Per row and through `mutateAsync`: `variables` only names the latest call, so a row whose
+    // restore still runs would look free again and could be restored twice.
+    restoring.mark(entry.id, true);
+    void restore
+      .mutateAsync(entry)
+      // The mutation toasts its own failure.
+      .catch(() => undefined)
+      .finally(() => restoring.mark(entry.id, false));
   };
 
   const askDelete = async (entry: RemovedFolder): Promise<void> => {
@@ -99,7 +108,7 @@ export function RecentlyRemovedPanel(): ReactNode {
     body = (
       <ul className="flex flex-col divide-y">
         {entries.map((entry) => {
-          const restoring = restore.isPending && restore.variables?.id === entry.id;
+          const isRestoring = restoring.pending.has(entry.id);
           // A library skill never displaces the one that took its folder name.
           const libraryTaken = entry.library && entry.occupied;
           return (
@@ -145,10 +154,10 @@ export function RecentlyRemovedPanel(): ReactNode {
                 <Button
                   variant="outline"
                   size="xs"
-                  disabled={entry.parentMissing || libraryTaken || restoring}
+                  disabled={entry.parentMissing || libraryTaken || isRestoring}
                   onClick={() => void askRestore(entry)}
                 >
-                  {restoring ? <Spinner className="size-3" /> : <RotateCcw />}
+                  {isRestoring ? <Spinner className="size-3" /> : <RotateCcw />}
                   {t("settings.storage.removed.restore")}
                 </Button>
                 <IconButton

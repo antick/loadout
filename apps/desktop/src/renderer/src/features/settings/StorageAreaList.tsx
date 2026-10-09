@@ -6,6 +6,7 @@ import { PathText } from "@/components/PathText";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useClearAppCache, useClearStorage } from "@/features/settings/storage-mutations";
+import { usePendingSet } from "@/hooks/use-pending-set";
 
 export interface StorageAreaListProps {
   entries: readonly StorageEntry[];
@@ -17,6 +18,7 @@ export function StorageAreaList({ entries }: StorageAreaListProps): ReactNode {
   const confirm = useConfirm();
   const clear = useClearStorage();
   const clearApp = useClearAppCache();
+  const clearing = usePendingSet();
 
   const onClear = async (entry: StorageEntry): Promise<void> => {
     const title = t(`settings.storage.areas.${entry.area}.title`);
@@ -26,16 +28,25 @@ export function StorageAreaList({ entries }: StorageAreaListProps): ReactNode {
       confirmLabel: t("settings.storage.clear"),
     });
     if (!ok) return;
-    if (entry.area === "app") clearApp.mutate();
-    else if (entry.clearable) clear.mutate(entry.area as Parameters<typeof clear.mutate>[0]);
+    if (entry.area === "app") {
+      clearApp.mutate();
+    } else if (entry.clearable) {
+      // Per area: `variables` only names the latest call, so an area still clearing would look
+      // free again while another one runs.
+      clearing.mark(entry.area, true);
+      void clear
+        .mutateAsync(entry.area as Parameters<typeof clear.mutate>[0])
+        // The mutation toasts its own failure.
+        .catch(() => undefined)
+        .finally(() => clearing.mark(entry.area, false));
+    }
   };
 
   return (
     <ul className="flex flex-col divide-y">
       {entries.map((entry) => {
         const busy =
-          (entry.area === "app" && clearApp.isPending) ||
-          (clear.isPending && clear.variables === entry.area);
+          (entry.area === "app" && clearApp.isPending) || clearing.pending.has(entry.area);
         const canClear = entry.clearable || entry.area === "app";
         return (
           <li key={entry.area} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
