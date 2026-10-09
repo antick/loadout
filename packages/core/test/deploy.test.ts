@@ -1,4 +1,12 @@
-import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+} from "node:fs";
 import { join } from "node:path";
 import { APP_NAME, type DeployMode } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -454,5 +462,16 @@ describe("deploy service", () => {
     expect(isLink(claudeTarget("alpha"))).toBe(true);
     expect(world.store.deployment(skill.id, "claude_code")?.mode).toBe("symlink");
     expect(world.store.get(skill.id).sourceRef).toBe(skill.libraryPath);
+  });
+
+  it("puts the agent's folder back when adopting it fails", async () => {
+    const existing = makeSkill(join(world.home, ".claude", "skills"), "alpha", { body: "mine" });
+    const skill = world.addSkill("alpha");
+    // The library folder is gone, so nothing can be written in place of the agent's folder.
+    rmSync(skill.libraryPath, { recursive: true });
+
+    await rejection(world.deploy.adopt(skill, world.registry.get("claude_code")));
+    expect(readFileSync(join(existing, "SKILL.md"), "utf8")).toContain("mine");
+    expect(world.removed.list()).toEqual([]);
   });
 });

@@ -363,14 +363,22 @@ export function createDeployService(ctx: CoreContext, deps: DeployServiceDeps): 
         // Replaced on the user's word, but never lost: a folder holding anything the library
         // copy lacks (other content, a `.git` folder, links) goes to Recently removed first.
         const stat = lstatOrNull(pair.targetPath);
-        if (
+        const keptId =
           stat?.isDirectory() &&
           !stat.isSymbolicLink() &&
           (hashDir(pair.targetPath) !== skill.contentHash || holdsUncopiedEntries(pair.targetPath))
-        ) {
-          deps.removed.setAside(pair.targetPath, { place: agent.displayName, reason: "replaced" });
+            ? deps.removed.setAside(pair.targetPath, {
+                place: agent.displayName,
+                reason: "replaced",
+              })
+            : null;
+        try {
+          await ops.deployPair(pair, { kind: "user_confirmed" });
+        } catch (error) {
+          // The agent keeps its own folder rather than being left with nothing.
+          if (keptId) deps.removed.putBack(keptId);
+          throw error;
         }
-        await ops.deployPair(pair, { kind: "user_confirmed" });
       });
       ctx.touched("skills");
     },
