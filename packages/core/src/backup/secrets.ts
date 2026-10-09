@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { SecretFinding } from "@loadout/shared";
 import { AppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
-import { statOrNull } from "../util/fs";
+import { lstatOrNull } from "../util/fs";
 import { batchInput, parseBatch } from "../util/git-batch";
 import type { BackupEnv } from "./env";
 import { commitStaged, originUrl, prepareCommit, resolveCommit, upstreamCommit } from "./repo";
@@ -152,7 +152,8 @@ async function scanFilesSince(env: BackupEnv, base: string | null): Promise<Secr
   // The metadata folder is checked too: it holds the user's own words (skill notes).
   for (const file of files) {
     const path = join(env.repoDir, ...file.split("/"));
-    if (!statOrNull(path)?.isFile()) continue;
+    // A link is committed as the path it points at, never the content there.
+    if (!lstatOrNull(path)?.isFile()) continue;
     findings.push(...(findSecretsInFile(file, path) ?? []));
   }
   return findings;

@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findSecrets, findSecretsInFile } from "../src/backup/secret-scan";
@@ -195,6 +195,25 @@ describe("backup push check", () => {
     });
     expect(rawGit(remote, "log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
   });
+
+  // Windows needs extra rights to make links.
+  it.skipIf(process.platform === "win32")(
+    "backs up a link to a file holding a key: only the link's path is committed",
+    async () => {
+      const remote = createBareRemote(temp.dir);
+      const a = createDevice(temp.dir, "A");
+      device = a;
+      a.addSkill("linked");
+      const outside = join(temp.dir, "credentials");
+      writeFileSync(outside, `token = ${GITHUB_TOKEN}\n`);
+      symlinkSync(outside, join(a.skillsDir, "linked", "creds"));
+      await a.api.init();
+      await a.api.setRemote(remote);
+
+      expect(await a.api.sync()).toMatchObject({ pushed: true });
+      expect(rawGit(remote, "log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
+    },
+  );
 
   it("a pull checks a note not written to its metadata file yet before committing it", async () => {
     const remote = createBareRemote(temp.dir);

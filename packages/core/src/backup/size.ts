@@ -10,6 +10,7 @@ import {
   GIT_DIR,
   dirSize,
   ensureDir,
+  lstatOrNull,
   readDirSafe,
   statOrNull,
   writeFileAtomic,
@@ -105,7 +106,8 @@ async function backedUpSizes(env: BackupEnv): Promise<Map<string, number> | null
   for (const file of result.stdout.split("\0")) {
     if (!file) continue;
     const top = file.split("/", 1)[0] ?? file;
-    const bytes = statOrNull(join(env.repoDir, ...file.split("/")))?.size ?? 0;
+    // Not followed: git stores a link as the path it points at.
+    const bytes = lstatOrNull(join(env.repoDir, ...file.split("/")))?.size ?? 0;
     sizes.set(top, (sizes.get(top) ?? 0) + bytes);
   }
   return sizes;
