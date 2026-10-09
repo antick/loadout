@@ -35,5 +35,6 @@ test("the import list flags a skill that runs code before it is installed", asyn
 
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("heading", { name: "6 skills found" })).toBeVisible();
-  await expect(dialog.getByText("Runs code")).toHaveCount(1);
+  // Two of them: sql-migrations ships a script, and log-triage's frontmatter declares a hook.
+  await expect(dialog.getByRole("button", { name: "Runs code" })).toHaveCount(2);
 });
