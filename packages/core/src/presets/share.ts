@@ -263,7 +263,8 @@ export function createPresetSharing(ctx: CoreContext, deps: PresetSharingDeps): 
     ): Promise<PresetExportResult> => {
       const preset = deps.presets.get(id);
       const path = normalizeAbsolutePath(destPath, "Export path");
-      if (isInside(ctx.paths.skillsDir, path))
+      // Not into the library's folder: the database, Recently removed and the rest live there.
+      if (isInside(ctx.paths.baseDir, path) || isInside(ctx.paths.skillsDir, path))
         throw invalid("Export somewhere outside the skill library");
       const skills = preset.skillIds.map((skillId) => store.get(skillId));
       const built = buildPresetFile(

@@ -80,6 +80,10 @@ describe("exporting a preset", () => {
     await expect(
       core.api.presets.exportFile(presetId, join(core.ctx.paths.skillsDir, "x.json")),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    // The database lives next to the skills, not in them.
+    await expect(
+      core.api.presets.exportFile(presetId, core.ctx.paths.dbPath),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
   });
 });
 
