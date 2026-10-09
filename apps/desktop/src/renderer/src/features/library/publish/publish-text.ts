@@ -15,8 +15,7 @@ export function skipText(skip: PublishSkip, t: TFunction): string {
   return t(`publish.skip.${skip.code}`, paramsOf(skip));
 }
 
-export const problemParams = (problem: ClawhubProblem): Record<string, string> =>
-  paramsOf(problem);
+export const problemParams = (problem: ClawhubProblem): Record<string, string> => paramsOf(problem);
 
 /** A ClawHub problem told apart from the others of the same kind (one per file). */
 export function problemKey(problem: ClawhubProblem): string {

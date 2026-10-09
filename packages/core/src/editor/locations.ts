@@ -40,7 +40,6 @@ export interface LocationDeps {
   instructions: InstructionFinder;
 }
 
-
 function library(skill: Skill): ResolvedLocation {
   return {
     location: { kind: "library", skillId: skill.id },
