@@ -405,7 +405,7 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
           domain: REIMPORT_DOMAIN,
           approval,
           approveRemovals: options.approveRemovals,
-          lockMode: "wait",
+          lockMode: options.lockMode ?? "wait",
           acceptRisk: options.acceptRisk,
           dryRun: options.dryRun,
           preview: source,
