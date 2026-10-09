@@ -192,7 +192,10 @@ export function createProjectsService(
       projects.delete(id);
       ctx.settings.deleteRaw(INTERNAL_KEYS.projectExportAgents(id));
       ctx.settings.deleteRaw(INTERNAL_KEYS.projectSuggestionsDismissed(id));
-      deps.history.removeKeysStartingWith(projectHistoryPrefix(id));
+      // Under the lock, like every save that records a version there.
+      await ctx.lock.run("forget a project's history", () =>
+        deps.history.removeKeysStartingWith(projectHistoryPrefix(id)),
+      );
       activity.forget(id);
       ctx.touched("projects");
     },
