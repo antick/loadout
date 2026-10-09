@@ -111,7 +111,12 @@ function PlanList({
 }
 
 /** Where the preset comes from, what it holds, and its name here. Fresh on every opening. */
-function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): ReactNode {
+interface ImportFormProps extends Omit<ImportPresetDialogProps, "open"> {
+  /** The import runs or settled: the dialog may not close meanwhile. */
+  onImportingChange: (importing: boolean) => void;
+}
+
+function ImportForm({ onOpenChange, onImportingChange }: ImportFormProps): ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const preview = usePreviewPresetImport();
@@ -159,6 +164,7 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
       look(input);
       return;
     }
+    onImportingChange(true);
     importPreset.mutate(
       { input: previewed, name: name.trim() || undefined, reuseSameName: [...reuse] },
       {
@@ -167,6 +173,7 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
           onOpenChange(false);
           void navigate({ to: "/presets/$presetId", params: { presetId: result.preset.id } });
         },
+        onSettled: () => onImportingChange(false),
       },
     );
   };
@@ -222,7 +229,12 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
         ) : null}
       </FieldGroup>
       <DialogFooter>
-        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={importPreset.isPending}
+          onClick={() => onOpenChange(false)}
+        >
           {t("common.cancel")}
         </Button>
         <Button type="submit" disabled={busy || !input.trim()}>
@@ -236,11 +248,13 @@ function ImportForm({ onOpenChange }: Omit<ImportPresetDialogProps, "open">): Re
 
 /** Create a preset from a file someone shared, installing the skills the library lacks. */
 export function ImportPresetDialog({ open, onOpenChange }: ImportPresetDialogProps): ReactNode {
+  // Closing mid-import would drop the form, and with it the move to the new preset.
+  const [importing, setImporting] = useState(false);
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => (importing ? undefined : onOpenChange(next))}>
       <DialogContent className="sm:max-w-lg">
         {/* Mounted afresh on every opening; kept whole while it fades out. */}
-        <ImportForm onOpenChange={onOpenChange} />
+        <ImportForm onOpenChange={onOpenChange} onImportingChange={setImporting} />
       </DialogContent>
     </Dialog>
   );
