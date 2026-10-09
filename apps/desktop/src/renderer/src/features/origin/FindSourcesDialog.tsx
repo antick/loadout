@@ -39,11 +39,21 @@ function bestOf(row: SearchRow | undefined): SourceCandidate | undefined {
  * matches come ticked; a changed copy waits for the user to tick it.
  */
 export function FindSourcesDialog({ open, onOpenChange, skills }: FindSourcesDialogProps) {
+  // Closed mid-run, the loop would keep linking skills nobody can see any more.
+  const [linking, setLinking] = useState(false);
+  const change = (next: boolean): void => {
+    if (!linking) onOpenChange(next);
+  };
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={change}>
       <DialogContent className="min-w-0 sm:max-w-2xl">
         {/* Mounted afresh on every opening; kept whole while it fades out. */}
-        <FindSourcesBody skills={skills} onClose={() => onOpenChange(false)} />
+        <FindSourcesBody
+          skills={skills}
+          linking={linking}
+          onLinkingChange={setLinking}
+          onClose={() => change(false)}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -52,16 +62,19 @@ export function FindSourcesDialog({ open, onOpenChange, skills }: FindSourcesDia
 /** Mounted per opening, so every opening searches afresh. */
 function FindSourcesBody({
   skills,
+  linking,
+  onLinkingChange,
   onClose,
 }: {
   skills: readonly Skill[];
+  linking: boolean;
+  onLinkingChange: (linking: boolean) => void;
   onClose: () => void;
 }): ReactNode {
   const { t } = useTranslation();
   const [listed] = useState(skills);
   const searches = useSourceSearches(listed);
   const attach = useAttachSource();
-  const [linking, setLinking] = useState(false);
   /** The user's own ticks; untouched rows follow "exact match comes ticked". */
   const [choices, setChoices] = useState<ReadonlyMap<string, boolean>>(new Map());
 
@@ -74,20 +87,22 @@ function FindSourcesBody({
   const differs = ticked.some((skill) => !isExact(bestOf(searches.rows.get(skill.id))));
 
   const linkTicked = async (): Promise<void> => {
-    setLinking(true);
+    onLinkingChange(true);
     let linked = 0;
     for (const skill of ticked) {
-      const candidate = bestOf(searches.rows.get(skill.id));
-      if (!candidate) continue;
+      const row = searches.rows.get(skill.id);
+      const candidate = bestOf(row);
+      if (!candidate || row?.state !== "done") continue;
       try {
         await attach.mutateAsync({ skillId: skill.id, candidate, announce: false });
         searches.set(skill.id, { state: "linked" });
         linked += 1;
       } catch (error) {
-        searches.set(skill.id, { state: "failed", message: errorMessage(error) });
+        // The match stays, so linking it can be tried again.
+        searches.set(skill.id, { ...row, linkError: errorMessage(error) });
       }
     }
-    setLinking(false);
+    onLinkingChange(false);
     if (linked > 0) toast.success(t("origin.batch.linkedToast", { count: linked }));
   };
 
@@ -129,7 +144,7 @@ function FindSourcesBody({
             : t("origin.batch.done", { count: listed.length })}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" disabled={linking} onClick={onClose}>
             {t("common.close")}
           </Button>
           <Button disabled={linking || ticked.length === 0} onClick={() => void linkTicked()}>
@@ -194,6 +209,7 @@ function SearchResultRow({
         <button
           type="button"
           className="w-fit truncate text-left text-sm font-medium hover:underline"
+          disabled={disabled}
           onClick={openSkill}
         >
           {skill.name}
@@ -268,6 +284,11 @@ function RowStatus({
           <SourceCandidateItem candidate={best} compact />
           {others > 0 ? (
             <span className={muted}>{t("origin.batch.otherMatches", { count: others })}</span>
+          ) : null}
+          {row.linkError ? (
+            <span data-selectable className="text-xs break-words text-danger">
+              {row.linkError}
+            </span>
           ) : null}
         </div>
       );

@@ -10,7 +10,7 @@ import { errorMessage } from "@/lib/toast";
  */
 export type SearchRow =
   | { state: "waiting" | "searching" }
-  | { state: "done"; search: SourceSearch }
+  | { state: "done"; search: SourceSearch; linkError?: string }
   | { state: "failed"; message: string }
   | { state: "linked" }
   | { state: "marked" };
