@@ -194,7 +194,10 @@ describe("reading SkillSpector reports", () => {
   });
 });
 
-describe("the safety check on install", () => {
+/** The fake SkillSpector is a shell script, which Windows cannot start without a shell. */
+const FAKE_SCANNER_RUNS = process.platform !== "win32";
+
+describe.skipIf(!FAKE_SCANNER_RUNS)("the safety check on install", () => {
   it("stops a flagged skill before anything is written, and installs it when accepted", async () => {
     const source = makeSkill(sources, "bad", { body: EVIL });
     const error = await rejection(install.api.fromPath(source));
@@ -308,7 +311,7 @@ describe("the safety check on install", () => {
   });
 });
 
-describe("scanning the library", () => {
+describe.skipIf(!FAKE_SCANNER_RUNS)("scanning the library", () => {
   it("scans skills with no report or a stale one, and says what it found", async () => {
     world.ctx.settings.set("safetyScanOnInstall", false);
     const good = await install.api.fromPath(makeSkill(sources, "good"));

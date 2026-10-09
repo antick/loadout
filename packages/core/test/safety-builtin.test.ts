@@ -73,7 +73,9 @@ describe("the built-in rules", () => {
     const bang = makeSkill(temp.dir, "bang", { files: { "scripts/setup": `#!/bin/sh\n${pipe}` } });
     const runs = makeSkill(temp.dir, "runs", { files: { "scripts/setup": pipe } });
     chmodSync(join(runs, "scripts", "setup"), 0o755);
-    for (const report of [named, scanWithRules(bang), scanWithRules(runs)]) {
+    // Windows has no executable bit: there a script without a shebang reads as text.
+    const executable = process.platform === "win32" ? [] : [scanWithRules(runs)];
+    for (const report of [named, scanWithRules(bang), ...executable]) {
       expect(report.verdict).toBe("unsafe");
       expect(report.findings[0]).toMatchObject({ id: "network.pipe_to_shell", confidence: 0.9 });
     }

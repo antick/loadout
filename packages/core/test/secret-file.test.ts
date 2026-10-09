@@ -21,7 +21,8 @@ describe("createFileSecretStore", () => {
     await store.set("user", "me");
     expect(await store.get("token")).toBe("abc");
     expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({ token: "abc", user: "me" });
-    expect(statSync(file).mode & 0o777).toBe(0o600);
+    // Windows keeps no Unix permission bits: only elsewhere is the file private to its owner.
+    if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600);
     await store.delete("token");
     expect(await store.get("token")).toBeNull();
     expect(await store.get("user")).toBe("me");

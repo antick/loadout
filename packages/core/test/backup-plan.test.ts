@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   authEnvironment,
@@ -372,11 +374,14 @@ describe("remote URLs", () => {
       kind: "local",
       path: "/srv/git/skills.git",
     });
-    // A `file://` address stays as given for git; the folder it names is known as a path.
-    expect(parseRemoteUrl("file:///srv/git/skills.git")).toMatchObject({
+    // A `file://` address stays as given for git; the folder it names is known as a path. Built
+    // from this system's absolute path: on Windows that has a drive letter.
+    const folder = resolve("/srv/git/skills.git");
+    const fileUrl = pathToFileURL(folder).href;
+    expect(parseRemoteUrl(fileUrl)).toMatchObject({
       kind: "local",
-      cleanUrl: "file:///srv/git/skills.git",
-      path: "/srv/git/skills.git",
+      cleanUrl: fileUrl,
+      path: folder,
     });
   });
 
