@@ -71,6 +71,8 @@ export function PresetBar({
   );
 
   if (items.length === 0) return null;
+  // Over several agents a count is of skill × agent pairs, which the tooltip has to say.
+  const perAgent = mode === "agent-pair" && agentKeys.length > 1;
 
   const run = async (preset: Preset, action: () => Promise<unknown>): Promise<void> => {
     if (busyId) return;
@@ -130,10 +132,13 @@ export function PresetBar({
             </TooltipTrigger>
             <TooltipContent>
               <p className="font-medium">
-                {t(`presetBar.${state.activity}`, {
-                  installed: state.installed,
-                  total: state.total,
-                })}
+                {t(
+                  perAgent && partial ? "presetBar.partialPerAgent" : `presetBar.${state.activity}`,
+                  {
+                    installed: state.installed,
+                    total: state.total,
+                  },
+                )}
               </p>
               <p className="opacity-80">
                 {t(active ? "presetBar.clickToRemove" : "presetBar.clickToAdd")}

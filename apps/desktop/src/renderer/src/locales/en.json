@@ -201,6 +201,7 @@
     "label": "Presets",
     "active": "Every skill of this preset is installed here",
     "partial": "{{installed}} of {{total}} installed here",
+    "partialPerAgent": "{{installed}} of {{total}} installed, counting each skill once per agent",
     "inactive": "Not installed here",
     "clickToAdd": "Click to install what is missing",
     "clickToRemove": "Click to remove the preset's skills from here",
