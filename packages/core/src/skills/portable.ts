@@ -4,7 +4,7 @@ import { APP_NAME, type Skill, isNewerVersion } from "@loadout/shared";
 import type { Database } from "../db/database";
 import type { Logger } from "../log";
 import type { LibraryPaths } from "../paths";
-import { ensureDir, isSkillDir, writeJsonAtomic } from "../util/fs";
+import { ensureDir, isSkillDir, sameEntry, writeJsonAtomic } from "../util/fs";
 import { contentFingerprint, hashDir } from "../util/hash";
 import { readSkillIdentity } from "./metadata";
 import {
@@ -392,6 +392,14 @@ export class PortableMetadata {
       if (name.startsWith(".")) continue;
       const libraryPath = join(this.#paths.skillsDir, name);
       if (!isSkillDir(libraryPath) || this.#skills.findByLibraryPath(libraryPath)) continue;
+      // The folder a row knows, renamed only in letter case: the row takes the name on disk.
+      const recased = this.#skills.findByDirName(name);
+      if (recased && sameEntry(recased.libraryPath, libraryPath)) {
+        this.#skills.patch(recased.id, { libraryPath });
+        moved.push(recased.id);
+        this.#log.info(`Skill folder ${basename(recased.libraryPath)} was renamed to ${name}`);
+        continue;
+      }
       const identity = readSkillIdentity(libraryPath);
       const contentHash = hashDir(libraryPath);
       const sameName = missing.filter((skill) => skill.name === identity.name);

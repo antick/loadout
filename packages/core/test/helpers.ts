@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -14,6 +14,16 @@ import { silentLogger } from "../src/log";
 export function tempDir(prefix = "loadout-test-"): { dir: string; cleanup: () => void } {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+/** The temp folder's disk ignores letter case (macOS and Windows by default). */
+export function caseBlindDisk(): boolean {
+  const probe = mkdtempSync(join(tmpdir(), "loadout-case-"));
+  try {
+    return existsSync(probe.toUpperCase());
+  } finally {
+    rmSync(probe, { recursive: true, force: true });
+  }
 }
 
 export function writeFile(path: string, content: string): void {

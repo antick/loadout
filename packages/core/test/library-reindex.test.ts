@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Core } from "../src/core";
 import { RepoLock } from "../src/lock";
 import { MISSING_GRACE_MS } from "../src/skills/portable";
-import { createTestCore, makeSkill, tempDir } from "./helpers";
+import { caseBlindDisk, createTestCore, makeSkill, tempDir } from "./helpers";
 
 /**
  * Another process (a CLI sync, the app mid-merge) can set a skill folder aside for a moment while
@@ -126,6 +126,16 @@ describe("re-indexing skill folders that moved or went missing", () => {
     expect(core.store.find(skillId)?.libraryPath).toBe(renamed);
     expect(core.store.list()).toHaveLength(1);
     expect(resolve(readlinkSync(linkPath))).toBe(renamed);
+  });
+
+  it.skipIf(!caseBlindDisk())("follows a folder renamed only in letter case", async () => {
+    const renamed = join(core.ctx.paths.skillsDir, "Alpha");
+    renameSync(skillDir, renamed);
+    await core.background.libraryChangedOnDisk();
+
+    expectKept();
+    expect(core.store.list()).toHaveLength(1);
+    expect(core.store.find(skillId)?.libraryPath).toBe(renamed);
   });
 
   it("writes the new path of a renamed folder that has no links to follow", async () => {

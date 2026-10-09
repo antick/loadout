@@ -115,6 +115,14 @@ export function targetIdentity(path: string): string {
   return join(canonicalPath(dirname(resolved)), resolved.slice(dirname(resolved).length + 1));
 }
 
+/** Two paths name one entry on disk (a case-insensitive file system, a linked folder). */
+export function sameEntry(a: string, b: string): boolean {
+  if (targetIdentity(a) === targetIdentity(b)) return true;
+  const left = lstatOrNull(a);
+  const right = lstatOrNull(b);
+  return left !== null && right !== null && left.dev === right.dev && left.ino === right.ino;
+}
+
 /** `child` is `parent` or lies inside it (lexical, after resolve). */
 export function isInside(parent: string, child: string): boolean {
   const rel = relative(resolve(parent), resolve(child));

@@ -11,7 +11,7 @@ import type { CoreContext } from "../context";
 import { AppError, errorMessage, invalid, isAppError } from "../errors";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
 import type { RemovedStore } from "../storage/removed";
-import { canonicalPath, lstatOrNull, targetIdentity } from "../util/fs";
+import { canonicalPath, lstatOrNull, sameEntry } from "../util/fs";
 import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import { type BatchApply, createBatchApply } from "./batch";
 import { copyWasEdited, holdsOwnEdits, repointSources, rowsAtPath } from "./evidence";
@@ -110,14 +110,6 @@ export interface DeployService {
 export interface RenameCheck {
   conflicts: TargetConflict[];
   editedCopies: DeploymentRecord[];
-}
-
-/** Two paths name one entry on disk (a case-insensitive file system, a linked folder). */
-function sameEntry(a: string, b: string): boolean {
-  if (targetIdentity(a) === targetIdentity(b)) return true;
-  const left = lstatOrNull(a);
-  const right = lstatOrNull(b);
-  return left !== null && right !== null && left.dev === right.dev && left.ino === right.ino;
 }
 
 const emptyReport = (): RedeployReport => ({ written: 0, conflicts: [], failed: [], kept: [] });
