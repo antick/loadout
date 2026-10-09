@@ -123,8 +123,9 @@ export function createInstallService(ctx: CoreContext, deps: InstallServiceDeps)
         total: children.length,
         name,
       });
-      // A skill of that name is already in the library: a bulk import never touches it.
-      if (store.findByLibraryPath(join(ctx.paths.skillsDir, name))) {
+      // A skill of that name is already in the library: a bulk import never touches it. Letter
+      // case aside, as the library compares names (`PDF` is `pdf` on most disks).
+      if (store.findByDirName(name)) {
         result.skipped += 1;
         continue;
       }

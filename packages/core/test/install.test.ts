@@ -258,6 +258,15 @@ describe("install from an archive", () => {
 });
 
 describe("batch import of a folder", () => {
+  it("skips a skill whose name differs from a library skill's only in letter case", async () => {
+    await install.api.fromPath(makeSkill(join(sources, "old"), "alpha"));
+    const folder = join(sources, "batch");
+    makeSkill(folder, "ALPHA");
+
+    expect(await install.api.importFolder(folder)).toEqual({ imported: 0, skipped: 1, errors: [] });
+    expect(world.store.list().map((s) => s.dirName)).toEqual(["alpha"]);
+  });
+
   it("imports direct children that are skills and skips names the library already has", async () => {
     await install.api.fromPath(makeSkill(join(sources, "old"), "alpha"));
     const folder = join(sources, "batch");
