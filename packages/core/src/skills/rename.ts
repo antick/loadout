@@ -5,7 +5,7 @@ import type { CoreContext } from "../context";
 import type { DeployService } from "../deploy";
 import { linkPointsAt, removeTarget, writeTarget } from "../deploy/engine";
 import { samePath } from "../deploy/evidence";
-import { exists, invalid, targetConflict } from "../errors";
+import { errorMessage, exists, invalid, targetConflict } from "../errors";
 import { lstatOrNull, readDirSafe } from "../util/fs";
 import { hashDir } from "../util/hash";
 import { checkSkillName, isLibraryNameTaken } from "./create";
@@ -151,7 +151,16 @@ export async function renameSkill(
       throw error;
     }
     const moved = store.get(skill.id);
-    rewriteDocument(store, moved, name);
+    try {
+      rewriteDocument(store, moved, name);
+    } catch (error) {
+      // The new name could not be written (a read-only SKILL.md): undo the move, as if never
+      // renamed, rather than leave a half-renamed skill with no deployments.
+      moveFolder(store, moved, skill.libraryPath, skill.dirName);
+      store.patch(skill.id, { name: from });
+      await deploy.redeploy(store.get(skill.id), agents, recorded);
+      throw error;
+    }
     if (
       moved.sourceRef &&
       isAbsolute(moved.sourceRef) &&
@@ -169,7 +178,12 @@ export async function renameSkill(
         message: conflict.reason,
       })),
     ];
-    result.projectLinks = await relinkProjects(entries.links, to, name);
+    try {
+      result.projectLinks = await relinkProjects(entries.links, to, name);
+    } catch (error) {
+      // The rename itself is done: a project link that could not follow is reported, not thrown.
+      result.failed.push({ name, message: errorMessage(error) });
+    }
     result.skill = store.get(skill.id);
     ctx.activity.record("rename", name, `was ${from}`);
     ctx.touched("skills", "projects");

@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import type { RenameOptions } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -100,6 +107,22 @@ describe("renaming a library skill", () => {
     expect(isLink(join(cursor, "pdf-forms"))).toBe(true);
     expect(existsSync(join(cursor, "pdf-tool"))).toBe(false);
   });
+
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "puts everything back when the new name cannot be written",
+    async () => {
+      const skill = world.addSkill("pdf-tool");
+      await world.deploy.api.apply([skill.id], ["claude_code"], "add");
+      chmodSync(join(skill.libraryPath, "SKILL.md"), 0o444);
+
+      await expect(rename(skill.id, "pdf-forms")).rejects.toThrow(/EACCES/);
+      const back = world.store.get(skill.id);
+      expect(back).toMatchObject({ name: "pdf-tool", libraryPath: skill.libraryPath });
+      expect(existsSync(join(world.ctx.paths.skillsDir, "pdf-forms"))).toBe(false);
+      expect(realpathSync(join(claude, "pdf-tool"))).toBe(realpathSync(skill.libraryPath));
+      expect(back.deployments.map((d) => d.agentKey)).toEqual(["claude_code"]);
+    },
+  );
 
   it("moves copies too, and refuses when a copy was edited in the agent's folder", async () => {
     world.ctx.settings.set("deployMode", "copy");
