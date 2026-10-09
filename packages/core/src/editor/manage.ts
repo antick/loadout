@@ -14,6 +14,7 @@ import { isPortableName } from "../util/names";
 import { isReallyInside } from "../util/safe-path";
 import { type EditableFolder, mainDocumentOf } from "./files";
 import type { FileHistory } from "./history";
+import { MAX_EDITABLE_BYTES, decodeText } from "./text-file";
 import { resolveInside } from "../util/safe-path";
 
 /**
@@ -150,13 +151,20 @@ export function renameIn(folder: EditableFolder, from: string, to: string): Fold
   return { path: target.relative, files: moved };
 }
 
-/** Delete a file or folder, keeping every file in the history first. */
+/**
+ * Delete a file or folder, keeping every file the editor could open in the history first. A
+ * binary or one too large to edit could never be shown from there, so it is not copied.
+ */
 export function deleteIn(folder: EditableFolder, path: string, history: FileHistory): FolderChange {
   const entry = existingAt(folder, path);
   refuseMainDocument(folder, entry.relative);
   const files = contentFilesOf(entry);
   for (const file of files) {
-    history.record(folder.historyKey, file, readFileSync(join(folder.dir, ...segmentsOf(file))));
+    const absolute = join(folder.dir, ...segmentsOf(file));
+    const stat = lstatOrNull(absolute);
+    if (!stat?.isFile() || stat.size > MAX_EDITABLE_BYTES) continue;
+    const bytes = readFileSync(absolute);
+    if (decodeText(bytes)) history.record(folder.historyKey, file, bytes);
   }
   removePathSync(entry.absolute);
   return { path: entry.relative, files };

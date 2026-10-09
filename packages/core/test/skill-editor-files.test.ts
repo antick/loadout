@@ -205,11 +205,14 @@ describe("deleting", () => {
     expect(world.ctx.activity.list(1)[0]?.detail).toBe("Deleted notes.md");
   });
 
-  it("deletes a folder, keeping every file in it", async () => {
+  it("deletes a folder, keeping every file in it the editor could open", async () => {
     const skill = world.addSkill("alpha", { "scripts/a.sh": "a\n", "scripts/sub/b.sh": "b\n" });
+    writeFileSync(join(skill.libraryPath, "scripts", "tool.bin"), Buffer.from([0, 1, 2, 0]));
     await ed().deleteFile(lib(skill.id), "scripts");
     expect(existsSync(join(skill.libraryPath, "scripts"))).toBe(false);
     expect(await ed().fileVersions(lib(skill.id), "scripts/sub/b.sh")).toHaveLength(1);
+    // A binary could never be shown from the history, so it is not copied there.
+    expect(await ed().fileVersions(lib(skill.id), "scripts/tool.bin")).toHaveLength(0);
     expect(await ed().folders(lib(skill.id))).toEqual([]);
   });
 
