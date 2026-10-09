@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import type { PublishSkillPlan } from "@loadout/shared";
 import { AppError } from "../errors";
 import { ensureDir, isInside, removePathSync, EXECUTABLE_MODE, FILE_MODE } from "../util/fs";
+import { isReallyInside } from "../util/safe-path";
 import type { Checkout } from "./checkout";
 import type { PlannedSkill } from "./plan";
 
@@ -43,8 +44,13 @@ export async function writeAndCommit(
   const todo = planned.filter(({ plan }) => plan.status === "new" || plan.status === "changed");
   for (const { plan, files } of todo) {
     const folder = join(checkout.dir, ...plan.folder.split("/"));
-    // The name was checked already; this is the last line of defence against a path that leaves.
-    if (!isInside(checkout.dir, folder) || folder === checkout.dir) {
+    // The name was checked already; this is the last line of defence against a path that leaves,
+    // also through a link the repository holds on the way (`skills -> ../..`).
+    if (
+      !isInside(checkout.dir, folder) ||
+      folder === checkout.dir ||
+      !isReallyInside(checkout.dir, folder)
+    ) {
       throw new AppError(
         "INVALID_INPUT",
         `Refusing to write outside the repository: ${plan.folder}`,
