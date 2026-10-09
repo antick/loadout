@@ -58,9 +58,17 @@ export function RemovalGuardDialog({
   const { t } = useTranslation();
   const names = useAgentNames();
   const groups = useMemo(() => groupByLocation(removals ?? []), [removals]);
+  // An edit in an agent's copy says whose copy it is; the library's are plain paths.
   const edits = useMemo(
-    () => (removals ?? []).filter((removal) => removal.kind === "edited").map((r) => r.path),
-    [removals],
+    () =>
+      (removals ?? [])
+        .filter((removal) => removal.kind === "edited")
+        .map((r) =>
+          r.location === REMOVAL_IN_LIBRARY
+            ? r.path
+            : `${names.get(r.location) ?? r.location}: ${r.path}`,
+        ),
+    [removals, names],
   );
   const deletions = (removals?.length ?? 0) - edits.length;
 

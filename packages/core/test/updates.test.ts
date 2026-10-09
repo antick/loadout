@@ -294,6 +294,25 @@ describe("update", () => {
     });
   });
 
+  it("asks before an update replaces a file edited in an agent's copy", async () => {
+    world.ctx.settings.set("deployMode", "copy");
+    const pdf = await world.installFromGit("pdf");
+    await world.deploy.api.deploy(pdf.id, "claude_code");
+    const edited = join(world.claudeTarget("pdf"), "SKILL.md");
+    writeFile(edited, "mine");
+    changePdfUpstream(world);
+
+    const asked = await world.updates.api.update(pdf.id);
+    expect(asked.pendingRemovals).toEqual([
+      { location: "claude_code", path: "SKILL.md", kind: "edited" },
+    ]);
+    expect(readFileSync(edited, "utf8")).toBe("mine");
+
+    await world.updates.api.update(pdf.id, asked.approval);
+    expect(readFileSync(edited, "utf8")).not.toBe("mine");
+    expect(world.removed.list()).toHaveLength(1);
+  });
+
   it("only moves the revisions when the commit touched another skill", async () => {
     const pdf = await world.installFromGit("pdf");
     writeFile(join(world.remote, "skills", "docx", "extra.md"), "more");

@@ -154,7 +154,11 @@ export function createCore(options: CoreCreateOptions = {}): Core {
     request,
     clawhub,
     safety,
-    replace: { removed, refreshCopies: deploy.refreshCopies },
+    // A copy edited in an agent's folder is kept, as the editor and an update keep it.
+    replace: {
+      removed,
+      refreshCopies: (skill) => deploy.refreshCopies(skill, { keepModified: true }),
+    },
     sourceNews,
   });
   const scan = createScanService(ctx, {

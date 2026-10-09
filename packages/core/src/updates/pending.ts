@@ -1,4 +1,5 @@
 import type { PendingRemoval, Skill } from "@loadout/shared";
+import { holdsOwnEdits } from "../deploy/evidence";
 import { invalid } from "../errors";
 import { hashAsLibraryCopy } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
@@ -18,6 +19,17 @@ function changedSinceInstall(store: SkillStore, skill: Skill): string[] {
   if (!snapshot) return [];
   return Object.entries(fileDigests(skill.libraryPath))
     .filter(([path, digest]) => snapshot.files[path] !== digest)
+    .map(([path]) => path);
+}
+
+/**
+ * Files of an edited copy that differ from the library skill it was made from. Those the agent
+ * added are not among them: they are listed as removed.
+ */
+function copyEdits(fresh: Skill, copyDir: string): string[] {
+  const library = fileDigests(fresh.libraryPath);
+  return Object.entries(fileDigests(copyDir))
+    .filter(([path, digest]) => library[path] !== undefined && library[path] !== digest)
     .map(([path]) => path);
 }
 
@@ -56,6 +68,11 @@ function pendingRemovals(
     seen.add(identity);
     // Anything but a real folder is refused by the deploy engine and left untouched.
     if (!lstatOrNull(row.targetPath)?.isDirectory()) continue;
+    // Files the user changed in the copy that the rebuild would overwrite: asked like any edit.
+    const edits = holdsOwnEdits(row, fresh.contentHash) ? copyEdits(fresh, row.targetPath) : [];
+    for (const path of listReplacedEdits(row.targetPath, rebuiltFrom, edits)) {
+      removals.push({ location: row.agentKey, path, kind: "edited" });
+    }
     for (const path of listRemovedPaths(row.targetPath, rebuiltFrom)) {
       removals.push({ location: row.agentKey, path, kind: "removed" });
     }

@@ -217,6 +217,19 @@ describe("global workspace", () => {
     ]);
   });
 
+  it("keeps another agent's edited copy when uploading over its skill", async () => {
+    world.ctx.settings.set("deployMode", "copy");
+    const skill = world.addSkill("helper");
+    await world.deploy.api.deploy(skill.id, "claude_code");
+    await world.deploy.api.deploy(skill.id, "cursor");
+    const cursorCopy = join(world.home, ".cursor", "skills", "helper");
+    writeFile(join(cursorCopy, "SKILL.md"), "---\nname: helper\ndescription: cursor\n---\nmine\n");
+    writeFile(join(claude, "helper", "SKILL.md"), "---\nname: helper\ndescription: v2\n---\nv2\n");
+
+    await api().upload("claude_code", "helper");
+    expect(skillText(cursorCopy)).toContain("mine");
+  });
+
   it.each([
     ["recorded", true],
     ["not recorded", false],

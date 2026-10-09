@@ -226,7 +226,7 @@ export interface PendingRemoval {
   /** `REMOVAL_IN_LIBRARY` or the agent key whose deployed copy holds the file. */
   location: string;
   path: string;
-  /** `edited`: a file changed in the app that the new version replaces. */
+  /** `edited`: a file the user changed, in the library or in that copy, that the new version replaces. */
   kind: "removed" | "edited";
 }
 

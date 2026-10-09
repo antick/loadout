@@ -131,7 +131,8 @@ export async function pushLocalToLibrary(
   }
   // Copies deployed elsewhere were made from the old content.
   const refreshCopies = async (skill: Skill): Promise<void> => {
-    logRedeployProblems(ctx.log, await deploy.refreshCopies(skill), "refresh");
+    const report = await deploy.refreshCopies(skill, { keepModified: true });
+    logRedeployProblems(ctx.log, report, "refresh");
   };
   // The library version it replaces goes to Recently removed, as any replaced skill does.
   return installReplacing(ctx, install.installIntoLibrary, { removed, refreshCopies }, match, {
