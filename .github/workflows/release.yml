@@ -7,8 +7,8 @@ name: Release builds
 # app's update check only sees the newest published release. Publishing it also publishes the
 # CLI to npm (publish-npm.yml).
 #
-# The builds are not signed with an Apple or Windows certificate: macOS asks to confirm the first
-# launch, Windows SmartScreen warns. docs/INSTALL.md tells users what to click.
+# The builds are not signed with an Apple certificate: macOS asks to confirm the first launch.
+# docs/INSTALL.md tells users what to click. Windows is paused (docs/TODO.md): no Windows build.
 
 on:
   push:
@@ -68,10 +68,6 @@ jobs:
             os: ubuntu-24.04
             args: --linux
             standalone_cli: false
-          - name: Windows
-            os: windows-2025
-            args: --win --x64
-            standalone_cli: false
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,7 +97,6 @@ jobs:
           path: |
             apps/desktop/release/*.dmg
             apps/desktop/release/*.zip
-            apps/desktop/release/*.exe
             apps/desktop/release/*.AppImage
             apps/desktop/release/*.deb
 
@@ -147,7 +142,7 @@ jobs:
         run: |
           node apps/desktop/scripts/update-feed.mjs dist \
             --version "${TAG#v}" --repo "$GITHUB_REPOSITORY" \
-            --require darwin-arm64 --require darwin-x64 --require win32-x64 \
+            --require darwin-arm64 --require darwin-x64 \
             --require linux-x64-appimage --require linux-arm64-appimage \
             --require linux-x64-deb --require linux-arm64-deb
 

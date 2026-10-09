@@ -190,10 +190,10 @@ and the type check once on Linux, the tests on Linux and macOS, and the UI tests
 Installers are published as GitHub releases of this repository. The app's update check reads
 `latest.json` from the newest published release, and the landing page links there.
 
-`.github/workflows/release.yml` builds macOS (Apple Silicon and Intel, DMG and ZIP), Windows
-(NSIS installer) and Linux (AppImage and DEB, x64 and arm64) installers and the standalone CLI
-executables. It then writes `latest.json` (version, and per system the download link, size and
-SHA-256) with `apps/desktop/scripts/update-feed.mjs`, and puts everything in a **draft** release.
+`.github/workflows/release.yml` builds macOS (Apple Silicon and Intel, DMG and ZIP) and Linux
+(AppImage and DEB, x64 and arm64) installers and the standalone CLI executables. It then writes
+`latest.json` (version, and per system the download link, size and SHA-256) with
+`apps/desktop/scripts/update-feed.mjs`, and puts everything in a **draft** release.
 
 ### Cut a release
 

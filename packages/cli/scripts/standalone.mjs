@@ -4,7 +4,7 @@
  * each target, which must be the same Node version that prepares the blob: this one.
  *
  *   node scripts/standalone.mjs                 this computer's platform only
- *   node scripts/standalone.mjs --all           every target (macOS targets need a Mac to sign)
+ *   node scripts/standalone.mjs --all           every released target (macOS ones need a Mac to sign)
  *   node scripts/standalone.mjs --target linux-arm64,win-x64
  *
  * Output: dist/standalone/loadout-cli-<version>-<target>[.exe] plus SHA256SUMS.
@@ -25,6 +25,8 @@ import { build } from "esbuild";
 import { bundleOptions } from "../build.mjs";
 
 const TARGETS = ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64", "win-x64"];
+/** What `--all` builds for a release. Windows is paused (docs/TODO.md): only on request. */
+const RELEASED = TARGETS.filter((target) => !target.startsWith("win"));
 const NODE_DIST_URL = "https://nodejs.org/dist";
 const SEA_FUSE = "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2";
 const SEA_RESOURCE = "NODE_SEA_BLOB";
@@ -44,7 +46,7 @@ function run(command, args) {
 }
 
 function chosenTargets(argv) {
-  if (argv.includes("--all")) return TARGETS;
+  if (argv.includes("--all")) return RELEASED;
   const flag = argv.indexOf("--target");
   if (flag === -1) return [hostTarget];
   const wanted = (argv[flag + 1] ?? "").split(",").filter(Boolean);
