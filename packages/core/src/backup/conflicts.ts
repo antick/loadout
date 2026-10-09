@@ -28,7 +28,6 @@ const RESOLVE_MESSAGE: Record<ConflictResolution, string> = {
   keep_both: "resolve conflict: keep both",
 };
 const REMOTE_COPY_SUFFIX = "-remote";
-const LOCAL_ASIDE_KEY = "local";
 
 /** What a choice changed on disk, so a failure can be undone and the rest finished after it. */
 interface ChoiceWork {
@@ -93,7 +92,8 @@ async function useRemote(
     : firstFreeName(conflict.theirsPath ?? conflict.skillName, isFree);
   const target = join(env.repoDir, folder);
   const move = (from: string, to: string): void => work.edit.move(from, to);
-  const aside = await setAsideFolder(env, staged.stage, folder, LOCAL_ASIDE_KEY, move);
+  // Keyed by the skill id, as a merge does: a crash rescue reads it back as the skill.
+  const aside = await setAsideFolder(env, staged.stage, folder, conflict.skillKey, move);
   if (aside) work.replaced.push({ aside, target });
   move(staged.folder, target);
   // The other device's metadata wins; what it leaves out (a block, a note) stays as it is here.
