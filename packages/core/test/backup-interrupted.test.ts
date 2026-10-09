@@ -166,4 +166,20 @@ describe("a backup merge that did not finish", () => {
       details: { marker: "index.lock" },
     });
   });
+
+  it("stops on a lock dated in the future instead of waiting for the clock", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["alpha"]);
+    track(a);
+    const b = track(await joinRemote(temp.dir, remote));
+    b.editSkill("alpha", "from B");
+    const lock = join(b.skillsDir, ".git", "index.lock");
+    writeFileSync(lock, "");
+    const inAnHour = Date.now() / 1000 + 60 * 60;
+    utimesSync(lock, inAnHour, inAnHour);
+
+    await expect(b.api.sync()).rejects.toMatchObject({
+      code: "GIT",
+      details: { marker: "index.lock" },
+    });
+  });
 });

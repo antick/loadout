@@ -62,9 +62,14 @@ function leftoverMarker(env: BackupEnv): string | undefined {
   return INTERRUPTED_MARKERS.find((name) => existsSync(gitPath(env, name)));
 }
 
-/** Wait while `index.lock` is fresh: another git command is still running, not cut off. */
+/**
+ * Wait while `index.lock` is fresh: another git command is still running, not cut off. Never
+ * longer than the grace period itself, so a lock dated in the future (a clock set back) is judged
+ * like one left behind instead of holding the library lock until the clock catches up.
+ */
 async function waitForBusyIndex(env: BackupEnv): Promise<void> {
-  for (;;) {
+  const deadline = Date.now() + INDEX_LOCK_GRACE_MS;
+  while (Date.now() < deadline) {
     const lock = statOrNull(gitPath(env, INDEX_LOCK));
     if (!lock || Date.now() - lock.mtimeMs >= INDEX_LOCK_GRACE_MS) return;
     await sleep(INDEX_LOCK_POLL_MS);
