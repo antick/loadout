@@ -79,12 +79,15 @@ function fileBytes(path: string): Buffer | null {
 
 /**
  * Of the files edited in the app, those the replacement would change: present in the library
- * now, and different (or missing) in the replacement. Sorted, `/` separated.
+ * now, and different (or missing) in the replacement. `overrides` holds replacement files by
+ * relative path whose text differs from the folder's (a library copy's fixed name). Sorted, `/`
+ * separated.
  */
 export function listReplacedEdits(
   currentRoot: string,
   replacementRoot: string,
   editedFiles: readonly string[],
+  overrides?: ReadonlyMap<string, string>,
 ): string[] {
   const replaced: string[] = [];
   for (const path of new Set(editedFiles)) {
@@ -92,7 +95,11 @@ export function listReplacedEdits(
     const segments = path.split("/");
     const current = fileBytes(join(currentRoot, ...segments));
     if (!current) continue;
-    const replacement = fileBytes(join(replacementRoot, ...segments));
+    const override = overrides?.get(segments.join("/"));
+    const replacement =
+      override === undefined
+        ? fileBytes(join(replacementRoot, ...segments))
+        : Buffer.from(override);
     if (!replacement || !replacement.equals(current)) replaced.push(segments.join("/"));
   }
   return replaced.sort(compareText);

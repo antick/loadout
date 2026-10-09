@@ -1,7 +1,7 @@
 import type { PendingRemoval, Skill } from "@loadout/shared";
 import { holdsOwnEdits } from "../deploy/evidence";
 import { invalid } from "../errors";
-import { hashAsLibraryCopy } from "../skills/numbered-name";
+import { hashAsLibraryCopy, libraryCopyOverrides } from "../skills/numbered-name";
 import type { SkillStore } from "../skills/store";
 import { lstatOrNull, targetIdentity } from "../util/fs";
 import { fileDigests } from "../util/hash";
@@ -46,7 +46,9 @@ function pendingRemovals(
   if (sourceDir) {
     // An edited file the new version drops is listed once, as the edit the user would lose.
     const edited = [...fresh.editedFiles, ...changedSinceInstall(store, fresh)];
-    const edits = listReplacedEdits(fresh.libraryPath, sourceDir, edited);
+    // Compared with the library copy the source becomes: a kept name is no lost edit.
+    const overrides = libraryCopyOverrides(sourceDir, fresh.dirName, fresh.name);
+    const edits = listReplacedEdits(fresh.libraryPath, sourceDir, edited, overrides);
     const editSet = new Set(edits);
     for (const path of edits) removals.push({ location: REMOVAL_IN_LIBRARY, path, kind: "edited" });
     for (const path of listRemovedPaths(fresh.libraryPath, sourceDir)) {
@@ -93,7 +95,9 @@ export function assessReplacement(
   fresh: Skill,
   sourceDir: string | null,
 ): Assessment {
-  const newHash = sourceDir ? hashAsLibraryCopy(sourceDir, fresh.dirName) : fresh.contentHash;
+  const newHash = sourceDir
+    ? hashAsLibraryCopy(sourceDir, fresh.dirName, {}, fresh.name)
+    : fresh.contentHash;
   if (sourceDir && newHash === null) throw invalid("The source has no files to install");
   // Against the stored hash: a commit elsewhere in a big repository changes nothing here.
   const contentChanged = newHash !== fresh.contentHash;

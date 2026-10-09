@@ -23,12 +23,15 @@ interface NameFix {
 /**
  * A skill that went into the library as `<its name>-N`, because another skill had its name,
  * says `name: <its name>` in its SKILL.md: agents would see two skills with one name, and the
- * Agent Skills rules want the name to match the folder. This is the document with that fixed,
- * or null when `sourceDir` needs nothing for `dirName`.
+ * Agent Skills rules want the name to match the folder. So does a skill the user renamed: `name`
+ * is the library skill's own, and when it is its folder's name a new version keeps it. This is
+ * the document with that fixed, or null when `sourceDir` needs nothing for `dirName`.
  */
-function nameFix(sourceDir: string, dirName: string): NameFix | null {
+function nameFix(sourceDir: string, dirName: string, name?: string): NameFix | null {
+  const sourceName = readSkillIdentity(sourceDir).name;
   const numbered = NUMBERED.exec(dirName);
-  if (!numbered || readSkillIdentity(sourceDir).name !== numbered[1]) return null;
+  const renamed = name === dirName && sourceName !== dirName;
+  if (!renamed && (!numbered || sourceName !== numbered[1])) return null;
   const found = readSkillDocument(sourceDir);
   if (!found) return null;
   const content = setFrontmatterName(found.content, dirName);
@@ -36,13 +39,17 @@ function nameFix(sourceDir: string, dirName: string): NameFix | null {
   return { filename: toPosix(found.filename), content, name: dirName };
 }
 
-/** Hash of `sourceDir` as the library keeps it under `dirName`: its name fixed if needed. */
+/**
+ * Hash of `sourceDir` as the library keeps it under `dirName`: its name fixed if needed. `name`
+ * is the library skill's own name when the copy replaces one (see `nameFix`).
+ */
 export function hashAsLibraryCopy(
   sourceDir: string,
   dirName: string,
   options: HashOptions = {},
+  name?: string,
 ): string | null {
-  const fix = nameFix(sourceDir, dirName);
+  const fix = nameFix(sourceDir, dirName, name);
   if (!fix) return hashDir(sourceDir, options);
   return hashDir(sourceDir, { ...options, overrides: new Map([[fix.filename, fix.content]]) });
 }
@@ -55,8 +62,9 @@ export function sameTextAsLibraryCopy(
   sourceDir: string,
   dirName: string,
   libraryPath: string,
+  name?: string,
 ): boolean {
-  const sourceText = hashAsLibraryCopy(sourceDir, dirName, EOL_INSENSITIVE);
+  const sourceText = hashAsLibraryCopy(sourceDir, dirName, EOL_INSENSITIVE, name);
   return sourceText !== null && sourceText === hashDir(libraryPath, EOL_INSENSITIVE);
 }
 
@@ -67,17 +75,19 @@ export function sameTextAsLibraryCopy(
 export function libraryCopyOverrides(
   sourceDir: string,
   dirName: string,
+  name?: string,
 ): Map<string, string> | undefined {
-  const fix = nameFix(sourceDir, dirName);
+  const fix = nameFix(sourceDir, dirName, name);
   return fix ? new Map([[fix.filename, fix.content]]) : undefined;
 }
 
 /**
- * Fix the name in a library folder just written as `<its name>-N`. Returns the name it now
- * carries, or null when nothing needed changing.
+ * Fix the name in a library folder just written as `<its name>-N`, or over a skill the user
+ * renamed (`name`, see `nameFix`). Returns the name it now carries, or null when nothing needed
+ * changing.
  */
-export function fixNumberedName(libraryDir: string, dirName: string): string | null {
-  const fix = nameFix(libraryDir, dirName);
+export function fixNumberedName(libraryDir: string, dirName: string, name?: string): string | null {
+  const fix = nameFix(libraryDir, dirName, name);
   if (!fix) return null;
   writeFileSync(join(libraryDir, fix.filename), fix.content);
   return fix.name;

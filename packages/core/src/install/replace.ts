@@ -38,7 +38,8 @@ export async function installReplacing(
 ): Promise<Skill> {
   const skill = await ctx.lock.run(`replace ${owner.name}`, async () => {
     const changed =
-      hashAsLibraryCopy(request.sourceDir, owner.dirName) !== hashDir(owner.libraryPath);
+      hashAsLibraryCopy(request.sourceDir, owner.dirName, {}, owner.name) !==
+      hashDir(owner.libraryPath);
     if (changed)
       deps.removed.keepCopy(owner.libraryPath, { place: LIBRARY_PLACE, reason: "replaced" });
     return install({

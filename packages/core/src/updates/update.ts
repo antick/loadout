@@ -189,7 +189,8 @@ export function createUpdater(ctx: CoreContext, deps: UpdaterDeps): Updater {
   async function checkNewVersion(plan: Replacement): Promise<SafetyReport | null> {
     const current = store.get(plan.skillId);
     if (!plan.sourceDir) return null;
-    if (hashAsLibraryCopy(plan.sourceDir, current.dirName) === current.contentHash) return null;
+    const newHash = hashAsLibraryCopy(plan.sourceDir, current.dirName, {}, current.name);
+    if (newHash === current.contentHash) return null;
     const [report] = await deps.safety.check([{ name: current.name, dir: plan.sourceDir }], {
       acceptRisk: plan.acceptRisk,
       progressKey: updateProgressKey(plan.skillId),

@@ -153,9 +153,13 @@ export async function installIntoLibrary(
       // Copy from the real folder: a source that is itself a link would be copied as a link.
       const dirName = basename(destination);
       const held = hashDir(destination);
-      const inPlace = held !== null && held === copyHashAs(dirName);
+      // A skill being replaced keeps the name the user gave it (see `fixNumberedName`).
+      const copyHash = replaced
+        ? hashAsLibraryCopy(sourceDir, dirName, {}, replaced.name)
+        : copyHashAs(dirName);
+      const inPlace = held !== null && held === copyHash;
       if (!inPlace) await replaceDirAtomic(canonicalPath(sourceDir), destination);
-      const fixedName = fixNumberedName(destination, dirName);
+      const fixedName = fixNumberedName(destination, dirName, replaced?.name);
 
       const userContent = request.userContent === true && owner !== null;
       const fields = {

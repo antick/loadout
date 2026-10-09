@@ -169,12 +169,12 @@ async function localFinding(
     const source = await openLocalSource(skill, download, cache);
     try {
       if (!skill.contentHash) return settled(skill, "local_only");
-      const sourceHash = hashAsLibraryCopy(source.dir, skill.dirName);
+      const sourceHash = hashAsLibraryCopy(source.dir, skill.dirName, {}, skill.name);
       if (sourceHash === (installedHash ?? skill.contentHash)) {
         return settled(skill, "up_to_date");
       }
       // A checkout that only flipped line endings is not an update worth offering.
-      const same = sameTextAsLibraryCopy(source.dir, skill.dirName, skill.libraryPath);
+      const same = sameTextAsLibraryCopy(source.dir, skill.dirName, skill.libraryPath, skill.name);
       return settled(skill, same ? "up_to_date" : "update_available");
     } finally {
       await source.cleanup();

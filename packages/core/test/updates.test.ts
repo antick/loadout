@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelled } from "../src/errors";
 import { updateProgressKey } from "@loadout/shared";
+import { renameSkill } from "../src/skills/rename";
 import { writeFile, rejection } from "./helpers";
 import { commitAll, git, leftoverCheckouts } from "./install-fixtures";
 import {
@@ -311,6 +312,25 @@ describe("update", () => {
     await world.updates.api.update(pdf.id, asked.approval);
     expect(readFileSync(edited, "utf8")).not.toBe("mine");
     expect(world.removed.list()).toHaveLength(1);
+  });
+
+  it("keeps a skill's new name through check and update", async () => {
+    const pdf = await world.installFromGit("pdf");
+    const deps = { store: world.store, deploy: world.deploy, projectSkillFolders: () => [] };
+    await renameSkill(world.ctx, deps, pdf.id, "my-pdf");
+
+    const checked = await world.updates.api.check(pdf.id);
+    expect(checked.updateStatus).toBe("up_to_date");
+
+    changePdfUpstream(world);
+    const asked = await world.updates.api.update(pdf.id);
+    expect(asked.pendingRemovals).toEqual([]);
+    const renamed = world.store.get(pdf.id);
+    expect(renamed.name).toBe("my-pdf");
+    expect(readFileSync(join(renamed.libraryPath, "SKILL.md"), "utf8")).toContain("name: my-pdf");
+    expect(readFileSync(join(renamed.libraryPath, "scripts", "run.sh"), "utf8")).toBe(
+      "echo pdf v2\n",
+    );
   });
 
   it("only moves the revisions when the commit touched another skill", async () => {

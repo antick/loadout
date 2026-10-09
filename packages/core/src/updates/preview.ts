@@ -55,7 +55,9 @@ export function diffWithSource(
     entries: diffTrees(
       skill.libraryPath,
       source.dir,
-      options.asLibraryCopy ? libraryCopyOverrides(source.dir, skill.dirName) : undefined,
+      options.asLibraryCopy
+        ? libraryCopyOverrides(source.dir, skill.dirName, skill.name)
+        : undefined,
     ),
   };
 }
