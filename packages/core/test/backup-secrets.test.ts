@@ -196,6 +196,26 @@ describe("backup push check", () => {
     expect(rawGit(remote, "log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
   });
 
+  it("a pull checks a note not written to its metadata file yet before committing it", async () => {
+    const remote = createBareRemote(temp.dir);
+    const a = createDevice(temp.dir, "A");
+    device = a;
+    const skill = a.addSkill("clean");
+    await a.api.init();
+    await a.api.setRemote(remote);
+    await a.api.sync();
+
+    // Saved in the database only: the metadata file is written when the next commit prepares.
+    a.store.update(skill.id, { note: `Call it with ${GITHUB_TOKEN}` });
+    await expect(a.api.pull()).rejects.toMatchObject({ code: "SECRETS_FOUND" });
+    expect(a.git("log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
+
+    // The save on quit checks the same way, and leaves the change uncommitted.
+    a.ctx.settings.set("backupAutoEnabled", true);
+    await a.service.auto.runOnQuit();
+    expect(a.git("log", "-p", "--all")).not.toContain(GITHUB_TOKEN);
+  });
+
   it("a pull does not commit a key it finds in uncommitted changes", async () => {
     const remote = createBareRemote(temp.dir);
     const a = createDevice(temp.dir, "A");

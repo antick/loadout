@@ -20,7 +20,6 @@ import {
   requireBranch,
 } from "./repo";
 import { scanForPush, scanUncommittedChanges, secretsFound } from "./secrets";
-import { refreshIgnoreFile } from "./size";
 import { restorePointId } from "./snapshots";
 
 /**
@@ -59,8 +58,9 @@ function fetchOrigin(env: BackupEnv): Promise<void> {
 export async function pullRemote(env: BackupEnv): Promise<MergeSummary> {
   await fetchRemote(env);
   const result = await env.ctx.lock.run("backup merge", async () => {
-    // The merge commits pending changes first; a sync has refreshed the ignore file by then.
-    await refreshIgnoreFile(env);
+    // The merge commits pending changes first: bring the metadata and the ignore file up to date
+    // now, so the check below sees exactly what that commit takes in.
+    await prepareCommit(env);
     // As before a sync's commit: a key caught now can still simply be removed.
     const uncommitted = await scanUncommittedChanges(env);
     if (uncommitted.length > 0) throw secretsFound(uncommitted);

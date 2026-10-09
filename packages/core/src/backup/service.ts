@@ -1,5 +1,5 @@
 import type { BackupApi } from "@loadout/shared";
-import { exists } from "../errors";
+import { exists, isAppError } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import type { AutoBackupTarget } from "./auto";
 import { cloneLibrary } from "./clone";
@@ -9,10 +9,10 @@ import { sanitizeRemoteUrl } from "./credentials";
 import { writeDeviceName } from "./device";
 import { type BackupEnv, DEFAULT_BRANCH, REMOTE_NAME } from "./env";
 import { createGithubService } from "./github";
-import { assertRepo, commitLibrary, currentBranch, isRepo, originUrl } from "./repo";
+import { assertRepo, currentBranch, isRepo, originUrl } from "./repo";
 import { cleanUpUnpushed } from "./history-cleanup";
 import { readIgnoreRules, writeIgnoreRules } from "./ignore-rules";
-import { allowSecrets, scanForPush, scanUncommittedChanges } from "./secrets";
+import { allowSecrets, commitLibraryChecked, scanForPush } from "./secrets";
 import { buildSizeReport, refreshIgnoreFile } from "./size";
 import {
   DEFAULT_SNAPSHOT_LIMIT,
@@ -206,12 +206,14 @@ export function createBackupOperations(env: BackupEnv, request: HttpRequest): Ba
     pendingConflicts: () => countConflicts(ctx.db),
     commitLocal: async (message) => {
       await ctx.lock.tryRun("backup commit", async () => {
-        // A save on quit must not bake a key into history the next push would carry.
-        if ((await originUrl(env)) && (await scanUncommittedChanges(env)).length > 0) {
+        // A save on quit must not bake a key into history the next push would carry. Checked
+        // after the metadata and ignore file are brought up to date, so it sees what is committed.
+        try {
+          await commitLibraryChecked(env, message);
+        } catch (error) {
+          if (!isAppError(error, "SECRETS_FOUND")) throw error;
           ctx.log.warn("Not saving the library locally: a change looks like a key or token");
-          return;
         }
-        await commitLibrary(env, message);
       });
     },
   };
