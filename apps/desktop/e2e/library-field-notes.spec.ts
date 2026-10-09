@@ -8,9 +8,9 @@ test("the Agents tab says which agents do not act on a skill's frontmatter", asy
 
   const rows = panel.getByRole("listitem");
   const openCode = rows.filter({ hasText: "OpenCode" });
-  await expect(openCode.getByText("Skips allowed-tools, model")).toBeVisible();
+  await expect(openCode.getByText("Skips allowed-tools and model")).toBeVisible();
   const cursor = rows.filter({ hasText: "Cursor" });
-  await expect(cursor.getByText("Docs do not list allowed-tools, model")).toBeVisible();
+  await expect(cursor.getByText("Docs do not list allowed-tools and model")).toBeVisible();
   // Claude Code reads both, and Codex has no documentation Loadout can quote.
   await expect(
     rows.filter({ hasText: "Claude Code" }).getByText(/Skips|Docs do not list/),
@@ -19,6 +19,6 @@ test("the Agents tab says which agents do not act on a skill's frontmatter", asy
     0,
   );
 
-  await openCode.getByText("Skips allowed-tools, model").hover();
+  await openCode.getByText("Skips allowed-tools and model").hover();
   await expect(page.getByRole("tooltip")).toContainText("documentation lists the fields it reads");
 });

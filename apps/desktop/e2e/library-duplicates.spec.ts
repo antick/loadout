@@ -31,7 +31,7 @@ test("review a possible duplicate, compare it, keep one and undo", async ({ page
 
   await pair.getByRole("button", { name: "Keep diff-review" }).click();
   const confirm = page.getByRole("alertdialog", { name: "Keep diff-review?" });
-  await expect(confirm.getByText("Deployed to: codex, cursor")).toBeVisible();
+  await expect(confirm.getByText("Deployed to: codex and cursor")).toBeVisible();
   await confirm.getByRole("button", { name: "Remove code-review" }).click();
 
   await expect(dialog.getByText("No duplicates found")).toBeVisible();
