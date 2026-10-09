@@ -119,26 +119,38 @@ export function SkillsFileSection({ dir }: { dir: string }): ReactNode {
   const reveal = useRevealPath();
   const [mode, setMode] = useState<SkillsFileMode | null>(null);
   const [creating, setCreating] = useState(false);
-  if (file.isPending) return null;
+  // Outside the strip, so an open dialog stays when the file stops parsing while it runs.
+  const dialogs = (
+    <>
+      <SkillsFilePlanDialog dir={dir} mode={mode} onClose={() => setMode(null)} />
+      <CreateDialog dir={dir} open={creating} onClose={() => setCreating(false)} />
+    </>
+  );
+  if (file.isPending) return dialogs;
   // A file that cannot be read (a TOML syntax error, a missing key) says why, path included, so
   // the user can fix it and look again.
   if (file.error) {
     return (
-      <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed border-danger/40 px-3 py-2">
-        <h2 className="font-mono text-xs font-medium text-muted-foreground">{SKILLS_FILE_NAME}</h2>
-        <p role="alert" className="min-w-0 flex-1 text-xs break-words text-danger">
-          {t("skillsFile.broken", { message: errorMessage(file.error) })}
-        </p>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={file.isFetching}
-          onClick={() => void file.refetch()}
-        >
-          {file.isFetching ? <Spinner /> : <RefreshCw />}
-          {t("common.retry")}
-        </Button>
-      </section>
+      <>
+        <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed border-danger/40 px-3 py-2">
+          <h2 className="font-mono text-xs font-medium text-muted-foreground">
+            {SKILLS_FILE_NAME}
+          </h2>
+          <p role="alert" className="min-w-0 flex-1 text-xs break-words text-danger">
+            {t("skillsFile.broken", { message: errorMessage(file.error) })}
+          </p>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={file.isFetching}
+            onClick={() => void file.refetch()}
+          >
+            {file.isFetching ? <Spinner /> : <RefreshCw />}
+            {t("common.retry")}
+          </Button>
+        </section>
+        {dialogs}
+      </>
     );
   }
   const info = file.data;
@@ -146,54 +158,55 @@ export function SkillsFileSection({ dir }: { dir: string }): ReactNode {
   const own = info !== null && info.root === dir;
 
   return (
-    <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed px-3 py-2">
-      <h2 className="font-mono text-xs font-medium text-muted-foreground">{SKILLS_FILE_NAME}</h2>
-      {own && info ? (
-        <>
-          <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-            {summary(info, t)}
-          </p>
-          <Button size="sm" variant="outline" onClick={() => setMode("apply")}>
-            <Play />
-            {t("skillsFile.apply")}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setMode("update")}>
-            <RefreshCw />
-            {t("skillsFile.update")}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={t("skillsFile.more")}>
-                <MoreHorizontal />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => reveal.mutate(info.path)}>
-                <FolderOpen />
-                {t("common.reveal")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                disabled={!info.lock || info.lock.folders.length === 0}
-                onSelect={() => setMode("unapply")}
-              >
-                <Trash2 />
-                {t("skillsFile.unapply")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      ) : (
-        <>
-          <p className="min-w-0 flex-1 text-xs text-muted-foreground">{t("skillsFile.offer")}</p>
-          <Button size="sm" variant="ghost" onClick={() => setCreating(true)}>
-            <FileCode2 />
-            {t("skillsFile.createShort")}
-          </Button>
-        </>
-      )}
-      <SkillsFilePlanDialog dir={dir} mode={mode} onClose={() => setMode(null)} />
-      <CreateDialog dir={dir} open={creating} onClose={() => setCreating(false)} />
-    </section>
+    <>
+      <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed px-3 py-2">
+        <h2 className="font-mono text-xs font-medium text-muted-foreground">{SKILLS_FILE_NAME}</h2>
+        {own && info ? (
+          <>
+            <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {summary(info, t)}
+            </p>
+            <Button size="sm" variant="outline" onClick={() => setMode("apply")}>
+              <Play />
+              {t("skillsFile.apply")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setMode("update")}>
+              <RefreshCw />
+              {t("skillsFile.update")}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" aria-label={t("skillsFile.more")}>
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => reveal.mutate(info.path)}>
+                  <FolderOpen />
+                  {t("common.reveal")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={!info.lock || info.lock.folders.length === 0}
+                  onSelect={() => setMode("unapply")}
+                >
+                  <Trash2 />
+                  {t("skillsFile.unapply")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        ) : (
+          <>
+            <p className="min-w-0 flex-1 text-xs text-muted-foreground">{t("skillsFile.offer")}</p>
+            <Button size="sm" variant="ghost" onClick={() => setCreating(true)}>
+              <FileCode2 />
+              {t("skillsFile.createShort")}
+            </Button>
+          </>
+        )}
+      </section>
+      {dialogs}
+    </>
   );
 }
