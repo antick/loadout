@@ -14,7 +14,7 @@ import {
 import type { CoreContext } from "../context";
 import { AppError, errorMessage, unsupported } from "../errors";
 import type { SkillStore } from "../skills/store";
-import { mapLimit } from "../util/async";
+import { mapLimit, yieldToEventLoop } from "../util/async";
 import { scanWithRules } from "./builtin";
 import { BUILTIN_RULES_VERSION } from "./rules";
 import { type ScannerProgram, findScanner, runScanner, scannerVersion } from "./scanner";
@@ -132,7 +132,12 @@ export function createSafetyService(ctx: CoreContext, deps: SafetyServiceDeps): 
    * skill shows it was not checked by SkillSpector. A report SkillSpector does give stands.
    */
   async function scanDir(engine: Engine, dir: string, name: string): Promise<SafetyReport> {
-    if (engine.kind === "builtin") return scanWithRules(dir);
+    if (engine.kind === "builtin") {
+      // The rules read every file synchronously: in a run over the whole library, let the app's
+      // other calls through between skills instead of holding them all until the end.
+      await yieldToEventLoop();
+      return scanWithRules(dir);
+    }
     try {
       return await runScanner(engine.program.path, dir);
     } catch (error) {
