@@ -25,8 +25,8 @@ const UNREADABLE_STALE_MS = 60_000;
 /** While a lock is held, its file's modification time is moved on this often. */
 const HEARTBEAT_MS = 5_000;
 /**
- * A lock file not moved on for this long was left behind: its holder crashed, hangs, or sits on
- * a computer whose process this one cannot ask about (another host name, which on macOS also
+ * A lock file of another host not moved on for this long was left behind: its holder sits on a
+ * computer whose process this one cannot ask about (another host name, which on macOS also
  * happens when the network changes). Many heartbeats long, so a busy holder never loses it.
  */
 const STALE_MS = 2 * 60_000;
@@ -118,19 +118,19 @@ export class RepoLock {
   }
 
   /**
-   * Left behind, never in use: the holder of a live lock moves its time on every heartbeat. A
-   * lock is abandoned when it is older than this computer's start (its pid may be reused), when
-   * no heartbeat moved it for the stale limit, or when its process on this host is gone.
+   * Left behind, never in use. A lock is abandoned when it is older than this computer's start
+   * (its pid may be reused) or when its process on this host is gone. On this host a live
+   * process keeps its lock however long since the last heartbeat: synchronous work (a library
+   * move) blocks the timer that moves it on. Only another host's lock, whose process cannot be
+   * asked about, is judged by its age: no heartbeat moved it for the stale limit.
    */
   #abandoned(holder: LockInfo | null): boolean {
     const stat = statOrNull(this.#path);
     if (!stat) return false;
     const age = Date.now() - stat.mtimeMs;
     if (holder === null) return age > UNREADABLE_STALE_MS;
-    if (age > this.#staleMs) return true;
-    // Another computer's process cannot be asked about: only its age and this start count.
-    if (holder.host !== hostname()) return stat.mtimeMs < bootTime();
-    return writerGone(holder.pid, stat.mtimeMs);
+    if (holder.host === hostname()) return writerGone(holder.pid, stat.mtimeMs);
+    return age > this.#staleMs || stat.mtimeMs < bootTime();
   }
 
   /** Move the lock file's time on while it is still ours, so nobody takes it for abandoned. */

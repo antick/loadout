@@ -1,6 +1,6 @@
 import { existsSync, renameSync } from "node:fs";
 import { basename, join } from "node:path";
-import { formatTimestampCompact, firstFreeName } from "@loadout/shared";
+import { formatTimestampCompact, firstFreeName, type Skill } from "@loadout/shared";
 import { exists } from "../errors";
 import { INTERNAL_KEYS } from "../settings/store";
 import { readPortableSkillFiles } from "../skills/portable";
@@ -63,6 +63,31 @@ interface Carried {
   complete: boolean;
   /** Database changes to make once the swap has really happened. */
   adjustments: (() => void)[];
+  /** Database changes to make once the new library is indexed. */
+  afterIndex: (() => void)[];
+}
+
+/**
+ * A local skill identical to the backup's but under another id gives way to the backup's row.
+ * What only this device knows about it (where it is deployed, what came from its source) moves
+ * onto that row, or deleting the local row would take it along.
+ */
+function handOver(env: BackupEnv, local: Skill, remoteId: string, carried: Carried): void {
+  const deployments = env.store.deployments().filter((row) => row.skillId === local.id);
+  const installed = env.store.installed(local.id);
+  carried.adjustments.push(() => env.store.delete(local.id));
+  carried.afterIndex.push(() => {
+    const remote = env.store.find(remoteId);
+    if (!remote) return;
+    for (const row of deployments) {
+      env.store.upsertDeployment(remote.id, row.agentKey, row.targetPath, row.mode, row.sourceHash);
+    }
+    const sameSource =
+      remote.sourceType === local.sourceType && remote.sourceRef === local.sourceRef;
+    if (installed && sameSource && !env.store.installed(remote.id)) {
+      env.store.setInstalled(remote.id, installed);
+    }
+  });
 }
 
 /**
@@ -73,7 +98,7 @@ interface Carried {
  */
 async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carried> {
   const remoteIds = remoteSkillIds(env, cloneDir);
-  const carried: Carried = { complete: true, adjustments: [] };
+  const carried: Carried = { complete: true, adjustments: [], afterIndex: [] };
 
   for (const entry of readDirSafe(env.repoDir)) {
     // Git's folder and our metadata are rebuilt, never carried.
@@ -106,7 +131,8 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
     }
 
     const row = env.store.findByLibraryPath(local);
-    const sameSkill = row !== null && remoteIds.get(entry.name) === row.id;
+    const remoteId = remoteIds.get(entry.name);
+    const sameSkill = row !== null && remoteId === row.id;
     if (hashDir(local) !== hashDir(incoming)) {
       const name = firstFreeName(
         `${entry.name}${LOCAL_COPY_SUFFIX}`,
@@ -128,7 +154,8 @@ async function carryLocalEntries(env: BackupEnv, cloneDir: string): Promise<Carr
     if (row && !sameSkill) {
       // Identical content under another id: the backup's identity wins, or presets synced from
       // other devices would point at a skill this device does not know.
-      carried.adjustments.push(() => env.store.delete(row.id));
+      if (remoteId === undefined) carried.adjustments.push(() => env.store.delete(row.id));
+      else handOver(env, row, remoteId, carried);
     }
   }
   return carried;
@@ -202,6 +229,10 @@ export async function cloneLibrary(
     if (!keep) await removePath(asideDir);
     // Not authoritative: the carried-over skills have no metadata yet and must be indexed.
     await env.reconcile("adopt");
+    if (carried.afterIndex.length > 0) {
+      for (const reattach of carried.afterIndex) reattach();
+      env.ctx.touched("skills");
+    }
     return keep ? asideDir : null;
   });
 
