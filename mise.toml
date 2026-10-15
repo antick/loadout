@@ -1,9 +1,9 @@
 # Tool versions and task shortcuts for https://mise.jdx.dev.
 # `mise install` installs Node and pnpm at these exact versions. `mise tasks` lists the tasks.
-# Keep pnpm the same as `packageManager` in package.json, and Node on the major CI uses.
+# Keep pnpm the same as `packageManager` in package.json, and Node on the major the CI workflows use.
 
 [tools]
-node = "22.23.3"
+node = "24.22.0"
 pnpm = "12.4.2"
 
 [tasks.install]
