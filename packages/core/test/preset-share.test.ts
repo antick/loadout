@@ -1,9 +1,9 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { PRESET_FILE_FORMAT, type PresetFile } from "@loadout/shared";
+import { PRESET_FILE_FORMAT, type PresetFile, type Skill } from "@loadout/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Core } from "../src/core";
-import { parsePresetFile } from "../src/presets/share-file";
+import { parsePresetFile, remoteSourceOf } from "../src/presets/share-file";
 import { makeSkill, tempDir, createTestCore } from "./helpers";
 import { commitAll, initRepo, redirectGithubTo } from "./install-fixtures";
 
@@ -73,6 +73,26 @@ describe("exporting a preset", () => {
 
     const bare = await core.api.presets.exportFile(presetId, file, { includeFiles: false });
     expect(bare).toMatchObject({ embedded: 0, nameOnly: ["notes"] });
+  });
+
+  it("leaves out a user name or token stored in a skill's link", () => {
+    const linked = {
+      sourceType: "url",
+      sourceRef: "https://me:token@downloads.example.com/pack.zip",
+      sourceSubpath: "pdf",
+    } as Skill;
+    expect(remoteSourceOf(linked)).toEqual({
+      url: "https://downloads.example.com/pack.zip",
+      branch: null,
+      subpath: "pdf",
+    });
+    const cloned = {
+      sourceType: "git",
+      sourceUrl: "https://token@example.com/acme/skills.git",
+      sourceBranch: "main",
+      sourceSubpath: null,
+    } as Skill;
+    expect(remoteSourceOf(cloned)?.url).toBe("https://example.com/acme/skills.git");
   });
 
   it("refuses to write into the library", async () => {

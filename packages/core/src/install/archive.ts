@@ -37,6 +37,8 @@ const SKILL_SEARCH_DEPTH = 4;
 /** Refuse to unpack more than this: a small zip can expand to fill the disk. */
 export const MAX_UNPACKED_BYTES = 512 * MIB;
 const ZIP_MAGIC = [0x50, 0x4b] as const;
+/** ZIP compression method 0: the entry's bytes are kept as they are. */
+const ZIP_STORED = 0;
 
 // ZIP central directory layout (APPNOTE 4.3.12 / 4.3.16).
 const END_SIGNATURE = 0x06054b50;
@@ -114,16 +116,21 @@ function writeEntry(root: string, name: string, bytes: Uint8Array | null, mode: 
   }
 }
 
-function unpackTar(data: Buffer, root: string): void {
+/** Unpack a tar into `root`; returns the bytes of its files. */
+function unpackTar(data: Buffer, root: string): number {
   const entries = readTar(data, MAX_UNPACKED_BYTES);
   if (entries.length === 0) throw invalid("The archive is empty or damaged");
   mkdirSync(root, { recursive: true });
+  let unpacked = 0;
   for (const entry of entries) {
+    unpacked += entry.data.length;
     writeEntry(root, entry.name, entry.kind === "directory" ? null : entry.data, entry.mode);
   }
+  return unpacked;
 }
 
-function unpackZip(data: Buffer, root: string): void {
+/** Unpack a zip into `root`; returns the bytes of its files. */
+function unpackZip(data: Buffer, root: string): number {
   const modes = readUnixModes(data);
   let unpacked = 0;
   let entries = 0;
@@ -136,6 +143,11 @@ function unpackZip(data: Buffer, root: string): void {
       if (safeEntryPath(file.name) === null) return false;
       // A link inside an archive could point anywhere; skills never need one.
       if (((modes.get(file.name) ?? 0) & MODE_TYPE_MASK) === MODE_SYMLINK) return false;
+      // A stored entry yields its compressed bytes, whatever size it claims. Entries that claim one
+      // byte each while sharing one large payload would otherwise pass the cap below.
+      if (file.compression === ZIP_STORED && file.size !== file.originalSize) {
+        throw invalid(`The archive is damaged: ${file.name} does not match its recorded size`);
+      }
       unpacked += file.originalSize;
       if (unpacked > MAX_UNPACKED_BYTES) {
         throw invalid(`Archive is larger than ${formatBytes(MAX_UNPACKED_BYTES)} when unpacked`);
@@ -147,6 +159,7 @@ function unpackZip(data: Buffer, root: string): void {
   for (const [name, bytes] of Object.entries(files)) {
     writeEntry(root, name, name.endsWith("/") ? null : bytes, modes.get(name) ?? 0);
   }
+  return unpacked;
 }
 
 /** An archive unpacked into a temp folder. Always call `cleanup`. */
@@ -179,12 +192,11 @@ export async function unpackArchive(data: Buffer, name: string): Promise<Unpacke
 
 /**
  * Unpack archive bytes into `root`, which the caller owns and cleans up. `name` is only a hint for
- * the format when the bytes do not say.
+ * the format when the bytes do not say. Returns the bytes of the files unpacked.
  */
-export function unpackArchiveInto(data: Buffer, name: string, root: string): void {
+export function unpackArchiveInto(data: Buffer, name: string, root: string): number {
   try {
-    if (isTarData(data, name)) unpackTar(data, root);
-    else unpackZip(data, root);
+    return isTarData(data, name) ? unpackTar(data, root) : unpackZip(data, root);
   } catch (error) {
     if (isAppError(error)) throw error;
     throw invalid(`Could not read the archive: ${errorMessage(error)}`);

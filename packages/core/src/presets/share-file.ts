@@ -10,6 +10,7 @@ import {
   type PresetFileSkill,
   type Skill,
   formatBytes,
+  redactUrl,
 } from "@loadout/shared";
 import { invalid } from "../errors";
 import { isSafeRelativePath } from "../util/safe-path";
@@ -21,17 +22,20 @@ const MAX_SKILLS = 500;
 const MAX_NAME_LENGTH = 200;
 const REPLACEMENT_CHAR = "�";
 
-/** Where a skill can be installed from on another computer; null when only here. */
+/**
+ * Where a skill can be installed from on another computer; null when only here. A user name or
+ * token stored in the address (links added before they were refused) never leaves in the file.
+ */
 export function remoteSourceOf(skill: Skill): NonNullable<PresetFileSkill["source"]> | null {
   if ((skill.sourceType === "git" || skill.sourceType === "marketplace") && skill.sourceUrl) {
     return {
-      url: skill.sourceUrl,
+      url: redactUrl(skill.sourceUrl),
       branch: skill.sourceType === "git" ? skill.sourceBranch : null,
       subpath: skill.sourceSubpath,
     };
   }
   if (skill.sourceType === "url" && skill.sourceRef) {
-    return { url: skill.sourceRef, branch: null, subpath: skill.sourceSubpath };
+    return { url: redactUrl(skill.sourceRef), branch: null, subpath: skill.sourceSubpath };
   }
   return null;
 }
