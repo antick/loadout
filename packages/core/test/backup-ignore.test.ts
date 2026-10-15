@@ -142,6 +142,40 @@ describe("backup ignore rules", () => {
     expect(b.read("alpha-renamed", ".env")).toBe("SECRET=1");
   });
 
+  it("keeps left-out files of a folder that is not a skill when another device changes it", async () => {
+    writeFile(join(a.skillsDir, "docs", "guide.md"), "v1\n");
+    await a.api.sync();
+    await b.api.sync();
+    writeFile(join(b.skillsDir, "docs", ".env"), "SECRET=1");
+    writeFile(join(a.skillsDir, "docs", "guide.md"), "v2\n");
+    await a.api.sync();
+    // An edit of B's own makes this a full merge, not a fast-forward.
+    b.editSkill("beta", "from B");
+    await b.api.sync();
+
+    expect(b.git("log", "-1", "--format=%P").split(" ")).toHaveLength(2);
+    expect(readFileSync(join(b.skillsDir, "docs", "guide.md"), "utf8")).toBe("v2\n");
+    expect(readFileSync(join(b.skillsDir, "docs", ".env"), "utf8")).toBe("SECRET=1");
+    expect(b.removed.list()).toEqual([]);
+  });
+
+  it("keeps left-out files of a folder that is not a skill in Recently removed when another device deletes it", async () => {
+    writeFile(join(a.skillsDir, "docs", "guide.md"), "v1\n");
+    await a.api.sync();
+    await b.api.sync();
+    writeFile(join(b.skillsDir, "docs", ".env"), "SECRET=1");
+    rawGit(a.skillsDir, "rm", "-rq", "docs");
+    await a.api.sync();
+    b.editSkill("beta", "from B");
+    await b.api.sync();
+
+    expect(existsSync(join(b.skillsDir, "docs"))).toBe(false);
+    const [kept] = b.removed.list();
+    expect(kept?.originalPath).toBe(join(b.skillsDir, "docs"));
+    await b.removed.restore(kept?.id ?? "");
+    expect(readFileSync(join(b.skillsDir, "docs", ".env"), "utf8")).toBe("SECRET=1");
+  });
+
   it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
     "keeps left-out files of a renamed skill when the merge fails before its commit",
     async () => {

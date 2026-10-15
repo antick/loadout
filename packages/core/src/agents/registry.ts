@@ -13,7 +13,7 @@ import type { CoreContext } from "../context";
 import { notFound } from "../errors";
 import { osConfigDir } from "../paths";
 import { INTERNAL_KEYS } from "../settings/store";
-import { canonicalPath, expandHome, segmentsOf } from "../util/fs";
+import { canonicalPath, expandHome, isInside, segmentsOf } from "../util/fs";
 
 /**
  * An agent's home folder as its variable (`CODEX_HOME`, …) sets it: an absolute path (or `~/…`),
@@ -59,6 +59,10 @@ interface ResolveSettings {
   projectOverrides: Record<string, string>;
 }
 
+/** The folder an agent was found in; null when it was not found by its folder. */
+const foundAt = (detection: AgentDetection): string | null =>
+  detection.reason === "folder" ? detection.path : null;
+
 /**
  * `a\\b/./` → `a/b`: project-relative folders compare as `/` separated, with no trailing slash.
  * Null when nothing is left, or for a folder outside the project (never saved that way).
@@ -80,27 +84,50 @@ export class AgentRegistry {
     this.#ctx = ctx;
   }
 
-  /** `~/<relative>`, plus the OS config folder variant for `.config/…` paths. */
-  #candidates(relative: string): string[] {
-    const paths = [join(this.#ctx.homeDir, relative)];
-    if (relative.startsWith(CONFIG_PREFIX)) {
-      const alternative = join(
-        osConfigDir(this.#ctx.homeDir),
-        relative.slice(CONFIG_PREFIX.length),
-      );
-      if (!paths.includes(alternative)) paths.push(alternative);
+  /**
+   * `~/<relative>`, plus the OS config folder variant for `.config/…` paths, each with the folder
+   * it was put under.
+   */
+  #rooted(relative: string): { root: string; path: string }[] {
+    const home = this.#ctx.homeDir;
+    if (!relative.startsWith(CONFIG_PREFIX)) return [{ root: home, path: join(home, relative) }];
+    const inside = relative.slice(CONFIG_PREFIX.length);
+    const found = [{ root: join(home, CONFIG_PREFIX), path: join(home, relative) }];
+    const configRoot = osConfigDir(home);
+    const alternative = join(configRoot, inside);
+    if (found.every(({ path }) => path !== alternative)) {
+      found.push({ root: configRoot, path: alternative });
     }
-    return paths;
+    return found;
   }
 
-  #firstExisting(relative: string): string {
-    const candidates = this.#candidates(relative);
-    return candidates.find((path) => existsSync(path)) ?? (candidates[0] as string);
+  #candidates(relative: string): string[] {
+    return this.#rooted(relative).map(({ path }) => path);
   }
 
-  /** A home-relative path on this machine, preferring the OS config folder variant that exists. */
-  homePath(relative: string): string {
-    return this.#firstExisting(relative);
+  /**
+   * The candidate that exists; else the one under the same root as `near` (the folder the agent
+   * was found in), so a folder still to be made lands beside it; else the first.
+   */
+  #firstExisting(relative: string, near: string | null = null): string {
+    const candidates = this.#rooted(relative);
+    const existing = candidates.find(({ path }) => existsSync(path));
+    if (existing) return existing.path;
+    const beside =
+      near === null
+        ? []
+        : candidates
+            .filter(({ root }) => isInside(root, near))
+            .sort((a, b) => b.root.length - a.root.length);
+    return (beside[0] ?? (candidates[0] as { path: string })).path;
+  }
+
+  /**
+   * A home-relative path on this machine, preferring the OS config folder variant that exists,
+   * then the one under the root `agent` was found in.
+   */
+  homePath(relative: string, agent?: Pick<ResolvedAgent, "detection">): string {
+    return this.#firstExisting(relative, agent ? foundAt(agent.detection) : null);
   }
 
   customAgents(): CustomAgentRecord[] {
@@ -152,7 +179,7 @@ export class AgentRegistry {
     const defaultSkillsDir =
       envHome && homeEnv
         ? join(envHome.value, homeEnv.skillsDir)
-        : this.#firstExisting(definition.skillsDir);
+        : this.#firstExisting(definition.skillsDir, found);
     return {
       key: definition.key,
       displayName: definition.displayName,

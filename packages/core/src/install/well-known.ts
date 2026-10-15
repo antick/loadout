@@ -34,6 +34,26 @@ export interface WellKnownEntry {
   fileBase: string | null;
 }
 
+/** What the skills of one site may still write, shared by all of its downloads. */
+export interface SiteBudget {
+  left: number;
+  /** Set once a skill went over; the whole site is then refused. */
+  exceeded: boolean;
+}
+
+export function createSiteBudget(): SiteBudget {
+  return { left: MAX_SITE_BYTES, exceeded: false };
+}
+
+/** Take `bytes` from `budget`; throws once the site's skills add up to more than it allows. */
+function spend(budget: SiteBudget | undefined, bytes: number): void {
+  if (!budget) return;
+  budget.left -= bytes;
+  if (budget.left >= 0) return;
+  budget.exceeded = true;
+  throw invalid(`The site's skills add up to more than ${formatBytes(MAX_SITE_BYTES)}`);
+}
+
 export interface WellKnownIndex {
   indexUrl: string;
   entries: WellKnownEntry[];
@@ -56,6 +76,10 @@ const PROBE_TIMEOUT_MS = 10 * SECOND_MS;
 const MAX_INDEX_BYTES = 2 * MIB;
 const MAX_ARTIFACT_BYTES = 64 * MIB;
 const MAX_FILES = 1000;
+/** Most skills one index may list: each is a download of its own. */
+export const MAX_INDEX_ENTRIES = 500;
+/** Most bytes the skills of one site may write together, unpacked archives counted in full. */
+export const MAX_SITE_BYTES = 512 * MIB;
 const MAX_DESCRIPTION = 1024;
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
 const DIGEST_PREFIX = "sha256:";
@@ -142,6 +166,9 @@ function olderEntry(value: unknown, indexUrl: string): WellKnownEntry | null {
  */
 export function parseWellKnownIndex(raw: unknown, indexUrl: string): WellKnownEntry[] | null {
   if (!isRecord(raw) || !Array.isArray(raw.skills)) return null;
+  if (raw.skills.length > MAX_INDEX_ENTRIES) {
+    throw invalid(`The skills index lists more than ${MAX_INDEX_ENTRIES} skills`);
+  }
   if (raw.$schema === CURRENT_SCHEMA) {
     const entries = raw.skills.flatMap((entry) => currentEntry(entry, indexUrl) ?? []);
     return entries.length > 0 ? entries : null;
@@ -248,7 +275,8 @@ function writeInside(root: string, relativePath: string, data: Buffer): void {
 /**
  * Download one skill of an index into `root` (created here) and return its folder. The current
  * format's artifact must match its digest, so a changed or tampered file is refused. Every
- * download keeps to `rule`, the one the index was read under.
+ * download keeps to `rule`, the one the index was read under. `budget`, shared by the skills of
+ * one site, caps what they write together.
  */
 export async function fetchWellKnownSkill(
   download: Download,
@@ -256,6 +284,7 @@ export async function fetchWellKnownSkill(
   root: string,
   rule: RedirectRule,
   signal?: AbortSignal,
+  budget?: SiteBudget,
 ): Promise<string> {
   mkdirSync(root, { recursive: true });
   const subject = `The skill ${entry.name}`;
@@ -274,10 +303,11 @@ export async function fetchWellKnownSkill(
       );
     }
     if (type === "skill-md") {
+      spend(budget, data.length);
       writeInside(root, SKILL_FILE, data);
       return root;
     }
-    unpackArchiveInto(data, new URL(url).pathname, root);
+    spend(budget, unpackArchiveInto(data, new URL(url).pathname, root));
     return archiveSkillDir(root);
   }
   const base = entry.fileBase;
@@ -309,6 +339,7 @@ export async function fetchWellKnownSkill(
         `The files of ${entry.name} add up to more than ${formatBytes(MAX_ARTIFACT_BYTES)}`,
       );
     }
+    spend(budget, data.length);
     writeInside(root, isDocument ? SKILL_FILE : file, data);
   }
   return root;

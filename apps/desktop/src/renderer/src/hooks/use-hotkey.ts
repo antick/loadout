@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 
+/** What `KeyboardEvent.key` holds for a dead key, the first half of an accented letter. */
+const DEAD_KEY = "Dead";
+
 export interface HotkeyOptions {
   /** Require ⌘ on macOS / Ctrl elsewhere. Default true. */
   mod?: boolean;
@@ -26,6 +29,19 @@ export function matchesHotkey(
     if (!event.altKey || event.code !== `Key${key.toUpperCase()}`) return false;
   } else if (event.altKey || event.key.toLowerCase() !== key.toLowerCase()) return false;
   return mod === (event.metaKey || event.ctrlKey) && shift === event.shiftKey;
+}
+
+/**
+ * Does this press type text of its own? ⌥ makes characters on macOS (⌥Z is "ż" on the Polish
+ * layout), and those belong to whatever the user is typing in. Elsewhere ⌥Z reports plain "z".
+ */
+export function typesText(
+  event: Pick<HotkeyEvent, "key" | "metaKey" | "ctrlKey">,
+  key: string,
+): boolean {
+  if (event.metaKey || event.ctrlKey) return false;
+  if (event.key === DEAD_KEY) return true;
+  return [...event.key].length === 1 && event.key.toLowerCase() !== key.toLowerCase();
 }
 
 /** True when the event comes from somewhere the user is typing. */
@@ -66,6 +82,8 @@ export function useHotkey(
     if (!enabled) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (!matchesHotkey(event, key, { mod, shift, alt })) return;
+      // An ⌥ shortcut never eats a character typed into a field or the code editor.
+      if (alt && typesText(event, key) && isTypingTarget(event.target)) return;
       if (blockedByDialogs && isDialogOpen()) return;
       latest.current(event);
     };

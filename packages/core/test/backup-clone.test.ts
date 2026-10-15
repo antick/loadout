@@ -105,6 +105,25 @@ describe("backup clone, size rules and credentials", () => {
     expect(a.skill("alpha-local")?.id).toBe(clash.id);
   });
 
+  it("keeps the deployments of a local skill identical to the backup's", async () => {
+    const { a, remote } = await seedRemote(temp.dir, ["shared"]);
+    track(a);
+    const b = track(createDevice(temp.dir, "B"));
+    // Same name and bytes as the backup's, under an id of its own, deployed on this device.
+    const local = b.addSkill("shared");
+    const target = join(temp.dir, "agent", "shared");
+    b.store.upsertDeployment(local.id, "claude_code", target, "symlink", local.contentHash);
+
+    await b.api.clone(remote);
+
+    const adopted = b.skill("shared");
+    expect(adopted?.id).toBe(a.skill("shared")?.id);
+    expect(b.store.deployments()).toMatchObject([
+      { skillId: adopted?.id, agentKey: "claude_code", targetPath: target, mode: "symlink" },
+    ]);
+    expect(b.store.find(local.id)).toBeNull();
+  });
+
   it("keeps the old library when a top-level file of its own differs from the backup's", async () => {
     const { a, remote } = await seedRemote(temp.dir, ["alpha"]);
     track(a);

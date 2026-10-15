@@ -51,6 +51,8 @@ import { commitStaged, mergeBase, requireBranch, resolveCommit, upstreamCommit }
 const BEFORE_MERGE_MESSAGE = "backup: before merge";
 const MERGE_MESSAGE_PREFIX = "merge: sync from ";
 const UNKNOWN_DEVICE = "another device";
+/** Set-aside key of a top-level entry that is not a skill: skill ids are UUIDs, never this. */
+const RESIDUAL_ASIDE_PREFIX = "residual-";
 
 export interface MergeResult {
   summary: MergeSummary;
@@ -129,6 +131,8 @@ async function materialise(
   edit.addStage(stage.dir);
   // Folders of ours that the merge replaces or drops, set aside with their left-out files.
   const asides = new Map<string, SetAsideFolder>();
+  // The same for top-level entries that are not skills (`docs/`, a README).
+  const residualAsides: SetAsideFolder[] = [];
   const planned = new Set(plan.skills.flatMap((item) => (item.path ? [item.path] : [])));
   const move = (from: string, to: string): void => edit.move(from, to);
   const place = (item: SkillPlan, from: string): void => {
@@ -156,6 +160,10 @@ async function materialise(
       }
       if (item.content !== "theirs" || !item.path) continue;
       if (!settleSetAside(env, aside, join(env.repoDir, item.path))) leftIn ??= aside.to;
+    }
+    // Back into the entry another device changed; into Recently removed when it deleted it.
+    for (const aside of residualAsides) {
+      if (!settleSetAside(env, aside, aside.from)) leftIn ??= aside.to;
     }
   } finally {
     if (!leftIn) await stage.cleanup();
@@ -215,7 +223,10 @@ async function materialise(
     for (const entry of plan.residual) {
       // Read from another device's commit: only ever a direct child of the repository.
       if (!isPlainEntryName(entry.name)) continue;
-      await removePath(join(env.repoDir, entry.name));
+      // Set aside, not deleted: git puts back only tracked files, and an undo needs it whole.
+      const key = `${RESIDUAL_ASIDE_PREFIX}${entry.name}`;
+      const aside = await setAsideFolder(env, stage, entry.name, key, move);
+      if (aside) residualAsides.push(aside);
       if (entry.action === "checkout") {
         await env.git.run(["checkout", theirs.commit, "--", entry.name], {
           globalArgs: ["--literal-pathspecs"],

@@ -175,6 +175,24 @@ describe("library lock", () => {
     expect(existsSync(path)).toBe(false);
   });
 
+  it("keeps a lock held through synchronous work longer than the stale limit", () => {
+    const holder = new RepoLock(path, { heartbeatMs: 10, staleMs: 100 });
+    const waiter = new RepoLock(path, { heartbeatMs: 10, staleMs: 100 });
+    let stolen = true;
+    const ran = holder.holdSync("move the library", () => {
+      // A long synchronous copy: no heartbeat can run meanwhile.
+      const end = Date.now() + 300;
+      while (Date.now() < end) {
+        // busy
+      }
+      stolen = waiter.holdSync("other", () => {});
+      expect(existsSync(path)).toBe(true);
+    });
+    expect(ran).toBe(true);
+    expect(stolen).toBe(false);
+    expect(existsSync(path)).toBe(false);
+  });
+
   it("writes metadata asked for inside an operation only once that operation is done", async () => {
     const world = createTestWorld();
     try {

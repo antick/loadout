@@ -24,6 +24,7 @@ import { downloadWatched, redirectRule } from "./redirects";
 import {
   type WellKnownEntry,
   type WellKnownIndex,
+  createSiteBudget,
   fetchWellKnownSkill,
   findWellKnownIndex,
 } from "./well-known";
@@ -163,7 +164,8 @@ export function createWebPreviews(ctx: CoreContext, deps: WebPreviewDeps): WebPr
 
 /**
  * Download every skill of a site's index into one temp folder, one folder per index name. A skill
- * that fails to download is left out and logged; the preview lists what arrived.
+ * that fails to download is left out and logged; the preview lists what arrived. Going over the
+ * site's total size refuses the whole site, once the downloads under way have finished.
  */
 async function fetchSite(
   download: Download,
@@ -178,12 +180,20 @@ async function fetchSite(
   const failures: string[] = [];
   // The skills' downloads keep to the rule the index was read under: one other site at most.
   const rule = redirectRule("install", index.redirectedTo);
+  const budget = createSiteBudget();
+  let overBudget: unknown = null;
   try {
     await mapLimit(index.entries, SITE_CONCURRENCY, async (entry: WellKnownEntry) => {
       try {
-        await fetchWellKnownSkill(download, entry, join(root, entry.name), rule, signal);
+        if (budget.exceeded) return;
+        await fetchWellKnownSkill(download, entry, join(root, entry.name), rule, signal, budget);
       } catch (error) {
         if (isAppError(error, "CANCELLED") || signal.aborted) throw cancelled();
+        // Kept until the other downloads finish, so none writes into the folder after cleanup.
+        if (budget.exceeded) {
+          overBudget ??= error;
+          return;
+        }
         failures.push(`${entry.name}: ${errorMessage(error)}`);
         await removePath(join(root, entry.name)).catch(() => undefined);
       } finally {
@@ -194,6 +204,7 @@ async function fetchSite(
         });
       }
     });
+    if (overBudget) throw overBudget;
     if (failures.length > 0) {
       ctx.log.warn(`Some skills of ${posix.dirname(index.indexUrl)} did not download`, failures);
     }

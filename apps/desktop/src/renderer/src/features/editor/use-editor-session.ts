@@ -36,12 +36,32 @@ interface SaveOptions {
 
 type Sessions = Record<string, FileSession>;
 
+/**
+ * The run already in flight for `key`, or a new one from `start`, forgotten once it settles. A
+ * second save of a file joins the first: sending the same base hash again would come back as a
+ * false CHANGED_ON_DISK once the first save moved the file on.
+ */
+export function joinInFlight<T>(
+  running: Map<string, Promise<T>>,
+  key: string,
+  start: () => Promise<T>,
+): Promise<T> {
+  const existing = running.get(key);
+  if (existing) return existing;
+  const run = start().finally(() => {
+    if (running.get(key) === run) running.delete(key);
+  });
+  running.set(key, run);
+  return run;
+}
+
 export interface EditorSession {
   sessions: Readonly<Sessions>;
   /** A version of `file` was read from disk. */
   sync(file: SkillFile): void;
   /** New text for a file, typed or put back from an earlier version: an unsaved change. */
   setDraft(path: string, draft: string): void;
+  /** A save of a file already being saved joins that save and gets its outcome. */
   save(path: string, options?: SaveOptions): Promise<SaveOutcome>;
   /** Paths currently being saved. */
   saving: ReadonlySet<string>;
@@ -104,8 +124,10 @@ export function useEditorSession(location: SkillLocation): EditorSession {
     [commit, draftKey],
   );
 
-  const save = useCallback(
-    async (path: string, options: SaveOptions = {}): Promise<SaveOutcome> => {
+  const inFlight = useRef(new Map<string, Promise<SaveOutcome>>());
+
+  const runSave = useCallback(
+    async (path: string, options: SaveOptions): Promise<SaveOutcome> => {
       const session = latest.current[path];
       if (!session) return { kind: "failed", error: new Error(`${path} is not open`) };
       const content = session.draft;
@@ -139,6 +161,12 @@ export function useEditorSession(location: SkillLocation): EditorSession {
       }
     },
     [draftKey, location, mutateAsync, update],
+  );
+
+  const save = useCallback(
+    (path: string, options: SaveOptions = {}): Promise<SaveOutcome> =>
+      joinInFlight(inFlight.current, path, () => runSave(path, options)),
+    [runSave],
   );
 
   // Mirror the drafts to localStorage after a short pause, and at once when the page goes.

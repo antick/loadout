@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { archiveLink, archiveLinkName } from "../src/install/archive-link";
+import { archiveLink, archiveLinkName, skillFileLink } from "../src/install/archive-link";
 import { installArchive, leftoverCheckouts, writeZip } from "./install-fixtures";
 import { type UpdatesWorld, createUpdatesWorld } from "./updates-world";
 
@@ -70,6 +70,18 @@ describe("archive links", () => {
     ]) {
       expect(archiveLink(text)).toBeNull();
     }
+  });
+
+  it("refuses a link that carries a user name, password or token, as Git input does", async () => {
+    const secret = "https://me:token@downloads.example.com/packs/writing.zip";
+    expect(() => archiveLink(secret)).toThrow("Leave the user name, password or token out");
+    expect(() => skillFileLink("https://token@cdn.example.com/pdf/SKILL.md")).toThrow(
+      "Leave the user name, password or token out",
+    );
+    await expect(world.install.api.previewGit(secret)).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    expect(requests).toEqual([]);
   });
 
   it("downloads a link, lists its skills and installs the chosen ones as linked skills", async () => {

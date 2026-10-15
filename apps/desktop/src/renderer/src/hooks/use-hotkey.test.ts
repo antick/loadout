@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesHotkey } from "@/hooks/use-hotkey";
+import { matchesHotkey, typesText } from "@/hooks/use-hotkey";
 
 const press = (key: string, held: { meta?: boolean; shift?: boolean; alt?: boolean } = {}) => ({
   key,
@@ -30,5 +30,19 @@ describe("matchesHotkey", () => {
     expect(matchesHotkey(press("k", { meta: true, shift: true }), "k")).toBe(false);
     expect(matchesHotkey(press("k", { meta: true, shift: true }), "k", { shift: true })).toBe(true);
     expect(matchesHotkey(press("/"), "/", { mod: false })).toBe(true);
+  });
+});
+
+describe("typesText", () => {
+  it("sees the character ⌥ makes on macOS as typing, such as ż on the Polish layout", () => {
+    const polish = { ...press("z", { alt: true }), key: "ż" };
+    expect(matchesHotkey(polish, "z", { mod: false, alt: true })).toBe(true);
+    expect(typesText(polish, "z")).toBe(true);
+    expect(typesText({ ...press("e", { alt: true }), key: "Dead" }, "e")).toBe(true);
+  });
+
+  it("leaves the shortcut alone where ⌥ makes no character or ⌘ is held", () => {
+    expect(typesText(press("z", { alt: true }), "z")).toBe(false);
+    expect(typesText({ ...press("e", { meta: true, alt: true }), key: "´" }, "e")).toBe(false);
   });
 });

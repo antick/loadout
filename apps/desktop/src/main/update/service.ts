@@ -326,7 +326,20 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     throw error;
   }
 
-  async function install(): Promise<void> {
+  /**
+   * The toast and Settings can both ask to install; a second request joins the first instead of
+   * preparing the same stage folder again underneath it.
+   */
+  let installing: Promise<void> | null = null;
+
+  function install(): Promise<void> {
+    installing ??= runInstall().finally(() => {
+      installing = null;
+    });
+    return installing;
+  }
+
+  async function runInstall(): Promise<void> {
     if (!ready || state.phase !== "ready") throw new Error("No update is ready to install");
     const saved = ready;
     const path = await reverify(saved).catch((error: unknown) => discardReady(saved, error));
