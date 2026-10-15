@@ -74,40 +74,36 @@ Every feature in detail, current limitations and what still needs testing:
 
 ## Run locally
 
-1. Install Node.js 22.13 or newer and Git. Then let Node's Corepack provide the pnpm version
-   pinned in the `packageManager` field of [package.json](package.json):
+The repository uses [mise](https://mise.jdx.dev) to pin its tools and name its commands.
+[mise.toml](mise.toml) holds the exact Node and pnpm versions and the tasks, so you do not
+have to remember the package manager.
+
+1. Install [mise](https://mise.jdx.dev/getting-started.html) and Git.
+
+2. Open a terminal in the folder where you cloned this repository, then trust its `mise.toml`
+   and install the pinned Node and pnpm:
 
    ```bash
-   corepack enable
+   mise trust
+   mise install
    ```
 
-2. Open a terminal in the folder where you cloned this repository.
-
-3. Confirm the tools are available:
+3. Start the app:
 
    ```bash
-   node --version
-   pnpm --version
-   git --version
+   mise run dev
    ```
 
-4. Install the project dependencies:
+   The first run installs the project dependencies. Later runs skip that step until
+   `pnpm-lock.yaml` or a `package.json` changes. Then the task builds the CLI and opens the
+   Electron desktop app with development reload. Keep the terminal running. The real app
+   opens in its own window; you do not need to open a browser or start a separate backend.
 
-   ```bash
-   pnpm install
-   ```
+4. Stop development with `Ctrl+C` in that terminal. Run `mise run dev` again next time.
 
-5. Start the app:
-
-   ```bash
-   pnpm dev
-   ```
-
-   This builds the CLI and opens the Electron desktop app with development reload.
-   Keep the terminal running. The real app opens in its own window; you do not need
-   to open a browser or start a separate backend.
-
-6. Stop development with `Ctrl+C` in that terminal. Run `pnpm dev` again next time.
+Without mise, install Node.js 22.13 or newer, run `corepack enable` to get the pnpm version
+pinned in the `packageManager` field of [package.json](package.json), and use the `pnpm`
+commands that each task runs (see the `run` lines in `mise.toml`).
 
 No `.env` file or GitHub sign-in is required for basic local use. The default library
 is `~/.loadout`; development uses your real library and agent folders.
@@ -129,12 +125,12 @@ is `~/.loadout`; development uses your real library and agent folders.
 Run these from the repository root:
 
 ```bash
-pnpm cli --help
-pnpm cli skills list
-pnpm cli agents list
-pnpm cli skills install /path/to/my-skill
-pnpm cli skills deploy my-skill --agent claude_code --agent codex
-pnpm cli skills status my-skill
+mise run cli -- --help
+mise run cli -- skills list
+mise run cli -- agents list
+mise run cli -- skills install /path/to/my-skill
+mise run cli -- skills deploy my-skill --agent claude_code --agent codex
+mise run cli -- skills status my-skill
 ```
 
 Replace the example path, skill name and agent keys with your own. The app also publishes
@@ -150,31 +146,39 @@ loadout --help
 
 ## Development commands
 
-| Command        | What it does                                  |
-| -------------- | --------------------------------------------- |
-| `pnpm dev`     | Build the CLI, then start the app with reload |
-| `pnpm check`   | oxlint, oxfmt check, typecheck, all tests     |
-| `pnpm test`    | vitest across packages                        |
-| `pnpm build`   | Build the CLI and desktop app                 |
-| `pnpm format`  | Format with oxfmt                             |
-| `pnpm package` | Build installers into `apps/desktop/release`  |
-| `pnpm cli …`   | Run the CLI from source                       |
+Run `mise tasks` to list every task. Each task installs the dependencies first when needed.
+
+| Command                  | What it does                                           |
+| ------------------------ | ------------------------------------------------------ |
+| `mise run dev`           | Build the CLI, then start the app with reload          |
+| `mise run check`         | oxlint, oxfmt check, typecheck, all tests              |
+| `mise run lint`          | oxlint and the dash check                              |
+| `mise run typecheck`     | Typecheck every package                                |
+| `mise run test`          | vitest across packages                                 |
+| `mise run build`         | Build the CLI and desktop app                          |
+| `mise run format`        | Format with oxfmt                                      |
+| `mise run package`       | Build installers into `apps/desktop/release`           |
+| `mise run cli -- …`      | Run the CLI from source                                |
+| `mise run dev:browser`   | Serve the interface in a browser on a seeded test home |
+| `mise run test:ui`       | Run the Playwright UI tests                            |
+| `mise run test:ui:setup` | Install the Chromium browser the UI tests use (once)   |
+| `mise run dev:landing`   | Serve the landing page                                 |
 
 To try the interface in a browser without touching your own library, run
-`pnpm --filter @loadout/desktop dev:browser` and open the address it prints. It serves the
+`mise run dev:browser` and open the address it prints. It serves the
 renderer on the real core, without Electron, on a temporary home folder seeded with skills,
 agents, projects, presets and a backup. Dialogs, the shell and app updates are stand-ins there.
 The temporary home is removed when the server stops.
 
-`pnpm check` leaves out the UI tests, which click through that browser preview in headless
+`mise run check` leaves out the UI tests, which click through that browser preview in headless
 Chromium with Playwright, each worker on its own seeded home that goes back to the seed before
-every test. Run them with `pnpm --filter @loadout/desktop test:ui`, after installing the
-browser once with `pnpm --filter @loadout/desktop exec playwright install chromium`.
+every test. Run them with `mise run test:ui`, after installing the browser once with
+`mise run test:ui:setup`.
 
 ## Website
 
 `apps/landing` is the landing page at [loadout.potion.sh](https://loadout.potion.sh), an Astro
-static site. `pnpm --filter @loadout/landing run dev` serves it while you work on it, and
+static site. `mise run dev:landing` serves it while you work on it, and
 `pnpm exec turbo run build --filter=@loadout/landing` builds it. Vercel builds and
 serves it from `vercel.json`; links such as where installers are downloaded live in
 `apps/landing/src/lib/site.ts`. The agent list on the page comes from `@loadout/shared`, so it

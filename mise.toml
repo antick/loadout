@@ -1,0 +1,94 @@
+# Tool versions and task shortcuts for https://mise.jdx.dev.
+# `mise install` installs Node and pnpm at these exact versions. `mise tasks` lists the tasks.
+# Keep pnpm the same as `packageManager` in package.json, and Node on the major CI uses.
+
+[tools]
+node = "22.23.3"
+pnpm = "12.4.2"
+
+[tasks.install]
+description = "Install the dependencies (skipped when the lockfile and manifests have not changed)"
+run = "pnpm install"
+sources = [
+  "package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "apps/*/package.json",
+  "packages/*/package.json",
+]
+outputs = ["node_modules/.modules.yaml"]
+
+[tasks.dev]
+description = "Build the CLI, then start the desktop app with reload"
+depends = ["install"]
+run = "pnpm run dev"
+
+[tasks."dev:browser"]
+description = "Serve the interface in a browser on a temporary, seeded home folder"
+depends = ["install"]
+run = "pnpm --filter @loadout/desktop run dev:browser"
+
+[tasks."dev:landing"]
+description = "Serve the landing page while you work on it"
+depends = ["install"]
+run = "pnpm --filter @loadout/landing run dev"
+
+[tasks.build]
+description = "Build the CLI and desktop app"
+depends = ["install"]
+run = "pnpm run build"
+
+[tasks.package]
+description = "Build installers into apps/desktop/release"
+depends = ["install"]
+run = "pnpm run package"
+
+[tasks.check]
+description = "oxlint, oxfmt check, typecheck, all tests"
+depends = ["install"]
+run = "pnpm run check"
+
+[tasks.lint]
+description = "Run oxlint and the dash check"
+depends = ["install"]
+run = "pnpm run lint"
+
+[tasks."lint:fix"]
+description = "Fix what oxlint can fix"
+depends = ["install"]
+run = "pnpm run lint:fix"
+
+[tasks.format]
+description = "Format with oxfmt"
+depends = ["install"]
+run = "pnpm run format"
+
+[tasks."format:check"]
+description = "Check the formatting with oxfmt"
+depends = ["install"]
+run = "pnpm run format:check"
+
+[tasks.typecheck]
+description = "Typecheck every package"
+depends = ["install"]
+run = "pnpm run typecheck"
+
+[tasks.test]
+description = "Run vitest across packages"
+depends = ["install"]
+run = "pnpm run test"
+
+[tasks."test:ui"]
+description = "Run the Playwright UI tests against the browser preview"
+depends = ["install"]
+run = "pnpm --filter @loadout/desktop run test:ui"
+
+[tasks."test:ui:setup"]
+description = "Install the Chromium browser the UI tests use (once)"
+depends = ["install"]
+run = "pnpm --filter @loadout/desktop exec playwright install chromium"
+
+[tasks.cli]
+description = "Run the CLI from source; pass its arguments after the task name"
+depends = ["install"]
+run = "pnpm run cli"
