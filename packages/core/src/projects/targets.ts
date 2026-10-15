@@ -6,6 +6,7 @@ import {
   type ProjectTarget,
 } from "@loadout/shared";
 import type { AgentRegistry, ResolvedAgent } from "../agents/registry";
+import { realPathOf } from "../util/fs";
 import type { ProjectRecord } from "./store";
 
 /** A project target with the folders it reads on this machine. */
@@ -93,8 +94,18 @@ function linkedTarget(project: ProjectRecord, registry: AgentRegistry): Resolved
 }
 
 /**
- * Where skills live in a workspace. Agents that resolve to the same project-relative folder are
- * one target, in the user's agent order; agents without a project folder are left out.
+ * The folder a merged target writes to: one no link leads into, when a member has such a folder,
+ * so the skills land where they really are; else the first member's.
+ */
+function directDir(root: string, dirs: string[]): string {
+  const realRoot = realPathOf(root);
+  return dirs.find((dir) => realPathOf(join(root, dir)) === join(realRoot, dir)) ?? dirs[0] ?? "";
+}
+
+/**
+ * Where skills live in a workspace. Agents whose project folders are one folder on disk (the same
+ * relative path, or two paths a link joins) are one target, in the user's agent order; agents
+ * without a project folder are left out.
  */
 export function resolveTargets(project: ProjectRecord, registry: AgentRegistry): ResolvedTarget[] {
   if (project.type === "linked") return [linkedTarget(project, registry)];
@@ -105,15 +116,25 @@ export function resolveTargets(project: ProjectRecord, registry: AgentRegistry):
   const rank = (agent: ResolvedAgent): number =>
     registration.get(agent.key) ?? Number.MAX_SAFE_INTEGER;
 
-  const groups = new Map<string, ResolvedAgent[]>();
+  const groups = new Map<string, { dirs: string[]; members: ResolvedAgent[] }>();
+  const identities = new Map<string, string>();
   for (const agent of registry.list()) {
     const relativeDir = agent.projectSkillsDir;
     if (!relativeDir) continue;
-    groups.set(relativeDir, [...(groups.get(relativeDir) ?? []), agent]);
+    let identity = identities.get(relativeDir);
+    if (identity === undefined) {
+      identity = realPathOf(join(project.path, relativeDir));
+      identities.set(relativeDir, identity);
+    }
+    const group = groups.get(identity) ?? { dirs: [], members: [] };
+    if (!group.dirs.includes(relativeDir)) group.dirs.push(relativeDir);
+    group.members.push(agent);
+    groups.set(identity, group);
   }
-  return [...groups].flatMap(([relativeDir, members]) => {
+  return [...groups.values()].flatMap(({ dirs, members }) => {
     const sorted = [...members].sort((a, b) => rank(a) - rank(b));
     const first = sorted[0];
+    const relativeDir = directDir(project.path, dirs);
     return first ? [mergeAgents(relativeDir, first, sorted, project.path)] : [];
   });
 }

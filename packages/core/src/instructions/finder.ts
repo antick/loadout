@@ -71,7 +71,7 @@ export function createInstructionFinder(deps: InstructionFinderDeps) {
   function pathOf(agent: ResolvedAgent, place: Place): string | null {
     const relative = AGENT_INSTRUCTION_FILES[agent.key]?.[place.scope];
     if (!relative) return null;
-    return place.project ? join(place.project.path, relative) : registry.homePath(relative);
+    return place.project ? join(place.project.path, relative) : registry.homePath(relative, agent);
   }
 
   /** One entry per distinct file, read by the available agents plus `include`. */

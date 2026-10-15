@@ -2,37 +2,43 @@ import { basename, isAbsolute } from "node:path";
 import type { DeployMode, Skill } from "@loadout/shared";
 import type { DeploymentRecord, SkillStore } from "../skills/store";
 import { lstatOrNull, targetIdentity } from "../util/fs";
-import { hashDir } from "../util/hash";
+import { hashDir, holdsUncopiedEntries } from "../util/hash";
 import type { OwnershipPolicy, TargetState } from "./engine";
 
 /**
- * The hash of the folder at the row's path, when it is a real folder; null when it is missing
- * (rewriting loses nothing) or a link or file (the engine refuses those on its own).
+ * What the folder at the row's path holds, when it is a real folder; null when it is missing
+ * (rewriting loses nothing) or a link or file (the engine refuses those on its own). `hash` is
+ * null for a folder with no content. `extras`: it holds a `.git` folder, which no copy Loadout
+ * makes contains, so someone put it there and its hash cannot show it.
  */
-function folderHashAt(row: DeploymentRecord): string | null {
+function folderAt(row: DeploymentRecord): { hash: string | null; extras: boolean } | null {
   const stat = lstatOrNull(row.targetPath);
   if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) return null;
-  return hashDir(row.targetPath);
+  return {
+    hash: hashDir(row.targetPath),
+    extras: holdsUncopiedEntries(row.targetPath, { copiesLinks: true }),
+  };
 }
 
-const changedSince = (row: DeploymentRecord, hash: string): boolean =>
-  row.sourceHash === null || hash !== row.sourceHash;
+const changedSince = (row: DeploymentRecord, hash: string | null): boolean =>
+  hash !== null && (row.sourceHash === null || hash !== row.sourceHash);
 
 /** The copy at the row's path differs from the content it was made from. */
 export function copyWasEdited(row: DeploymentRecord): boolean {
-  const hash = folderHashAt(row);
-  return hash !== null && changedSince(row, hash);
+  const folder = folderAt(row);
+  return folder !== null && (folder.extras || changedSince(row, folder.hash));
 }
 
 /**
  * A copy in an agent's folder holds the user's own edits: it was changed there and differs from
- * the library's content too (a pull may have put that there, which loses nothing). The copy is
- * hashed once.
+ * the library's content too (a pull may have put that there, which loses nothing), or it holds
+ * something no copy of ours does. The copy is hashed once.
  */
 export function holdsOwnEdits(row: DeploymentRecord, libraryHash: string | null): boolean {
   if (row.mode !== "copy") return false;
-  const hash = folderHashAt(row);
-  return hash !== null && changedSince(row, hash) && hash !== libraryHash;
+  const folder = folderAt(row);
+  if (folder === null) return false;
+  return folder.extras || (changedSince(row, folder.hash) && folder.hash !== libraryHash);
 }
 
 export function samePath(a: string, b: string): boolean {
