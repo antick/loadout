@@ -17,3 +17,6 @@ coverage
 
 # Temporary git worktrees made by coding agents
 /.claude/worktrees/
+
+# Personal mise overrides
+mise.local.toml
