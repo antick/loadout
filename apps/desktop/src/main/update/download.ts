@@ -50,12 +50,13 @@ function within<T>(
       signal.removeEventListener("abort", onAbort);
       settle();
     }
-    if (signal.aborted) return onAbort();
-    signal.addEventListener("abort", onAbort, { once: true });
+    // Handled before anything else: a read left behind by an abort still rejects later.
     promise.then(
       (value) => finish(() => resolve(value)),
       (error: unknown) => finish(() => reject(error)),
     );
+    if (signal.aborted) return onAbort();
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 }
 

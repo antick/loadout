@@ -167,6 +167,16 @@ describe("update service", () => {
     expect(deps.quit).not.toHaveBeenCalled();
   });
 
+  it("installs once when asked twice at the same time", async () => {
+    const { updates, deps } = service();
+    expect((await updates.download()).phase).toBe("ready");
+    const first = updates.install();
+    const second = updates.install();
+    expect(second).toBe(first);
+    await Promise.all([first, second]);
+    expect(deps.openPath).toHaveBeenCalledTimes(1);
+  });
+
   it("checks the download again before installing, and refuses one changed on disk", async () => {
     const { updates, deps } = service();
     expect((await updates.download()).phase).toBe("ready");

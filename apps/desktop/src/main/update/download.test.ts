@@ -100,6 +100,40 @@ describe("downloadVerified", () => {
     expect(Date.now() - started).toBeLessThan(2000);
   });
 
+  it("leaves no unhandled rejection when cancelled mid-read", async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown): void => {
+      unhandled.push(reason);
+    };
+    process.on("unhandledRejection", onUnhandled);
+    try {
+      const fetchImpl = (async (_url: string, init?: RequestInit) => {
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new Uint8Array(BODY.subarray(0, 10)));
+            init?.signal?.addEventListener("abort", () =>
+              controller.error(new DOMException("aborted", "AbortError")),
+            );
+          },
+        });
+        return new Response(stream);
+      }) as typeof fetch;
+      const controller = new AbortController();
+      const running = downloadVerified(FILE, join(root, FILE.name), {
+        ...options(fetchImpl, controller.signal).opts,
+        stallMs: 10_000,
+        onProgress: (received) => {
+          if (received > 0) controller.abort();
+        },
+      });
+      await expect(running).rejects.toBeDefined();
+      await new Promise((settle) => setTimeout(settle, 50));
+    } finally {
+      process.off("unhandledRejection", onUnhandled);
+    }
+    expect(unhandled).toEqual([]);
+  });
+
   it("throws away a download that does not match the checksum", async () => {
     const destination = join(root, FILE.name);
     const bad = Buffer.from(BODY).fill(65, 0, 10);

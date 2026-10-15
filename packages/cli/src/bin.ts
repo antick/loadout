@@ -5,9 +5,18 @@ import { version as appVersion } from "../../../apps/desktop/package.json";
 import { pickInTerminal } from "./picker/terminal";
 import { runCli } from "./run";
 
+/** The reader closed the pipe early, as in `loadout skills list | head -1`. */
+const BROKEN_PIPE = "EPIPE";
+
 /** Both ends a terminal a person types in: only then may a command ask. */
 const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 const terminal = { input: process.stdin, output: process.stdout, color: !process.env.NO_COLOR };
+
+// Nobody reads the rest: stop quietly, with the exit code set so far (0 unless one was set).
+process.stdout.on("error", (error: NodeJS.ErrnoException) => {
+  if (error.code !== BROKEN_PIPE) throw error;
+  process.exit();
+});
 
 // No top-level await: the standalone build bundles this file as CommonJS.
 void runCli(process.argv.slice(2), {
