@@ -5,10 +5,7 @@
   "buildCommand": "pnpm exec turbo run build --filter=@loadout/landing",
   "outputDirectory": "apps/landing/dist",
   "git": {
-    "deploymentEnabled": {
-      "**": false,
-      "main": true
-    }
+    "deploymentEnabled": false
   },
   "headers": [
     {
