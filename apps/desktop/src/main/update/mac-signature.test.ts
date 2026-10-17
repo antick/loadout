@@ -12,6 +12,7 @@ it("requires Developer ID, the installed team, the app identity and Apple's asse
   await verifyMacPublisher(STAGED, INSTALLED, ID, run);
   expect(run).toHaveBeenNthCalledWith(1, "codesign", ["--verify", "--deep", "--strict", INSTALLED]);
   const requirement = run.mock.calls[2]?.[1][4];
+  expect(requirement).toMatch(/^=/);
   expect(requirement).toContain(`identifier "${ID}"`);
   expect(requirement).toContain(`certificate leaf[subject.OU] = "${TEAM}"`);
   expect(requirement).toContain("anchor apple generic");

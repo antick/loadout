@@ -30,6 +30,7 @@ export async function verifyMacPublisher(
     "certificate leaf[field.1.2.840.113635.100.6.1.13] exists",
     `certificate leaf[subject.OU] = "${team}"`,
   ].join(" and ");
-  await run("codesign", ["--verify", "--deep", "--strict", "-R", requirement, bundle]);
+  // '=' tells codesign this is requirement text, rather than a path to a requirements file.
+  await run("codesign", ["--verify", "--deep", "--strict", "-R", `=${requirement}`, bundle]);
   await run("spctl", ["--assess", "--type", "execute", "--verbose=4", bundle]);
 }

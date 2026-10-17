@@ -38,6 +38,10 @@ describe("locateApp", () => {
     expect(locate({}, false).blocker).toBe("read_only");
   });
 
+  it("can replace a running signed bundle without editing its protected contents", () => {
+    expect(locate({ writable: (path) => path === "/Applications" }).blocker).toBeNull();
+  });
+
   it("runs the installer on Windows", () => {
     expect(locate({ platform: "win32", execPath: "C:\\\\Loadout\\\\Loadout.exe" })).toEqual({
       method: "installer",

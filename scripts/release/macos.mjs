@@ -20,7 +20,7 @@ const identity = JSON.parse(
   readFileSync(join(ROOT, "packages/shared/src/app-identity.json"), "utf8"),
 );
 const { version } = JSON.parse(readFileSync(join(ROOT, "apps/desktop/package.json"), "utf8"));
-const ENTITLEMENTS = join(ROOT, "apps/desktop/build/entitlements.mac.plist");
+const CLI_ENTITLEMENTS = join(ROOT, "scripts/release/entitlements.cli.plist");
 
 export function requireValues(env, names) {
   const missing = names.filter((name) => !env[name]?.trim());
@@ -137,7 +137,7 @@ function verifyBundle(bundle, env) {
   requireValues(env, ["APPLE_TEAM_ID"]);
   if (!TEAM_PATTERN.test(env.APPLE_TEAM_ID)) throw new Error("Invalid Apple team identifier");
   const requirement = `anchor apple generic and identifier "${identity.id}" and certificate leaf[subject.OU] = "${env.APPLE_TEAM_ID}" and certificate leaf[field.1.2.840.113635.100.6.1.13] exists`;
-  run("codesign", ["--verify", "--deep", "--strict", "-R", requirement, bundle]);
+  run("codesign", ["--verify", "--deep", "--strict", "-R", `=${requirement}`, bundle]);
   const plist = join(bundle, "Contents/Info.plist");
   const actual = run("plutil", [
     "-extract",
@@ -207,7 +207,7 @@ function signCli(env) {
       "--options",
       "runtime",
       "--entitlements",
-      ENTITLEMENTS,
+      CLI_ENTITLEMENTS,
       "--sign",
       env.CSC_NAME,
       "--keychain",
@@ -215,6 +215,12 @@ function signCli(env) {
       binary,
     ]);
     run("codesign", ["--verify", "--strict", binary]);
+    // Run each build on matching hardware (and Intel through Rosetta on Apple Silicon).
+    // Notarization checks signatures; it does not prove Node's JIT can start.
+    if (arch === process.arch || process.arch === "arm64") {
+      if (run(binary, ["--version"]).trim() !== version)
+        throw new Error(`The signed ${arch} CLI did not report ${version}`);
+    }
     const archive = join(dir, `cli-${arch}.zip`);
     run("ditto", ["-c", "-k", "--keepParent", binary, archive]);
     notarize(archive, env);

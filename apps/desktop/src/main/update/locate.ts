@@ -47,7 +47,9 @@ export function locateApp(input: LocateInput): AppLocation {
     else if (!blocker && bundle?.includes("/AppTranslocation/")) blocker = "translocated";
     else if (!blocker && bundle?.startsWith("/Volumes/") && !writable(bundle)) {
       blocker = "disk_image";
-    } else if (!blocker && bundle && !(writable(bundle) && writable(posix.dirname(bundle)))) {
+      // macOS can deny W_OK on a running signed bundle while allowing its rename. Updates
+      // replace the entire directory; they need write access to its parent, not its contents.
+    } else if (!blocker && bundle && !writable(posix.dirname(bundle))) {
       blocker = "read_only";
     }
     return { method: "replace", target: bundle, blocker };

@@ -64,6 +64,8 @@ migration while the old private key is still available.
    CLI binaries are signed and submitted to Apple; their checksums are generated afterwards.
    Bare CLI executables cannot carry a stapled ticket, so their first Gatekeeper assessment
    can require an internet connection.
+   The standalone Node CLI uses its own entitlements, including executable-memory support
+   required by Intel V8. Both Mac CLI binaries must start and report the release version.
 6. The draft must contain both Mac DMG/ZIP pairs, Linux x64/arm64 AppImage and Debian packages,
    four standalone CLI executables, `SHA256SUMS`, `latest.json` and `latest.json.sig`. Windows
    remains unsupported. GitHub build provenance is attached to the release artifacts.
