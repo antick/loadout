@@ -9,7 +9,7 @@
     "**/routeTree.gen.ts",
     "**/dist/**",
     "**/out/**",
-    "**/release/**",
+    "apps/desktop/release/**",
     "pnpm-lock.yaml"
   ]
 }

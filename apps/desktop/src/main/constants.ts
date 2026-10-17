@@ -17,6 +17,7 @@ export const PAGE_RELOAD_MIN_INTERVAL_MS = 10_000;
 export const WINDOW_STATE_FILE = "window-state.json";
 export const SECRETS_FILE = "secrets.json";
 export const APP_ICON_FILE = "icon.png";
+export const DEV_DOCK_BADGE = "DEV";
 /** Chromium's crash reports, kept inside the app data folder. */
 export const CRASH_DUMPS_DIR = "Crashpad";
 

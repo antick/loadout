@@ -1,7 +1,7 @@
 import { join } from "node:path";
-import { Menu, Notification, Tray, nativeImage } from "electron";
+import { Menu, Notification, Tray, app, nativeImage } from "electron";
 import type { Core } from "@loadout/core";
-import { APP_NAME, type ApplyResult, isAgentAvailable } from "@loadout/shared";
+import { type ApplyResult, isAgentAvailable } from "@loadout/shared";
 import { TRAY_REFRESH_DEBOUNCE_MS } from "./constants";
 import { type TrayActions, type TrayState, buildTrayMenu } from "./tray-menu";
 
@@ -40,7 +40,7 @@ function createTray(resourcesDir: string, initial: TrayState, actions: TrayActio
     .resize({ width: TRAY_ICON_SIZE, height: TRAY_ICON_SIZE });
   image.setTemplateImage(true);
   const tray = new Tray(image);
-  tray.setToolTip(APP_NAME);
+  tray.setToolTip(app.getName());
   const update = (state: TrayState): void =>
     tray.setContextMenu(Menu.buildFromTemplate(buildTrayMenu(state, actions)));
   update(initial);

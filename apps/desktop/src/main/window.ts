@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { BrowserWindow, type Rectangle, app, screen, shell } from "electron";
 import { writeFileAtomic } from "@loadout/core";
-import { APP_NAME } from "@loadout/shared";
 import {
   TRAFFIC_LIGHT_POSITION,
   WINDOW_DEFAULT_HEIGHT,
@@ -74,7 +73,7 @@ export function createMainWindow(icon: string): BrowserWindow {
     y: saved?.bounds.y,
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
-    title: APP_NAME,
+    title: app.getName(),
     icon,
     show: false,
     titleBarStyle: isMac ? "hiddenInset" : "default",
@@ -88,6 +87,10 @@ export function createMainWindow(icon: string): BrowserWindow {
     },
   });
   if (saved?.maximized) win.maximize();
+  win.on("page-title-updated", (event) => {
+    event.preventDefault();
+    win.setTitle(app.getName());
+  });
 
   win.once("ready-to-show", () => win.show());
   win.on("close", () => saveState(win));

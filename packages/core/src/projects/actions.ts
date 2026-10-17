@@ -1,3 +1,4 @@
+import { moveProjectCopies, preserveLinkedCopies } from "./shared-links";
 import { rmdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -26,14 +27,7 @@ import {
   unsupported,
 } from "../errors";
 import { checkNewSkill } from "../skills/create";
-import {
-  ensureDir,
-  isInside,
-  lstatOrNull,
-  moveEntrySync,
-  readDirSafe,
-  removePath,
-} from "../util/fs";
+import { isInside, lstatOrNull, readDirSafe, removePath } from "../util/fs";
 import {
   type LocalSyncDeps,
   pushLocalToLibrary,
@@ -188,12 +182,8 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
           await removePath(leftover.path);
           pruneDisabledSide(leftover);
         }
-        for (const { variant, to } of moves) {
-          ensureDir(dirname(to));
-          // A linked workspace can park skills on another disk: moved by copy there.
-          moveEntrySync(variant.path, to);
-          pruneDisabledSide(variant);
-        }
+        moveProjectCopies(moves);
+        for (const { variant } of moves) pruneDisabledSide(variant);
       });
       ctx.touched("projects");
     },
@@ -368,6 +358,10 @@ export function createProjectActions(ctx: CoreContext, deps: ProjectActionsDeps)
       if (variants.length === 0) throw notFound(NOT_IN_WORKSPACE);
       const removedIds: string[] = [];
       await ctx.lock.run(`delete ${relativePath}`, async () => {
+        preserveLinkedCopies(
+          new Set(variants.map((variant) => variant.path)),
+          findVariants(targets, relativePath),
+        );
         for (const variant of variants) {
           const kept = deps.removed.setAside(variant.path, {
             place: placeOf(project, variant.target.displayName),

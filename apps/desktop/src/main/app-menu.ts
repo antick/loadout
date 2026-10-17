@@ -1,5 +1,5 @@
 import type { MenuItemConstructorOptions } from "electron";
-import { APP_NAME } from "@loadout/shared";
+import { APP_NAME, DEV_APP_NAME } from "@loadout/shared";
 
 export interface AppMenuOptions {
   /** `process.platform`: macOS gets its app menu and window roles, the others leave them out. */
@@ -26,7 +26,7 @@ export function buildAppMenu({ platform, packaged }: AppMenuOptions): MenuItemCo
   const appMenu: MenuItemConstructorOptions[] = mac
     ? [
         {
-          label: APP_NAME,
+          label: packaged ? APP_NAME : DEV_APP_NAME,
           submenu: [
             { role: "about" },
             SEPARATOR,

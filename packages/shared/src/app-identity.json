@@ -1,0 +1,7 @@
+{
+  "name": "Loadout",
+  "id": "sh.potion.loadout",
+  "developmentName": "Loadout Dev",
+  "developmentId": "sh.potion.loadout.dev",
+  "developmentHome": ".loadout-dev"
+}

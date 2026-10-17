@@ -1,3 +1,4 @@
+import type { ProjectDuplicatePlan } from "./project-duplicates";
 import type {
   ExportResult,
   ActivityEntry,
@@ -288,6 +289,9 @@ export interface WorkspaceApi {
 }
 
 export interface ProjectsApi {
+  previewDuplicates(id: string, relativePath: string): Promise<ProjectDuplicatePlan>;
+  resolveDuplicates(id: string, relativePath: string, token: string): Promise<void>;
+  undoDuplicates(id: string, relativePath: string): Promise<void>;
   list(): Promise<Project[]>;
   add(path: string): Promise<Project>;
   addLinked(name: string, path: string, disabledPath?: string | null): Promise<Project>;

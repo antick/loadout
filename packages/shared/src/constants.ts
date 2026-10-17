@@ -1,5 +1,10 @@
-export const APP_NAME = "Loadout";
-export const APP_ID = "sh.potion.loadout";
+import identity from "./app-identity.json" with { type: "json" };
+
+export const APP_NAME = identity.name;
+export const APP_ID = identity.id;
+export const DEV_APP_NAME = identity.developmentName;
+export const DEV_APP_ID = identity.developmentId;
+export const DEV_HOME_DIR_NAME = identity.developmentHome;
 /**
  * The place name core gives the library itself (in Recently removed, the editor's header); the
  * app shows its own word for it, `placeText` in the renderer.

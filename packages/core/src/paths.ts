@@ -120,8 +120,10 @@ const HOME_ENTRIES: ReadonlySet<string> = new Set([
 
 export function osConfigDir(home: string): string {
   if (process.platform === "darwin") return join(home, "Library", "Application Support");
-  if (process.platform === "win32") return process.env.APPDATA ?? join(home, "AppData", "Roaming");
-  return process.env.XDG_CONFIG_HOME ?? join(home, ".config");
+  // Explicit homes (development and tests) must not discover real agent folders through the OS.
+  const env = home === homedir() ? process.env : {};
+  if (process.platform === "win32") return env.APPDATA ?? join(home, "AppData", "Roaming");
+  return env.XDG_CONFIG_HOME ?? join(home, ".config");
 }
 
 function buildPaths(baseDir: string, defaultBaseDir: string): LibraryPaths {

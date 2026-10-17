@@ -1,4 +1,4 @@
-import { APP_NAME } from "@loadout/shared";
+import { APP_NAME, DEV_APP_NAME } from "@loadout/shared";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -80,6 +80,11 @@ export function TitleBar({
           className="app-no-drag flex shrink-0 items-center gap-1 border-r pr-3 empty:hidden"
         />
         <div ref={titleSlotRef} className="min-w-0 flex-1" />
+        {import.meta.env.DEV ? (
+          <span className="shrink-0 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-300">
+            {DEV_APP_NAME}
+          </span>
+        ) : null}
         <button
           type="button"
           onClick={shell.openCommandPalette}

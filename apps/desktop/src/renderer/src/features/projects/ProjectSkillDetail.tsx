@@ -1,3 +1,4 @@
+import { ResolveProjectDuplicatesDialog } from "./ResolveProjectDuplicatesDialog";
 import { isAgentAvailable, type Project, type ProjectTarget } from "@loadout/shared";
 import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,6 +39,7 @@ export function ProjectSkillDetail({
   // The sheet keeps its content while it slides out, so keep the last skill around as well.
   const group = useLastDefined(openGroup);
   // Which copy's document is on screen; falls back to the one that needs attention most.
+  const [resolving, setResolving] = useState(false);
   const [viewKey, setViewKey] = useState<string | null>(null);
   const shown = group ? (variantFor(group, viewKey ?? "") ?? leadVariant(group)) : undefined;
   const document = useProjectDocument(project.id, shown?.relativePath, shown?.agentKey);
@@ -51,6 +53,7 @@ export function ProjectSkillDetail({
       item={openGroup}
       onClose={() => {
         setViewKey(null);
+        setResolving(false);
         onClose();
       }}
       path={shown?.path}
@@ -70,6 +73,22 @@ export function ProjectSkillDetail({
         group ? <SkillActionButtons all size="sm" actions={actions.actionsFor(group)} /> : null
       }
     >
+      {group &&
+      project.type === "project" &&
+      (group.variants.length > 1 || group.duplicates.length > 0) ? (
+        <>
+          <Button variant="outline" className="self-start" onClick={() => setResolving(true)}>
+            {t("projectDuplicates.action")}
+          </Button>
+          <ResolveProjectDuplicatesDialog
+            open={resolving}
+            projectId={project.id}
+            skill={group.relativePath}
+            name={group.name}
+            onClose={() => setResolving(false)}
+          />
+        </>
+      ) : null}
       {group && project.supportsToggle ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
           <div className="min-w-0">

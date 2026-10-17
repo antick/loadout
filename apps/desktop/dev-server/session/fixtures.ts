@@ -200,3 +200,11 @@ export const BROKEN_SKILLS_FILE = {
   project: "shop-web",
   text: 'agents = ["claude_code"]\n[[sources\n',
 };
+
+/** Identical project copies for the resolve and Undo browser flow. */
+export const IDENTICAL_PROJECT_COPIES = {
+  project: "billing-api",
+  skill: "code-review",
+  dirs: [".agents/skills", ".claude/skills", ".cursor/skills"],
+  linkedDir: ".pi/skills",
+};

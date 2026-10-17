@@ -15,9 +15,9 @@ Download the installer for your system from the
 
 Loadout runs on macOS and Linux. Windows is not supported for now.
 
-The builds are not signed with an Apple certificate yet, so macOS asks for one extra click the
-first time. [docs/INSTALL.md](docs/INSTALL.md) says which file to pick and exactly what to click
-on macOS and Linux. After the first start, Loadout updates itself.
+macOS releases from 0.4.0 are signed with an Apple Developer ID certificate and notarized.
+[docs/INSTALL.md](docs/INSTALL.md) explains installation on macOS and Linux. After installation,
+Loadout checks for updates and offers to download and install them.
 
 ## Screenshots
 
@@ -105,8 +105,11 @@ Without mise, install Node.js 22.13 or newer, run `corepack enable` to get the p
 pinned in the `packageManager` field of [package.json](package.json), and use the `pnpm`
 commands that each task runs (see the `run` lines in `mise.toml`).
 
-No `.env` file or GitHub sign-in is required for basic local use. The default library
-is `~/.loadout`; development uses your real library and agent folders.
+No `.env` file or GitHub sign-in is required for basic local use. The installed app keeps its
+library at `~/.loadout` or your saved location. `pnpm dev` opens **Loadout Dev**, with a separate
+library at `~/.loadout-dev/.loadout` and separate default agent folders under `~/.loadout-dev`.
+It does not import your real library or publish over your installed CLI. Use disposable project
+copies for testing: a real project you explicitly add can still be modified.
 
 ## First use
 
@@ -200,6 +203,9 @@ Installers are published as GitHub releases of this repository. The app's update
 `latest.json` (version, and per system the download link, size and SHA-256) with
 `apps/desktop/scripts/update-feed.mjs`, and puts everything in a **draft** release.
 
+Signing setup, development separation, installer checks and recovery are documented in
+[docs/RELEASING.md](docs/RELEASING.md).
+
 ### Cut a release
 
 Every step, from picking the version to checking npm, is in the release skill,
@@ -225,12 +231,11 @@ trusted publishing. A failed run can be re-run from the Actions tab.
 
 ### The landing page
 
-The landing page takes its version and installer links from the newest published release when
-it is built, and Vercel builds it on pushes to `main`, before the release is published. So
-publishing a release also has Vercel rebuild it through a deploy hook
-(`.github/workflows/deploy-landing.yml`, repository secret `VERCEL_DEPLOY_HOOK_URL`). Without the
-secret that run only leaves a notice, and the page offers the previous version until the next
-push to `main`.
+Publishing a stable release starts `.github/workflows/vercel-production.yml`. It checks out
+that release's tag, verifies it belongs to `main`, and deploys the website to Vercel production.
+The build reads that exact release's installer feed and fails if the expected downloads are
+missing. Required repository secrets are `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
+`VERCEL_PROJECT_ID`. Branch pushes and PRs do not deploy production.
 
 ## Layout
 

@@ -12,6 +12,7 @@ desktop installers, the update feed, the standalone CLI and the npm package `@an
 all take their version from it. The user invoking this skill is their instruction to push and
 publish; the only question to ask is the version.
 
+Read `docs/RELEASING.md` for signing setup, installer acceptance and recovery.
 Run every step from the repository root. Stop at the first step that fails, say what failed
 and what to do, and do not carry on around it.
 
@@ -49,7 +50,7 @@ Pick the next version from the Conventional Commit types since `$last`:
 If the user passed a version as the argument, suggest that one instead (it must be valid semver
 and higher than the current version).
 
-Show the user:
+Reuse a version already explicitly confirmed in this session; do not ask again. Otherwise show the user:
 
 - the suggested version and the one-line reason (e.g. "3 feat commits, before 1.0.0: minor"),
 - the commits since `$last`, grouped under Features, Fixes and Other,
@@ -65,12 +66,13 @@ the CLI, the npm package and the standalone builds read it from there.
 ```sh
 pnpm install --frozen-lockfile
 pnpm check                              # lint, format, typecheck, every test; must pass
+pnpm --filter @loadout/desktop test:ui    # renderer behavior, including project dialogs
 git add apps/desktop/package.json
 git commit -m "chore: release <version>"
 ```
 
-A failing `pnpm check`: stop, undo the version edit (`git checkout apps/desktop/package.json`),
-and report the failure. Do not release around it.
+A failing check: diagnose and fix it within the authorized scope, then rerun the affected checks.
+Preserve user changes. Do not tag or publish while a required check fails.
 
 ## 4. Push and tag
 
@@ -109,9 +111,13 @@ The workflow leaves a **draft**. Check it before publishing:
 gh release view "v<version>" --json isDraft,assets --jq '{isDraft, assets: [.assets[].name]}'
 ```
 
-It must hold `latest.json` and its signature `latest.json.sig`, a macOS DMG and ZIP, a Windows `.exe`, Linux AppImage and `.deb`
-files, and the `loadout-cli-<version>-*` standalone executables with `SHA256SUMS`. Anything
-missing: stop and report.
+It must hold `latest.json` and `latest.json.sig`, macOS DMG and ZIP files for **both arm64 and
+x64**, Linux AppImage and `.deb` files for **both architectures**, and macOS/Linux standalone
+CLI executables with `SHA256SUMS`. Windows is paused; do not require a Windows installer.
+Verify `Release builds` succeeded for this tag and exact commit, including its reusable CI
+checks, Apple signing, notarization, stapling and artifact checks. A build attestation alone
+is not an Apple signature. Download the candidate and complete the installer acceptance
+checks in `docs/RELEASING.md` before publication. Report hardware coverage honestly.
 
 ```sh
 gh release edit "v<version>" --draft=false --latest
@@ -119,18 +125,10 @@ gh release edit "v<version>" --draft=false --latest
 
 Installed copies of the app offer the update within six hours.
 
-The landing page does not update on its own: it reads the newest release when Vercel builds it,
-and the push in step 4 built it before this release was published. Publishing starts **Rebuild
-the landing page** (`.github/workflows/deploy-landing.yml`), which calls a Vercel deploy hook:
-
-```sh
-gh run list --workflow deploy-landing.yml --limit 1
-gh run watch <run-id> --exit-status               # a minute or two
-```
-
-Its run summary saying "No VERCEL_DEPLOY_HOOK_URL secret" means the hook is not set up: the page
-keeps offering the previous version until the next push to `main`. Tell the user, with the steps
-in "The landing page" below.
+Publishing a stable release starts **Vercel production** (`.github/workflows/vercel-production.yml`).
+It deploys the released tag, and its build requires that tag's installer feed. Observe the run
+for this release, then verify the live website offers this version and working installer links.
+A failed deployment is unfinished release work; fix it or report the specific blocker.
 
 ## 7. Watch the CLI reach npm
 
@@ -165,16 +163,15 @@ rebuilt, the npm package URL
 (`https://www.npmjs.com/package/@antick/loadout`), and that users update the CLI with
 `pnpm add -g @antick/loadout@latest`. List anything that failed or was skipped.
 
-## The landing page
+## Website prerequisites
 
-Rebuilding loadout.potion.sh after a release needs a Vercel deploy hook, stored as a GitHub
-secret. The user sets it up once:
+The Vercel workflow requires repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID` and
+`VERCEL_PROJECT_ID`. Native Vercel Git deployments are disabled; branch pushes do not deploy
+production. A manual `vercel-production.yml` dispatch redeploys the latest stable release.
 
-1. Go to https://vercel.com, open the project that serves loadout.potion.sh, then
-   **Settings** → **Git** → **Deploy Hooks**
-2. Name it `GitHub release`, branch `main`, click **Create Hook**, and copy the URL
-3. Go to https://github.com/antick/loadout/settings/secrets/actions and click
-   **New repository secret**
-4. Name `VERCEL_DEPLOY_HOOK_URL`, paste the URL as the secret, click **Add secret**
+## Apple prerequisites
 
-Then rebuild the page for the release just published: `gh workflow run deploy-landing.yml`.
+Confirm the `release` GitHub environment is restricted to `v*` tags and holds the Apple
+settings listed in `docs/RELEASING.md`. The workflow must fail if signing or notarization is
+unavailable. Preserve the separate existing `UPDATE_FEED_SIGNING_KEY` and its public key.
+Never log, commit or put private certificate/key material into a PR or release description.

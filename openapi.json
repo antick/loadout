@@ -1,0 +1,255 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Loadout project duplicate resolution",
+    "version": "1.0.0",
+    "description": "Desktop IPC channels and their existing local browser-preview HTTP transport. Args are [projectId, relativeSkillPath] and, for resolveDuplicates, the unchanged preview token. This document covers these three operations only; no production HTTP server is introduced."
+  },
+  "paths": {
+    "/__loadout/invoke": {
+      "post": {
+        "operationId": "invokeProjectDuplicateResolution",
+        "summary": "Preview, resolve, or undo project-local duplicate copies",
+        "description": "previewDuplicates is read-only. resolveDuplicates accepts identical copies only, revalidates the token under the library lock, backs up originals, then creates relative directory symlinks. undoDuplicates restores backed-up copies only if shared content and paths remain safe; changed files are refused. Global and plugin copies are excluded.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "channel": {
+                        "const": "projects.previewDuplicates"
+                      },
+                      "args": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": ["channel", "args"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "channel": {
+                        "const": "projects.resolveDuplicates"
+                      },
+                      "args": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "minItems": 3,
+                        "maxItems": 3
+                      }
+                    },
+                    "required": ["channel", "args"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "channel": {
+                        "const": "projects.undoDuplicates"
+                      },
+                      "args": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": ["channel", "args"],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "IPC result envelope; operational errors use ok:false. Preview returns a plan. Resolve and Undo return an undefined value encoded by the browser adapter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "const": true
+                        },
+                        "value": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "token": {
+                                  "type": "string"
+                                },
+                                "canonicalPath": {
+                                  "type": ["string", "null"]
+                                },
+                                "copies": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "path": {
+                                        "type": "string"
+                                      },
+                                      "agentName": {
+                                        "type": "string"
+                                      },
+                                      "agentKey": {
+                                        "type": "string"
+                                      },
+                                      "hash": {
+                                        "type": "string"
+                                      },
+                                      "files": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "path": {
+                                              "type": "string"
+                                            },
+                                            "hash": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": ["path", "hash"],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "required": ["path", "agentName", "agentKey", "hash", "files"],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "status": {
+                                  "enum": [
+                                    "identical",
+                                    "different",
+                                    "unsupported",
+                                    "resolved",
+                                    "none"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": ["string", "null"]
+                                },
+                                "canUndo": {
+                                  "type": "boolean"
+                                },
+                                "links": {
+                                  "type": "array",
+                                  "description": "Existing project skill links, preserved during resolution and Undo.",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "path": {
+                                        "type": "string"
+                                      },
+                                      "targetPath": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["path", "targetPath"]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "token",
+                                "canonicalPath",
+                                "copies",
+                                "status",
+                                "reason",
+                                "canUndo",
+                                "links"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "$undefined": {
+                                  "const": true
+                                }
+                              },
+                              "required": ["$undefined"],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": ["ok", "value"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "const": false
+                        },
+                        "error": {
+                          "type": "object",
+                          "required": ["code", "message"],
+                          "properties": {
+                            "code": {
+                              "type": "string"
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "details": {
+                              "type": "object"
+                            }
+                          }
+                        }
+                      },
+                      "required": ["ok", "error"],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Browser preview request guard refused the request."
+          }
+        }
+      }
+    }
+  }
+}

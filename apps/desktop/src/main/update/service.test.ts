@@ -264,4 +264,20 @@ describe("update service", () => {
     expect(updates.status().blocker).toBe("not_configured");
     expect((await updates.check()).phase).toBe("idle");
   });
+
+  it("keeps the previous app after a failed restart and removes it after a successful one", async () => {
+    mkdirSync(join(root, "updates"));
+    const target = join(root, "Loadout.AppImage");
+    const backup = `${target}.previous-123`;
+    const pending = join(root, "updates", "pending-install.json");
+    const record = { from: "1.0.0", to: "1.1.0", at: 1, pid: 123 };
+    const location = { method: "replace", target, blocker: null } as const;
+    writeFileSync(backup, "working app");
+    writeFileSync(pending, JSON.stringify(record));
+    await service({ location }).updates.start();
+    expect(existsSync(backup)).toBe(true);
+    writeFileSync(pending, JSON.stringify(record));
+    await service({ location, currentVersion: "1.1.0" }).updates.start();
+    expect(existsSync(backup)).toBe(false);
+  });
 });

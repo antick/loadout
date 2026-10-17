@@ -15,6 +15,8 @@ import { AddLinkedWorkspaceTab } from "./AddLinkedWorkspaceTab";
 import { AddProjectFolderTab } from "./AddProjectFolderTab";
 import { AddProjectSuggestedTab } from "./AddProjectSuggestedTab";
 import { soleItem } from "@/lib/batch";
+import { DIALOG_TALL_CLASS } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 export interface AddProjectDialogProps {
   open: boolean;
@@ -94,7 +96,7 @@ export function AddProjectDialog({
 }: AddProjectDialogProps): ReactNode {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className={cn(DIALOG_TALL_CLASS, "overflow-y-auto sm:max-w-lg")}>
         <AddProjectBody onOpenChange={onOpenChange} onAdded={onAdded} />
       </DialogContent>
     </Dialog>

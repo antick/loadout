@@ -3,8 +3,8 @@
  * same backup, a deployment broken in an agent's folder, a token saved. The UI tests ask for one
  * by name (`setUp` in `e2e/app.ts`) before they open the page.
  */
-import { mkdirSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { type Core, createCore, silentLogger } from "@loadout/core";
 import type { CoreApi } from "@loadout/shared";
 import { allowHeldBack, installFolder, saveFile, skillNamed } from "./actions.ts";
@@ -16,6 +16,7 @@ import {
   CLAWHUB_TOKEN,
   CONFLICTING,
   DIFFERING_PROJECT_COPIES,
+  IDENTICAL_PROJECT_COPIES,
   MANY_DELETED,
   OTHER_DEVICE_NAME,
   PROJECTS_DIR,
@@ -127,6 +128,23 @@ const SCENARIOS: Record<string, Scenario> = {
   "clawhub-signed-in": (_world, api) => api.publish.setClawhubToken(CLAWHUB_TOKEN),
 
   /** billing-api's code-review in a second agent folder too, both copies changed by hand. */
+  "project-copies-identical": async (world) => {
+    const { project, skill, dirs, linkedDir } = IDENTICAL_PROJECT_COPIES;
+    for (const dir of dirs) {
+      const target = join(world.home, PROJECTS_DIR, project, dir, skill);
+      rmSync(target, { recursive: true, force: true });
+      writeFiles(target, {
+        "SKILL.md": document(skill, "Shared project instructions."),
+        "notes.md": "Supporting instructions.",
+      });
+    }
+    const root = join(world.home, PROJECTS_DIR, project);
+    const link = join(root, linkedDir, skill);
+    rmSync(link, { recursive: true, force: true });
+    mkdirSync(dirname(link), { recursive: true });
+    symlinkSync(relative(dirname(link), join(root, dirs[0]!, skill)), link, "dir");
+  },
+
   "project-copies-differ": async (world, api) => {
     const { project, skill, agent, dirs } = DIFFERING_PROJECT_COPIES;
     const projectId = (await api.projects.list()).find((entry) => entry.name === project)?.id;

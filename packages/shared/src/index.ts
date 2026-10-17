@@ -50,3 +50,4 @@ export * from "./skill-notes";
 export * from "./tags";
 export * from "./editors";
 export * from "./skills-command";
+export * from "./project-duplicates";

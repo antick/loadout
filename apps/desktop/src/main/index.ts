@@ -5,12 +5,8 @@ import { BrowserWindow, Menu, app, dialog, session, shell } from "electron";
 import { AppError, type Core, createCore } from "@loadout/core";
 import {
   AGENT_HOME_ENV_VARIABLES,
-  APP_DATA_DIR_NAME,
   APP_RUNNING_FILE,
-  APP_ID,
   APP_NAME,
-  DEV_APP_DATA_DIR_NAME,
-  LIBRARY_DIR_NAME,
   type LoadoutApi,
   type RemoveAllDataOptions,
   UPDATE_FEED_PUBLIC_KEY,
@@ -18,6 +14,7 @@ import {
   errorMessage,
 } from "@loadout/shared";
 import { createAppApi } from "./app-api";
+import { appProfile } from "./app-profile";
 import { buildAppMenu } from "./app-menu";
 import { CLOSE_QUESTION, closeChoice, closeOutcome, shouldReloadPage } from "./close-request";
 import { createCrashHandlers } from "./crash";
@@ -26,6 +23,7 @@ import { revealInFileManager } from "./reveal";
 import { coreEnv, readShellEnv } from "./shell-env";
 import {
   APP_ICON_FILE,
+  DEV_DOCK_BADGE,
   CRASH_DUMPS_DIR,
   PAGE_RELOAD_MIN_INTERVAL_MS,
   SECRETS_FILE,
@@ -67,6 +65,7 @@ function stopWatchers(): void {
 const resourcesDir = app.isPackaged
   ? join(process.resourcesPath, "resources")
   : join(import.meta.dirname, "../../resources");
+const profile = appProfile(app.isPackaged, homedir());
 const appIconPath = join(resourcesDir, APP_ICON_FILE);
 const bundledCliPath = app.isPackaged
   ? join(process.resourcesPath, "cli", "loadout.mjs")
@@ -76,14 +75,10 @@ const send = createEventSender(() => BrowserWindow.getAllWindows());
 
 // The name macOS shows in the app menu (About, Hide, Quit). Without it Electron uses the package
 // name.
-app.setName(APP_NAME);
+app.setName(profile.name);
 // The app's own files live in the home data folder next to the library, not in the OS app data
 // folder. Set before anything reads the path (the single-instance lock does).
-const appDataDir = join(
-  homedir(),
-  LIBRARY_DIR_NAME,
-  app.isPackaged ? APP_DATA_DIR_NAME : DEV_APP_DATA_DIR_NAME,
-);
+const appDataDir = profile.appDataDir;
 app.setPath("userData", appDataDir);
 app.setPath("crashDumps", join(appDataDir, CRASH_DUMPS_DIR));
 
@@ -274,6 +269,7 @@ function createUpdates(log: Core["ctx"]["log"], logsDir: string): UpdateService 
 
 function start(): void {
   app.dock?.setIcon(appIconPath);
+  if (!app.isPackaged) app.dock?.setBadge(DEV_DOCK_BADGE);
   Menu.setApplicationMenu(
     Menu.buildFromTemplate(buildAppMenu({ platform: process.platform, packaged: app.isPackaged })),
   );
@@ -286,6 +282,7 @@ function start(): void {
   const opened = openCoreOrAsk(
     () =>
       createCore({
+        homeDir: profile.homeDir,
         secrets: createSecretStore(join(app.getPath("userData"), SECRETS_FILE)),
         emit: (event, payload) => {
           if (event === "data:changed") {
@@ -305,7 +302,7 @@ function start(): void {
         // Only the app carries out a library move queued in Settings, never a CLI run.
         migrateLibrary: true,
         echoLogs: !app.isPackaged,
-        env: () => coreEnv(shellEnv, process.env),
+        env: () => (app.isPackaged ? coreEnv(shellEnv, process.env) : {}),
         fetchImpl: appFetch,
         host: {
           appVersion: app.getVersion(),
@@ -313,13 +310,13 @@ function start(): void {
           bundledSkillDir: existsSync(join(resourcesDir, "skills"))
             ? join(resourcesDir, "skills")
             : null,
-          bundledCliPath: existsSync(bundledCliPath) ? bundledCliPath : null,
+          bundledCliPath: app.isPackaged && existsSync(bundledCliPath) ? bundledCliPath : null,
           nodeRunner: { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" } },
           downloadsDir: app.getPath("downloads"),
           appDataDir,
         },
       }),
-    nativeUnavailablePrompts(),
+    nativeUnavailablePrompts(profile.homeDir),
   );
   if (!opened) {
     app.exit(0);
@@ -373,30 +370,32 @@ function start(): void {
 
   // Opened from the Dock, the app misses what the shell profile exports (CODEX_HOME, …), and
   // the PATH the editors' commands are on.
-  void readShellEnv([...AGENT_HOME_ENV_VARIABLES, "PATH"]).then((read) => {
-    const found = read ?? {};
-    shellEnv = found;
-    // Only now are agents' folders final: a skill follows an agent whose folder moved. Never
-    // before, nor when the shell could not be read, or a Dock launch would move them to the
-    // default folder and back again.
-    if (read === null) {
-      core?.ctx.log.warn("Could not read the shell's variables");
-    } else {
-      void core
-        ?.followAgentFolders()
-        .then((moves) => {
-          if (moves.length > 0) send("data:changed", { scope: ["agents", "skills"] });
-        })
-        .catch((error: unknown) =>
-          core?.ctx.log.warn("Could not follow moved agent folders", error),
-        );
-    }
-    const learned = Object.keys(found).filter((name) => process.env[name] === undefined);
-    if (learned.length === 0) return;
-    core?.ctx.log.info(`Agent folders moved by the shell: ${learned.join(", ")}`);
-    send("data:changed", { scope: ["agents", "skills", "projects"] });
-    tray?.refresh();
-  });
+  void readShellEnv(app.isPackaged ? [...AGENT_HOME_ENV_VARIABLES, "PATH"] : ["PATH"]).then(
+    (read) => {
+      const found = read ?? {};
+      shellEnv = found;
+      // Only now are agents' folders final: a skill follows an agent whose folder moved. Never
+      // before, nor when the shell could not be read, or a Dock launch would move them to the
+      // default folder and back again.
+      if (read === null) {
+        core?.ctx.log.warn("Could not read the shell's variables");
+      } else {
+        void core
+          ?.followAgentFolders()
+          .then((moves) => {
+            if (moves.length > 0) send("data:changed", { scope: ["agents", "skills"] });
+          })
+          .catch((error: unknown) =>
+            core?.ctx.log.warn("Could not follow moved agent folders", error),
+          );
+      }
+      const learned = Object.keys(found).filter((name) => process.env[name] === undefined);
+      if (learned.length === 0) return;
+      core?.ctx.log.info(`Agent folders moved by the shell: ${learned.join(", ")}`);
+      send("data:changed", { scope: ["agents", "skills", "projects"] });
+      tray?.refresh();
+    },
+  );
 
   // Tells a CLI run that the app is open, so it never moves the library out from under it.
   try {
@@ -423,7 +422,7 @@ process.on("unhandledRejection", crash.unhandledRejection);
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.setAppUserModelId(APP_ID);
+  app.setAppUserModelId(profile.id);
   app.on("second-instance", showWindow);
   app.on("activate", showWindow);
   app.on("browser-window-focus", () => void checkLibrary());

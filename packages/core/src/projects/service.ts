@@ -1,3 +1,4 @@
+import { createProjectDuplicateActions, type ProjectDuplicateDeps } from "./duplicates";
 import { basename, dirname, join } from "node:path";
 import {
   isAgentAvailable,
@@ -23,7 +24,7 @@ import { withProjectDuplicates } from "../workspace/duplicates";
 import { readLocalDocument } from "../workspace/local-actions";
 import { type LibraryIndex, indexLibrary } from "../workspace/local-scan";
 import { type FileHistory, projectHistoryPrefix } from "../editor/history";
-import { type ProjectActionsDeps, createProjectActions } from "./actions";
+import { createProjectActions } from "./actions";
 import { osConfigDir } from "../paths";
 import { refuseLinkedOverlap, refuseProjectOverlap } from "./overlap";
 import { findProjects, listProjectSkills, summarize } from "./scan";
@@ -40,7 +41,7 @@ import {
   resolveTargets,
 } from "./targets";
 
-export interface ProjectsServiceDeps extends ProjectActionsDeps {
+export interface ProjectsServiceDeps extends ProjectDuplicateDeps {
   /** Editor history: a removed project's earlier file versions go with it. */
   history: Pick<FileHistory, "removeKeysStartingWith">;
 }
@@ -90,6 +91,7 @@ export function createProjectsService(
   const projects = new ProjectStore(ctx.db);
   const activity = new ProjectActivity(ctx.settings);
   const actions = createProjectActions(ctx, deps);
+  const duplicates = createProjectDuplicateActions(ctx, deps);
 
   const library = (): LibraryIndex => indexLibrary(store.list(), store.deployments());
   const targetsOf = (project: ProjectRecord): ResolvedTarget[] => resolveTargets(project, registry);
@@ -137,6 +139,9 @@ export function createProjectsService(
   }
 
   const api: ProjectsApi = {
+    previewDuplicates: (id, path) => duplicates.preview(projects.get(id), path),
+    resolveDuplicates: (id, path, token) => duplicates.resolve(projects.get(id), path, token),
+    undoDuplicates: (id, path) => duplicates.undo(projects.get(id), path),
     list: async () => {
       // One look at the library serves every workspace in the list.
       const index = library();
@@ -274,8 +279,12 @@ export function createProjectsService(
     setSkillEnabled: async (id, relativePath, enabled) =>
       actions.setSkillEnabled(projects.get(id), relativePath, enabled),
 
-    deleteSkill: async (id, relativePath, agentKey) =>
-      actions.deleteSkill(projects.get(id), relativePath, agentKey),
+    deleteSkill: async (id, relativePath, agentKey) => {
+      const project = projects.get(id);
+      const removed = await actions.deleteSkill(project, relativePath, agentKey);
+      duplicates.forget(project, relativePath);
+      return removed;
+    },
 
     suggestSkills: async (id) => {
       const project = projects.get(id);

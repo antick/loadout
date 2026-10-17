@@ -2,6 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { chmod, mkdir, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { verifyMacPublisher } from "./mac-signature";
 
 const run = promisify(execFile);
 
@@ -24,16 +25,34 @@ while kill -0 "$pid" 2>/dev/null; do
   fi
   sleep 0.2
 done
-backup="$target.previous-$$"
+backup="$target.previous-$pid"
+incoming="$target.incoming-$pid"
+if [ -e "$backup" ] || [ -L "$backup" ] || [ -e "$incoming" ] || [ -L "$incoming" ]; then
+  echo "update: recovery files already exist; nothing was replaced"
+  exit 1
+fi
+# Copy onto the installation disk first. Replacing the app then uses atomic same-disk renames.
+if [ "$kind" = "bundle" ]; then
+  ditto "$staged" "$incoming"
+else
+  cp "$staged" "$incoming"
+fi
+if [ "$?" -ne 0 ]; then
+  rm -rf "$incoming"
+  echo "update: could not prepare the replacement; nothing was replaced"
+  exit 1
+fi
 if mv "$target" "$backup"; then
-  if mv "$staged" "$target"; then
-    rm -rf "$backup"
+  if mv "$incoming" "$target"; then
+    rm -rf "$staged"
+    # The new app removes its backup only after it has opened its library successfully.
     echo "update: replaced $target"
   else
     echo "update: could not move the new version in; the old one is back"
     mv "$backup" "$target"
   fi
 else
+  rm -rf "$incoming"
   echo "update: could not move $target aside; nothing was replaced"
 fi
 if [ "$kind" = "bundle" ]; then
@@ -65,6 +84,7 @@ export const WINDOWS_INSTALL_SCRIPT = [
 export interface MacBundleCheck {
   bundleId: string;
   version: string;
+  installedBundle: string;
 }
 
 async function plistValue(plist: string, key: string): Promise<string> {
@@ -96,12 +116,12 @@ export async function prepareMacBundle(
     throw new Error("The download is a different version than the release says");
   }
   try {
-    await run("codesign", ["--verify", "--deep", "--strict", bundle]);
+    await verifyMacPublisher(bundle, expected.installedBundle, expected.bundleId);
   } catch {
-    throw new Error("The downloaded app is damaged (its signature does not check out)");
+    throw new Error(
+      "The update did not pass Apple's trust checks for Loadout's publisher. Nothing was installed.",
+    );
   }
-  // Files this app downloads carry no quarantine flag; clear it anyway so macOS never asks.
-  await run("xattr", ["-dr", "com.apple.quarantine", bundle]).catch(() => undefined);
   return bundle;
 }
 

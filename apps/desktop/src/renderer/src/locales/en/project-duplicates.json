@@ -1,0 +1,26 @@
+{
+  "projectDuplicates": {
+    "action": "Resolve duplicates",
+    "title": "Resolve duplicates of “{{name}}”",
+    "description": "Compare the copies in this project before changing any files.",
+    "keep": "Keep this shared copy",
+    "replace": "Replace these copies with links to the shared copy",
+    "effect": "Your agents keep access. Editing through any of these locations updates the same files. Links stay inside this project and move with it.",
+    "backups": "The replaced folders are backed up in Recently removed for {{removedDays}} days. You can undo while those backups exist and the shared files have not changed.",
+    "global": "Global and plugin copies are not changed here. Warnings about those copies may remain.",
+    "undo": "Undo resolution",
+    "undone": "Original copies restored",
+    "changedFiles": "Files or folder permissions that differ",
+    "compareDocument": "Compare the main documents below. Supporting-file differences are listed above. Review them in the project before resolving these copies.",
+    "status": {
+      "identical": "These copies contain identical files and permissions.",
+      "different": "These copies differ. Nothing will be replaced. Review and reconcile the differences, then compare again.",
+      "unsupported": "Loadout cannot safely resolve these copies yet.",
+      "resolved": "Duplicate copies resolved. Your agents share one copy. Undo restores the previous folders; it will not overwrite later edits.",
+      "none": "These locations already share one copy, or there is only one copy in this project. No changes are needed."
+    },
+    "existingLinks": "Already linked (kept as they are)",
+    "existingLinksHelp": "These locations are shortcuts to an existing project copy, not extra copies. Loadout will leave these links in place during resolution and Undo.",
+    "pointsTo": "Currently points to"
+  }
+}

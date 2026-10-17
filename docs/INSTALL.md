@@ -7,9 +7,7 @@ This page says which file to pick and what to click the first time you open it.
 
 Loadout runs on macOS and Linux. Windows is not supported for now.
 
-**Why the extra clicks?** Loadout is not signed with a paid Apple certificate yet. macOS warns
-about any app that isn't, even a safe one. You only do this once: after that, Loadout updates
-itself.
+macOS releases from 0.4.0 are signed by Pankaj Sanam and notarized by Apple.
 
 **Check a download (optional).** Every file in a release carries a signed record of the GitHub
 build that made it. With the [GitHub CLI](https://cli.github.com) installed, run
@@ -27,28 +25,17 @@ was built from this repository's release workflow.
 it from Applications, not from the disk image or your Downloads folder. Otherwise it can't
 update itself.
 
-**3. Open it the first time.**
+**3. Open it the first time.** Open **Applications** and double-click **Loadout**. macOS may
+ask whether you want to open an app downloaded from the internet; choose **Open**. You should
+not need to disable security checks or remove quarantine. If macOS says the developer cannot
+be verified or that the app is damaged, download the current signed installer again and report
+that error if it persists.
 
-1. Open **Applications** and double-click **Loadout**. macOS says it can't check the app for
-   malware and doesn't open it. Click **Done**.
-2. Open **System Settings** → **Privacy & Security**.
-3. Scroll down to **Security**. It says "Loadout" was blocked. Click **Open Anyway**.
-4. Enter your password or use Touch ID, then click **Open Anyway** again.
+Already using an older release? Its updater can install the first signed version. You can also
+install the current DMG over the existing app after quitting it; your library is stored separately.
 
-From then on, Loadout opens like any other app.
-
-<details>
-<summary>Prefer the Terminal?</summary>
-
-After step 2 above, run this once instead of the clicks in step 3:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/Loadout.app
-```
-
-It removes the "downloaded from the internet" mark that makes macOS ask.
-
-</details>
+Developing Loadout too? `pnpm dev` opens **Loadout Dev**, with a separate library and settings.
+Both apps can stay open together. See [development separation](RELEASING.md#development-and-installed-copies).
 
 ## Linux
 

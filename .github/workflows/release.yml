@@ -7,8 +7,7 @@ name: Release builds
 # app's update check only sees the newest published release. Publishing it also publishes the
 # CLI to npm (publish-npm.yml).
 #
-# The builds are not signed with an Apple certificate: macOS asks to confirm the first launch.
-# docs/INSTALL.md tells users what to click. Windows is paused (docs/TODO.md): no Windows build.
+# macOS artifacts are signed, notarized and checked before uploading. Windows remains paused.
 
 on:
   push:
@@ -21,12 +20,11 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # No signing certificate is configured; do not let electron-builder look for one. macOS builds
-  # still get an ad-hoc signature (`identity: "-"` in electron-builder.yml).
-  CSC_IDENTITY_AUTO_DISCOVERY: "false"
-
 jobs:
+  quality:
+    name: Check the tagged commit
+    uses: ./.github/workflows/ci.yml
+
   version:
     name: Read the version
     runs-on: ubuntu-24.04
@@ -52,9 +50,14 @@ jobs:
 
   build:
     name: Build (${{ matrix.name }})
-    needs: version
+    needs: [version, quality]
+    environment: release
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 120
+    env:
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
     strategy:
       fail-fast: false
       matrix:
@@ -81,13 +84,29 @@ jobs:
       - name: Build the CLI and the app
         run: pnpm exec turbo run build --filter=@loadout/desktop...
 
+      - name: Prepare temporary Apple signing keychain
+        if: matrix.name == 'macOS'
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: node scripts/release/macos.mjs prepare
+
       - name: Package installers
         working-directory: apps/desktop
-        run: pnpm exec electron-builder --config electron-builder.yml ${{ matrix.args }} --publish never
+        run: pnpm exec electron-builder --config electron-builder.release.yml ${{ matrix.args }} --publish never
+
+      - name: Verify macOS installers and notarize disk images
+        if: matrix.name == 'macOS'
+        run: node scripts/release/macos.mjs verify
 
       - name: Build standalone CLI executables
         if: matrix.standalone_cli
         run: pnpm --filter @loadout/cli run build:standalone -- --all
+
+      - name: Sign and notarize the macOS CLI
+        if: matrix.standalone_cli
+        run: node scripts/release/macos.mjs cli
 
       - name: Upload installers
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -108,9 +127,14 @@ jobs:
           if-no-files-found: error
           path: packages/cli/dist/standalone/*
 
+      - name: Remove signing credentials
+        if: always() && matrix.name == 'macOS'
+        run: node scripts/release/macos.mjs cleanup
+
   release:
     name: Draft release
     needs: [version, build]
+    environment: release
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

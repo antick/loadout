@@ -16,9 +16,8 @@ export interface RemovalJob {
 const EXIT_WAIT_MS = 30_000;
 
 /**
- * The keychain item "Remove all data" deletes, on macOS only. A development build is named like
- * the installed app, so they share the item: deleting it there would leave the installed app
- * unable to read its saved tokens. A development build leaves it alone.
+ * The keychain item "Remove all data" deletes, on macOS only. Development leaves it alone:
+ * older development builds shared the installed app's item.
  */
 export function keychainServiceToRemove(
   platform: NodeJS.Platform,

@@ -61,6 +61,8 @@ export const keys = {
     targets: (projectId: string) => ["projects", "targets", projectId] as const,
     document: (projectId: string, relativePath: string, agentKey: string) =>
       ["projects", "document", projectId, relativePath, agentKey] as const,
+    duplicatePlan: (projectId: string, relativePath: string) =>
+      ["projects", "duplicate-plan", projectId, relativePath] as const,
     lastExportAgents: (projectId: string) => ["projects", "last-export-agents", projectId] as const,
     skillSuggestions: (projectId: string) => ["projects", "skill-suggestions", projectId] as const,
   },

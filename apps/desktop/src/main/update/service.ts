@@ -70,6 +70,7 @@ interface PendingInstall {
   from: string;
   to: string;
   at: number;
+  pid?: number;
 }
 
 export interface UpdateService {
@@ -138,8 +139,18 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
     if (pending) {
       const ok = pending.to === deps.currentVersion;
       state.lastInstall = { version: pending.to, ok, at: pending.at };
-      if (ok) deps.log.info(`Updated from ${pending.from} to ${pending.to}`);
-      else deps.log.warn(`The update to ${pending.to} did not arrive; see ${UPDATE_LOG_FILE}`);
+      if (ok) {
+        deps.log.info(`Updated from ${pending.from} to ${pending.to}`);
+        // Derive the backup beside our own executable; never accept a saved arbitrary path.
+        if (deps.location.target && Number.isSafeInteger(pending.pid) && (pending.pid ?? 0) > 0) {
+          await rm(`${deps.location.target}.previous-${pending.pid}`, {
+            recursive: true,
+            force: true,
+          }).catch((error: unknown) =>
+            deps.log.warn("Could not remove the previous app; it can be removed manually", error),
+          );
+        }
+      } else deps.log.warn(`The update to ${pending.to} did not arrive; see ${UPDATE_LOG_FILE}`);
     }
     const saved = await readJson<ReadyUpdate>(readyFile);
     const keep =
@@ -223,7 +234,12 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
   /** Turn the verified download into what `install` needs. Run once, by `install`. */
   async function prepare(downloaded: string, dir: string, version: string): Promise<string> {
     if (deps.platform === "darwin") {
-      return prepareMacBundle(downloaded, join(dir, "stage"), { bundleId: APP_ID, version });
+      if (!deps.location.target) throw new Error("Cannot find the installed application");
+      return prepareMacBundle(downloaded, join(dir, "stage"), {
+        bundleId: APP_ID,
+        version,
+        installedBundle: deps.location.target,
+      });
     }
     if (deps.platform === "linux" && deps.location.method === "replace") {
       return prepareAppImage(downloaded);
@@ -353,6 +369,7 @@ export function createUpdateService(deps: UpdateServiceDeps): UpdateService {
       from: deps.currentVersion,
       to: ready.version,
       at: Date.now(),
+      pid: process.pid,
     };
     await writeFile(pendingFile, JSON.stringify(pending));
     await mkdir(deps.logsDir, { recursive: true });

@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { dialog } from "electron";
 import { isLibraryDir, pointLibraryAt } from "@loadout/core";
@@ -13,8 +12,7 @@ import {
 const CHOICES: readonly UnavailableChoice[] = ["retry", "choose", "default", "quit"];
 
 /** The "cannot find its library" prompts as native dialogs: they run before any window exists. */
-export function nativeUnavailablePrompts(): UnavailablePrompts {
-  const home = homedir();
+export function nativeUnavailablePrompts(home: string): UnavailablePrompts {
   const defaultPath = join(home, LIBRARY_DIR_NAME);
   return {
     ask: (path) => {

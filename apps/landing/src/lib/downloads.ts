@@ -1,4 +1,10 @@
-import { UPDATE_FEED_URL, type UpdateTarget, parseUpdateFeed } from "@loadout/shared";
+import {
+  RELEASES_URL,
+  UPDATE_FEED_FILE,
+  UPDATE_FEED_URL,
+  type UpdateTarget,
+  parseUpdateFeed,
+} from "@loadout/shared";
 
 /**
  * Direct installer links, read at build time from the newest published release's `latest.json`
@@ -12,6 +18,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 const OFFLINE_MODE = "offline";
 const MAC_DISK_IMAGE = ".dmg";
 const MAC_ARCHIVE = ".zip";
+const RELEASE_TAG_PATTERN = /^v\d+\.\d+\.\d+$/;
 
 export interface Download {
   /** What the button says, e.g. "Apple silicon". */
@@ -71,18 +78,30 @@ async function macDiskImage(download: Download): Promise<Download> {
 /** The installers of the newest release, grouped by system; null when they cannot be read. */
 export async function loadDownloads(): Promise<Downloads | null> {
   if (import.meta.env.MODE === OFFLINE_MODE) return null;
+  const releaseTag = process.env.LOADOUT_RELEASE_TAG;
+  if (releaseTag && !RELEASE_TAG_PATTERN.test(releaseTag))
+    throw new Error("Invalid stable release tag");
+  const feedUrl = releaseTag
+    ? `${RELEASES_URL}/download/${releaseTag}/${UPDATE_FEED_FILE}`
+    : UPDATE_FEED_URL;
   try {
-    const response = await fetch(UPDATE_FEED_URL, {
+    const response = await fetch(feedUrl, {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const feed = parseUpdateFeed(await response.json(), UPDATE_FEED_URL);
+    const feed = parseUpdateFeed(await response.json(), feedUrl);
+    if (releaseTag && `v${feed.version}` !== releaseTag)
+      throw new Error("Release feed version does not match deployment");
 
     const groups: DownloadGroup[] = [];
     for (const { system, label, target } of OFFERED) {
       const file = feed.files[target];
+      if (!file && releaseTag) throw new Error(`Missing installer for ${target}`);
       if (!file) continue;
       const download = await macDiskImage({ label, kind: kindOf(file.name), url: file.url });
+      if (releaseTag && system === "macOS" && download.kind !== MAC_DISK_IMAGE) {
+        throw new Error(`Missing disk image for ${target}`);
+      }
       const group = groups.find((entry) => entry.system === system);
       if (group) group.downloads.push(download);
       else groups.push({ system, downloads: [download] });
@@ -90,6 +109,7 @@ export async function loadDownloads(): Promise<Downloads | null> {
     if (groups.length === 0) throw new Error("the feed lists no installers");
     return { version: feed.version, groups };
   } catch (error) {
+    if (releaseTag) throw error;
     // Seen in the build log; the page links to the release page instead.
     console.warn(`Direct download links left out: ${String(error)}`);
     return null;

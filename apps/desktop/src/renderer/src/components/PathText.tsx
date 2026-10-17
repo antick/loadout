@@ -12,6 +12,8 @@ export interface PathTextProps {
   reveal?: boolean;
   /** Show the "open in editor" button (defaults to `reveal`). */
   open?: boolean;
+  /** Keep the full path readable in review and confirmation dialogs. */
+  wrap?: boolean;
   className?: string;
 }
 
@@ -21,6 +23,7 @@ export function PathText({
   copy = true,
   reveal = true,
   open = reveal,
+  wrap = false,
   className,
 }: PathTextProps): ReactNode {
   const { data: info } = useAppInfo();
@@ -32,7 +35,10 @@ export function PathText({
       <span
         data-selectable
         title={path}
-        className="truncate font-mono text-xs text-muted-foreground"
+        className={cn(
+          "font-mono text-xs text-muted-foreground",
+          wrap ? "min-w-0 break-all whitespace-normal" : "truncate",
+        )}
       >
         {compactHome(path, info?.homeDir)}
       </span>

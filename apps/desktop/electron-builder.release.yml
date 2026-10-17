@@ -1,0 +1,11 @@
+# Public builds must never fall back to an ad-hoc signature.
+extends: electron-builder.yml
+forceCodeSigning: true
+mac:
+  # Empty selects CSC_NAME; null would disable signing and '-' would select ad-hoc signing.
+  identity: ""
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: true
+afterPack: scripts/require-release-signing.cjs

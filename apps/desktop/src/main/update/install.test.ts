@@ -48,11 +48,32 @@ describe.skipIf(process.platform === "win32")("swap script", () => {
     writeFileSync(target, "#!/bin/sh\necho old\n");
     writeFileSync(staged, `#!/bin/sh\ntouch "${started}"\n`);
 
-    expect(swap(exitedPid(), target, staged, 5)).toBe(0);
+    const pid = exitedPid();
+    expect(swap(pid, target, staged, 5)).toBe(0);
     expect(readFileSync(target, "utf8")).toContain(started);
     expect(existsSync(staged)).toBe(false);
     expect(await waitFor(started)).toBe(true);
     expect(readFileSync(join(root, "update.log"), "utf8")).toContain("replaced");
+    expect(readFileSync(`${target}.previous-${pid}`, "utf8")).toContain("echo old");
+  });
+
+  it("keeps the installed app when preparing the replacement fails", () => {
+    const target = join(root, "Loadout.AppImage");
+    writeFileSync(target, "old");
+    expect(swap(exitedPid(), target, join(root, "missing"), 5)).toBe(1);
+    expect(readFileSync(target, "utf8")).toBe("old");
+  });
+
+  it("does not overwrite a backup left by an earlier attempt", () => {
+    const target = join(root, "Loadout.AppImage");
+    const staged = join(root, "staged.AppImage");
+    const pid = exitedPid();
+    writeFileSync(target, "installed");
+    writeFileSync(staged, "new");
+    writeFileSync(`${target}.previous-${pid}`, "recovery");
+    expect(swap(pid, target, staged, 5)).toBe(1);
+    expect(readFileSync(target, "utf8")).toBe("installed");
+    expect(readFileSync(`${target}.previous-${pid}`, "utf8")).toBe("recovery");
   });
 
   it("leaves everything alone when the app does not exit", () => {
