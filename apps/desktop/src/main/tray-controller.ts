@@ -31,13 +31,10 @@ interface TrayHandle {
   dispose(): void;
 }
 
-const TRAY_ICON_SIZE = 18;
-
 /** System tray icon whose menu is rebuilt from `update`. */
 function createTray(resourcesDir: string, initial: TrayState, actions: TrayActions): TrayHandle {
-  const image = nativeImage
-    .createFromPath(join(resourcesDir, "trayTemplate.png"))
-    .resize({ width: TRAY_ICON_SIZE, height: TRAY_ICON_SIZE });
+  // 18px, with trayTemplate@2x.png picked up beside it for Retina screens.
+  const image = nativeImage.createFromPath(join(resourcesDir, "trayTemplate.png"));
   image.setTemplateImage(true);
   const tray = new Tray(image);
   tray.setToolTip(app.getName());
