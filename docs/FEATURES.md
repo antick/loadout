@@ -194,7 +194,8 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - **Open in editor** on every path: VS Code, Cursor, Windsurf, Zed or Sublime Text when found, else the default app.
 - Dashboard, command palette (`⌘K`), quick-start guide.
 - Four colour palettes in light and dark, four text sizes.
-- Tray icon; updates itself with a checksum check.
+- Tray icon; verifies signed update feeds and download checksums before updating.
+- macOS installers are signed with an Apple Developer ID certificate and notarized by Apple.
 - Closing the window asks, hides to the tray or quits, as set in Settings.
 - Logs, diagnostics and crash notice.
 
@@ -203,7 +204,6 @@ agents' and projects' folders. Setup: [README](../README.md#run-locally). Planne
 - English only.
 - GitHub device sign-in needs an OAuth client id; tokens and Git URLs work.
 - Windows is not supported for now: no Windows build, and Windows is not tested.
-- Builds are not signed with an Apple certificate.
 - The CLI can't read tokens saved by the app; use SSH, a credential helper, or for GitHub a GitHub CLI sign-in or `GITHUB_TOKEN`.
 - Roo Code's folder of rule files is not covered; Cline and Kiro rule folders are, as Rules.
 - Linux is untested, and so is a real drag from the file manager.
