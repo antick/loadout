@@ -15,7 +15,7 @@ Download the installer for your system from the
 
 Loadout runs on macOS and Linux. Windows is not supported for now.
 
-macOS releases from 0.4.0 are signed with an Apple Developer ID certificate and notarized.
+macOS releases from 0.4.1 are signed with an Apple Developer ID certificate and notarized.
 [docs/INSTALL.md](docs/INSTALL.md) explains installation on macOS and Linux. After installation,
 Loadout checks for updates and offers to download and install them.
 

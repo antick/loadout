@@ -7,7 +7,7 @@ This page says which file to pick and what to click the first time you open it.
 
 Loadout runs on macOS and Linux. Windows is not supported for now.
 
-macOS releases from 0.4.0 are signed by Pankaj Sanam and notarized by Apple.
+macOS releases from 0.4.1 are signed by Pankaj Sanam and notarized by Apple.
 
 **Check a download (optional).** Every file in a release carries a signed record of the GitHub
 build that made it. With the [GitHub CLI](https://cli.github.com) installed, run
