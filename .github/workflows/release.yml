@@ -184,8 +184,12 @@ jobs:
       - name: Write the release notes
         env:
           TAG: ${{ needs.version.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          previous="$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_SHA}^" 2>/dev/null || true)"
+          # An unsuccessful build can leave a protected tag without a published release.
+          # Include every change since the last version users could actually download.
+          previous="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 \
+            --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName // empty')"
           # An @word in a commit subject (owner/repo@skill, @antick/loadout) would mention a
           # GitHub user and list them as a contributor; in backticks it is plain text.
           changes() {
