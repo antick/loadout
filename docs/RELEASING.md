@@ -39,8 +39,10 @@ protection enabled. Store these in that environment:
 | `APPLE_API_KEY_ID`           | Secret   | API key identifier                           |
 | `APPLE_API_ISSUER`           | Secret   | API issuer identifier                        |
 
-The workflow imports the certificate into a temporary keychain, grants codesign access,
-and removes the keychain and API key in an `always()` cleanup step. PR builds do not receive
+The workflow imports the certificate into a temporary keychain, adds it to the signing search
+list, grants codesign access, and signs a small executable before packaging. Cleanup restores
+the original search list and removes the temporary keychain and API key in an `always()` step.
+PR builds do not receive
 these credentials. The public packaging configuration refuses missing signing settings.
 The checked-in `scripts/release/DeveloperIDG2CA.cer` is Apple's public
 [Developer ID G2 intermediate certificate](https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer),

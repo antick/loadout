@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { randomBytes, createHash } from "node:crypto";
 import {
   appendFileSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   readdirSync,
@@ -14,6 +15,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SIGNING_DIR = "loadout-release-signing";
 const KEYCHAIN_FILE = "release.keychain-db";
+const SEARCH_LIST_FILE = "keychain-search-list.json";
 const TEAM_PATTERN = /^[A-Z0-9]{10}$/;
 const IDENTITY_PATTERN = /"(Developer ID Application: [^"\n]+)"/g;
 const identity = JSON.parse(
@@ -54,6 +56,14 @@ function paths(env) {
   return { dir, keychain: join(dir, KEYCHAIN_FILE), key: join(dir, "AuthKey.p8") };
 }
 
+export function keychainSearchList(output) {
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+}
+
 function prepare(env) {
   requireValues(env, [
     "MACOS_CERTIFICATE_P12",
@@ -66,6 +76,8 @@ function prepare(env) {
   ]);
   const { dir, keychain, key } = paths(env);
   mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const previousSearchList = keychainSearchList(run("security", ["list-keychains", "-d", "user"]));
+  writeFileSync(join(dir, SEARCH_LIST_FILE), JSON.stringify(previousSearchList), { mode: 0o600 });
   const certificate = join(dir, "certificate.p12");
   writeFileSync(certificate, Buffer.from(env.MACOS_CERTIFICATE_P12, "base64"), { mode: 0o600 });
   writeFileSync(key, env.APPLE_API_KEY_P8, { mode: 0o600 });
@@ -73,6 +85,8 @@ function prepare(env) {
   run("security", ["create-keychain", "-p", password, keychain]);
   run("security", ["set-keychain-settings", "-lut", "21600", keychain]);
   run("security", ["unlock-keychain", "-p", password, keychain]);
+  // codesign's private-key lookup also uses the search list, even with --keychain supplied.
+  run("security", ["list-keychains", "-d", "user", "-s", keychain, ...previousSearchList]);
   // The PKCS#12 export contains the leaf certificate only. Clean CI hosts need its Apple issuer.
   run("security", ["import", join(ROOT, "scripts/release/DeveloperIDG2CA.cer"), "-k", keychain]);
   run("security", [
@@ -101,6 +115,14 @@ function prepare(env) {
     env.APPLE_TEAM_ID,
   );
   const qualifier = name.replace("Developer ID Application: ", "");
+  const probe = join(dir, "signing-probe");
+  writeFileSync(`${probe}.c`, "int main(void) { return 0; }\n");
+  run("xcrun", ["clang", `${probe}.c`, "-o", probe]);
+  run("codesign", ["--force", "--timestamp", "--sign", qualifier, "--keychain", keychain, probe]);
+  run("codesign", ["--verify", "--strict", probe]);
+  run(probe, []);
+  rmSync(probe);
+  rmSync(`${probe}.c`);
   appendFileSync(
     env.GITHUB_ENV,
     `CSC_NAME=${qualifier}\nCSC_KEYCHAIN=${keychain}\nAPPLE_API_KEY=${key}\n`,
@@ -242,9 +264,17 @@ function signCli(env) {
 function cleanup(env) {
   const { dir, keychain } = paths(env);
   try {
-    run("security", ["delete-keychain", keychain]);
+    const searchListFile = join(dir, SEARCH_LIST_FILE);
+    if (existsSync(searchListFile)) {
+      const previous = JSON.parse(readFileSync(searchListFile, "utf8"));
+      run("security", ["list-keychains", "-d", "user", "-s", ...previous]);
+    }
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    try {
+      if (existsSync(keychain)) run("security", ["delete-keychain", keychain]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   }
 }
 

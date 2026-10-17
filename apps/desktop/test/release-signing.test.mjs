@@ -1,6 +1,10 @@
 import { createRequire } from "node:module";
 import { afterEach, expect, it, vi } from "vitest";
-import { requireValues, signingIdentity } from "../../../scripts/release/macos.mjs";
+import {
+  keychainSearchList,
+  requireValues,
+  signingIdentity,
+} from "../../../scripts/release/macos.mjs";
 
 const require = createRequire(import.meta.url);
 const requireSigning = require("../scripts/require-release-signing.cjs");
@@ -8,6 +12,15 @@ const TEAM = "ABC1234567";
 const IDENTITY = `Developer ID Application: Test Publisher (${TEAM})`;
 
 afterEach(() => vi.unstubAllEnvs());
+
+it("preserves the existing keychain search list, including paths with spaces", () => {
+  expect(
+    keychainSearchList(
+      '    "/Users/test/Library/Keychains/login.keychain-db"\n    "/tmp/signing keychain"\n',
+    ),
+  ).toEqual(["/Users/test/Library/Keychains/login.keychain-db", "/tmp/signing keychain"]);
+  expect(keychainSearchList("")).toEqual([]);
+});
 
 it("accepts only the intended team's Developer ID Application certificate", () => {
   const output = `1) hash "${IDENTITY}"\n2) hash "Apple Development: Test Publisher (${TEAM})"`;
