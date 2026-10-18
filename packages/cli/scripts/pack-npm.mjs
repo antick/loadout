@@ -19,14 +19,12 @@ const BUNDLE = "dist/loadout.mjs";
 const BUNDLE_NAME = "cli.mjs";
 const OUT_DIR = "dist/npm";
 const APP_PACKAGE = "../../apps/desktop/package.json";
-/** Holds the Node.js floor (`engines.node`) of the whole repository. */
-const ROOT_PACKAGE = "../../package.json";
 const LICENSE_FILE = "../../LICENSE";
 const REPOSITORY = "https://github.com/antick/loadout";
 const app = JSON.parse(readFileSync(APP_PACKAGE, "utf8"));
-/** `node:sqlite` works without a flag from 22.13 on; the root package.json says so once. */
-const NODE_ENGINE = JSON.parse(readFileSync(ROOT_PACKAGE, "utf8")).engines.node;
 const cli = JSON.parse(readFileSync("package.json", "utf8"));
+/** The CLI runtime floor is independent of the development tools, such as Astro. */
+const NODE_ENGINE = cli.engines.node;
 /** Where the README says skills go; the full list is the app's agent table. */
 const DEPLOYED_TO = "Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and more";
 

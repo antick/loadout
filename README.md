@@ -101,7 +101,7 @@ have to remember the package manager.
 
 4. Stop development with `Ctrl+C` in that terminal. Run `mise run dev` again next time.
 
-Without mise, install Node.js 22.13 or newer, run `corepack enable` to get the pnpm version
+Without mise, install Node.js 22.22 or newer, run `corepack enable` to get the pnpm version
 pinned in the `packageManager` field of [package.json](package.json), and use the `pnpm`
 commands that each task runs (see the `run` lines in `mise.toml`).
 
