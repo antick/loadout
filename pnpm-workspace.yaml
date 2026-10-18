@@ -2,9 +2,16 @@ packages:
   - apps/*
   - packages/*
 
+# Wait two days before resolving newly published dependency versions (in minutes).
+minimumReleaseAge: 2880
+
 # Packages allowed to run install scripts: Electron downloads its binary and esbuild picks its
 # platform build. electron-winstaller is only needed when building Windows installers on Windows.
 allowBuilds:
   electron: true
   esbuild: true
   electron-winstaller: false
+
+# @electron/get@3 uses bootstrap(), which global-agent@4 retains, without roarr/sprintf-js.
+overrides:
+  "@electron/get@3>global-agent": 4.1.3
