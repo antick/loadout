@@ -1,6 +1,12 @@
 name: Set up pnpm, Node and the dependencies
 description: The pnpm version from package.json, Node 24 with the pnpm store cached, then a frozen install.
 
+inputs:
+  cache-pnpm:
+    description: Cache the pnpm store through setup-node (turn off in release signing jobs).
+    required: false
+    default: "true"
+
 runs:
   using: composite
   steps:
@@ -11,7 +17,8 @@ runs:
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version: 24
-        cache: pnpm
+        cache: ${{ inputs.cache-pnpm == 'true' && 'pnpm' || '' }}
+        package-manager-cache: ${{ inputs.cache-pnpm == 'true' }}
 
     - name: Install
       shell: bash
