@@ -2,8 +2,6 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: /
-    cooldown:
-      default-days: 7
     schedule:
       interval: weekly
     # Versions are pinned exactly, so every update is a reviewed change to a pinned number.
@@ -14,8 +12,6 @@ updates:
   - package-ecosystem: github-actions
     # The shared setup action pins its own actions; it is only looked at when listed.
     directories: ["/", "/.github/actions/setup"]
-    cooldown:
-      default-days: 7
     schedule:
       interval: weekly
     groups:

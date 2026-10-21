@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up pnpm, Node and the dependencies
-        uses: $/.github/actions/setup
+        uses: ./.github/actions/setup
 
       - name: Lint
         run: pnpm run lint
@@ -59,7 +59,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up pnpm, Node and the dependencies
-        uses: $/.github/actions/setup
+        uses: ./.github/actions/setup
 
       # On CI the packages run side by side, each on every core (scripts/test.mjs).
       - name: Test
@@ -78,7 +78,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up pnpm, Node and the dependencies
-        uses: $/.github/actions/setup
+        uses: ./.github/actions/setup
 
       - name: Read the Playwright version
         id: playwright

@@ -23,7 +23,7 @@ permissions:
 jobs:
   quality:
     name: Check the tagged commit
-    uses: $/.github/workflows/ci.yml
+    uses: ./.github/workflows/ci.yml
 
   version:
     name: Read the version
@@ -78,7 +78,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up pnpm, Node and the dependencies
-        uses: $/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           cache-pnpm: "false"
 

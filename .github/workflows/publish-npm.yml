@@ -32,7 +32,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up pnpm, Node and the dependencies
-        uses: $/.github/actions/setup
+        uses: ./.github/actions/setup
 
       - name: Build the npm package
         run: pnpm --filter @loadout/cli run pack:npm
