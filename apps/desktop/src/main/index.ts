@@ -34,6 +34,7 @@ import {
 import { createEventSender, registerIpc } from "./ipc";
 import { openCoreOrAsk } from "./library-unavailable";
 import { nativeUnavailablePrompts } from "./library-unavailable-dialogs";
+import { linuxPasswordStore } from "./password-store";
 import { createSecretStore } from "./secrets";
 import { type TrayController, createTrayController } from "./tray-controller";
 import { appFetch } from "./net-fetch";
@@ -81,6 +82,13 @@ app.setName(profile.name);
 const appDataDir = profile.appDataDir;
 app.setPath("userData", appDataDir);
 app.setPath("crashDumps", join(appDataDir, CRASH_DUMPS_DIR));
+// Must be set before the app is ready, when Chromium picks its keyring.
+const passwordStore = linuxPasswordStore({
+  platform: process.platform,
+  desktop: process.env.XDG_CURRENT_DESKTOP,
+  hasSwitch: app.commandLine.hasSwitch("password-store"),
+});
+if (passwordStore) app.commandLine.appendSwitch("password-store", passwordStore);
 
 function quit(): void {
   quitting = true;

@@ -59,7 +59,25 @@ If it doesn't start and mentions FUSE, install it first. On Ubuntu 24.04 and lat
 sudo apt install libfuse2t64
 ```
 
-On Ubuntu 22.04 and Debian: `sudo apt install libfuse2`.
+On Ubuntu 22.04 and Debian: `sudo apt install libfuse2`. On Arch, Omarchy and Manjaro:
+`sudo pacman -S fuse2`.
+
+**Add it to your app launcher (optional).** Desktops like Omarchy, Hyprland or Sway don't pick
+up an AppImage by themselves. Copy its menu entry and icon out of the file once:
+
+```bash
+cd ~/Applications
+./Loadout-*.AppImage --appimage-extract loadout.desktop
+./Loadout-*.AppImage --appimage-extract usr/share/icons
+mkdir -p ~/.local/share/applications ~/.local/share/icons
+sed "s|^Exec=AppRun|Exec=$(ls -1 "$PWD"/Loadout-*.AppImage | tail -n 1)|" \
+  squashfs-root/loadout.desktop > ~/.local/share/applications/loadout.desktop
+cp -r squashfs-root/usr/share/icons/. ~/.local/share/icons/
+rm -rf squashfs-root
+```
+
+Saved credentials are encrypted with your keyring through the Secret Service, so one must be
+running (gnome-keyring, as on Omarchy, or KeePassXC). On KDE, Loadout uses KWallet.
 
 **Debian or Ubuntu package:**
 
