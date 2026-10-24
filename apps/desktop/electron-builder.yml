@@ -31,6 +31,10 @@ electronFuses:
   grantFileProtocolExtraPrivileges: true
 extraMetadata:
   homepage: https://loadout.potion.sh
+  # Linux: Electron takes the Wayland app id (the window class Hyprland, Sway and docks match on)
+  # from this. Without it the id comes from the package name, `loadout-desktop`, which matches no
+  # .desktop file, so launchers show no icon and window rules miss the app.
+  desktopName: loadout.desktop
 # File names are read by scripts/update-feed.mjs to build the update feed: change both together.
 # The landing page's download links take the .dmg next to each mac .zip (apps/landing/src/lib/downloads.ts).
 mac:
@@ -61,6 +65,10 @@ linux:
   # personal e-mail out of the public installers.
   maintainer: Pankaj <antick@users.noreply.github.com>
   icon: build/icon.png
+  desktop:
+    entry:
+      # Same as desktopName above, so the running window is matched to this entry.
+      StartupWMClass: loadout
   target:
     - target: AppImage
       arch: [x64, arm64]
