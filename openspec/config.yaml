@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  Loadout is a pnpm monorepo: apps/desktop (Electron + React), packages/core (all behaviour),
+  packages/cli, packages/shared (API contract and types). The renderer never imports Node;
+  it calls typed IPC matching packages/shared/src/api.ts. Behaviour changes belong in core
+  and must keep CLI and desktop in parity. Do not change apps/landing or release workflows
+  unless the change explicitly requires it. Library filesystem writes use ctx.lock; deploy
+  must respect ownership in packages/core/src/deploy/engine.ts. Prefer macOS and Linux;
+  Windows is unsupported. Run pnpm run check for lint, format, typecheck, and unit tests.
+
+rules:
+  proposal:
+    - State whether the change touches desktop UI, core only, CLI only, or shared contract
+    - List API namespaces or routes affected
+  specs:
+    - Use SHALL or MUST in requirement bodies and keep scenarios with WHEN and THEN bullets
+    - Trace each requirement to code listed in openspec/source-inventory.md
+  tasks:
+    - Include pnpm run specs:check when spec files change
+    - Include pnpm run check when TypeScript changes
+
+operations:
+  apply:
+    guidance:
+      - Do not modify agent folders outside deploy ownership rules
+  archive:
+    guidance:
+      - Merge deltas into openspec/specs and run pnpm run specs:check

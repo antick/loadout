@@ -14,10 +14,13 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test",
+    "specs": "openspec list",
+    "specs:check": "OPENSPEC_TELEMETRY=0 openspec validate --all --strict --no-interactive",
     "cli": "pnpm --filter @loadout/cli run start --",
     "package": "turbo run package"
   },
   "devDependencies": {
+    "@fission-ai/openspec": "1.14.1",
     "oxfmt": "0.74.0",
     "oxlint": "1.89.0",
     "turbo": "2.11.10",

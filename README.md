@@ -250,6 +250,12 @@ missing. Required repository secrets are `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the rules and
 [docs/FEATURES.md](docs/FEATURES.md) for every feature.
 
+## OpenSpec
+
+Behaviour specs and the spec-driven change workflow live under [openspec/](openspec/).
+Run `pnpm run specs:check` to validate baseline requirements. See [openspec/README.md](openspec/README.md)
+and [AGENTS.md](AGENTS.md) for how contributors use it.
+
 ## License
 
 Loadout is free software under the [GNU General Public License v3.0](LICENSE) (`GPL-3.0-only`).
