@@ -5,6 +5,10 @@
   "semi": true,
   "trailingComma": "all",
   "ignorePatterns": [
+    ".agents/skills/openspec-*/**",
+    ".claude/skills/openspec-*/**",
+    ".cursor/skills/openspec-*/**",
+    ".dsh/skills/openspec-*/**",
     ".claude/worktrees/**",
     "**/routeTree.gen.ts",
     "**/dist/**",

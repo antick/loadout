@@ -1,0 +1,36 @@
+schema: spec-driven
+
+context: |
+  Loadout is an existing desktop and CLI product for managing agent skills, not a greenfield app.
+  Follow AGENTS.md and read openspec/README.md and openspec/baseline.md first.
+  Existing capability specs are a bounded baseline, not proof of exhaustive coverage.
+  Inspect implementation and tests before changing or extending a requirement.
+  Historical plans in docs/TODO.md are intent, not evidence that a feature shipped.
+  Behaviour lives in packages/core; the API contract lives in packages/shared; the renderer uses IPC only.
+  Never delete or overwrite agent paths unless deploy ownership proves Loadout created them.
+  Library filesystem writes run inside ctx.lock; do not hold the lock across network I/O.
+  macOS and Linux are supported; Windows is not. Keep plain punctuation in authored artifacts; do not use em dashes.
+
+rules:
+  proposal:
+    - Identify affected existing capability specs and consult their source references.
+    - Separate current behavior, requested behavior, non-goals and unresolved questions.
+  specs:
+    - Write observable SHALL requirements with WHEN/THEN scenarios.
+    - Cover deploy ownership, changed-on-disk detection, stale writes and recovery where relevant.
+    - If baseline coverage is missing, establish current behavior from code and tests before proposing a delta.
+  design:
+    - Reference docs/ARCHITECTURE.md and affected core or desktop modules.
+    - State data compatibility and verification implications without unrelated refactors.
+  tasks:
+    - Include unit or CLI tests, pnpm run check when TypeScript changes, and documentation updates.
+    - Include spec synchronization and source inventory maintenance before archiving.
+
+operations:
+  apply:
+    guidance:
+      - Work within the user's authorized scope and follow AGENTS.md verification and commit rules.
+      - Do not treat a baseline spec or historical plan as permission to implement unrelated work.
+  archive:
+    guidance:
+      - Sync accepted deltas into specs and report verification gaps honestly before archiving.
