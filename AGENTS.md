@@ -8,7 +8,7 @@ Follow `docs/ARCHITECTURE.md`: shared types first, behaviour only in `packages/c
 
 Use the repository-local OpenSpec skills for future product planning and implementation.
 Start with `openspec/README.md`, `openspec/baseline.md` and the affected specs.
-Use `pnpm run specs` for the pinned CLI and read the relevant skill before using it.
+Use `pnpm run specs` as the OpenSpec CLI passthrough (for example `pnpm run specs list --specs`) and read the relevant skill before using it.
 For features and behavior changes, follow this workflow:
 
 1. Read existing specs and active changes (`pnpm run specs list --specs` and
