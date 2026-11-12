@@ -15,7 +15,7 @@ import { join } from "node:path";
 
 /** GitHub repository whose releases hold the files. */
 const DEFAULT_REPO = "antick/loadout";
-const HOMEPAGE = "https://loadout.potion.sh/";
+const HOMEPAGE = "https://github.com/antick/loadout";
 const DESCRIPTION = "Manage AI agent skills across every coding tool";
 const LICENSE = "GPL-3.0-only";
 /** Electron 38 and later need macOS 12 (Homebrew reads a bare version as "this or newer"). */

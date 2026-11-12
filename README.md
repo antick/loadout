@@ -180,11 +180,10 @@ every test. Run them with `mise run test:ui`, after installing the browser once 
 
 ## Website
 
-`apps/landing` is the landing page at [loadout.potion.sh](https://loadout.potion.sh), an Astro
-static site. `mise run dev:landing` serves it while you work on it, and
-`pnpm exec turbo run build --filter=@loadout/landing` builds it. Vercel builds and
-serves it from `vercel.json`; links such as where installers are downloaded live in
-`apps/landing/src/lib/site.ts`. The agent list on the page comes from `@loadout/shared`, so it
+`apps/landing` is the retained Astro landing page. `mise run dev:landing` serves it locally,
+and `pnpm exec turbo run build --filter=@loadout/landing` builds it. It defaults to
+`http://localhost:4321`; set `SITE_URL` explicitly if hosting it again. Shared site settings
+live in `apps/landing/src/lib/site.ts`. The agent list on the page comes from `@loadout/shared`, so it
 always matches the app. The direct download links are read from the newest release's
 `latest.json` at build time; the tests build with `astro build --mode offline`, which skips that
 and links to the release page, so they never wait on the network.
@@ -231,18 +230,17 @@ trusted publishing. A failed run can be re-run from the Actions tab.
 
 ### The landing page
 
-Publishing a stable release starts `.github/workflows/vercel-production.yml`. It checks out
-that release's tag, verifies it belongs to `main`, and deploys the website to Vercel production.
-The build reads that exact release's installer feed and fails if the expected downloads are
-missing. Required repository secrets are `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
-`VERCEL_PROJECT_ID`. Branch pushes and PRs do not deploy production.
+The landing app is kept for local development, but releases no longer deploy it.
+The deployment workflow has been removed, and `vercel.json` keeps native Vercel Git
+deployments disabled for branch pushes and pull requests. Existing hosted deployments,
+domains, deploy hooks and credentials can be removed separately in the hosting account.
 
 ## Layout
 
 | Path              | Purpose                                            |
 | ----------------- | -------------------------------------------------- |
 | `apps/desktop`    | Electron main, preload and the React renderer      |
-| `apps/landing`    | Landing page at loadout.potion.sh                  |
+| `apps/landing`    | Retained Astro landing page                        |
 | `packages/core`   | All behaviour, plain Node TypeScript (no Electron) |
 | `packages/cli`    | The `loadout` command-line tool                    |
 | `packages/shared` | Types, API contract, events, settings, formatters  |

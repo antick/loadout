@@ -30,7 +30,7 @@ electronFuses:
   # The window is loaded from file://, which needs its usual access to its own files.
   grantFileProtocolExtraPrivileges: true
 extraMetadata:
-  homepage: https://loadout.potion.sh
+  homepage: https://github.com/antick/loadout
   # Linux: Electron takes the Wayland app id (the window class Hyprland, Sway and docks match on)
   # from this. Without it the id comes from the package name, `loadout-desktop`, which matches no
   # .desktop file, so launchers show no icon and window rules miss the app.
