@@ -31,5 +31,5 @@ test("navigation, downloads, and disclosures work without client scripts", () =>
   assert.match(html, /<details\b[^>]*>\s*<summary\b/);
   assert.doesNotMatch(html, /<script\b/, "This page should not require JavaScript");
   assert.match(html, /name="viewport" content="width=device-width, initial-scale=1"/);
-  assert.match(html, /rel="canonical" href="https:\/\/loadout.potion.sh\/"/);
+  assert.match(html, /rel="canonical" href="http:\/\/localhost:4321\/"/);
 });

@@ -82,7 +82,7 @@ jobs:
         with:
           cache-pnpm: "false"
 
-      # The app and what it bundles (the CLI); the landing page is Vercel's to build.
+      # The app and what it bundles (the CLI); the retained landing page is not deployed.
       - name: Build the CLI and the app
         run: pnpm exec turbo run build --filter=@loadout/desktop...
 

@@ -125,10 +125,7 @@ gh release edit "v<version>" --draft=false --latest
 
 Installed copies of the app offer the update within six hours.
 
-Publishing a stable release starts **Vercel production** (`.github/workflows/vercel-production.yml`).
-It deploys the released tag, and its build requires that tag's installer feed. Observe the run
-for this release, then verify the live website offers this version and working installer links.
-A failed deployment is unfinished release work; fix it or report the specific blocker.
+The retained landing app is not deployed as part of a release.
 
 ## 7. Watch the CLI reach npm
 
@@ -158,16 +155,9 @@ gh release view --json tagName,isDraft,url           # the new tag, isDraft fals
 pnpm view @antick/loadout version                     # the new version; the registry can lag a minute
 ```
 
-Report in a few lines: the version, the GitHub release URL, whether loadout.potion.sh was
-rebuilt, the npm package URL
+Report in a few lines: the version, the GitHub release URL, the npm package URL
 (`https://www.npmjs.com/package/@antick/loadout`), and that users update the CLI with
 `pnpm add -g @antick/loadout@latest`. List anything that failed or was skipped.
-
-## Website prerequisites
-
-The Vercel workflow requires repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID` and
-`VERCEL_PROJECT_ID`. Native Vercel Git deployments are disabled; branch pushes do not deploy
-production. A manual `vercel-production.yml` dispatch redeploys the latest stable release.
 
 ## Apple prerequisites
 

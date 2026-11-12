@@ -75,10 +75,8 @@ migration while the old private key is still available.
 8. Publish with an authorized human/CLI credential (`gh release edit <tag> --draft=false --latest`).
    A release published using a workflow's default `GITHUB_TOKEN` does not trigger the downstream
    release-event workflows; use a human token or explicitly dispatch equivalent jobs.
-9. Check `Publish the CLI to npm` and `Vercel production`. Verify npm reports the same
-   version and the live website links to that release's installers. The Vercel workflow checks
-   out the released tag and supplies `LOADOUT_RELEASE_TAG` to the build. Missing downloads
-   fail deployment instead of silently publishing an old version or fallback links.
+9. Check `Publish the CLI to npm` and verify npm reports the same version.
+   The retained landing app is not deployed as part of a release.
 
 Homebrew remains optional and manual: its workflow requires a separately configured tap and
 token. It is not a prerequisite for downloading, installing or updating the desktop app.

@@ -1,7 +1,8 @@
 import desktop from "../../../desktop/package.json";
 
 /** Where the page lives, and the links it points at. One place to change them. */
-export const SITE_URL = "https://loadout.potion.sh";
+// Local-only by default. Set SITE_URL when intentionally hosting this app again.
+export const SITE_URL = process.env.SITE_URL || "http://localhost:4321";
 export const PARENT_URL = "https://potion.sh";
 export const PARENT_NAME = "potion.sh";
 
